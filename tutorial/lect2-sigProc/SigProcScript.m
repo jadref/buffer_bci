@@ -1,3 +1,5 @@
+run ../../utilities/initPaths
+
 % load the data this contains
 % X - [ channels x time x epochs ] raw EEG data
 % Y - [ epochs x 1 ] class labels for X's epochs

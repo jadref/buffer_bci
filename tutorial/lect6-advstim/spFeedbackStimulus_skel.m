@@ -1,8 +1,4 @@
-if ( exist('initPaths','file') ) 
-  initPaths;
-else
-  run ../utilities/initPaths;
-end
+run ../../utilities/initPaths;
 
 buffhost='localhost';buffport=1972;
 global ft_buff; ft_buff=struct('host',buffhost,'port',buffport);

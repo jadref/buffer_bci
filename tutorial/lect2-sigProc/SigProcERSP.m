@@ -1,5 +1,5 @@
 % initialise the matlab paths
-run ../utilities/initPaths;
+run ../../utilities/initPaths;
 
 % load the data this contains
 % X - [ channels x time x epochs ] raw EEG data

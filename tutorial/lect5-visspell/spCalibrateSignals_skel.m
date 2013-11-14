@@ -1,4 +1,4 @@
-run ../utilities/initPaths;
+run ../../utilities/initPaths;
 
 buffhost='localhost';buffport=1972;
 global ft_buff; ft_buff=struct('host',buffhost,'port',buffport);
