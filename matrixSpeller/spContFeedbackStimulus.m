@@ -1,4 +1,4 @@
-if ( ~exist('spConfig','var') || ~spConfig ) configureSpeller(); end;
+configureSpeller();
 
 % wait for the buffer to return valid header information
 hdr=[];
@@ -160,7 +160,8 @@ for si=1:nSeq;
     p  = 1./(1+exp(-dv)); p=p./sum(p); % norm letter prob      
     [ans,predTgt] = max(dv); % predicted target is highest correlation
   
-    for hi=1:numel(h); set(h(hi),'fontSize',symbSize*(.5+1.5*p(hi))); end;     % update the feedback display
+    % update the feedback display
+    for hi=1:numel(h); set(h(hi),'fontSize',symbSize*(1+.5*(p(hi)-1/numel(symbols)))); end;     
     % show the classifier prediction
     set(h(predTgt),'color',tgtColor);
     drawnow;

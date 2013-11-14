@@ -1,4 +1,4 @@
-if ( ~exist('spConfig','var') || ~spConfig ) configureSpeller(); end;
+configureSpeller();
 
 % wait for the buffer to return valid header information
 hdr=[];

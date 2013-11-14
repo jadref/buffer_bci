@@ -5,7 +5,7 @@
 %  (startPhase.cmd,calibrate)  -- start calibration phase processing (i.e. cat data)
 %  (startPhase.cmd,testing)    -- start test phase, i.e. on-line prediction generation
 %  (startPhase.cmd,exit)       -- stop everything
-if ( ~exist('gameConfigured') || isempty(gameConfigured) ) configureGame; end;
+configureGame;
 
 if ( ~exist('capFile','var') ) capFile='1010'; end; %'cap_tmsi_mobita_num'; 
 if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4; overridechnms=1;
@@ -18,9 +18,6 @@ testname='testing_data';
 if ( ~exist('verb','var') ) verb =2; end;
 subject='test';
 
-% startup the buffer etc. to wait for phase control events.
-buffhost='localhost'; buffport=1972;
-global ft_buff; ft_buff=struct('host',buffhost,'port',buffport);
 % wait for the buffer to return valid header information
 hdr=[];
 while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
@@ -32,8 +29,6 @@ while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffe
   end;
   pause(1);
 end;
-% do the initial clock alignment
-initgetwTime;  initsleepSec;
 
 % main loop waiting for commands and then executing them
 state=struct('pending',[],'nevents',[],'nsamples',[],'hdr',hdr); 

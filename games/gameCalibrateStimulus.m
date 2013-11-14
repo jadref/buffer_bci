@@ -1,4 +1,4 @@
-if ( ~exist('gameConfigured','var') || ~gameConfigured )  configureGame(); end
+configureGame(); 
 
 
 % make stim seq with an extra invisible symbol to increase the ISI

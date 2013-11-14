@@ -33,7 +33,7 @@ while (ishandle(contFig))
     try
       inducedDemoERPStimulus();
     catch
-      % do nothing
+      fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
     end
     nSymbs=onSymbs;
     sendEvent(phaseToRun,'end');
@@ -47,6 +47,7 @@ while (ishandle(contFig))
     %try
       imCalibrateStimulus();
     %catch
+      %fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
       % do nothing
     %end
     sendEvent(phaseToRun,'end');
@@ -59,6 +60,7 @@ while (ishandle(contFig))
     try
       imCalibrateStimulus();
     catch
+      fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
       sendEvent('stimulus.training','end');    
     end
     sendEvent(phaseToRun,'end');
@@ -77,6 +79,7 @@ while (ishandle(contFig))
       sendEvent('startPhase.cmd','testing');
       imOnlineFeedbackStimulus;
     catch
+      fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
       sendEvent('stimulus.test','end');
     end
     sendEvent(phaseToRun,'end');

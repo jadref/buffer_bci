@@ -1,4 +1,4 @@
-if ( ~exist('imConfig','var') || ~imConfig ) configureIM(); end;
+configureIM();
 
 % wait for the buffer to return valid header information
 hdr=[];

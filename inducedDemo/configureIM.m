@@ -1,3 +1,7 @@
+% guard to prevent running multiple times
+if ( exist('imConfig','var') && ~isempty(imConfig) ) return; end;
+imConfig=true;
+
 run ../utilities/initPaths;
 
 buffhost='localhost';buffport=1972;
@@ -19,7 +23,6 @@ initgetwTime();
 initsleepSec();
 
 capFile='cap_tmsi_mobita_im2';
-imConfig=true;
 verb=1;
 buffhost='localhost';
 buffport=1972;

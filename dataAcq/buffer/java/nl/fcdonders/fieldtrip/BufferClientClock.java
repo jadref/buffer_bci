@@ -46,9 +46,9 @@ public class BufferClientClock extends BufferClient {
 					  getSamp()<(long)(clockSync.Slast) || // detected prediction before last known sample
 					  getTime()>(long)(clockSync.Tlast)+updateInterval || // simply too long since we updated
 					  clockSync.N < 10 ) { // Simply not enough points to believe we've got a good estimate
-					 System.out.println("Updating clock sync");
+					 System.out.print("Updating clock sync: SampErr " + getSampErr() + " getSamp " + getSamp() + " Slast " + clockSync.Slast);
 					 e.sample = poll(0).nSamples; // force update if error is too big
-					 System.out.println("SampErr " + getSampErr() + " getSamp " + getSamp() + " Slast " + clockSync.Slast + " poll " + e.sample);
+					 System.out.println(" poll " + e.sample);
 				} else { // use the estimated time
 					 e.sample=(int)getSamp();
 				}

@@ -1,4 +1,4 @@
-if ( ~exist('spConfig') || isempty(spConfig) ) configureSpeller; end;
+configureSpeller;
 
 % create the control window and execute the phase selection loop
 contFig=controller(); info=guidata(contFig); 
@@ -33,7 +33,7 @@ while (ishandle(contFig))
     %try
       spCalibrateStimulus();
     %catch
-      % do nothing
+    %  fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
     %end
     sendEvent(phaseToRun,'end');
     nSeq=onSeq;
@@ -46,6 +46,7 @@ while (ishandle(contFig))
     %try
       spCalibrateStimulus();
     %catch
+    %  fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
       sendEvent('stimulus.training','end');    
     %end
     sendEvent(phaseToRun,'end');
@@ -64,6 +65,7 @@ while (ishandle(contFig))
       sendEvent('startPhase.cmd','testing');
       spFeedbackStimulus;
     %catch
+    %  fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
       sendEvent('stimulus.test','end');
     %end
     sendEvent('stimulus.test','end');
@@ -77,6 +79,7 @@ while (ishandle(contFig))
       sendEvent('startPhase.cmd','testing');
       spFeedbackStimulus;
     catch
+      fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
       sendEvent('stimulus.test','end');
     end
     sendEvent('stimulus.test','end');
@@ -90,6 +93,7 @@ while (ishandle(contFig))
       sendEvent('startPhase.cmd','testing');
       spFeedbackStimulus;
     catch
+      fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
       sendEvent('stimulus.test','end');
     end
     sendEvent('stimulus.test','end');
@@ -103,6 +107,7 @@ while (ishandle(contFig))
       sendEvent('startPhase.cmd','contfeedback');
       spContFeedbackStimulus;
     %catch
+    %  fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
       sendEvent('stimulus.test','end');
     %end
     sendEvent('stimulus.test','end');

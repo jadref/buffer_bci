@@ -1,7 +1,4 @@
-if ( ~exist('gameConfigured','var') || ~gameConfigured )
-  run ../utilities/initPaths;
-  configureGame();
-end
+configureGame();
 fbtype='epoch';%'cont';%
 
 % hack set nsymbs lower

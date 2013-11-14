@@ -1,6 +1,7 @@
 #!/bin/bash
 cd `dirname ${BASH_SOURCE[0]}`
-cat <<EOF | matlab -nodesktop  
+source ../utilities/findMatlab.sh
+cat <<EOF | $matexe -nodesktop  
 runIM;
 quit;
 EOF

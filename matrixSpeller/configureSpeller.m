@@ -1,3 +1,7 @@
+% guard to prevent running multiple times
+if ( exist('spConfig','var') && ~isempty(spConfig) ) return; end;
+spConfig=true;
+
 run ../utilities/initPaths;
 
 buffhost='localhost';buffport=1972;
@@ -18,7 +22,6 @@ end;
 initgetwTime();
 initsleepSec();
 
-spConfig=true;
 verb=1;
 nSeq=5;%15;%
 nRepetitions=5;  % the number of complete row/col stimulus before sequence is finished

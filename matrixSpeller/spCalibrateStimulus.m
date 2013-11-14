@@ -1,4 +1,4 @@
-if ( ~exist('spConfig','var') || ~spConfig ) configureSpeller(); end;
+configureSpeller();
 
 % make the stimulus
 fig=gcf;

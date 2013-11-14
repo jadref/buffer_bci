@@ -1,22 +1,22 @@
 if ( exist('OCTAVE_VERSION') ) debug_on_error(1); else dbstop if error; end;
+% guard to prevent running multiple times
+if ( exist('gameConfig','var') && ~isempty(gameConfig) ) return; end;
+gameConfig=true;
 
 run ../utilities/initPaths;
-gameConfigured=true; % flag that we've already done the configuration
-  
+
+capFile='cap_tmsi_mobita_p300';
 keyboardControl=false;%true;%
+% do the initial clock alignment
+initgetwTime;  initsleepSec;
   
-global rtclockmb rtclockrecord dispState gameState getwTime;
+%global dispState gameState;
 verb=1;
 buffhost='localhost'; buffport=1972;
-global ft_buff; ft_buff=struct('host',buffhost,'port',buffport);
-stimType ='ssvep'; %'pseudorand';% 
-isi      = 1/12;
 zoomed   = false;
 zoomedLim=[-4 4];
+
 % BCI Stim Props
-nSymbs=4;
-tti=.5; % target to target interval
-vnSymbs=max(nSymbs,round(tti/isi)); % number virtual symbs used to generate the stim seq... adds occasional gaps
 flashColor=[1 1 1]; % the 'flash' color (white)
 tgtColor = [.8 .8 .8];
 bgColor  = [.1 .1 .1];
@@ -24,8 +24,12 @@ tgt2Color= [1 0 0];
 arrowScale=[.4 1.0];
 sizeStim = 1.5;
 
-
 % epoch timing info
+stimType ='ssvep'; %'pseudorand';% 
+isi      = 1/10;
+nSymbs=4;
+tti=.6; % target to target interval
+vnSymbs=max(nSymbs,round(tti/isi)); % number virtual symbs used to generate the stim seq... adds occasional gaps
 targetTime= ceil(.5/isi)*isi;
 startDelay=0;
 interTrialDelay=0;
@@ -57,6 +61,11 @@ sokobanLevels={'soko1.lv' 'soko2.lv' 'soko3.lv'};
 symbols={'1'  '2'  '3';...
          '4'  '5'  '6';...
          '7'  '8'  '9'}';
+symbols={'a'  'b'  'c' 'd' 'e';...
+         'f'  'g'  'h' 'i' 'j';...
+         'k'  'l'  'm' 'n' 'o';...
+         'p'  'q'  'r' 's' 't';...
+         'u'  'v'  'w' 'x' 'yz'}';
 vnRows=max(size(symbols,1),ceil(tti/isi));
 vnCols=max(size(symbols,2),ceil(tti/isi));
 symbSize=.1;

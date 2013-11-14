@@ -1,4 +1,4 @@
-if ( ~exist('gameConfigured') || isempty(gameConfigured) ) configureGame; end;
+configureGame;
 
 % wait for the buffer to return valid header information
 hdr=[];

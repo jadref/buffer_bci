@@ -122,8 +122,10 @@ while ( ~endTraining )
          if ( isequal(yrange,[0 0]) ) 
             %fprintf('Warning: Clims are equal -- reset to clim+/- .5');
             yrange=.5*[-1 1]; 
+         elseif ( yrange(1)==yrange(2) ) 
+           yrange=yrange(1)+.5*[-1 1];
          end;
-         set(hdls(1:size(ppdat,1)),'ylim',yrange); ylim=yrange;
+          ylim=yrange; set(hdls(1:size(ppdat,1)),'ylim',ylim);
       end
    end
    

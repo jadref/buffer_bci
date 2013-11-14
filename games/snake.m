@@ -1,7 +1,5 @@
-if ( ~exist('gameConfigured','var') || ~gameConfigured )
-  run ../utilities/initPaths;
-  configureGame();
-end
+configureGame();
+
 zoomed=false;
 %moveInterval=maxMoveInterval;
 %nSymbs=4;
@@ -47,7 +45,6 @@ end;
 stimState.visibleStim=visibleStim;
 [ev,stimState]=drawStim(0,stimState,[0;0],1);
 
-% align sample clock
 % wait for the buffer to return valid header information
 hdr=[];
 while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data

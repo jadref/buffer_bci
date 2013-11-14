@@ -1,5 +1,5 @@
 dbstop if error;
-if ( ~exist('gameConfigured') || isempty(gameConfigured) ) configureGame; end;
+configureGame;
 % wait for the buffer to return valid header information
 hdr=[];
 while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
@@ -11,9 +11,6 @@ while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffe
   end;
   pause(1);
 end;
-% align the rtclock
-initgetwTime;
-initsleepSec;
 
 % create the control window and execute the phase selection loop
 contFig=gameController(); info=guidata(contFig); 
@@ -51,6 +48,7 @@ while (ishandle(contFig))
     try
       gameCalibrateStimulus()
     catch
+      fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
       % do nothing
     end
     sendEvent(phaseToRun,'end');
@@ -63,6 +61,7 @@ while (ishandle(contFig))
     try
       gameCalibrateStimulus()
     catch
+      fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
       sendEvent('stimulus.training','end');    
     end
     sendEvent(phaseToRun,'end');
@@ -81,6 +80,7 @@ while (ishandle(contFig))
       sendEvent('startPhase.cmd','testing');
       snake;
     catch
+      fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
       sendEvent('stimulus.test','end');
     end
     sendEvent(phaseToRun,'end');
@@ -93,6 +93,7 @@ while (ishandle(contFig))
       sendEvent('startPhase.cmd','testing');
       sokoban;
     catch
+      fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
       sendEvent('stimulus.test','end');
     end
     sendEvent(phaseToRun,'end');
@@ -105,6 +106,7 @@ while (ishandle(contFig))
       sendEvent('startPhase.cmd','testing');
       pacman;
     catch
+      fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
       sendEvent('stimulus.test','end');
     end
     sendEvent(phaseToRun,'end');
@@ -114,12 +116,13 @@ while (ishandle(contFig))
     sendEvent('subject',info.subject);
     %sleepSec(.1);
     sendEvent('spelling','start');
-    %try
+    try
       sendEvent('startPhase.cmd','contfeedback');
       spContFeedbackStimulus;
-    %catch
+    catch
+      fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
       sendEvent('stimulus.test','end');
-    %end
+    end
     sendEvent('spelling','end');    
     
   end

@@ -1,7 +1,5 @@
-if ( ~exist('gameConfigured','var') || ~gameConfigured )
-  run ../utilities/initPaths;
-  configureGame();
-end
+configureGame();
+
 %moveInterval=maxMoveInterval;
 zoomed=false; if ( level>2 ) zoomed=true; end;
 max_moves=500;
@@ -34,7 +32,6 @@ stimState=struct('hdls',stimh,'stimSeq',stimSeq,'stimTime',stimTime,...
     'stimPos',stimPos,'stimPCoords',stimPCoords,'sizeStim',sizeStim);
 visibleStim=stimState.visibleStim;
 
-% align sample clock
 % wait for the buffer to return valid header information
 hdr=[];
 while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data

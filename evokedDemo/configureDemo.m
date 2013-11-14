@@ -1,5 +1,7 @@
+% guard to prevent running multiple times
+if ( exist('runConfig','var') && ~isempty(runConfig) ) return; end;
+runConfig=true;
 run ../utilities/initPaths;
-runConfig=true; % mark as config already done
 
 buffhost='localhost';buffport=1972;
 global ft_buff; ft_buff=struct('host',buffhost,'port',buffport);

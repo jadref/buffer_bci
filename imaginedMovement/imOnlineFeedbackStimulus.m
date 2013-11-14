@@ -1,4 +1,4 @@
-if ( ~exist('imConfig','var') || ~imConfig ) configureIM(); end;
+configureIM();
 
 % wait for the buffer to return valid header information
 hdr=[];
@@ -90,10 +90,12 @@ for si=1:nSeq;
           ev=predevents(si(ei));% event to process
           pred=ev.value;
           % now do something with the prediction....
-          if ( numel(pred)==1 && pred>0 && pred<nSymbs && isinteger(pred) ) % predicted symbol, convert to dv equivalent
-            tmp=pred; pred=zeros(nSymbs,1); pred(tmp)=1;
-          else
-            pred=[pred -pred];
+          if ( numel(pred)==1 )
+            if ( pred>0 && pred<=nSymbs && isinteger(pred) ) % predicted symbol, convert to dv equivalent
+              tmp=pred; pred=zeros(nSymbs,1); pred(tmp)=1;
+            else % binary problem
+              pred=[pred -pred];
+            end
           end
           prob = 1./(1+exp(-pred)); prob=prob./sum(prob); % convert from dv to normalised probability
           if ( verb>=0 ) 

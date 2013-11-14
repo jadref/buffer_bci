@@ -1,4 +1,4 @@
-if ( ~exist('runConfig','var') || ~runConfig ) configureDemo(); end;
+configureDemo();
 
 % make the stimulus
 clf;fig=gcf;

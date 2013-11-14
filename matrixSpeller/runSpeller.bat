@@ -1,1 +1,2 @@
-start "matlab" "C:\Program Files\MATLAB\R2012a\bin\matlab.exe" -nodesktop -nosplash -minimize -singleCompThread -r "runSpeller;quit;"
+call ..\utilities\findMatlab.bat
+start "matlab" %matexe% -nodesktop -nosplash -minimize -singleCompThread -r "runSpeller;quit;"

@@ -22,29 +22,41 @@ An overview of the included directories is:
 
   plotting -- various plotting utility functions, e.g. plotting topographic head outlines, plotting 3-d data (multi-plots), zooming multi-plots
   
-  pacman -- Example BCI system for playing 3 simple games (Snake, Sokoban and Pacman) using and visual evoked response (ERP) type BCI
+  games -- Example BCI system for playing 3 simple games (Snake, Sokoban and Pacman) using and visual evoked response (ERP) type BCI
 
   imaginedMovement -- Example BCI system for controlling a cursor using an imagined movement (ERSP) type BCI
 
   matrixSpeller -- Example BCI system for spelling characters using a visual matrix-speller (p300) type BCI
+
+ cursorControl -- Example BCI system for controlling a cursor in 2-d using
+                             visual evoked response (ERP) type BCI
+
+  evokedDemo -- Example system for visualizing responses evoked by visual
+                            stimulus, both transient and steady state, and
+                            attention related (p300 type) changes.
+
+  inducedDemo -- Example system for visualizing induced responses.
+
 
 Installation
 ------------
 
 Copy these directories somewhere on your local harddrive.
 
+*Windows Only* : modify the path in the file utilities/findMatlab.bat to point to your install of matlab
+
 QuickStart
 ----------
 
-Read the readme.txt file in either of the pacman, imaginedMovement, or matrixSpeller directories for instructions on how to startup and run those demos.
+Read the readme.txt file in either of the games, imaginedMovement, or matrixSpeller directories for instructions on how to startup and run those demos.
 
-To run the pacman demo:
+To run the games demo:
 1) Start a buffer by running: dataAcq/startBuffer.bat or buffer/startBuffer.sh
 (optional) 1.1) Start a simulated data source (if you don't have an measurement system connected) by running: dataAcq/startSignalProxy.bat or .sh
-2) Start the Matlab based signal processing proces by running: pacman/startSigProcBuffer.bat or .sh
+2) Start the Matlab based signal processing process by running: pacman/startSigProcBuffer.bat or .sh
 3) Start the Matlab based experiment control & stimulus presentation system by running : pacman/runGame.bat or runGame.sh
 4) Type in the subject name to the experiment control window, and then run through each of the experiment phases: 
    Practice -- practice the task to be used in the BCI.  Green arrows indicate target locations you should attend to by counting the white and red arrow 'flashes'
    Calibration -- get calibration data by attending as instructed for ~90seconds
    Classifier Training -- train a classifier using the calibration data.  3 windows will pop-up showing: Per-class ERPs, per-class AUCs, and cross-validated classification performance.
-5) Selected the game you would like to play!
+5) Select the game you would like to play!

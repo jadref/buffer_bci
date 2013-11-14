@@ -1,3 +1,7 @@
+% guard to prevent running multiple times
+if ( exist('imConfig','var') && ~isempty(imConfig) ) return; end;
+imConfig=true;
+
 run ../utilities/initPaths;
 
 buffhost='localhost';buffport=1972;
@@ -18,11 +22,12 @@ end;
 initgetwTime();
 initsleepSec();
 
-imConfig=true;
+capFile='cap_tmsi_mobita_im';
+
 verb=0;
 buffhost='localhost';
 buffport=1972;
-nSymbs=2;
+nSymbs=3;
 nSeq=20;
 nBlock=2;%10; % number of stim blocks to use
 trialDuration=3;
