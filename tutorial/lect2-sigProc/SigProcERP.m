@@ -8,12 +8,14 @@ run ../../utilities/initPaths;
 % Cnames - {str nCh x 1} cell array of strings for the names of X's channels
 % Cpos - [2 x nCh] x-y positions of each of X's channels (for plotting)
 load('ERPdata'); 
+times=(1:size(X,2))/fs;
+yvals=times;
 
 % plot the first 3 epochs of the data in a topo-graphic multi-plot
-clf;image3d(X(:,:,1:3),1,'plotPos',Cpos,'Xvals',Cnames,'disptype','plot','ticklabs','sw');
+clf;image3d(X(:,:,1:3),1,'plotPos',Cpos,'Xvals',Cnames,'Yvals',yvals,'ylabel','time (s)','disptype','plot','ticklabs','sw');
 % plot the class averages
 erp = cat(3,mean(X(:,:,Y>0),3),mean(X(:,:,Y<=0),3));
-clf;image3d(erp,1,'plotPos',Cpos,'Xvals',Cnames,'Zvals',{'pos','neg'},'disptype','plot','ticklabs','sw');
+clf;image3d(erp,1,'plotPos',Cpos,'Xvals',Cnames,'Yvals',yvals,'Zvals',{'pos','neg'},'disptype','plot','ticklabs','sw');
 
 zoomplots; % allow interactive zooming of the plots to see better what's going on
 
@@ -29,7 +31,7 @@ X=X(~badch,:,:);
 % don't forget to update the channel info too!
 Cpos=Cpos(:,~badch);
 Cnames=Cnames(~badch);
-clf;image3d(X(:,:,1:3),1,'plotPos',Cpos,'Xvals',Cnames,'disptype','plot','ticklabs','sw');
+
 
 % 3) re-reference - CAR
 fprintf('3) CAR\n');
@@ -44,6 +46,8 @@ X   =fftfilter(X,filt,[],2);
 % 4.5) remove bad epochs
 fprintf('4.5) bad trial removal');
 badep = idOutliers(X,3,3);
+Xbad = X(:,:,badep); % store bad example to plot it..
+% clf;image3d(Xbad,1,'plotPos',Cpos,'Xvals',Cnames,'disptype','plot','ticklabs','sw'); % plot bad info
 X=X(:,:,~badep);
 Y=Y(~badep); % don't forget to update labels!
 
