@@ -154,7 +154,7 @@ opIdxX(matchX)=[]; opIdxY(matchY)=[];
 % X
 % permute so dim order is: [OP IP Match]
 % N.B. permute uses [order] where order(i) = oldDimension number moved to i'th new dimension
-xperm = [opIdxX ipIdxX mIdxX];
+xperm = [opIdxX(:); ipIdxX(:); mIdxX(:)];
 tmp = true(1,max(2,max(xperm))); tmp(xperm)=false; % find unused dims
 xperm = [xperm find(tmp)]; % make a valid permutation, by adding unused
 X=permute(X,xperm); 
@@ -163,7 +163,7 @@ X=reshape(X,[prod(szX(opIdxX)) prod(szX(ipIdxX)) prod(szX(mIdxX))]);
 
 % Y
 % permute to be: [IP OP Match]
-yperm = [ipIdxY opIdxY mIdxY];
+yperm = [ipIdxY(:); opIdxY(:); mIdxY(:)];
 tmp = true(1,max(2,max(yperm))); tmp(yperm)=false; % find unused dims
 yperm = [yperm find(tmp)]; % make a valid permutation by adding unused dims
 Y=permute(Y,yperm); 
