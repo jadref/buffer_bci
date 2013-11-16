@@ -21,7 +21,7 @@ end;
 initgetwTime();
 initsleepSec();
 
-capFile='cap_tmsi_mobita_black';%'1010'; %'emotiv';%cap_tmsi_mobita_im2'; N.B. use 1010 for emotiv so non-eeg are labelled correctly
+capFile='1010'; %'emotiv';%cap_tmsi_mobita_im2'; N.B. use 1010 for emotiv so non-eeg are labelled correctly
 verb=0;
 buffhost='localhost';
 buffport=1972;
@@ -39,13 +39,10 @@ nSymbs=2;
 trialDuration=3;
 baselineDuration=1;
 intertrialDuration=2;
+isi = 2/60;
+periods=[2 4];
 bgColor=[.1 .1 .1]; % background color (grey)
 tgtColor=[0 1 0]; % the target indication color (green)
 flashColor=[1 1 1]; % the 'flash' color (white)
 fixColor=[1 0 0];
-trlen_ms=1000;
-
-% the set of options the user will pick from
-symbols={'1' '2' '3';...
-         '4' '5' '6';...
-         '7' '8' '9'}';
+trlen_ms=trialDuration*1000;

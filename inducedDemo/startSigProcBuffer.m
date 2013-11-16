@@ -5,7 +5,6 @@
 %  (startPhase.cmd,calibrate)  -- start calibration phase processing (i.e. cat data)
 %  (startPhase.cmd,testing)    -- start test phase, i.e. on-line prediction generation
 %  (startPhase.cmd,exit)       -- stop everything
-run ../utilities/initPaths.m;
 configureIM;
 
 if ( ~exist('capFile','var') ) capFile='1010'; end; %'cap_tmsi_mobita_num'; 
@@ -17,25 +16,7 @@ dname='training_data';
 cname='clsfr';
 testname='testing_data';
 if ( ~exist('verb','var') ) verb =2; end;
-trlen_ms = 3000;
 subject='test';
-
-% startup the buffer etc. to wait for phase control events.
-buffhost='localhost'; buffport=1972;
-global ft_buff; ft_buff=struct('host',buffhost,'port',buffport);
-% wait for the buffer to return valid header information
-hdr=[];
-while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
-  try 
-    hdr=buffer('get_hdr',[],buffhost,buffport); 
-  catch
-    fprintf('Waiting for header\n');
-    hdr=[];
-  end;
-  pause(1);
-end;
-% do the initial clock alignment
-initgetwTime;  initsleepSec;
 
 % main loop waiting for commands and then executing them
 state=struct('pending',[],'nevents',[],'nsamples',[],'hdr',hdr); 

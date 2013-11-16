@@ -32,7 +32,7 @@ while (ishandle(contFig))
     try
       imCalibrateStimulus();
     catch
-      fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
     end
     sendEvent(phaseToRun,'end');
     nSeq=onSeq;
@@ -44,7 +44,7 @@ while (ishandle(contFig))
     try
       imCalibrateStimulus();
     catch
-      fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
       sendEvent('stimulus.training','end');    
     end
     sendEvent(phaseToRun,'end');

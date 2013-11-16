@@ -36,3 +36,5 @@ moveScale = .1;
 bgColor=[.5 .5 .5];
 fixColor=[1 0 0];
 tgtColor=[0 1 0];
+
+trlen_ms = 3000;

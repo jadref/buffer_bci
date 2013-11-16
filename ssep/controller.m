@@ -24,7 +24,7 @@ function varargout = controller(varargin)
 
 % Edit the above text to modify the response to help controller
 
-% Last Modified by GUIDE v2.5 25-Oct-2013 23:12:45
+% Last Modified by GUIDE v2.5 30-Oct-2013 21:59:01
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -136,9 +136,29 @@ guidata(hObject,handles);
 uiresume;
 
 
-% --- Executes on button press in freespell.
+% --- Executes on button press in snake.
+function copyspell1_Callback(hObject, eventdata, handles)
+% hObject    handle to snake (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.phaseToRun=get(hObject,'Tag');
+guidata(hObject,handles);
+uiresume;
+
+
+% --- Executes on button press in sokoban.
+function copyspell2_Callback(hObject, eventdata, handles)
+% hObject    handle to sokoban (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.phaseToRun=get(hObject,'Tag');
+guidata(hObject,handles);
+uiresume;
+
+
+% --- Executes on button press in testing.
 function freespelling_Callback(hObject, eventdata, handles)
-% hObject    handle to freespell (see GCBO)
+% hObject    handle to testing (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles.phaseToRun=get(hObject,'Tag');
@@ -176,9 +196,9 @@ guidata(hObject,handles);
 uiresume;
 
 
-% --- Executes on button press in contfeedback.
-function contfeedback_Callback(hObject, eventdata, handles)
-% hObject    handle to contfeedback (see GCBO)
+% --- Executes on button press in neurofeedback.
+function neurofeedback_Callback(hObject, eventdata, handles)
+% hObject    handle to neurofeedback (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles.phaseToRun=get(hObject,'Tag');

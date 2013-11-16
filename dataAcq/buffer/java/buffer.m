@@ -8,7 +8,7 @@ function [varargout]=buffer(cmd,detail,host,port)
 % To read data from a buffer server over the network
 %   hdr = buffer('get_hdr', [],     host, port)
 %   dat = buffer('get_dat', datsel, host, port)
-%   evt = buffer('get_evt', evtsel, host, port)
+%   evt = buffer('get_evt', evtsel, host, port) %N.B. only 1-d array event values are supported
 %
 % The selection for data and events should be zero-offset and contain
 %   datsel = [begsample endsample]

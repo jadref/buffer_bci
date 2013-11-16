@@ -5,6 +5,18 @@ gameConfig=true;
 
 run ../utilities/initPaths;
 
+% wait for the buffer to return valid header information
+hdr=[];
+while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
+  try 
+    hdr=buffer('get_hdr',[],buffhost,buffport); 
+  catch
+    fprintf('Waiting for header\n');
+    hdr=[];
+  end;
+  pause(1);
+end;
+
 capFile='cap_tmsi_mobita_p300';
 keyboardControl=false;%true;%
 % do the initial clock alignment

@@ -1,4 +1,8 @@
-function [dat,key,state]=erpViewer(buffhost,buffport,varargin);
+function [rawepochs,key,nTarget]=erpViewer(buffhost,buffport,varargin);
+% simple viewer for ERPs based on matching buffer events
+%
+% [rawepochs,key,nTarget]=erpViewer(buffhost,buffport,varargin)
+%
 opts=struct('cuePrefix','cue.','endType','end.training','verb',1,'nSymbols',0,'trlen_ms',1000,'trlen_samp',[],'detrend',1,'fftfilter',[],'freqbands',[],'spatfilt','car','capFile','1010','overridechnms',0,'welch_width_ms',500,'redraw_ms',500);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;

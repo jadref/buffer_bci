@@ -5,8 +5,9 @@
 %  (startPhase.cmd,calibrate)  -- start calibration phase processing (i.e. cat data)
 %  (startPhase.cmd,testing)    -- start test phase, i.e. on-line prediction generation
 %  (startPhase.cmd,exit)       -- stop everything
-configureGame;
+configureSSEP();
 
+%N.B. use 1010 for emotiv so non-eeg are labelled correctly
 if ( ~exist('capFile','var') ) capFile='1010'; end; %'cap_tmsi_mobita_num'; 
 if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4; overridechnms=1;
 else                                     thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
@@ -52,7 +53,8 @@ while ( true )
     end  
   end
   if ( isempty(phaseToRun) ) continue; end;
-  fprintf('%d) Starting phase : %s\n',getwTime(),phaseToRun);
+
+  fprintf('%d) Starting phase : %s\n',devents(di).sample,phaseToRun);
   
   switch lower(phaseToRun);
     
@@ -70,12 +72,20 @@ while ( true )
     sendEvent(lower(phaseToRun),'start'); % mark start/end testing
     eegViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms);
     sendEvent(lower(phaseToRun),'end'); % mark start/end testing
-    if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;        
-    
-   %---------------------------------------------------------------------------------
-   case 'calibrate';
+    if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;    
+
+    %---------------------------------------------------------------------------------
+   case {'erspvis','erpvis','erpviewer'};
     if ( verb>0 ) fprintf('Starting : %s\n',phaseToRun); ptime=getwTime(); end;
-    [traindata,traindevents,state]=buffer_waitData(buffhost,buffport,[],'startSet',{'stimulus.tgtFlash'},'exitSet',{'stimulus.training' 'end'},'verb',verb,'trlen_ms',trlen_ms);
+    sendEvent(lower(phaseToRun),'start'); % mark start/end testing
+    erpViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix','stimulus','endType',lower(phaseToRun),'trlen_ms',trlen_ms,'freqbands',[.0 .3 45 47]);
+    sendEvent(lower(phaseToRun),'end'); % mark start/end testing
+    if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;    
+        
+   %---------------------------------------------------------------------------------
+   case {'calibrate','calibration'};
+    if ( verb>0 ) fprintf('Starting : %s\n',phaseToRun); ptime=getwTime(); end;
+    [traindata,traindevents]=buffer_waitData(buffhost,buffport,[],'startSet',{'stimulus.stimSeq'},'exitSet',{'stimulus.training' 'end'},'verb',verb,'trlen_ms',trlen_ms);
     mi=matchEvents(traindevents,'stimulus.training','end'); traindevents(mi)=[]; traindata(mi)=[];%remove exit event
     fprintf('Saving %d epochs to : %s\n',numel(traindevents),[dname '_' subject '_' datestr]);
     save([dname '_' subject '_' datestr],'traindata','traindevents');
@@ -100,6 +110,7 @@ while ( true )
       save([cname '_' subject '_' datestr],'-struct','clsfr');
       if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;
     catch
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
       fprintf('Error in train classifier!');
     end
     sendEvent(lower(phaseToRun),'end'); % mark start/end testing
@@ -115,23 +126,7 @@ while ( true )
       clsSubj = subject;
     end;
     sendEvent(lower(phaseToRun),'start'); % mark start/end testing
-    gameApplyClsfr(clsfr,'nSymbs',nSymbs,'verb',verb,'margin',15,'minEvents',nSymbs,'saveFile',[testname '_' subject '_' datestr]);
-    sendEvent(lower(phaseToRun),'end');    
-    if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;
-
-    
-    %---------------------------------------------------------------------------------
-   case {'contfeedback'};
-    if ( verb>0 ) fprintf('Starting : %s\n',phaseToRun); ptime=getwTime(); end;
-    if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
-      clsfrfile = [cname '_' subject '_' datestr];
-      if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=[cname '_' subject]; end;
-      if(verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
-      clsfr=load(clsfrfile);
-      clsSubj = subject;
-    end;
-    sendEvent(lower(phaseToRun),'start'); % mark start/end testing
-    spContFeedbackSignals()
+    spFeedbackSignals()
     sendEvent(lower(phaseToRun),'end');    
     if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;
     
