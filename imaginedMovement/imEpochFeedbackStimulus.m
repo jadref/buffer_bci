@@ -3,6 +3,7 @@ configureIM();
 % make the target sequence
 tgtSeq=mkStimSeqRand(nSymbs,nSeq);
 
+% make the stimulus display
 fig=gcf;
 clf;
 set(fig,'Name','Imagined Movement','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
@@ -30,10 +31,10 @@ set(gca,'visible','off');
 set(h(:),'facecolor',bgColor);
 sendEvent('stimulus.testing','start');
 drawnow; pause(5); % N.B. pause so fig redraws
-
+endTesting=false; dvs=[];
 for si=1:nSeq;
 
-  if ( ~ishandle(fig) ) break; end;
+  if ( ~ishandle(fig) || endTesting ) break; end;
   
   sleepSec(intertrialDuration);
   % show the screen to alert the subject to trial start
@@ -53,58 +54,53 @@ for si=1:nSeq;
   sendEvent('stimulus.target',find(tgtSeq(:,si)>0));
   sendEvent('stimulus.trial','start');
   
-  % for the trial duration update the fixatation point in response to prediction events
-  status=buffer('wait_dat',[-1 -1 -1],buffhost,buffport); % get current state
-  nevents=status.nevents; nsamples=status.nsamples;
   % initial fixation point position
-  fixPos = stimPos(:,end);
+  dvs(:)=0; nPred=0; state=[];
   trlStartTime=getwTime();
   timetogo = trialDuration;
   while (timetogo>0)
     timetogo = trialDuration - (getwTime()-trlStartTime); % time left to run in this trial
-    % wait for events to process *or* end of trial
-    status=buffer('wait_dat',[-1 -1 timetogo*1000/4],buffhost,buffport); 
-    stime =getwTime();
-    if ( status.nevents > nevents ) % new events to process
-      events=[];
-      if (status.nevents>nevents) events=buffer('get_evt',[nevents status.nevents-1],buffhost,buffport); end;
-      mi    =matchEvents(events,{'stimulus.prediction'});
-      predevents=events(mi);
-      % make a random testing event
-      if ( 0 ) predevents=struct('type','stimulus.prediction','sample',0,'value',ceil(rand()*nSymbs+eps)); end;
-      if ( ~isempty(predevents) ) 
-        [ans,si]=sort([predevents.sample],'ascend'); % proc in *temporal* order
-        for ei=1:numel(predevents);
-          ev=predevents(si(ei));% event to process
-          pred=ev.value;
-          % now do something with the prediction....
-          if ( numel(pred)==1 )
-            if ( pred>0 && pred<=nSymbs && isinteger(pred) ) % predicted symbol, convert to dv equivalent
-              tmp=pred; pred=zeros(nSymbs,1); pred(tmp)=1;
-            else % binary problem
-              pred=[pred -pred];
-            end
+    % wait for events to process *or* end of trial *or* out of time
+    [dat,events,state]=buffer_waitData(buffhost,buffport,state,'exitSet',{timetogo*1000 {'stimulus.prediction' 'stimulus.testing'}},'verb',verb);
+    for ei=1:numel(events);
+      ev=events(ei);
+      if ( strcmp(ev.type,'stimulus.prediction') ) 
+        pred=ev.value;
+        % now do something with the prediction....
+        if ( numel(pred)==1 )
+          if ( pred>0 && pred<=nSymbs && isinteger(pred) ) % predicted symbol, convert to dv equivalent
+            tmp=pred; pred=zeros(nSymbs,1); pred(tmp)=1;
+          else % binary problem, convert to per-class
+            pred=[pred -pred];
           end
-          prob = 1./(1+exp(-pred)); prob=prob./sum(prob); % convert from dv to normalised probability
-          if ( verb>=0 ) 
-              fprintf('dv:');fprintf('%5.4f ',pred);fprintf('\t\tProb:');fprintf('%5.4f ',prob);fprintf('\n'); 
-          end;
-          
-          % feedback information... simply move in direction detected by the BCI
-          dx = stimPos(:,1:end-1)*prob(:); % change in position is weighted by class probs
-          fixPos = fixPos + dx*moveScale;
-          set(h(end),'position',[fixPos-stimRadius/2;stimRadius/2*[1;1]]);
         end
-        drawnow; % update the display after all events processed
+        nPred=nPred+1;
+        dvs(:,nPred)=pred;
+        if ( verb>=0 ) 
+          fprintf('dv:');fprintf('%5.4f ',pred);fprintf('\n'); 
+        end;          
+      elseif ( strcmp(ev.type,'stimulus.testing') ) 
+        endTesting=true; break;
       end % prediction events to processa  
     end % if feedback events to process
-    
-  end % loop over epochs in the sequence
+    if ( endTesting ) break; end;
+  end % loop accumulating prediction events
 
+  % give the feedback on the predicted class
+  dv = sum(dvs,2); prob=1./(1+exp(-dv)); prob=prob./sum(prob);
+  if ( verb>=0 ) 
+    fprintf('dv:');fprintf('%5.4f ',pred);fprintf('\t\tProb:');fprintf('%5.4f ',prob);fprintf('\n'); 
+  end;  
+  [ans,predTgt]=max(dv); % prediction is max classifier output
+  set(h(:),'facecolor',bgColor);
+  set(h(predTgt),'facecolor',tgtColor);
+  drawnow;
+  sendEvent('stimulus.predTgt',predTgt);
+  sleepSec(feedbackDuration);
+  
   % reset the cue and fixation point to indicate trial has finished  
   set(h(:),'facecolor',bgColor);
   % also reset the position of the fixation point
-  set(h(end),'position',[stimPos(:,end)-stimRadius/4;stimRadius/2*[1;1]]);
   drawnow;
   sendEvent('stimulus.trial','end');
   

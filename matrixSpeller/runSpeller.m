@@ -107,7 +107,7 @@ while (ishandle(contFig))
       sendEvent('startPhase.cmd','contfeedback');
       spContFeedbackStimulus;
     %catch
-    %  fprintf('ERROR Caught:\n %s\n%s\n',lasterror.identifer,lasterror.message);
+      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
       sendEvent('stimulus.test','end');
     %end
     sendEvent('stimulus.test','end');

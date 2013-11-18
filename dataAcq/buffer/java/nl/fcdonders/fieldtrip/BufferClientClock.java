@@ -13,6 +13,7 @@ public class BufferClientClock extends BufferClient {
 	 protected ClockSync clockSync=null;
 	 public long maxSampError  =5120;  // BODGE: very very very big!
 	 public long updateInterval=10000; // at least every 10seconds
+	 protected int numWrong=0; // count of number wrong predictions... if too many then reset the clock
 
 	 public BufferClientClock(){
 		  super();
@@ -41,18 +42,7 @@ public class BufferClientClock extends BufferClient {
 	 // overridden methods to 
 	 // Fill in the estimated sample info
 	 public BufferEvent putEvent(BufferEvent e) throws IOException {
-		  if ( e.sample < 0 ) { 
-				if ( getSampErr()>maxSampError || // error too big
-					  getSamp()<(long)(clockSync.Slast) || // detected prediction before last known sample
-					  getTime()>(long)(clockSync.Tlast)+updateInterval || // simply too long since we updated
-					  clockSync.N < 10 ) { // Simply not enough points to believe we've got a good estimate
-					 System.out.print("Updating clock sync: SampErr " + getSampErr() + " getSamp " + getSamp() + " Slast " + clockSync.Slast);
-					 e.sample = poll(0).nSamples; // force update if error is too big
-					 System.out.println(" poll " + e.sample);
-				} else { // use the estimated time
-					 e.sample=(int)getSamp();
-				}
-		  }
+		  if ( e.sample < 0 ) { e.sample=(int)getSampOrPoll(); }
 		  return super.putEvent(e);
 	 }
 	 // use the returned sample info to update the clock sync
@@ -74,6 +64,31 @@ public class BufferClientClock extends BufferClient {
 
 	 //--------------------------------------------------------------------
 	 // New methods to do the clock syncronization
+	 public long getSampOrPoll() throws IOException {
+		  long sample=-1;
+		  boolean dopoll=false;
+		  if ( getSampErr()>maxSampError || // error too big
+				 getTime()>(long)(clockSync.Tlast)+updateInterval || // simply too long since we updated
+				 clockSync.N < 10 ) { // Simply not enough points to believe we've got a good estimate
+				dopoll=true;
+		  }  
+		  if ( getSamp()<(long)(clockSync.Slast) ){ // detected prediction before last known sample
+				numWrong++; // increment count of number of times this has happened
+				dopoll=true;
+		  } else {
+				numWrong=0;
+		  }
+		  if ( dopoll ) { // poll buffer for current samples
+				if ( numWrong > 5 ) clockSync.reset(); // reset clock if detected sysmetic error
+				System.out.print("Updating clock sync: SampErr " + getSampErr() + 
+									  " getSamp " + getSamp() + " Slast " + clockSync.Slast);
+				sample = poll(0).nSamples; // force update if error is too big
+				System.out.println(" poll " + sample);
+		  } else { // use the estimated time
+				sample=(int)getSamp();
+		  }
+		  return sample;
+	 }
 	 public long getSamp() { return clockSync.getSamp(); }
 	 public long getSamp(double time) { return clockSync.getSamp(time); }
 	 public long getSampErr() { return Math.abs(clockSync.getSampErr()); }

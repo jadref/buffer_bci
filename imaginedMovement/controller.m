@@ -24,7 +24,7 @@ function varargout = controller(varargin)
 
 % Edit the above text to modify the response to help controller
 
-% Last Modified by GUIDE v2.5 30-Oct-2013 21:59:01
+% Last Modified by GUIDE v2.5 17-Nov-2013 23:18:24
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -156,9 +156,9 @@ guidata(hObject,handles);
 uiresume;
 
 
-% --- Executes on button press in testing.
+% --- Executes on button press in contFeedback.
 function freespelling_Callback(hObject, eventdata, handles)
-% hObject    handle to testing (see GCBO)
+% hObject    handle to contFeedback (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles.phaseToRun=get(hObject,'Tag');
@@ -186,9 +186,9 @@ guidata(hObject,handles);
 uiresume;
 
 
-% --- Executes on button press in testing.
-function testing_Callback(hObject, eventdata, handles)
-% hObject    handle to testing (see GCBO)
+% --- Executes on button press in contFeedback.
+function contFeedback_Callback(hObject, eventdata, handles)
+% hObject    handle to contFeedback (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles.phaseToRun=get(hObject,'Tag');
@@ -199,6 +199,16 @@ uiresume;
 % --- Executes on button press in neurofeedback.
 function neurofeedback_Callback(hObject, eventdata, handles)
 % hObject    handle to neurofeedback (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.phaseToRun=get(hObject,'Tag');
+guidata(hObject,handles);
+uiresume;
+
+
+% --- Executes on button press in epochFeedback.
+function epochFeedback_Callback(hObject, eventdata, handles)
+% hObject    handle to epochFeedback (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles.phaseToRun=get(hObject,'Tag');

@@ -28,6 +28,9 @@ An overview of the included directories is:
 
   matrixSpeller -- Example BCI system for spelling characters using a visual matrix-speller (p300) type BCI
 
+  matrixSpellerPTB -- Example BCI system for spelling characters using a visual matrix-speller (p300) type BCI.  This version uses PsychToolBox to improve the timing of the visual stimulus rendering.
+    N.B. to use this you will need to set the PTB path correctly in utilities/initPTBPaths.m
+
  cursorControl -- Example BCI system for controlling a cursor in 2-d using
                              visual evoked response (ERP) type BCI
 

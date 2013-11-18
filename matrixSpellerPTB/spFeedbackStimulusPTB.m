@@ -1,30 +1,36 @@
 configureSpeller();
 
 % make the stimulus
-fig=gcf;
-set(fig,'Name','Matrix Speller','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
-clf;
-ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
-        'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
-        'color',[0 0 0],'DrawMode','fast','nextplot','replacechildren',...
-        'xlim',[-1.5 1.5],'ylim',[-1.5 1.5],'Ydir','normal');
-[h,symbs]=initGrid(symbols);
+ws=Screen('windows'); % re-use existing window if there
+if ( isempty(ws) )
+  screenNum = max(Screen('Screens')); % get 2nd display
+  wPtr= Screen('OpenWindow',screenNum,bgColor,windowPos)
+  Screen('BlendFunction',wPtr,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA); % enable alpha blending
+  [flipInterval nrValid stddev]=Screen('GetFlipInterval',wPtr); % get flip-time (i.e. refresh rate)
+end
+
+% make the stimuli
+[texels srcR destR]=mkTextureGrid(wPtr,symbols);
+flash=false(size(symbols)); %logical indicator of current flash state
 
 % make the row/col flash sequence for each sequence
 [stimSeqRow,stimTimeRow]=mkStimSeqRand(vnRows,nRepetitions*vnRows,stimDuration);
-stimSeqRow(size(symbols,1)+1:end,:)=[];  % remove the extra symbol
+stimSeqRow(size(symbols,1)+1:end,:)=[];  % remove the extra symbol(s)
 [stimSeqCol,stimTimeCol]=mkStimSeqRand(vnCols,nRepetitions*vnCols,stimDuration);
-stimSeqCol(size(symbols,2)+1:end,:)=[];  % remove the extra symbol
+stimSeqCol(size(symbols,2)+1:end,:)=[];  % remove the extra symbol(s)
 
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
-set(h(:),'color',[.5 .5 .5]);
+% reset the cue and fixation point to indicate trial has finished  
+Screen('Drawtextures',wPtr,texels,srcR,destR,[],[],[],[.5 .5 .5]*255); 
+Screen('flip',wPtr);% re-draw the display
 sendEvent('stimulus.training','start');
+stimSeq=zeros([size(symbols),size(stimSeqRow,2)+size(stimSeqCol,2)]); % for decoding
 for si=1:nSeq;
 
-  if ( ~ishandle(fig) ) break; end;
-  nFlash = 0; stimSeq=zeros(size(symbols));
-  set(h(:),'color',bgColor); % rest all symbols to background color
+  nFlash = 0; stimSeq(:)=0;
+  Screen('Drawtextures',wPtr,texels,srcR,destR,[],[],[],bgColor*255); 
+  Screen('flip',wPtr);% re-draw the display
   sleepSec(interSeqDuration);
   sendEvent('stimulus.sequence','start');
   
@@ -33,11 +39,13 @@ for si=1:nSeq;
   for ei=1:size(stimSeqRow,2);
     % record the stimulus state, needed for decoding the classifier predictions later
     nFlash=nFlash+1;
-    stimSeq(stimSeqRow(:,ei)>0,:,nFlash)=true;
-    % set the stimulus state
-    set(h(:),'color',bgColor);
-    set(h(stimSeqRow(:,ei)>0,:),'color',flashColor);
-    drawnow;
+    flash(:)=false; flash(stimSeqRow(:,ei)>0,:)=true; % indicator for which symbols are flashed now
+    stimSeq(:,:,nFlash)=flash;
+    Screen('Drawtextures',wPtr,texels,srcR,destR,[],[],[],bgColor*255); 
+    if (any(flash(:)) ) 
+      Screen('Drawtextures',wPtr,texels(flash),srcR(:,flash),destR(:,flash),[],[],[],flashColor*255); 
+    end
+    Screen('flip',wPtr);
     sendEvent('stimulus.rowFlash',stimSeqRow(:,ei)); % indicate this row is 'flashed'    
     sleepSec(stimDuration);
   end
@@ -47,18 +55,20 @@ for si=1:nSeq;
   for ei=1:size(stimSeqCol,2);
     % record the stimulus state, needed for decoding the classifier predictions later
     nFlash=nFlash+1;
-    stimSeq(:,stimSeqCol(:,ei)>0,nFlash)=true;
-    % set the stimulus state
-    set(h(:),'color',bgColor);
-    set(h(:,stimSeqCol(:,ei)>0),'color',flashColor);
-    drawnow;
+    flash(:)=false; flash(:,stimSeqCol(:,ei)>0)=true; % indicator for which symbols are flashed now
+    stimSeq(:,:,nFlash)=flash;
+    Screen('Drawtextures',wPtr,texels,srcR,destR,[],[],[],bgColor*255); 
+    if (any(flash(:)) ) 
+      Screen('Drawtextures',wPtr,texels(flash),srcR(:,flash),destR(:,flash),[],[],[],flashColor*255); 
+    end
+    Screen('flip',wPtr);
     sendEvent('stimulus.colFlash',stimSeqCol(:,ei)); % indicate this row is 'flashed'
     sleepSec(stimDuration);    
   end
    
   % reset the cue and fixation point to indicate trial has finished  
-  set(h(:),'color',bgColor);
-  drawnow;
+  Screen('Drawtextures',wPtr,texels,srcR,destR,[],[],[],bgColor*255); 
+  Screen('flip',wPtr);
   sleepSec(trlen_ms/1000-stimDuration+.2);  % wait long enough for classifier to finish up..
   sendEvent('stimulus.sequence','end');
 
@@ -74,8 +84,9 @@ for si=1:nSeq;
     [ans,predTgt] = max(corr); % predicted target is highest correlation
   
     % show the classifier prediction
-    set(h(predTgt),'color',tgtColor);
-    drawnow;
+    Screen('Drawtextures',wPtr,texels,srcR,destR,[],[],[],bgColor*255); 
+    Screen('Drawtextures',wPtr,texels(predTgt),srcR(:,predTgt),destR(:,predTgt),[],[],[],tgtColor*255); 
+    Screen('flip',wPtr);% re-draw the display
     sendEvent('stimulus.prediction',symbols{predTgt});
   end
   sleepSec(feedbackDuration);
@@ -84,5 +95,6 @@ for si=1:nSeq;
 end % sequences
 % end training marker
 sendEvent('stimulus.feedback','end');
-text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the testing phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.1);
-pause(3);
+uiwait(msgbox({'That ends the testing phase.','Thanks for your patience'},'Thanks','modal'),10);
+pause(1);
+if ( isempty(windowPos) ) Screen('closeall'); end; % close display if fullscreen

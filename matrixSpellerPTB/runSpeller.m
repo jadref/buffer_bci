@@ -1,4 +1,5 @@
-configureIM();
+configureSpeller;
+
 % create the control window and execute the phase selection loop
 contFig=controller(); info=guidata(contFig); 
 while (ishandle(contFig))
@@ -9,96 +10,64 @@ while (ishandle(contFig))
   info=guidata(contFig); 
   subject=info.subject;
   phaseToRun=lower(info.phaseToRun);
-  fprintf('Start phase : %s\n',phaseToRun);
-  
+  fprintf('Starting Phase: %s\n',phaseToRun);
   switch phaseToRun;
     
-   %---------------------------------------------------------------------------
    case 'capfitting';
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until capFitting is done
     buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);       
 
-   %---------------------------------------------------------------------------
    case 'eegviewer';
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until capFitting is done
     buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);           
     
-   %---------------------------------------------------------------------------
    case 'practice';
     sendEvent('subject',info.subject);
     sendEvent(phaseToRun,'start');
     onSeq=nSeq; nSeq=4; % override sequence number
-    try
-      imCalibrateStimulus();
-    catch
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
-    end
+    onRepetitions=nRepetitions; nRepetitions=3;
+    %try
+      spCalibrateStimulusPTB();
+    %catch
+      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
+    %end
     sendEvent(phaseToRun,'end');
     nSeq=onSeq;
+    nRepetitions=onRepetitions;
     
-   %---------------------------------------------------------------------------
    case {'calibrate','calibration'};
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun)
     sendEvent(phaseToRun,'start');
-    try
-      imCalibrateStimulus();
-    catch
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
+    %try
+      spCalibrateStimulusPTB();
+    %catch
+      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
       sendEvent('stimulus.training','end');    
-    end
+    %end
     sendEvent(phaseToRun,'end');
 
-   %---------------------------------------------------------------------------
    case {'train','classifier'};
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until training is done
     buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);  
-
-   %---------------------------------------------------------------------------
-   case {'epochfeedback'};
+    
+   case 'freespell';
     sendEvent('subject',info.subject);
     %sleepSec(.1);
     sendEvent(phaseToRun,'start');
-    %try
+    try
       sendEvent('startPhase.cmd','testing');
-      imEpochFeedbackStimulus;
-    %catch
-      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
-    %end
-    sendEvent('stimulus.test','end');
-    sendEvent(phaseToRun,'end');
-   
-   %---------------------------------------------------------------------------
-   case {'test','testing','contfeedback'};
-    sendEvent('subject',info.subject);
-    %sleepSec(.1);
-    sendEvent(phaseToRun,'start');
-    %try
-      sendEvent('startPhase.cmd','testing');
-      imOnlineFeedbackStimulus;
-    %catch
-      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
-    %end
-    sendEvent('stimulus.test','end');
-    sendEvent(phaseToRun,'end');
-
-   %---------------------------------------------------------------------------
-   case {'neurofeedback'};
-    sendEvent('subject',info.subject);
-    %sleepSec(.1);
-    sendEvent(phaseToRun,'start');
-    %try
-      sendEvent('startPhase.cmd','testing');
-      imNeuroFeedbackStimulus;
-    %catch
-      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
-    %end
+      spFeedbackStimulusPTB;
+    catch
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
+      sendEvent('stimulus.test','end');
+    end
     sendEvent('stimulus.test','end');
     sendEvent(phaseToRun,'end');
         

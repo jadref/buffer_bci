@@ -19,7 +19,6 @@ stimSeqRow(size(symbols,1)+1:end,:)=[];  % remove the extra symbol
 stimSeqCol(size(symbols,2)+1:end,:)=[];  % remove the extra symbol
 
 % play the stimulus
-% reset the cue and fixation point to indicate trial has finished  
 set(h(:),'color',[.5 .5 .5]);
 sendEvent('stimulus.training','start');
 drawnow; pause(5); % N.B. use pause so the figure still re-draws
