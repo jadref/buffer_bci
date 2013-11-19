@@ -59,7 +59,7 @@ for si=1:size(tgtSeq,2);
   % make the stim-seq for this trial
   [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(h,trialDuration,isi,periods,false);
   % now play the sequence
-  sendEvent('stimulus.stimSeq',stimSeq(:,tgtId));
+  sendEvent('stimulus.stimSeq',stimSeq(tgtId,:));
   seqStartTime=getwTime(); ei=0; ndropped=0; frametime=zeros(numel(stimTime),4);
   while ( stimTime(end)>=getwTime()-seqStartTime ) % frame-dropping version    
     ei=min(numel(stimTime),ei+1);

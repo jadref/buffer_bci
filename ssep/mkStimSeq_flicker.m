@@ -1,8 +1,12 @@
-function [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(h,duration,isi,periods,mkTarget)
+function [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(h,duration,isi,periods,mkTarget,smooth)
+% make a periodic flicker stimulus
+% 
+%   [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(h,duration,isi,periods,mkTarget)
 if ( nargin<2 || isempty(duration) ) duration=3; end; % default to 3sec
 if ( nargin<3 || isempty(isi) ) isi=2/60; end; % default to 60Hz
 if ( nargin<4 || isempty(periods) ) periods=[2 4]; end;
 if ( nargin<5 || isempty(mkTarget) ) mkTarget=true; end;
+if ( nargin<6 || isempty(smooth) )   smooth=false; end;
 % make a simple visual intermittent flash stimulus
 colors=[1 1 1;...;  % color(1) = flash
         0 1 0]';    % color(2) = target
@@ -10,10 +14,11 @@ stimTime=0:isi:duration; % event every isi
 stimSeq =zeros(numel(h),numel(stimTime)); % make stimSeq where everything is in background state
 stimSeq(2:end-1,:)=0; % turn-on only the central square
 for stimi=1:numel(h)-1;
-  cycle=[ones(floor(periods(stimi)/2),1);zeros(periods(stimi)-floor(periods(stimi)/2),1)]; % 1 cycle of the SSEP
-  seq=repmat(cycle,1,ceil(numel(stimTime)/numel(cycle))); % enough for stimTime events
-  stimSeq(stimi,:) = seq(1:numel(stimTime));
+  % N.B. include slight phase offset to prevent value being exactly==0
+  stimSeq(stimi,:) = cos(((0:numel(stimTime)-1)+.0001)/periods(stimi)*2*pi); 
 end
+if ( ~smooth ) stimSeq=double(stimSeq>0); end;
+%if ( ~smooth ) stimSeq=sign(stimSeq); end;
 eventSeq=cell(numel(stimTime),1); % No events...
 
 % add a target queue
