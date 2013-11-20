@@ -50,6 +50,8 @@ Copy these directories somewhere on your local harddrive.
 
 *Windows Only* : modify the path in the file utilities/findMatlab.bat to point to your install of matlab
 
+*OSX Only* : make the recording file runnable by executing this command in your terminal: sudo chmod +x /dataAcq/buffer/maci/recording
+
 QuickStart
 ----------
 
