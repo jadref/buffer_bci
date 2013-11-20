@@ -1,7 +1,7 @@
-function [rawepochs,key,nTarget]=erpViewer(buffhost,buffport,varargin);
+function [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin);
 % simple viewer for ERPs based on matching buffer events
 %
-% [rawepochs,key,nTarget]=erpViewer(buffhost,buffport,varargin)
+% [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin)
 %
 opts=struct('cuePrefix','cue.','endType','end.training','verb',1,'nSymbols',0,'trlen_ms',1000,'trlen_samp',[],'detrend',1,'fftfilter',[],'freqbands',[],'spatfilt','car','capFile','1010','overridechnms',0,'welch_width_ms',500,'redraw_ms',500);
 [opts,varargin]=parseOpts(opts,varargin);
@@ -43,9 +43,10 @@ filt=[];if ( ~isempty(opts.freqbands)) filt=mkFilter(trlen_samp/2,opts.freqbands
 % recording the ERP data
 key      = {};
 nCls     = opts.nSymbols;
-rawepochs= zeros(sum(iseeg),trlen_samp,max(1,nCls)); % stores the raw data
+rawEpochs= zeros(sum(iseeg),trlen_samp); % stores the raw data
+rawIds   = 0;
+nTarget  = 0;
 erp      = zeros(sum(iseeg),trlen_samp,max(1,nCls)); % stores the pre-proc data used in the figures
-nTarget  = zeros(max(nCls,1),1);
 
 % make the figure window
 clf;
@@ -91,7 +92,6 @@ while ( ~endTraining )
       if ( isempty(mi) ) % new class to average
         key{end+1}=val;
         mi=numel(key);
-        nTarget(mi)=0;
         erp(:,:,mi)=0;
         nCls       =mi;
       end;
@@ -105,8 +105,9 @@ while ( ~endTraining )
       end
       
       % store the 'raw' data
-      nTarget(mi)=nTarget(mi)+1;
-      rawepochs(:,:,nTarget(mi),mi) = dat;
+      nTarget=nTarget+1;
+      rawIds(nTarget)=mi;
+      rawEpochs(:,:,nTarget) = dat;
     end
   end
 
@@ -128,7 +129,7 @@ while ( ~endTraining )
   resetval=get(resethdl,'value');
   if ( resetval ) 
     fprintf('reset detected\n');
-    key={}; nTarget(:)=0; 
+    key={}; nTarget=0; rawIds=[];
     erp=zeros(sum(iseeg),numel(yvals),1);
     updateLines(1)=true; updateLines(:)=true; % everything must be re-drawn
     set(resethdl,'value',0); % pop the button back out
@@ -138,7 +139,7 @@ while ( ~endTraining )
   if ( any(updateLines) )
     damagedLines=find(updateLines(1:numel(key)));
     for mi=damagedLines(:)';
-      ppdat=rawepochs(:,:,1:nTarget(mi),mi);
+      ppdat=rawEpochs(:,:,rawIds==mi);
       if ( isempty(ppdat) ) erp(:,:,mi)=0; continue; end;
       if( curvistype==1 ) % time-domain
         if( ~isempty(filt)) ppdat=fftfilter(ppdat,filt,[],2); end;
@@ -150,9 +151,9 @@ while ( ~endTraining )
       end
       erp(:,:,mi) = mean(ppdat,3);
       if ( isnumeric(key{mi}) ) % line label -- including number of times seen
-        label{mi}=sprintf('%g (%d)',key{mi},nTarget(mi));
+        label{mi}=sprintf('%g (%d)',key{mi},sum(rawIds(1:nTarget)==mi));
       else
-        label{mi}=sprintf('%s (%d)',key{mi},nTarget(mi));
+        label{mi}=sprintf('%s (%d)',key{mi},sum(rawIds(1:nTarget)==mi));
       end
     end
     vistype=curvistype;
@@ -163,6 +164,10 @@ while ( ~endTraining )
   drawnow;      
 end
 if ( ishandle(fig) ) close(fig); end;
+if( nargout>0 ) 
+  rawIds=rawIds(1:nTarget);
+  rawEpochs=rawEpochs(:,:,1:nTarget);
+end
 return;
 %-----------------------
 function testCase();

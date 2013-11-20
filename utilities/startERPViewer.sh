@@ -3,6 +3,7 @@ cd `dirname ${BASH_SOURCE[0]}`
 source ../utilities/findMatlab.sh
 cat <<EOF | $matexe -nodesktop  
 run ../utilities/initPaths;
-erpViewer([],[],'cuePrefix',{'keyboard' 'stimulus'});
+[X,Y,key]=erpViewer([],[],'cuePrefix',{'keyboard' 'stimulus'});
+save('erpViewerDat','X','Y','key');
 quit;
 EOF

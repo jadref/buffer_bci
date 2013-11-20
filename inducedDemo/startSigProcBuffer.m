@@ -53,7 +53,7 @@ while ( true )
   end
   if ( isempty(phaseToRun) ) continue; end;
 
-  fprintf('%d) Starting phase : %s\n',getwTime(),phaseToRun);
+  fprintf('%d) Starting phase : %s\n',devents(di).sample,phaseToRun);
   
   switch lower(phaseToRun);
     
@@ -77,7 +77,9 @@ while ( true )
    case {'erspvis','erpviewer'};
     if ( verb>0 ) fprintf('Starting : %s\n',phaseToRun); ptime=getwTime(); end;
     sendEvent(lower(phaseToRun),'start'); % mark start/end testing
-    erpViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix','stimulus.target','endType',lower(phaseToRun),'trlen_ms',trlen_ms);
+    [X,Y,key]=erpViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix','stimulus.target','endType',lower(phaseToRun),'trlen_ms',trlen_ms);
+    fn=sprintf('erpvis_%s_%s',subject,datestr);fprintf('Saving to: %s\n',fn); % save results
+    save(fn,'X','Y','key');
     sendEvent(lower(phaseToRun),'end'); % mark start/end testing
     if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;    
     
