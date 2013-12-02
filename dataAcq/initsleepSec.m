@@ -1,5 +1,6 @@
 global sleepSec;
 evalin('caller','global sleepSec;');
+evalin('base','global sleepSec;');
 if ( isempty(sleepSec) && exist('WaitSecs') )
   try % check the the MEX will actually run!
     WaitSecs();

@@ -1,6 +1,7 @@
 % set the real-time-clock to use
 global getwTime;
 evalin('caller','global getwTime');
+evalin('base','global getwTime');
 if ( isempty(getwTime) && exist('GetSecs') )
   try % PTB method may break!
     GetSecs();
