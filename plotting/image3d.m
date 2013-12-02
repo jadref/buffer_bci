@@ -42,6 +42,8 @@ function [varargout]=image3d(varargin)
 %                      function_name(xvals,yvals,data_matrix,...
 %                                    xticklabs,yticklabs,xlabel,ylabel,clabel)
 %  plotopts -- options to pass to the display function ([])
+%  plotPosOpts -- options to pass to posPlots (if used)
+%                 (struct('sizes','equal','plotsposition',[.05 .08 .91 .88],'postype','position'))
 %  titlepos -- [x y width] title position relative to the plot  ([.5 1 1])
 % Outputs:
 %  h   -- the handles of the generated plots
@@ -223,8 +225,8 @@ if ( any(strcmp(opts.disptype,{'imaget','plott','mcplott'})) )
 end
 
 axmark=axscale;
-if ( ~isnumeric(axscale{1}) || any(sign(diff(axmark{1}))<0) ) axscale{1}=1:numel(axscale{1}); end;
-if ( ~isnumeric(axscale{2}) || any(sign(diff(axmark{2}))<0) ) axscale{2}=1:numel(axscale{2}); end;
+if ( ~isnumeric(axscale{1}) || any(abs(diff(diff(axmark{1})))>1e-6) ) axscale{1}=1:numel(axscale{1}); end;
+if ( ~isnumeric(axscale{2}) || any(abs(diff(diff(axmark{2})))>1e-6) ) axscale{2}=1:numel(axscale{2}); end;
 if ( isnumeric(axscale{1}) ) axscale{1}=single(axscale{1}); end;
 if ( isnumeric(axscale{2}) ) axscale{2}=single(axscale{2}); end;
 if ( isnumeric(axscale{3}) ) axscale{3}=single(axscale{3}); end;
@@ -275,7 +277,7 @@ elseif ( isnumeric(opts.ticklabs) )
       error('Numeric ticklabs should be position or index');
    end
 end
-tickAxes=false(N); tickAxes(tickIdxs)=true;
+tickAxes=false(N,1); tickAxes(tickIdxs)=true;
 
 % Ensure all sub-plots use the same color/Yrange axes
 clim=[min(A(:)) max(A(:))];  cblim=clim;
@@ -326,11 +328,11 @@ for pi=1:N;
         tickIdx(tickIdx<1)=[]; tickIdx(tickIdx>numel(axmark{1}))=[];
         axsettings={axsettings{:} 'XTick',tickIdx,'XTickLabel',axmark{1}(tickIdx),...
                     'XTickMode','manual','XTickLabelMode','manual'};
-     elseif( any(sign(diff(axmark{1}))<0) ) % discontinous scale
-        tickIdx = find(sign(diff(axmark{1}))<0);
-        axsettings={axsettings{:} 'XTick' tickIdx 'XTickLabel',1:numel(tickIdx) ...
-                    'XTickMode','manual','XTickLabelMode','manual'};
-     else
+     elseif( any(abs(diff(diff(axmark{1})))>1e-6) ) % non-uniform scaling
+        tickIdx = [true abs(diff(diff(axmark{1})))>1e-6 true]; % locations of changes
+        axsettings={axsettings{:} 'XTick' find(tickIdx) 'XTickLabel',axmark{1}(tickIdx) ...
+                    'XTickMode','manual','XTickLabelMode','manual'};       
+     else       
         axsettings={axsettings{:} 'XTickLabelMode' 'auto'};
      end
      if(~tickAxes(pi)) axsettings={axsettings{:} 'YTickLabel',[],'XTickLabel',[]};end;
@@ -364,10 +366,10 @@ for pi=1:N;
         tickIdx=unique(max(1,floor(get(hdls(pi),'XTick')))); 
         axsettings={axsettings{:} 'XTick',tickIdx,'XTickLabel',axmark{2}(tickIdx),...
                     'XTickMode','manual','XTickLabelMode','manual'};
-     elseif( any(sign(diff(axmark{2}))<0) ) % discontinous scale
-        tickIdx = find(sign(diff(axmark{2}))<0);
-        axsettings={axsettings{:} 'XTick' tickIdx 'XTickLabel',1:numel(tickIdx) ...
-                    'XTickMode','manual','XTickLabelMode','manual'};
+     elseif( any(abs(diff(diff(axmark{2})))>1e-6) ) % non-uniform scaling
+        tickIdx = [true abs(diff(diff(axmark{2})))>1e-6 true]; % locations of changes
+        axsettings={axsettings{:} 'XTick' find(tickIdx) 'XTickLabel',axmark{2}(tickIdx) ...
+                    'XTickMode','manual','XTickLabelMode','manual'};       
      else
         xlim=single([min(axscale{2}) max(axscale{2})]); if( xlim(1)==xlim(2) ) xlim=xlim+[-.5 .5]; end
         % set to nearest 1/100'th
@@ -395,10 +397,10 @@ for pi=1:N;
         tickIdx=unique(floor(get(hdls(pi),'XTick'))); 
         axsettings={'XTickLabel',axmark{1}(tickIdx),...
                     'XTickMode','manual','XTickLabelMode','manual'};
-     elseif( any(sign(diff(axmark{1}))<0) ) % discontinous scale
-        tickIdx = find(sign(diff(axmark{1}))<0);
-        axsettings={axsettings{:} 'XTick' tickIdx 'XTickLabel',1:numel(tickIdx) ...
-                    'XTickMode','manual','XTickLabelMode','manual'};
+     elseif( any(abs(diff(diff(axmark{1})))>1e-6) ) % non-uniform scaling
+        tickIdx = [true abs(diff(diff(axmark{1})))>1e-6 true]; % locations of changes
+        axsettings={axsettings{:} 'XTick' find(tickIdx) 'XTickLabel',axmark{1}(tickIdx) ...
+                    'XTickMode','manual','XTickLabelMode','manual'};       
      else
         axsettings={axsettings{:} 'XTickLabelMode' 'auto'};
      end
@@ -456,10 +458,11 @@ for pi=1:N;
          set(hdls(pi),'xlabel',[get(hdls(pi),'xlabel') ' *' sprintf('%f',10.^num0)]);
          set(hdls(pi),'xtick',ticks*10.^-num0);
        else
-         set(hdls(pi),'xtick',tickIdx([1,end]));  set(hdls(pi),'xminortick','on');
+         set(hdls(pi),'xtick',tickIdx([1,end]),'xticklabel',ticks([1,end]));  set(hdls(pi),'xminortick','on');
        end
      else
-       set(hdls(pi),'xtick',tickIdx([1,end]));  set(hdls(pi),'xminortick','on');
+       keep = round(linspace(1,numel(tickIdx),pos(3)./(size(ticks,2)*fontsize*.5)));
+       set(hdls(pi),'xtick',tickIdx(keep),'xticklabel',ticks(keep,:));  set(hdls(pi),'xminortick','on');
      end
    end
    tickIdx=get(hdls(pi),'ytick'); ticks=get(hdls(pi),'yticklabel');

@@ -161,7 +161,7 @@ for spi=1:nSubProbs; % loop over sub-problems
         if( numel(spi)>1 ) fprintf('['); end;
         for spii=1:numel(spi); % N.B. we need to loop as dv2conf etc. only work on 1 sub-prob at a time
           fprintf('%0.2f/NA  ',conf2loss(dv2conf(Ytrn(:,spii),res.f(:,spii,ci)),1,opts.lossType)); 
-          if( spii<max(spi) ) fprintf('|'); end;
+          if( spii<numel(spi) ) fprintf('|'); end;
         end
         if(numel(spi)>1) fprintf(']'); if(numel(spi)<5) fprintf(' '); else fprintf('\n');end;
         elseif ( numel(spi)==1 ) fprintf('\t'); end;

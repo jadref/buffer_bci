@@ -1,6 +1,8 @@
 function [f,fraw,p]=apply_ersp_clsfr(X,clsfr,verb)
 % apply a previously trained classifier to the input data
 % 
+%  [f,fraw,p]=apply_ersp_clsfr(X,clsfr,verb) 
+%
 % Inputs:
 %  X - [ ch x time x epoch ] data set
 %  clsfr - [struct] trained classifier structure as given by train_1bitswitch
@@ -43,17 +45,17 @@ if ( isfield(clsfr,'badchthresh') && ~isempty(clsfr.badchthresh) )
   end
 end
 
-%2) Spatial filter
+%4.2) time range selection
+if ( ~isempty(clsfr.timeIdx) ) 
+  X    = X(:,clsfr.timeIdx,:);
+end
+
+%3) Spatial filter
 if ( isfield(clsfr,'spatialfilt') && ~isempty(clsfr.spatialfilt) )
   X=tprod(X,[-1 2 3 4],clsfr.spatialfilt,[1 -1]); % apply the SLAP
 end
 
-%4.2) time range selection
-if ( ~isempty(clsfr.timeIdx) ) 
-  X    = X(:,clsfr.timeIdx(1):clsfr.timeIdx(2),:);
-end
-
-%4.5) check for bad trials
+%3.5) check for bad trials
 isbadtr=false;
 if ( isfield(clsfr,'badtrthresh') && ~isempty(clsfr.badtrthresh) )
   X2 = sqrt(max(0,tprod(X,[-1 -2 1],[],[-1 -2 1])./size(X,1)./size(X,2)));
@@ -89,7 +91,7 @@ end
 
 %4) sub-select the range of frequencies we care about
 if ( isfield(clsfr,'freqIdx') && ~isempty(clsfr.freqIdx) )
-  X=X(:,clsfr.freqIdx(1):clsfr.freqIdx(2),:); % sub-set to the interesting frequency range
+  X=X(:,clsfr.freqIdx,:); % sub-set to the interesting frequency range
 end
 
 %6) apply classifier

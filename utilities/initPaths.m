@@ -2,6 +2,9 @@
 buffer_bcidir=fileparts(fileparts(mfilename('fullpath'))); % parent directory
 if ( exist(fullfile(buffer_bcidir,'dataAcq'),'dir') ) 
   addpath(fullfile(buffer_bcidir,'dataAcq')); 
+  if ( exist(fullfile(buffer_bcidir,'dataAcq','buffer'),'dir') ) 
+    addpath(fullfile(buffer_bcidir,'dataAcq','buffer')); 
+  end
   if ( exist(fullfile(buffer_bcidir,'dataAcq','buffer','java'),'dir') ) % use java buffer if it's there
     bufferjavaclassdir=fullfile(buffer_bcidir,'dataAcq','buffer','java');
     addpath(bufferjavaclassdir); 
@@ -15,9 +18,7 @@ if ( exist(fullfile(buffer_bcidir,'dataAcq'),'dir') )
       warning('Modifying javaclass path -- this clears all variables!');
       javaaddpath(bufferjavaclassdir); % N.B. this will clear all local variables!
     end
-  elseif ( exist(fullfile(buffer_bcidir,'dataAcq','buffer'),'dir') ) 
-    addpath(fullfile(buffer_bcidir,'dataAcq','buffer')); 
-  end;
+  end
 end;
 if ( exist(fullfile(buffer_bcidir,'bciLoop'),'dir') ) addpath(fullfile(buffer_bcidir,'bciLoop')); end;
 if ( exist(fullfile(buffer_bcidir,'utilities'),'dir') ) addpath(fullfile(buffer_bcidir,'utilities')); end;

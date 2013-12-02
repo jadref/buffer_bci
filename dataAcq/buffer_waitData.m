@@ -20,6 +20,7 @@ function [data,devents,state,opts]=buffer_waitData(host,port,state,varargin);
 %  hdr  -- buffer header, got from state.hdr or read_hdr if empty. ([])
 %  startSet -- {2x1} cell array of match strings/numbers for matching 
 %              events based on their type and/or value as used in matchEvents.
+%              {type value} OR {{types} {values}}
 %               See matchEvents for details
 %  exitSet  -- {2x1} cell array of type,value sets on which to *STOP* waiting for
 %               more events.
@@ -57,7 +58,7 @@ function [data,devents,state,opts]=buffer_waitData(host,port,state,varargin);
 if ( numel(varargin)==1 && isstruct(varargin{1}) ) % shortcut option parsing!
   opts=varargin{1}; 
 else
-  opts=struct('fs',[],'startSet',[],'endSet',[],'exitSet',[],'offset_ms',[],'offset_samp',[],'trlen_ms',[],'trlen_samp',[],'hdr',[],'verb',1,'timeOut_ms',5000,'getOpts',0);
+  opts=struct('fs',[],'startSet',[],'endSet',[],'exitSet',[],'offset_ms',[],'offset_samp',[],'trlen_ms',[],'trlen_samp',[],'hdr',[],'verb',1,'timeOut_ms',1000,'getOpts',0);
   opts=parseOpts(opts,varargin);
   if ( opts.getOpts ) data=[];devents=[];state=[]; return; end;
 end
@@ -154,7 +155,7 @@ while( ~exitEvent )
   if ( opts.verb>=0 ) 
     t=toc-t1; 
     if ( t>=opts.timeOut_ms/1000*.9 ) 
-      fprintf(' %5.3f seconds, %d samples %d events\n',t,status.nsamples,status.nevents);
+      fprintf(' %5.3f seconds, %d samples %d events\r',t,status.nsamples,status.nevents);
       if ( ispc() ) drawnow; end; % re-draw display
     end;
   end;
@@ -175,7 +176,7 @@ while( ~exitEvent )
     if ( ~isempty(startevents) ) % some events matched so we need to get their data
       bgns=zeros(size(startevents)); ends=bgns;
       % construct a new event with the datarange defined
-      for ei=numel(startevents):-1:1; % N.B. events are returns in *reverse* temporal order, i.e. latest first!
+      for ei=1:numel(startevents); % N.B. events are returns in *reverse* temporal order, i.e. latest first!
         % N.B. we assume: start_samp = sample+offset; end_samp=sample+offset+duration;
         if ( ~isempty(opts.trlen_samp) )
           startevents(ei).duration=opts.trlen_samp;

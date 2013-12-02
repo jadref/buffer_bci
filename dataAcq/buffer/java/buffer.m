@@ -83,14 +83,23 @@ switch cmd;
   varargout{1}=hdr;
  case 'put_hdr';  
   if ( isfield(detail,'nChans') ) % java or mex-buffer version of the header field names
-    hdr=javaObject('nl.fcdonders.fieldtrip.Header',detail.nChans,detail.fSample,detail.dataType);
+    if ( isfield(detail,'Fs') ) fs=detail.Fs; else fs=detail.fSample; end;
+    if ( isfield(detail,'dataType') ) dataType=detail.dataType; 
+    elseif( isfield(detail,'data_type') ) dataType=detail.dataType;
+    elseif( isfield(detail,'orig') )      dataType=detail.orig.data_type;
+    end
+    if ( isstr(dataType) ) dataType=getTypeID(dataType); end
+    hdr=javaObject('nl.fcdonders.fieldtrip.Header',detail.nChans,fs,dataType);
   else
-    hdr=javaObject('nl.fcdonders.fieldtrip.Header',detail.nchans,detail.fsample,detail.data_type);    
+    if ( isfield(detail,'fs') ) fs=detail.fs; else fs=detail.fsample; end;
+    hdr=javaObject('nl.fcdonders.fieldtrip.Header',detail.nchans,fs,detail.data_type);    
   end
   if ( isfield(detail,'labels') )
     hdr.labels=detail.labels; % N.B. inconsistent names btw java and mex versions    
-  else
+  elseif ( isfield(detail,'channel_names') )
     hdr.labels=detail.channel_names; % N.B. inconsistent names btw java and mex versions
+  elseif ( isfield(detail,'label') )
+    hdr.labels=detail.label;
   end
   bufClient.putHeader(hdr);
  case 'get_dat';
@@ -193,15 +202,25 @@ if ( isempty(clientIdx) ) % make a new connection
 end
 if ( ~bufferClient{clientIdx}.isConnected() ) % re-connect if wanted/needed
   try
-    fprintf('Connecting to : %s %d\n',host,port);
+    fprintf('Connecting to : %s %d...',host,port);
     bufferClient{clientIdx}.disconnect();
     bufferClient{clientIdx}.connect(host,port);
+    fprintf('done.\n');
   catch
-    error('Couldnt connect to the buffer: %s %d',host,port);
+    error('Failed: Couldnt connect to the buffer: %s %d',host,port);
   end
 end
 bufClient=bufferClient{clientIdx};
 return;
+
+function [dataType]=getTypeID(dataType)
+typeIDs={'CHAR',0;'UINT8',1;'UINT16',2;'UINT32',3;'UINT64',4;
+         'INT8',5;'INT16',6;'INT32',7;'INT64',8;'FLOAT32',9;'FLOAT64',10;
+        'single',9;'double',10};
+idx=strmatch(lower(dataType),typeIDs(:,1));
+dataType=typeIDs{idx,2};
+return;
+
 
 function testCase();
 buffer;% connect

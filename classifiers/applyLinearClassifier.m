@@ -13,7 +13,10 @@ function [f,fraw]=applyLinearClassifier(X,classifier)
 
 if ( isfield(classifier,'dim') ) dim=classifier.dim; else dim=ndims(X)+1; end;
 Xidx=-(1:ndims(X)); Xidx(dim)=1:numel(dim);
-Widx=-(1:ndims(X)+1); Widx(dim)=0; Widx(max(ndims(X)+1,ndims(classifier.W)))=numel(dim)+1;
+Widx=-(1:ndims(classifier.W)); 
+if( dim==ndims(X) ) Widx(dim)=numel(dim)+1; 
+else Widx(dim)=0; Widx(max(ndims(X)+1,ndims(classifier.W)))=numel(dim)+1;
+end
 fraw = tprod(X,Xidx,classifier.W,Widx,'n');      % apply the weight vector
 fraw = repop(fraw,'+',classifier.b);                % include the bias
 

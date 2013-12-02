@@ -22,7 +22,7 @@ end;
 initgetwTime();
 initsleepSec();
 
-capFile='cap_tmsi_mobita_im';
+capFile='1010';%'cap_tmsi_mobita_im';
 
 verb=0;
 buffhost='localhost';
@@ -40,4 +40,6 @@ fixColor=[1 0 0];
 tgtColor=[0 1 0];
 
 % Neurofeedback smoothing
+trlen_ms=3000;
+trlen_ms_ol=trlen_ms;
 expSmoothFactor = log(2)/log(10); % smooth the last 10...

@@ -9,6 +9,7 @@ function [W,opts,winFn]=welchpsd(X,dim,varargin);
 %  overlap    -- fractional overlap of windows (.5)
 %  width_{ms,samp} -- window width in millisec or samples
 %  start_{ms,samp} -- window start locations in millisec or samples
+%  fs         -- sampling rate of the data (only needed is spec with _ms) ([])
 %  verb       -- verbosity level (0)
 %  center     -- [bool] center the data before fft'ing? (1)
 %  detrend    -- [bool] remove linear trends before fft'ing (0)

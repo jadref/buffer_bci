@@ -14,10 +14,13 @@ function [clsfr,res]=train_ersp_clsfr(X,Y,varargin)
 %  timeband  - [2 x 1] band of times to use for classification, all if empty ([])
 %  freqband  - [2 x 1] or [3 x 1] or [4 x 1] band of frequencies to use
 %              EMPTY for *NO* spectral filter
+%              OR
+%              { nFreq x 1 } cell array of discrete frequencies to pick
 %  width_ms  - [float] width in millisecs for the windows in the welch spectrum (250)
 %              estimation.  
 %              N.B. the output frequency resolution = 1000/width_ms, so 4Hz with 250ms
-%  spatialfilter -- [str] one of 'slap','car','none'  ('slap')
+%  spatialfilter -- [str] one of 'slap','car','none','csp','ssep'              ('slap')
+%       WARNING: CSP is particularly prone to *overfitting* so treat any performance estimates with care...
 %  badchrm   - [bool] do we do bad channel removal    (1)
 %  badchthresh - [float] threshold in std-dev units to id channel as bad (3.5)
 %  badtrrm   - [bool] do we do bad trial removal      (1)
@@ -49,6 +52,7 @@ if ( isempty(ch_pos) && ~isempty(ch_names) ) % convert names to positions
   di = addPosInfo(ch_names,opts.capFile); % get 3d-coords
   ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names
 end
+fs=opts.fs; if ( isempty(fs) ) warning('No sampling rate specified... assuming fs=250'); fs=250; end;
 
 %1) Detrend
 if ( opts.detrend )
@@ -78,10 +82,20 @@ if ( opts.badchrm || ~isempty(opts.badCh) )
   fprintf('%d ch removed\n',sum(isbadch));
 end
 
+%2.2) time range selection
+timeIdx=[];
+if ( ~isempty(opts.timeband) ) 
+  timeIdx = opts.timeband * fs; % convert to sample indices
+  timeIdx = max(min(timeIdx,size(X,2)),1); % ensure valid range
+  timeIdx = int32(timeIdx(1):timeIdx(2));
+  X    = X(:,timeIdx,:);
+end
+
 %3) Spatial filter/re-reference
 R=[];
 if ( size(X,1)> 5 ) % only spatial filter if enough channels
-  switch lower( opts.spatialfilter )
+  sftype=lower(opts.spatialfilter);
+  switch ( sftype )
    case 'slap';
     fprintf('3) Slap\n');
     if ( ~isempty(ch_pos) )       
@@ -95,6 +109,33 @@ if ( size(X,1)> 5 ) % only spatial filter if enough channels
    case {'whiten','wht'};
     fprintf('3) whiten\n');
     R=whiten(X,1,1,0,0,1); % symetric whiten
+   case {'csp','csp1','csp2','csp3'};
+    fprintf('3) csp\n');
+    nf=str2num(sftype(end)); if ( isempty(nf) ) nf=3; end;
+    [R,d]=csp(X,Y,3,nf); % 3 comp for each class CSP [oldCh x newCh x nClass]
+    R=R(:,:)'; % [ newCh x oldCh ]
+    ch_pos=[]; 
+    % re-name channels
+    ch_names={};for ci=1:size(d,1); for clsi=1:size(d,2); ch_names{ci,clsi}=sprintf('SF%d.%d',clsi,ci); end; end;
+   case {'ssep','car-ssep','car+ssep','ssep1','ssep2','ssep3'};
+    fprintf('3) SSEP\n'); % est spatial filter using the SSEP approach
+    nf=str2num(sftype(end)); if ( isempty(nf) ) nf=2; end;
+    if ( iscell(opts.freqband) ) 
+      periods = fs./[opts.freqband{:}];
+    else
+      if ( numel(opts.freqband)==2 ) passband=opts.freqband; else passband=opts.freqband([2 3]); end;
+      periods = fs./[passband(1):passband(2)];
+    end
+    Xcar=X; % copy of data
+    if ( strcmp('car',sftype(1:min(end,3))) ) % first CAR the data
+      Xcar=repop(X,'-',mean(X,1));Rcar=eye(size(X,1))-(1./size(X,1));
+    end
+    % Now find the ssep filt
+    [R,s]=ssepSpatFilt(Xcar,[1 2],periods); % R=[ch x newCh]    
+    R=R(:,1:nf);     % only keep the best 2 filters
+    R=R'; % [ newCh x ch]
+    if ( strcmp('car',sftype(1:min(end,3))) ) R=R*Rcar; end    % include the effect of the CAR
+    ch_pos=[]; ch_names={}; for ci=1:size(R,1); ch_names{ci}=sprintf('SF%d',ci); end; % re-name channels
    case 'none';
    otherwise; warning(sprintf('Unrecog spatial filter type: %s. Ignored!',opts.spatialfilter ));
   end
@@ -103,17 +144,10 @@ if ( ~isempty(R) ) % apply the spatial filter
   X=tprod(X,[-1 2 3],R,[1 -1]); 
 end
 
-%2.2) time range selection
-timeIdx=[];
-if ( ~isempty(opts.timeband) ) 
-  timeIdx = opts.timeband * fs; % convert to sample indices
-  timeIdx = max(min(timeIdx,size(X,2)),1); % ensure valid range
-  X    = X(:,timeIdx(1):timeIdx(2),:);
-end
-
-%2.5) Bad trial removal
+%3.5) Bad trial removal
+isbadtr=[]; trthresh=[];
 if ( opts.badtrrm ) 
-  fprintf('2) bad trial removal');
+  fprintf('2.5) bad trial removal');
   [isbadtr,trstds,trthresh]=idOutliers(X,3,opts.badtrthresh);
   X=X(:,:,~isbadtr);
   Y=Y(~isbadtr);
@@ -122,26 +156,37 @@ end;
 
 %4) welch to convert to power spectral density
 fprintf('4) Welch\n');
-[X,wopts,winFn]=welchpsd(X,2,'width_ms',opts.width_ms,'windowType',opts.windowType,'fs',opts.fs,...
+[X,wopts,winFn]=welchpsd(X,2,'width_ms',opts.width_ms,'windowType',opts.windowType,'fs',fs,...
                          'aveType',opts.aveType,'detrend',1); 
-freqs=0:(1000/opts.width_ms):opts.fs; % position of the frequency bins
+freqs=0:(1000/opts.width_ms):fs/2; % position of the frequency bins
 
 %5) sub-select the range of frequencies we care about
-fidx=[];
-if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(opts.fs) ) 
-  if ( numel(opts.freqband)>2 ) % convert the diff band spects to upper/lower frequencies
-    if ( numel(opts.freqband)==3 ) opts.freqband=opts.freqband([1 3]);
-    elseif(numel(opts.freqband)==4 ) opts.freqband=[mean(opts.freqband([1 2])) mean(opts.freqband([3 4]))];
-    end
-  end
+fIdx=[];
+if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) ) 
   fprintf('5) Select frequencies\n');
-  [ans,fidx(1)]=min(abs(freqs-opts.freqband(1))); % lower frequency bin
-  [ans,fidx(2)]=min(abs(freqs-opts.freqband(2))); % upper frequency bin
-  X=X(:,fidx(1):fidx(2),:); % sub-set to the interesting frequency range
+  if ( isnumeric(opts.freqband) )
+    if ( numel(opts.freqband)>2 ) % convert the diff band spects to upper/lower frequencies
+      if ( numel(opts.freqband)==3 ) opts.freqband=opts.freqband([1 3]);
+      elseif(numel(opts.freqband)==4 ) opts.freqband=[mean(opts.freqband([1 2])) mean(opts.freqband([3 4]))];
+      end
+    end
+    [ans,fIdx(1)]=min(abs(freqs-opts.freqband(1))); % lower frequency bin
+    [ans,fIdx(2)]=min(abs(freqs-opts.freqband(2))); % upper frequency bin
+    fIdx = int32(fIdx(1):fIdx(2));
+  elseif ( iscell(opts.freqband) ) %set of discrete-frequencies to pick
+    freqband=[opts.freqband{:}]; % convert to vector
+    freqband=[freqband;2*freqband;3*freqband]; % select higher harmonics also
+    fIdx=false(size(X,2),1);
+    for fi=1:numel(freqband);
+      [ans,tmp]=min(abs(freqs-freqband(fi))); % lower frequency bin
+      fIdx(tmp)=true;
+    end    
+  end
+  X=X(:,fIdx,:); % sub-set to the interesting frequency range
 end;
 
 %5.5) Visualise the input?
-if ( opts.visualize  && ~isempty(ch_pos) )
+if ( opts.visualize )
    uY=unique(Y);sidx=[]; labels=opts.class_names;
    for ci=1:numel(uY);
       mu(:,:,ci)=mean(X(:,:,Y==uY(ci)),3);
@@ -149,16 +194,17 @@ if ( opts.visualize  && ~isempty(ch_pos) )
       if ( isempty(labels) || numel(labels)<ci || isempty(labels{ci}) )  labels{ci}=sprintf('%d',uY(ci)); end;
    end
    if ( ~isempty(di) ) xy=cat(2,di.extra.pos2d); % use the pre-comp ones if there
-   else xy = xyz2xy(ch_pos);
+   elseif (size(ch_pos,1)==3) xy = xyz2xy(ch_pos);
+   else   xy=[];
    end
-   if (size(ch_pos,1)==3 ) xy = xyz2xy(ch_pos); else xy=[]; end; % convert 3d->2d co-ords
-   erpfig=figure('Name','Data Visualisation: ERSP');
-   yvals=freqs; if( ~isempty(fidx) ) yvals=freqs(fidx(1):fidx(2)); end
-   image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels,'disptype','plot','ticklabs','sw','clabel','db');
+   erpfig=gcf;figure(erpfig);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');
+   yvals=freqs; if( ~isempty(fIdx) ) yvals=freqs(fIdx); end
+   image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels,'disptype','plot','ticklabs','sw','clabel',opts.aveType);
    zoomplots;
-   aucfig=figure('Name','Data Visualisation: ERSP AUC');
+   aucfig=gcf+1;figure(aucfig);clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');
    image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
    colormap ikelvin; zoomplots;
+   figure(erpfig);
    drawnow;
 end
 
@@ -167,7 +213,7 @@ fprintf('6) train classifier\n');
 [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',1,varargin{:});
 
 %7) combine all the info needed to apply this pipeline to testing data
-clsfr.fs          = opts.fs;   % sample rate of training data
+clsfr.fs          = fs;   % sample rate of training data
 clsfr.detrend     = opts.detrend; % detrend?
 clsfr.isbad       = isbadch;% bad channels to be removed
 clsfr.spatialfilt = R;    % spatial filter used for surface laplacian
@@ -178,7 +224,7 @@ clsfr.timeIdx     = timeIdx; % time range to apply the classifer to
 
 clsfr.windowFn    = winFn;% temporal window prior to fft
 clsfr.welchAveType= opts.aveType;% other options to pass to the welchpsd
-clsfr.freqIdx     = fidx; % start/end index of frequencies to keep
+clsfr.freqIdx     = fIdx; % start/end index of frequencies to keep
 
 clsfr.badtrthresh = []; if ( ~isempty(trthresh) ) clsfr.badtrthresh = trthresh(end)*opts.badtrscale; end
 clsfr.badchthresh = []; if ( ~isempty(chthresh) ) clsfr.badchthresh = chthresh(end)*opts.badchscale; end
@@ -190,8 +236,10 @@ clsfr.dvstats.std = [std(tstf(Y==clsfr.spKey(1)))  std(tstf(Y==clsfr.spKey(2))) 
 %  bins=[-inf -200:5:200 inf]; clf;plot([bins(1)-1 bins(2:end-1) bins(end)+1],[histc(tstf(Y>0),bins) histc(tstf(Y<=0),bins)]); 
 
 if ( opts.visualize > 1 ) 
-   b=msgbox({sprintf('Classifier performance : %s',sprintf('%4.1f ',res.tstbin(:,:,res.opt.Ci)*100)) 'OK to continue!'},'Results');
-   while ( ishandle(b) ) pause(.1); end; % wait to close auc figure
+  summary = sprintf('%4.1f ',res.tstbin(:,:,res.opt.Ci)*100);
+  if(size(res.tstbin,2)>1)summary=[summary sprintf(' = %4.1f <ave>',mean(res.tstbin(:,:,res.opt.Ci),2)*100)];end
+   b=msgbox({sprintf('Classifier performance : %s',summary) 'OK to continue!'},'Results');
+   while ( ishandle(b) ) drawnow; pause(.2); end; % wait to close auc figure
    if ( ishandle(aucfig) ) close(aucfig); end;
    if ( ishandle(erpfig) ) close(erpfig); end;
    if ( ishandle(b) ) close(b); end;

@@ -15,9 +15,8 @@ if ( nargin<5 || isempty(port) )
 end;
 
 % get the set of possible events
-%hdr   =buffer('get_hdr',[],host,port);
-%status=struct('nevents',hdr.nevents,'nsamples',hdr.nsamples);
-status=buffer('wait_dat',[-1 -1 -1],host,port);
+if ( nevents<=0 ) wait=[-1 -1 -1]; else wait=[inf nevents 1000]; end;
+status=buffer('wait_dat',wait,host,port);
 events=[];
 if( status.nevents>nevents )
     % N.B. event range is counted from start -> end-1!

@@ -117,12 +117,13 @@ timeIdx=[];
 if ( ~isempty(opts.timeband) ) 
   timeIdx = opts.timeband * fs; % convert to sample indices
   timeIdx = max(min(timeIdx,size(X,2)),1); % ensure valid range
-  X    = X(:,timeIdx(1):timeIdx(2),:);
+  timeIdx = int32(timeIdx(1):timeIdx(2));
+  X    = X(:,timeIdx,:);
 end
 
 
 %4.5) Bad trial removal
-trthresh=[];
+isbadtr=[]; trthresh=[];
 if ( opts.badtrrm )
   fprintf('4.5) bad trial removal');
   [isbadtr,trstds,trthresh]=idOutliers(X,3,opts.badtrthresh);
@@ -142,7 +143,8 @@ if ( opts.visualize && ~isempty(ch_pos) )
    times=(1:size(mu,2))/opts.fs;
    erpfig=figure('Name','Data Visualisation: ERP');
    if ( ~isempty(di) ) xy=cat(2,di.extra.pos2d); % use the pre-comp ones if there
-   else xy = xyz2xy(ch_pos);
+   elseif (size(ch_pos,1)==3) xy = xyz2xy(ch_pos);
+   else   xy=[];
    end
    image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',labels,'disptype','plot','ticklabs','sw');
    zoomplots;

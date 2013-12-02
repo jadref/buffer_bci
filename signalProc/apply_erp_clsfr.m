@@ -58,7 +58,7 @@ end
 
 %4.2) time range selection
 if ( ~isempty(clsfr.timeIdx) ) 
-  X    = X(:,clsfr.timeIdx(1):clsfr.timeIdx(2),:);
+  X    = X(:,clsfr.timeIdx,:);
 end
 
 %4.5) check for bad trials
