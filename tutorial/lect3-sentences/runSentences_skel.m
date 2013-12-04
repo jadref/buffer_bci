@@ -17,11 +17,6 @@ end;
 % set the real-time-clock to use
 initgetwTime();
 initsleepSec();
-% init the buffer clock alignment
-global rtclockrecord rtclockmb;
-[rtclockmb rtclockrecord]=buffer_alignrtClock();
-clockUpdateTime=getwTime();
-clockUpdateInterval=1; %
 
 
 % make the target sequence
@@ -52,14 +47,6 @@ sendEvent('stimulus.sentences','start');
 
 % sleep (accuratly) for a certain duration
 sleepSec(interCharDuration);
-
-% keep the clock in sync  
-ftime=getwTime();
-if ( (ftime-clockUpdateTime)>clockUpdateInterval ) % keep the clock sync
-  status=buffer('wait_dat',[-1 -1 -1]); % current sample info
-  [rtclockmb rtclockrecord]=updateClocks(rtclockrecord,status.nsamples,getwTime()); 
-  clockUpdateTime=ftime;
-end
 
 % wait for a key press
 msg=msgbox({'Press OK to continue'},'Continue?');while ishandle(msg); pause(.2); end;

@@ -17,11 +17,6 @@ end;
 % set the real-time-clock to use
 initgetwTime();
 initsleepSec();
-% init the buffer clock alignment
-global rtclockrecord rtclockmb;
-[rtclockmb rtclockrecord]=buffer_alignrtClock();
-clockUpdateTime=getwTime();
-clockUpdateInterval=1;
 
 % ----------------------------------------------------------------------------
 %    FILL IN YOUR CODE BELOW HERE
