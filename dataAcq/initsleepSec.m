@@ -1,3 +1,10 @@
+% setup the global variable which contains the pointer to the high-resolution thread sleep timer
+%
+% []=intsleepSec();
+%
+% N.B. use sleepSec(t) to use
+%
+% See also: sleepSec, pause
 global sleepSec;
 evalin('caller','global sleepSec;');
 evalin('base','global sleepSec;');

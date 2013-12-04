@@ -1,3 +1,10 @@
+% setup the global variable which contains the pointer to the high-resolution wall-time clock
+%
+% []=initgetwTime();
+%
+% N.B. use t=getwTime() to use
+%
+% See also: getwTime, toc
 % set the real-time-clock to use
 global getwTime;
 evalin('caller','global getwTime');
