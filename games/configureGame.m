@@ -5,6 +5,7 @@ gameConfig=true;
 
 run ../utilities/initPaths;
 
+buffhost='localhost'; buffport=1972;
 % wait for the buffer to return valid header information
 hdr=[];
 while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
@@ -24,7 +25,6 @@ initgetwTime;  initsleepSec;
   
 %global dispState gameState;
 verb=1;
-buffhost='localhost'; buffport=1972;
 zoomed   = false;
 zoomedLim=[-4 4];
 
