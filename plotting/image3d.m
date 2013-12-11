@@ -152,17 +152,17 @@ switch dim  % setup the axes labels and finish index expression
      if ( iscell(axscale{2}) ) % cell array of strings
        axscale{2}=axscale{2}(:); tmp=axscale{2};
        for i=1:prod(sizeA(4:end)); 
-         for j=1:size(axscale{2},1); axscale{2}{j,i}=[num2str(i) ' ' tmp{j}]; end;
+         for j=1:numel(tmp); axscale{2}{j,i}=[num2str(i) ' ' tmp{j}]; end;
        end
      elseif (isnumeric(axscale{2}) )
        tmp=axscale{2};
        for i=1:prod(sizeA(4:end)); 
-         for j=1:size(axscale{2},1); axscale{2}(j,i)=axscale{2}(j) + 100*i; end;
+         for j=1:numel(tmp); axscale{2}(j,i)=tmp(j) + 100*i; end;
        end
-       axscale{2}=axscale{2}(:)';
      end
      axscale{2}=axscale{2}(:)';
-     axlab{2}  =sprintf('[extra,%s]',opts.zlabel); 
+     zlab=opts.zlabel; if ( isempty(zlab) ) zlab=['d3']; end;
+     axlab{2}  =sprintf('[extra,%s]',zlab); 
      axmask{2} =1:prod(sizeA(3:end)); 
   else
      axscale{2} = Zvals(1:axsz(2)); axmask{2}=opts.zmask; axlab{2}=opts.zlabel;
@@ -179,13 +179,17 @@ switch dim  % setup the axes labels and finish index expression
      if ( iscell(axscale{2}) ) % cell array of strings
        axscale{2}=axscale{2}(:); tmp=axscale{2};
        for i=1:prod(sizeA(4:end)); 
-         for j=1:size(axscale{2},1); axscale{2}{j,i}=[num2str(i) ' ' tmp{j}]; end;
+         for j=1:numel(tmp); axscale{2}{j,i}=[num2str(i) ' ' tmp{j}]; end;
        end
      elseif (isnumeric(axscale{2}) )
-       axscale{2}=single(axscale{2}(:))+repmat(100*(1:prod(sizeA(4:end))),[numel(axscale{2}),1]); 
-       axscale{2}=axscale{2}(:)';
+       tmp=axscale{2};
+       for i=1:prod(sizeA(4:end)); 
+         for j=1:numel(tmp); axscale{2}(j,i)=tmp(j) + 100*i; end;
+       end
      end
-     axlab{2}   = sprintf('[extra,%s]',opts.zlabel); 
+     axscale{2}=axscale{2}(:)';
+     zlab=opts.zlabel; if ( isempty(zlab) ) zlab=['d3']; end;
+     axlab{2}   = sprintf('[extra,%s]',zlab); 
   else
      axscale{2} = Zvals(1:axsz(2)); axlab{2}=opts.zlabel; axmask{2}=opts.zmask; 
   end 
@@ -199,17 +203,20 @@ switch dim  % setup the axes labels and finish index expression
      warning('Extra dimensions after 3 compressed into 3rd'); 
      axscale{3}=Zvals(1:axsz(3)); 
      if ( iscell(axscale{3}) ) % cell array of strings
-       axscale{3}=axscale{3}(:); tmp=axscale{2};
+       axscale{3}=axscale{3}(:); tmp=axscale{3};
        for i=1:prod(sizeA(4:end)); 
-         for j=1:size(axscale{3},1); axscale{3}{j,i}=[num2str(i) ' ' tmp{j}]; end;
+         for j=1:numel(tmp); axscale{3}{j,i}=[num2str(i) ' ' tmp{j}]; end;
        end
      elseif (isnumeric(axscale{3}) )
-       axscale{3}=single(axscale{3}(:))+repmat(100*(1:prod(sizeA(4:end))),[numel(axscale{3}),1]); 
-       axscale{3}=axscale{3}(:)';
+       tmp=axscale{3};
+       for i=1:prod(sizeA(4:end)); 
+         for j=1:numel(tmp); axscale{3}(j,i)=tmp(j) + 100*i; end;
+       end
      end
-     %axscale{3} = repmat(Zvals(1:axsz(3)),1,prod(sizeA(4:end)));  axscale{3}=axscale{3}(:)';
-     axsz(3)=prod(sizeA(3:end)); %A=reshape(A,[sizeA(1:2) prod(sizeA(3:end))]);
-     axlab{3}   = sprintf('[extra,%s]',opts.zlabel); 
+     axscale{3}=axscale{3}(:)';
+     axsz(3)=prod(sizeA(3:end));
+     zlab=opts.zlabel; if ( isempty(zlab) ) zlab=['d3']; end;
+     axlab{3}   = sprintf('[extra,%s]',zlab); 
      N = prod(sizeA(3:end));
   else
      axscale{3}= Zvals(1:axsz(3)); axlab{3}=opts.zlabel; axmask{3}=opts.zmask;
