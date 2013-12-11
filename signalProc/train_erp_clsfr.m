@@ -148,10 +148,12 @@ if ( opts.visualize && ~isempty(ch_pos) )
    end
    image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',labels,'disptype','plot','ticklabs','sw');
    zoomplots;
+   try; saveaspdf('ERP'); catch; end;
    aucfig=figure('Name','Data Visualisation: ERP AUC');
    image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',labels,'disptype','imaget','ticklabs','sw','clim',[.2 .8]);
    colormap ikelvin; zoomplots;
    drawnow;
+   try; saveaspdf('AUC'); catch; end;
 end
 
 %6) train classifier

@@ -201,11 +201,13 @@ if ( opts.visualize )
    yvals=freqs; if( ~isempty(fIdx) ) yvals=freqs(fIdx); end
    image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels,'disptype','plot','ticklabs','sw','clabel',opts.aveType);
    zoomplots;
+   try; saveaspdf('ERSP'); catch; end;
    aucfig=gcf+1;figure(aucfig);clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');
    image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
    colormap ikelvin; zoomplots;
-   figure(erpfig);
+   try; saveaspdf('AUC'); catch; end;
    drawnow;
+   figure(erpfig);
 end
 
 %6) train classifier
