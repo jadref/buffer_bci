@@ -33,7 +33,7 @@ while (ishandle(contFig))
     %try
       ssepCalibrateStimulus();
     %catch
-      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
+      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
     %end
     sendEvent(phaseToRun,'end');
     nSeq=onSeq;
@@ -46,7 +46,7 @@ while (ishandle(contFig))
     %try
       ssepCalibrateStimulus();
     %catch
-      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
+      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.training','end');    
     %end
     sendEvent(phaseToRun,'end');
@@ -65,7 +65,7 @@ while (ishandle(contFig))
       sendEvent('startPhase.cmd','testing');
       ssepFeedbackStimulus;
     %catch
-      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
+      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.test','end');
     %end
     sendEvent(phaseToRun,'end');
