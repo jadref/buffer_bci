@@ -110,7 +110,7 @@ while ( true )
       save([cname '_' subject '_' datestr],'-struct','clsfr');
       if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;
     catch
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       fprintf('Error in train classifier!');
     end
     sendEvent(lower(phaseToRun),'end'); % mark start/end testing
