@@ -16,7 +16,6 @@ dname='training_data';
 cname='clsfr';
 testname='testing_data';
 if ( ~exist('verb','var') ) verb =2; end;
-trlen_ms = 600;
 subject='test';
 
 % main loop waiting for commands and then executing them

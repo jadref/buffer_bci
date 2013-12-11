@@ -1,17 +1,5 @@
 configureGame;
 
-% wait for the buffer to return valid header information
-hdr=[];
-while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
-  try 
-    hdr=buffer('get_hdr',[],buffhost,buffport); 
-  catch
-    hdr=[];
-    fprintf('Invalid header info... waiting.\n');
-  end;
-  pause(1);
-end;
-
 if ( ~exist('cname','var') ) cname='clsfr'; end;
 if ( ~exist('clsfr','var') ) clsfr=load(cname); end;
 trlen_samp=0;
