@@ -1,7 +1,7 @@
-function [clsfr,res]=train_ersp_clsfr(X,Y,varargin)
+function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 % train a simple ERSP (spectral power) classifer
 % 
-% [clsfr]=train_ersp_clsfr(X,Y,...)
+% [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,...)
 %
 % Inputs:
 %  X         - [ ch x time x epoch ] data set
@@ -36,6 +36,8 @@ function [clsfr,res]=train_ersp_clsfr(X,Y,varargin)
 % Outputs:
 %  clsfr  - [struct] structure contining the stuff necessary to apply the trained classifier
 %  res    - [struct] detailed results for each fold
+%  X       -- [ppch x pptime x ppepoch] pre-processed data (N.B. may/will have different size to input X)
+%  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
 opts=struct('fs',[],'timeband',[],'freqband',[],'width_ms',250,'windowType','hanning','aveType','amp',...
             'detrend',1,'spatialfilter','slap',...
             'badchrm',1,'badchthresh',3.1,'badchscale',2,...

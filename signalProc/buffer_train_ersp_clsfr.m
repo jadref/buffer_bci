@@ -1,7 +1,7 @@
-function [clsfr,res]=buffer_train_ersp_clsfr(X,Y,hdr,varargin);
+function [clsfr,res,X,Y]=buffer_train_ersp_clsfr(X,Y,hdr,varargin);
 % train ERSP (frequency-domain) classifier with ft-buffer based data/events input
 %
-%   [clsfr,res]=buffer_train_ersp_clsfr(X,Y,hdr,varargin);
+%   [clsfr,res,X,Y]=buffer_train_ersp_clsfr(X,Y,hdr,varargin);
 %
 % Inputs:
 %  X -- [ch x time x epoch] data
@@ -20,6 +20,8 @@ function [clsfr,res]=buffer_train_ersp_clsfr(X,Y,hdr,varargin);
 % Outputs:
 %  clsfr   -- [struct] a classifer structure
 %  res     -- [struct] a results structure
+%  X       -- [ppch x pptime x ppepoch] pre-processed data (N.B. may/will have different size to input X)
+%  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
 %
 % See Also: train_ersp_clsfr
 opts=struct('capFile','1010','overridechnms',0);
@@ -52,5 +54,5 @@ ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names
 iseeg=[di.extra.iseeg];
 
 % call the actual function which does the classifier training
-[clsfr,res]=train_ersp_clsfr(X,Y,'ch_names',ch_names,'ch_pos',ch_pos,'fs',fs,'badCh',~iseeg,varargin{:});
+[clsfr,res,X,Y]=train_ersp_clsfr(X,Y,'ch_names',ch_names,'ch_pos',ch_pos,'fs',fs,'badCh',~iseeg,varargin{:});
 return;

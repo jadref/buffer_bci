@@ -147,7 +147,12 @@ while( ~exitEvent )
   onevents=nevents;
   if ( opts.verb>=0 ) t1=toc; end;
   % N.B. nevents-1... because test is >nevents events!
-  status=buffer('wait_dat',[endsamp nevents timeout_ms],host,port);
+  try
+    status=buffer('wait_dat',[endsamp nevents timeout_ms],host,port);
+  catch % catch buffer failures and restart
+    warning('Buffer crash!');
+    break;
+  end
   if ( status.nevents < onevents )
       warning('Buffer restarted!')
       nevents=0; endsamp=status.nsamples;

@@ -1,4 +1,4 @@
-function [clsfr,res,X]=train_erp_clsfr(X,Y,varargin)
+function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 % train a simple ERP classifer.
 % 
 % [clsfr,res,X]=train_erp_clsfr(X,Y....);
