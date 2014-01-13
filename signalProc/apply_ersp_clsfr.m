@@ -1,4 +1,4 @@
-function [f,fraw,p]=apply_ersp_clsfr(X,clsfr,verb)
+function [f,fraw,p,X]=apply_ersp_clsfr(X,clsfr,verb)
 % apply a previously trained classifier to the input data
 % 
 %  [f,fraw,p]=apply_ersp_clsfr(X,clsfr,verb) 
@@ -11,6 +11,7 @@ function [f,fraw,p]=apply_ersp_clsfr(X,clsfr,verb)
 %  f    - [size(X,epoch) x nCls] the classifier's raw decision value
 %  fraw - [size(X,dim) x nSp] set of pre-binary sub-problem decision values
 %  p    - [size(X,dim) x nSp] the classifiers predictions as probabilities
+%  X    - [n-d] the pre-processed data
 if( nargin<3 || isempty(verb) ) verb=0; end;
 
 %0) convert to singles (for speed)

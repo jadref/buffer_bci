@@ -1,4 +1,4 @@
-function [f,fraw,p]=buffer_apply_ersp_clsfr(X,clsfr,verb)
+function [f,fraw,p,X]=buffer_apply_ersp_clsfr(X,clsfr,verb)
 % apply a previously trained classifier to the input data
 % 
 %  f=buffer_apply_erp_clsfr(X,clsfr,varargin)
@@ -15,6 +15,7 @@ function [f,fraw,p]=buffer_apply_ersp_clsfr(X,clsfr,verb)
 %  f    - [size(X,epoch) x nCls] the classifier's raw decision value
 %  fraw - [size(X,dim) x nSp] set of pre-binary sub-problem decision values
 %  p     - [size(X,epoch) x nCls] the classifier's assessment of the probablility of each class
+%  X     - [n-d] the pre-processed data
 if( nargin<3 || isempty(verb))  verb=0; end;
 % extract the data - from field begining with trainingData
 if ( iscell(X) ) 
@@ -26,7 +27,7 @@ if ( iscell(X) )
 elseif ( isstruct(X) )
   X=cat(3,X.buf);
 end 
-[f, fraw, p]=apply_ersp_clsfr(X,clsfr,verb);
+[f, fraw, p, X]=apply_ersp_clsfr(X,clsfr,verb);
 if ( verb>0 ) fprintf('Classifier prediction:  %g %g\n', f,p); end;
 return;
 %------------------

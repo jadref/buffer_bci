@@ -1,7 +1,7 @@
-function [f,fraw,p,isbadch,isbadtr]=apply_erp_clsfr(X,clsfr,verb)
+function [f,fraw,p,X,isbadch,isbadtr]=apply_erp_clsfr(X,clsfr,verb)
 % apply a previously trained classifier to the input data
 % 
-%  [f,fraw,p]=apply_erp_clsfr(X,clsfr,verb)
+%  [f,fraw,p,X]=apply_erp_clsfr(X,clsfr,verb)
 %
 % Inputs:
 %  X - [ ch x time (x epoch) ] data set
@@ -11,6 +11,7 @@ function [f,fraw,p,isbadch,isbadtr]=apply_erp_clsfr(X,clsfr,verb)
 %  f     - [size(X,epoch) x nCls] the classifier's raw decision value
 %  fraw  - [size(X,dim) x nSp] set of pre-binary sub-problem decision values
 %  p     - [size(X,epoch) x nCls] the classifier's assessment of the probablility of each class
+%  X     - [n-d] the pre-processed data
 if( nargin<3 || isempty(verb) ) verb=0; end;
 
 
