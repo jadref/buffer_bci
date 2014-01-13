@@ -27,7 +27,7 @@ else % fields call type
     evt.type=type;
     if ( nargin<6 ) host=[]; port=[]; end;
 end
-if ( evt.sample<0 ) evt.sample=round(getsampTime()); end;
+%if ( evt.sample<0 ) evt.sample=round(getsampTime()); end;
 % value type conversions for sending
 if ( iscell(evt.value) && ischar(evt.value{1}) ) evt.value=str2buff(evt.value); 
 elseif ( islogical(evt.value) ) evt.value=int8(evt.value); %logical conversion

@@ -114,7 +114,7 @@ X = exp(-.5*(([0:T-1]'-mu)./sigma).^2);
 %------------------------------------------
 function [X]=repeated(T,cycle)
 % repeat the input 1 period to the desired length
-X = cycle(mod(1:T,end)+1);
+X = cycle(mod(0:T-1,end)+1);
 
 %----------------------------------------------------------------------------
 function [x]=randSig(T,Pr,varargin)

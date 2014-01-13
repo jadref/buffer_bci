@@ -49,7 +49,7 @@ run ../utilities/initPTBPaths;
 [stimSeqCol]=mkStimSeqRand(size(symbols,2),nRepetitions*size(symbols,2));
 
 % get current sample time, so can send 2 events refering to the *same* time-point
-stimSamp=getsampTime(); % get current sample time, for event time-stamps
+stimSamp=buffer('get_samp'); % get current sample time, for event time-stamps
 sendEvent('stimulus.rowFlash',stimSeqRow(:,ei),stimSamp); % indicate this row is 'flashed'
 sendEvent('stimulus.tgtFlash',stimSeqRow(tgtRow,ei),stimSamp); % indicate if it was a 'target' flash
 

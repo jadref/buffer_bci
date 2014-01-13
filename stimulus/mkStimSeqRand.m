@@ -37,7 +37,7 @@ for si=nSymbols+1:nSymbols:nStim;
     stimCode(si+ssi) = sel;    % record selection
   end
 end
-for si=1:nStim; stimSeq(stimCode(si),si)=1; end;
+for si=1:nStim; if ( stimCode(si)>0) stimSeq(stimCode(si),si)=1; end; end;
 stimTime=(0:size(stimSeq,2)-1)*isi(1);
 eventSeq=stimSeq;
 return;
