@@ -94,7 +94,14 @@ hdr=[]; if ( isfield(state,'hdr') ) hdr=state.hdr; end; if ( isempty(hdr) ) hdr=
 % convert offsets etc from ms to samples
 fs=opts.fs; 
 if ( isempty(fs) && ( ~isempty(opts.trlen_ms) || ~isempty(opts.offset_ms) ) ) 
-  if ( isempty(hdr) ) hdr=buffer('get_hdr',[],host,port); end
+  if ( isempty(hdr) ) 
+    try;
+      hdr=buffer('get_hdr',[],host,port); 
+    catch;
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);      
+      fprintf('Error: Header not set!  Is the amplifier connected?\nTry again later.\n');
+    end
+  end
   fs=hdr.fsample; 
 elseif ( isempty(hdr) ) 
   hdr=struct('fsample',fs,'nevents',[],'nsamples',[]);
