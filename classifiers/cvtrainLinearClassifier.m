@@ -35,7 +35,7 @@ function [classifier,res,Y]=cvtrainLinearClassifier(X,Y,Cs,fIdxs,varargin)
 %           |.dim -- [ind] dimensions of X which contain the trails
 %  res   -- [struct] results structure as returned by cvtrainFn
 opts=struct('objFn','klr_cg','dim',[],'spType','1v1','spKey',[],'spMx',[],'zeroLab',0,...
-            'balYs',0,'verb',0,'Cscale',[],'compKernel',1);
+            'balYs',0,'verb',0,'Cscale',[],'compKernel',1,'binsp',1);
 [opts,varargin]=parseOpts(opts,varargin);
 if( nargin < 3 ) Cs=[]; end;
 if( nargin < 4 || isempty(fIdxs) ) fIdxs=10; end;
@@ -53,8 +53,14 @@ if ( ~(isempty(spKey) && isempty(spMx)) ) % sub-prob decomp already done, so tru
 elseif ( size(Y,2)==1 && all(Y(:)==-1 | Y(:)==0 | Y(:)==1) && ~(opts.zeroLab && any(Y(:)==0)) ) % already a valid binary problem
     spKey=[1 -1]; % binary problem
     spMx =[1 -1];
-else
+elseif ( opts.binsp )
   [Y,spKey,spMx]=lab2ind(Y,spKey,spMx,opts.zeroLab); % convert to binary sub-problems
+else
+  spKey=unique(Y); spMx=[];
+end
+spDesc=[];
+if ( ~isempty(spMx) && ~isempty(spKey) )
+  spDesc=mkspDesc(spMx,spKey);
 end
 spDesc=mkspDesc(spMx,spKey);
   
@@ -90,16 +96,20 @@ if ( opts.compKernel )
    if ( opts.verb>0 ) fprintf('..done\n'); end;
    % call cvtrain to do the actual work
    % N.B. note we use dim 2 because of the kernel transformation
-   res=cvtrainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',2,'verb',opts.verb,varargin{:}); 
+   res=cvtrainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',2,'verb',opts.verb,'binsp',opts.binsp,varargin{:}); 
 else
    % call cvtrain to do the actual work
-   res=cvtrainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',dim,'verb',opts.verb,varargin{:}); 
+   res=cvtrainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',dim,'verb',opts.verb,'binsp',opts.binsp,varargin{:}); 
 end
 
 
 % Extract the classifier weight vector(s)
 % best hyper-parameter for all sub-probs, N.B. use the same C for all sub-probs to ensure multi-class is OK
+if ( opts.binsp ) 
 [opttstbin,optCi]=max(mean(res.tstbin,2)+mean(res.tstauc,2),[],3); 
+else
+[opttstbin,optCi]=max(mean(res.tstbin,2),[],3); 
+end
 for isp=1:size(Y,2); % get soln for each subproblem
    if ( isfield(res,'opt') && isfield(res.opt,'soln') ) % optimal calibrated solution trained on all data
       soln  = res.opt.soln{isp};

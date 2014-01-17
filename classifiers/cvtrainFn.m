@@ -93,7 +93,7 @@ opts = struct('binsp',1,'aucNoise',0,'recSoln',0,'dim',[],...
 if ( ndims(Y)>2 || ~any(size(Y,1)==size(X)) ) 
    error('Y should be a matrix with N elements'); 
 end
-if ( ~all(Y(:)==-1 | Y(:)==0 | Y(:)==1) )
+if ( opts.binsp && (~all(Y(:)==-1 | Y(:)==0 | Y(:)==1)) )
   error('Y should be matrix of -1/0/+1 label indicators.');
 end
 if ( nargin < 4 || isempty(Cs) ) Cs=[5.^(3:-1:-3) 0]; end;
@@ -223,8 +223,10 @@ for foldi=1:size(fIdxs,ndims(fIdxs));
            res.fold.tstbin (:,spi(spii),ci,foldi)=conf2loss(res.fold.tstconf(:,spi(spii),ci,foldi),1,opts.lossType);
             % add some noise to p to ensure dv2auc is real
             %if ( opts.aucNoise )  f(:,spii) = f(:,spii) + rand(size(f(:,spii)))*max(1,f(:,spii))*1e-4; end;
-            res.fold.trnauc(:,spi(spii),ci,foldi) =dv2auc(Ytrn(:,spii),f(:,spii));
-            res.fold.tstauc(:,spi(spii),ci,foldi) =dv2auc(Ytst(:,spii),f(:,spii));
+            if ( opts.binsp )
+              res.fold.trnauc(:,spi(spii),ci,foldi) =dv2auc(Ytrn(:,spii),f(:,spii));
+              res.fold.tstauc(:,spi(spii),ci,foldi) =dv2auc(Ytst(:,spii),f(:,spii));
+            end
             % log the performance
             if ( opts.verb > -1 )
                if ( strcmp(opts.dispType,'bin') )
@@ -250,7 +252,7 @@ for foldi=1:size(fIdxs,ndims(fIdxs));
       end
     end
 end
-szRes=size(res.fold.trnauc); 
+szRes=size(res.fold.trnbin); 
 res.fold.di=mkDimInfo(szRes,'perf',[],[],'subProb',[],opts.spDesc,'C',[],Cs,'fold',[],[],'dv');
 foldD=4;
 res.fold.di(foldD).info.fIdxs=fIdxs;
@@ -262,15 +264,21 @@ res.trnbin = conf2loss(res.trnconf,1,opts.lossType);%mean(res.fold.trnbin,foldD)
 res.trnbin_se=sqrt(abs(sum(res.fold.trnbin.^2,foldD)/nFolds-(res.trnbin.^2))/nFolds);
 res.tstbin = conf2loss(res.tstconf,1,opts.lossType);%mean(res.fold.tstbin,foldD);
 res.tstbin_se=sqrt(abs(sum(res.fold.tstbin.^2,foldD)/nFolds-(res.tstbin.^2))/nFolds);
-res.trnauc = mean(res.fold.trnauc,foldD);
-res.trnauc_se=sqrt(abs(sum(res.fold.trnauc.^2,foldD)/nFolds-(res.trnauc.^2))/nFolds);
-res.tstauc = mean(res.fold.tstauc,foldD);
-res.tstauc_se=sqrt(abs(sum(res.fold.tstauc.^2,foldD)/nFolds-(res.tstauc.^2))/nFolds);
+if ( opts.binsp )
+  res.trnauc = mean(res.fold.trnauc,foldD);
+  res.trnauc_se=sqrt(abs(sum(res.fold.trnauc.^2,foldD)/nFolds-(res.trnauc.^2))/nFolds);
+  res.tstauc = mean(res.fold.tstauc,foldD);
+  res.tstauc_se=sqrt(abs(sum(res.fold.tstauc.^2,foldD)/nFolds-(res.tstauc.^2))/nFolds);
+end
 res.fIdxs  = fIdxs;
 res.Y      = Y;
 
 % record the optimal solution and it's parameters
+if ( opts.binsp ) 
 [opttstbin,optCi]=max(mean(res.tstbin,2)+opts.aucWght*mean(res.tstauc,2)); % best hyper-parameter for all sub-probs
+else
+[opttstbin,optCi]=max(mean(res.tstbin,2)); % best hyper-parameter for all sub-probs
+end
 res.opt.Ci  =optCi;
 res.opt.C   =Cs(optCi);
 res.opt.tstbin=res.tstbin(:,:,optCi); 
@@ -335,10 +343,10 @@ end
 
 if ( opts.verb > -2 && size(fIdxs,ndims(fIdxs))>1)
    if ( opts.verb > -1 ) fprintf('-------------------------\n'); end;
-   for spi=1:size(res.trnauc,2); % loop over sub-problems
-      if ( size(res.trnauc,2)>1 ) fprintf('(ave/%2d)\t',spi); else; fprintf('(ave)\t'); end;
+   for spi=1:size(res.trnbin,2); % loop over sub-problems
+      if ( size(res.trnbin,2)>1 ) fprintf('(ave/%2d)\t',spi); else; fprintf('(ave)\t'); end;
       for ci=1:size(Cs,2);
-         if ( strcmp(opts.dispType,'bin') )
+         if ( ~opts.binsp || strcmp(opts.dispType,'bin') )
             fprintf('%0.2f/%0.2f',res.trnbin(:,spi,ci),res.tstbin(:,spi,ci));
          else
             fprintf('%0.2f/%0.2f',res.trnauc(:,spi,ci),res.tstauc(:,spi,ci));
@@ -347,10 +355,10 @@ if ( opts.verb > -2 && size(fIdxs,ndims(fIdxs))>1)
       end
       fprintf('\n');
    end
-   if ( size(res.trnauc,2)>1 ) % cross problem average performance
+   if ( size(res.trnbin,2)>1 ) % cross problem average performance
       fprintf('(ave/av)\t',spi); 
       for ci=1:size(Cs,2);
-         if ( strcmp(opts.dispType,'bin') )
+         if ( ~opts.binsp || strcmp(opts.dispType,'bin') )
             fprintf('%0.2f/%0.2f\t',mean(res.trnbin(:,:,ci),2),mean(res.tstbin(:,:,ci),2));
          else
             fprintf('%0.2f/%0.2f\t',mean(res.trnauc(:,spi,ci),2),mean(res.tstauc(:,spi,ci),2));
@@ -413,8 +421,10 @@ for fi=1:size(outerfIdxs,2);
    [ans optI] = max(res.outer(fi).tstauc); Copt = Cs(optI);
    
    % Outer-cv performance recording
-   res.trnauc(:,fi) =dv2auc(Ytrn,res.outer(fi).f(:,:,optI));   
-   res.tstauc(:,fi) =dv2auc(Ytst,res.outer(fi).f(:,:,optI));
+   if ( opts.binsp )
+     res.trnauc(:,fi) =dv2auc(Ytrn,res.outer(fi).f(:,:,optI));   
+     res.tstauc(:,fi) =dv2auc(Ytst,res.outer(fi).f(:,:,optI));
+   end
    res.trnconf(:,fi)=dv2conf(Ytrn,res.outer(fi).f(:,:,optI));  
    res.tstconf(:,fi)=dv2conf(Ytst,res.outer(fi).f(:,:,optI));
    res.trnbin(:,fi) =conf2loss(res.trnconf(:,fi),'cr');
