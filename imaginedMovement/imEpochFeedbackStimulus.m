@@ -53,49 +53,32 @@ for si=1:nSeq;
   drawnow;% expose; % N.B. needs a full drawnow for some reason
   sendEvent('stimulus.target',find(tgtSeq(:,si)>0));
   sendEvent('stimulus.trial','start');
+  sleepSec(trialDuration); 
   
-  % initial fixation point position
-  dvs(:)=0; nPred=0; state=[];
-  trlStartTime=getwTime();
-  timetogo = trialDuration;
-  while (timetogo>0)
-    timetogo = trialDuration - (getwTime()-trlStartTime); % time left to run in this trial
-    % wait for events to process *or* end of trial *or* out of time
-    [dat,events,state]=buffer_waitData(buffhost,buffport,state,'exitSet',{timetogo*1000 {'stimulus.prediction' 'stimulus.testing'}},'verb',verb);
-    for ei=1:numel(events);
-      ev=events(ei);
-      if ( strcmp(ev.type,'stimulus.prediction') ) 
-        pred=ev.value;
-        % now do something with the prediction....
-        if ( numel(pred)==1 )
-          if ( pred>0 && pred<=nSymbs && isinteger(pred) ) % predicted symbol, convert to dv equivalent
-            tmp=pred; pred=zeros(nSymbs,1); pred(tmp)=1;
-          else % binary problem, convert to per-class
-            pred=[pred -pred];
-          end
-        end
-        nPred=nPred+1;
-        dvs(:,nPred)=pred;
-        if ( verb>=0 ) 
-          fprintf('dv:');fprintf('%5.4f ',pred);fprintf('\n'); 
-        end;          
-      elseif ( strcmp(ev.type,'stimulus.testing') ) 
-        endTesting=true; break;
-      end % prediction events to processa  
-    end % if feedback events to process
-    if ( endTesting ) break; end;
-  end % loop accumulating prediction events
-
-  % give the feedback on the predicted class
-  dv = sum(dvs,2); prob=1./(1+exp(-dv)); prob=prob./sum(prob);
-  if ( verb>=0 ) 
-    fprintf('dv:');fprintf('%5.4f ',pred);fprintf('\t\tProb:');fprintf('%5.4f ',prob);fprintf('\n'); 
-  end;  
-  [ans,predTgt]=max(dv); % prediction is max classifier output
-  set(h(:),'facecolor',bgColor);
-  set(h(predTgt),'facecolor',tgtColor);
-  drawnow;
-  sendEvent('stimulus.predTgt',predTgt);
+  % wait for classifier prediction event
+  if( verb>0 ) fprintf(1,'Waiting for predictions\n'); end;
+  [data,devents,state]=buffer_waitData(buffhost,buffport,[],'exitSet',{500 'classifier.prediction'},'verb',verb);
+  % do something with the prediction (if there is one), i.e. give feedback
+  if( ~isempty(devents) ) % extract the decision value
+    dv = devents(end).value;
+    if ( numel(dv)==1 )
+      if ( dv>0 && dv<=nSymbs && isinteger(dv) ) % dvicted symbol, convert to dv equivalent
+        tmp=dv; dv=zeros(nSymbs,1); dv(tmp)=1;
+      else % binary problem, convert to per-class
+        dv=[dv -dv];
+      end
+    end    
+    % give the feedback on the predicted class
+    prob=1./(1+exp(-dv)); prob=prob./sum(prob);
+    if ( verb>=0 ) 
+      fprintf('dv:');fprintf('%5.4f ',dv);fprintf('\t\tProb:');fprintf('%5.4f ',prob);fprintf('\n'); 
+    end;  
+    [ans,predTgt]=max(dv); % prediction is max classifier output
+    set(h(:),'facecolor',bgColor);
+    set(h(predTgt),'facecolor',tgtColor);
+    drawnow;
+    sendEvent('stimulus.predTgt',predTgt);
+  end % if classifier prediction
   sleepSec(feedbackDuration);
   
   % reset the cue and fixation point to indicate trial has finished  
@@ -104,8 +87,6 @@ for si=1:nSeq;
   drawnow;
   sendEvent('stimulus.trial','end');
   
-  ftime=getwTime();
-  fprintf('\n');
 end % loop over sequences in the experiment
 % end training marker
 sendEvent('stimulus.testing','end');

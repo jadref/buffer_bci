@@ -24,7 +24,7 @@ initsleepSec();
 
 capFile='1010';%'cap_tmsi_mobita_im';
 
-verb=0;
+verb=1;
 buffhost='localhost';
 buffport=1972;
 nSymbs=3;
@@ -38,6 +38,7 @@ moveScale = .1;
 bgColor=[.5 .5 .5];
 fixColor=[1 0 0];
 tgtColor=[0 1 0];
+fbColor=[0 0 1];
 
 % Neurofeedback smoothing
 trlen_ms=3000;
