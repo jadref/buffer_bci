@@ -7,9 +7,11 @@
 %  (startPhase.cmd,exit)       -- stop everything
 configureIM;
 
-if ( ~exist('capFile','var') ) capFile='1010'; end; %'cap_tmsi_mobita_num'; 
-if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4; overridechnms=1;
-else                                     thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
+thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
+if ( ~exist('capFile','var') ) capFile='1010'; 
+else %'cap_tmsi_mobita_num'; 
+    overridechnms=1;
+    if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4;  end;
 end
 datestr = datevec(now); datestr = sprintf('%02d%02d%02d',datestr(1)-2000,datestr(2:3));
 dname='training_data';
