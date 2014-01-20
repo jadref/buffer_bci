@@ -42,8 +42,13 @@ if ( isstruct(Y) ) Y=cat(1,Y.value); end; % convert event struct into labels
 
 fs=[];
 if ( isstruct(hdr) )
-  if ( isfield(hdr,'channel_names') ) chNames=hdr.channel_names; end;
-  if ( isfield(hdr,'fsample') ) fs=hdr.fsample; end;
+  if ( isfield(hdr,'channel_names') ) chNames=hdr.channel_names; 
+  elseif( isfield(hdr,'label') )      chNames=hdr.label;
+  end;
+  if ( isfield(hdr,'fsample') )       fs=hdr.fsample; 
+  elseif ( isfield(hdr,'Fs') )        fs=hdr.Fs;
+  elseif( isfield(hdr,'SampleRate') ) fs=hdr.SampleRate; 
+  end;
 elseif ( iscell(hdr) && isstr(hdr{1}) )
   chNames=hdr;
 end

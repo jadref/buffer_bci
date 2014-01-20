@@ -80,8 +80,8 @@ while ( true )
     if ( verb>0 ) fprintf('Starting : %s\n',phaseToRun); ptime=getwTime(); end;
     [traindata,traindevents,state]=buffer_waitData(buffhost,buffport,state,'startSet',{'stimulus.target'},'exitSet',{'stimulus.training' 'end'},'verb',verb,'trlen_ms',trlen_ms);
     mi=matchEvents(traindevents,'stimulus.training','end'); traindevents(mi)=[];traindata(mi)=[];%remove exit event
-    fprintf('Saving %d epochs to : %s\n',numel(traindevents),[dname '_' subject '_' datestr]);
-    save([dname '_' subject '_' datestr],'traindata','traindevents');
+    fname=[dname '_' subject '_' datestr];
+    fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save(fname,'traindata','traindevents');
     trainSubj=subject;
     sendEvent(lower(phaseToRun),'end'); % mark start/end testing
     if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;
@@ -99,8 +99,8 @@ while ( true )
       sendEvent(lower(phaseToRun),'start'); % mark start/end testing
       clsfr=buffer_train_ersp_clsfr(traindata,traindevents,state.hdr,'spatialfilter','slap','freqband',[6 10 26 30],'badchrm',1,'badtrrm',1,'objFn','lr_cg','compKernel',0,'dim',3,'capFile',capFile,'overridechnms',overridechnms,'visualize',2);
       clsSubj=subject;
-      fprintf('Saving classifier to : %s\n',[cname '_' subject '_' datestr]);
-      save([cname '_' subject '_' datestr],'-struct','clsfr');
+      fname=[cname '_' subject '_' datestr];
+      fprintf('Saving classifier to : %s\n',fname); save(fname,'-struct','clsfr');
       if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;
     %catch
     %  fprintf('Error in train classifier!');
@@ -118,7 +118,9 @@ while ( true )
       clsSubj = subject;
     end;
     sendEvent(lower(phaseToRun),'start'); % mark start/end testing
-    imEpochFeedbackSignals(clsfr,'buffhost',buffhost,'buffport',buffport,'hdr',hdr,'trlen_ms',trlen_ms,'verb',verb)
+    [testdata,testdevents]=imEpochFeedbackSignals(clsfr,'buffhost',buffhost,'buffport',buffport,'hdr',hdr,'trlen_ms',trlen_ms,'verb',verb)
+    fname=[dname '_' subject '_' datestr '_test'];
+    fprintf('Saving %d epochs to : %s\n',numel(testdevents),fname);save(fname,'testdata','testdevents');
     sendEvent(lower(phaseToRun),'end');    
     if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;
 

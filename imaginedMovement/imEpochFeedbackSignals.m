@@ -1,8 +1,13 @@
-function []=imContFeedbackSignals(clsfr,varargin)
+function [testdata,testevents]=imContFeedbackSignals(clsfr,varargin)
 % apply classifier to data after the indicated events
 %
-%  []=imContFeedbackSignals(clsfr,varargin)
+%  [testdata,testevents]=imContFeedbackSignals(clsfr,varargin)
 %
+% Inputs:
+%  clsfr  -- [struct] a classifier structure as returned by train_ersp_clsfr
+% Outputs:
+%  testdata   -- [struct 1xN] data classifier was applied to in each epoch
+%  testevents -- [struct 1xN] event which triggered the classifier to be applied
 % Options:
 %  buffhost, buffport, hdr
 %  startSet      -- {2 x 1} cell array of {event.type event.value} to match to start getting data to 
@@ -28,8 +33,10 @@ if ( isempty(trlen_samp) )
     trlen_samp=max(trlen_samp,size(clsfr.windowFn,2)); 
   end
 end
+testdata={}; testevents={}; %N.B. cell array to avoid expensive mem-realloc during execution loop
 state=[]; 
 endTest=false;
+nepochs=0;
 while ( ~endTest )
   % wait for data to apply the classifier to
   [data,devents,state]=buffer_waitData(opts.buffhost,opts.buffport,state,'startSet',opts.startSet,'trlen_samp',trlen_samp,'exitSet',{'data' {opts.endType}},'verb',opts.verb);
@@ -41,6 +48,8 @@ while ( ~endTest )
       endTest=true;
     elseif ( matchEvents(devents(ei),opts.startSet) ) % flash, apply the classifier
       if ( opts.verb>0 ) fprintf('Processing event: %s',ev2str(devents(ei))); end;
+      nepochs=nepochs+1;
+      if ( nargout>0 ) testdata{nepochs}=data(ei); testevents{nepochs}=devents(ei); end;
       % apply classification pipeline to this events data
       [f,fraw,p]=buffer_apply_ersp_clsfr(data(ei).buf,clsfr);
       sendEvent('classifier.prediction',f);
@@ -50,3 +59,4 @@ while ( ~endTest )
     end
   end % devents 
 end % feedback phase
+if( nargout>0 ) testdata=cat(1,testdata{:}); testevents=cat(1,testevents{:}); end;
