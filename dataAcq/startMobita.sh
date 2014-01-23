@@ -16,4 +16,4 @@ else # Mac
 	 buffexe=$buffdir'/buffer/maci/mobita2ft';
    fi
 fi
-$buffexe "$@"
+$buffexe 10.11.12.13:4242 localhost:1972 50 4 "$@"
