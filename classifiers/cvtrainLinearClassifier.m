@@ -53,16 +53,14 @@ if ( ~(isempty(spKey) && isempty(spMx)) ) % sub-prob decomp already done, so tru
 elseif ( size(Y,2)==1 && all(Y(:)==-1 | Y(:)==0 | Y(:)==1) && ~(opts.zeroLab && any(Y(:)==0)) ) % already a valid binary problem
     spKey=[1 -1]; % binary problem
     spMx =[1 -1];
-elseif ( opts.binsp )
-  [Y,spKey,spMx]=lab2ind(Y,spKey,spMx,opts.zeroLab); % convert to binary sub-problems
 else
-  spKey=unique(Y); spMx=[];
+  [Y,spKey,spMx]=lab2ind(Y,spKey,spMx,opts.zeroLab); % convert to binary sub-problems
+  if ( opts.binsp ) spMx=[]; end;
 end
 spDesc=[];
 if ( ~isempty(spMx) && ~isempty(spKey) )
   spDesc=mkspDesc(spMx,spKey);
 end
-spDesc=mkspDesc(spMx,spKey);
   
 % build a folding -- which is label aware, and aware of the sub-prob encoding type
 if ( numel(fIdxs)==1 ) fIdxs=gennFold(Y,fIdxs,'dim',numel(dim)+1); end;
@@ -105,18 +103,22 @@ end
 
 % Extract the classifier weight vector(s)
 % best hyper-parameter for all sub-probs, N.B. use the same C for all sub-probs to ensure multi-class is OK
-if ( opts.binsp ) 
-[opttstbin,optCi]=max(mean(res.tstbin,2)+mean(res.tstauc,2),[],3); 
+
+if ( isfield(res,'opt') && isfield(res.opt,'soln') ) % optimal calibrated solution trained on all data
+  for isp=1:numel(res.opt.soln); % get soln for each subproblem
+    soln  = res.opt.soln{isp};
+    W(:,isp) = soln(1:end-1); b(isp)=soln(end);
+  end
 else
-[opttstbin,optCi]=max(mean(res.tstbin,2),[],3); 
-end
-for isp=1:size(Y,2); % get soln for each subproblem
-   if ( isfield(res,'opt') && isfield(res.opt,'soln') ) % optimal calibrated solution trained on all data
-      soln  = res.opt.soln{isp};
-   else
-      soln  = res.soln{isp,optCi(isp)}; 
-   end
-   W(:,isp) = soln(1:end-1); b(isp)=soln(end);
+  if ( opts.binsp ) 
+    [opttstbin,optCi]=max(mean(res.tstbin,2)+mean(res.tstauc,2),[],3); 
+  else
+    [opttstbin,optCi]=max(mean(res.tstbin,2),[],3); 
+  end
+  for isp=1:size(Y,2); % get soln for each subproblem
+    soln  = res.soln{isp,optCi(isp)}; 
+    W(:,isp) = soln(1:end-1); b(isp)=soln(end);      
+  end
 end
 if ( ~opts.compKernel ) % input space classifier, just extract
    W=reshape(W,[szX(1:min(odim)-1) size(W,2)]);
