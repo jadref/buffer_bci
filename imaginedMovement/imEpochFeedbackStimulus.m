@@ -27,10 +27,11 @@ set(gca,'visible','off');
 
 
 % play the stimulus
-% reset the cue and fixation point to indicate trial has finished  
 set(h(:),'facecolor',bgColor);
 sendEvent('stimulus.testing','start');
 drawnow; pause(5); % N.B. pause so fig redraws
+% initialize the state so don't miss classifier prediction events
+status=buffer('wait_dat',[-1 -1 -1],buffhost,buffport); state =[status.nsamples status.nevents 0];
 endTesting=false; dvs=[];
 for si=1:nSeq;
 
@@ -57,9 +58,11 @@ for si=1:nSeq;
   
   % wait for classifier prediction event
   if( verb>0 ) fprintf(1,'Waiting for predictions\n'); end;
-  [data,devents,state]=buffer_waitData(buffhost,buffport,[],'exitSet',{500 'classifier.prediction'},'verb',verb);
+  [data,devents,state]=buffer_waitData(buffhost,buffport,state,'exitSet',{500 'classifier.prediction'},'verb',verb);
   % do something with the prediction (if there is one), i.e. give feedback
-  if( ~isempty(devents) ) % extract the decision value
+  if( isempty(devents) ) % extract the decision value
+    fprintf(1,'Error! no predictions, continuing');
+  else
     dv = devents(end).value;
     if ( numel(dv)==1 )
       if ( dv>0 && dv<=nSymbs && isinteger(dv) ) % dvicted symbol, convert to dv equivalent
@@ -75,7 +78,7 @@ for si=1:nSeq;
     end;  
     [ans,predTgt]=max(dv); % prediction is max classifier output
     set(h(:),'facecolor',bgColor);
-    set(h(predTgt),'facecolor',tgtColor);
+    set(h(predTgt),'facecolor',fbColor);
     drawnow;
     sendEvent('stimulus.predTgt',predTgt);
   end % if classifier prediction

@@ -52,7 +52,7 @@ while ( ~endTest )
       if ( nargout>0 ) testdata{nepochs}=data(ei); testevents{nepochs}=devents(ei); end;
       % apply classification pipeline to this events data
       [f,fraw,p]=buffer_apply_ersp_clsfr(data(ei).buf,clsfr);
-      sendEvent('classifier.prediction',f);
+      sendEvent('classifier.prediction',f,devents(ei).sample);
       if ( opts.verb>0 ) fprintf('Sent classifier prediction = %s.\n',sprintf('%g ',f)); end;
     else
       if ( opts.verb>0 ) fprintf('Unmatched event : %s\n',ev2str(devents(ei))); end;
