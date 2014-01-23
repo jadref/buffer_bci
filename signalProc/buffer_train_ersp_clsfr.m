@@ -44,10 +44,14 @@ fs=[];
 if ( isstruct(hdr) )
   if ( isfield(hdr,'channel_names') ) chNames=hdr.channel_names; 
   elseif( isfield(hdr,'label') )      chNames=hdr.label;
+  else 
+    warning('Couldnt find channel names in header');
+    chNames={}; for di=1:size(X,1); chNames{di}=sprintf('%d',di); end;
   end;
   if ( isfield(hdr,'fsample') )       fs=hdr.fsample; 
   elseif ( isfield(hdr,'Fs') )        fs=hdr.Fs;
   elseif( isfield(hdr,'SampleRate') ) fs=hdr.SampleRate; 
+  else warning('Couldnt find sample rate in header, using 100'); fs=100;
   end;
 elseif ( iscell(hdr) && isstr(hdr{1}) )
   chNames=hdr;
