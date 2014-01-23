@@ -55,6 +55,12 @@ function [data,devents,state,opts]=buffer_waitData(host,port,state,varargin);
 %     process_events(data,devents);
 %  end
 % end
+if ( nargin<1 || isempty(host) ) host='localhost'; end;
+if ( nargin<2 || isempty(port) ) port=1972; end;
+if ( nargin<3 || isempty(state)) % get the current info fast so don't miss things...
+  status=buffer('wait_dat',[-1 -1 -1],host,port);
+  state =struct('pending',[],'nevents',status.nevents,'nsamples',status.nsamples,'hdr',[]);  
+end;
 if ( numel(varargin)==1 && isstruct(varargin{1}) ) % shortcut option parsing!
   opts=varargin{1}; 
 else
@@ -62,9 +68,6 @@ else
   opts=parseOpts(opts,varargin);
   if ( opts.getOpts ) data=[];devents=[];state=[]; return; end;
 end
-if ( nargin<1 || isempty(host) ) host='localhost'; end;
-if ( nargin<2 || isempty(port) ) port=1972; end;
-if ( nargin<3 || isempty(state)) state=struct('pending',[],'nevents',[],'nsamples',[],'hdr',[]); end;
 if ( ~isempty(state) && isnumeric(state) ) % called in same way as buffer('wait_dat');
   opts.timeOut_ms=state(3);
   state=struct('pending',[],'nevents',state(2),'nsamples',state(1),'hdr',[]);  
