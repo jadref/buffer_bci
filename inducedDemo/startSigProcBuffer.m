@@ -56,71 +56,56 @@ while ( true )
   if ( isempty(phaseToRun) ) continue; end;
 
   fprintf('%d) Starting phase : %s\n',devents(di).sample,phaseToRun);
+  if ( verb>0 ) fprintf('Starting : %s\n',phaseToRun); ptime=getwTime(); end;
+  sendEvent(lower(phaseToRun),'start'); % mark start/end testing
   
   switch lower(phaseToRun);
     
     %---------------------------------------------------------------------------------
    case 'capfitting';
-    if ( verb>0 ) fprintf('Starting : %s\n',phaseToRun); ptime=getwTime(); end;
-    sendEvent(lower(phaseToRun),'start'); % mark start/end testing
     capFitting('noiseThresholds',thresh,'badChThreshold',badchThresh,'verb',verb,'showOffset',0,'capFile',capFile,'overridechnms',overridechnms);
-    sendEvent(lower(phaseToRun),'end'); % mark start/end testing
-    if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;
 
     %---------------------------------------------------------------------------------
    case 'eegviewer';
-    if ( verb>0 ) fprintf('Starting : %s\n',phaseToRun); ptime=getwTime(); end;
-    sendEvent(lower(phaseToRun),'start'); % mark start/end testing
     eegViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms);
-    sendEvent(lower(phaseToRun),'end'); % mark start/end testing
-    if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;    
 
     %---------------------------------------------------------------------------------
    case {'erspvis','erpviewer'};
-    if ( verb>0 ) fprintf('Starting : %s\n',phaseToRun); ptime=getwTime(); end;
-    sendEvent(lower(phaseToRun),'start'); % mark start/end testing
     [X,Y,key]=erpViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix','stimulus.target','endType',lower(phaseToRun),'trlen_ms',trlen_ms);
+
     fn=sprintf('erpvis_%s_%s',subject,datestr);fprintf('Saving to: %s\n',fn); % save results
     save(fn,'X','Y','key');
-    sendEvent(lower(phaseToRun),'end'); % mark start/end testing
-    if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;    
     
     
    %---------------------------------------------------------------------------------
    case {'calibrate','calibration'};
-    if ( verb>0 ) fprintf('Starting : %s\n',phaseToRun); ptime=getwTime(); end;
     [traindata,traindevents,state]=buffer_waitData(buffhost,buffport,[],'startSet',{'stimulus.target'},'exitSet',{'stimulus.training' 'end'},'verb',verb,'trlen_ms',trlen_ms);
+
     mi=matchEvents(traindevents,'stimulus.training','end'); traindevents(mi)=[];traindata(mi)=[];%remove exit event
     fprintf('Saving %d epochs to : %s\n',numel(traindevents),[dname '_' subject '_' datestr]);
-    save([dname '_' subject '_' datestr],'traindata','traindevents');
+    save([dname '_' subject '_' datestr],'traindata','traindevents','hdr');
     trainSubj=subject;
-    sendEvent(lower(phaseToRun),'end'); % mark start/end testing
-    if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;
 
     %---------------------------------------------------------------------------------
    case {'train','training'};
     %try
-      if ( verb>0 ) fprintf('Starting : %s\n',phaseToRun); ptime=getwTime(); end;
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
         fprintf('Loading training data from : %s\n',[dname '_' subject '_' datestr]);
         load([dname '_' subject '_' datestr]); 
         trainSubj=subject;
       end;
       if ( verb>0 ) fprintf('%d epochs\n',numel(traindevents)); end;
-      sendEvent(lower(phaseToRun),'start'); % mark start/end testing
+
       clsfr=buffer_train_ersp_clsfr(traindata,traindevents,state.hdr,'spatialfilter','slap','freqband',[6 10 26 30],'badchrm',1,'badtrrm',1,'objFn','lr_cg','compKernel',0,'dim',3,'capFile',capFile,'overridechnms',overridechnms,'visualize',2);
       clsSubj=subject;
       fprintf('Saving classifier to : %s\n',[cname '_' subject '_' datestr]);
       save([cname '_' subject '_' datestr],'-struct','clsfr');
-      if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;
     %catch
     %  fprintf('Error in train classifier!');
     %end
-    sendEvent(lower(phaseToRun),'end'); % mark start/end testing
 
     %---------------------------------------------------------------------------------
    case {'test','testing'};
-    if ( verb>0 ) fprintf('Starting : %s\n',phaseToRun); ptime=getwTime(); end;
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
       clsfrfile = [cname '_' subject '_' datestr];
       if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=[cname '_' subject]; end;
@@ -128,10 +113,8 @@ while ( true )
       clsfr=load(clsfrfile);
       clsSubj = subject;
     end;
-    sendEvent(lower(phaseToRun),'start'); % mark start/end testing
+
     imOnlineFeedbackSignals(clsfr,'buffhost',buffhost,'buffport',buffport,'hdr',hdr,'endType',lower(phaseToRun),'alpha',0); % N.B. no-averaging in classifier as it's done in the feedback
-    sendEvent(lower(phaseToRun),'end');    
-    if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;
     
    case 'exit';
     break;
@@ -140,6 +123,8 @@ while ( true )
     warning(sprintf('Unrecognised experiment phase ignored! : %s',phaseToRun));
     
   end
+  if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;
+  sendEvent(lower(phaseToRun),'end');
 end
 
 %uiwait(msgbox({'Thankyou for participating in our experiment.'},'Thanks','modal'),10);
