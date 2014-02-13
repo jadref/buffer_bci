@@ -5,7 +5,7 @@ function [U,s,Xr,covXr,covX]=ssepSpatFilt(X,dim,ref,taus)
 %
 % Inputs:
 %  X   -- [ch x time x epochs...] the raw data
-%  dim -- [2 x 1] the dimensions of X which contain resp. [space, time]
+%  dim -- [2 x 1] the dimensions of X which contain resp. [space, time]   ([1 2])
 %               the reference signal is applied along the time-dimension
 %               the spatial filter is computed for the space-dimension
 %               all other dimensions are averaged over
@@ -27,26 +27,28 @@ if ( size(ref,1)==1 ) % convert from period to sin/cos pairs
   periods=ref; 
   ref=zeros(size(X,dim(2)),numel(periods)*2);
   for ri=1:size(periods,2);
-    ref(:,2*ri-1)= mkSig(size(X,dim(2)),'sin',periods(ri)); ref(:,2*ri-1)=ref(:,2*ri-1)./norm(ref(:,2*ri-1));
-    ref(:,2*ri  )= mkSig(size(X,dim(2)),'cos',periods(ri)); ref(:,2*ri  )=ref(:,2*ri  )./norm(ref(:,2*ri  ));
+    ref(:,2*ri-1)= sin([0:size(X,dim(2))-1]*2*pi/periods(ri)); ref(:,2*ri-1)=ref(:,2*ri-1)./norm(ref(:,2*ri-1));
+    ref(:,2*ri  )= cos([0:size(X,dim(2))-1]*2*pi/periods(ri)); ref(:,2*ri  )=ref(:,2*ri  )./norm(ref(:,2*ri  ));
   end
 end
 
 % compute the IP of data with ref-signal
 if ( numel(taus)==1 && taus==0 )
-  Xr = tprod(X,[1:dim(2)-1 -dim(2) dim(2)+1:ndims(X)],ref,[-dim(2) dim(2)]);
+  Xr = tprod(X,[1:dim(2)-1 -dim(2) dim(2)+1:ndims(X)],ref,[-dim(2) dim(2)+1:ndims(ref)-1 dim(2)]);
 else
   for taui=1:numel(taus);
     reftau = zeros(size(ref)); reftau(taus(taui)+1:end,:)=ref(1:end-taus(taui),:);
-    Xr(:,(0:size(ref,2)-1)*numel(taus)+taui)=tprod(X,[1:dim(2)-1 -dim(2) dim(2)+1:ndims(X)],reftau,[-2 2]); % [ch x ref*taus]
+    Xr(:,(0:size(ref,2)-1)*numel(taus)+taui)=tprod(X,[1:dim(2)-1 -dim(2) dim(2)+1:ndims(X)],reftau,[-2 2+1:ndims(ref)-1 2]); % [ch x ref*taus]
   end
 end
+szX=size(X);
 % compute cov for each ref-signal
 xidx1= -(1:ndims(X)); xidx1(dim(1))=1; xidx1(dim(2))=3; %OP over space, align over ref, IP over rest
 xidx2= -(1:ndims(X)); xidx2(dim(1))=2; xidx2(dim(2))=3; 
-covXr= tprod(Xr,[1 3 -4],[],[2 3 -4])./(size(X,2)*size(X,3)); %[ ch x ch x ref*taus]
+covXr= tprod(Xr,xidx1,[],xidx2)./prod(szX([1:dim(1)-1 dim(1)+1:end))); %[ ch x ch x ref*taus]
 % compute the whole data covariance -- for the noise to suppress
-covX = tprod(X,[1 -2 -3],[],[2 -2 -3])./(size(X,2)*size(X,3));% [ch x ch]
+xidx1= -(1:ndims(X)); xidx1(dim(1))=1;  xidx2= -(1:ndims(X)); xidx2(dim(1))=2; % OP over space, IP over rest
+covX = tprod(X,xidx1,[],xidx2)./prod(szX([1:dim(1)-1 dim(1)+1:end)));% [ch x ch]
 % gen eigen value solver
 [U,s]=eig(mean(covXr,3),covX);s=diag(s); [ans,si]=sort(abs(s),'descend'); s=s(si); U=U(:,si);
 % pick which components to return
