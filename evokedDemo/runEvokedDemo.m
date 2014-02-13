@@ -35,7 +35,19 @@ while (ishandle(contFig))
       % do nothing
     %end
     sendEvent(phaseToRun,'end');    
-        
+
+   case {'erpvisptb'};
+    sendEvent('subject',info.subject);
+    sendEvent('startPhase.cmd',phaseToRun);
+    %try
+      evokedDemoERPStimulusPTB();
+    %catch
+      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+      % do nothing
+    %end
+    sendEvent(phaseToRun,'end');    
+    
+    
    case 'practice';
     sendEvent('subject',info.subject);
     sendEvent(phaseToRun,'start');

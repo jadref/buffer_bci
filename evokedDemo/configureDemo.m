@@ -1,6 +1,6 @@
 % guard to prevent running multiple times
-if ( exist('runConfig','var') && ~isempty(runConfig) ) return; end;
-runConfig=true;
+%if ( exist('runConfig','var') && ~isempty(runConfig) ) return; end;
+%runConfig=true;
 run ../utilities/initPaths;
 
 buffhost='localhost';buffport=1972;
@@ -35,6 +35,8 @@ interSeqDuration=2;
 feedbackDuration=5;
 stimRadius=.6;
 
+ssvepFreq = [15 7.5 10 20 30];
+
 nSymbs=2;
 trialDuration=3;
 baselineDuration=1;
@@ -49,3 +51,6 @@ trlen_ms=1000;
 symbols={'1' '2' '3';...
          '4' '5' '6';...
          '7' '8' '9'}';
+
+% PTB stuff
+windowPos=[0 0 500 500]; %[];% in sub-window set to [] for full screen

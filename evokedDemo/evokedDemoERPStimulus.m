@@ -39,6 +39,7 @@ while ( ~endTraining )
   while ( ~seqStart )
     key=get(fig,'userData');
     while ( isempty(key) )
+      if ( ~ishandle(fig) ) endTraining=true; break; end;  
       key=get(fig,'userData');
       pause(.25);
     end
@@ -48,12 +49,14 @@ while ( ~endTraining )
     switch lower(key)
      case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h);     seqStart=true;
      case {'a','2'}; seqStart=false; % not implemented yet! %[stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(h);     seqStart=true;
-     case {'s','3'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,3,2/60,'SSVEP 15');   seqStart=true;
+     case {'s','3'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,3,1/ssvepFreq(1)/2,sprintf('SSVEP %g',ssvepFreq(1)));   seqStart=true;
      case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(h);      seqStart=true;
      case {'f','5'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(h); seqStart=true;
      case {'q','escape'};         endTraining=true; break; % end the phase
-     case {'9'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,3,4/60,'SSVEP 7.5');   seqStart=true;
-     case {'0'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,3,1/60,'SSVEP 30');   seqStart=true;
+     case {'7'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,3,1/ssvepFreq(2)/2,sprintf('SSVEP %g',ssvepFreq(2)));  seqStart=true;
+     case {'8'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,3,1/ssvepFreq(3)/2,sprintf('SSVEP %g',ssvepFreq(3)));  seqStart=true;
+     case {'9'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,3,1/ssvepFreq(4)/2,sprintf('SSVEP %g',ssvepFreq(4)));  seqStart=true;
+     case {'0'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,3,1/ssvepFreq(5)/2,sprintf('SSVEP %g',ssvepFreq(5)));  seqStart=true;
      otherwise; fprintf('Unrecog key: %s\n',lower(key)); seqStart=false;
     end        
   end

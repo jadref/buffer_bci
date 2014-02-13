@@ -24,7 +24,7 @@ function varargout = controller(varargin)
 
 % Edit the above text to modify the response to help controller
 
-% Last Modified by GUIDE v2.5 20-Oct-2013 02:52:27
+% Last Modified by GUIDE v2.5 01-Feb-2014 02:53:17
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -204,3 +204,15 @@ function erpvis_Callback(hObject, eventdata, handles)
 handles.phaseToRun=get(hObject,'Tag');
 guidata(hObject,handles);
 uiresume;
+
+
+% --- Executes on button press in erpvisPTB.
+function erpvisPTB_Callback(hObject, eventdata, handles)
+% hObject    handle to erpvisPTB (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.phaseToRun=get(hObject,'Tag');
+guidata(hObject,handles);
+uiresume;
+
+
