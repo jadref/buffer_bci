@@ -6,7 +6,9 @@ function [data,devents,state,opts]=buffer_waitData(host,port,state,varargin);
 % Inputs:
 %  host -- buffer host name
 %  port -- buffer port
-%  state -- [struct] current state of the waitData.  This contains 3 fields:
+%  state -- [struct] current state of the waitData, use this between subsequent calls to buffer_waitData
+%            to resume processing from when the previous call finished.
+%           This contains 3 fields:
 %           .pending -- [struct] list of events for which we are still waiting for data
 %           .nevents -- [int] number of events processed so far
 %           .nsamples - [int] number of samples processed so far
@@ -18,16 +20,25 @@ function [data,devents,state,opts]=buffer_waitData(host,port,state,varargin);
 %               
 % Options:
 %  hdr  -- buffer header, got from state.hdr or read_hdr if empty. ([])
-%  startSet -- {2x1} cell array of match strings/numbers for matching 
+%  startSet -- {type value} OR {{types} {values}} cell array of match strings/numbers for matching 
 %              events based on their type and/or value as used in matchEvents.
-%              {type value} OR {{types} {values}}
-%               See matchEvents for details
-%  exitSet  -- {2x1} cell array of type,value sets on which to *STOP* waiting for
-%               more events.
+%               The first element of this array is the *set* of event types to match
+%               The second element of this array is the *set* of event values to match
+%               An event which matches one of the types *and* one of the values is counted as a match.
+%                [N.B. internally matchEvents is used to matching mi=matchEvents(events,startSet{:})]
+%               See matchEvents for more details on the structure of startSet
+%  exitSet  -- {type value} OR {{types} {values}} cell array of type,value sets on which to *STOP* waiting for
+%               more events in the same structure as for the startSet (see matchEvents for more details)
 %              OR
 %               'data' - stop as soon as we have the data for *ANY* matching event
 %              OR
 %                [int] - time to wait in ms before returning
+%              Note: These types of match can be combined, e.g. 
+%                 {1000 'data' {'cmd' 'stimulus'} 'end'} exits when:
+%                    1000ms have pased,   OR
+%                    a startEvent has data available,    OR
+%                    a type:'cmd' value:'end' event is recieved,          OR 
+%                    a type:'stimulus' value:'end' event is recieved
 %  offset_ms/samp -- offset from start/end event from/to which we gather data in ms or samples
 %  trlen_ms/samp  -- trial length from start event in ms or samples
 %  hdr      -- [struct] cached header structure for the attached buffer
@@ -39,13 +50,16 @@ function [data,devents,state,opts]=buffer_waitData(host,port,state,varargin);
 %  state -- [struct] current waitData state in the same format as the input state
 %
 % Examples:
-% % Example 1: get 1s of data after every event with type 'stimulus' until we recieve a 'cmd','exit' event
-%  [data,devents]=buffer_waitData([],[],[],'startSet',{'stimulus'},'trlen_ms',1000,'exitSet',{'cmd' 'exit');
+% % Example 1: block until an event of type 'stimulus' is recieved and return it immeadiately:
+%  [data,devents]=buffer_waitData([],[],[],'exitSet',{'stimulus'});
 %
+% % Example 2: get 1s of data after every event with type 'stimulus' until we recieve a 'cmd','exit' event
+%  [data,devents]=buffer_waitData([],[],[],'startSet',{'stimulus'},'trlen_ms',1000,'exitSet',{'cmd' 'exit');
 % % Example 2: loop geting data and processing it forever
 % state=[];
 % while ( true ) 
 %  % block until we've got new events *and* data to process
+%  % Note: we pass the 'state' back into call so no events are missed between calls.
 %  [data,devents,state]=buffer_waitData([],[],state,'startSet',{'stimulus'},'trlen_ms',1000,'exitSet',{'data' 'cmd' 'exit'});
 %  if ( any(matchEvents(devents,'cmd','exit')) ) % check for exit events, stop if found
 %    break;
