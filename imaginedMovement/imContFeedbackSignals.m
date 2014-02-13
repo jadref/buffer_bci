@@ -22,7 +22,9 @@ trlen_samp=opts.trlen_samp;
 if ( isempty(trlen_samp) ) 
   trlen_samp=0;
   if ( ~isempty(opts.trlen_ms) ) 
-    if(~isempty(opts.hdr))fs=opts.hdr.fsample;else hdr=buffer('get_hdr',buffhost,buffport);fs=hdr.fsample; end;
+    if(~isempty(opts.hdr)) fs=opts.hdr.fsample; 
+    else hdr=buffer('get_hdr',buffhost,buffport); fs=hdr.fsample; 
+    end;
     trlen_samp = opts.trlen_ms /1000 * fs; 
   end
   % ensure is at least a big as the welch window size!
