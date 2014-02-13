@@ -1,4 +1,23 @@
 function []=eegViewer(buffhost,buffport,varargin);
+% simple eegviewer function
+%
+% eegViewer(buffhost,buffport,varargin)
+%
+% Inputs:
+%  buffhost -- host name where the buffer is
+%  buffport -- port to connect to
+% Options:
+%  endType -- event type which means stop viewing eeg   ('end.training')
+%  trlen_ms/trlen_samp -- amount of data to plot for each channel (5000ms)
+%  updateFreq -- [single] frequency to re-draw the display           (4)
+%  detrend    -- [bool]  detrend the data before plotting            (1)
+%  fftfilter  -- [4x1] spectral filter to apply to the data before plotting ([.1 .3 45 47])
+%  downsample -- [single] frequency to downsample to before drawing display (128)
+%  spatfilt   -- 'str' name of type of spatial filtering to do to the data   ('car')
+%  capFile    -- [str] capFile name to get the electrode positions from      ('1010')
+%  overridechnms -- [bool] flag if we use the channel names from the capFile rather than the buffer (0)
+%  welch_width_ms -- [single] size in time of the welch window               (500ms) 
+%                      -> defines the frequency resolution for the frequency view of the data.   
 opts=struct('endType','end.training','verb',1,'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',128,'spatfilt','car','capFile','1010','overridechnms',0,'welch_width_ms',500);
 opts=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
