@@ -20,6 +20,7 @@ testname='testing_data';
 if ( ~exist('verb','var') ) verb =2; end;
 if ( ~exist('trlem_ms_ol','var') ) trlen_ms_ol=trlen_ms; end;
 subject='test';
+if ( ~exist('trlen_ms_ol','var') ) trlen_ms_ol=trlen_ms; end;
 
 % main loop waiting for commands and then executing them
 state=struct('pending',[],'nevents',[],'nsamples',[],'hdr',hdr); 
@@ -120,7 +121,6 @@ while ( true )
       clsfr=load(clsfrfile);
       clsSubj = subject;
     end;
-
     imContFeedbackSignals(clsfr,'buffhost',buffhost,'buffport',buffport,'hdr',hdr,'trlen_ms',trlen_ms_ol,'verb',verb)
     
    case 'exit';
