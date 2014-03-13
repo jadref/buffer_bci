@@ -57,7 +57,7 @@ erpSamp=inf(1,3);
 blockSize=opts.blockSize;
 fsample  =opts.fsample;
 nsamp=0; nblk=0; nevents=0; scaling=ones(hdr.nchans,1);
-tic;stopwatch=toc; printtime=stopwatch;
+tic;stopwatch=toc; printtime=stopwatch; fstart=stopwatch;
 % key listener
 if ( opts.keyboardEvents || opts.key2signal ) 
   fig=figure(1);clf;
@@ -81,7 +81,7 @@ while( true )
     end
   end
   %wait 
-  pause(nsamp/fsample-toc);% blockSize./fsample);
+  pause(blockSize./fsample-(toc-fstart));fstart=toc; % sleep so exactly blockSize/fsample between blocks
   buffer('put_dat',dat,host,port);
   if ( opts.verb~=0 )
     if ( opts.verb>0 || (opts.verb<0 && toc-printtime>-opts.verb) )

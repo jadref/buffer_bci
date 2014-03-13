@@ -33,15 +33,19 @@ function [varargout]=buffer(cmd,detail,host,port)
 %   buffer('sync_clk',wait, host, port) % sync the real-time and sample clocks with points at wait
 %   buffer('con', [], host, port) % create connection to host/port
 %
+% N.B. if the GLOBAL variable TESTING=true, then returns immediately for all cases with an empty structure
+%      useful for stimulus development without a buffer/signal proxy running
+%
 % N.B. datatype IDs
 %	 CHAR    = 0;	 UINT8   = 1;	 UINT16  = 2;	 UINT32  = 3;	 UINT64  = 4;	 INT8    = 5;
 %	 INT16   = 6;	 INT32   = 7;	 INT64   = 8;	 FLOAT32 = 9;	 FLOAT64 = 10;
     
-global bufferClient; % globals used to hold the java object, and connection info
+global bufferClient TESTING; % globals used to hold the java object, and connection info
 if ( nargin<1 ) cmd=[]; end;
 if ( nargin<2 ) detail=[]; end;
 if ( nargin<3 ) host=[]; end;
 if ( nargin<4 ) port=[]; end;
+if ( isequal(TESTING,true) ) varargout{1}=struct(); return; end;
 
 if ( isempty(bufferClient) )
   buffer_bcidir=fileparts(fileparts(fileparts(mfilename('fullpath')))); % buffer_bci directory
@@ -164,6 +168,9 @@ switch cmd;
     varargout{1}=bufClient.getSamp();
   else
     varargout{1}=bufClient.getSamp(detail);
+  end
+  if ( exist('OCTAVE_VERSION') ) % in octave have to manually convert arrays..
+    varargout{1}=varargout{1}.doubleValue();
   end
  case 'get_time';
   varargout{1}=bufClient.getTime();
