@@ -24,7 +24,7 @@ function varargout = controller(varargin)
 
 % Edit the above text to modify the response to help controller
 
-% Last Modified by GUIDE v2.5 30-Oct-2013 21:59:01
+% Last Modified by GUIDE v2.5 10-Mar-2014 17:02:29
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -199,6 +199,16 @@ uiresume;
 % --- Executes on button press in neurofeedback.
 function neurofeedback_Callback(hObject, eventdata, handles)
 % hObject    handle to neurofeedback (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.phaseToRun=get(hObject,'Tag');
+guidata(hObject,handles);
+uiresume;
+
+
+% --- Executes on button press in calibrationPTB.
+function calibrationPTB_Callback(hObject, eventdata, handles)
+% hObject    handle to calibrationPTB (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles.phaseToRun=get(hObject,'Tag');

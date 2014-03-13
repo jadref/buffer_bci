@@ -51,6 +51,18 @@ while (ishandle(contFig))
     %end
     sendEvent(phaseToRun,'end');
 
+   case {'calibrateptb','calibrationptb'};
+    sendEvent('subject',info.subject);
+    sendEvent('startPhase.cmd',phaseToRun);
+    sendEvent(phaseToRun,'start');
+    %try
+      ssepCalibrateStimulusPTB();
+    %catch
+      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+      sendEvent('stimulus.training','end');    
+    %end
+    sendEvent(phaseToRun,'end');
+
    case {'train','classifier'};
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
