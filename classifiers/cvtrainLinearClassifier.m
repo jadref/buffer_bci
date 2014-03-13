@@ -24,16 +24,21 @@ function [classifier,res,Y]=cvtrainLinearClassifier(X,Y,Cs,fIdxs,varargin)
 %  Cscale - [float] scaling parameter for the penalties                     (.1*var(X))
 %             N.B. usually auto computed from the data, set to 1 to force input Cs  
 %  balYs  - [bool] balance the labels of sets                               (0)
+%  binsp  - [bool] do we break multi-class problems into sets of binary problems (1)
 %  spType - [str] sub-problem decomposition to use for multi-class. one-of '1v1' '1vR' ('1v1')
 %  spKey  - [Nx1] set of all possible label values                          ([])
 %  spMx   - [nSp x nClass] encoding/decoding matrix to map from class labels to/from binary 
 %           subProblems                                                     ([])
+%  cv2    - [bool] use double nested cross-validation to produce performance estimates? (0)
+%           Note: use the cv2trainFn option 'nInner' to set the number of inner folds
 % Outputs:
 %  classifier -- [struct] containing all the information about the linear classifier
 %           |.w -- [size(X) x nSp] weighting over X (for each subProblem)
 %           |.b -- [nSp x 1] bias term
 %           |.dim -- [ind] dimensions of X which contain the trails
 %  res   -- [struct] results structure as returned by cvtrainFn
+%
+% See also: cvtrainFn, cv2trainFn, lr_cg, klr_cg, l2svm_cg, rls_cg
 opts=struct('objFn','klr_cg','dim',[],'spType','1v1','spKey',[],'spMx',[],'zeroLab',0,...
             'balYs',0,'verb',0,'Cscale',[],'compKernel',1,'binsp',1);
 [opts,varargin]=parseOpts(opts,varargin);
@@ -94,16 +99,23 @@ if ( opts.compKernel )
    if ( opts.verb>0 ) fprintf('..done\n'); end;
    % call cvtrain to do the actual work
    % N.B. note we use dim 2 because of the kernel transformation
-   res=cvtrainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',2,'verb',opts.verb,'binsp',opts.binsp,varargin{:}); 
+   if ( opts.cv2 ) 
+     res=cv2trainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',2,'verb',opts.verb,'binsp',opts.binsp,varargin{:}); 
+   else
+     res=cvtrainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',dim,'verb',opts.verb,'binsp',opts.binsp,varargin{:}); 
+   end   
 else
    % call cvtrain to do the actual work
-   res=cvtrainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',dim,'verb',opts.verb,'binsp',opts.binsp,varargin{:}); 
+   if ( opts.cv2 ) 
+     res=cv2trainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',dim,'verb',opts.verb,'binsp',opts.binsp,varargin{:}); 
+   else
+     res=cvtrainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',dim,'verb',opts.verb,'binsp',opts.binsp,varargin{:}); 
+   end
 end
 
 
 % Extract the classifier weight vector(s)
 % best hyper-parameter for all sub-probs, N.B. use the same C for all sub-probs to ensure multi-class is OK
-
 if ( isfield(res,'opt') && isfield(res.opt,'soln') ) % optimal calibrated solution trained on all data
   for isp=1:numel(res.opt.soln); % get soln for each subproblem
     soln  = res.opt.soln{isp};
@@ -116,7 +128,11 @@ else
     [opttstbin,optCi]=max(mean(res.tstbin,2),[],3); 
   end
   for isp=1:size(Y,2); % get soln for each subproblem
-    soln  = res.soln{isp,optCi(isp)}; 
+    if ( isfield(res.soln) )
+      soln  = res.soln{isp,optCi(isp)}; 
+    elseif ( isfield(res.fold,'soln') ) % only per-fold solutions available. pick the first
+      soln  = res.fold.soln{isp,optCi(isp)}; 
+    end
     W(:,isp) = soln(1:end-1); b(isp)=soln(end);      
   end
 end
@@ -136,6 +152,7 @@ function testCase()
 
 [X,Y]=mkMultiClassTst([-1 0 0 0; 1 0 0 0; .2 .5 0 0],[400 400 50],[.3 .3 0 0; .3 .3 0 0; .2 .2 0 0],[],[-1 1 1]);
 [classifier,res]=cvtrainLinearClassifier(X,Y,[],10);
+plotLinDecisFn(X,Y,classifier.W,classifier.b)
 % 2d features
 X=reshape(X,[2 2 size(X,2)]);
 [classifier,res]=cvtrainLinearClassifier(X,Y,[],10);
