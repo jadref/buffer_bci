@@ -16,7 +16,8 @@ function [clsfr,res,X,Y]=buffer_train_ersp_clsfr(X,Y,hdr,varargin);
 % Options:
 %  capFile -- [str] name of file which contains the electrode position info  ('1010')
 %  overridechnms -- [bool] does capfile override names from the header    (false)
-%  varargin -- all other options are passed as option arguments to train_ersp_clsfr
+%  varargin -- all other options are passed as option arguments to train_ersp_clsfr, e.g.
+%              freqband,timeband,spatialfilter,badchrm,badtrrm,detrend,etc..
 % Outputs:
 %  clsfr   -- [struct] a classifer structure
 %  res     -- [struct] a results structure
@@ -38,7 +39,12 @@ elseif ( isstruct(X) )
   X=cat(3,X.buf);
 end 
 X=single(X);
-if ( isstruct(Y) ) Y=cat(1,Y.value); end; % convert event struct into labels
+if ( isstruct(Y) ) % convert event struct into labels
+  if ( isnumeric(Y(1).value) ) Y=cat(1,Y.value); 
+  elseif(isstr(Y(1).value) )   Y=cat(1,{Y.value});
+  else error('Dont know how to handle Y value type');
+  end
+end; 
 
 fs=[];
 if ( isstruct(hdr) )
