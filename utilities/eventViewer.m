@@ -1,19 +1,21 @@
-function []=eventViewer(host,port,excludeSet)
+function []=eventViewer(host,port,mtype,mval)
 % view the event stream from a fieldtrip buffer
 %
-% []=eventViewer(host,port,excludeSet)
+% []=eventViewer(host,port,startType,startVal)
 %
 % Inputs:
 %   host -- host where the buffer is running  ('localhost')
 %   port -- port where the buffer is running  (1972)
-%   excludeSet -- {2x1} match set for events *not* to display         ([])
-%              format is as used in matchEvents but basically consists of pairs of types and values
-%              {type value} OR {{types} {values}}
-%               See matchEvents for details
-run ../utilities/initPaths;
+%   startType -- {{types}} cell array of match strings for matching events types
+%   startValue -- {{values}} cell array of match values for matching events.  
+%     N.B. Match occurs if type matches *any* startType, and value matches *any* startValue
+%     [N.B. internally matchEvents is used to matching mi=matchEvents(events,startType,startValue)
+%               See matchEvents for more details on the structure of startSet
+if ( ~exist('buffer','file') ) run('../utilities/initPaths.m'); end;
 if ( nargin<1 || isempty(host) ) host='localhost'; end;
 if ( nargin<2 || isempty(port) ) port=1972; end;
-if ( nargin<3 ) excludeSet={}; end;
+if ( nargin<3 ) mtype={};  end;
+if ( nargin<4 ) mval={}; end;
 % wait for valid header
 hdr=[];
 while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
@@ -31,21 +33,17 @@ if ( isfield(hdr,'SampleRate') ) fs=hdr.SampleRate;
 elseif ( isfield(hdr,'Fs') )     fs=hdr.Fs;
 end
 
-nevents=[]; nSamples=0; tic;
+state=[]; nSamples=0; tic;
 while ( true )
-  [events,nevents,nsamples]=buffer_newevents([],[],nevents,host,port);
+  [events,state]=buffer_newevents([],[],state,mtype,mval);
   if ( ~isempty(events) ) 
-    if ( ~isempty(excludeSet) )
-      mi=matchEvents(events,excludeSet{:});
-      events=events(~mi);
-    end
-    fprintf('%d) %s\n',nsamples,ev2str(events));
+    fprintf('%d) %s\n',state.nsamples,ev2str(events));
   end
-  if ( nsamples > nSamples+fs ) % once per *data* second print a '.'
-    fprintf(1,'%d %d %f (samp,event,sec)\r',nsamples,nevents,toc);
-    nSamples=nsamples;
-  elseif ( nsamples<nSamples ) % buffer-restart detected
+  if ( state.nsamples > nSamples+fs ) % once per *data* second print a '.'
+    fprintf(1,'%d %d %f (samp,event,sec)\r',state.nsamples,state.nevents,toc);
+    nSamples=state.nsamples;
+  elseif ( state.nsamples<nSamples ) % buffer-restart detected
     fprintf(1,'Buffer restart detected\n');
-    nSamples=nsamples;
+    nSamples=state.nsamples;
   end
 end
