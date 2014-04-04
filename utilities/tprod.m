@@ -134,6 +134,7 @@ if ( isempty(compileOK) ) % only try to compile the function once
   name = mfilename('fullpath'); % get the directory where we are
                                 % find out what directory it is defined in
   name(name=='\')='/';
+  if(isequal(name(end-1:end),'.m')) name=name(1:end-2); end;
   dir=name(1:max(find(name == '/')-1));
   try % try changing to that directory
     cd(dir);
