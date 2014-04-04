@@ -11,14 +11,21 @@ public class ClockSync {
 	 double N=-1;  // number points
 	 double sS=0, sT=0;  // sum samples, time
 	 double sS2=0, sST=0, sT2=0; // sum product samples time
+	 double sampErr=0; // running estimate of the est-true sample error
 	 double m, b; // fit, scale and offset
 	 double alpha, hl; // learning rate, halflife
 	 double minUpdateTime = 50; // only update if at least 50ms apart, prevent rounding errors	 
+	 double weightLim = 0;
 
-	 public ClockSync() {this(.95);}  //N.B. half-life = log(.5)/log(alpha) .95=13, .97=22, .98=34, .99=69 seconds
+	 // Note to make this work reliabily we use a combination of a long averagering interval
+	 // AND a rapid outlier detection to rapidly detect systematic changes which require 
+	 // discarding the memory
+	 //N.B. half-life = log(.5)/log(alpha) .8=3, .9=7, .95=13, .97=22, .98=34, .99=69 seconds
+	 public ClockSync() {this(.97);}  
 	 public ClockSync(double alpha){ 
 		  this.alpha=alpha; 
 		  this.hl = Math.log(.5)/Math.log(alpha);
+		  this.weightLim = (1-Math.pow(alpha,hl/2))/(1-alpha);
 		  reset();
 	 }
 	 public ClockSync(double nSamples, double time, double alpha) {
@@ -28,7 +35,7 @@ public class ClockSync {
 	 public void reset(){
 		  System.out.println("reset clock");
 		  N=0;
-		  S0=0; T0=0; sS=0; sT=0; sS2=0; sST=0; sT2=0; Tlast=-10000; Slast=-10000;
+		  S0=0; T0=0; sS=0; sT=0; sS2=0; sST=0; sT2=0; Tlast=-10000; Slast=-10000; sampErr=10000;
 	 }
 	 public double getTime(){ // current time in milliseconds
 		  //return ((double)java.lang.System.nanoTime())/1000.0/1000.0; // N.B. only java >=1.5
@@ -41,10 +48,18 @@ public class ClockSync {
 		  if ( S<Slast || T<Tlast ) { reset(); } // Buffer restart detected, so reset
 		  if ( N <= 0 ){ // first call with actual data, record the start points
 				N=0; S0=S; T0=T; Tlast=T; Slast=S;
-		  }
-		  // sanity check inputs and ignore if too close in time -> would lead to infinite gradients
-		  if ( T<Tlast+minUpdateTime ) { 
+		  } else if ( S==Slast || T==Tlast || T<Tlast+minUpdateTime ) {
+				//System.out.println("Too soon! S=" + S + " Slast=" + Slast + " T=" + T + " Tlast=" + Tlast);
+				// sanity check inputs and ignore if too close in time or sample number 
+				// -> would lead to infinite gradients
 				return;
+		  }
+		  // Update the sample error statistics
+		  double estErr = Math.abs(getSamp(T)-S); 
+		  if ( N>1 && N<weightLim ) { // reset in the initial phase
+				sampErr = estErr;
+		  } else { // running average after predictions are reliable
+				sampErr = sampErr*alpha + (1-alpha)*estErr;
 		  }
 		  // BODGE: this should really the be integerated weight
 		  double wght = Math.pow(alpha,((double)(T-Tlast))/1000.0); // weight based on time since last update
@@ -70,7 +85,7 @@ public class ClockSync {
 		  } else { // default to just use the initial point
 				m = 0; b = S0;
 		  }
-		  System.out.println(" wght=" + wght + " N= " + N + " m,b= " + m + ',' + b);
+		  //System.out.println(" wght=" + wght + " N= " + N + " m,b= " + m + ',' + b + " estErr=" + estErr);
 	 }
 
 	 public long getSamp(){ return getSamp(getTime());}
@@ -80,9 +95,8 @@ public class ClockSync {
 	 // N.B. the max weight is: \sum alpha.^(i) = 1/(1-alpha)
 	 //      and the weight of 1 half-lifes worth of data is : (1-alpha.^(hl))/(1-alpha);
 	 public long getSampErr(){
-		  double weightLim = (1-Math.pow(alpha,hl/2))/(1-alpha);
-		  System.out.println(" N = " + N + " weightLim = " + weightLim);
+		  //System.out.println(" N = " + N + " weightLim = " + weightLim + " sampErr = " + sampErr);
 		  //BODGE:time since last update in samples
-		  return (Tlast>0&&N>weightLim)?((long)((getTime()-Tlast)*m)):100000;
+		  return (Tlast>0&&N>1)?((long)sampErr):100000;
 	 }
 }

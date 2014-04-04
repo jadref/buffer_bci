@@ -67,6 +67,7 @@ end
 
 if ( isempty(cmd) ) return; end;
 switch cmd;
+ 
  case 'get_hdr';  
   hdrj=bufClient.getHeader();  
   hdr=struct('nChans',hdrj.nChans,...
@@ -85,6 +86,7 @@ switch cmd;
   hdr.data_type=hdr.dataType;
   hdr.channel_names=hdr.labels; % N.B. inconsistent names btw java and mex versions
   varargout{1}=hdr;
+ 
  case 'put_hdr';  
   if ( isfield(detail,'nChans') ) % java or mex-buffer version of the header field names
     if ( isfield(detail,'Fs') ) fs=detail.Fs; else fs=detail.fSample; end;
@@ -106,8 +108,8 @@ switch cmd;
     hdr.labels=detail.label;
   end
   bufClient.putHeader(hdr);
- case 'get_dat';
-  
+ 
+ case 'get_dat'; 
   bufj=bufClient.getDoubleData(detail(1),detail(2));
   buf=bufj; 
   % N.B. matlab is col-major, java is row-major.  Need to transpose results
@@ -117,10 +119,13 @@ switch cmd;
     buf=buf'; 
   end
   varargout{1}=struct('buf',buf);
+ 
  case 'put_dat';
   % N.B. java stores in *column major order* so transpose the data before putting it!
   if ( isstruct(detail) ) detail=detail.buf; end;
-  bufClient.putData(detail');
+  % N.B. java-Order = Row-Major so reverse size
+  bufClient.putData(detail(:),[size(detail,2) size(detail,1)]); 
+ 
  case 'get_evt';
   evtj=bufClient.getEvents(detail(1),detail(2));
   evt =repmat(struct('type',[],'value',[],'sample',-1,'offset',0,'duration',0),size(evtj)); % pre-alloc array
@@ -142,6 +147,7 @@ switch cmd;
   end
   % argh! different names from mex version
   varargout{1}=evt;
+ 
  case 'put_evt';
   if ( numel(detail)==1 ) 
     e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.BufferEvent',detail.type,detail.value,detail.sample));
@@ -155,6 +161,7 @@ switch cmd;
     e =struct('type',detail(end).type,'value',detail(end).value,'sample',e.sample,'offset',e.offset,'duration',e.duration);
   end
   varargout{1}=e;
+ 
  case {'wait_dat','poll'};
   if ( isempty(detail) ) detail=[-1 -1 -1]; end;
   if ( all(detail<0) ) detail(:)=0; end; % diff between mex and java  
@@ -163,6 +170,7 @@ switch cmd;
   % argh! different names from mex version
   sampevents.nsamples=sampevents.nSamples; sampevents.nevents=sampevents.nEvents;
   varargout{1}=sampevents;
+ 
  case 'get_samp';
   if ( isempty(detail) ) 
     varargout{1}=bufClient.getSamp();
@@ -172,12 +180,13 @@ switch cmd;
   if ( exist('OCTAVE_VERSION') ) % in octave have to manually convert arrays..
     varargout{1}=varargout{1}.doubleValue();
   end
+ 
  case 'get_time';
   varargout{1}=bufClient.getTime();
+ 
  case 'sync_clk'; 
   if ( ~isempty(detail) ) bufClient.syncClocks(detail); else bufClient.syncClocks(); end;
 end
-
 
 % connection/reconnection helper function
 function [bufClient,host,port]=reconnect(host,port)
@@ -204,7 +213,8 @@ if ( isempty(clientIdx) ) % make a new connection
     bufferClient{clientIdx}.setAutoReconnect(true);
   catch
     le=lasterr;
-    error('Couldnt connect to the buffer: %s %d',host,port);
+    fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    error('Couldnt connect to the buffer: %s %d',host,port);    
   end  
 end
 if ( ~bufferClient{clientIdx}.isConnected() ) % re-connect if wanted/needed

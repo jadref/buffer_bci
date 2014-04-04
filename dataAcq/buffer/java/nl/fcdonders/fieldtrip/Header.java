@@ -64,6 +64,13 @@ public class Header {
 		this.dataType = dataType;
 		this.labels   = new String[nChans]; // allocate, but do not fill
 	}
+	 // wapper to support Octave
+	public Header(float nChans, float fSample, float dataType) {
+		 this((int)nChans,fSample,(int)dataType);
+	}
+	public Header(double nChans, double fSample, double dataType) {
+		 this((int)nChans,(float)fSample,(int)dataType);
+	}
 	
 	protected int getSerialSize() {
 		int size = 24;

@@ -11,7 +11,7 @@ import java.io.*;
 public class BufferClientClock extends BufferClient {
 
 	 protected ClockSync clockSync=null;
-	 public long maxSampError  =5120;  // BODGE: very very very big!
+	 public long maxSampError  =10000;  // BODGE: very very very big!
 	 public long updateInterval=3000; // at least every 3seconds
 	 public long minUpdateInterval=10; // at least 10ms (100Hz) between clock updates
 	 protected int numWrong=0; // count of number wrong predictions... if too many then reset the clock
@@ -49,6 +49,18 @@ public class BufferClientClock extends BufferClient {
 	 public SamplesEventsCount wait(int nSamples, int nEvents, int timeout) throws IOException {
 		  SamplesEventsCount secount = super.wait(nSamples,nEvents,timeout);
 		  //System.out.println("clock update");
+		  double deltaSamples = clockSync.getSamp()-secount.nSamples; // delta between true and estimated
+		  //System.out.println("sampErr="+getSampErr() + " d(samp) " + deltaSamples + " sampThresh= " + clockSync.m*1000.0*.5);
+		  if( getSampErr()<maxSampError ){
+				if ( deltaSamples > clockSync.m*1000.0*.5 ){ // lost samples					 
+					 System.out.println(deltaSamples + " Lost samples detected");
+					 clockSync.reset();
+					 //clockSync.b = clockSync.b - deltaSamples;
+				} else if ( deltaSamples < -clockSync.m*1000.0*.5 ){ // extra samples
+					 System.out.println(-deltaSamples + " Extra samples detected");
+					 clockSync.reset();
+				}
+		  }
 		  clockSync.updateClock(secount.nSamples); // update the rt->sample mapping
 		  return secount;
 	 }
@@ -69,7 +81,7 @@ public class BufferClientClock extends BufferClient {
 		  boolean dopoll=false;
 		  if ( getSampErr()>maxSampError || // error too big
 				 getTime()>(long)(clockSync.Tlast)+updateInterval || // simply too long since we updated
-				 clockSync.N < 10 ) { // Simply not enough points to believe we've got a good estimate
+				 clockSync.N < 8 ) { // Simply not enough points to believe we've got a good estimate
 				dopoll=true;
 		  }
 		  if ( getSamp()<(long)(clockSync.Slast) ){ // detected prediction before last known sample
@@ -82,12 +94,15 @@ public class BufferClientClock extends BufferClient {
 				dopoll=false;
 		  }
 		  if ( dopoll ) { // poll buffer for current samples
-				if ( numWrong > 5 ) clockSync.reset(); // reset clock if detected sysmetic error
+				if ( numWrong > 5 ) { 
+					 clockSync.reset(); // reset clock if detected sysmetic error
+					 numWrong=0;
+				}
 				long sampest=getSamp();
-				System.out.print("Updating clock sync: SampErr " + getSampErr() + 
-									  " getSamp " + sampest + " Slast " + clockSync.Slast);
+				//System.out.print("Updating clock sync: SampErr " + getSampErr() + 
+				//					  " getSamp " + sampest + " Slast " + clockSync.Slast);
 				sample = poll(0).nSamples; // force update if error is too big
-				System.out.println(" poll " + sample + " delta " + (sample-sampest));
+				//System.out.println(" poll " + sample + " delta " + (sample-sampest));
 		  } else { // use the estimated time
 				sample=(int)getSamp();
 		  }

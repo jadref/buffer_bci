@@ -561,7 +561,22 @@ public class BufferClient {
 		readResponse(PUT_OK);
 	}	
 	
-	public void putData(double[][] data) throws IOException {
+	 // 1-d data version.  Mostly for Octave calls, but useful in other cases
+	 public void putData(double[] data, int[] sz) throws IOException {
+		  int nSamples = sz[0]; // N.B. Java convention = ROW-Major, i.e. cols == channels vary fastest
+		  int nChans = sz[1];
+		  if( data.length != nSamples*nChans ) {
+				throw new IOException("Cannot size does not match data size");
+		  }		  
+		  ByteBuffer buf = preparePutData(nChans, nSamples, DataType.FLOAT64);
+		  buf.asDoubleBuffer().put(data);
+		  buf.rewind();
+		  writeAll(buf);
+		  readResponse(PUT_OK);
+		  return;
+	 }
+	 
+	 public void putData(double[][] data) throws IOException {
 		int nSamples = data.length;
 		if (nSamples == 0) return;
 		int nChans = data[0].length;
