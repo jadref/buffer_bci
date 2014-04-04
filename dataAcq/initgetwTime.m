@@ -9,6 +9,8 @@
 global getwTime;
 evalin('caller','global getwTime');
 evalin('base','global getwTime');
+getwTime=@() buffer('get_time')/1000; % use the rtc provided by the buffer
+return;
 if ( isempty(getwTime) && exist('GetSecs') )
   try % PTB method may break!
     GetSecs();
