@@ -22,12 +22,20 @@ if ( ~exist('configured','var') || ~isequal(configured,true) )
   initsleepSec;
   
   if ( exist('OCTAVE_VERSION') ) % use fast render pipeline in OCTAVE
-    %graphics_toolkit('fltk');
+    graphics_toolkit('fltk');
   end
   configured=true;
 end
 
 capFile='cap_tmsi_mobita_black';%'1010'; %'emotiv';%cap_tmsi_mobita_im2'; N.B. use 1010 for emotiv so non-eeg are labelled correctly
+% set cap-fitting and position information thresholds
+thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
+if ( ~exist('capFile','var') ) capFile='1010'; 
+else %'cap_tmsi_mobita_num'; 
+    overridechnms=1;
+    if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4;  end;
+end
+
 verb=0;
 buffhost='localhost';
 buffport=1972;
@@ -41,8 +49,9 @@ stimRadius=.3;
 
 trialDuration=3;
 baselineDuration=1;
+rtbDuration=1;
 intertrialDuration=2;
-isi = 2/60;
+isi = 1/60;
 periods=[3 3 4 4;...  % periods
          0 1 0 2]';   % phases
 classes={};
@@ -57,4 +66,4 @@ fixColor=[1 0 0];
 trlen_ms=trialDuration*1000;
 
 % PTB stuff
-windowPos=[0 0 500 500];%[];%[0 0 1024 1024];% % in sub-window set to [] for full screen
+windowPos=[];%[0 0 500 500];%[0 0 1024 1024];% % in sub-window set to [] for full screen

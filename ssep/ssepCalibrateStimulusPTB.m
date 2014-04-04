@@ -64,18 +64,22 @@ for seqi=1:nSeq;
     % now play the sequence
     sendEvent('stimulus.stimSeq',stimSeq(tgtId,:)); % event is actual target stimulus sequence
     seqStartTime=getwTime(); ei=0; ndropped=0; syncEvtTime=seqStartTime; frametime=zeros(numel(stimTime),4);
-    while ( stimTime(end)>=getwTime()-seqStartTime ) % frame-dropping version    
+    while ( true ) % frame-dropping version    
+      ftime=getwTime()-seqStartTime();
+      if ( ftime>=stimTime(end) ) break; end;
       ei=min(numel(stimTime),ei+1);
-      frametime(ei,1)=getwTime()-seqStartTime;
+      frametime(ei,1)=ftime;
       % find nearest stim-time, dropping frames is necessary to say on the time-line
-      if ( frametime(ei,1)>=stimTime(min(numel(stimTime),ei+1)) ) 
+      if ( ftime>=stimTime(min(numel(stimTime),ei+1)) ) 
         oei = ei;
-        for ei=ei+1:numel(stimTime); if ( frametime(oei,1)<stimTime(ei) ) break; end; end; % find next valid frame
+        for ei=ei+1:numel(stimTime); if ( ftime<stimTime(ei) ) break; end; end; % find next valid frame
         if ( verb>=0 ) fprintf('%d) Dropped %d Frame(s)!!!\n',ei,ei-oei); end;
         ndropped=ndropped+(ei-oei);
       end
       ss=stimSeq(:,ei);
-      Screen('Drawtextures',wPtr,texels(ss>=0),srcR(:,ss>=0),destR(:,ss>=0),[],[],[],bgColor*255); 
+      if(any(ss>=0))
+        Screen('Drawtextures',wPtr,texels(ss>=0),srcR(:,ss>=0),destR(:,ss>=0),[],[],[],bgColor*255); 
+      end
       if(any(ss==1))
         Screen('Drawtextures',wPtr,texels(ss==1),srcR(:,ss==1),destR(:,ss==1),[],[],[],colors(:,1)*255); 
       end% stimSeq codes into a colortable
@@ -112,7 +116,9 @@ for seqi=1:nSeq;
       fprintf('Sum: %d dropped frametime=%g drawTime=[%g,%g,%g]\n',...
               ndropped,mean(diff(frametime(:,1))),min(dt),mean(dt),max(dt));
     end
-    
+
+    sendEvent('stimulus.rtb','start');
+    sleepSec(rtbDuration);        
     Screen('flip',wPtr);% re-draw the display, as blank
     sendEvent('stimulus.trial','end');
     
