@@ -57,7 +57,7 @@ function [varargout]=image3d(varargin)
 % check for (X,Y,Z,dim,varargin) calling format
 opts = struct('plotPos',[],'handles',[],'layout',[],...
               'X',[],'Y',[],'Z',[],...
-              'Xvals',[],'Yvals',[],'Zvals',[],'xVals',[],'yVals',[],'zVals',[],...
+              'Xvals',[],'Yvals',[],'Zvals',[],'xVals',[],'yVals',[],'zVals',[],'xvals',[],'yvals',[],'zvals',[],...
               'xlabel','','ylabel','','zlabel','',...
               'xmask',[],'ymask',[],'zmask',[],...
               'colorbar',[],'legend',[],'clim','minmax','clabel','',...
@@ -119,11 +119,17 @@ if ( dim > 3 ) warning('Only for 3d inputs'); dim=3; end;
 
 sizeA=size(A); sizeA(end+1:3)=1;
 N=sizeA(dim);
-if(~isempty(opts.Xvals)) Xvals=opts.Xvals; end;if(isempty(Xvals) && ~isempty(opts.xVals)) Xvals=opts.xVals; end 
+if(~isempty(opts.Xvals)) Xvals=opts.Xvals; end;
+if(isempty(Xvals) && ~isempty(opts.xVals)) Xvals=opts.xVals; end 
+if(isempty(Xvals) && ~isempty(opts.xvals)) Xvals=opts.xvals; end 
 if( isempty(Xvals) ) Xvals=1:sizeA(1); end; 
-if(~isempty(opts.Yvals)) Yvals=opts.Yvals; end;if(isempty(Yvals) && ~isempty(opts.yVals)) Yvals=opts.yVals; end;
+if(~isempty(opts.Yvals)) Yvals=opts.Yvals; end;
+if(isempty(Yvals) && ~isempty(opts.yVals)) Yvals=opts.yVals; end;
+if(isempty(Yvals) && ~isempty(opts.yvals)) Yvals=opts.yvals; end;
 if( isempty(Yvals) ) Yvals=1:sizeA(2); end;
-if(~isempty(opts.Zvals)) Zvals=opts.Zvals; end;if(isempty(Zvals) && ~isempty(opts.zVals)) Zvals=opts.zVals; end; 
+if(~isempty(opts.Zvals)) Zvals=opts.Zvals; end;
+if(isempty(Zvals) && ~isempty(opts.zVals)) Zvals=opts.zVals; end; 
+if(isempty(Zvals) && ~isempty(opts.zvals)) Zvals=opts.zvals; end; 
 if( isempty(Zvals) ) Zvals=1:sizeA(3); end;
 if( isempty(opts.xmask) ) opts.xmask=true(1,sizeA(1)); end;
 if( isempty(opts.ymask) ) opts.ymask=true(1,sizeA(2)); end;
@@ -335,7 +341,7 @@ for pi=1:N;
         tickIdx(tickIdx<1)=[]; tickIdx(tickIdx>numel(axmark{1}))=[];
         axsettings={axsettings{:} 'XTick',tickIdx,'XTickLabel',axmark{1}(tickIdx),...
                     'XTickMode','manual','XTickLabelMode','manual'};
-     elseif( any(abs(diff(diff(axmark{1})))>1e-6) ) % non-uniform scaling
+     elseif( any(abs(diff(diff(axmark{1}(:)')))>1e-6) ) % non-uniform scaling
         tickIdx = [true abs(diff(diff(axmark{1})))>1e-6 true]; % locations of changes
         axsettings={axsettings{:} 'XTick' find(tickIdx) 'XTickLabel',axmark{1}(tickIdx) ...
                     'XTickMode','manual','XTickLabelMode','manual'};       
@@ -374,7 +380,7 @@ for pi=1:N;
         axsettings={axsettings{:} 'XTick',tickIdx,'XTickLabel',axmark{2}(tickIdx),...
                     'XTickMode','manual','XTickLabelMode','manual'};
      elseif( any(abs(diff(diff(axmark{2})))>1e-6) ) % non-uniform scaling
-        tickIdx = [true abs(diff(diff(axmark{2})))>1e-6 true]; % locations of changes
+        tickIdx = [true abs(diff(diff(axmark{2}(:)')))>1e-6 true]; % locations of changes
         axsettings={axsettings{:} 'XTick' find(tickIdx) 'XTickLabel',axmark{2}(tickIdx) ...
                     'XTickMode','manual','XTickLabelMode','manual'};       
      else
@@ -405,7 +411,7 @@ for pi=1:N;
         axsettings={'XTickLabel',axmark{1}(tickIdx),...
                     'XTickMode','manual','XTickLabelMode','manual'};
      elseif( any(abs(diff(diff(axmark{1})))>1e-6) ) % non-uniform scaling
-        tickIdx = [true abs(diff(diff(axmark{1})))>1e-6 true]; % locations of changes
+        tickIdx = [true abs(diff(diff(axmark{1}(:)')))>1e-6 true]; % locations of changes
         axsettings={axsettings{:} 'XTick' find(tickIdx) 'XTickLabel',axmark{1}(tickIdx) ...
                     'XTickMode','manual','XTickLabelMode','manual'};       
      else
@@ -568,7 +574,14 @@ if ( ~isempty(opts.colorbar) && opts.colorbar && ~isempty(opts.clim) )  % true c
   else
     pos=legendpos;
   end
-  hdls(N+1)=colorbar('peer',hdls(N),'outerposition',pos);
+  if ( exist('OCTAVE_VERSION','builtin') ) % in octave have to manually convert arrays..
+    tmp=get(hdls(N),'outerposition');
+    hdls(N+1)=colorbar('peer',hdls(N),'outerposition',pos); %BUG: octave resizes axes even if give colorbar size
+    set(hdls(N),'outerposition',tmp);
+    set(hdls(N+1),'outerposition',pos);
+  else    
+    hdls(N+1)=colorbar('peer',hdls(N),'outerposition',pos);
+  end
   if ( ~isempty(opts.clabel) ) title(hdls(end),opts.clabel); end;
 end % if colorbar
 

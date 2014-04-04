@@ -1,6 +1,5 @@
-function rgb = rainbow(n);
-% RAINBOW(n) creates a colormap, ranging from blue via green to red.
-% Similar to 'jet', but without the darkening at the ends.
+function rgb =trafficlight(n);
+% RAINBOW(n) creates a colormap, ranging from green via orange to red.
 if nargin == 0, n = size(get(gcf,'colormap'),1); end
 m = fix(n/2);
 step = 1/m;
