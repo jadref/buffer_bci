@@ -39,8 +39,8 @@ function [classifier,res,Y]=cvtrainLinearClassifier(X,Y,Cs,fIdxs,varargin)
 %  res   -- [struct] results structure as returned by cvtrainFn
 %
 % See also: cvtrainFn, cv2trainFn, lr_cg, klr_cg, l2svm_cg, rls_cg
-opts=struct('objFn','klr_cg','dim',[],'spType','1v1','spKey',[],'spMx',[],'zeroLab',0,...
-            'balYs',0,'verb',0,'Cscale',[],'compKernel',1,'binsp',1);
+opts=struct('objFn','lr_cg','dim',[],'spType','1vR','spKey',[],'spMx',[],'zeroLab',0,...
+            'balYs',0,'verb',0,'Cscale',[],'compKernel',0,'binsp',1,'cv2',0);
 [opts,varargin]=parseOpts(opts,varargin);
 if( nargin < 3 ) Cs=[]; end;
 if( nargin < 4 || isempty(fIdxs) ) fIdxs=10; end;
@@ -55,12 +55,12 @@ if ( ~(isempty(spKey) && isempty(spMx)) ) % sub-prob decomp already done, so tru
   if ( ~all(Y(:)==-1 | Y(:)==0 | Y(:)==1) ) 
     error('spKey/spMx given but Y isnt an set of binary sub-problems');
   end
-elseif ( size(Y,2)==1 && all(Y(:)==-1 | Y(:)==0 | Y(:)==1) && ~(opts.zeroLab && any(Y(:)==0)) ) % already a valid binary problem
+elseif ( isnumeric(Y) && size(Y,2)==1 && all(Y(:)==-1 | Y(:)==0 | Y(:)==1) && ~(opts.zeroLab && any(Y(:)==0)) ) % already a valid binary problem
     spKey=[1 -1]; % binary problem
     spMx =[1 -1];
-else
+elseif ( opts.binsp )
+  if ( isempty(spMx) ) spMx=opts.spType; end;
   [Y,spKey,spMx]=lab2ind(Y,spKey,spMx,opts.zeroLab); % convert to binary sub-problems
-  if ( opts.binsp ) spMx=[]; end;
 end
 spDesc=[];
 if ( ~isempty(spMx) && ~isempty(spKey) )
@@ -145,7 +145,8 @@ else % kernel method. extract the weights
 end
 
 % put all the parameters into 1 structure
-classifier = struct('W',W,'b',b,'dim',dim,'spMx',spMx,'spKey',spKey);
+if ( iscell(spKey) ) spKey={spKey}; end; % BODGE: need double nest cell-arrays when making structs
+classifier = struct('W',W,'b',b,'dim',dim,'spMx',spMx,'spKey',spKey,'spDesc',{spDesc},'binsp',opts.binsp);
 return;
 %-----------------------------------------------------------------------------
 function testCase()

@@ -142,7 +142,7 @@ for spi=1:nSubProbs; % loop over sub-problems
    if ( opts.verb > -1 ) 
       if ( nSubProbs>1 ) fprintf('(out/%2d)\t',spi); else; fprintf('(out)\t'); end;
    end
-   seed=opts.seed; % seed
+   seed=opts.seed; % reset seed for each sub-prob
    Ytrn = Y(:,spi);
    exInd = all(fIdxs(:,min(end,spi),:)==0,3); Ytrn(exInd)=0; % excluded points
    for ci=1:size(Cs,2);%siCs; % proc in sorted order
@@ -160,7 +160,7 @@ for spi=1:nSubProbs; % loop over sub-problems
       if( opts.verb > -1 ) 
         if( numel(spi)>1 ) fprintf('['); end;
         for spii=1:numel(spi); % N.B. we need to loop as dv2conf etc. only work on 1 sub-prob at a time
-          fprintf('%0.2f/NA  ',conf2loss(dv2conf(Ytrn(:,spii),res.f(:,spii,ci)),1,opts.lossType)); 
+          fprintf('%0.2f/NA  ',conf2loss(dv2conf(Ytrn(:,spii),f(:,spii)),1,opts.lossType)); 
           if( spii<numel(spi) ) fprintf('|'); end;
         end
         if(numel(spi)>1) fprintf(']'); if(numel(spi)<5) fprintf(' '); else fprintf('\n');end;
@@ -286,6 +286,7 @@ res.opt.trnbin=res.trnbin(:,:,optCi);
 if ( opts.outerSoln ) % use classifier trained on all the data
    res.opt.soln=res.soln(:,optCi);
    res.opt.f   =res.f(:,:,optCi);   
+   res.opt.tstf=res.tstf(:,:,optCi);
 else % estimate from per fold solutions
   if ( opts.binsp ) opt=soln(:,optCi,:); else opt=soln(optCi,:); end; % spi x 1 x fold
   if ( isnumeric(soln{1}) || (iscell(soln{1}) && isnumeric(soln{1}{1})) ) % use average over all folds solutions
@@ -311,10 +312,12 @@ else % estimate from per fold solutions
         end
     end
     res.opt.f    = mean(res.fold.f(:,:,optCi,:),4);
+    res.opt.tstf=res.tstf(:,:,optCi);
   else % use classifier trained on 1 single fold of the data
     optFold=1;
     res.opt.soln=soln(:,optCi,optFold);
     res.opt.f   =res.fold.f(:,:,optCi,optFold);
+    res.opt.tstf=res.tstf(:,:,optCi);
   end
 end
 if ( ~isempty(opts.calibrate) ) % N.B. only for linear classifiers!
@@ -335,10 +338,10 @@ if ( ~isempty(opts.calibrate) ) % N.B. only for linear classifiers!
       res.opt.soln{i}(end)    =res.opt.soln{i}(end)*Ab(1,i)+Ab(2,i);
     end
     % update the predictions also
-    res.opt.f(:,i) = res.opt.f(:,i)*Ab(1,i)+Ab(2,i);
-    res.tstf(:,i,res.opt.Ci) = res.tstf(:,i,res.opt.Ci)*Ab(1,i)+Ab(2,i);
+    res.opt.f(:,i)    = res.opt.f(:,i)*Ab(1,i)+Ab(2,i);
+    res.opt.tstf(:,i) = res.tstf(:,i,res.opt.Ci)*Ab(1,i)+Ab(2,i);
   end  
-  res.opt.cal.scale=Ab(1,:); res.opt.cal.offset=Ab(1,:);
+  res.opt.cal.scale=Ab(1,:); res.opt.cal.offset=Ab(2,:);
 end
 
 if ( opts.verb > -2 && size(fIdxs,ndims(fIdxs))>1)

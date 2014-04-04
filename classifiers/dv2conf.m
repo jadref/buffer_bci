@@ -41,8 +41,8 @@ for i=1:size(Y,3); % loop over different sub-probs (Y's)
    for prey=1:size(Y,1);      
       for j=1:size(dv,3); % loop over classifiers (dv's)
          for predv=1:size(dv,1);
-            conf=[sum(dv(predv,:,j)>=0 & Y(prey,:,i)>0) sum(dv(predv,:,j)>=0 & Y(prey,:,i)<0);
-                  sum(dv(predv,:,j)<0  & Y(prey,:,i)>0) sum(dv(predv,:,j)<0  & Y(prey,:,i)<0)];
+            conf=[sum(dv(predv,:,j)>=0 & Y(prey,:,i)==1) sum(dv(predv,:,j)>=0 & Y(prey,:,i)==-1);
+                  sum(dv(predv,:,j)<0  & Y(prey,:,i)==1) sum(dv(predv,:,j)<0  & Y(prey,:,i)==-1)];
             confMx(predv,:,j,prey,i)=conf(:);
          end
       end

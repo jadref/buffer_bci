@@ -122,7 +122,7 @@ oX=X; oY=Y;
 incIdx=Y(:)~=0;
 if ( sum(incIdx)./numel(Y) < opts.incThresh ) % if enough ignored to be worth it
    if ( sum(incIdx)==0 ) error('Empty training set!'); end;
-   X=X(:,incIdx); Y=Y(incIdx); if ( numel(wght)==numel(Y) ) wght=wght(incIdx); end;
+   X=X(:,incIdx); Y=Y(incIdx); if ( numel(wghtY)==numel(oY) ) wghtY=wghtY(incIdx); end;
 end
 
 % generate an initial seed solution if needed
