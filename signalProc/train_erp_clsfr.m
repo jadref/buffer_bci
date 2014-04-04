@@ -21,6 +21,7 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %  badtrrm   - [bool] do we do bad trial removal      (1)
 %  badtrthresh - [float] threshold in std-dev units to id trial as bad (3)
 %  detrend   - [bool] do we detrend the data          (1)
+%  classify  - [bool] do we train a classifier        (1)
 %  visualize - [int] visualize the data
 %               0 - don't visualize
 %               1 - visualize, but don't wait
@@ -31,17 +32,17 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %  clsfr  - [struct] structure contining the stuff necessary to apply the trained classifier
 %  res    - [struct] results structure
 %  X      - [size(X)] the pre-processed data
-opts=struct('fs',[],'timeband',[],'freqband',[],'downsample',[],'detrend',1,'spatialfilter','car',...
+opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],'downsample',[],'detrend',1,'spatialfilter','car',...
     'badchrm',1,'badchthresh',3.1,'badchscale',2,...
     'badtrrm',1,'badtrthresh',3,'badtrscale',2,...
-    'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','visualize',2,...
-    'badCh',[],'nFold',10);
+    'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
+    'visualize',2,'badCh',[],'nFold',10);
 [opts,varargin]=parseOpts(opts,varargin);
 
 di=[]; ch_pos=opts.ch_pos; ch_names=opts.ch_names;
 if ( iscell(ch_pos) && isstr(ch_pos{1}) ) ch_names=ch_pos; ch_pos=[]; end;
-if ( isempty(ch_pos) && ~isempty(ch_names) ) % convert names to positions
-  di = addPosInfo(ch_names,opts.capFile); % get 3d-coords
+if ( isempty(ch_pos) && (~isempty(ch_names) || opts.overridechnms) ) % convert names to positions
+  di = addPosInfo(ch_names,opts.capFile,opts.overridechnms); % get 3d-coords
   ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names
 end
 
@@ -56,6 +57,7 @@ isbadch=[]; chthresh=[];
 if ( opts.badchrm || ~isempty(opts.badCh) )
   fprintf('2) bad channel removal, ');
   isbadch = false(size(X,1),1);
+  if ( ~isempty(ch_pos) ) isbadch(numel(ch_pos)+1:end)=true; end;
   if ( ~isempty(opts.badCh) )
       isbadch(opts.badCh)=true;
       goodCh=find(~isbadch);
@@ -136,8 +138,14 @@ end;
 if ( opts.visualize && ~isempty(ch_pos) )
    uY=unique(Y);sidx=[];
    for ci=1:numel(uY);
-      mu(:,:,ci)=mean(X(:,:,Y==uY(ci)),3);
-      if(~(ci>1 && numel(uY)<=2)) [auc(:,:,ci),sidx]=dv2auc((Y==uY(ci))*2-1,X,3,sidx); end;
+     Yci = (Y==uY(ci));
+      mu(:,:,ci)=mean(X(:,:,Yci),3);
+      if(~(ci>1 && numel(uY)<=2)) 
+        [aucci,sidx]=dv2auc(Yci*2-1,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
+        aucesp=auc_confidence(numel(Y),sum(Yci)./numel(Y));
+        aucci(aucci<.5+acuesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
+        auc(:,:,ci)=aucci;
+      end;
       labels{ci}=sprintf('%d',uY(ci));
    end
    times=(1:size(mu,2))/opts.fs;
@@ -157,8 +165,12 @@ if ( opts.visualize && ~isempty(ch_pos) )
 end
 
 %6) train classifier
-fprintf('6) train classifier\n');
-[clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',1,varargin{:});
+if ( opts.classify ) 
+  fprintf('6) train classifier\n');
+  [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',1,varargin{:});
+else
+  clsfr=struct();
+end
 
 %7) combine all the info needed to apply this pipeline to testing data
 clsfr.fs          = fs;   % sample rate of training data

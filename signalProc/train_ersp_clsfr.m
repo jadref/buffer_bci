@@ -38,20 +38,21 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %  res    - [struct] detailed results for each fold
 %  X       -- [ppch x pptime x ppepoch] pre-processed data (N.B. may/will have different size to input X)
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
-opts=struct('fs',[],'timeband',[],'freqband',[],'width_ms',250,'windowType','hanning','aveType','amp',...
+opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],...
+            'width_ms',250,'windowType','hanning','aveType','amp',...
             'detrend',1,'spatialfilter','slap',...
             'badchrm',1,'badchthresh',3.1,'badchscale',2,...
             'badtrrm',1,'badtrthresh',3,'badtrscale',2,...
-            'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','visualize',1,...
-            'badCh',[],'nFold',10,'class_names',[]);
+            'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
+            'visualize',1,'badCh',[],'nFold',10,'class_names',[]);
 [opts,varargin]=parseOpts(opts,varargin);
 
 % get the sampling rate
 if ( isempty(opts.fs) ) error('Sampling rate not specified!'); end;
 di=[]; ch_pos  =opts.ch_pos; ch_names=opts.ch_names;
 if ( iscell(ch_pos) && isstr(ch_pos{1}) ) ch_names=ch_pos; ch_pos=[]; end;
-if ( isempty(ch_pos) && ~isempty(ch_names) ) % convert names to positions
-  di = addPosInfo(ch_names,opts.capFile); % get 3d-coords
+if ( isempty(ch_pos) && (~isempty(ch_names) || opts.overridechnms) ) % convert names to positions
+  di = addPosInfo(ch_names,opts.capFile,opts.overridechnms); % get 3d-coords
   ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names
 end
 fs=opts.fs; if ( isempty(fs) ) warning('No sampling rate specified... assuming fs=250'); fs=250; end;
@@ -67,6 +68,7 @@ isbadch=[]; chthresh=[];
 if ( opts.badchrm || ~isempty(opts.badCh) )
   fprintf('2) bad channel removal, ');
   isbadch = false(size(X,1),1);
+  if ( ~isempty(ch_pos) ) isbadch(numel(ch_pos)+1:end)=true; end;
   if ( ~isempty(opts.badCh) )
       isbadch(opts.badCh)=true;
       goodCh=find(~isbadch);
@@ -177,7 +179,7 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
     fIdx = int32(fIdx(1):fIdx(2));
   elseif ( iscell(opts.freqband) ) %set of discrete-frequencies to pick
     freqband=[opts.freqband{:}]; % convert to vector
-    freqband=[freqband;2*freqband;3*freqband]; % select higher harmonics also
+    freqband=[freqband;2*freqband];%3*freqband]; % select higher harmonics also
     fIdx=false(size(X,2),1);
     for fi=1:numel(freqband);
       [ans,tmp]=min(abs(freqs-freqband(fi))); % lower frequency bin
@@ -190,10 +192,13 @@ end;
 %5.5) Visualise the input?
 if ( opts.visualize )
    uY=unique(Y);sidx=[]; labels=opts.class_names;
-   for ci=1:numel(uY);
-      mu(:,:,ci)=mean(X(:,:,Y==uY(ci)),3);
-      if(~(ci>1 && numel(uY)<=2)) [auc(:,:,ci),sidx]=dv2auc((Y==uY(ci))*2-1,X,3,sidx); end;
-      if ( isempty(labels) || numel(labels)<ci || isempty(labels{ci}) )  labels{ci}=sprintf('%d',uY(ci)); end;
+   for ci=1:numel(uY);     
+     if(iscell(uY)) tmp=strmatch(uY(ci),Y); yind=false(size(Y)); yind(tmp)=true; else yind=(Y==uY(ci)); end;
+      mu(:,:,ci)=mean(X(:,:,yind),3);
+      if(~(ci>1 && numel(uY)<=2)) [auc(:,:,ci),sidx]=dv2auc((yind)*2-1,X,3,sidx); end;
+      if ( isempty(labels) || numel(labels)<ci || isempty(labels{ci}) ) 
+        if ( iscell(uY) ) labels{ci}=uY{ci}; else labels{ci}=sprintf('%d',uY(ci)); end
+      end;
    end
    if ( ~isempty(di) ) xy=cat(2,di.extra.pos2d); % use the pre-comp ones if there
    elseif (size(ch_pos,1)==3) xy = xyz2xy(ch_pos);
@@ -213,8 +218,12 @@ if ( opts.visualize )
 end
 
 %6) train classifier
-fprintf('6) train classifier\n');
-[clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',1,varargin{:});
+if ( opts.classify ) 
+  fprintf('6) train classifier\n');
+  [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',1,varargin{:});
+else
+  clsfr=struct();
+end
 
 %7) combine all the info needed to apply this pipeline to testing data
 clsfr.fs          = fs;   % sample rate of training data
@@ -235,8 +244,8 @@ clsfr.badchthresh = []; if ( ~isempty(chthresh) ) clsfr.badchthresh = chthresh(e
 % record some dv stats which are useful
 tstf = res.tstf(:,res.opt.Ci); % N.B. this *MUST* be calibrated to be useful
 clsfr.dvstats.N   = [sum(res.Y>0) sum(res.Y<=0) numel(res.Y)]; % [pos-class neg-class pooled]
-clsfr.dvstats.mu  = [mean(tstf(Y==clsfr.spKey(1))) mean(tstf(Y==clsfr.spKey(2))) mean(tstf)];
-clsfr.dvstats.std = [std(tstf(Y==clsfr.spKey(1)))  std(tstf(Y==clsfr.spKey(2)))  std(tstf)];
+clsfr.dvstats.mu  = [mean(tstf(res.Y(:,1)>0)) mean(tstf(res.Y(:,1)<=0)) mean(tstf)];
+clsfr.dvstats.std = [std(tstf(res.Y(:,1)>0))  std(tstf(res.Y(:,1)<=0))  std(tstf)];
 %  bins=[-inf -200:5:200 inf]; clf;plot([bins(1)-1 bins(2:end-1) bins(end)+1],[histc(tstf(Y>0),bins) histc(tstf(Y<=0),bins)]); 
 
 if ( opts.visualize > 1 ) 

@@ -45,10 +45,10 @@ szX=size(X);
 % compute cov for each ref-signal
 xidx1= -(1:ndims(X)); xidx1(dim(1))=1; xidx1(dim(2))=3; %OP over space, align over ref, IP over rest
 xidx2= -(1:ndims(X)); xidx2(dim(1))=2; xidx2(dim(2))=3; 
-covXr= tprod(Xr,xidx1,[],xidx2)./prod(szX([1:dim(1)-1 dim(1)+1:end))); %[ ch x ch x ref*taus]
+covXr= tprod(Xr,xidx1,[],xidx2)./prod(szX([1:dim(1)-1 dim(1)+1:end])); %[ ch x ch x ref*taus]
 % compute the whole data covariance -- for the noise to suppress
 xidx1= -(1:ndims(X)); xidx1(dim(1))=1;  xidx2= -(1:ndims(X)); xidx2(dim(1))=2; % OP over space, IP over rest
-covX = tprod(X,xidx1,[],xidx2)./prod(szX([1:dim(1)-1 dim(1)+1:end)));% [ch x ch]
+covX = tprod(X,xidx1,[],xidx2)./prod(szX([1:dim(1)-1 dim(1)+1:end]));% [ch x ch]
 % gen eigen value solver
 [U,s]=eig(mean(covXr,3),covX);s=diag(s); [ans,si]=sort(abs(s),'descend'); s=s(si); U=U(:,si);
 % pick which components to return

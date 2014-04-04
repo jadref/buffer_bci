@@ -27,6 +27,8 @@ function [filt]=mkFilter(len,bands,xscale)
 %           [len x numel(bands)] filters for vector-cell-array inputs
 %           N.B. this is normalise such that its max amplitude==1
 %
+% Example:
+%  filt= mkFilter(floor(nSamp/2),[8 10 24 28],1/duration); % mk fftfilter filter for data nSamp long = duration (s)
 % N.B. for constant weight overlapping window functions you should use:
 %  blackman=.37,kaiser(2)=.46, rest=.5
 if ( nargin < 3 ) xscale=1; end;
