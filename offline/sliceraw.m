@@ -102,10 +102,17 @@ if ( ~isempty(opts.offset_samp) ) offset_samp = offset_samp+opts.offset_samp; en
 
 % Finally get the data segements we want
 data=repmat(struct('buf',[]),size(devents));
-if ( opts.verb>0 ) fprintf('Slicing %d epochs:',numel(devents));end;
+if ( opts.verb>=0 ) fprintf('Slicing %d epochs:',numel(devents));end;
+keep=true(numel(devents),1);
 for ei=1:numel(devents);
   data(ei).buf=read_buffer_offline_data(datafname,hdr,devents(ei).sample+[offset_samp]);  
-  if ( opts.verb>0 ) fprintf('.');end
+  if ( size(data(ei).buf,2) < (offset_samp(2)-offset_samp(1)) ) keep(ei)=false; end;
+  if ( opts.verb>=0 ) fprintf('.');end
 end
-if ( opts.verb>0 ) fprintf('done.\n');end
+if ( ~all(keep) )
+  fprintf('Discarding %d events with no data\n',sum(~keep));
+  data=data(keep);
+  devents=devents(keep);
+end
+if ( opts.verb>=0 ) fprintf('done.\n');end
 return;

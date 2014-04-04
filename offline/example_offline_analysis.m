@@ -27,8 +27,18 @@ run ../utilities/initPaths
 [data,devents,hdr]=sliceraw('~/output/test/140117/2145_20681/raw_buffer/0001','startSet',{'stimulus.trial' 'start'});
 
 % 2) train a ERsP classifier on this data.
-[clsfr,X]=buffer_train_ersp_clsfr(data,devents,hdr);
+[clsfr,X]=buffer_train_ersp_clsfr(data,devents,hdr,'freqband',[8 10 24 28],'capFile',capFile);
 % N.B. X now contains the pre-processed data which can be used for other purposes, e.g. making better plots.
 
 % 3) apply this classifier to the same data (or new data)
 [f]      =buffer_apply_ersp_clsfr(data,clsfr);  % f contains the classifier decision values
+
+% Alt: Manually pre-process the data
+dd=cat(3,data.buf); % get 3-d array
+dd=detrend(dd,2);   % temporal trend removal
+dd=repop(dd,'-',mean(dd,1)); % CAR - spatial mean removal
+dd=fftfilter(dd,mkFilter(floor(size(dd,2)/2),[0 0 30 40],1/3),[],2); % spectral low pass 30Hz
+clf;imagesc(mean(dd,3)); % plot average time-locked data
+% Alt: Plot with channels in the right positions
+[ch_name,ans,ch_pos]=readCapInf('1010'); % get electrode names and positions
+clf;image3d(mean(dd,3),1,'disptype','plot','plotPos',ch_pos,'xvals',ch_name);%plot average time-locked data
