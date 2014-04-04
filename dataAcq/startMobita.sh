@@ -8,6 +8,7 @@ if [ `uname -s` == 'Linux' ]; then
    if [ -r $buffdir/buffer/glnx86/mobita2ft ]; then
 	 buffexe=$buffdir'/buffer/glnx86/mobita2ft';
    fi
+   sudo killall -STOP NetworkManager
 else # Mac
    if [ -r $buffdir/buffer/bin/maci/mobita2ft ]; then
 	 buffexe=$buffdir'/buffer/bin/maci/mobita2ft';
@@ -17,3 +18,7 @@ else # Mac
    fi
 fi
 $buffexe 10.11.12.13:4242 localhost:1972 50 4 "$@"
+
+if [ `uname -s` == 'Linux' ]; then
+   sudo killall -CONT NetworkManager
+fi
