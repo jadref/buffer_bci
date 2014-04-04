@@ -1,4 +1,4 @@
-run ../../utilities/initPaths;
+run ../../utilities/initPaths.m;
 
 buffhost='localhost';buffport=1972;
 global ft_buff; ft_buff=struct('host',buffhost,'port',buffport);
@@ -13,11 +13,9 @@ while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffe
   end;
   pause(1);
 end;
-
 % set the real-time-clock to use
 initgetwTime();
 initsleepSec();
-
 
 % make the target sequence
 sentences={'hello world','this is new!','BCI is fun!'};
