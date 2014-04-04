@@ -48,25 +48,31 @@ keyevt=struct('type','keyboard','value',0,'sample',[],'offset',0,'duration',0);
 
 % pre-build the ERP templates
 erps=zeros(round(opts.fsample/2),3); 
-erps(:,1) = exp(-(1:size(erps,1)));
-erps(:,2) = 1;
-erps(:,3) = exp(-((1:size(erps,1))-size(erps,1)/2).^2./(size(erps,1)/4));
-erps=erps*10;
+erps(:,1) = exp(-(1:size(erps,1))*5./size(erps,1));                       erps(:,1)=erps(:,1)./sum(erps(:,1));
+erps(:,2) = 1;                                                            erps(:,2)=erps(:,2)./sum(erps(:,2));
+erps(:,3) = exp(-((1:size(erps,1))-size(erps,1)/2).^2./(size(erps,1)/3)); erps(:,3)=erps(:,3)./sum(erps(:,3));
+erps=erps*50;
 erpSamp=inf(1,3);
 
 blockSize=opts.blockSize;
 fsample  =opts.fsample;
-nsamp=0; nblk=0; nevents=0; scaling=ones(hdr.nchans,1);
+nsamp=0; nblk=0; nevents=0; 
+scaling=[0;ones(hdr.nchans-1,1)];
+%fprintf(stderr,'Scaling = [%s]\n',sprintf('%g ',scaling));
 tic;stopwatch=toc; printtime=stopwatch; fstart=stopwatch;
 % key listener
 if ( opts.keyboardEvents || opts.key2signal ) 
   fig=figure(1);clf;
   set(fig,'name','Press key here to generate events','menubar','none','toolbar','none');
-  set(fig,'keypressfcn',@keyListener);
+  ax=axes('position',[0 0 1 1],'visible','off');
   text(.5,.5,{'Keyboard Events' '-------'...
               'space = amplitude 0' '0= amplitude 1' '9= amplitude 2' 'Z=amplitude 26'...
              'e = exponential ERP' 't=tophat ERP' 'g=gaussian ERP'});
-  set(gca,'visible','off');
+  set(fig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character))); 
+  if ( exist('OCTAVE_VERSION','builtin') ) 
+    page_output_immediately(1); % prevent buffering output
+    graphics_toolkit('fltk'); % use fast rendering library
+  end
 end  
 if ( opts.mouse2signal ) scrnSz=get(0,'ScreenSize'); end % scale by screensize
 while( true )
@@ -106,17 +112,16 @@ while( true )
   %tsamp(nblk)=nsamp; ttime(nblk)=buffer('get_time'); esamp(nblk)=buffer('get_samp'); 
   if ( opts.keyboardEvents || opts.key2signal )
     if ( ~ishandle(fig) ) break; end;
-    h=get(fig,'userData');
-    if ( ~isempty(h) )
+    h=get(fig,'userdata');
+    if ( ~isempty(h) && ischar(h) )
       fprintf('\nkey=%s\n',h);
       if ( opts.keyboardEvents ) 
         %tsamp(nblk)=nsamp; ttime(nblk)=buffer('get_time'); esamp(nblk)=buffer('get_samp'); 
         keyevt.value=h; 
-        keyevt.sample=nsamp;
+        %keyevt.sample=nsamp;
         keyevt.sample=-1; % test the auto-filling code
         evt=buffer('put_evt',keyevt,host,port);
         fprintf('%d) evt=%s\n',nsamp,ev2str(evt));
-        set(fig,'userData',[]); % mark as processed
       end
       switch lower(h); % record start of ERP time
        case 'e'; erpSamp(1)=nsamp;
@@ -130,17 +135,24 @@ while( true )
     end
   end
   if ( opts.mouse2signal ) 
-    pos=get(0,'PointerLocation');
-    scaling(2:3)=pos./scrnSz(3:4)*2;
+    if ( exist('OCTAVE_VERSION','builtin') ) 
+      pos=get(fig,'currentpoint'); % N.B. only updated when you *click*
+    else
+      pos=get(0,'PointerLocation');
+    end
+    if ( any(pos(:)>0) )
+      scaling(2:3)=pos(:)'./scrnSz(3:4)*2;
+    end
   end
-  if ( mod(nblk,ceil(fsample/blockSize))==0 ) % check for closed window to say stop
+  % N.B. due to a bug on OCTAVE we need to do this in the main loop to cause the display to re-draw...
+  %  and allow us to update the mouse/keyboard information.
+  set(fig,'userdata',[]); % mark any key's pressed as processed
+  if ( mod(nblk,ceil(fsample/blockSize/4))==0 ) % re-draw 10x a second
     drawnow;
     if ( ~ishandle(fig) ) break; end;
   end;
 end
 return;
-function []=keyListener(src,ev)
-set(src,'userData',ev.Character);
 
 %-------------
 function testCase();
