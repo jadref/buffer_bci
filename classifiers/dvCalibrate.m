@@ -49,7 +49,7 @@ end
 
 Ab=zeros(2,size(Y,2)); %Ab(2,:)=-mean([mean(dv(Y<0,:),1);mean(dv(Y>0,:),1)],1);%b=zeros(1,size(Y,2)); 
 oAb=ones(size(Ab)); f=ones(1,size(Y,2));
-% newton method root search for scaling parameter A
+% Gradient descent to find the parameters
 % N.B. we use dv' = dv*exp(A), so A has range -inf->+inf
 for iter=1:maxIter
    of=f;
