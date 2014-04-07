@@ -184,8 +184,8 @@ class Client:
 		self.isConnected = False
 		self.sock = []
 	
-	def connect(self, hostname, port=1972):
-		"""connect(hostname [, port]) -- make a connection, default port is 1972."""
+	def connect(self, hostname='localhost', port=1972):
+		"""connect([hostname, port]) -- make a connection, default host:port is localhost:1972."""
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.sock.connect((hostname, port))
 		self.sock.setblocking(True)
@@ -348,18 +348,21 @@ class Client:
 		return D
 		
 		
-	def getEvents(self, index = None):
+	def getEvents(self, indices = None):
 		"""getEvents([indices]) -- retrieve events and return them as a list of Event objects.
-			The 'indices' argument is optional, and if given, must be a tuple or list with 
+			The 'indices'=[start end] argument is optional, and if given, must be a tuple or list with 
 			inclusive, zero-based start/end indices. The 'type' and 'value' fields of the event
 			will be converted to strings or Numpy arrays.
 		"""
 			
-		if index is None:
+		if indices is None:
 			request = struct.pack('HHI', VERSION, GET_EVT, 0)
 		else:
-			indS = int(index[0])
-			indE = int(index[1])
+			indS = int(indices[0])
+			if len(indices)==1:
+				indE = indS
+			else:
+				indE = int(indices[-1])
 			request = struct.pack('HHIII', VERSION, GET_EVT, 8, indS, indE)
 		self.sendRaw(request)
 		
@@ -443,6 +446,8 @@ class Client:
 		return struct.unpack('II', resp_buf[0:8])
 		
 	def wait(self, nsamples, nevents, timeout):
+		if nsamples<0: nsamples=2**32-1 # convert -1 -> maxint
+		if nevents<0:  nevents =2**32-1 # convert -2 -> maxint
 		request = struct.pack('HHIIII', VERSION, WAIT_DAT, 12, int(nsamples), int(nevents), int(timeout))
 		self.sendRaw(request)
 		
@@ -486,8 +491,8 @@ if __name__ == "__main__":
 	
 		if H.nSamples > 0:
 			print '\nTrying to read last sample...'
-			index = H.nSamples - 1
-			D = ftc.getData([index, index])
+			indices = H.nSamples - 1
+			D = ftc.getData([indices, indices])
 			print D
 
 		if H.nEvents > 0:
