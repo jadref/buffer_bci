@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2010, Stefan Klanke
- * Donders Institute for Donders Institute for Brain, Cognition and Behaviour,
- * Centre for Cognitive Neuroimaging, Radboud University Nijmegen,
- * Kapittelweg 29, 6525 EN Nijmegen, The Netherlands
- */
 import java.io.*;
 import java.nio.*;
 import nl.fcdonders.fieldtrip.*;
