@@ -6,14 +6,13 @@
 %  (startPhase.cmd,testing)    -- start test phase, i.e. on-line prediction generation
 %  (startPhase.cmd,exit)       -- stop everything
 configureDemo();
-
-%N.B. use 1010 for emotiv so non-eeg are labelled correctly
-thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
-if ( ~exist('capFile','var') ) capFile='1010'; 
-else %'cap_tmsi_mobita_num'; 
-    overridechnms=1;
-    if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4;  end;
+if( ~exist('capFile','var') || isempty(capFile) ) 
+  [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); capFile=fullfile(pth,fn);
+  if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
+  if ( strcmpi(fn,'1010.txt') ) overridechnms=0; else overridechnms=1; end; % force default override
 end
+thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
+if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4;  end;
 datestr = datevec(now); datestr = sprintf('%02d%02d%02d',datestr(1)-2000,datestr(2:3));
 dname='training_data';
 cname='clsfr';

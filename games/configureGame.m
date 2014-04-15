@@ -18,7 +18,7 @@ while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffe
   pause(1);
 end;
 
-capFile='cap_tmsi_mobita_p300';
+%capFile='cap_tmsi_mobita_p300';
 keyboardControl=false;%true;%
 % do the initial clock alignment
 initgetwTime;  initsleepSec;
