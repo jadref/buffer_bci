@@ -20,14 +20,14 @@ function []=sigViewer(buffhost,buffport,varargin);
 %                      -> defines the frequency resolution for the frequency view of the data.   
 %  freqbands  -- [2x1] frequency bands to display in the freq-domain plot    (opts.fftfilter)
 %  noisebands -- [2x1] frequency bands to display for the 50 Hz noise plot   ([45 47 53 55])
-opts=struct('endType','end.training','verb',1,'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',128,'spatfilt','car','capFile','1010','overridechnms',0,'welch_width_ms',500,'noisebands',[45 47 53 55],'noiseBins',[0 1],'timeOut_ms',1000);
+if ( ~exist('buffer','file') ) run('../utilities/initPaths.m'); end;
+opts=struct('endType','end.training','verb',1,'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',128,'spatfilt','car','capFile',[],'overridechnms',0,'welch_width_ms',500,'noisebands',[45 47 53 55],'noiseBins',[0 1],'timeOut_ms',1000);
 opts=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
 if ( isempty(opts.freqbands) && ~isempty(opts.fftfilter) ) opts.freqbands=opts.fftfilter; end;
 
 % get channel info for plotting
-if ( ~exist('buffer','file') ) run('../utilities/initPaths.m'); end;
 hdr=[];
 while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
   try 
@@ -38,7 +38,13 @@ while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffe
   end;
   pause(1);
 end;
-di = addPosInfo(hdr.channel_names,opts.capFile,opts.overridechnms); % get 3d-coords
+capFile=opts.capFile; overridechnms=opts.overridechnms; 
+if(isempty(opts.capFile)) 
+  [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); capFile=fullfile(pth,fn);
+  if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
+  if ( strcmpi(fn,'1010.txt') ) overridechnms=0; else overridechnms=1; end; % force default override
+end
+di = addPosInfo(hdr.channel_names,capFile,overridechnms); % get 3d-coords
 ch_pos=cat(2,di.extra.pos2d); ch_names=di.vals; % extract pos and channels names
 iseeg=[di.extra.iseeg];
 
@@ -90,7 +96,7 @@ if ( ~exist('OCTAVE_VERSION','builtin') ) % in octave have to manually convert a
   zoomplots;
 end
 % install listener for key-press mode change
-set(fig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character))); 
+set(fig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
 set(fig,'userdata',[]);
 drawnow; % make sure the figure is visible
 
@@ -161,7 +167,7 @@ while ( ~endTraining )
      case 'q'; break;
     end;
     set(fig,'userdata',[]);
-    set(modehdl,'value',tmp);
+    if ( ~isempty(modehdl) ) set(modehdl,'value',tmp); end;
   end
   switch (curvistype) 
     
