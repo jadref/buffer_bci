@@ -143,7 +143,7 @@ if ( opts.visualize && ~isempty(ch_pos) )
       if(~(ci>1 && numel(uY)<=2)) 
         [aucci,sidx]=dv2auc(Yci*2-1,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
         aucesp=auc_confidence(numel(Y),sum(Yci)./numel(Y));
-        aucci(aucci<.5+acuesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
+        aucci(aucci<.5+aucesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
         auc(:,:,ci)=aucci;
       end;
       labels{ci}=sprintf('%d',uY(ci));
