@@ -42,8 +42,8 @@ capFile=opts.capFile; overridechnms=opts.overridechnms;
 if(isempty(opts.capFile)) 
   [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); capFile=fullfile(pth,fn);
   if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
-  if ( strcmpi(fn,'1010.txt') ) overridechnms=0; else overridechnms=1; end; % force default override
 end
+if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
 di = addPosInfo(hdr.channel_names,capFile,overridechnms); % get 3d-coords
 ch_pos=cat(2,di.extra.pos2d); ch_names=di.vals; % extract pos and channels names
 iseeg=[di.extra.iseeg];
