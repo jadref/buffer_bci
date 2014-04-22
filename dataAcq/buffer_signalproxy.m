@@ -86,9 +86,10 @@ while( true )
       dat.buf(1,1:numel(erpIdx)) = dat.buf(1,1:numel(erpIdx))+erps(erpIdx,ei)';
     end
   end
-  %wait 
-  pause(blockSize./fsample-(toc-fstart));fstart=toc; % sleep so exactly blockSize/fsample between blocks
+  % sleep so exactly blockSize/fsample between blocks
+  trem=max(0,blockSize./fsample-(toc-fstart));sleepSec(trem);fstart=toc; 
   buffer('put_dat',dat,host,port);
+  fprintf('%g) trem=%g\n',toc-stopwatch,trem)
   if ( opts.verb~=0 )
     if ( opts.verb>0 || (opts.verb<0 && toc-printtime>-opts.verb) )
       fprintf('%d %d %d %f (blk,samp,event,sec)\r',nblk,nsamp,nevents,toc-stopwatch);
@@ -153,6 +154,13 @@ while( true )
   end;
 end
 return;
+
+function []=sleepSec(t)
+if ( exist('java')==2 )
+  javaMethod('sleep','java.lang.Thread',max(0,t)*1000);      
+else
+  pause(t);
+end
 
 %-------------
 function testCase();
