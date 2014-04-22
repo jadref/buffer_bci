@@ -1,5 +1,5 @@
 % initialise the matlab paths
-run ../../utilities/initPaths;
+run ../../utilities/initPaths.m;
 
 % load the data this contains
 % X - [ channels x time x epochs ] raw EEG data
@@ -53,8 +53,9 @@ Y=Y(~badep); % don't forget to update labels!
 
 %6) train classifier
 fprintf('6) train classifier\n');
-[clsfr, res]=cvtrainLinearClassifier(X,Y,[],10,'compKernel',0,'objFn','lr_cg');
-
+[clsfr, res]=cvtrainLinearClassifier(X,Y,[],10);
+% Plot the trained classifier weight vector (only for linear classifiers)
+clf;image3d(clsfr.W,1,'plotPos',Cpos,'Xvals',Cnames,'disptype','plot','ticklabs','sw'); % plot bad info
 
 %---------------------------------------------------------------------------------------------------
 %7) use train_erp_clsfr which does all this for you!
