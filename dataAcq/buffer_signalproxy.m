@@ -46,16 +46,17 @@ dat=struct('nchans',hdr.nchans,'nsamples',opts.blockSize,'data_type',hdr.data_ty
 simevt=struct('type','stimulus','value',0,'sample',[],'offset',0,'duration',0);
 keyevt=struct('type','keyboard','value',0,'sample',[],'offset',0,'duration',0);
 
-% pre-build the ERP templates
-erps=zeros(round(opts.fsample/2),3); 
-erps(:,1) = exp(-(1:size(erps,1))*5./size(erps,1));                       erps(:,1)=erps(:,1)./sum(erps(:,1));
-erps(:,2) = 1;                                                            erps(:,2)=erps(:,2)./sum(erps(:,2));
-erps(:,3) = exp(-((1:size(erps,1))-size(erps,1)/2).^2./(size(erps,1)/3)); erps(:,3)=erps(:,3)./sum(erps(:,3));
-erps=erps*50;
-erpSamp=inf(1,3);
-
 blockSize=opts.blockSize;
 fsample  =opts.fsample;
+
+% pre-build the ERP templates
+erps=zeros(round(fsample/2),3); 
+erps(:,1) = exp(-(1:size(erps,1))*5./size(erps,1));                       erps(:,1)=erps(:,1)./sum(abs(erps(:,1)));
+erps(:,2) = 1;                                                            erps(:,2)=erps(:,2)./sum(abs(erps(:,2)));
+erps(:,3) = exp(-((1:size(erps,1))-size(erps,1)/2).^2./(size(erps,1)/3)); erps(:,3)=erps(:,3)./sum(abs(erps(:,3)));
+erps=erps*size(erps,1); % erp averages amplitude 1/sample
+erpSamp=inf(1,3);
+
 nsamp=0; nblk=0; nevents=0; 
 scaling=[0;ones(hdr.nchans-1,1)];
 %fprintf(stderr,'Scaling = [%s]\n',sprintf('%g ',scaling));
@@ -79,7 +80,7 @@ while( true )
   nblk=nblk+1;
   onsamp=nsamp; nsamp=nsamp+blockSize;
   dat.buf = randn(hdr.nchans,blockSize);
-  if ( ~isempty(scaling) ) dat.buf = dat.buf.*repmat(scaling(1:hdr.nchans),1,size(dat.buf,2)); end;
+  if ( ~isempty(scaling) ) dat.buf = dat.buf.*repmat(scaling(1:size(dat.buf,1)),1,size(dat.buf,2)); end;
   for ei=1:numel(erpSamp);
     if ( erpSamp(ei)<nsamp && erpSamp(ei)+size(erps,1)>onsamp )
       erpIdx=min(size(erps,1),onsamp+1-erpSamp(ei)):min(size(erps,1),nsamp-erpSamp(ei));
@@ -89,7 +90,7 @@ while( true )
   % sleep so exactly blockSize/fsample between blocks
   trem=max(0,blockSize./fsample-(toc-fstart));sleepSec(trem);fstart=toc; 
   buffer('put_dat',dat,host,port);
-  fprintf('%g) trem=%g\n',toc-stopwatch,trem)
+  %fprintf('%g) trem=%g\n',toc-stopwatch,trem)
   if ( opts.verb~=0 )
     if ( opts.verb>0 || (opts.verb<0 && toc-printtime>-opts.verb) )
       fprintf('%d %d %d %f (blk,samp,event,sec)\r',nblk,nsamp,nevents,toc-stopwatch);
