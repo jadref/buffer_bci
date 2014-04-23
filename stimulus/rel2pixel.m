@@ -1,5 +1,13 @@
 function [rect]=rel2pixel(wPtr,rect)
 % simple utility function to convert from relative coordinates to pixel coordinates
+%  
+%  [rect]=rel2pixel(wPtr,rect)
+%
+% Inputs:
+%   wPtr - handle to the PTB window to convert for
+%   rect - rectangle in relative coords to convert, [x y w h] or [ L T R B ] format
+% Outputs:
+%   rect - rectangel in pixel co-ordinates in input format
 if ( numel(wPtr)==1 ) [width,height]=Screen('WindowSize',wPtr); 
 else                  width=wPtr(1);height=wPtr(2);
 end
