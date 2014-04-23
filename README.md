@@ -60,8 +60,8 @@ Read the readme.txt file in either of the games, imaginedMovement, or matrixSpel
 To run the games demo:
 1) Start a buffer by running: dataAcq/startBuffer.bat or buffer/startBuffer.sh
 (optional) 1.1) Start a simulated data source (if you don't have an measurement system connected) by running: dataAcq/startSignalProxy.bat or .sh
-2) Start the Matlab based signal processing process by running: pacman/startSigProcBuffer.bat or .sh (alternatively: run dataAcq/startSignalProxy.sh)
-3) Start the Matlab based experiment control & stimulus presentation system by running : pacman/runGame.bat or runGame.sh
+2) Start the Matlab based signal processing process by running: games/startSigProcBuffer.bat or .sh (alternatively: run dataAcq/startSignalProxy.sh)
+3) Start the Matlab based experiment control & stimulus presentation system by running : games/runGame.bat or runGame.sh
 4) Type in the subject name to the experiment control window, and then run through each of the experiment phases: 
    Practice -- practice the task to be used in the BCI.  Green arrows indicate target locations you should attend to by counting the white and red arrow 'flashes'
    Calibration -- get calibration data by attending as instructed for ~90seconds
