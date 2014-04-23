@@ -1,27 +1,28 @@
 if ( exist('OCTAVE_VERSION') ) debug_on_error(1); else dbstop if error; end;
-% guard to prevent running multiple times
-if ( exist('gameConfig','var') && ~isempty(gameConfig) ) return; end;
-gameConfig=true;
-
-run ../utilities/initPaths;
-
-% wait for the buffer to return valid header information
-buffhost='localhost'; buffport=1972;
-hdr=[];
-while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
-  try 
-    hdr=buffer('get_hdr',[],buffhost,buffport); 
-  catch
-    fprintf('Waiting for header\n');
-    hdr=[];
+% guard to prevent running slow stuff multiple times
+if ( ~exist('gameConfig','var') || ~isequal(gameConfig,true) ) 
+  run ../utilities/initPaths.m;
+  % wait for the buffer to return valid header information
+  buffhost='localhost'; buffport=1972;
+  hdr=[];
+  while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
+    try 
+      hdr=buffer('get_hdr',[],buffhost,buffport); 
+    catch
+      fprintf('Waiting for header\n');
+      hdr=[];
+    end;
+    pause(1);
   end;
-  pause(1);
-end;
-
+  % set the RTC to use
+  initgetwTime;  initsleepSec;
+  if ( exist('OCTAVE_VERSION') ) % use fast render pipeline in OCTAVE
+    graphics_toolkit('fltk');
+  end
+  gameConfig=true;
+end
 %capFile='cap_tmsi_mobita_p300';
 keyboardControl=false;%true;%
-% do the initial clock alignment
-initgetwTime;  initsleepSec;
   
 %global dispState gameState;
 verb=1;
@@ -39,7 +40,7 @@ sizeStim = 1.5;
 
 % epoch timing info
 stimType ='ssvep'; %'pseudorand';% 
-isi      = 1/10;
+isi      = 1/2;
 nSymbs=4;
 tti=.6; % target to target interval
 vnSymbs=max(nSymbs,round(tti/isi)); % number virtual symbs used to generate the stim seq... adds occasional gaps
@@ -50,7 +51,7 @@ interTrialDelay=0;
 maxMoveInterval = ceil(6/isi)*isi; % move character every this long seconds
 minMoveInterval = ceil(0.75/isi)*isi; % fastest possible is 1.5 sec
 moveInterval    = maxMoveInterval;
-speedupInterval = moveInterval*4;
+speedupInterval = inf;moveInterval*4;
 movePause       = .5;
 pelletInterval  = 10;
 nLives=1;
@@ -86,4 +87,4 @@ interSeqDuration=2;
 feedbackDuration=5;
 nRepetitions=5;
 stimDuration=isi;
-trlen_ms=600;
+trlen_ms=1000;

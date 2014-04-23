@@ -141,7 +141,7 @@ while( lives>0 && nMoves<max_moves && ~goalReached )
     frametime(nframe,4)=getwTime();
     if ( ~isempty(ev) && ~isempty(ev.value) ) 
       ev=sendEvent(ev); 
-      if (verb>1) fprintf('Event: %s\n',ev2str(ev)); end;
+      if (verb>0) sec=buffer('poll'); fprintf('%d) Event: %s\n',sec.nSamples,ev2str(ev)); end;
     end;
 
     % wait for move events
