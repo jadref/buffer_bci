@@ -195,7 +195,12 @@ if ( opts.visualize )
    for ci=1:numel(uY);     
      if(iscell(uY)) tmp=strmatch(uY(ci),Y); yind=false(size(Y)); yind(tmp)=true; else yind=(Y==uY(ci)); end;
       mu(:,:,ci)=mean(X(:,:,yind),3);
-      if(~(ci>1 && numel(uY)<=2)) [auc(:,:,ci),sidx]=dv2auc((yind)*2-1,X,3,sidx); end;
+      if(~(ci>1 && numel(uY)<=2)) 
+        [aucci,sidx]=dv2auc(Yci*2-1,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
+        aucesp=auc_confidence(numel(Y),sum(Yci)./numel(Y));
+        aucci(aucci<.5+aucesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
+        auc(:,:,ci)=aucci;
+      end;
       if ( isempty(labels) || numel(labels)<ci || isempty(labels{ci}) ) 
         if ( iscell(uY) ) labels{ci}=uY{ci}; else labels{ci}=sprintf('%d',uY(ci)); end
       end;
