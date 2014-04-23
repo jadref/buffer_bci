@@ -39,8 +39,8 @@ arrowScale=[.4 1.0];
 sizeStim = 1.5;
 
 % epoch timing info
-stimType ='ssvep'; %'pseudorand';% 
-isi      = 1/2;
+stimType ='pseudorand';% 'ssvep'; %
+isi      = 1/5;
 nSymbs=4;
 tti=.6; % target to target interval
 vnSymbs=max(nSymbs,round(tti/isi)); % number virtual symbs used to generate the stim seq... adds occasional gaps
@@ -72,9 +72,9 @@ sokobanLevels={'soko1.lv' 'soko2.lv' 'soko3.lv'};
 
 % speller config options
 % the set of options the user will pick from
-symbols={'1'  '2'  '3';...
-         '4'  '5'  '6';...
-         '7'  '8'  '9'}';
+% symbols={'1'  '2'  '3';...
+%          '4'  '5'  '6';...
+%          '7'  '8'  '9'}';
 symbols={'a'  'b'  'c' 'd' 'e';...
          'f'  'g'  'h' 'i' 'j';...
          'k'  'l'  'm' 'n' 'o';...
