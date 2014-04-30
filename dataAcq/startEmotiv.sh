@@ -1,7 +1,6 @@
 #! /usr/bin/env bash
-cd `dirname ${BASH_SOURCE[0]}`
-%cd ~/BCI_code/toolboxes/brainstream_mds/toolboxes/fieldtrip/realtime/bin/maci/
-buffdir=`dirname $0`
+# Get the *Absolute* path to where this script is running
+buffdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 bciroot=~/output
 subject='test';
 if [ $# -gt 0 ]; then subject=$1; fi 
@@ -28,15 +27,16 @@ if [ `uname -s` == 'Linux' ]; then
 	fi
 else # Mac
    if [ -r $buffdir/buffer/bin/maci/emotiv2ft ]; then
-	 buffexe=$buffdir'/buffer/bin/maci';
+    # Argh, annoyingly the emotive driver only works if run in it's own directory
+    cd $buffdir/buffer/bin/maci
 	 # add exec directory to library load path
 	 export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$buffdir'/buffer/bin/maci'
    fi
    if [ -r $buffdir/buffer/maci/emotiv2ft ]; then
-	 buffexe=$buffdir'/buffer/maci';
+    # Argh, annoyingly the emotive driver only works if run in it's own directory
+    cd $buffdir/buffer/maci
 	 export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$buffdir'/buffer/maci'
    fi
+   buffexe='./emotiv2ft'
 fi
-# Argh, annoyingly the emotive driver only works if run in it's own directory
-cd $buffexe
-./emotiv2ft ${buffdir}/emotiv.cfg $outfile > $logfile 
+$buffexe ${buffdir}/emotiv.cfg $outfile > $logfile 

@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 cd `dirname ${BASH_SOURCE[0]}`
-%cd ~/BCI_code/toolboxes/brainstream_mds/toolboxes/fieldtrip/realtime/bin/maci/
-buffdir=`dirname $0`
+buffdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+echo $buffdir
 bciroot=~/output
 subject='test';
 if [ $# -gt 0 ]; then subject=$1; fi 
@@ -28,10 +28,17 @@ if [ `uname -s` == 'Linux' ]; then
 	fi
 else # Mac
    if [ -r $buffdir/buffer/bin/maci/biosemi2ft ]; then
-	 buffexe=$buffdir'/buffer/bin/maci/biosemi2ft';
+    # Argh, annoyingly the driver only works if run in it's own directory
+    cd $buffdir/buffer/bin/maci
+   # add exec directory to library load path
+   export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$buffdir'/buffer/bin/maci'
    fi
    if [ -r $buffdir/buffer/maci/biosemi2ft ]; then
-	 buffexe=$buffdir'/buffer/maci/biosemi2ft';
+    # Argh, annoyingly the driver only works if run in it's own directory
+    cd $buffdir/buffer/maci
+	 # add exec directory to library load path
+	 export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$buffdir'/buffer/maci'
    fi
+   buffexe='./biosemi2ft';
 fi
-$buffexe biosemi.cfg $outfile > $logfile 
+$buffexe ${buffdir}/biosemi.cfg $outfile > $logfile 
