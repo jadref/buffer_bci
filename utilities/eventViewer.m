@@ -11,7 +11,7 @@ function []=eventViewer(host,port,mtype,mval)
 %     N.B. Match occurs if type matches *any* startType, and value matches *any* startValue
 %     [N.B. internally matchEvents is used to matching mi=matchEvents(events,startType,startValue)
 %               See matchEvents for more details on the structure of startSet
-if ( ~exist('buffer','file') ) run('../utilities/initPaths.m'); end;
+wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../utilities/initPaths.m'); end;
 if ( nargin<1 || isempty(host) ) host='localhost'; end;
 if ( nargin<2 || isempty(port) ) port=1972; end;
 if ( nargin<3 ) mtype={};  end;

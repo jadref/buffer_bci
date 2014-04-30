@@ -16,7 +16,7 @@ function [dat,key,state]=capFitting(varargin);
 %  offsetThresholds - [2x1] lower and upper noise power thresholds for the [green and red] colors ([5 15])
 %  timeOut_ms    - [int] timeOut to wait for data from the buffer (5000)
 %  host,port     - [str] host and port where the buffer lives ('localhost',1972)
-if ( ~exist('buffer','file') ) run('../utilities/initPaths.m'); end;
+wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../utilities/initPaths.m'); end;
 opts=struct('updateInterval',.5,'capFile',[],'overridechnms',0,'verb',1,'mafactor',.1,...
     'noiseband',[45 55],'noiseThresholds',[.5 5],'offsetThresholds',[5 15],'badChThreshold',1e-8,'fig',[],...
     'host','localhost','port',1972,'timeOut_ms',5000,'showOffset',true);
