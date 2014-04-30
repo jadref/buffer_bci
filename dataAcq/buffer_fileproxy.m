@@ -33,8 +33,7 @@ function []=buffer_signalproxy(host,port,filename,varargin);
 if ( nargin<2 || isempty(port) ) port=1972; end;
 if ( nargin<1 || isempty(host) ) host='localhost'; end;
 if ( nargin<3 || isempty(filename) ) error('Insufficient arguments -- must specify file name!'); end;
-mdir=fileparts(mfilename('fullpath'));
-run(fullfile(mdir,'..','utilities','initPaths'));
+wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../utilities/initPaths.m'); end;
 % init the accurate real-time-clock
 initgetwTime();
 initsleepSec();
