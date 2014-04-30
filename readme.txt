@@ -24,6 +24,13 @@ An overview of the included directories is:
   
   games -- Example BCI system for playing 3 simple games (Snake, Sokoban and Pacman) using and visual evoked response (ERP) type BCI
 
+  offline -- Example scripts for process saved BCI data offline, i.e. analysing data loaded from file
+
+  example -- Example clients for the major supported programming languages; Matlab, java, Python, C#
+
+  tutorial -- Tutorial arranged in lectures 1 through 5 about how BCIs work, 
+              the structure and components of a BCI and how to build a standard BCI with the buffer_bci framework
+				 
   imaginedMovement -- Example BCI system for controlling a cursor using an imagined movement (ERSP) type BCI
 
   matrixSpeller -- Example BCI system for spelling characters using a visual matrix-speller (p300) type BCI
@@ -54,12 +61,32 @@ QuickStart
 Read the readme.txt file in either of the games, imaginedMovement, or matrixSpeller directories for instructions on how to startup and run those demos.
 
 To run the games demo:
-1) Start a buffer by running: dataAcq/startBuffer.bat or buffer/startBuffer.sh
-(optional) 1.1) Start a simulated data source (if you don't have an measurement system connected) by running: dataAcq/startSignalProxy.bat or .sh
+
+1) Start the data Acquisation system.
+
+ If you have *no* EEG hardware, but just want to test:
+  1.1) start a buffer by running: dataAcq/startBuffer.bat or buffer/startBuffer.sh
+  1.2) start a *simulated* data source by running: dataAcq/startSignalProxy.bat or .sh
+
+ If you have EEG hardware connected then depending on the hardware:
+  TMSi Mobita
+  		 1.1) start a buffer by running: dataAcq/startBuffer.bat or buffer/startBuffer.sh
+       1.2) start the hardware driver by running: dataAcq/startMobita.bat or dataAcq/startMobita.sh
+   Emotiv Epoc:
+	    1.1) start the hardware driver *only* by running: dataAcq/startEmotiv.bat or dataAcq/startEmotiv.sh
+   Biosemi Active 2:
+       1.1) start the hardware driver *only* by running: dataAcq/startBiosemi.bat or dataAcq/startBiosemi.sh
+
 2) Start the Matlab based signal processing process by running: games/startSigProcBuffer.bat or .sh
+
 3) Start the Matlab based experiment control & stimulus presentation system by running : games/runGame.bat or runGame.sh
+
 4) Type in the subject name to the experiment control window, and then run through each of the experiment phases: 
+
    Practice -- practice the task to be used in the BCI.  Green arrows indicate target locations you should attend to by counting the white and red arrow 'flashes'
+
    Calibration -- get calibration data by attending as instructed for ~90seconds
+
    Classifier Training -- train a classifier using the calibration data.  3 windows will pop-up showing: Per-class ERPs, per-class AUCs, and cross-validated classification performance.
+
 5) Select the game you would like to play!
