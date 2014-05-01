@@ -13,18 +13,24 @@ namespace FieldTrip.Buffer
 	    private NetworkStream theStream;
 	    public String Host;
 	    public int Port;
+	  public int timeout=10000;
 	    
 	    public String readerResponse="";
 		
 		
 		public SocketChannel(){
 		}
+
+	  ~SocketChannel() // distructor, correctly close the socket first
+	  {
+		 try { // don't throw within distructor
+			mySocket.Close();
+		 } catch{	}
+	  }
 	
-	
-	    void OnApplicationQuit(){
-	        close();
-	    }
-		
+	  // void OnApplicationQuit(){
+	  //     this.close();
+	  // }		
 		
 		public bool connect(string hostname, int port){
 			try
@@ -33,10 +39,11 @@ namespace FieldTrip.Buffer
 	        	Port = port;
 	            mySocket = new TcpClient(Host, Port);
                 mySocket.NoDelay=true;
-                mySocket.ReceiveTimeout=500;
+                mySocket.ReceiveTimeout=0; // allow infinite read time
 	            theStream = mySocket.GetStream();
 	            socketReady = true;
-	            theStream.ReadTimeout=500;
+					// allow infinite read time, Necessary for long wait_dat calls....
+	            theStream.ReadTimeout=1000000;//System.Threading.Infinite; 
 	        }
 	        catch (Exception e)
 	        {
@@ -46,6 +53,11 @@ namespace FieldTrip.Buffer
 	        return socketReady;
 		}
 		
+	  public TcpClient socket()
+	  {
+		 return mySocket;
+	  }
+
 		
 		public int write(ByteBuffer src){
 	        int toWrite = (int)src.remaining();
@@ -64,9 +76,9 @@ namespace FieldTrip.Buffer
 	 		byte[] message = new byte[toRead];
 	 		
 	 		int readBytes = 0;
-	 		while(readBytes<toRead){
+	 		//while(readBytes<toRead){ // this loop is uncessary -- we return number bytes read anyway...
 	 			readBytes += theStream.Read(message, readBytes, toRead-readBytes);
-	 		}
+	 		//}
 	 		dst.put(message);
 	 		return readBytes;
 	 	}

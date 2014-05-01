@@ -39,8 +39,16 @@ class javaclient {
 			 try {
 				  System.out.println("Connecting to "+hostname+":"+port);
 				  C.connect(hostname, port);
-				  C.setAutoReconnect(true);
-				  hdr = C.getHeader();
+				  //C.setAutoReconnect(true);
+				  if ( C.isconnected() ) { hdr = C.getHeader(); }
+			 } catch (IOException e) {
+				  hdr=null;
+			 }
+			 if ( hdr==null ){
+ 				  System.out.println("Invalid Header... waiting");
+				  Thread.sleep(1000);
+			 }
+		}
 				  //float[][] data = C.getFloatData(0,hdr.nSamples-1);				
 				  System.out.println("#channels....: "+hdr.nChans);
 				  System.out.println("#samples.....: "+hdr.nSamples);
@@ -52,12 +60,6 @@ class javaclient {
 							 System.out.println("Ch. " + n + ": " + hdr.labels[n]);
 						}
 				  }
-			 } catch (IOException e) {
-				  hdr=null;
-				  System.out.println("Invalid Header... waiting");
-				  Thread.sleep(1000);
-			 }
-		}
 						
 		// Now do the echo-server
 		int nEvents=hdr.nEvents;

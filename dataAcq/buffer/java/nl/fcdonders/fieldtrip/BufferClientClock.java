@@ -45,6 +45,18 @@ public class BufferClientClock extends BufferClient {
 		  if ( e.sample < 0 ) { e.sample=(int)getSampOrPoll(); }
 		  return super.putEvent(e);
 	 }
+	 public void putEvents(BufferEvent[] e) throws IOException {
+		int samp = -1;
+		for( int i=0; i<e.length; i++ )
+		  {			 
+			 if ( e[i].sample < 0 )
+				{
+				  if ( samp<0 ) samp=(int)getSampOrPoll();
+				  e[i].sample=samp;
+				}
+		  }
+		super.putEvents(e);
+	 }
 	 // use the returned sample info to update the clock sync
 	 public SamplesEventsCount wait(int nSamples, int nEvents, int timeout) throws IOException {
 		  SamplesEventsCount secount = super.wait(nSamples,nEvents,timeout);

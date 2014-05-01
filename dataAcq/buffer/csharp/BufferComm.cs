@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using FieldTrip.Buffer;
 
-namespace SDL_NET_game
+namespace FieldTrip.Buffer
 {
     // Communication with the FiledTrip buffer
     class BufferComm
@@ -39,9 +39,7 @@ namespace SDL_NET_game
 
         // Connect to the buffer
         public void Connect() {
-
             C.connect(hostname, port);
-            C.syncClocks();
         }
 
         // Return a float matrix array of the latest data in the FieldTrip buffer
@@ -56,7 +54,6 @@ namespace SDL_NET_game
             if (nSamples == 0) nSamples = sampevents.nSamples;
             if (sampevents.nSamples == nSamples) { return null; }
             if (sampevents.nSamples < nSamples) {
-                if (C.isConnected()) C.syncClocks(); // re-sync the write client
                 nSamples = sampevents.nSamples -1;
                 return null;
             }
@@ -82,7 +79,6 @@ namespace SDL_NET_game
             if (nEvents == 0) nEvents = sampevents.nEvents-2;
             if (sampevents.nEvents - 1 == nEvents) { return -1; }
             if (sampevents.nEvents < nEvents) {
-                if (C.isConnected()) C.syncClocks(); // re-sync the write client
                 nEvents = sampevents.nEvents;
                 return -1;
             }
@@ -124,7 +120,6 @@ namespace SDL_NET_game
             if (nEvents == 0) nEvents = sampevents.nEvents - 2;
             if (sampevents.nEvents - 1 == nEvents) { return null; }
             if (sampevents.nEvents < nEvents) {
-                if (C.isConnected()) C.syncClocks(); // re-sync the write client
                 nEvents = sampevents.nEvents;
                 return null;
             }
@@ -174,7 +169,6 @@ namespace SDL_NET_game
 
         // Disconnect from the buffer
         public void Disconnect() {
-
             C.disconnect();
         }
     }

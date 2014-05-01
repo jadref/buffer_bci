@@ -11,9 +11,9 @@ public class ClockSync {
 	 double N=-1;  // number points
 	 double sS=0, sT=0;  // sum samples, time
 	 double sS2=0, sST=0, sT2=0; // sum product samples time
-	 double sampErr=0; // running estimate of the est-true sample error
-	 double m, b; // fit, scale and offset
+	 public double m, b; // fit, scale and offset
 	 double alpha, hl; // learning rate, halflife
+	 double sampErr=0; // running estimate of the est-true sample error
 	 double minUpdateTime = 50; // only update if at least 50ms apart, prevent rounding errors	 
 	 double weightLim = 0;
 

@@ -36,39 +36,39 @@ namespace FieldTrip.Buffer
 		public const short BUFFER_NOT_MATCH_DESCRIPTION_ERROR = 0x508;
 		public const short INVALID_EVENT_DEF_ERROR = 0x509;
 		public const short INVALID_SIZE_DATA_DEF_ERROR = 0x510;
-		
-		
-		protected SocketChannel sockChan;
-		protected ByteOrder myOrder;
-		public Header header;
-		public ClockSync clockSync=null;
-		
-		public short errorReturned;
+				
+	public SocketChannel sockChan;
+	public bool activeConnection;
+	protected bool autoReconnect;
+	protected string host;
+	protected int port;
+	protected ByteOrder myOrder;
+	  protected int errorReturned;
 	
 		public BufferClient() {
 			myOrder = ByteOrder.nativeOrder();
-			clockSync=new ClockSync();
 		}
 		
 		public BufferClient(ByteOrder order) {
 			myOrder = order;
-			clockSync=new ClockSync();
 		}
 		
-		public bool connect(string hostname, int port) {
-			if(sockChan == null){
-				sockChan = new SocketChannel();
-			}else if(sockChan.isConnected()){
-				disconnect();
-			}
-            try
-            {
-                sockChan.connect(hostname, port);
-            }
-            catch{} // don't throw... return state is if connection worked
-			return sockChan.isConnected();
-		}
-		
+	  virtual public bool connect(string hostname, int port) {
+		 // if ( sockChan == null )
+		 // 	{
+			  sockChan = new SocketChannel();  
+		 // }
+		 // else if ( sockChan != null && sockChan.isConnected()) {
+		 //	disconnect(); // disconnect old connection
+		 //}
+		 sockChan.connect(hostname, port);
+		 activeConnection = sockChan.isConnected();
+		 if ( activeConnection ) { // cache the connection info
+			this.host = hostname;
+			this.port = port;
+		 }
+		 return activeConnection;
+		}		
 		
 		public bool connect(string address) {
 			int colonPos = address.LastIndexOf(':');
@@ -78,21 +78,48 @@ namespace FieldTrip.Buffer
 				
                 return connect(hostname,port);
 			}
-			//throw new IOException("Address format not recognized / supported yet.");
+			throw new IOException("Address format not recognized / supported yet.");
 			// other addresses not recognised yet
 			return false;
 		}
 		
+	  public bool reconnect() {
+		 System.Console.WriteLine("Remote side disconnected detected. Trying to reconnect to : " + host + ":" + port);
+		 return connect(host,port);
+	  }
+
 		public void disconnect()  {
-			sockChan.close();
+		  if ( sockChan!=null ) sockChan.close();		 
+		  sockChan = null;
+		  activeConnection=false;
 		}
 		
 		public bool isConnected() {
-			if (sockChan == null) return false;
-			return sockChan.isConnected();
+		 bool conn=false;
+		 if (activeConnection && sockChan != null && sockChan.isConnected() ) {
+			  // // try to read 1 byte, if this fails then the socket was reset
+			  // int nread=-1;
+			  // try {
+			  // 		ByteBuffer tmp= ByteBuffer.allocate(1);
+			  // 		sockChan.socket().Client.Blocking=false;
+			  // 		nread=sockChan.read(tmp); // fast non-blocking read
+			  // 		sockChan.socket().Client.Blocking=true;
+			  // } catch (IOException e) { }
+			  // //System.Console.Writeline("read " + nread + "bytes"); System.out.flush();
+			  // if ( nread<0 ) {
+			  // 		activeConnection=false;
+			  // } else {
+			  // 		conn = true;
+			  // }
+			conn=true;
+		 }
+		 return conn;
 		}
 		
-		public Header getHeader() {
+	 public bool getAutoReconnect() { return autoReconnect; }
+	 public bool setAutoReconnect(bool val){ autoReconnect=val; return autoReconnect; }
+
+		virtual public Header getHeader() {
 			ByteBuffer buf;
 	
 			buf = ByteBuffer.allocate(8);
@@ -105,9 +132,8 @@ namespace FieldTrip.Buffer
 			writeAll(buf);
 		
 			buf = readResponse(GET_OK);
-			header = new Header(buf);
-			clockSync.updateClock(header.nSamples); // update the rt->sample mapping
-			return header;
+			Header hdr = new Header(buf);
+			return hdr;
 		}
 		
 		/** Returns true if channel names were written */
@@ -363,11 +389,6 @@ namespace FieldTrip.Buffer
 		
 		
 		public ByteBuffer getRawData(int first, int last, DataDescription descr) {
-			
-			if(header==null || header.nSamples<1){
-				getHeader();
-			}
-			
 			ByteBuffer buf;
 			
 			buf = ByteBuffer.allocate(16);
@@ -561,12 +582,9 @@ namespace FieldTrip.Buffer
 			readResponse(PUT_OK);
 		}	
 	
-		public BufferEvent putEvent(BufferEvent e)  {
+		virtual public BufferEvent putEvent(BufferEvent e)  {
 			ByteBuffer buf;
 			int eventSize = e.size();
-			if ( e.sample < 0 ) { 
-                e.sample=clockSync.time2samp(); 
-            }
 			buf = ByteBuffer.allocate(8+eventSize);
 			buf.order(myOrder); 
 		
@@ -578,7 +596,7 @@ namespace FieldTrip.Buffer
             return e;
 		}
 	
-		public void putEvents(BufferEvent[] e){
+		virtual public void putEvents(BufferEvent[] e){
 			ByteBuffer buf;
 			int bufsize = 0;
 		
@@ -625,9 +643,9 @@ namespace FieldTrip.Buffer
 			buf = readResponse(FLUSH_OK);
 		}	
 		
-		public SamplesEventsCount wait(int nSamples, int nEvents, int timeout)  {
+		virtual public SamplesEventsCount wait(int nSamples, int nEvents, int timeout)  {
 			ByteBuffer buf;
-            SamplesEventsCount secount = null;
+			SamplesEventsCount secount = null;
 	
 			buf = ByteBuffer.allocate(20);
 			buf.order(myOrder); 
@@ -637,9 +655,8 @@ namespace FieldTrip.Buffer
 		
 			writeAll(buf);
 			buf = readResponse(WAIT_OK);
-            secount = new SamplesEventsCount(buf.getInt(), buf.getInt());
-			clockSync.updateClock(secount.nSamples); // update the rt->sample mapping
-            return secount;
+			secount = new SamplesEventsCount(buf.getInt(), buf.getInt());
+			return secount;
 		}
 		
 		public SamplesEventsCount waitForSamples(int nSamples, int timeout) {
@@ -656,25 +673,6 @@ namespace FieldTrip.Buffer
 		public SamplesEventsCount poll(int timeout) {
 			return wait(-1,-1,timeout);
 		}
-
-        public SamplesEventsCount syncClocks()
-        {
-			return	 syncClocks(new int[] {100,200,300,400,500,600});
-		}
-        public SamplesEventsCount syncClocks(int wait)
-        {
-			return	 syncClocks(new int[] {wait});
-		}
-        public SamplesEventsCount syncClocks(int[] wait)
-        {
-            SamplesEventsCount ssc;
-			ssc=poll(0);
-			for (int i=0;i<wait.Length;i++) {			
-				 Thread.Sleep(wait[i]);
-				 ssc=poll(0);				
-			}
-            return ssc;
-      }
 		
 		
 		//*********************************************************************
@@ -683,9 +681,14 @@ namespace FieldTrip.Buffer
 		
 		protected ByteBuffer readAll(ByteBuffer dst) {
 			int cap = dst.capacity();
+			int now = 0;
 			while (cap > 0) {
-				int now = sockChan.read(dst);
-				cap -= now;
+			  now = sockChan.read(dst);
+			  if ( now < 0 ){
+				 //System.Console.WriteLine("Read here ");
+				 throw new IOException("Remote side closed connection!");						
+			  }
+			  cap -= now;
 			}
 			return dst;
 		}
@@ -724,12 +727,17 @@ namespace FieldTrip.Buffer
 		
 		
 		protected ByteBuffer writeAll(ByteBuffer dst) {
-			int rem = (int)dst.remaining();
-			while (rem > 0) {
-				int now = sockChan.write(dst);
-				rem -= now;
+		  int rem = (int)dst.remaining();
+		  int now = 0;
+		  while (rem > 0) {
+			 now = sockChan.write(dst);
+			 if ( now < 0 ){
+				//System.Console.Writeline("Write here ");
+				throw new IOException("Remote side closed connection!");
+			 }
+			 rem -= now;
 			}
-			return dst;
+		  return dst;
 		}	
 		
 		
