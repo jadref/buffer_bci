@@ -1,13 +1,13 @@
 function []=eventViewer(host,port,mtype,mval)
 % view the event stream from a fieldtrip buffer
 %
-% []=eventViewer(host,port,startType,startVal)
+% []=eventViewer(host,port,mType,mVal)
 %
 % Inputs:
 %   host -- host where the buffer is running  ('localhost')
 %   port -- port where the buffer is running  (1972)
-%   startType -- {{types}} cell array of match strings for matching events types
-%   startValue -- {{values}} cell array of match values for matching events.  
+%   mType -- {{types}} cell array of match strings for matching events types
+%   mValue -- {{values}} cell array of match values for matching events.  
 %     N.B. Match occurs if type matches *any* startType, and value matches *any* startValue
 %     [N.B. internally matchEvents is used to matching mi=matchEvents(events,startType,startValue)
 %               See matchEvents for more details on the structure of startSet
