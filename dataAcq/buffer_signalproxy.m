@@ -26,12 +26,17 @@ function []=buffer_signalproxy(host,port,varargin);
 %  mouse2signal   - [bool] does the signal amplitude depend on mouse position (1)
 %                     channel 2 amplitude = mouse x-coordinate / screen x-size * 2
 %                     channel 3 amplitude = mouse y-coordinate / screen y-size * 2
+%  event2signal   - [bool] do certain events with type 'sigprox.erp' ERP style events?    (1)
+%                      event types are similar to te key2signal events
+%                      sendEvent('sigprox.erp','e') = exponential ERP
+%                      sendEvent('sigprox.erp','e') = tophat ERP
+%                      sendEvent('sigprox.erp','e') = gaussian ERP
 %  verb           - [int] verbosity level.  If <0 then rate in samples to print status info (0)
 if ( nargin<2 || isempty(port) ) port=1972; end;
 if ( nargin<1 || isempty(host) ) host='localhost'; end;
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../utilities/initPaths.m'); end;
 
-opts=struct('fsample',100,'nCh',3,'blockSize',5,'Cnames',[],'stimEventRate',100,'queueEventRate',500,'keyboardEvents',true,'verb',-2,'key2signal',true,'mouse2signal',true);
+opts=struct('fsample',100,'nCh',3,'blockSize',5,'Cnames',[],'stimEventRate',100,'queueEventRate',500,'keyboardEvents',true,'verb',-2,'key2signal',true,'mouse2signal',true,'event2signal',true);
 opts=parseOpts(opts,varargin);
 if ( isempty(opts.Cnames) )
   opts.Cnames={'Cz' 'CPz' 'Oz'};
@@ -56,7 +61,7 @@ erps(:,3) = exp(-((1:size(erps,1))-size(erps,1)/2).^2./(size(erps,1)/3)); erps(:
 erps=erps*size(erps,1); % erp averages amplitude 1/sample
 erpSamp=inf(1,3);
 
-nsamp=0; nblk=0; nevents=0; 
+nsamp=0; nblk=0; nevents=0;
 scaling=[0;ones(hdr.nchans-1,1)];
 %fprintf(stderr,'Scaling = [%s]\n',sprintf('%g ',scaling));
 tic;stopwatch=toc; printtime=stopwatch; fstart=stopwatch;
@@ -75,6 +80,7 @@ if ( opts.keyboardEvents || opts.key2signal )
   end
 end  
 if ( opts.mouse2signal ) scrnSz=get(0,'ScreenSize'); end % scale by screensize
+if ( opts.event2signal ) nEvents=-1; end;
 while( true )
   nblk=nblk+1;
   onsamp=nsamp; nsamp=nsamp+blockSize;
@@ -86,8 +92,11 @@ while( true )
       dat.buf(1,1:numel(erpIdx)) = dat.buf(1,1:numel(erpIdx))+erps(erpIdx,ei)';
     end
   end
-  % sleep so exactly blockSize/fsample between blocks
-  trem=max(0,blockSize./fsample-(toc-fstart));sleepSec(trem);fstart=toc; 
+  % sleep until the next data sample is due
+  curtime=toc-fstart; sendtime=nblk*blockSize./fsample;% current time, time at which data should be sent
+  % check for v.long gap between calls (missed at least 2 block times) => suspend, reset if so
+  if ( curtime>sendtime+2*blockSize./fsample ) fstart=sendtime-(curtime+fstart);  curtime=toc-fstart; end
+  trem=max(0,sendtime-curtime);sleepSec(trem);%fstart=toc; 
   buffer('put_dat',dat,host,port);
   %fprintf('%g) trem=%g\n',toc-stopwatch,trem)
   if ( opts.verb~=0 )
@@ -143,6 +152,20 @@ while( true )
     end
     if ( any(pos(:)>0) )
       scaling(2:3)=pos(:)'./scrnSz(3:4)*2;
+    end
+  end
+  if ( opts.event2signal ) 
+    [events,nEvents]=buffer_newevents(host,port,nEvents,'sigprox.erp',[],0);
+    for ei=1:numel(events); % treat as simulated key-press
+      fprintf('%s\n',ev2str(events(ei)));
+      evtval=events(ei).value;
+      if ( isstr(evtval) ) 
+        switch  lower(evtval);
+         case 'e'; erpSamp(1)=nsamp;
+         case 't'; erpSamp(2)=nsamp;
+         case 'g'; erpSamp(3)=nsamp;
+        end
+      end      
     end
   end
   % N.B. due to a bug on OCTAVE we need to do this in the main loop to cause the display to re-draw...
