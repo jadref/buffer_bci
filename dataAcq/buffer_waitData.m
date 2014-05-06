@@ -120,11 +120,11 @@ if ( isempty(fs) && ( ~isempty(opts.trlen_ms) || ~isempty(opts.offset_ms) ) )
     end
   end
   fs=hdr.fsample; 
-elseif ( isempty(hdr) ) 
+elseif ( isempty(hdr) && ~isempty(fs) ) 
   hdr=struct('fsample',fs,'nevents',[],'nsamples',[]);
 end;
 % Use the given trial length to over-ride the status info if wanted
-if ( ~isempty(opts.trlen_ms) )
+if ( ~isempty(opts.trlen_ms) || ~isempty(opts.offset_ms) )
   if ( isempty(fs) ) error('no fs: cant compute ms2samp'); end;
   samp2ms = 1000/fs; ms2samp = fs/1000;
   opts.trlen_samp = floor(opts.trlen_ms*ms2samp);
