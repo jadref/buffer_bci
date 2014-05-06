@@ -22,7 +22,7 @@ function [events,state,nevents,nsamples]=buffer_newevents(host,port,state,mtype,
 %     N.B. Match occurs if type matches *any* startType, and value matches *any* startValue
 %     [N.B. internally matchEvents is used to matching mi=matchEvents(events,startType,startValue)
 %               See matchEvents for more details on the structure of startSet
-%  timeOut_ms -- [int] time to wait in buffer('wait_dat',...) call before returning  (inf)
+%  timeOut_ms -- [int] time to wait in buffer('wait_dat',...) call before returning  (5000)
 %
 % Outputs:
 %  devents -- [struct Nx1] structure containing the matched events
