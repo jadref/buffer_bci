@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
   
   nEvents=header.def->nevents;
   exitExpt=0;
-  while ( ~exitExpt ) {
+  while ( exitExpt==0 ) {
 
 	 /* wait until we have more events to process */
 	 waitdef.threshold.nsamples = -1;
@@ -141,9 +141,9 @@ int main(int argc, char *argv[]) {
 
 		  /* test for special event types we should ignore */
 		  if ( event.def->type_type == DATATYPE_CHAR ){
-			 if (        strncmp(event.buf,                      "echo",sizeof("echo"))==0 ) { 
+			 if (        strncmp(event.buf,"echo",sizeof("echo"))==0 ) { 
 				continue; 				/* don't echo echo events */
-			 } else if ( strncmp(event.buf+event.def->type_numel,"exit",sizeof("exit"))==0 ) {
+			 } else if ( strncmp(event.buf,"exit",sizeof("exit"))==0 ) {
 				exitExpt=1;          /* quit for exit events */
 				continue; 				/* don't echo exit events */
 			 }
@@ -173,7 +173,8 @@ int main(int argc, char *argv[]) {
 		  echoeventdef = *(event.def); /* copy definition from the input event */
 		  echoeventdef.type_type  = DATATYPE_CHAR;
 		  echoeventdef.type_numel = sizeof("echo");
-		  echoeventdef.bufsize    = echoeventdef.type_numel + echoeventdef.value_numel;
+		  echoeventdef.bufsize    = echoeventdef.type_numel*wordsize_from_type(echoeventdef.type_type) 
+			 + echoeventdef.value_numel*wordsize_from_type(echoeventdef.value_type);
 		  /* make a new event buf which contains the new event type and a copy of the value */
 		  /* N.B. append *allocates* new ram, so be sure to free it afterwards */
 		  /* first add the event definition */
@@ -182,13 +183,14 @@ int main(int argc, char *argv[]) {
 		  requestdef.bufsize = append(&request.buf, requestdef.bufsize, "echo", sizeof("echo"));
 		  /* then the event value information, which is copied from the received event */
 		  requestdef.bufsize = append(&request.buf, requestdef.bufsize,
-												(char *) event.buf + event.def->type_numel, event.def->value_numel);
+										 (char *)event.buf + event.def->type_numel*wordsize_from_type(event.def->type_type), 
+												event.def->value_numel*wordsize_from_type(event.def->value_type));
 		  /* send the echo event */
 		  if ( (status=tcprequest(serverfd, &request, &response)) || (response->def->command!=PUT_OK) ) { 
 			 fprintf(stderr, "cclient: invalid put-event response = %d,%d\n",status,response->def->command);
 			 exit(-1);
 		  }
-		  FREE(request.buf); FREE(response); /* deallocate the buffer */
+		  FREE(request.buf); FREE(response->def); FREE(response); /* deallocate the buffer */
 		}
 		/* deallocate memory used to store the received events */
 		FREE(getevtresponse->buf);FREE(getevtresponse->def); FREE(getevtresponse);
