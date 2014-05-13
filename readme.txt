@@ -3,7 +3,6 @@ This system has been tested to work on Mac, Windows or Linux, and works with any
 
 An overview of the included directories is:
   dataAcq -- code for data acquisition, i.e. interfacing to recording hardware, based on the field-trip buffer specification <http://fieldtrip.fcdonders.nl/development/realtime>.
-             Also code for generating and waiting for events via the buffer
 				 Also scripts (.bat for windows, .sh for Linux/Mac) for starting the executables
   dataAcq/buffer -- mex files for MATLAB access to fieldtrip buffer data storage
   dataAcq/buffer/glnx86 -- linux executable binaries for hardware access
@@ -11,6 +10,10 @@ An overview of the included directories is:
   dataAcq/buffer/maci   -- (intel) Mac OS executable binaries for hardware access
   dataAcq/buffer/maci64 -- 64-bit (intel) Mac OS executable binaries for hardware access
   dataAcq/buffer/win32  -- windows executable binaries for hardware access
+  dataAcq/buffer/c      -- buffer client driver code in C
+  dataAcq/buffer/csharp -- buffer client driver code in C#
+  dataAcq/buffer/python -- buffer client driver code in Python
+  dataAcq/buffer/java   -- buffer client driver code in java
 
   signalProc -- code for pre-processing EEG data, training classifiers, and applying the trained classifiers on-line for the ERP and ERSP based BCIs
 
@@ -26,7 +29,7 @@ An overview of the included directories is:
 
   offline -- Example scripts for process saved BCI data offline, i.e. analysing data loaded from file
 
-  example -- Example clients for the major supported programming languages; Matlab, java, Python, C#
+  example -- Example clients for the major supported programming languages; Matlab, java, Python, C#, C
 
   tutorial -- Tutorial arranged in lectures 1 through 5 about how BCIs work, 
               the structure and components of a BCI and how to build a standard BCI with the buffer_bci framework
@@ -38,7 +41,7 @@ An overview of the included directories is:
   matrixSpellerPTB -- Example BCI system for spelling characters using a visual matrix-speller (p300) type BCI.  This version uses PsychToolBox to improve the timing of the visual stimulus rendering.
     N.B. to use this you will need to set the PTB path correctly in utilities/initPTBPaths.m
 
- cursorControl -- Example BCI system for controlling a cursor in 2-d using
+  cursorControl -- Example BCI system for controlling a cursor in 2-d using
                              visual evoked response (ERP) type BCI
 
   evokedDemo -- Example system for visualizing responses evoked by visual
@@ -53,7 +56,7 @@ Installation
 
 Copy these directories somewhere on your local harddrive.
 
-*Windows Only* : modify the path in the file utilities/findMatlab.bat to point to your install of matlab
+Note: if MATLAB/Octave is not found automatically then modify the path in the file utilities/findMatlab.bat (windows) or utilities/findMatlab.sh (Linux/MacOSX)
 
 QuickStart
 ----------
