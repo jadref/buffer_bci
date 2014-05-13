@@ -138,11 +138,11 @@ end;
 if ( opts.visualize && ~isempty(ch_pos) )
    uY=unique(Y);sidx=[];
    for ci=1:numel(uY);
-     Yci = (Y==uY(ci));
+     if(iscell(uY)) tmp=strmatch(uY(ci),Y); Yci=false(size(Y)); Yci(tmp)=true; else Yci=(Y==uY(ci)); end;
       mu(:,:,ci)=mean(X(:,:,Yci),3);
       if(~(ci>1 && numel(uY)<=2)) 
         [aucci,sidx]=dv2auc(Yci*2-1,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
-        aucesp=auc_confidence(numel(Y),sum(Yci)./numel(Y));
+        aucesp=auc_confidence(numel(Y),sum(Yci)./numel(Y),.2);
         aucci(aucci<.5+aucesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
         auc(:,:,ci)=aucci;
       end;

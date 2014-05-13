@@ -59,4 +59,4 @@ clf;image3d(clsfr.W,1,'plotPos',Cpos,'Xvals',Cnames,'disptype','plot','ticklabs'
 
 %---------------------------------------------------------------------------------------------------
 %7) use train_erp_clsfr which does all this for you!
-[clsfr,res,X]=train_erp_clsfr(X,Y,'ch_pos',Cnames,'fs',fs,'compKernel',0,'objFn','lr_cg');
+[clsfr,res,X]=train_erp_clsfr(X,Y,'ch_pos',Cnames,'fs',fs);

@@ -194,10 +194,10 @@ if ( opts.visualize )
    uY=unique(Y);sidx=[]; labels=opts.class_names;
    for ci=1:numel(uY);     
      if(iscell(uY)) tmp=strmatch(uY(ci),Y); yind=false(size(Y)); yind(tmp)=true; else yind=(Y==uY(ci)); end;
-      mu(:,:,ci)=mean(X(:,:,yind),3);
+      mu(:,:,ci)=mean(X(:,:,Yci),3);
       if(~(ci>1 && numel(uY)<=2)) 
         [aucci,sidx]=dv2auc(Yci*2-1,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
-        aucesp=auc_confidence(numel(Y),sum(Yci)./numel(Y));
+        aucesp=auc_confidence(numel(Y),sum(Yci)./numel(Y),.2);
         aucci(aucci<.5+aucesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
         auc(:,:,ci)=aucci;
       end;
