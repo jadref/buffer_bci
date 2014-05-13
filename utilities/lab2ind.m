@@ -54,8 +54,6 @@ else
 end
 if ( isstr(Y) )    Y =single(Y); end;
 if ( islogical(Y)) Y =single(Y); key=single(key); zeroLab=1; end;
-% BODGE: cell array of char's as integers
-if ( iscell(key) && isstr(key{1}) && numel(key{1})==1 ) key=strvcat(key{:}); end; 
 if ( isstr(key) ) key=single(key); end;
 key=key(:); % ensure key is col vector
 
