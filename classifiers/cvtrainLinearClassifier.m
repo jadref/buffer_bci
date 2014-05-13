@@ -39,13 +39,13 @@ function [classifier,res,Y]=cvtrainLinearClassifier(X,Y,Cs,fIdxs,varargin)
 %  res   -- [struct] results structure as returned by cvtrainFn
 %
 % See also: cvtrainFn, cv2trainFn, lr_cg, klr_cg, l2svm_cg, rls_cg
-opts=struct('objFn','lr_cg','dim',[],'spType','1vR','spKey',[],'spMx',[],'zeroLab',0,...
+opts=struct('objFn','lr_cg','dim',-1,'spType','1vR','spKey',[],'spMx',[],'zeroLab',0,...
             'balYs',0,'verb',0,'Cscale',[],'compKernel',0,'binsp',1,'cv2',0);
 [opts,varargin]=parseOpts(opts,varargin);
 if( nargin < 3 ) Cs=[]; end;
 if( nargin < 4 || isempty(fIdxs) ) fIdxs=10; end;
 
-dim=opts.dim; if ( isempty(dim) ) dim=ndims(X); end;
+dim=opts.dim; if ( isempty(dim) ) dim=ndims(X); end; % default to 
 dim(dim<0)=dim(dim<0)+ndims(X)+1; % convert negative to positive indicies
 
 if( ndims(Y)==2 && size(Y,1)==1 && size(Y,2)>1 ) Y=Y'; end; % col vector only
@@ -71,7 +71,7 @@ end
 if ( numel(fIdxs)==1 ) fIdxs=gennFold(Y,fIdxs,'dim',numel(dim)+1); end;
 if ( opts.balYs ) [fIdxs] = balanceYs(Y,fIdxs); end % balance the folding if wanted
 
-% estimate good range hype-params
+% estimate good range hyper-params
 Cscale=opts.Cscale;
 if ( isempty(Cscale) || isequal(Cscale,'l2') )  Cscale=CscaleEst(X,2,[],0);
 elseif ( isequal(Cscale,'l1') )                 Cscale=sqrt(CscaleEst(X,2,[],0));
