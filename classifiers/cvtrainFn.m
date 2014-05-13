@@ -320,7 +320,7 @@ else % estimate from per fold solutions
     res.opt.tstf=res.tstf(:,:,optCi);
   end
 end
-if ( ~isempty(opts.calibrate) ) % N.B. only for linear classifiers!
+if ( ~isempty(opts.calibrate) && ~isequal(opts.calibrate,0) ) % N.B. only for linear classifiers!
   cr=res.tstbin(:,:,optCi); % cv-estimated probability of being correct - target for calibration
   %if ( strcmp(opts.calibrate,'bal') ) cr = cr([1 1],:,:); end; % balanced calibration
   % correct the targets to prevent overfitting
