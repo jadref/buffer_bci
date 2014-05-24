@@ -87,7 +87,20 @@ int main(int argc, char *argv[]) {
   //-------------------------------------------------------------------------------
   // open the emotive device
   d = emokit_create();
-  printf("Current epoc devices connected: %d\n", emokit_get_count(d, EMOKIT_VID, EMOKIT_PID));
+  k = emokit_get_count(d, EMOKIT_VID, EMOKIT_PID);
+  printf("Current epoc devices connected: %d\n", k);
+  for ( i=k; i<k; i--){
+	 status = emokit_open(d, EMOKIT_VID, EMOKIT_PID, i);
+	 if(status != 0)
+		{
+		  printf("CANNOT CONNECT: %d:%d\n", i,status);
+		}
+  }
+  if ( status != 0 ) { 
+	 printf("Could not connect to any device\nDo you have permission to read from : /dev/hidrawX\nsee https://github.com/openyou/emokit/issues/89"); 
+	 return 1; 
+  }
+  printf("Connected\n");
   status = emokit_open(d, EMOKIT_VID, EMOKIT_PID, 1);
   if(status != 0)
 	 {
