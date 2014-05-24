@@ -19,68 +19,11 @@ function varargout = gameController(varargin)
 %      instance to run (singleton)".
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
-
-% Copyright 2002-2003 The MathWorks, Inc.
-
-% Edit the above text to modify the response to help gameController
-
-% Last Modified by GUIDE v2.5 26-Oct-2013 23:20:16
-
-% Begin initialization code - DO NOT EDIT
-gui_Singleton = 1;
-gui_State = struct('gui_Name',       mfilename, ...
-                   'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @gameController_OpeningFcn, ...
-                   'gui_OutputFcn',  @gameController_OutputFcn, ...
-                   'gui_LayoutFcn',  [] , ...
-                   'gui_Callback',   []);
-if nargin && ischar(varargin{1})
-    gui_State.gui_Callback = str2func(varargin{1});
-end
-
-if nargout
-    [varargout{1:nargout}] = gui_mainfcn(gui_State, varargin{:});
+if nargin && ischar(varargin{1}) % call the call-back function
+  feval(varargin{:});
 else
-    gui_mainfcn(gui_State, varargin{:});
+  varargout{1} = gameController_layout(varargin{:});  
 end
-% End initialization code - DO NOT EDIT
-
-
-% --- Executes just before gameController is made visible.
-function gameController_OpeningFcn(hObject, eventdata, handles, varargin)
-% This function has no output args, see OutputFcn.
-% hObject    handle to figure
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to gameController (see VARARGIN)
-
-% Choose default command line output for gameController
-handles.output = hObject;
-data = handles;
-data.subject='test';
-data.level =1;
-data.speed =6;
-data.phasesCompleted={};
-data.phasetoRun=[];
-
-% Update handles structure
-guidata(hObject, data);
-
-% UIWAIT makes gameController wait for user response (see UIRESUME)
-% uiwait(handles.gameController);
-
-
-% --- Outputs from this function are returned to the command line.
-function varargout = gameController_OutputFcn(hObject, eventdata, handles) 
-% varargout  cell array for returning output args (see VARARGOUT);
-% hObject    handle to figure
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Get default command line output from handles structure
-varargout{1} = handles.output;
-
-
 
 function subjectName_Callback(hObject, eventdata, handles)
 % hObject    handle to subjectName (see GCBO)
@@ -89,6 +32,7 @@ function subjectName_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of subjectName as text
 %        str2double(get(hObject,'String')) returns contents of subjectName as a double
+handles=guidata(hObject);
 handles.subject=get(hObject,'String');
 guidata(hObject,handles);
 
@@ -111,6 +55,7 @@ function capFitting_Callback(hObject, eventdata, handles)
 % hObject    handle to capFitting (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+handles=guidata(hObject);
 handles.phaseToRun='capFitting';
 guidata(hObject,handles);
 uiresume;
@@ -121,6 +66,7 @@ function calibration_Callback(hObject, eventdata, handles)
 % hObject    handle to calibration (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+handles=guidata(hObject);
 handles.phaseToRun='calibrate';
 guidata(hObject,handles);
 uiresume;
@@ -131,6 +77,7 @@ function classifier_Callback(hObject, eventdata, handles)
 % hObject    handle to classifier (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+handles=guidata(hObject);
 handles.phaseToRun='train';
 guidata(hObject,handles);
 uiresume;
@@ -141,6 +88,7 @@ function snake_Callback(hObject, eventdata, handles)
 % hObject    handle to snake (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+handles=guidata(hObject);
 handles.phaseToRun='snake';
 guidata(hObject,handles);
 uiresume;
@@ -151,6 +99,7 @@ function sokoban_Callback(hObject, eventdata, handles)
 % hObject    handle to sokoban (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+handles=guidata(hObject);
 handles.phaseToRun='sokoban';
 guidata(hObject,handles);
 uiresume;
@@ -161,6 +110,7 @@ function pacman_Callback(hObject, eventdata, handles)
 % hObject    handle to pacman (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+handles=guidata(hObject);
 handles.phaseToRun='pacman';
 guidata(hObject,handles);
 uiresume;
@@ -171,6 +121,7 @@ function practice_Callback(hObject, eventdata, handles)
 % hObject    handle to practice (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+handles=guidata(hObject);
 handles.phaseToRun='practice';
 guidata(hObject,handles);
 uiresume;
@@ -186,6 +137,7 @@ function level_Callback(hObject, eventdata, handles)
 %        contents{get(hObject,'Value')} returns selected item from level
 %fprintf('hello');
 lvls=get(hObject,'String');
+handles=guidata(hObject);
 handles.level=lvls{get(hObject,'Value')};
 guidata(hObject,handles);
 
@@ -207,6 +159,7 @@ function uipanel4_SelectionChangeFcn(hObject, eventdata, handles)
 % hObject    handle to uipanel4 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+handles=guidata(hObject);
 handles.level = str2num(get(hObject,'String'));
 guidata(hObject,handles);
 
@@ -215,6 +168,7 @@ function uipanel5_SelectionChangeFcn(hObject, eventdata, handles)
 % hObject    handle to uipanel4 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+handles=guidata(hObject);
 handles.speed = str2num(get(hObject,'String')); 
 guidata(hObject,handles);
 
@@ -248,6 +202,7 @@ function eegviewer_Callback(hObject, eventdata, handles)
 % hObject    handle to eegviewer (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+handles=guidata(hObject);
 handles.phaseToRun=get(hObject,'tag');
 guidata(hObject,handles);
 uiresume;
@@ -258,6 +213,7 @@ function Spelling_Callback(hObject, eventdata, handles)
 % hObject    handle to Spelling (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+handles=guidata(hObject);
 handles.phaseToRun=get(hObject,'tag');
 guidata(hObject,handles);
 uiresume;
