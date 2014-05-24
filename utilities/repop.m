@@ -80,7 +80,8 @@ persistent compileOK;
 mlock % weirdly this is needed for the persistent variable to remain set between calls
 
 if ( isempty(compileOK) ) % only try to compile the function once
-  if ( exist('bsxfun','builtin') || exist(fullfile(fileparts(mfilename('fullpath')),'compileFailed'),'file') ) % matlab R2008 or later, don't even bother to compile!
+  if ( exist('bsxfun','builtin') || exist(fullfile(fileparts(mfilename('fullpath')),'compileFailed'),'file') ...
+       || exist('OCTAVE_VERSION','builtin') ) % matlab R2008 or later, don't even bother to compile!
     compileOK=false;
     [varargout{1:nargout}] = repopm(varargin{:});
     return;
