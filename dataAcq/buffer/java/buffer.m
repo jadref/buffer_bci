@@ -77,7 +77,7 @@ switch cmd;
              'labels',{{}},...
              'dataType',hdrj.dataType);
   labj=hdrj.labels; for ci=1:numel(labj); hdr.labels{ci}=char(labj(ci)); end;
-  if ( !isnumeric(hdr.fSample) && exist('OCTAVE_VERSION','builtin') ) hdr.fSample=hdr.fSample.doubleValue(); end;
+  if ( ~isnumeric(hdr.fSample) && exist('OCTAVE_VERSION','builtin') ) hdr.fSample=hdr.fSample.doubleValue(); end;
   % Argh! duplicte field names to also be in the mex-version format, i.e non-camelCase
   hdr.nchans  =hdr.nChans;
   hdr.nsamples=hdr.nSamples;
@@ -177,7 +177,7 @@ switch cmd;
   else
     varargout{1}=bufClient.getSamp(detail);
   end
-  if ( !isnumeric(varargout{1}) && exist('OCTAVE_VERSION','builtin') )%in octave have to manually convert arrays..
+  if ( ~isnumeric(varargout{1}) && exist('OCTAVE_VERSION','builtin') )%in octave have to manually convert arrays..
     varargout{1}=varargout{1}.doubleValue();
   end
  
