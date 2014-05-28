@@ -1,14 +1,27 @@
-buffer_bci
+Buffer BCI
 ==========
 
-Simple Matlab/Octave based framework for building Brain Computer/Machine Interfaces (BCI/BMI)s
+Buffer BCI is a platform independent and language agnostic framework
+for building Brain Computer Interface experiements.  It is based on a
+client-server architecture with multiple clients getting and putting
+data to a centeral data and events server.  The server is based on the
+[fieldtrip buffer](http://fieldtrip.fcdonders.nl/development/realtime)
+specificitation for data access and storage. 
 
-This directory contains all the matlab code, and associated .mex files for the BCI framework used in the BCI Practical course.
-This system has been tested to work on Mac, Windows or Linux, and works with any Matlab version >R14.
+The server is available for Mac, Linux and Windows and language
+bindings are provided the following programming languages Matlab,
+Octave, Java, Python, C\# and c.  For Matlab and Octave additional
+signal-analysis, classification and example demonstration BCIs are
+provided.  A summary of the language feature support is:
+ * C#, java, Python, c : support for accessing data and events
+ * Octave : with Octave_java, support for accessing data and events. Support of processing of data.  Graphics supportd depends on the graphics toolkit available, viz. Qthandles=full support, fltk=data visualization, gnuplot=no graphics.
+ * Matlab : R>7.4, full support for accessing data and events, signal analysis, data visualization and GUI control.
+
+File List
+---------
 
 An overview of the included directories is:
   dataAcq -- code for data acquisition, i.e. interfacing to recording hardware, based on the field-trip buffer specification <http://fieldtrip.fcdonders.nl/development/realtime>.
-             Also code for generating and waiting for events via the buffer
 				 Also scripts (.bat for windows, .sh for Linux/Mac) for starting the executables
   dataAcq/buffer -- mex files for MATLAB access to fieldtrip buffer data storage
   dataAcq/buffer/glnx86 -- linux executable binaries for hardware access
@@ -16,6 +29,10 @@ An overview of the included directories is:
   dataAcq/buffer/maci   -- (intel) Mac OS executable binaries for hardware access
   dataAcq/buffer/maci64 -- 64-bit (intel) Mac OS executable binaries for hardware access
   dataAcq/buffer/win32  -- windows executable binaries for hardware access
+  dataAcq/buffer/c      -- buffer client driver code in C
+  dataAcq/buffer/csharp -- buffer client driver code in C#
+  dataAcq/buffer/python -- buffer client driver code in Python
+  dataAcq/buffer/java   -- buffer client driver code in java
 
   signalProc -- code for pre-processing EEG data, training classifiers, and applying the trained classifiers on-line for the ERP and ERSP based BCIs
 
@@ -27,18 +44,21 @@ An overview of the included directories is:
 
   plotting -- various plotting utility functions, e.g. plotting topographic head outlines, plotting 3-d data (multi-plots), zooming multi-plots
   
+  games -- Example BCI system for playing 3 simple games (Snake, Sokoban and Pacman) using and visual evoked response (ERP) type BCI
+
   offline -- Example scripts for process saved BCI data offline, i.e. analysing data loaded from file
 
-  example -- Example clients for the major supported programming languages; Matlab, java, Python, C#
+  example -- Example clients for the major supported programming languages; Matlab, java, Python, C#, C
 
   tutorial -- Tutorial arranged in lectures 1 through 5 about how BCIs work, 
               the structure and components of a BCI and how to build a standard BCI with the buffer_bci framework
-
-  games -- Example BCI system for playing 3 simple games (Snake, Sokoban and Pacman) using and visual evoked response (ERP) type BCI
-
+				 
   imaginedMovement -- Example BCI system for controlling a cursor using an imagined movement (ERSP) type BCI
 
   matrixSpeller -- Example BCI system for spelling characters using a visual matrix-speller (p300) type BCI
+
+  matrixSpellerPTB -- Example BCI system for spelling characters using a visual matrix-speller (p300) type BCI.  This version uses PsychToolBox to improve the timing of the visual stimulus rendering.
+    N.B. to use this you will need to set the PTB path correctly in utilities/initPTBPaths.m
 
   cursorControl -- Example BCI system for controlling a cursor in 2-d using
                              visual evoked response (ERP) type BCI
@@ -53,13 +73,21 @@ An overview of the included directories is:
 Installation
 ------------
 
-Copy these directories somewhere on your local harddrive.
+Copy these directories somewhere on your local drive.
 
-*Windows Only* : modify the path in the file utilities/findMatlab.bat to point to your install of matlab
+Note: is using MATLAB/Octave and the executable is not found
+automatically then modify the path in the file
+utilities/findMatlab.bat (windows) or utilities/findMatlab.sh
+(Linux/MacOSX) to point to the executable location
 
-*OSX Only* : make the recording file runnable by executing this command in your terminal: sudo chmod +x /dataAcq/buffer/maci/recording
 
-Read the readme.txt file in either of the games, imaginedMovement, or matrixSpeller directories for instructions on how to startup and run those demos.
+QuickStart
+----------
+
+Read the readme.txt file in either of the games, imaginedMovement, or
+matrixSpeller directories for instructions on how to startup and run
+those demos.  (Note: all demos require Matlab/Octave_java+QtHandles to
+run correctly!)
 
 To run the games demo:
 
@@ -70,17 +98,16 @@ To run the games demo:
   1.2) start a *simulated* data source by running: dataAcq/startSignalProxy.bat or .sh
 
  If you have EEG hardware connected then depending on the hardware:
-  TMSi Mobita
-  		 1.1) start a buffer by running: dataAcq/startBuffer.bat or buffer/startBuffer.sh
-       1.2) start the hardware driver by running: dataAcq/startMobita.bat or dataAcq/startMobita.sh
-   Emotiv Epoc:
-	    1.1) start the hardware driver *only* by running: dataAcq/startEmotiv.bat or dataAcq/startEmotiv.sh
-   Biosemi Active 2:
-       1.1) start the hardware driver *only* by running: dataAcq/startBiosemi.bat or dataAcq/startBiosemi.sh
+  1.1) start a buffer by running: dataAcq/startBuffer.bat or buffer/startBuffer.sh
+  1.2) start appropriate acquisition driver for your device:
+  		 TMSi Mobita :       dataAcq/startMobita.bat  or  dataAcq/startMobita.sh
+       Emotiv Epoc:        dataAcq/startEmotiv.bat  or  dataAcq/startEmotiv.sh
+       Biosemi Active 2:   dataAcq/startBiosemi.bat or  dataAcq/startBiosemi.sh
+		 Interaxon Muse:     dataAcq/startMuse.bat    or  dataAcq/startMuse.sh
 
-2) Start the Matlab based signal processing process by running: games/startSigProcBuffer.bat or .sh
+2) Start the Matlab/Octave based signal processing process by running: games/startSigProcBuffer.bat or .sh
 
-3) Start the Matlab based experiment control & stimulus presentation system by running : games/runGame.bat or runGame.sh
+3) Start the Matlab/Octave based experiment control & stimulus presentation system by running : games/runGame.bat or runGame.sh
 
 4) Type in the subject name to the experiment control window, and then run through each of the experiment phases: 
 
