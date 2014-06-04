@@ -7,9 +7,13 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %  X         - [ ch x time x epoch ] data set
 %  Y         - [ nEpoch x 1 ] set of data class labels
 % Options:  (specify as 'name',value pairs, e.g. train_ersp_clsfr(X,Y,'fs',10);
+%  ch_names  - {str} cell array of strings which label each channel
 %  ch_pos    - [3 x nCh] 3-d co-ordinates of the data electrodes
 %              OR
 %              {str} cell array of strings which label each channel in *1010 system*
+%  capFile   - 'filename' file from which to load the channel position information.
+%              *this overrides* ch_pos if given
+%  overridechnms - [bool] flag if channel order from 'capFile' overrides that from the 'ch_names' option
 %  fs        - sampling rate of the data
 %  timeband  - [2 x 1] band of times to use for classification, all if empty ([])
 %  freqband  - [2 x 1] or [3 x 1] or [4 x 1] band of frequencies to use
