@@ -24,8 +24,9 @@ if ( (isnumeric(vals) || (~isempty(overridenms) && overridenms)) )%...
    %     && numel(Cnames)<=numel(vals)  )
    ovals=vals;
    if ( isnumeric(vals) ) vals = num2cell(vals(:)); end;
-   vals(1:min(end,numel(Cnames)))=Cnames(1:min(numel(vals),end)); % Use ch-names from capFile
-   %vals(1:numel(Cnames))=Cnames; % Use ch-names from capFile
+   if ( isempty(vals) ) vals(1:numel(Cnames))=Cnames; % Use ch-names from capFile
+   else                 vals(1:min(end,numel(Cnames)))=Cnames(1:min(numel(vals),end)); % Use ch-names from capFile
+   end
 end
 % Add the channel position info, and iseeg status
 chnm={};
