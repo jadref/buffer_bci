@@ -94,12 +94,12 @@ To run the games demo:
 
  If you have *no* EEG hardware, but just want to test:
 
-  1.2) start a buffer by running: `dataAcq/startBuffer.bat` or `buffer/startBuffer.sh`
+  1.2) start a buffer by running: `dataAcq/startBuffer.bat` or `buffer/startBuffer.sh`  
   1.2) start a *simulated* data source by running: `dataAcq/startSignalProxy.bat` or .sh
 
  If you have EEG hardware connected then depending on the hardware:
 
-  1.1) start a buffer by running: `dataAcq/startBuffer.bat` or `buffer/startBuffer.sh`
+  1.1) start a buffer by running: `dataAcq/startBuffer.bat` or `buffer/startBuffer.sh`  
   1.2) start appropriate acquisition driver for your device:  
   		 TMSi Mobita([1]):       `dataAcq/startMobita.bat`  or  `dataAcq/startMobita.sh`  
        Emotiv Epoc:        `dataAcq/startEmotiv.bat`  or  `dataAcq/startEmotiv.sh`  
@@ -112,11 +112,11 @@ To run the games demo:
 
 4. Type in the subject name to the experiment control window, and then run through each of the experiment phases: 
 
-* Practice -- practice the task to be used in the BCI.  Green arrows indicate target locations you should attend to by counting the white and red arrow 'flashes'
+  * Practice -- practice the task to be used in the BCI.  Green arrows indicate target locations you should attend to by counting the white and red arrow 'flashes'
 
-* Calibration -- get calibration data by attending as instructed for ~90seconds
+  * Calibration -- get calibration data by attending as instructed for ~90seconds
 
-* Classifier Training -- train a classifier using the calibration data.  3 windows will pop-up showing: Per-class ERPs, per-class AUCs, and cross-validated classification performance.
+  * Classifier Training -- train a classifier using the calibration data.  3 windows will pop-up showing: Per-class ERPs, per-class AUCs, and cross-validated classification performance.
 
 5. Select the game you would like to play!
 
