@@ -172,7 +172,7 @@ return;
 %-----------------------
 function testCase();
 %Add necessary paths
-run ../utilities/initPaths;
+run ../utilities/initPaths.m;
 
 % start the buffer proxy
 % dataAcq/startSignalProxy
