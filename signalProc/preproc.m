@@ -5,11 +5,15 @@ function [X,pipeline,info,opts]=preproc(X,varargin)
 %
 % Inputs:
 %  X         - [ ch x time x epoch ] data set
-%  Y         - [ nEpoch x 1 ] set of data class labels
 % Options:  (specify as 'name',value pairs, e.g. train_ersp_clsfr(X,Y,'fs',10);
+%  Y         - [ nEpoch x 1 ] set of data class labels
+%  ch_names  - {str} cell array of strings which label each channel
 %  ch_pos    - [3 x nCh] 3-d co-ordinates of the data electrodes
 %              OR
 %              {str} cell array of strings which label each channel in *1010 system*
+%  capFile   - 'filename' file from which to load the channel position information.
+%              *this overrides* ch_pos if given
+%  overridechnms - [bool] flag if channel order from 'capFile' overrides that from the 'ch_names' option
 %  fs        - sampling rate of the data
 %  timeband  - [2 x 1] band of times to use for classification, all if empty ([])
 %  freqband  - [2 x 1] or [3 x 1] or [4 x 1] band of frequencies to use
@@ -31,7 +35,6 @@ function [X,pipeline,info,opts]=preproc(X,varargin)
 %               1 - visualize, but don't wait
 %               2 - visualize, and wait for user before continuing
 %  verb      - [int] verbosity level
-%  ch_names  - {str} cell array of strings which label each channel
 %  class_names - {str} names for each of the classes in Y in *increasing* order ([])
 % Outputs:
 %  X       -- [ppch x pptime x ppepoch] pre-processed data (N.B. may/will have different size to input X)
@@ -57,6 +60,19 @@ if ( isempty(ch_pos) && (~isempty(ch_names) || opts.overridechnms) ) % convert n
   ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names  
 end
 fs=opts.fs; if ( isempty(fs) ) warning('No sampling rate specified... assuming fs=250'); fs=250; end;
+Y=opts.Y; if(isempty(Y))Y=ones(size(X,3),1);end
+
+
+% convert X to 3-d if needed
+if ( iscell(X) ) 
+  if ( isnumeric(X{1}) ) 
+    X=cat(3,X{:});
+  else
+    error('Unrecognised data format!');
+  end
+elseif ( isstruct(X) )
+  X=cat(3,X.buf);
+end 
 
 %1) Detrend
 if ( opts.detrend )
@@ -89,7 +105,7 @@ end
 filt=[]; 
 fs=opts.fs;
 outsz=[size(X,2) size(X,2)];
-if(~isempty(opts.downsample)) outsz(2)=min(outsz(2),round(trlen_samp*opts.downsample/fs)); end;
+if(~isempty(opts.downsample)) outsz(2)=min(outsz(2),round(size(X,2)*opts.downsample/fs)); end;
 if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) ) 
   fprintf('4) filter\n');
   len=size(X,2);
@@ -167,17 +183,25 @@ if ( opts.badtrrm )
   fprintf('2.5) bad trial removal');
   [isbadtr,trstds,trthresh]=idOutliers(X,3,opts.badtrthresh);
   X=X(:,:,~isbadtr);
+  if (~isempty(Y)) Y=Y(~isbadtr);end
   fprintf(' %d tr removed\n',sum(isbadtr));
 end;
 
 %5.5) Visualise the input?
 if ( opts.visualize && ~isempty(ch_pos) )
-  Y=opts.Y; if(isempty(Y))Y=ones(size(X,3),1);end
-  uY=unique(Y);sidx=[];
-   for ci=1:numel(uY);
-      mu(:,:,ci)=mean(X(:,:,Y==uY(ci)),3);
-      if(~(ci>1 && numel(uY)<=2)) [auc(:,:,ci),sidx]=dv2auc((Y==uY(ci))*2-1,X,3,sidx); end;
-      labels{ci}=sprintf('%d',uY(ci));
+   uY=unique(Y);sidx=[]; labels=opts.class_names;
+   for ci=1:numel(uY);     
+     if(iscell(uY)) tmp=strmatch(uY(ci),Y); Yci=false(size(Y)); Yci(tmp)=true; else Yci=(Y==uY(ci)); end;
+      mu(:,:,ci)=mean(X(:,:,Yci),3);
+      if(~(ci>1 && numel(uY)<=2)) 
+        [aucci,sidx]=dv2auc(Yci*2-1,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
+        aucesp=auc_confidence(numel(Y),sum(Yci)./numel(Y),.2);
+        aucci(aucci<.5+aucesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
+        auc(:,:,ci)=aucci;
+      end;
+      if ( isempty(labels) || numel(labels)<ci || isempty(labels{ci}) ) 
+        if ( iscell(uY) ) labels{ci}=uY{ci}; else labels{ci}=sprintf('%d',uY(ci)); end
+      end;
    end
    times=(1:size(mu,2))/opts.fs;
    erpfig=figure('Name','Data Visualisation: ERP');
