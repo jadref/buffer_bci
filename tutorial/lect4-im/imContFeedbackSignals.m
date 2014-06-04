@@ -1,4 +1,4 @@
-run ../../utilities/initPaths;
+run ../../utilities/initPaths.m;
 
 buffhost='localhost';buffport=1972;
 % wait for the buffer to return valid header information

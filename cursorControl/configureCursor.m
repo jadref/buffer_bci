@@ -3,7 +3,7 @@ if ( exist('OCTAVE_VERSION','builtin') ) debug_on_error(1); else dbstop if error
 if ( exist('cursorConfig','var') && ~isempty(cursorConfig) ) return; end;
 cursorConfig=true;
 
-run ../utilities/initPaths;
+run ../utilities/initPaths.m;
 
 buffhost='localhost';buffport=1972;
 global ft_buff; ft_buff=struct('host',buffhost,'port',buffport);
@@ -22,6 +22,15 @@ end;
 % set the real-time-clock to use
 initgetwTime();
 initsleepSec();
+
+if ( exist('OCTAVE_VERSION','builtin') ) 
+  page_output_immediately(1); % prevent buffering output
+  if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
+    graphics_toolkit('qthandles'); % use fast rendering library
+  elseif ( ~isempty(strmatch('fltk',available_graphics_toolkits())) )
+    graphics_toolkit('fltk'); % use fast rendering library
+  end
+end
 
 verb=1;
 nSeq=15;

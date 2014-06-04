@@ -1,7 +1,7 @@
 % guard to prevent running multiple times
 %if ( exist('runConfig','var') && ~isempty(runConfig) ) return; end;
 %runConfig=true;
-run ../utilities/initPaths;
+run ../utilities/initPaths.m;
 
 buffhost='localhost';buffport=1972;
 global ft_buff; ft_buff=struct('host',buffhost,'port',buffport);
@@ -20,6 +20,15 @@ end;
 % set the real-time-clock to use
 initgetwTime();
 initsleepSec();
+
+if ( exist('OCTAVE_VERSION','builtin') ) 
+  page_output_immediately(1); % prevent buffering output
+  if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
+    graphics_toolkit('qthandles'); % use fast rendering library
+  elseif ( ~isempty(strmatch('fltk',available_graphics_toolkits())) )
+    graphics_toolkit('fltk'); % use fast rendering library
+  end
+end
 
 capFile='cap_tmsi_mobita_black';%'1010'; %'emotiv';%cap_tmsi_mobita_im2'; N.B. use 1010 for emotiv so non-eeg are labelled correctly
 verb=0;

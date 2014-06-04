@@ -1,4 +1,4 @@
-run ../../utilities/initPaths
+run ../../utilities/initPaths.m
 
 % load the data this contains
 % X - [ channels x time x epochs ] raw EEG data
