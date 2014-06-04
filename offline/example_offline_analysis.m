@@ -33,6 +33,10 @@ run ../utilities/initPaths
 % 3) apply this classifier to the same data (or new data)
 [f]      =buffer_apply_ersp_clsfr(data,clsfr);  % f contains the classifier decision values
 
+
+% Alt1 : just run the pre-processing on this data
+[X_pp,pipeline]=preproc(data,'freqband',[8 10 24 28],'capFile',capFile,'overridechnms',1);
+
 % Alt: Manually pre-process the data
 dd=cat(3,data.buf); % get 3-d array
 dd=detrend(dd,2);   % temporal trend removal
