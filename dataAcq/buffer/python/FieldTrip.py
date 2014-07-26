@@ -56,8 +56,19 @@ numpyType = ['int8', 'uint8', 'uint16', 'uint32', 'uint64', 'int8', 'int16', 'in
 # Corresponding word sizes
 wordSize = [1,1,2,4,8,1,2,4,8,4,8]
 # FieldTrip data type as indexed by numpy dtype.num
-# this goes  0 => nothing, 1..4 => int8, uint8, int16, uint16, 7..10 => int32, uint32, int64, uint64  11..12 => float32, float64
-dataType = [-1, 5, 1, 6, 2, -1, -1, 7, 3, 8, 4, 9, 10]
+# dType  dType.num  fieldTrip
+# int8      1	       1	
+# uint8     2	       5
+# int16     3	       2
+# uint16    4	       6
+# int32     5	       2
+# uint32    6	       7
+# int64     7	       4
+# uint64    8	       8
+# float32   11	       9
+# float64   12	       10
+
+dataType = [-1, 5, 1, 6, 2, 7, 3, 8, 4, -1, -1, 9, 10]
 
 def serialize(A):
 	"""Returns Fieldtrip data type and string representation of the given object, if possible."""
