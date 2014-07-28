@@ -50,7 +50,7 @@ public class BufferClient {
 		timeout=500;
 	}
 	
-	public boolean connect(String hostname, int port) throws IOException {
+	public synchronized boolean connect(String hostname, int port) throws IOException {
 		 //System.out.println("connect ");
 		if ( sockChan != null && sockChan.isConnected()) {
 			 disconnect(); // disconnect old connection
@@ -67,7 +67,7 @@ public class BufferClient {
 		return activeConnection;
 	}
 	
-	public boolean connect(String address) throws IOException {
+	public synchronized boolean connect(String address) throws IOException {
 		int colonPos = address.lastIndexOf(':');
 		if (colonPos != -1) {
 			String hostname = address.substring(0,colonPos);
@@ -87,18 +87,18 @@ public class BufferClient {
 		return false;
 	}
 	
-	 public boolean reconnect() throws IOException {
+	 public synchronized boolean reconnect() throws IOException {
 		  System.out.println("Remote side disconnected detected. Trying to reconnect to : " + host + ":" + port);
 		  return connect(host,port);
 	 }
 
-	public void disconnect() throws IOException {
+	public synchronized void disconnect() throws IOException {
 		 if ( sockChan!=null ) sockChan.socket().close();		 
 		sockChan = null;
 		activeConnection=false;
 	}
 	
-	public boolean isConnected() {
+	public synchronized boolean isConnected() {
 		 boolean conn=false;
 		 if (activeConnection && sockChan != null && sockChan.isConnected() ) {
 			  // try to read 1 byte, if this fails then the socket was reset
@@ -126,7 +126,7 @@ public class BufferClient {
 	 public int setTimeout(int val){ timeout=val; return timeout; }
 
 	
-	public Header getHeader() throws IOException {
+	public synchronized Header getHeader() throws IOException {
 		ByteBuffer buf;
 
 		buf = ByteBuffer.allocate(8);
@@ -140,7 +140,7 @@ public class BufferClient {
 	}
 	
 	/** Returns true if channel names were written */
-	public boolean putHeader(Header hdr) throws IOException {
+	public synchronized boolean putHeader(Header hdr) throws IOException {
 		ByteBuffer buf;
 		int bufsize = hdr.getSerialSize();
 
@@ -155,7 +155,7 @@ public class BufferClient {
 		return hdr.channelNameSize > hdr.nChans;
 	}
 	
-	public short[][] getShortData(int first, int last) throws IOException {
+	public synchronized short[][] getShortData(int first, int last) throws IOException {
 		DataDescription dd = new DataDescription();
 		ByteBuffer buf = getRawData(first, last, dd);
 	
@@ -183,7 +183,7 @@ public class BufferClient {
 		return data;
 	}
 	
-	public int[][] getIntData(int first, int last) throws IOException {
+	public synchronized int[][] getIntData(int first, int last) throws IOException {
 		DataDescription dd = new DataDescription();
 		ByteBuffer buf = getRawData(first, last, dd);
 	
@@ -218,7 +218,7 @@ public class BufferClient {
 		return data;
 	}
 	
-	public long[][] getLongData(int first, int last) throws IOException {
+	public synchronized long[][] getLongData(int first, int last) throws IOException {
 		DataDescription dd = new DataDescription();
 		ByteBuffer buf = getRawData(first, last, dd);
 	
@@ -260,7 +260,7 @@ public class BufferClient {
 		return data;
 	}		
 	
-	public float[][] getFloatData(int first, int last) throws IOException {
+	public synchronized float[][] getFloatData(int first, int last) throws IOException {
 		DataDescription dd = new DataDescription();
 		ByteBuffer buf = getRawData(first, last, dd);
 	
@@ -309,7 +309,7 @@ public class BufferClient {
 		return data;
 	}
 	
-	public double[][] getDoubleData(int first, int last) throws IOException {
+	public synchronized double[][] getDoubleData(int first, int last) throws IOException {
 		DataDescription dd = new DataDescription();
 		ByteBuffer buf = getRawData(first, last, dd);
 	
@@ -366,7 +366,7 @@ public class BufferClient {
 	}
 	
 	
-	public ByteBuffer getRawData(int first, int last, DataDescription descr) throws IOException {
+	public synchronized ByteBuffer getRawData(int first, int last, DataDescription descr) throws IOException {
 		ByteBuffer buf;
 
 		buf = ByteBuffer.allocate(16);
@@ -392,7 +392,7 @@ public class BufferClient {
 	}	
 	
 	
-	public BufferEvent[] getEvents() throws IOException {
+	public synchronized BufferEvent[] getEvents() throws IOException {
 		ByteBuffer buf;
 
 		buf = ByteBuffer.allocate(8);
@@ -414,7 +414,7 @@ public class BufferClient {
 	}	
 	
 	
-	public BufferEvent[] getEvents(int first, int last) throws IOException {
+	public synchronized BufferEvent[] getEvents(int first, int last) throws IOException {
 		ByteBuffer buf;
 
 		buf = ByteBuffer.allocate(16);
@@ -436,7 +436,7 @@ public class BufferClient {
 		return evs;
 	}
 	
-	public void putRawData(int nSamples, int nChans, int dataType, byte[] data) throws IOException {
+	public synchronized void putRawData(int nSamples, int nChans, int dataType, byte[] data) throws IOException {
 		if (nSamples == 0) return;
 		if (nChans == 0) return;
 	
@@ -451,7 +451,7 @@ public class BufferClient {
 		readResponse(PUT_OK);
 	}	
 	
-	public void putData(byte[][] data) throws IOException {
+	public synchronized void putData(byte[][] data) throws IOException {
 		int nSamples = data.length;
 		if (nSamples == 0) return;
 		int nChans = data[0].length;
@@ -472,7 +472,7 @@ public class BufferClient {
 		readResponse(PUT_OK);
 	}
 	
-	public void putData(short[][] data) throws IOException {
+	public synchronized void putData(short[][] data) throws IOException {
 		int nSamples = data.length;
 		if (nSamples == 0) return;
 		int nChans = data[0].length;
@@ -495,7 +495,7 @@ public class BufferClient {
 		readResponse(PUT_OK);
 	}	
 	
-	public void putData(int[][] data) throws IOException {
+	public synchronized void putData(int[][] data) throws IOException {
 		int nSamples = data.length;
 		if (nSamples == 0) return;
 		int nChans = data[0].length;
@@ -517,7 +517,7 @@ public class BufferClient {
 		readResponse(PUT_OK);
 	}
 	
-	public void putData(long[][] data) throws IOException {
+	public synchronized void putData(long[][] data) throws IOException {
 		int nSamples = data.length;
 		if (nSamples == 0) return;
 		int nChans = data[0].length;
@@ -539,7 +539,7 @@ public class BufferClient {
 		readResponse(PUT_OK);
 	}	
 		
-	public void putData(float[][] data) throws IOException {
+	public synchronized void putData(float[][] data) throws IOException {
 		int nSamples = data.length;
 		if (nSamples == 0) return;
 		int nChans = data[0].length;
@@ -562,7 +562,7 @@ public class BufferClient {
 	}	
 	
 	 // 1-d data version.  Mostly for Octave calls, but useful in other cases
-	 public void putData(double[] data, int[] sz) throws IOException {
+	 public synchronized void putData(double[] data, int[] sz) throws IOException {
 		  int nSamples = sz[0]; // N.B. Java convention = ROW-Major, i.e. cols == channels vary fastest
 		  int nChans = sz[1];
 		  if( data.length != nSamples*nChans ) {
@@ -576,7 +576,7 @@ public class BufferClient {
 		  return;
 	 }
 	 
-	 public void putData(double[][] data) throws IOException {
+	 public synchronized void putData(double[][] data) throws IOException {
 		int nSamples = data.length;
 		if (nSamples == 0) return;
 		int nChans = data[0].length;
@@ -598,7 +598,7 @@ public class BufferClient {
 		readResponse(PUT_OK);
 	}	
 
-	public BufferEvent putEvent(BufferEvent e) throws IOException {
+	public synchronized BufferEvent putEvent(BufferEvent e) throws IOException {
 		ByteBuffer buf;
 
 		buf = ByteBuffer.allocate(8+e.size());
@@ -612,7 +612,7 @@ public class BufferClient {
 		return e;
 	}
 
-	public void putEvents(BufferEvent[] e) throws IOException {
+	public synchronized void putEvents(BufferEvent[] e) throws IOException {
 		ByteBuffer buf;
 		int bufsize = 0;
 	
@@ -632,7 +632,7 @@ public class BufferClient {
 		readResponse(PUT_OK);
 	}		
 	
-	public void flushHeader() throws IOException {
+	public synchronized void flushHeader() throws IOException {
 		ByteBuffer buf = ByteBuffer.allocate(8);
 		buf.order(myOrder); 
 	
@@ -641,7 +641,7 @@ public class BufferClient {
 		buf = readResponse(FLUSH_OK);
 	}	
 	
-	public void flushData() throws IOException {
+	public synchronized void flushData() throws IOException {
 		ByteBuffer buf = ByteBuffer.allocate(8);
 		buf.order(myOrder); 
 	
@@ -650,7 +650,7 @@ public class BufferClient {
 		buf = readResponse(FLUSH_OK);
 	}	
 	
-	public void flushEvents() throws IOException {
+	public synchronized void flushEvents() throws IOException {
 		ByteBuffer buf = ByteBuffer.allocate(8);
 		buf.order(myOrder); 
 	
@@ -659,7 +659,7 @@ public class BufferClient {
 		buf = readResponse(FLUSH_OK);
 	}	
 	
-	public SamplesEventsCount wait(int nSamples, int nEvents, int timeout) throws IOException {
+	public synchronized SamplesEventsCount wait(int nSamples, int nEvents, int timeout) throws IOException {
 		ByteBuffer buf;
 
 		buf = ByteBuffer.allocate(20);
@@ -674,18 +674,18 @@ public class BufferClient {
 		return new SamplesEventsCount(buf.getInt(), buf.getInt());
 	}
 	
-	public SamplesEventsCount waitForSamples(int nSamples, int timeout) throws IOException {
+	public synchronized SamplesEventsCount waitForSamples(int nSamples, int timeout) throws IOException {
 		return wait(nSamples, -1, timeout);
 	}	
 	
-	public SamplesEventsCount waitForEvents(int nEvents, int timeout) throws IOException {
+	public synchronized SamplesEventsCount waitForEvents(int nEvents, int timeout) throws IOException {
 		return wait(-1, nEvents, timeout);
 	}		
 	
-	public SamplesEventsCount poll() throws IOException {
+	public synchronized SamplesEventsCount poll() throws IOException {
 		return wait(0,0,0);
 	}
-	 public SamplesEventsCount poll(int timeout) throws IOException {
+	 public synchronized SamplesEventsCount poll(int timeout) throws IOException {
 		  return wait(-1,-1,timeout);
 	 }
 	
@@ -693,7 +693,7 @@ public class BufferClient {
 	//		protected methods and variables from here on
 	//*********************************************************************
 	
-	protected ByteBuffer readAll(ByteBuffer dst) throws IOException {
+	protected synchronized ByteBuffer readAll(ByteBuffer dst) throws IOException {
 		int rem = dst.remaining();
 		int now = 0;
 		while (rem > 0) {
@@ -707,7 +707,7 @@ public class BufferClient {
 		return dst;
 	}
 	
-	protected ByteBuffer readResponse(int expected) throws IOException {
+	protected synchronized ByteBuffer readResponse(int expected) throws IOException {
 		ByteBuffer def = ByteBuffer.allocate(8);
 		def.order(myOrder);
 		readAll(def);
@@ -726,7 +726,7 @@ public class BufferClient {
 		return buf;
 	}	
 	
-	protected ByteBuffer writeAll(ByteBuffer dst) throws IOException {
+	protected synchronized ByteBuffer writeAll(ByteBuffer dst) throws IOException {
 		int rem = dst.remaining();
 		int now=0;
 		while (rem > 0) {
@@ -740,7 +740,7 @@ public class BufferClient {
 		return dst;
 	}
 	
-	protected ByteBuffer preparePutData(int nChans, int nSamples, int type) {
+	protected synchronized ByteBuffer preparePutData(int nChans, int nSamples, int type) {
 		int bufsize = DataType.wordSize[type]*nSamples*nChans;
 		
 		ByteBuffer buf = ByteBuffer.allocate(8+16+bufsize);

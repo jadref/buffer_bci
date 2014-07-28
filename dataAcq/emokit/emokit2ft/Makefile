@@ -7,6 +7,7 @@ LIBHIDAPIPATH=/usr/local
 
 CXX = gcc
 CXXFLAGS = -I$(FTBUFFER) -Wunused -Wall -O
+LDLIBS = -lm
 LIBEXT=so
 
 ifneq (,$(findsting mingw32,$(PLATFORM)))
