@@ -31,6 +31,7 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %               1 - visualize, but don't wait
 %               2 - visualize, and wait for user before continuing
 %  verb      - [int] verbosity level
+%  class_names - {str} names for each of the classes in Y in *increasing* order ([])
 % Outputs:
 %  clsfr  - [struct] structure contining the stuff necessary to apply the trained classifier
 %  res    - [struct] results structure
@@ -39,14 +40,20 @@ opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],'downsample',[],'de
     'badchrm',1,'badchthresh',3.1,'badchscale',2,...
     'badtrrm',1,'badtrthresh',3,'badtrscale',2,...
     'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
-    'visualize',2,'badCh',[],'nFold',10);
+    'visualize',2,'badCh',[],'nFold',10,'class_names',[]);
 [opts,varargin]=parseOpts(opts,varargin);
 
 di=[]; ch_pos=opts.ch_pos; ch_names=opts.ch_names;
 if ( iscell(ch_pos) && isstr(ch_pos{1}) ) ch_names=ch_pos; ch_pos=[]; end;
-if ( isempty(ch_pos) && (~isempty(ch_names) || opts.overridechnms) ) % convert names to positions
+% convert names to positions
+if ( isempty(ch_pos) && ~isempty(opts.capFile) && (~isempty(ch_names) || opts.overridechnms) ) 
   di = addPosInfo(ch_names,opts.capFile,opts.overridechnms); % get 3d-coords
-  ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names
+  if ( any([di.extra.iseeg]) ) 
+    ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names    
+  else % fall back on showing all data
+    warning('Capfile didnt match any data channels -- no EEG?');
+    ch_pos=[];
+  end
 end
 
 %1) Detrend
@@ -72,7 +79,7 @@ if ( opts.badchrm || ~isempty(opts.badCh) )
   end;
   X=X(~isbadch,:,:);
   if ( ~isempty(ch_names) ) % update the channel info
-    ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names)));
+    if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names))); end;
     ch_names=ch_names(~isbadch(1:numel(ch_names)));
   end
   fprintf('%d ch removed\n',sum(isbadch));
@@ -138,8 +145,9 @@ if ( opts.badtrrm )
 end;
 
 %5.5) Visualise the input?
-if ( opts.visualize && ~isempty(ch_pos) )
-   uY=unique(Y);sidx=[];
+aucfig=[];erpfig=[];
+if ( opts.visualize )
+   uY=unique(Y);sidx=[]; labels=opts.class_names;
    for ci=1:numel(uY);
      if(iscell(uY)) tmp=strmatch(uY(ci),Y); Yci=false(size(Y)); Yci(tmp)=true; else Yci=(Y==uY(ci)); end;
       mu(:,:,ci)=mean(X(:,:,Yci),3);
@@ -149,7 +157,9 @@ if ( opts.visualize && ~isempty(ch_pos) )
         aucci(aucci<.5+aucesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
         auc(:,:,ci)=aucci;
       end;
-      labels{ci}=sprintf('%d',uY(ci));
+      if ( isempty(labels) || numel(labels)<ci || isempty(labels{ci}) ) 
+        if ( iscell(uY) ) labels{ci}=uY{ci}; else labels{ci}=sprintf('%d',uY(ci)); end
+      end;
    end
    times=(1:size(mu,2))/opts.fs;
    erpfig=figure('Name','Data Visualisation: ERP');
@@ -192,9 +202,9 @@ clsfr.badtrthresh = []; if ( ~isempty(trthresh) ) clsfr.badtrthresh = trthresh(e
 clsfr.badchthresh = []; if ( ~isempty(chthresh) ) clsfr.badchthresh = chthresh(end)*opts.badchscale; end
 % record some dv stats which are useful
 tstf = res.tstf(:,res.opt.Ci); % N.B. this *MUST* be calibrated to be useful
-clsfr.dvstats.N   = [sum(Y>0) sum(Y<=0) numel(Y)]; % [pos-class neg-class pooled]
-clsfr.dvstats.mu  = [mean(tstf(Y>0)) mean(tstf(Y<=0)) mean(tstf)];
-clsfr.dvstats.std = [std(tstf(Y>0))  std(tstf(Y<=0))  std(tstf)];
+clsfr.dvstats.N   = [sum(res.Y>0) sum(res.Y<=0) numel(res.Y)]; % [pos-class neg-class pooled]
+clsfr.dvstats.mu  = [mean(tstf(res.Y(:,1)>0)) mean(tstf(res.Y(:,1)<=0)) mean(tstf)];
+clsfr.dvstats.std = [std(tstf(res.Y(:,1)>0))  std(tstf(res.Y(:,1)<=0))  std(tstf)];
 %  bins=[-inf -200:5:200 inf]; clf;plot([bins(1)-1 bins(2:end-1) bins(end)+1],[histc(tstf(Y>0),bins) histc(tstf(Y<=0),bins)]); 
 
 if ( opts.visualize > 1 ) 

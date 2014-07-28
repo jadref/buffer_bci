@@ -1,12 +1,12 @@
-function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
-% train a simple ERSP (spectral power) classifer
+function [X,pipeline,info,opts]=preproc_erp(X,varargin)
+% simple pre-processing function
 % 
-% [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,...)
+% [X,pipeline,info,opts]=preproc_ersp(X,...)
 %
 % Inputs:
 %  X         - [ ch x time x epoch ] data set
-%  Y         - [ nEpoch x 1 ] set of data class labels
 % Options:  (specify as 'name',value pairs, e.g. train_ersp_clsfr(X,Y,'fs',10);
+%  Y         - [ nEpoch x 1 ] set of data class labels
 %  ch_names  - {str} cell array of strings which label each channel
 %  ch_pos    - [3 x nCh] 3-d co-ordinates of the data electrodes
 %              OR
@@ -38,27 +38,36 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %               1 - visualize, but don't wait
 %               2 - visualize, and wait for user before continuing
 %  verb      - [int] verbosity level
-%  ch_names  - {str} cell array of strings which label each channel
 %  class_names - {str} names for each of the classes in Y in *increasing* order ([])
 % Outputs:
-%  clsfr  - [struct] structure contining the stuff necessary to apply the trained classifier
-%  res    - [struct] detailed results for each fold
 %  X       -- [ppch x pptime x ppepoch] pre-processed data (N.B. may/will have different size to input X)
-%  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
-opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],...
+%  pipeline-- [struct] structure with parameters use to pre-process the data
+%  info    -- [struct] structure with other information about what has been done to the data.  
+%              Specificially:
+%               .ch_names-- {str nCh x 1} names of each channel as from cap-file
+%               .ch_pos  -  [3 x nCh] position of each channel as from capfile
+%               .badch   -- [bool nCh x 1] logical indicating which channels were found bad
+%               .badtr   -- [bool N x 1] logical indicating which trials were found bad
+%  opts    -- [struct] the options used for in this call
+opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],'downsample',[],...
             'width_ms',250,'windowType','hanning','aveType','amp',...
             'detrend',1,'spatialfilter','slap',...
             'badchrm',1,'badchthresh',3.1,'badchscale',2,...
             'badtrrm',1,'badtrthresh',3,'badtrscale',2,...
             'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
-            'visualize',1,'badCh',[],'nFold',10,'class_names',[]);
+            'visualize',1,...
+            'badCh',[],'nFold',10,'class_names',[],'Y',[],'hdr',[]);
 [opts,varargin]=parseOpts(opts,varargin);
 
 % get the sampling rate
-if ( isempty(opts.fs) ) error('Sampling rate not specified!'); end;
 di=[]; ch_pos  =opts.ch_pos; ch_names=opts.ch_names;
 if ( iscell(ch_pos) && isstr(ch_pos{1}) ) ch_names=ch_pos; ch_pos=[]; end;
-if ( isempty(ch_pos) && ~isempty(opts.capFile) && (~isempty(ch_names) || opts.overridechnms) ) % convert names to positions
+if ( isempty(ch_names) && ~isempty(opts.hdr) ) % ARGH! deal with inconsistent field names in diff header vers
+  if ( isfield(opts.hdr,'labels') ) ch_names=opts.hdr.labels;
+  elseif( isfield(opts.hdr,'label') ) ch_names=opts.hdr.label;
+  elseif( isfield(opts.hdr,'channel_names') ) ch_names=opts.hdr.channel_names; end;
+end;
+if ( isempty(ch_pos) && (~isempty(ch_names) || opts.overridechnms) ) % convert names to positions
   di = addPosInfo(ch_names,opts.capFile,opts.overridechnms); % get 3d-coords
   if ( any([di.extra.iseeg]) ) 
     ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names    
@@ -67,7 +76,34 @@ if ( isempty(ch_pos) && ~isempty(opts.capFile) && (~isempty(ch_names) || opts.ov
     ch_pos=[];
   end
 end
-fs=opts.fs; if ( isempty(fs) ) warning('No sampling rate specified... assuming fs=250'); fs=250; end;
+fs=opts.fs; 
+if ( isempty(fs) ) 
+  if ( ~isempty(opts.hdr) ) % ARGH! deal with inconsistent field names in diff header vers
+    if ( isfield(opts.hdr,'fSample') ) fs=opts.hdr.fSample;
+    elseif( isfield(opts.hdr,'fsample') ) fs=opts.hdr.fsample
+    elseif( isfield(opts.hdr,'Fs') ) fs=opts.hdr.Fs;end
+  else
+    warning('No sampling rate specified... assuming fs=250'); fs=250; 
+  end
+end;
+
+% convert X to 3-d if needed
+if ( iscell(X) ) 
+  if ( isnumeric(X{1}) ) 
+    X=cat(3,X{:});
+  else
+    error('Unrecognised data format!');
+  end
+elseif ( isstruct(X) )
+  X=cat(3,X.buf);
+end 
+Y=opts.Y; 
+if(isempty(Y))
+  Y=ones(size(X,3),1);
+else
+  % buffer event type input? assume Y.value is the event value
+  if (isstruct(Y) && isfield(Y,'value')) Y=[Y.value]; end;
+end
 
 %1) Detrend
 if ( opts.detrend )
@@ -85,19 +121,16 @@ isbadch=[]; chthresh=[];
 if ( opts.badchrm || ~isempty(opts.badCh) )
   fprintf('2) bad channel removal, ');
   isbadch = false(size(X,1),1);
-  if ( ~isempty(ch_pos) ) isbadch(numel(ch_pos)+1:end)=true; end;
-  if ( ~isempty(opts.badCh) )
-      isbadch(opts.badCh)=true;
-      goodCh=find(~isbadch);
-      if ( opts.badchrm ) 
-          [isbad2,chstds,chthresh]=idOutliers(X(goodCh,:,:),1,opts.badchthresh);
-          isbadch(goodCh(isbad2))=true;
-      end
-  elseif ( opts.badchrm ) [isbadch,chstds,chthresh]=idOutliers(X,1,opts.badchthresh); 
-  end;
+  if ( ~isempty(ch_names) )    isbadch(numel(ch_names)+1:end)=true; end;
+  if ( ~isempty(opts.badCh) )  isbadch(opts.badCh)=true; end
+  if ( opts.badchrm ) 
+    goodCh=find(~isbadch);
+    [isbad2,chstds,chthresh]=idOutliers(X(goodCh,:,:),1,opts.badchthresh);
+    isbadch(goodCh(isbad2))=true;
+  end
   X=X(~isbadch,:,:);
   if ( ~isempty(ch_names) ) % update the channel info
-    if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names))); end;
+    ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names)));
     ch_names=ch_names(~isbadch(1:numel(ch_names)));
   end
   fprintf('%d ch removed\n',sum(isbadch));
@@ -171,7 +204,7 @@ if ( opts.badtrrm )
   fprintf('2.5) bad trial removal');
   [isbadtr,trstds,trthresh]=idOutliers(X,3,opts.badtrthresh);
   X=X(:,:,~isbadtr);
-  Y=Y(~isbadtr);
+  if (~isempty(Y)) Y=Y(~isbadtr);end
   fprintf(' %d tr removed\n',sum(isbadtr));
 end;
 
@@ -207,7 +240,7 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
 end;
 
 %5.5) Visualise the input?
-if ( opts.visualize )
+if ( opts.visualize && ~isempty(ch_pos) )
    uY=unique(Y);sidx=[]; labels=opts.class_names;
    for ci=1:numel(uY);     
      if(iscell(uY)) tmp=strmatch(uY(ci),Y); Yci=false(size(Y)); Yci(tmp)=true; else Yci=(Y==uY(ci)); end;
@@ -222,11 +255,12 @@ if ( opts.visualize )
         if ( iscell(uY) ) labels{ci}=uY{ci}; else labels{ci}=sprintf('%d',uY(ci)); end
       end;
    end
-   if ( ~isempty(di) ) xy=cat(2,di.extra.pos2d); % use the pre-comp ones if there
-   elseif (size(ch_pos,1)==3) xy = xyz2xy(ch_pos);
+   times=(1:size(mu,2))/fs;
+   erpfig=figure('Name','Data Visualisation: ERP');
+   if (size(ch_pos,1)==3) xy = xyz2xy(ch_pos);
+   elseif ( ~isempty(di) ) xy=cat(2,di.extra.pos2d); % use the pre-comp ones if there
    else   xy=[];
    end
-   erpfig=gcf;figure(erpfig);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');
    yvals=freqs; if( ~isempty(fIdx) ) yvals=freqs(fIdx); end
    image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels,'disptype','plot','ticklabs','sw','clabel',opts.aveType);
    zoomplots;
@@ -239,70 +273,26 @@ if ( opts.visualize )
    figure(erpfig);
 end
 
-%6) train classifier
-if ( opts.classify ) 
-  fprintf('6) train classifier\n');
-  [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',1,varargin{:});
-else
-  clsfr=struct();
-end
+% save the pipeline parameters
+pipeline.fs          = fs;   % sample rate of training data
+pipeline.detrend     = opts.detrend; % detrend?
+pipeline.isbad       = isbadch;% bad channels to be removed
+pipeline.spatialfilt = R;    % spatial filter used for surface laplacian
+pipeline.filt        = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
+pipeline.outsz       = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
+pipeline.timeIdx     = timeIdx; % time range to apply the classifer to
 
-%7) combine all the info needed to apply this pipeline to testing data
-clsfr.fs          = fs;   % sample rate of training data
-clsfr.detrend     = opts.detrend; % detrend?
-clsfr.isbad       = isbadch;% bad channels to be removed
-clsfr.spatialfilt = R;    % spatial filter used for surface laplacian
+pipeline.windowFn    = winFn;% temporal window prior to fft
+pipeline.welchAveType= opts.aveType;% other options to pass to the welchpsd
+pipeline.freqIdx     = fIdx; % start/end index of frequencies to keep
 
-clsfr.filt        = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
-clsfr.outsz       = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
-clsfr.timeIdx     = timeIdx; % time range to apply the classifer to
+pipeline.badtrthresh = []; if ( ~isempty(trthresh) ) pipeline.badtrthresh = trthresh(end)*opts.badtrscale; end
+pipeline.badchthresh = []; if ( ~isempty(chthresh) ) pipeline.badchthresh = chthresh(end)*opts.badchscale; end
 
-clsfr.windowFn    = winFn;% temporal window prior to fft
-clsfr.welchAveType= opts.aveType;% other options to pass to the welchpsd
-clsfr.freqIdx     = fIdx; % start/end index of frequencies to keep
-
-clsfr.badtrthresh = []; if ( ~isempty(trthresh) ) clsfr.badtrthresh = trthresh(end)*opts.badtrscale; end
-clsfr.badchthresh = []; if ( ~isempty(chthresh) ) clsfr.badchthresh = chthresh(end)*opts.badchscale; end
-% record some dv stats which are useful
-tstf = res.tstf(:,res.opt.Ci); % N.B. this *MUST* be calibrated to be useful
-clsfr.dvstats.N   = [sum(res.Y>0) sum(res.Y<=0) numel(res.Y)]; % [pos-class neg-class pooled]
-clsfr.dvstats.mu  = [mean(tstf(res.Y(:,1)>0)) mean(tstf(res.Y(:,1)<=0)) mean(tstf)];
-clsfr.dvstats.std = [std(tstf(res.Y(:,1)>0))  std(tstf(res.Y(:,1)<=0))  std(tstf)];
-%  bins=[-inf -200:5:200 inf]; clf;plot([bins(1)-1 bins(2:end-1) bins(end)+1],[histc(tstf(Y>0),bins) histc(tstf(Y<=0),bins)]); 
-
-if ( opts.visualize > 1 ) 
-  summary = sprintf('%4.1f ',res.tstbin(:,:,res.opt.Ci)*100);
-  if(size(res.tstbin,2)>1)summary=[summary sprintf(' = %4.1f <ave>',mean(res.tstbin(:,:,res.opt.Ci),2)*100)];end
-   b=msgbox({sprintf('Classifier performance : %s',summary) 'OK to continue!'},'Results');
-   while ( ishandle(b) ) drawnow; pause(.2); end; % wait to close auc figure
-   if ( ishandle(aucfig) ) close(aucfig); end;
-   if ( ishandle(erpfig) ) close(erpfig); end;
-   if ( ishandle(b) ) close(b); end;
-   drawnow;
-end
+% other info about the pre-processing
+info.ch_names=ch_names;
+info.ch_pos  =ch_pos;
+info.badch   =isbadch;
+info.badtr   =isbadtr;
 
 return;
-
-%---------------------------------
-function xy=xyz2xy(xyz)
-% utility to convert 3d co-ords to 2-d ones
-% search for center of the circle defining the head
-cent=mean(xyz,2); cent(3)=min(xyz(3,:)); 
-f=inf; fstar=inf; tstar=0; 
-for t=0:.05:1; % simple loop to find the right height..
-   cent(3)=t*(max(xyz(3,:))-min(xyz(3,:)))+min(xyz(3,:));
-   r2=sum(repop(xyz,'-',cent).^2); 
-   f=sum((r2-mean(r2)).^2); % objective is variance in distance to the center
-   if( f<fstar ) fstar=f; centstar=cent; end;
-end
-cent=centstar;
-r = abs(max(abs(xyz(3,:)-cent(3)))*1.1); if( r<eps ) r=1; end;  % radius
-h = xyz(3,:)-cent(3);  % height
-rr=sqrt(2*(r.^2-r*h)./(r.^2-h.^2)); % arc-length to radial length ratio
-xy = [xyz(1,:).*rr; xyz(2,:).*rr];
-return
-%---------------------------------------
-function testCase()
-z=jf_mksfToy('Y',sign(round(rand(600,1))-.5));
-[clsfr]=train_ersp_clsfr(z.X,z.Y,'fs',z.di(2).info.fs,'ch_pos',[z.di(1).extra.pos3d],'ch_names',z.di(1).vals,'freqband',[0 .1 10 12],'visualize',1,'verb',1);
-f=apply_ersp_clsfr(X,clsfr);

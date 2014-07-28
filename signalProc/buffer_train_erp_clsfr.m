@@ -37,7 +37,12 @@ elseif ( isstruct(X) )
   X=cat(3,X.buf);
 end 
 X=single(X);
-if ( isstruct(Y) ) Y=cat(1,Y.value); end; % convert event struct into labels
+if ( isstruct(Y) ) % convert event struct into labels
+  if ( isnumeric(Y(1).value) ) Y=cat(1,Y.value); 
+  elseif(isstr(Y(1).value) )   Y=cat(1,{Y.value});
+  else error('Dont know how to handle Y value type');
+  end
+end; 
 
 fs=[]; chNames=[];
 if ( isstruct(hdr) )
@@ -58,8 +63,13 @@ end
 
 % get position info and identify the eeg channels
 di = addPosInfo(chNames,opts.capFile,opts.overridechnms); % get 3d-coords
-ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names
 iseeg=false(size(X,1),1); iseeg([di.extra.iseeg])=true;
+if ( any(iseeg) ) 
+  ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names    
+else % fall back on showing all data
+  warning('Capfile didnt match any data channels -- no EEG?');
+  ch_pos=[]; ch_names=di.vals; iseeg(:)=true;
+end
 
 % call the actual function which does the classifier training
 [clsfr,res,X,Y]=train_erp_clsfr(X,Y,'ch_names',ch_names,'ch_pos',ch_pos,'fs',fs,'badCh',~iseeg,varargin{:});

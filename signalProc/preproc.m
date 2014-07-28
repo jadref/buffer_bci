@@ -29,7 +29,10 @@ function [X,pipeline,info,opts]=preproc(X,varargin)
 %  badchthresh - [float] threshold in std-dev units to id channel as bad (3.5)
 %  badtrrm   - [bool] do we do bad trial removal      (1)
 %  badtrthresh - [float] threshold in std-dev units to id trial as bad (3)
-%  detrend   - [bool] do we detrend the data          (1)
+%  detrend   - [int] do we detrend/center the data          (1)
+%              0 - do nothing
+%              1 - detrend the data
+%              2 - center the data (i.e. subtract the mean)
 %  visualize - [int] visualize the data
 %               0 - don't visualize
 %               1 - visualize, but don't wait
@@ -48,20 +51,31 @@ opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],'downsample',[],...
             'badtrrm',1,'badtrthresh',3,'badtrscale',2,...
             'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
             'visualize',1,...
-            'badCh',[],'nFold',10,'class_names',[],'Y',[]);
+            'badCh',[],'nFold',10,'class_names',[],'Y',[],'hdr',[]);
 [opts,varargin]=parseOpts(opts,varargin);
 
 % get the sampling rate
-if ( isempty(opts.fs) ) error('Sampling rate not specified!'); end;
 di=[]; ch_pos  =opts.ch_pos; ch_names=opts.ch_names;
 if ( iscell(ch_pos) && isstr(ch_pos{1}) ) ch_names=ch_pos; ch_pos=[]; end;
+if ( isempty(ch_names) && ~isempty(opts.hdr) ) % ARGH! deal with inconsistent field names in diff header vers
+  if ( isfield(opts.hdr,'labels') ) ch_names=opts.hdr.labels;
+  elseif( isfield(opts.hdr,'label') ) ch_names=opts.hdr.label;
+  elseif( isfield(opts.hdr,'channel_names') ) ch_names=opts.hdr.channel_names; end;
+end;
 if ( isempty(ch_pos) && (~isempty(ch_names) || opts.overridechnms) ) % convert names to positions
   di = addPosInfo(ch_names,opts.capFile,opts.overridechnms); % get 3d-coords
   ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names  
 end
-fs=opts.fs; if ( isempty(fs) ) warning('No sampling rate specified... assuming fs=250'); fs=250; end;
-Y=opts.Y; if(isempty(Y))Y=ones(size(X,3),1);end
-
+fs=opts.fs; 
+if ( isempty(fs) ) 
+  if ( ~isempty(opts.hdr) ) % ARGH! deal with inconsistent field names in diff header vers
+    if ( isfield(opts.hdr,'fSample') ) fs=opts.hdr.fSample;
+    elseif( isfield(opts.hdr,'fsample') ) fs=opts.hdr.fsample
+    elseif( isfield(opts.hdr,'Fs') ) fs=opts.hdr.Fs;end
+  else
+    warning('No sampling rate specified... assuming fs=250'); fs=250; 
+  end
+end;
 
 % convert X to 3-d if needed
 if ( iscell(X) ) 
@@ -73,11 +87,17 @@ if ( iscell(X) )
 elseif ( isstruct(X) )
   X=cat(3,X.buf);
 end 
+Y=opts.Y; if(isempty(Y))Y=ones(size(X,3),1);end
 
 %1) Detrend
 if ( opts.detrend )
-  fprintf('1) Detrend\n');
-  X=detrend(X,2); % detrend over time
+  if ( isequal(opts.detrend,1) )
+    fprintf('1) Detrend\n');
+    X=detrend(X,2); % detrend over time
+  elseif ( isequal(opts.detrend,2) )
+    fprintf('1) Center\n');
+    X=repop(X,'-',mean(X,2));
+  end
 end
 
 %2) Bad channel identification & removal
@@ -103,13 +123,12 @@ end
 
 %4) spectrally filter to the range of interest
 filt=[]; 
-fs=opts.fs;
 outsz=[size(X,2) size(X,2)];
 if(~isempty(opts.downsample)) outsz(2)=min(outsz(2),round(size(X,2)*opts.downsample/fs)); end;
 if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) ) 
   fprintf('4) filter\n');
   len=size(X,2);
-  filt=mkFilter(opts.freqband,floor(len/2),opts.fs/len);
+  filt=mkFilter(opts.freqband,floor(len/2),fs/len);
   X   =fftfilter(X,filt,outsz,2,1);
 elseif( ~isempty(opts.downsample) ) % manual downsample without filtering
   X   =subsample(X,outsz(2));   
@@ -203,7 +222,7 @@ if ( opts.visualize && ~isempty(ch_pos) )
         if ( iscell(uY) ) labels{ci}=uY{ci}; else labels{ci}=sprintf('%d',uY(ci)); end
       end;
    end
-   times=(1:size(mu,2))/opts.fs;
+   times=(1:size(mu,2))/fs;
    erpfig=figure('Name','Data Visualisation: ERP');
    if ( ~isempty(di) ) xy=cat(2,di.extra.pos2d); % use the pre-comp ones if there
    elseif (size(ch_pos,1)==3) xy = xyz2xy(ch_pos);

@@ -65,8 +65,13 @@ end
 
 % get position info and identify the eeg channels
 di = addPosInfo(chNames,opts.capFile,opts.overridechnms); % get 3d-coords
-ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names
-iseeg=[di.extra.iseeg];
+iseeg=false(size(X,1),1); iseeg([di.extra.iseeg])=true;
+if ( any(iseeg) ) 
+  ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names    
+else % fall back on showing all data
+  warning('Capfile didnt match any data channels -- no EEG?');
+  ch_pos=[];
+end
 
 % call the actual function which does the classifier training
 [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,'ch_names',ch_names,'ch_pos',ch_pos,'fs',fs,'badCh',~iseeg,varargin{:});
