@@ -26,10 +26,11 @@ if ( dim < 0 ) dim = ndims(dv)+dim+1; end;
 if ( nargin < 4 || isempty(sidx) )
    if ( numel(dv) <= MAXEL ) % Small enough to do in 1 pass
      if ( dvnoise ) dv=dv+dv*(rand(size(dv))-.5)*1e-5*max(1,dv); end;
-      [sdv,sidx]=sort(dv,dim,'ascend'); sidx = int32(sidx); clear sdv;
+     [sdv,sidx]=sort(dv,dim,'ascend'); sidx = int32(sidx); clear sdv;
    else % chunk instead      
       dvsz=size(dv); nd=ndims(dv);
       if ( verb>0 ) fprintf('AUC:'); ci=0; end;
+      if ( nargout > 1 ) sidx=int32(dvsz); end; % pre-alloc too hold result
       [idx,chkStrides,nchnks]=nextChunk([],dvsz,dim,MAXEL);
       while ( ~isempty(idx) ) 
         dvidx=dv(idx{:});
@@ -38,9 +39,9 @@ if ( nargin < 4 || isempty(sidx) )
             [resi,sidxi]=dv2auc(Y,dvidx,dim);
             sidx(idx{:})=sidxi; 
          else
-            resi=dv2auc(Y,dvidx,dim);
-          end
-          clear dvidx;
+           resi=dv2auc(Y,dvidx,dim);
+         end
+         clear dvidx;
          idx{dim}=1; res(idx{:})=resi; % store the result
          idx{dim}=1:dvsz(dim);
          idx=nextChunk(idx,dvsz,chkStrides); % get next chunk
