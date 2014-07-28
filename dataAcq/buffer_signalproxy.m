@@ -28,15 +28,16 @@ function []=buffer_signalproxy(host,port,varargin);
 %                     channel 3 amplitude = mouse y-coordinate / screen y-size * 2
 %  event2signal   - [bool] do certain events with type 'sigprox.erp' ERP style events?    (1)
 %                      event types are similar to te key2signal events
-%                      sendEvent('sigprox.erp','e') = exponential ERP
-%                      sendEvent('sigprox.erp','e') = tophat ERP
-%                      sendEvent('sigprox.erp','e') = gaussian ERP
+%                      sendEvent('sigprox.erp','e') = exponential ERP  
+%                      sendEvent('sigprox.erp','t') = tophat ERP       
+%                      sendEvent('sigprox.erp','g') = gaussian ERP
+%  triggerType    - [str] event type to look for event2signal triggers
 %  verb           - [int] verbosity level.  If <0 then rate in samples to print status info (0)
 if ( nargin<2 || isempty(port) ) port=1972; end;
 if ( nargin<1 || isempty(host) ) host='localhost'; end;
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../utilities/initPaths.m'); end;
 
-opts=struct('fsample',100,'nCh',3,'blockSize',5,'Cnames',[],'stimEventRate',100,'queueEventRate',500,'keyboardEvents',true,'verb',-2,'key2signal',true,'mouse2signal',true,'event2signal',true);
+opts=struct('fsample',100,'nCh',3,'blockSize',5,'Cnames',[],'stimEventRate',100,'queueEventRate',500,'keyboardEvents',true,'verb',-2,'key2signal',true,'mouse2signal',true,'event2signal',true,'triggerType','sigprox.erp');
 opts=parseOpts(opts,varargin);
 if ( isempty(opts.Cnames) )
   opts.Cnames={'Cz' 'CPz' 'Oz'};
@@ -72,11 +73,16 @@ if ( opts.keyboardEvents || opts.key2signal )
   ax=axes('position',[0 0 1 1],'visible','off');
   text(.5,.5,{'Keyboard Events' '-------'...
               'space = amplitude 0' '0= amplitude 1' '9= amplitude 2' 'Z=amplitude 26'...
-             'e = exponential ERP' 't=tophat ERP' 'g=gaussian ERP'});
+             'e = exponential ERP' 't=tophat ERP' 'g=gaussian ERP' ...
+              sprintf('ERP trigger event type = %s',opts.triggerType)});
   set(fig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character))); 
   if ( exist('OCTAVE_VERSION','builtin') ) 
     page_output_immediately(1); % prevent buffering output
-    graphics_toolkit('fltk'); % use fast rendering library
+    if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
+      graphics_toolkit('qthandles'); % use fast rendering library
+    elseif ( ~isempty(strmatch('fltk',available_graphics_toolkits())) )
+      graphics_toolkit('fltk'); % use fast rendering library
+    end
   end
 end  
 if ( opts.mouse2signal ) scrnSz=get(0,'ScreenSize'); end % scale by screensize
@@ -155,17 +161,15 @@ while( true )
     end
   end
   if ( opts.event2signal ) 
-    [events,nEvents]=buffer_newevents(host,port,nEvents,'sigprox.erp',[],0);
+    [events,nEvents]=buffer_newevents(host,port,nEvents,opts.triggerType,[],0);
     for ei=1:numel(events); % treat as simulated key-press
       fprintf('%s\n',ev2str(events(ei)));
       evtval=events(ei).value;
-      if ( isstr(evtval) ) 
-        switch  lower(evtval);
-         case 'e'; erpSamp(1)=nsamp;
-         case 't'; erpSamp(2)=nsamp;
-         case 'g'; erpSamp(3)=nsamp;
-        end
-      end      
+      switch  evtval;
+       case {'e','E',1,true}; erpSamp(1)=nsamp;
+       case {'t','T',2};      erpSamp(2)=nsamp;
+       case {'g','G',3};      erpSamp(3)=nsamp;
+      end
     end
   end
   % N.B. due to a bug on OCTAVE we need to do this in the main loop to cause the display to re-draw...
