@@ -10,9 +10,9 @@ LIBEXT=so
 EXTENSION=
 
 # turn-on optimization
-#CXXFLAGS += -O -g
+#CXXFLAGS += -O3 -g
 # turn-on profile code
-CXXFLAGS += -g -pg
+CXXFLAGS += -g #-pg
 
 #windows
 ifneq (,$(findstring mingw, $(PLATFORM)))
@@ -48,15 +48,20 @@ ifneq (,$(findstring linux,$(PLATFORM))) # linux
 endif
 
 # dependencies info
-SOURCES = cclient.c 
-bufferSOURCES = $(FTBUFFER)/util.c $(FTBUFFER)/tcprequest.c 
+CLIENTSOURCES = cclient.c 
+PROXYSOURCES  = csignalproxy.c 
+bufferSOURCES = $(FTBUFFER)/util.c $(FTBUFFER)/tcprequest.c $(FTBUFFER)/cleanup.c
 
-TARGETS = cclient$(EXTENSION)
+TARGETS = cclient$(EXTENSION) csignalproxy$(EXTENSION)
 
 all: $(TARGETS)
 
-cclient$(EXTENSION): $(SOURCES) $(bufferSOURCES)
+cclient$(EXTENSION): $(CLIENTSOURCES) $(bufferSOURCES)
 	$(CXX) -o cclient $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
+
+csignalproxy$(EXTENSION): $(PROXYSOURCES) $(bufferSOURCES)
+	$(CXX) -o csignalproxy $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
+	$(CXX) -o csignalproxy.split $^ $(CXXFLAGS) -DSPLITREQ -DREADLATE $(LDFLAGS) $(LDLIBS)
 
 clean:
 	$(RM) *.o $(call fixpath, $(TARGETS)) cclient$(EXTENSION)
