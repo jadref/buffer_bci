@@ -17,4 +17,4 @@ else # Mac
 	 buffexe=$buffdir'/buffer/maci/thinkgear2ft';
    fi
 fi
-$buffexe /dev/bt0 mindwave.cfg localhost:1972
+$buffexe /dev/ttyUSB0 mindwave.cfg localhost 1972

@@ -17,4 +17,4 @@ rem Search for the buffer executable
 if exist "%batdir%buffer\bin\win32\biosemi2ft.exe" ( set buffexe="%batdir%buffer\bin\win32\biosemi2ft.exe" )
 if exist "%batdir%buffer\win32\biosemi2ft.exe" ( set buffexe="%batdir%buffer\win32\biosemi2ft.exe" )
 if exist "%batdir%biosemi2ft.exe" ( set buffexe="%batdir%biosemi2ft.exe" )
-start /b "buffer" %buffexe% biosemi.cfg %outfile%
+start /b "buffer" %buffexe% biosemi.cfg %outfile% localhost 1972
