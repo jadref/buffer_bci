@@ -92,6 +92,8 @@ if ( iscell(opts.startSet) )
   mi=matchEvents(events,opts.startSet{:});
 elseif ( isa(opts.startSet,'function_handle') || exist(opts.startSet)==2 )
   mi=feval(opts.startSet,events);
+elseif ( isempty(opts.startSet) ) % return all events
+  mi=true(numel(events),1);
 end
 devents=events(mi); % select the set of events for which we want data
 
