@@ -21,7 +21,7 @@ function []=sigViewer(buffhost,buffport,varargin);
 %  freqbands  -- [2x1] frequency bands to display in the freq-domain plot    (opts.fftfilter)
 %  noisebands -- [2x1] frequency bands to display for the 50 Hz noise plot   ([45 47 53 55])
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../utilities/initPaths.m'); end;
-opts=struct('endType','end.training','verb',1,'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',128,'spatfilt','car','capFile',[],'overridechnms',0,'welch_width_ms',500,'noisebands',[45 47 53 55],'noiseBins',[0 1],'timeOut_ms',1000);
+opts=struct('endType','end.training','verb',1,'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',128,'spatfilt','car','capFile',[],'overridechnms',0,'welch_width_ms',500,'noisebands',[45 47 53 55],'noiseBins',[0 1],'timeOut_ms',1000,'spectBaseline',1);
 opts=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
@@ -38,15 +38,27 @@ while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffe
   end;
   pause(1);
 end;
+% extract channel info from hdr
+ch_names=hdr.channel_names; ch_pos=[]; iseeg=true(numel(ch_names),1);
+% get capFile info for positions
 capFile=opts.capFile; overridechnms=opts.overridechnms; 
 if(isempty(opts.capFile)) 
-  [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); capFile=fullfile(pth,fn);
-  if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
+  [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); if ( ~isequal(fn,0) ) capFile=fullfile(pth,fn); end;
+  %if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
 end
 if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
-di = addPosInfo(hdr.channel_names,capFile,overridechnms); % get 3d-coords
-ch_pos=cat(2,di.extra.pos2d); ch_names=di.vals; % extract pos and channels names
-iseeg=[di.extra.iseeg];
+if ( ~isempty(capFile) ) 
+  di = addPosInfo(ch_names,capFile,overridechnms); % get 3d-coords
+  ch_pos=cat(2,di.extra.pos2d); % extract pos and channels names
+  ch_names=di.vals; 
+  iseeg=[di.extra.iseeg];
+  if ( ~any(iseeg) ) % fall back on showing all data
+    warning('Capfile didnt match any data channels -- no EEG?');
+    ch_names=hdr.channels_names;
+    ch_pos=[];
+    iseeg=true(numel(ch_names),1);
+  end
+end
 
 if ( isfield(hdr,'fSample') ) fs=hdr.fSample; else fs=hdr.fsample; end;
 trlen_samp=opts.trlen_samp;
@@ -74,19 +86,24 @@ outsz=[trlen_samp trlen_samp];if(~isempty(opts.downsample)) outsz(2)=min(outsz(2
 rawdat    = zeros(sum(iseeg),outsz(1));
 ppdat     = zeros(sum(iseeg),outsz(2));
 % and the spectrogram version
-[ppspect,start_samp,freqs]=spectrogram(ppdat,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample);
+[ppspect,start_samp,freqs]=spectrogram(rawdat,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample);
 ppspect=ppspect(:,freqIdx(1):freqIdx(2),:); % subset to freq range of interest
 start_s=-start_samp(end:-1:1)/hdr.fsample;
 
 % make the figure window
-if ( exist('OCTAVE_VERSION','builtin') ) % in octave have to manually convert arrays..
-  graphics_toolkit('fltk');
+if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics facility
+  if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
+    graphics_toolkit('qthandles'); % use fast rendering library
+  elseif ( ~isempty(strmatch('fltk',available_graphics_toolkits())) )
+    graphics_toolkit('fltk'); % use fast rendering library
+  end
 end
 clf;
 fig=gcf;
 set(fig,'Name','Sig-Viewer : t=time, f=freq, p=50Hz power, s=spectrogram, q,close window=quit.','menubar','none','toolbar','none','doublebuffer','on');
 axes('position',[0 0 1 1]); topohead();set(gca,'visible','off','nextplot','add');
-hdls=image3d(ppspect,1,'plotPos',ch_pos(:,iseeg),'Xvals',ch_names,'yvals',freqs(freqIdx(1):freqIdx(2)),'ylabel','freq (hz)','zvals',start_s,'zlabel','time (s)','disptype','imaget','colorbar',1,'ticklabs','sw','legend',0,'plotPosOpts.plotsposition',[.05 .08 .91 .85]);
+plotPos=ch_pos; if ( ~isempty(plotPos) ) plotPos=plotPos(:,iseeg); end;
+hdls=image3d(ppspect,1,'plotPos',plotPos,'Xvals',ch_names,'yvals',freqs(freqIdx(1):freqIdx(2)),'ylabel','freq (hz)','zvals',start_s,'zlabel','time (s)','disptype','imaget','colorbar',1,'ticklabs','sw','legend',0,'plotPosOpts.plotsposition',[.05 .08 .91 .85]);
 cbarhdl=[]; 
 if ( strcmpi(get(hdls(end),'Tag'),'colorbar') ) 
   cbarhdl=hdls(end); hdls(end)=[]; cbarpos=get(cbarhdl,'outerposition');
@@ -187,7 +204,8 @@ while ( ~endTraining )
    case 'spect'; % spectrogram
     ppdat = spectrogram(ppdat,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample);
     ppdat = ppdat(:,freqIdx(1):freqIdx(2),:);    
-    
+    % subtract the 'common-average' spectrum
+    if ( opts.spectBaseline ) ppdat=repop(ppdat,'-',mean(mean(ppdat,3),1)); end
   end
   
   datrange=[min(ppdat(:)),max(ppdat(:))];
@@ -253,6 +271,7 @@ while ( ~endTraining )
       set(img_hdls,'xdata',start_s([1 end]),'ydata',freqs([freqIdx(1) freqIdx(2)]),'visible','on');      
       for hi=1:numel(hdls); xlabel(hdls(hi),'time (s)'); ylabel(hdls(hi),'freq (hz)');end;
       datlim=[0 max(abs(ppdat(:)))];
+      if ( datlim(1)>=datlim(2) || any(isnan(datlim)) ) datlim=[-1 1]; end;
       if ( ~isempty(cbarhdl) ) 
         set(findobj(cbarhdl),'visible','on'); 
         set(get(cbarhdl,'children'),'ydata',datlim);set(cbarhdl,'ylim',datlim); 
@@ -290,16 +309,13 @@ while ( ~endTraining )
       set(line_hdls(hi),'ydata',ppdat(hi,:));
     end
     
-   case {'power','spect'}; % 50Hz/spectrogram -- change the color of the image
-                           % map from raw power into the colormap we're using, not needed as we use the auto-scaling function
-                           %ppdat=max(opts.noiseBins(1),min(ppdat,opts.noiseBins(end)))./(opts.noiseBins(end)-opts.noiseBins(1))*size(colormap,1);
+   case {'power','spect'}; % 50Hz/spectrogram -- update the image data
+    % map from raw power into the colormap we're using, not needed as we use the auto-scaling function
+    %ppdat=max(opts.noiseBins(1),min(ppdat,opts.noiseBins(end)))./(opts.noiseBins(end)-opts.noiseBins(1))*size(colormap,1);
     for hi=1:size(ppdat,1);
       set(img_hdls(hi),'cdata',shiftdim(ppdat(hi,:,:)));
     end
   end
-  % if ( ~exist('OCTAVE_VERSION','builtin') ) % in octave have to manually convert arrays..
-  %   set(fig,'userdata',[]); % hack to force redraw?
-  % end
   drawnow;
 end
 return;
