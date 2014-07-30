@@ -5,7 +5,10 @@ for i=1:numel(events);
   if ( ~isstruct(event) ) event=struct(event); end;
   val = event.value; 
   if ( isempty(val) ) val='[]';
-  elseif( isnumeric(val) ) val=['[' sprintf('%g,',val(1:end-1)) sprintf('%g',val(end)) ']']; 
+  elseif( isnumeric(val) ) 
+    vstr=sprintf('%g',val(1));
+    if ( numel(val)>1) vstr=['[' vstr sprintf(' %g',val(2:end)) ']']; end;
+    val=vstr;
   end;
   str=[str sprintf('(sample=%d type=%s value=%s)\n',int32(event.sample),event.type,val)];
 end
