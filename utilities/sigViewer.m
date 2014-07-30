@@ -51,6 +51,7 @@ if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms
 if ( ~isempty(capFile) ) 
   di = addPosInfo(ch_names,capFile,overridechnms); % get 3d-coords
   ch_pos=cat(2,di.extra.pos2d); % extract pos and channels names
+  ch_pos3d=cat(2,di.extra.pos3d);
   ch_names=di.vals; 
   iseeg=[di.extra.iseeg];
   if ( ~any(iseeg) ) % fall back on showing all data
@@ -95,7 +96,7 @@ start_s=-start_samp(end:-1:1)/hdr.fsample;
 % pre-compute the SLAP spatial filter
 slapfilt=[];
 if ( ~isempty(ch_pos) )       
-  slapfilt=sphericalSplineInterpolate(ch_pos,ch_pos,[],[],'slap');%pre-compute the SLAP filter we'll use
+  slapfilt=sphericalSplineInterpolate(ch_pos3d(:,iseeg),ch_pos3d(:,iseeg),[],[],'slap');%pre-compute the SLAP filter we'll use
 else
   warning('Cant compute SLAP without channel positions!'); 
 end
@@ -152,7 +153,7 @@ for hi=1:size(ppdat,1);
 end;
 
 ppopts.badchrm=opts.badchrm;
-ppopts.pptype='none';if(opts.detrend)pptype='detrend'; end;
+ppopts.preproctype='none';if(opts.detrend)pptype='detrend'; end;
 ppopts.spatfilttype=opts.spatfilt;
 ppopts.freqbands=opts.freqbands;
 optsFighandles=[];
@@ -165,11 +166,11 @@ if ( isequal(opts.sigProcOptsGui,1) )
     if ( strcmpi(get(h,'string'),ppopts.spatfilttype) ) set(h,'value',1); break;end; 
   end;
   for h=get(optsFighandles.preproc,'children')'; 
-    if ( strcmpi(get(h,'string'),ppopts.pptype) ) set(h,'value',1); break;end; 
+    if ( strcmpi(get(h,'string'),ppopts.preproctype) ) set(h,'value',1); break;end; 
   end;
   set(optsFighandles.badchrm,'value',ppopts.badchrm);
+  ppopts=getSigProcOpts(optsFighandles);
 end
-ppopts=getsigprocOpts(optsFighandles);
 
 endTraining=false; state=[];
 cursamp=hdr.nSamples;
