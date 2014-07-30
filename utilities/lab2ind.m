@@ -89,7 +89,7 @@ else
 end
 
 % special case for the no class distinction case
-if ( nClass<2 && nSp==1 && all(Y==Y(1)) ) ind=ones(size(Y)); return; end;
+if ( nClass<2 && nSp==1 && (isnumeric(Y) && all(Y==Y(1))) ) ind=ones(size(Y)); return; end;
 
 % build the actual sub-problem indicator matrix
 ind=single(zeros(numel(Y),nSp));
