@@ -42,7 +42,8 @@ interSeqDuration=2;
 feedbackDuration=5;
 bgColor=[.1 .1 .1]; % background color (grey)
 flashColor=[1 1 1]; % the 'flash' color (white)
-tgtColor=[0 1 0]; % the target indication color (green)
+tgtColor =[0 1 0];  % the target indication color (green)
+predColor=[0 1 0];  % the feedback indication color (green)
 
 % the set of options the user will pick from
 symbols={'1' '2' '3';...
