@@ -20,8 +20,9 @@ function []=sigViewer(buffhost,buffport,varargin);
 %                      -> defines the frequency resolution for the frequency view of the data.   
 %  freqbands  -- [2x1] frequency bands to display in the freq-domain plot    (opts.fftfilter)
 %  noisebands -- [2x1] frequency bands to display for the 50 Hz noise plot   ([45 47 53 55])
+%  sigprocoptsgui -- [bool] show the on-line option changing gui             (0)
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../utilities/initPaths.m'); end;
-opts=struct('endType','end.training','verb',1,'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',128,'spatfilt','car','capFile',[],'overridechnms',0,'welch_width_ms',500,'noisebands',[45 47 53 55],'noiseBins',[0 1],'timeOut_ms',1000,'spectBaseline',1);
+opts=struct('endType','end.training','verb',1,'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',128,'spatfilt','car','badchrm',0,'capFile',[],'overridechnms',0,'welch_width_ms',500,'noisebands',[45 47 53 55],'noiseBins',[0 1],'timeOut_ms',1000,'spectBaseline',1,'sigProcOptsGui',0);
 opts=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
@@ -60,6 +61,9 @@ if ( ~isempty(capFile) )
   end
 end
 
+% add number prefix to ch-names for display
+for ci=1:numel(ch_names); ch_names{ci} = sprintf('%d %s',ci,ch_names{ci}); end;
+
 if ( isfield(hdr,'fSample') ) fs=hdr.fSample; else fs=hdr.fsample; end;
 trlen_samp=opts.trlen_samp;
 if ( isempty(trlen_samp) && ~isempty(opts.trlen_ms) ) trlen_samp=round(opts.trlen_ms*fs/1000); end;
@@ -73,10 +77,8 @@ else
     times=(-ceil((trlen_samp+1)*opts.downsample/fs):0)/opts.downsample;
 end
 freqs=0:1000/opts.welch_width_ms:fs/2;
-[ans,freqIdx(1)]=min(abs(freqs-opts.freqbands(1))); 
-[ans,freqIdx(2)]=min(abs(freqs-opts.freqbands(max(end,2))));
-[ans,noiseIdx(1)]=min(abs(freqs-opts.noisebands(1))); 
-[ans,noiseIdx(2)]=min(abs(freqs-opts.noisebands(max(end,2))));
+freqIdx =getfreqIdx(freqs,opts.freqbands);
+noiseIdx=getfreqIdx(freqs,opts.noisebands);
 
 % make the spectral filter
 filt=[]; if ( ~isempty(opts.freqbands)) filt=mkFilter(trlen_samp/2,opts.freqbands,fs/trlen_samp);end
@@ -89,6 +91,14 @@ ppdat     = zeros(sum(iseeg),outsz(2));
 [ppspect,start_samp,freqs]=spectrogram(rawdat,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample);
 ppspect=ppspect(:,freqIdx(1):freqIdx(2),:); % subset to freq range of interest
 start_s=-start_samp(end:-1:1)/hdr.fsample;
+
+% pre-compute the SLAP spatial filter
+slapfilt=[];
+if ( ~isempty(ch_pos) )       
+  slapfilt=sphericalSplineInterpolate(ch_pos,ch_pos,[],[],'slap');%pre-compute the SLAP filter we'll use
+else
+  warning('Cant compute SLAP without channel positions!'); 
+end
 
 % make the figure window
 if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics facility
@@ -141,6 +151,25 @@ for hi=1:size(ppdat,1);
   datlimi=get(hdls(hi),'ylim');datlim(1)=min(datlim(1),datlimi(1)); datlim(2)=max(datlim(2),datlimi(2));
 end;
 
+ppopts.badchrm=opts.badchrm;
+ppopts.pptype='none';if(opts.detrend)pptype='detrend'; end;
+ppopts.spatfilttype=opts.spatfilt;
+ppopts.freqbands=opts.freqbands;
+optsFighandles=[];
+if ( isequal(opts.sigProcOptsGui,1) )
+  optsFigh=sigProcOptsFig();
+  optsFighandles=guihandles(optsFigh);
+  set(optsFighandles.lowcutoff,'string',sprintf('%g',ppopts.freqbands(1)));
+  set(optsFighandles.highcutoff,'string',sprintf('%g',ppopts.freqbands(end)));  
+  for h=get(optsFighandles.spatfilt,'children')'; 
+    if ( strcmpi(get(h,'string'),ppopts.spatfilttype) ) set(h,'value',1); break;end; 
+  end;
+  for h=get(optsFighandles.preproc,'children')'; 
+    if ( strcmpi(get(h,'string'),ppopts.pptype) ) set(h,'value',1); break;end; 
+  end;
+  set(optsFighandles.badchrm,'value',ppopts.badchrm);
+end
+ppopts=getsigprocOpts(optsFighandles);
 
 endTraining=false; state=[];
 cursamp=hdr.nSamples;
@@ -166,10 +195,30 @@ while ( ~endTraining )
   rawdat(:,blkIdx+1:end)=dat.buf(iseeg,:);
   
   % pre-process the data
+  % get updated parameters if needed
+  if ( ~isempty(optsFighandles) && ishandle(optsFighandles.figure1) )
+    tmp=ppopts.freqbands;
+    ppopts=getSigProcOpts(optsFighandles);
+    % compute updated spectral filter information, if needed
+    if ( ~isequal(tmp,ppopts.freqbands) )
+      filt    =mkFilter(trlen_samp/2,ppopts.freqbands,fs/trlen_samp);    
+      freqIdx =getfreqIdx(freqs,ppopts.freqbands);
+    end
+  end
   ppdat = rawdat;
-  if ( opts.detrend ) ppdat=detrend(ppdat,2); end;
-  if ( ~isempty(opts.spatfilt) ) 
-    if ( strcmpi(opts.spatfilt,'car') ) ppdat=repop(ppdat,'-',mean(ppdat,1)); end
+  switch(lower(ppopts.preproctype));
+   case 'none';   
+   case 'center'; ppdat=repop(ppdat,'-',mean(ppdat,2));
+   case 'detrend';ppdat=detrend(ppdat,2);
+   otherwise; warning('Unrecognised pre-proc type');
+  end
+    
+  switch(lower(ppopts.spatfilttype))
+   case 'none';
+   case 'car';    ppdat=repop(ppdat,'-',mean(ppdat,1));
+   case 'slap';   if ( ~isempty(slapfilt) ) ppdat=tprod(ppdat,[-1 2 3],slapfilt,[-1 1]); end;
+   case 'whiten'; 
+   otherwise; warning('unrecognised spatial filter type');
   end
 
   % switch visualization mode if wanted
@@ -319,6 +368,19 @@ while ( ~endTraining )
   drawnow;
 end
 return;
+
+function freqIdx=getfreqIdx(freqs,freqbands)
+[ans,freqIdx(1)]=min(abs(freqs-freqbands(1))); 
+[ans,freqIdx(2)]=min(abs(freqs-freqbands(max(end,2))));
+
+function sigprocopts=getSigProcOpts(optsFighandles)
+% get the current options from the sig-proc-opts figure
+sigprocopts.badchrm=get(optsFighandles.badchrm,'value');
+sigprocopts.spatfilttype=get(get(optsFighandles.spatfilt,'SelectedObject'),'String');
+sigprocopts.preproctype=get(get(optsFighandles.preproc,'SelectedObject'),'String');
+sigprocopts.freqbands=[str2num(get(optsFighandles.lowcutoff,'string')) 
+                    str2num(get(optsFighandles.highcutoff,'string'))];  
+
 %-----------------------
 function testCase();
 % start the buffer proxy
