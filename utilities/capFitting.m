@@ -54,6 +54,9 @@ di = addPosInfo(hdr.channel_names,capFile,overridechnms); % get 3d-coords
 ch_pos=cat(2,di.extra.pos2d); ch_names=di.vals; % extract pos and channels names
 iseeg=find([di.extra.iseeg]);  
 
+% add number prefix to ch-names for display
+for ci=1:numel(ch_names); ch_names{ci} = sprintf('%d %s',ci,ch_names{ci}); end;
+
 % amplifier specific thresholds
 if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4; overridechnms=1;
 else                                     thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
