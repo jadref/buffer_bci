@@ -82,15 +82,15 @@ while (ishandle(contFig))
        
    case {'testing','test','freespell'};
     sendEvent('subject',info.subject);
-    %sleepSec(.1);
+    sleepSec(.1);
     sendEvent(phaseToRun,'start');
-    %try
+    try
       sendEvent('startPhase.cmd','testing');
       spFeedbackStimulus;
-    %catch
-      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    catch
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.test','end');
-    %end
+    end
     sendEvent(phaseToRun,'end');
   end
   info.phasesCompleted={info.phasesCompleted{:} info.phaseToRun};

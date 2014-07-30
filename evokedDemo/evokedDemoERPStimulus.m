@@ -2,7 +2,7 @@ configureDemo();
 
 % make the stimulus
 fig=gcf;
-set(fig,'Name','Press: Left/Right/Down to generate trial','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
+set(fig,'Name','Press: 1,2,3,4,5,6 trial','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
 clf;
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
@@ -21,10 +21,23 @@ h(4) =rectangle('curvature',[1 1],'position',[[0;0]-.5/4;.5/2*[1;1]],'facecolor'
 set(gca,'visible','off');
 set(fig,'keypressfcn',@keyListener);
 set(fig,'userdata',[]); % clear any old key info
+% instructions object
+instructstr={'Stimulus Type Keys',
+             '',
+             '1 or v : visual oddball',
+             sprintf('3 or s : SSVEP (%ghz)',ssvepFreq(1)),
+             '4 or p : visual P300',
+             sprintf('5 or f : flicker (SSVEP %g or %ghz))',ssvepFreq(1),ssvepFreq(2)),
+             'q      : quit'
+            };
+instructh=text(min(get(ax,'xlim'))+.25*diff(get(ax,'xlim')),mean(get(ax,'ylim')),instructstr,'HorizontalAlignment','left','VerticalAlignment','middle','color',[0 1 0],'fontunits','normalized','FontSize',.05,'visible','off');
+
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
 set(h(:),'visible','off'); % make them all invisible
 set(h(:),'facecolor',bgColor);
+set(instructh,'visible','on');
+inswait=0;
 tgt=ones(4,1);
 endTraining=false; si=0;
 sendEvent('stimulus.training','start'); 
@@ -37,11 +50,14 @@ while ( ~endTraining )
   % wait for key press to start the next epoch  
   seqStart=false;
   while ( ~seqStart )
+    inswait=0;
     key=get(fig,'userData');
     while ( isempty(key) )
       if ( ~ishandle(fig) ) endTraining=true; break; end;  
       key=get(fig,'userData');
       pause(.25);
+      inswait=inswait+1;
+      if ( inswait>6 ) set(instructh,'visible','on');drawnow; end;
     end
     %fprintf('key=%s\n',key);
     key=get(fig,'currentkey');
@@ -60,6 +76,7 @@ while ( ~endTraining )
      otherwise; fprintf('Unrecog key: %s\n',lower(key)); seqStart=false;
     end        
   end
+  set(instructh,'visible','off');drawnow;sleepSec(.5);
   if ( endTraining ) break; end;
 
   % show the screen to alert the subject to trial start

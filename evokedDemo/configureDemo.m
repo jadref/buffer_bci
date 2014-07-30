@@ -30,10 +30,9 @@ if ( exist('OCTAVE_VERSION','builtin') )
   end
 end
 
-capFile='cap_tmsi_mobita_black';%'1010'; %'emotiv';%cap_tmsi_mobita_im2'; N.B. use 1010 for emotiv so non-eeg are labelled correctly
+%capFile='cap_tmsi_mobita_black';%'1010'; %'emotiv';%cap_tmsi_mobita_im2'; N.B. use 1010 for emotiv so non-eeg are labelled correctly
 verb=0;
-buffhost='localhost';
-buffport=1972;
+buffhost='localhost'; buffport=1972;
 
 verb=0;
 nSeq=15;

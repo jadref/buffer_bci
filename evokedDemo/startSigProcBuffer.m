@@ -55,7 +55,7 @@ while ( true )
   end
   if ( isempty(phaseToRun) ) continue; end;
 
-  fprintf('%d) Starting phase : %s\n',getwTime(),phaseToRun);
+  fprintf('%g) Starting phase : %s\n',getwTime(),phaseToRun);
   if ( verb>0 ) fprintf('Starting : %s\n',phaseToRun); ptime=getwTime(); end;
   sendEvent(lower(phaseToRun),'start'); % mark start/end testing
   
@@ -63,10 +63,12 @@ while ( true )
     
     %---------------------------------------------------------------------------------
    case 'capfitting';
+    clf;
     capFitting('noiseThresholds',thresh,'badChThreshold',badchThresh,'verb',verb,'showOffset',0,'capFile',capFile,'overridechnms',overridechnms);
 
     %---------------------------------------------------------------------------------
    case 'eegviewer';
+    clf;
     eegViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms);
 
     %---------------------------------------------------------------------------------
@@ -77,7 +79,7 @@ while ( true )
     
    %---------------------------------------------------------------------------------
    case {'calibrate','calibration'};
-    [traindata,traindevents]=buffer_waitData(buffhost,buffport,[],'startSet',{'stimulus.tgtFlash'},'exitSet',{'stimulus.training' 'end'},'verb',verb,'trlen_ms',trlen_ms);
+    [traindata,traindevents]=buffer_waitData(buffhost,buffport,[],'startSet',{'stimulus.tgtFlash'},'exitSet',{'stimulus.training' 'end'},'verb',verb+1,'trlen_ms',trlen_ms);
     mi=matchEvents(traindevents,'stimulus.training','end'); traindevents(mi)=[]; traindata(mi)=[];%remove exit event
     fprintf('Saving %d epochs to : %s\n',numel(traindevents),[dname '_' subject '_' datestr]);
     save([dname '_' subject '_' datestr],'traindata','traindevents','hdr');
