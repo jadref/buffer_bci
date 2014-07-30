@@ -130,4 +130,12 @@ Note: By default raw data is saved to:
 ###Notes: TMSi mobita {mobita}
 This device uses wifi to connect between the computer and the amplifier.  When recording data this connection *cannot* be disconnected.  Unfortunately, most OSs currently have a wifi auto-scan system which will periodically scan for 'better' wifi networks.  This scanning will interrupt data sending and cause the connection to be temporally lost for 1-3seconds.   To prevent this you need to prevent wifi auto-scanning, how this is done differs depending on OS.
 * Linux: on most current linux wifi is managed by NetworkManager.  By stopping this process from running you can prevent wifi auto-scanning.  Do this by: `killall -STOP NetworkManager`.  To resume auto-scanning use: `killall -CONT NetworkManager`
-* Windows: to stop network scanning follow the instructions [here](http://answers.microsoft.com/en-us/windows/forum/windows_7-networking/how-to-disable-automatic-scanning-for-wifi/4c8253ec-40c6-42c8-a9f7-00d78fce966c). 
+* Windows: to stop network scanning follow the instructions [here](http://answers.microsoft.com/en-us/windows/forum/windows_7-networking/how-to-disable-automatic-scanning-for-wifi/4c8253ec-40c6-42c8-a9f7-00d78fce966c).  Briefly:
+
+To disable automatic scanning for Wireless networks, we need to stop WLAN autoconfig service.
+
+1.       Click the "Start" button.
+2.      Type "services.msc" in the field that appears. Press "Enter" key on your keyboard.
+3.       Find "WLAN autoconfig" and right-click on it. Choose "Stop" or "Pause" in the list of options that appears.
+
+Note: To enable the Wireless networks, follow the same steps but choose "Resume" or "Restart" in the same list of options.
