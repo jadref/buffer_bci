@@ -35,6 +35,7 @@ flashColor=[1 1 1]; % the 'flash' color (white)
 tgtColor = [.8 .8 .8];
 bgColor  = [.1 .1 .1];
 tgt2Color= [1 0 0];
+predColor= [0 1 0];
 arrowScale=[.4 1.0];
 sizeStim = 1.5;
 

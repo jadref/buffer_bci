@@ -149,7 +149,7 @@ for si=1:nSeq;
   
     for hi=1:numel(h); set(h(hi),'fontSize',symbSize*(1+.5*(p(hi)-1/numel(symbols)))); end;     % update the feedback display
     % show the classifier prediction
-    set(h(predTgt),'color',tgtColor);
+    set(h(predTgt),'color',predColor);
     drawnow;
     sendEvent('stimulus.prediction',symbols{predTgt});
   end
