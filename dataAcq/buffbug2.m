@@ -1,5 +1,5 @@
 % very big put-dat
-run ../utilities/initPaths
+run ../utilities/initPaths.m
 host='localhost'; port=1972;
 
 
