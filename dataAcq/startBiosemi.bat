@@ -3,7 +3,7 @@ set drive=%~d0
 set bciroot=output\raw_buffer
 set subject=test
 rem get date/session
-For /f "tokens=2-4 delims=/ " %%a in ('date /t') do (set session=%%c%%a%%b) 
+For /f "tokens=2-4 delims=/- " %%a in ('date /t') do (set session=%%c%%b%%a) 
 rem get time
 For /f "tokens=1-4 delims=: " %%a in ('time /t') do (set block=%%a%%b%%c)
 set outfile=%drive%\%bciroot%\%subject%
