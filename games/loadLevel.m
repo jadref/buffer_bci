@@ -24,6 +24,7 @@ while ci<numel(char)
   ci=ci+1;
   if int32(char(ci))==10 || int32(char(ci))==13 % This occurs at the end of a line
     ci=ci+1; % Just read the next character
+    if ( ci>numel(char) ) break; end; % check for eof
     if ( int32(char(ci))==10 ) ci=ci+1; end; %skip \l on windows
     if ( ci>numel(char) ) break; end; % check for eof
     if ( isempty(maxx) ) maxx=xi; 
