@@ -22,7 +22,7 @@ function []=sigViewer(buffhost,buffport,varargin);
 %  noisebands -- [2x1] frequency bands to display for the 50 Hz noise plot   ([45 47 53 55])
 %  sigprocoptsgui -- [bool] show the on-line option changing gui             (0)
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../utilities/initPaths.m'); end;
-opts=struct('endType','end.training','verb',1,'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',128,'spatfilt','car','badchrm',0,'capFile',[],'overridechnms',0,'welch_width_ms',500,'noisebands',[45 47 53 55],'noiseBins',[0 1],'timeOut_ms',1000,'spectBaseline',1,'sigProcOptsGui',1);
+opts=struct('endType','end.training','verb',1,'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',128,'spatfilt','car','badchrm',0,'capFile',[],'overridechnms',0,'welch_width_ms',500,'noisebands',[45 47 53 55],'noiseBins',[0 1.5],'timeOut_ms',1000,'spectBaseline',1,'sigProcOptsGui',1,'dataStd',2.5);
 opts=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
@@ -44,7 +44,8 @@ ch_names=hdr.channel_names; ch_pos=[]; iseeg=true(numel(ch_names),1);
 % get capFile info for positions
 capFile=opts.capFile; overridechnms=opts.overridechnms; 
 if(isempty(opts.capFile)) 
-  [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); if ( ~isequal(fn,0) ) capFile=fullfile(pth,fn); end;
+  [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); drawnow;
+  if ( ~isequal(fn,0) ) capFile=fullfile(pth,fn); end;
   %if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
 end
 if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
@@ -56,7 +57,7 @@ if ( ~isempty(capFile) )
   iseeg=[di.extra.iseeg];
   if ( ~any(iseeg) ) % fall back on showing all data
     warning('Capfile didnt match any data channels -- no EEG?');
-    ch_names=hdr.channels_names;
+    ch_names=hdr.channel_names;
     ch_pos=[];
     iseeg=true(numel(ch_names),1);
   end
@@ -153,7 +154,7 @@ for hi=1:size(ppdat,1);
 end;
 
 ppopts.badchrm=opts.badchrm;
-ppopts.preproctype='none';if(opts.detrend)pptype='detrend'; end;
+ppopts.preproctype='none';if(opts.detrend)preproctype='detrend'; end;
 ppopts.spatfilttype=opts.spatfilt;
 ppopts.freqbands=opts.freqbands;
 optsFighandles=[];
@@ -175,6 +176,8 @@ end
 endTraining=false; state=[];
 cursamp=hdr.nSamples;
 while ( ~endTraining )  
+
+  %------------------------------------------------------------------------
   % wait for new data to be available
   status=buffer('wait_dat',[cursamp+update_samp inf opts.timeOut_ms],buffhost,buffport);
   if( status.nSamples < cursamp+update_samp )
@@ -188,40 +191,15 @@ while ( ~endTraining )
   dat   =buffer('get_dat',[cursamp+1 cursamp+update_samp],buffhost,buffport);
   cursamp = cursamp+update_samp;
   
-  if ( opts.verb>0 ) fprintf('.'); end;
-  if ( ~ishandle(fig) ) break; end;
-  
   % shift and insert into the data buffer
   rawdat(:,1:blkIdx)=rawdat(:,update_samp+1:end);
   rawdat(:,blkIdx+1:end)=dat.buf(iseeg,:);
-  
-  % pre-process the data
-  % get updated parameters if needed
-  if ( ~isempty(optsFighandles) && ishandle(optsFighandles.figure1) )
-    tmp=ppopts.freqbands;
-    ppopts=getSigProcOpts(optsFighandles);
-    % compute updated spectral filter information, if needed
-    if ( ~isequal(tmp,ppopts.freqbands) )
-      filt    =mkFilter(trlen_samp/2,ppopts.freqbands,fs/trlen_samp);    
-      freqIdx =getfreqIdx(freqs,ppopts.freqbands);
-    end
-  end
-  ppdat = rawdat;
-  switch(lower(ppopts.preproctype));
-   case 'none';   
-   case 'center'; ppdat=repop(ppdat,'-',mean(ppdat,2));
-   case 'detrend';ppdat=detrend(ppdat,2);
-   otherwise; warning('Unrecognised pre-proc type');
-  end
-    
-  switch(lower(ppopts.spatfilttype))
-   case 'none';
-   case 'car';    ppdat=repop(ppdat,'-',mean(ppdat,1));
-   case 'slap';   if ( ~isempty(slapfilt) ) ppdat=tprod(ppdat,[-1 2 3],slapfilt,[-1 1]); end;
-   case 'whiten'; 
-   otherwise; warning('unrecognised spatial filter type');
-  end
 
+  if ( opts.verb>0 ) fprintf('.'); end;
+  if ( ~ishandle(fig) ) break; end;
+
+  %------------------------------------------------------------------------
+  % Get updated user input
   % switch visualization mode if wanted
   key=[]; if ( ~isempty(modehdl) ) key=get(modehdl,'value'); end;
   if ( ~isempty(get(fig,'userdata')) ) key=get(fig,'userdata'); end; % key-overrides drop-down
@@ -236,6 +214,37 @@ while ( ~endTraining )
     set(fig,'userdata',[]);
     if ( ~isempty(modehdl) ) set(modehdl,'value',tmp); end;
   end
+  % get updated sig-proc parameters if needed
+  if ( ~isempty(optsFighandles) && ishandle(optsFighandles.figure1) )
+    tmp=ppopts.freqbands;
+    ppopts=getSigProcOpts(optsFighandles);
+    % compute updated spectral filter information, if needed
+    if ( ~isequal(tmp,ppopts.freqbands) )
+      filt    =mkFilter(trlen_samp/2,ppopts.freqbands,fs/trlen_samp);    
+      freqIdx =getfreqIdx(freqs,ppopts.freqbands);
+    end
+  end
+
+  %------------------------------------------------------------------------
+  % pre-process the data
+  ppdat = rawdat;
+  switch(lower(ppopts.preproctype));
+   case 'none';   
+   case 'center'; ppdat=repop(ppdat,'-',mean(ppdat,2));
+   case 'detrend';ppdat=detrend(ppdat,2);
+   otherwise; warning(sprintf('Unrecognised pre-proc type: %s',lower(ppopts.preproctype)));
+  end
+    
+  if ( ~strcmp(curvistype,'power') ) % BODGE: 50Hz power doesn't do any spatial filtering
+    switch(lower(ppopts.spatfilttype))
+     case 'none';
+     case 'car';    ppdat=repop(ppdat,'-',mean(ppdat,1));
+     case 'slap';   if ( ~isempty(slapfilt) ) ppdat=tprod(ppdat,[-1 2 3],slapfilt,[-1 1]); end;
+     case 'whiten'; 
+     otherwise; warning(sprintf('Unrecognised spatial filter type : %s',ppopts.spatfilttype));
+    end
+  end
+  
   switch (curvistype) 
     
    case 'time'; % time-domain, spectral filter
@@ -248,7 +257,7 @@ while ( ~endTraining )
     ppdat = ppdat(:,freqIdx(1):freqIdx(2));
     
    case 'power'; % 50Hz power, N.B. on the last 2s data only!
-    ppdat = welchpsd(ppdat(:,find(times>-2,1):end),2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'aveType','db');
+    ppdat = welchpsd(ppdat(:,find(times>-2,1):end),2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'aveType','amp');
     ppdat = mean(ppdat(:,freqIdx(1):freqIdx(2)),2); % ave power in this range
     
    case 'spect'; % spectrogram
@@ -258,11 +267,16 @@ while ( ~endTraining )
     if ( opts.spectBaseline ) ppdat=repop(ppdat,'-',mean(mean(ppdat,3),1)); end
   end
   
-  datrange=[min(ppdat(:)),max(ppdat(:))];
+  % compute useful range of data to show
+  % add some artifact robustness, data-lim is mean+3std-dev
+  datstats=[mean(ppdat(:)) std(ppdat(:))];
+  datrange=[max(min(ppdat(:)),datstats(1)-opts.dataStd*datstats(2)) min(datstats(1)+opts.dataStd*datstats(2),max(ppdat(:)))];
+
+  %---------------------------------------------------------------------------------
+  % Do visualisation mode switching work
   if ( ~isequal(vistype,curvistype) ) % reset the axes
     datlim=datrange;
     if ( datlim(1)>=datlim(2) || any(isnan(datlim)) ) datlim=[-1 1]; end;
-    set(hdls,'ylim',datlim);
     switch ( vistype ) % do pre-work dependent on current mode
      case 'power'; % 50hz power
       for hi=1:size(ppdat,1); % turn the tickmarks and label visible again
@@ -275,13 +289,14 @@ while ( ~endTraining )
       if ( ~isempty(cbarhdl) ) set(findobj(cbarhdl),'visible','off'); end
      case 'spect'; if ( ~isempty(cbarhdl) ) set(findobj(cbarhdl),'visible','off'); end
     end
-    switch ( curvistype ) 
-      
+    
+    % compute the current vis-types plot
+    switch ( curvistype )       
      case 'time'; % time-domain
       for hi=1:size(ppdat,1);
         xlabel(hdls(hi),'time (s)');
         ylabel(hdls(hi),'');
-        set(hdls(hi),'xlim',[times(1) times(size(ppdat,2))]);            
+        set(hdls(hi),'xlim',[times(1) times(size(ppdat,2))],'ylim',datlim);            
       end
       set(img_hdls,'visible','off'); % make the colors invisible        
       set(line_hdls,'xdata',times(1:size(ppdat,2)),'visible','on');
@@ -290,7 +305,7 @@ while ( ~endTraining )
       for hi=1:size(ppdat,1);
         xlabel(hdls(hi),'freq(hz)');
         ylabel(hdls(hi),'');
-        set(hdls(hi),'xlim',freqs([freqIdx(1) freqIdx(2)]));
+        set(hdls(hi),'xlim',freqs([freqIdx(1) freqIdx(2)]),'ylim',datlim);
       end
       set(img_hdls,'visible','off'); % make the colors invisible        
       set(line_hdls,'xdata',freqs(freqIdx(1):freqIdx(2)),'visible','on');
@@ -315,13 +330,11 @@ while ( ~endTraining )
       end;
       
      case 'spect'; % spectrogram
-      set(hdls,'xlim',start_s([1 end]),'ylim',freqs([freqIdx(1) freqIdx(2)])); % all the same axes
+      set(hdls,'xlim',start_s([1 end]),'ylim',freqs([freqIdx(1) freqIdx(2)]),'clim',datlim); % all the same axes
       set(line_hdls,'visible','off');
       % make the color images visible, in the right place with the right axes positions
       set(img_hdls,'xdata',start_s([1 end]),'ydata',freqs([freqIdx(1) freqIdx(2)]),'visible','on');      
       for hi=1:numel(hdls); xlabel(hdls(hi),'time (s)'); ylabel(hdls(hi),'freq (hz)');end;
-      datlim=[0 max(abs(ppdat(:)))];
-      if ( datlim(1)>=datlim(2) || any(isnan(datlim)) ) datlim=[-1 1]; end;
       if ( ~isempty(cbarhdl) ) 
         set(findobj(cbarhdl),'visible','on'); 
         set(get(cbarhdl,'children'),'ydata',datlim);set(cbarhdl,'ylim',datlim); 
@@ -372,7 +385,7 @@ return;
 
 function freqIdx=getfreqIdx(freqs,freqbands)
 [ans,freqIdx(1)]=min(abs(freqs-freqbands(1))); 
-[ans,freqIdx(2)]=min(abs(freqs-freqbands(max(end,2))));
+[ans,freqIdx(2)]=min(abs(freqs-freqbands(end)));
 
 function sigprocopts=getSigProcOpts(optsFighandles)
 % get the current options from the sig-proc-opts figure
