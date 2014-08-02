@@ -9,13 +9,13 @@ colors=[1 1 1;...;  % color(1) = flash
         0 1 0]';    % color(2) = target
 stimTime=0:isi:duration; % event every isi
 stimSeq =-ones(numel(h),numel(stimTime)); % make stimSeq where everything is turned off
-stimSeq(2:end-1,:)=0; % turn-on only the central square
-flashStim=-ones(numel(h),1); flashStim(1)=1; % flash only has symbol 1 set
+%stimSeq(2:end-1,:)=0; % turn-on only the central square
+%flashStim=-ones(numel(h),1); flashStim(1)=1; % flash only has symbol 1 set
 for stimi=1:numel(h)-2;
   % N.B. include slight phase offset to prevent value being exactly==0
   stimSeq(stimi+1,:) = cos(((0:numel(stimTime)-1)+.0001)/periods(stimi)*2*pi); 
+  if ( ~smooth ) stimSeq(stimi+1,:)=double(stimSeq(stimi+1,:)>0); end;
 end
-if ( ~smooth ) stimSeq=double(stimSeq>0); end;
 eventSeq=cell(numel(stimTime),1); % No events...
 
 % Pick who is going to be the target

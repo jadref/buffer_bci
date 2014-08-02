@@ -7,7 +7,7 @@ buffhost='localhost';buffport=1972;
 global ft_buff; ft_buff=struct('host',buffhost,'port',buffport);
 % wait for the buffer to return valid header information
 hdr=[];
-while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
+while ( isempty(hdr) || ~isstruct(hdr) || (isfield(hdr,'nchans') && hdr.nchans==0) ) % wait for the buffer to contain valid data
   try 
     hdr=buffer('get_hdr',[],buffhost,buffport); 
   catch
@@ -37,17 +37,19 @@ buffhost='localhost'; buffport=1972;
 verb=0;
 nSeq=15;
 nRepetitions=5;  % the number of complete row/col stimulus before sequence is finished
-cueDuration=2;
+cueDuration=3;
 stimDuration=.15;% the length a row/col is highlighted
 interSeqDuration=2;
 feedbackDuration=5;
 stimRadius=.6;
 
 ssvepFreq = [15 7.5 10 20 30];
+isi=1/60;
+flickerFreq=[15 20];
 
 nSymbs=2;
-trialDuration=3;
-baselineDuration=1;
+trialDuration=8;
+baselineDuration=2;
 intertrialDuration=2;
 bgColor=[.1 .1 .1]; % background color (grey)
 tgtColor=[0 1 0]; % the target indication color (green)

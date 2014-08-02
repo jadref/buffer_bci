@@ -48,14 +48,15 @@ while ( ~endTraining )
     [keyIsDown, t, keyCode] = KbCheck;  key=KbName(keyCode); % get the pressed key
     
     switch lower(key)
-     case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(texels);     seqStart=true;
-     case {'a','2'}; seqStart=false; % not implemented yet! %[stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(texels);     seqStart=true;
-     case {'s','3'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,3,1/ssvepFreq(1)/2,sprintf('SSVEP %g',ssvepFreq(1)));   seqStart=true;
-     case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(texels);      seqStart=true;
-     case {'f','5'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(texels); seqStart=true;
+     case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(texels,trialDuration);     seqStart=true;
+     case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration,1);   seqStart=true;
+     %case {'a','2'}; seqStart=false; % not implemented yet! %[stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(texels);     seqStart=true;
+     case {'s','3'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,trialDuration,1/ssvepFreq(1)/2,sprintf('SSVEP %g',ssvepFreq(1)));   seqStart=true;
+     case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(texels,trialDuration);      seqStart=true;
+     case {'f','5'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(texels,trialDuration,isi,1./(flickerFreq*isi)); seqStart=true;
      case {'q','escape'};         endTraining=true; break; % end the phase
-     case {'7'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,3,1/ssvepFreq(2)/2,sprintf('SSVEP %g',ssvepFreq(2)));  seqStart=true;
-     case {'8'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,3,1/ssvepFreq(3)/2,sprintf('SSVEP %g',ssvepFreq(3)));  seqStart=true;
+     case {'7'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,trialDuration,1/ssvepFreq(2)/2,sprintf('SSVEP %g',ssvepFreq(2)));  seqStart=true;
+     case {'8'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,trialDuration,1/ssvepFreq(3)/2,sprintf('SSVEP %g',ssvepFreq(3)));  seqStart=true;
      case {'9'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,3,1/ssvepFreq(4)/2,sprintf('SSVEP %g',ssvepFreq(4)));  seqStart=true;
      case {'0'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,3,1/ssvepFreq(5)/2,sprintf('SSVEP %g',ssvepFreq(5)));  seqStart=true;
      otherwise; fprintf('Unrecog key: %s\n',lower(key)); seqStart=false;

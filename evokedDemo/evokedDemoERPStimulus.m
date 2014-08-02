@@ -23,11 +23,12 @@ set(fig,'keypressfcn',@keyListener);
 set(fig,'userdata',[]); % clear any old key info
 % instructions object
 instructstr={'Stimulus Type Keys',
-             '',
-             '1 or v : visual oddball',
+             '';
+             '1 or v : visual reponse',
+             '2 or o : visual oddball',
              sprintf('3 or s : SSVEP (%ghz)',ssvepFreq(1)),
              '4 or p : visual P300',
-             sprintf('5 or f : flicker (SSVEP %g or %ghz))',ssvepFreq(1),ssvepFreq(2)),
+             sprintf('5 or f : flicker (SSVEP %g or %ghz))',flickerFreq(1),flickerFreq(2)),
              'q      : quit'
             };
 instructh=text(min(get(ax,'xlim'))+.25*diff(get(ax,'xlim')),mean(get(ax,'ylim')),instructstr,'HorizontalAlignment','left','VerticalAlignment','middle','color',[0 1 0],'fontunits','normalized','FontSize',.05,'visible','off');
@@ -43,13 +44,12 @@ endTraining=false; si=0;
 sendEvent('stimulus.training','start'); 
 while ( ~endTraining ) 
   si=si+1;
-  
-  if ( ~ishandle(fig) ) endTraining=true; break; end;  
-  
+    
   %sleepSec(intertrialDuration);
   % wait for key press to start the next epoch  
   seqStart=false;
   while ( ~seqStart )
+    if ( ~ishandle(fig) ) endTraining=true; break; end;  
     inswait=0;
     key=get(fig,'userData');
     while ( isempty(key) )
@@ -63,19 +63,21 @@ while ( ~endTraining )
     key=get(fig,'currentkey');
     set(fig,'userData',[]);
     switch lower(key)
-     case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h);     seqStart=true;
-     case {'a','2'}; seqStart=false; % not implemented yet! %[stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(h);     seqStart=true;
-     case {'s','3'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,3,1/ssvepFreq(1)/2,sprintf('SSVEP %g',ssvepFreq(1)));   seqStart=true;
-     case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(h);      seqStart=true;
-     case {'f','5'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(h); seqStart=true;
+     case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration);     seqStart=true;
+     case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration,1/4,[],1);seqStart=true;
+     %case {'a','2'}; seqStart=false; % not implemented yet! %[stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(h);     seqStart=true;
+     case {'s','3'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,trialDuration,1/ssvepFreq(1)/2,sprintf('SSVEP %g',ssvepFreq(1)));   seqStart=true;
+     case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(h,trialDuration);      seqStart=true;
+     case {'f','5'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(h,trialDuration,isi,1./(flickerFreq*isi)); seqStart=true;
      case {'q','escape'};         endTraining=true; break; % end the phase
-     case {'7'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,3,1/ssvepFreq(2)/2,sprintf('SSVEP %g',ssvepFreq(2)));  seqStart=true;
-     case {'8'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,3,1/ssvepFreq(3)/2,sprintf('SSVEP %g',ssvepFreq(3)));  seqStart=true;
+     case {'7'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,trialDuration,1/ssvepFreq(2)/2,sprintf('SSVEP %g',ssvepFreq(2)));  seqStart=true;
+     case {'8'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,trialDuration,1/ssvepFreq(3)/2,sprintf('SSVEP %g',ssvepFreq(3)));  seqStart=true;
      case {'9'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,3,1/ssvepFreq(4)/2,sprintf('SSVEP %g',ssvepFreq(4)));  seqStart=true;
      case {'0'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,3,1/ssvepFreq(5)/2,sprintf('SSVEP %g',ssvepFreq(5)));  seqStart=true;
      otherwise; fprintf('Unrecog key: %s\n',lower(key)); seqStart=false;
     end        
   end
+  if ( ~ishandle(fig) ) endTraining=true; end;  
   set(instructh,'visible','off');drawnow;sleepSec(.5);
   if ( endTraining ) break; end;
 
@@ -119,8 +121,7 @@ while ( ~endTraining )
     % send event saying what the updated display was
     if ( ~isempty(eventSeq{ei}) ) 
       ev=sendEvent(eventSeq{ei}{:}); 
-      %sendEvent('stimulus.tgtFlash',stimSeqRow(tgtRow,ei),stimSamp); % indicate if it was a 'target' flash
-      if (1||verb>0) fprintf('Event: %s\n',ev2str(ev)); end;
+      if (verb>0) fprintf('Event: %s\n',ev2str(ev)); end;
     end
   end
   if ( verb>0 ) % summary info
