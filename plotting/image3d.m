@@ -501,7 +501,7 @@ for pi=1:N;
    
 end
 % store axlimits in the figures userdata info, so works with clickplots
-set(gcf,'userdata',axsettings);
+setappdata(gcf,'axsettings',axsettings);
 
 if ( 0 )
 % BODGE: change the drawing order to be from top to bottom so titles overlap the plot above

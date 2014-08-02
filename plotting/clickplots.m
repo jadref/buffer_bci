@@ -33,7 +33,7 @@ hideSetting = get(0, 'showhiddenhandles');
 if strcmp(get(h, 'type'), 'figure')
 	set(0, 'showhiddenhandles', 'off');
 	set(findobj(get(h, 'children')), 'buttondownfcn', 'clickplots(gcbo)')
-	set(h, 'userdata', varargin)
+	setappdata(h, 'axsettings', varargin)
 	set(0, 'showhiddenhandles', hideSetting);
 	return
 end
@@ -49,10 +49,9 @@ keyHandle = findobj('tag', 'key', 'userdata', h);
 otherAxes = setdiff(findobj(fig, 'type', 'axes'), [h;keyHandle(:)]);
 set(0, 'showhiddenhandles', 'off');
 if up
-	props = get(fig, 'userdata'); if ~iscell(props), props = {}; end
-	props = [{'userdata', [], 'units', 'normalized', 'position', [0.1 0.1 0.8 0.8]} props(:)'];
+	props = getappdata(fig, 'axsettings'); if ~iscell(props), props = {}; end
+	props = {'units', 'normalized', 'position', [0.1 0.1 0.8 0.8] props{:}'};
 	saveProps = get(h, props(1:2:end));
-   props{2} = get(h,'userdata'); % propogate old user-data into new stuff
 	set(h, props{:})
 	props(2:2:end) = saveProps;
 	set(findobj(otherAxes), 'visible', 'off')
