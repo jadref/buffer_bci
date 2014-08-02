@@ -2,11 +2,10 @@
 cd `dirname ${BASH_SOURCE[0]}`
 source ../utilities/findMatlab.sh
 fname=$1;
-if [ ${fname:0:1} != "'" ]; then fname="'$fname'"; fi
+if [ ${fname:0:1}X != "'"X ]; then fname="'$fname'"; fi
 if [[ $matexe == *matlab ]]; then  args=-nodesktop; fi
 cat <<EOF | $matexe $args
-args={$2 $3 $4 $5 $6 $7 $8 $9 ${10}}
-buffer_fileproxy([],[],$fname,args{:});
+buffer_fileproxy([],[],$fname);
 quit;
 EOF
 # Note: to call with arguments you must *double-quote* the arguments....
