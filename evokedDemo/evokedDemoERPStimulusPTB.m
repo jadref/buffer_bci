@@ -54,11 +54,29 @@ while ( ~endTraining )
      case {'s','3'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,trialDuration,1/ssvepFreq(1)/2,sprintf('SSVEP %g',ssvepFreq(1)));   seqStart=true;
      case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(texels,trialDuration);      seqStart=true;
      case {'f','5'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(texels,trialDuration,isi,1./(flickerFreq*isi)); seqStart=true;
+     case {'l','6'}; % left box only
+      stimTime=0:1:trialDuration; % times something happens, i.e. every second send event
+      stimSeq =-ones(numel(h),numel(stimTime)); stimSeq(2,:)=1; stimSeq(4,:)=2; % what happens when
+      colors=[tgtColor;bgColor]'; % key for color to use for each stimulus
+      eventSeq=cell(1,numel(stimTime)); [eventSeq{1:end-1}]=deal({'stimulus' 'left'}); % markers to send
+      seqStart=true;
+     case {'n','7'}; % fixation point only
+      stimTime=0:1:trialDuration; % times something happens, i.e. every second send event
+      stimSeq =-ones(numel(h),numel(stimTime)); stimSeq(4,:)=1; % what happens when
+      colors=[tgtColor;bgColor]'; % key for color to use for each stimulus
+      eventSeq=cell(1,numel(stimTime)); [eventSeq{1:end-1}]=deal({'stimulus' 'right'}); % markers to send
+      seqStart=true;
+     case {'r','8'}; % right box only
+      stimTime=0:1:trialDuration; % times something happens, i.e. every second send event
+      stimSeq =-ones(numel(h),numel(stimTime)); stimSeq(3,:)=1; stimSeq(4,:)=2; % what happens when
+      colors=[tgtColor;bgColor]'; % key for color to use for each stimulus
+      eventSeq=cell(1,numel(stimTime)); [eventSeq{1:end-1}]=deal({'stimulus' 'left'}); % markers to send
+      seqStart=true;
      case {'q','escape'};         endTraining=true; break; % end the phase
-     case {'7'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,trialDuration,1/ssvepFreq(2)/2,sprintf('SSVEP %g',ssvepFreq(2)));  seqStart=true;
-     case {'8'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,trialDuration,1/ssvepFreq(3)/2,sprintf('SSVEP %g',ssvepFreq(3)));  seqStart=true;
-     case {'9'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,3,1/ssvepFreq(4)/2,sprintf('SSVEP %g',ssvepFreq(4)));  seqStart=true;
-     case {'0'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,3,1/ssvepFreq(5)/2,sprintf('SSVEP %g',ssvepFreq(5)));  seqStart=true;
+     % case {'7'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,trialDuration,1/ssvepFreq(2)/2,sprintf('SSVEP %g',ssvepFreq(2)));  seqStart=true;
+     % case {'8'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,trialDuration,1/ssvepFreq(3)/2,sprintf('SSVEP %g',ssvepFreq(3)));  seqStart=true;
+     % case {'9'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,3,1/ssvepFreq(4)/2,sprintf('SSVEP %g',ssvepFreq(4)));  seqStart=true;
+     % case {'0'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,3,1/ssvepFreq(5)/2,sprintf('SSVEP %g',ssvepFreq(5)));  seqStart=true;
      otherwise; fprintf('Unrecog key: %s\n',lower(key)); seqStart=false;
     end        
   end
