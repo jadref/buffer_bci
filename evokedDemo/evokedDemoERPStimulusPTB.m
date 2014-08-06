@@ -32,6 +32,27 @@ destR(:,4)= round(rel2pixel(wPtr,[.5-stimRadius/2/4 .5+stimRadius/2/4 .5+stimRad
 srcR(:,4) = [0 destR(3,4)-destR(1,4) destR(2,4)-destR(4,4) 0];
 texels(4)  = Screen('MakeTexture',wPtr,ones(srcR([3 2],4)')*255);
 
+% instructions object
+instructstr={'Stimulus Type Keys',
+             '';
+             '1 or v : visual reponse',
+             '2 or o : visual oddball',
+             sprintf('3 or s : SSVEP (%ghz)',ssvepFreq(1)),
+             '4 or p : visual P300',
+             sprintf('5 or f : flicker (SSVEP %g or %ghz)',flickerFreq(1),flickerFreq(2)),
+             '6 or l : left cue task',
+             '7 or n : nothing cue task',
+             '8 or r : right cue task',
+             'a      : auditory oddball',
+             'q      : quit'
+            };
+Screen('FillRect',wPtr,bgColor*255); % blank background
+[ans,ans,instructSrcR]=DrawFormattedText(wPtr,sprintf('%s\n',instructstr{:}),0,0,[1 1 1]*255);
+%extract image, back buffer and make into texture
+instructTexel=Screen('MakeTexture',wPtr,Screen('GetImage',wPtr,instructSrcR,'backBuffer'));
+Screen('FillRect',wPtr,bgColor*255); % blank background
+[instructDestR]=rel2pixel(wPtr,[.2 .2 .8 .8]);
+
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
 tgt=ones(4,1);
@@ -43,11 +64,17 @@ while ( ~endTraining )
   %sleepSec(intertrialDuration);
   % wait for key press to start the next epoch  
   seqStart=false;
-  while ( ~seqStart )
-    KbWait; % wait for a key press
-    [keyIsDown, t, keyCode] = KbCheck;  key=KbName(keyCode); % get the pressed key
-    
-    switch lower(key)
+  while ( ~seqStart )    
+    key=[];
+    while( isempty(key) ) 
+      KbWait([],2,GetSecs()+2); % wait for a key press *and release*, or until 2 sec has passed
+      [keyIsDown, t, keyCode] = KbCheck;  key=KbName(keyCode); % get the pressed key
+      % show the instructions
+      Screen('Drawtextures',wPtr,instructTexel,instructSrcR,instructDestR,[],[],[],tgtColor*255); 
+      Screen('flip',wPtr,1,1);% re-draw the display
+    end
+      
+    switch lower(key(1))
      case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(texels,trialDuration);     seqStart=true;
      case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration,1);   seqStart=true;
      %case {'a','2'}; seqStart=false; % not implemented yet! %[stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(texels);     seqStart=true;
@@ -56,21 +83,21 @@ while ( ~endTraining )
      case {'f','5'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(texels,trialDuration,isi,1./(flickerFreq*isi)); seqStart=true;
      case {'l','6'}; % left box only
       stimTime=0:1:trialDuration; % times something happens, i.e. every second send event
-      stimSeq =-ones(numel(h),numel(stimTime)); stimSeq(2,:)=1; stimSeq(4,:)=2; % what happens when
+      stimSeq =-ones(numel(texels),numel(stimTime)); stimSeq(2,:)=1; stimSeq(4,:)=2; % what happens when
       colors=[tgtColor;bgColor]'; % key for color to use for each stimulus
       eventSeq=cell(1,numel(stimTime)); [eventSeq{1:end-1}]=deal({'stimulus' 'left'}); % markers to send
       seqStart=true;
      case {'n','7'}; % fixation point only
       stimTime=0:1:trialDuration; % times something happens, i.e. every second send event
-      stimSeq =-ones(numel(h),numel(stimTime)); stimSeq(4,:)=1; % what happens when
+      stimSeq =-ones(numel(texels),numel(stimTime)); stimSeq(4,:)=1; % what happens when
       colors=[tgtColor;bgColor]'; % key for color to use for each stimulus
-      eventSeq=cell(1,numel(stimTime)); [eventSeq{1:end-1}]=deal({'stimulus' 'right'}); % markers to send
+      eventSeq=cell(1,numel(stimTime)); [eventSeq{1:end-1}]=deal({'stimulus' 'none'}); % markers to send
       seqStart=true;
      case {'r','8'}; % right box only
       stimTime=0:1:trialDuration; % times something happens, i.e. every second send event
-      stimSeq =-ones(numel(h),numel(stimTime)); stimSeq(3,:)=1; stimSeq(4,:)=2; % what happens when
+      stimSeq =-ones(numel(texels),numel(stimTime)); stimSeq(3,:)=1; stimSeq(4,:)=2; % what happens when
       colors=[tgtColor;bgColor]'; % key for color to use for each stimulus
-      eventSeq=cell(1,numel(stimTime)); [eventSeq{1:end-1}]=deal({'stimulus' 'left'}); % markers to send
+      eventSeq=cell(1,numel(stimTime)); [eventSeq{1:end-1}]=deal({'stimulus' 'right'}); % markers to send
       seqStart=true;
      case {'q','escape'};         endTraining=true; break; % end the phase
      % case {'7'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,trialDuration,1/ssvepFreq(2)/2,sprintf('SSVEP %g',ssvepFreq(2)));  seqStart=true;
@@ -78,10 +105,12 @@ while ( ~endTraining )
      % case {'9'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,3,1/ssvepFreq(4)/2,sprintf('SSVEP %g',ssvepFreq(4)));  seqStart=true;
      % case {'0'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,3,1/ssvepFreq(5)/2,sprintf('SSVEP %g',ssvepFreq(5)));  seqStart=true;
      otherwise; fprintf('Unrecog key: %s\n',lower(key)); seqStart=false;
-    end        
+    end
   end
   if ( endTraining ) break; end;
-
+  Screen('flip',wPtr);% re-draw the display, to clear instructions if needed
+  sleepSec(.5);
+  
   % show the screen to alert the subject to trial start
   Screen('Drawtextures',wPtr,texels(end),srcR(:,end),destR(:,end),[],[],[],fixColor*255); 
   Screen('flip',wPtr,1,1);% re-draw the display
