@@ -30,7 +30,7 @@ if ( nargin < 4 || isempty(sidx) )
    else % chunk instead      
       dvsz=size(dv); nd=ndims(dv);
       if ( verb>0 ) fprintf('AUC:'); ci=0; end;
-      if ( nargout > 1 ) sidx=int32(dvsz); end; % pre-alloc too hold result
+      if ( nargout > 1 ) sidx=int32(dv); end; % pre-alloc too hold result
       [idx,chkStrides,nchnks]=nextChunk([],dvsz,dim,MAXEL);
       while ( ~isempty(idx) ) 
         dvidx=dv(idx{:});
