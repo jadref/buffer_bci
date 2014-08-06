@@ -56,7 +56,7 @@ else
 end;
 
 if ( isempty(idx) )
-  idx=cell(numel(sz),1); for i=1:numel(sz); idx{i}=1:chnkStride(i); end; % build index expression
+  idx=cell(numel(sz),1); for i=1:numel(sz); idx{i}=int32(1:chnkStride(i)); end; % build index expression
 %elseif ( ~iscell(idx) || numel(idx) ~= numel(sz) ) 
 %   error('Idx must be cell array with numel(sz) elements');
 elseif ( all(chnkStride==sz) )
