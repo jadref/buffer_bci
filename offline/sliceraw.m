@@ -39,6 +39,7 @@ function [data,devents,hdr,events]=sliceraw(fname,varargin)
 %  trlen_ms/trlen_samp - [1x1] length of data to get for each epoch in milliseconds or samples (3000ms)
 %  offset_ms/offset_samp - [2x1] offset from event start/end to get data from in milli-sec or samples  ([])
 %                that is: data_range= event.sample+offset_samp(1) : event.sample+trlen_samp+offset_samp(2)
+%  subsample -- [1x1] sub-sample recorded data to max of this frequency if needed       (256)
 %
 % Examples:
 %  % 1: Simple example of slicing a whole file
@@ -56,7 +57,7 @@ function [data,devents,hdr,events]=sliceraw(fname,varargin)
 % See Also: buffer_waitData, buffer_train_erp_clsfr, buffer_train_ersp_clsfr, buffer_apply_erp_clsfr, buffer_apply_ersp_clsfr
 
 % set and parse the input options
-opts=struct('startSet',[],'trlen_ms',3000,'trlen_samp',[],'offset_ms',[],'offset_samp',[],'verb',0);
+opts=struct('startSet',[],'trlen_ms',3000,'trlen_samp',[],'offset_ms',[],'offset_samp',[],'verb',0,'subsample',256);
 opts=parseOpts(opts,varargin);
 
 % get the directory which contains the files
@@ -84,6 +85,13 @@ if ( isempty(opts.trlen_samp) ) opts.trlen_samp = ceil(opts.trlen_ms*fs/1000); e
 if ( isempty(opts.offset_samp) && ~isempty(opts.offset_ms) ) 
   opts.offset_samp = ceil(opts.offset_ms*fs/1000);
 end;
+% set the sub-sample ratio of needed
+subSampRatio=1;
+if ( ~isempty(opts.subsample) && fs>opts.subsample ) 
+  subSampRatio = round(fs/opts.subsample);
+  outfs=fs/subSampRatio;
+  fprintf('Subsampling from: %g to %g\n',fs,outfs);
+end
 
 % select the events we want to slice on from the stream
 % Note: you can replace this with something more sophsicated, e.g. to only return matching events between 
@@ -109,12 +117,18 @@ keep=true(numel(devents),1);
 for ei=1:numel(devents);
   data(ei).buf=read_buffer_offline_data(datafname,hdr,devents(ei).sample+[offset_samp]);  
   if ( size(data(ei).buf,2) < (offset_samp(2)-offset_samp(1)) ) keep(ei)=false; end;
+  if ( subSampRatio>1 ) % sub-sample
+    [data(ei).buf,idx] = subsample(data(ei).buf,size(data(ei).buf,2)./subSampRatio,2);
+  end
   if ( opts.verb>=0 ) fprintf('.');end
 end
 if ( ~all(keep) )
   fprintf('Discarding %d events with no data\n',sum(~keep));
   data=data(keep);
   devents=devents(keep);
+end
+if ( subSampRatio>1 ) % update the sample rate stored in the header
+  hdr.fSample=outfs;
 end
 if ( opts.verb>=0 ) fprintf('done.\n');end
 return;
