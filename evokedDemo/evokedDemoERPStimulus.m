@@ -32,6 +32,7 @@ instructstr={'Stimulus Type Keys',
              '6 or l : left cue task',
              '7 or n : nothing cue task',
              '8 or r : right cue task',
+             'a      : auditory oddball',
              'q      : quit'
             };
 instructh=text(min(get(ax,'xlim'))+.25*diff(get(ax,'xlim')),mean(get(ax,'ylim')),instructstr,'HorizontalAlignment','left','VerticalAlignment','middle','color',[0 1 0],'fontunits','normalized','FontSize',.05,'visible','off');
@@ -58,9 +59,9 @@ while ( ~endTraining )
     while ( isempty(key) )
       if ( ~ishandle(fig) ) endTraining=true; break; end;  
       key=get(fig,'userData');
+      if ( inswait>6 ) set(instructh,'visible','on');drawnow; end;
       pause(.25);
       inswait=inswait+1;
-      if ( inswait>6 ) set(instructh,'visible','on');drawnow; end;
     end
     %fprintf('key=%s\n',key);
     key=get(fig,'currentkey');
@@ -69,6 +70,7 @@ while ( ~endTraining )
      case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration);     seqStart=true;
      case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration,1/4,[],1);seqStart=true;
      %case {'a','2'}; seqStart=false; % not implemented yet! %[stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(h);     seqStart=true;
+     case {'a'}; [stimSeq,stimTime,eventSeq,colors,audio]=mkStimSeq_Aud(h,trialDuration,1/2,[],1);     seqStart=true;
      case {'s','3'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,trialDuration,1/ssvepFreq(1)/2,sprintf('SSVEP %g',ssvepFreq(1)));   seqStart=true;
      case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(h,trialDuration);      seqStart=true;
      case {'f','5'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(h,trialDuration,isi,1./(flickerFreq*isi)); seqStart=true;
@@ -82,13 +84,13 @@ while ( ~endTraining )
       stimTime=0:1:trialDuration; % times something happens, i.e. every second send event
       stimSeq =-ones(numel(h),numel(stimTime)); stimSeq(4,:)=1; % what happens when
       colors=[tgtColor;bgColor]'; % key for color to use for each stimulus
-      eventSeq=cell(1,numel(stimTime)); [eventSeq{1:end-1}]=deal({'stimulus' 'right'}); % markers to send
+      eventSeq=cell(1,numel(stimTime)); [eventSeq{1:end-1}]=deal({'stimulus' 'none'}); % markers to send
       seqStart=true;
      case {'r','8'}; % right box only
       stimTime=0:1:trialDuration; % times something happens, i.e. every second send event
       stimSeq =-ones(numel(h),numel(stimTime)); stimSeq(3,:)=1; stimSeq(4,:)=2; % what happens when
       colors=[tgtColor;bgColor]'; % key for color to use for each stimulus
-      eventSeq=cell(1,numel(stimTime)); [eventSeq{1:end-1}]=deal({'stimulus' 'left'}); % markers to send
+      eventSeq=cell(1,numel(stimTime)); [eventSeq{1:end-1}]=deal({'stimulus' 'right'}); % markers to send
       seqStart=true;
      case {'q','escape'};         endTraining=true; break; % end the phase
      %case {'7'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,trialDuration,1/ssvepFreq(2)/2,sprintf('SSVEP %g',ssvepFreq(2)));  seqStart=true;
@@ -128,7 +130,9 @@ while ( ~endTraining )
     if(any(ss==1))set(h(ss==1),'facecolor',colors(:,1)); end% stimSeq codes into a colortable
     if(any(ss==2))set(h(ss==2),'facecolor',colors(:,min(size(colors,2),2)));end;
     if(any(ss==3))set(h(ss==3),'facecolor',colors(:,min(size(colors,2),3)));end;
-
+    if(any(ss==-4))play(audio{1});end;
+    if(any(ss==-5))play(audio{2});end; 
+    
     % sleep until time to re-draw the screen
     sleepSec(max(0,stimTime(ei)-(getwTime()-seqStartTime))); % wait until time to call the draw-now
     if ( verb>0 ) frametime(ei,2)=getwTime()-seqStartTime; end;

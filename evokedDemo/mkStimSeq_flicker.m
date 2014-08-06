@@ -1,4 +1,4 @@
-function [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(h,duration,isi,periods,mkTarget)
+function [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(h,duration,isi,periods,mkTarget,smooth)
 if ( nargin<2 || isempty(duration) ) duration=3; end; % default to 3sec
 if ( nargin<3 || isempty(isi) ) isi=1/60; end; % default to 60Hz
 if ( nargin<4 || isempty(periods) ) periods=[2 4]; end;
