@@ -3,7 +3,7 @@ function [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin);
 %
 % [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin)
 %
-opts=struct('cuePrefix','cue.','endType','end.training','verb',1,'nSymbols',0,'trlen_ms',1000,'trlen_samp',[],'detrend',1,'fftfilter',[],'freqbands',[],'downsample',128,'spatfilt','car','badchrm',0,'capFile',[],'overridechnms',0,'welch_width_ms',500,'redraw_ms',500);
+opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,'nSymbols',0,'trlen_ms',1000,'trlen_samp',[],'detrend',1,'fftfilter',[],'freqbands',[],'downsample',128,'spatfilt','car','badchrm',1,'capFile',[],'overridechnms',0,'welch_width_ms',500,'redraw_ms',500);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
@@ -60,7 +60,11 @@ end
 
 % make the spectral filter
 filt=[]; if ( ~isempty(opts.freqbands)) filt=mkFilter(trlen_samp/2,opts.freqbands,fs/trlen_samp);end
-outsz=[trlen_samp trlen_samp];if(~isempty(opts.downsample)) outsz(2)=min(outsz(2),round(trlen_samp*opts.downsample/fs)); end;
+outsz=[trlen_samp trlen_samp];
+if(~isempty(opts.downsample)) 
+  outsz(2)=min(outsz(2),round(trlen_samp*opts.downsample/fs)); 
+  times   =(1:outsz(2))./opts.downsample;
+end;
 
 % recording the ERP data
 key      = {};
@@ -69,7 +73,8 @@ nCls     = opts.nSymbols;
 rawEpochs= zeros(sum(iseeg),trlen_samp); % stores the raw data
 rawIds   = 0;
 nTarget  = 0;
-erp      = zeros(sum(iseeg),trlen_samp,max(1,nCls)); % stores the pre-proc data used in the figures
+erp      = zeros(sum(iseeg),outsz(2),max(1,nCls)); % stores the pre-proc data used in the figures
+isbad    = false(sum(iseeg),1);
 
 % pre-compute the SLAP spatial filter
 slapfilt=[];
@@ -83,7 +88,8 @@ end
 clf;
 fig=gcf;
 set(fig,'Name','ER(s)P Viewer : t=time, f=freq, r=rest, q,close window=quit','menubar','none','toolbar','none','doublebuffer','on');
-hdls=image3d(erp,1,'plotPos',ch_pos(:,iseeg),'Xvals',ch_names(iseeg),'Yvals',times,'ylabel','time (s)','zlabel','class','disptype','plot','ticklabs','sw','legend','se','plotPosOpts.plotsposition',[.05 .08 .91 .85]);
+plotPos=ch_pos; if ( ~isempty(plotPos) ) plotPos=plotPos(:,iseeg); end;
+hdls=image3d(erp,1,'plotPos',plotPos,'Xvals',ch_names(iseeg),'Yvals',times,'ylabel','time (s)','zlabel','class','disptype','plot','ticklabs','sw','legend','se','plotPosOpts.plotsposition',[.05 .08 .91 .85]);
 
 % make popup menu for selection of TD/FD
 modehdl=uicontrol(fig,'Style','popup','units','normalized','position',[.8 .9 .2 .1],'String','Time|Frequency');
@@ -149,7 +155,7 @@ while ( ~endTraining )
     modekey=[]; if ( ~isempty(modehdl) ) modekey=get(modehdl,'value'); end;
     if ( ~isempty(get(fig,'userdata')) ) modekey=get(fig,'userdata'); end; % modekey-overrides drop-down
     if ( ~isempty(modekey) )
-      switch ( modekey );
+      switch ( modekey(1) );
        case {1,'t'}; tmp=1;curvistype='time';
        case {2,'f'}; tmp=2;curvistype='freq';
        case {3,'p'}; tmp=3;curvistype='power';
@@ -200,11 +206,22 @@ while ( ~endTraining )
          case 'detrend';ppdat=detrend(ppdat,2);
          otherwise; warning(sprintf('Unrecognised pre-proc type: %s',lower(ppopts.preproctype)));
         end
+        
+        % bad-channel identify and remove
+        if( ~isempty(ppopts.badchrm) && ppopts.badchrm>0 )
+          isbad=idOutliers(rawEpochs,1,ppopts.badchrm);
+          % set the data in this channel to 0
+          ppdat(isbad,:)=0;
+        end
       
+        % spatial filter
         switch(lower(ppopts.spatfilttype))
          case 'none';
-         case 'car';    ppdat=repop(ppdat,'-',mean(ppdat,1));
-         case 'slap';   if ( ~isempty(slapfilt) ) ppdat=tprod(ppdat,[-1 2 3],slapfilt,[-1 1]); end;
+         case 'car';    ppdat(~isbad,:,:)=repop(ppdat(~isbad,:,:),'-',mean(ppdat(~isbad,:,:),1));
+         case 'slap';   
+          if ( ~isempty(slapfilt) ) % only use and update from the good channels
+            ppdat(~isbad,:,:)=tprod(ppdat(~isbad,:,:),[-1 2 3],slapfilt(~isbad,~isbad),[-1 1]); 
+          end;
          case 'whiten'; 
          otherwise; warning(sprintf('Unrecognised spatial filter type : %s',ppopts.spatfilttype));
         end
