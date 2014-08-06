@@ -52,12 +52,13 @@ function [X,pipeline,info,opts]=preproc_erp(X,varargin)
 opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],'downsample',[],...
             'width_ms',250,'windowType','hanning','aveType','amp',...
             'detrend',1,'spatialfilter','slap',...
+            'eegonly',1,...
             'badchrm',1,'badchthresh',3.1,'badchscale',2,...
             'badtrrm',1,'badtrthresh',3,'badtrscale',2,...
             'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
             'visualize',1,...
             'badCh',[],'nFold',10,'class_names',[],'Y',[],'hdr',[]);
-[opts,varargin]=parseOpts(opts,varargin);
+opts=parseOpts(opts,varargin);
 
 % get the sampling rate
 di=[]; ch_pos  =opts.ch_pos; ch_names=opts.ch_names;
@@ -69,12 +70,16 @@ if ( isempty(ch_names) && ~isempty(opts.hdr) ) % ARGH! deal with inconsistent fi
 end;
 if ( isempty(ch_pos) && (~isempty(ch_names) || opts.overridechnms) ) % convert names to positions
   di = addPosInfo(ch_names,opts.capFile,opts.overridechnms); % get 3d-coords
-  if ( any([di.extra.iseeg]) ) 
-    ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names    
+  iseeg=[di.extra.iseeg];
+  if ( any(iseeg) ) 
+    ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names        
   else % fall back on showing all data
     warning('Capfile didnt match any data channels -- no EEG?');
     ch_pos=[];
+    iseeg=[];
   end
+  % restrict to eeg channels only
+  if ( opts.eegonly && ~isempty(iseeg) && isempty(opts.badCh) ) opts.badCh=~iseeg; end
 end
 fs=opts.fs; 
 if ( isempty(fs) ) 
@@ -223,13 +228,15 @@ if ( opts.badtrrm )
 end;
 
 %5.5) Visualise the input?
-if ( opts.visualize && ~isempty(ch_pos) )
+if ( opts.visualize )
    uY=unique(Y);sidx=[]; labels=opts.class_names;
    for ci=1:numel(uY);     
      if(iscell(uY)) tmp=strmatch(uY(ci),Y); Yci=false(size(Y)); Yci(tmp)=true; else Yci=(Y==uY(ci)); end;
       mu(:,:,ci)=mean(X(:,:,Yci),3);
       if(~(ci>1 && numel(uY)<=2)) 
-        [aucci,sidx]=dv2auc(Yci*2-1,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
+        if( numel(uY)==2 )  aucci=dv2auc(Yci*2-1,X,3); % don't store seed for binary
+        else                [aucci,sidx]=dv2auc(Yci*2-1,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
+        end
         aucesp=auc_confidence(numel(Y),sum(Yci)./numel(Y),.2);
         aucci(aucci<.5+aucesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
         auc(:,:,ci)=aucci;
