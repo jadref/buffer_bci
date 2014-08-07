@@ -48,9 +48,6 @@ fs=[]; chNames=[];
 if ( isstruct(hdr) )
   if ( isfield(hdr,'channel_names') ) chNames=hdr.channel_names; 
   elseif( isfield(hdr,'label') )      chNames=hdr.label;
-  else 
-    warning('Couldnt find channel names in header'); chNames=[];
-    chNames={}; for di=1:size(X,1); chNames{di}=sprintf('%d',di); end;
   end;
   if ( isfield(hdr,'fsample') )       fs=hdr.fsample; 
   elseif ( isfield(hdr,'Fs') )        fs=hdr.Fs;
@@ -59,6 +56,10 @@ if ( isstruct(hdr) )
   end;
 elseif ( iscell(hdr) && isstr(hdr{1}) )
   chNames=hdr;
+end
+if ( isempty(chNames) ) 
+  warning('No channel names set');
+  chNames={}; for di=1:size(X,1); chNames{di}=sprintf('%d',di); end;
 end
 
 % get position info and identify the eeg channels
