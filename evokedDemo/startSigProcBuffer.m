@@ -72,7 +72,7 @@ while ( true )
     eegViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms);
 
     %---------------------------------------------------------------------------------
-   case {'erspvis','erpvis','erpviewer'};
+   case {'erspvis','erpvis','erpviewer','erpvisptb'};
     [X,Y,key]=erpViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix','stimulus','endType',lower(phaseToRun),'trlen_ms',trlen_ms,'freqbands',[.0 .3 45 47]);
     fn=sprintf('erpvis_%s_%s',subject,datestr);fprintf('Saving to: %s\n',fn); % save results
     save(fn,'X','Y','key');
