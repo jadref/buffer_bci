@@ -1,4 +1,4 @@
-function [X,pipeline,info,opts]=preproc_ersp(X,varargin)
+function [X,pipeline,info,opts]=preproc_erp(X,varargin)
 % simple pre-processing function
 % 
 % [X,pipeline,info,opts]=preproc_ersp(X,...)
