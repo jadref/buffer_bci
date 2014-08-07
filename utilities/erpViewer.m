@@ -3,7 +3,7 @@ function [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin);
 %
 % [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin)
 %
-opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,'nSymbols',0,'trlen_ms',1000,'trlen_samp',[],'detrend',1,'fftfilter',[],'freqbands',[],'downsample',128,'spatfilt','car','badchrm',1,'capFile',[],'overridechnms',0,'welch_width_ms',500,'redraw_ms',500);
+opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,'nSymbols',0,'trlen_ms',1000,'trlen_samp',[],'detrend',1,'fftfilter',[],'freqbands',[],'downsample',128,'spatfilt','car','badchrm',1,'capFile',[],'overridechnms',0,'welch_width_ms',500,'redraw_ms',500,'sigProcOptsGui',1);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
@@ -52,9 +52,9 @@ if ( isempty(trlen_samp) && ~isempty(opts.trlen_ms) ) trlen_samp=round(opts.trle
 times=(1:trlen_samp)./fs;
 freqs=0:1000/opts.welch_width_ms:fs/2;
 if ( ~isempty(opts.freqbands) )
-  [ans,freqIdx(1)]=min(abs(freqs-opts.freqbands(1))); 
-  [ans,freqIdx(2)]=min(abs(freqs-opts.freqbands(max(end,2))));
+  freqIdx=getfreqIdx(freqs,opts.freqbands);
 else
+  opts.freqbands=[1 freqs(end)];
   freqIdx=[1 numel(freqs)];
 end
 
@@ -105,9 +105,24 @@ set(fig,'userdata',[]);
 drawnow; % make sure the figure is visible
 
 ppopts.badchrm=opts.badchrm;
-ppopts.preproctype='none';if(opts.detrend)preproctype='detrend'; end;
+ppopts.preproctype='none';if(opts.detrend)ppopts.preproctype='detrend'; end;
 ppopts.spatfilttype=opts.spatfilt;
 ppopts.freqbands=opts.freqbands;
+optsFighandles=[];
+if ( isequal(opts.sigProcOptsGui,1) )
+  optsFigh=sigProcOptsFig();
+  optsFighandles=guihandles(optsFigh);
+  set(optsFighandles.lowcutoff,'string',sprintf('%g',ppopts.freqbands(1)));
+  set(optsFighandles.highcutoff,'string',sprintf('%g',ppopts.freqbands(end)));  
+  for h=get(optsFighandles.spatfilt,'children')'; 
+    if ( strcmpi(get(h,'string'),ppopts.spatfilttype) ) set(h,'value',1); break;end; 
+  end;
+  for h=get(optsFighandles.preproc,'children')'; 
+    if ( strcmpi(get(h,'string'),ppopts.preproctype) ) set(h,'value',1); break;end; 
+  end;
+  set(optsFighandles.badchrm,'value',ppopts.badchrm);
+  ppopts=getSigProcOpts(optsFighandles);
+end
 
 % pre-call buffer_waitData to cache its options
 [datai,deventsi,state,waitDatopts]=buffer_waitData(buffhost,buffport,[],'startSet',{opts.cuePrefix},'trlen_samp',trlen_samp,'exitSet',{opts.redraw_ms 'data' opts.endType{:}},'verb',opts.verb,varargin{:},'getOpts',1);
@@ -115,12 +130,50 @@ ppopts.freqbands=opts.freqbands;
 endTraining=false;
 while ( ~endTraining )
 
+  updateLines=false(numel(key),1); % reset what needs to be re-drawn
+
   % wait for events...
   [datai,deventsi,state]=buffer_waitData(buffhost,buffport,state,waitDatopts);
   
   if ( ~ishandle(fig) ) break; end;
+  % Now do MATLAB gui events
+  modekey=[]; if ( ~isempty(modehdl) ) modekey=get(modehdl,'value'); end;
+  if ( ~isempty(get(fig,'userdata')) ) modekey=get(fig,'userdata'); end; % modekey-overrides drop-down
+  if ( ~isempty(modekey) )
+    switch ( modekey(1) );
+     case {1,'t'}; tmp=1;curvistype='time';
+     case {2,'f'}; tmp=2;curvistype='freq';
+     case {3,'p'}; tmp=3;curvistype='power';
+     case {4,'s'}; tmp=4;curvistype='spect';
+     case {'r'};   resetval=true; set(resethdl,'value',resetval); % press the reset button
+     case 'q'; break;
+    end;
+    set(fig,'userdata',[]);
+    if ( ~isempty(modehdl) ) set(modehdl,'value',tmp); end;
+  end
+  % get updated sig-proc parameters if needed
+  if ( ~isempty(optsFighandles) && ishandle(optsFighandles.figure1) )
+    [ppopts,damage]=getSigProcOpts(optsFighandles,ppopts);
+    % compute updated spectral filter information, if needed
+    if ( any(damage) ) % re-draw all
+      fprintf('Redraw all detected\n');
+      updateLines(1)=true; updateLines(:)=true; 
+    end; 
+    if ( damage(4) )
+      filt    =mkFilter(trlen_samp/2,ppopts.freqbands,fs/trlen_samp);    
+      freqIdx =getfreqIdx(freqs,ppopts.freqbands);
+    end
+  end
+  resetval=get(resethdl,'value');
+  if ( resetval ) 
+    fprintf('reset detected\n');
+    key={}; nTarget=0; rawIds=[];
+    erp=zeros(sum(iseeg),numel(yvals),1);
+    updateLines(1)=true; updateLines(:)=true; % everything must be re-drawn
+    resetval=0;
+    set(resethdl,'value',resetval); % pop the button back out
+  end
   
-  updateLines=false(numel(key),1);
   keep=true(numel(deventsi),1);
   for ei=1:numel(deventsi);
       event=deventsi(ei);
@@ -151,27 +204,14 @@ while ( ~endTraining )
       end
     end
 
-    % Now do MATLAB gui events
-    modekey=[]; if ( ~isempty(modehdl) ) modekey=get(modehdl,'value'); end;
-    if ( ~isempty(get(fig,'userdata')) ) modekey=get(fig,'userdata'); end; % modekey-overrides drop-down
-    if ( ~isempty(modekey) )
-      switch ( modekey(1) );
-       case {1,'t'}; tmp=1;curvistype='time';
-       case {2,'f'}; tmp=2;curvistype='freq';
-       case {3,'p'}; tmp=3;curvistype='power';
-       case {4,'s'}; tmp=4;curvistype='spect';
-       case {'r'};   resetval=true; set(resethdl,'value',resetval); % press the reset button
-       case 'q'; break;
-      end;
-      set(fig,'userdata',[]);
-      if ( ~isempty(modehdl) ) set(modehdl,'value',tmp); end;
-    end
 
     %---------------------------------------------------------------------------------
     % Do visualisation mode switching work
     if ( curvistype~=vistype ) % all to be updated!
       fprintf('vis switch detected\n');
       updateLines(1)=true; updateLines(:)=true;
+    end; 
+    if ( all(updateLines) )
       switch( curvistype )
        case {1,'time'}; ylabel='time (s)';  yvals=times; 
        case {2,'freq'}; ylabel='freq (hz)'; yvals=freqs(freqIdx(1):freqIdx(2)); 
@@ -179,16 +219,6 @@ while ( ~endTraining )
       end    
       % reset stored ERP info
       erp=zeros(sum(iseeg),numel(yvals),max(1,numel(key)));
-    end; 
-
-    resetval=get(resethdl,'value');
-    if ( resetval ) 
-      fprintf('reset detected\n');
-      key={}; nTarget=0; rawIds=[];
-      erp=zeros(sum(iseeg),numel(yvals),1);
-      updateLines(1)=true; updateLines(:)=true; % everything must be re-drawn
-      resetval=0;
-      set(resethdl,'value',resetval); % pop the button back out
     end
 
     %---------------------------------------------------------------------------------
@@ -222,7 +252,7 @@ while ( ~endTraining )
           if ( ~isempty(slapfilt) ) % only use and update from the good channels
             ppdat(~isbad,:,:)=tprod(ppdat(~isbad,:,:),[-1 2 3],slapfilt(~isbad,~isbad),[-1 1]); 
           end;
-         case 'whiten'; 
+         case 'whiten'; [W,D,ppdat(~isbad,:,:)]=whiten(ppdat(~isbad,:,:),1,'opt',1,0,1); %symetric whiten
          otherwise; warning(sprintf('Unrecognised spatial filter type : %s',ppopts.spatfilttype));
         end
       
@@ -262,6 +292,29 @@ if( nargout>0 )
   rawEpochs=rawEpochs(:,:,1:nTarget);
 end
 return;
+
+function freqIdx=getfreqIdx(freqs,freqbands)
+[ans,freqIdx(1)]=min(abs(freqs-freqbands(1))); 
+[ans,freqIdx(2)]=min(abs(freqs-freqbands(end)));
+
+function [sigprocopts,damage]=getSigProcOpts(optsFighandles,oldopts)
+% get the current options from the sig-proc-opts figure
+sigprocopts.badchrm=get(optsFighandles.badchrm,'value');
+sigprocopts.spatfilttype=get(get(optsFighandles.spatfilt,'SelectedObject'),'String');
+sigprocopts.preproctype=get(get(optsFighandles.preproc,'SelectedObject'),'String');
+sigprocopts.freqbands=[str2num(get(optsFighandles.lowcutoff,'string')) 
+                    str2num(get(optsFighandles.highcutoff,'string'))];  
+damage=false(4,1);
+if( nargout>1 && nargin>1) 
+  if ( isstruct(oldopts) )
+    damage(1)= ~isequal(oldopts.badchrm,sigprocopts.badchrm);
+    damage(2)= ~isequal(oldopts.spatfilttype,sigprocopts.spatfilttype);
+    damage(3)= ~isequal(oldopts.preproctype,sigprocopts.preproctype);
+    damage(4)= ~isequal(oldopts.freqbands,sigprocopts.freqbands);
+  end
+end
+
+
 %-----------------------
 function testCase();
 %Add necessary paths

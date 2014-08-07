@@ -22,7 +22,7 @@ function []=sigViewer(buffhost,buffport,varargin);
 %  noisebands -- [2x1] frequency bands to display for the 50 Hz noise plot   ([45 47 53 55])
 %  sigprocoptsgui -- [bool] show the on-line option changing gui             (0)
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../utilities/initPaths.m'); end;
-opts=struct('endType','end.training','verb',1,'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',128,'spatfilt','car','badchrm',0,'capFile',[],'overridechnms',0,'welch_width_ms',500,'noisebands',[45 47 53 55],'noiseBins',[0 1.5],'timeOut_ms',1000,'spectBaseline',1,'sigProcOptsGui',1,'dataStd',2.5);
+opts=struct('endType','end.training','verb',1,'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',128,'spatfilt','car','badchrm',0,'capFile',[],'overridechnms',0,'welch_width_ms',500,'noisebands',[45 47 53 55],'noiseBins',[0 1.75],'timeOut_ms',1000,'spectBaseline',1,'sigProcOptsGui',1,'dataStd',2.5,'covhalflife',20);
 opts=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
@@ -93,6 +93,10 @@ ppdat     = zeros(sum(iseeg),outsz(2));
 [ppspect,start_samp,freqs]=spectrogram(rawdat,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample);
 ppspect=ppspect(:,freqIdx(1):freqIdx(2),:); % subset to freq range of interest
 start_s=-start_samp(end:-1:1)/hdr.fsample;
+% and the data summary statistics
+chCov     = zeros(sum(iseeg),sum(iseeg));
+covAlpha  = exp(log(.5)./opts.covhalflife);
+isbad     = false(sum(iseeg),1);
 
 % pre-compute the SLAP spatial filter
 slapfilt=[];
@@ -154,7 +158,7 @@ for hi=1:size(ppdat,1);
 end;
 
 ppopts.badchrm=opts.badchrm;
-ppopts.preproctype='none';if(opts.detrend)preproctype='detrend'; end;
+ppopts.preproctype='none';if(opts.detrend)ppopts.preproctype='detrend'; end;
 ppopts.spatfilttype=opts.spatfilt;
 ppopts.freqbands=opts.freqbands;
 optsFighandles=[];
@@ -234,13 +238,35 @@ while ( ~endTraining )
    case 'detrend';ppdat=detrend(ppdat,2);
    otherwise; warning(sprintf('Unrecognised pre-proc type: %s',lower(ppopts.preproctype)));
   end
+
+  % track the covariance properties of the data
+  chCov = chCov*covAlpha + (1-covAlpha)*(ppdat(:,blkIdx+1:end)*ppdat(:,blkIdx+1:end)'./(size(ppdat,2)-blkIdx));
+  
+  if ( ~strcmp(curvistype,'power') ) % BODGE: 50Hz power doesn't do any spatial filtering, or bad-channel removal
+
+    % bad channel removal
+    if ( ppopts.badchrm || strcmp(ppopts.badchrm,'1') )
+      chPow = chCov(1:size(chCov,1)+1:end);
+      fprintf('%s < %g\n',sprintf('%g ',chPow),mean(chPow)+3*std(chPow));
+      for i=1:3;
+        isbad = chPow>(mean(chPow(~isbad))+3*std(chPow(~isbad))) | chPow<eps;
+      end
+      ppdat(isbad,:)=0; % zero out the bad channels
+    end
     
-  if ( ~strcmp(curvistype,'power') ) % BODGE: 50Hz power doesn't do any spatial filtering
+    % spatial filter
     switch(lower(ppopts.spatfilttype))
      case 'none';
-     case 'car';    ppdat=repop(ppdat,'-',mean(ppdat,1));
-     case 'slap';   if ( ~isempty(slapfilt) ) ppdat=tprod(ppdat,[-1 2 3],slapfilt,[-1 1]); end;
-     case 'whiten'; 
+     case 'car';    ppdat(~isbad,:,:)=repop(ppdat(~isbad,:,:),'-',mean(ppdat(~isbad,:,:),1));
+     case 'slap';   
+      if ( ~isempty(slapfilt) ) % only use and update from the good channels
+        ppdat(~isbad,:,:)=tprod(ppdat(~isbad,:,:),[-1 2 3],slapfilt(~isbad,~isbad),[-1 1]); 
+      end;
+     case 'whiten'; % use the current data-cov to estimate the whitener
+      [U,s]=eig(chCov(~isbad,~isbad)); s=diag(s); % eig-decomp
+      si=s>0 & ~isinf(s) & ~isnan(s);
+      W    = U(:,si) * diag(1./s(si)) * U(:,si)';
+      ppdat(~isbad,:,:)=tprod(ppdat(~isbad,:,:),[-1 2 3],W,[-1 1]);      
      otherwise; warning(sprintf('Unrecognised spatial filter type : %s',ppopts.spatfilttype));
     end
   end
@@ -259,6 +285,7 @@ while ( ~endTraining )
    case 'power'; % 50Hz power, N.B. on the last 2s data only!
     ppdat = welchpsd(ppdat(:,find(times>-2,1):end),2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'aveType','amp');
     ppdat = mean(ppdat(:,freqIdx(1):freqIdx(2)),2); % ave power in this range
+    ppdat = sqrt(ppdat); % BODGE: extra transformation to squeeze the large power values...
     
    case 'spect'; % spectrogram
     ppdat = spectrogram(ppdat,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample);
@@ -387,13 +414,22 @@ function freqIdx=getfreqIdx(freqs,freqbands)
 [ans,freqIdx(1)]=min(abs(freqs-freqbands(1))); 
 [ans,freqIdx(2)]=min(abs(freqs-freqbands(end)));
 
-function sigprocopts=getSigProcOpts(optsFighandles)
+function [sigprocopts,damage]=getSigProcOpts(optsFighandles,oldopts)
 % get the current options from the sig-proc-opts figure
 sigprocopts.badchrm=get(optsFighandles.badchrm,'value');
 sigprocopts.spatfilttype=get(get(optsFighandles.spatfilt,'SelectedObject'),'String');
 sigprocopts.preproctype=get(get(optsFighandles.preproc,'SelectedObject'),'String');
 sigprocopts.freqbands=[str2num(get(optsFighandles.lowcutoff,'string')) 
                     str2num(get(optsFighandles.highcutoff,'string'))];  
+damage=false(4,1);
+if( nargout>1 && nargin>1) 
+  if ( isstruct(oldopts) )
+    damage(1)= ~isequal(oldopts.badchrm,sigprocopts.badchrm);
+    damage(2)= ~isequal(oldopts.spatfilttype,sigprocopts.spatfilttype);
+    damage(3)= ~isequal(oldopts.preproctype,sigprocopts.preproctype);
+    damage(4)= ~isequal(oldopts.freqbands,sigprocopts.freqbands);
+  end
+end
 
 %-----------------------
 function testCase();
