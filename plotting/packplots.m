@@ -69,9 +69,9 @@ minY = min(Ys-rY(:,1)); maxY=max(Ys+rY(:,2));  % y-range (inc plot radius)
 W    = maxX-minX; W = W / opts.plotsposition(3);
 H    = maxY-minY; H = H / opts.plotsposition(4);
 if ( isequal(opts.scaling,'square') ) W=max(W,H); H=max(W,H); end;
-Xs   = (Xs-(maxX+minX)/2)/W; rX = rX/W; % 0 centered, -.5 -> +.5
+if ( W>0 ) Xs   = (Xs-(maxX+minX)/2)/W; rX = rX/W; end % 0 centered, -.5 -> +.5
 Xs   = Xs + opts.plotsposition(1)+.5*opts.plotsposition(3);
-Ys   = (Ys-(maxY+minY)/2)/H; rY = rY/H; % 0 centered, -.5 -> +.5
+if ( H>0 ) Ys   = (Ys-(maxY+minY)/2)/H; rY = rY/H; end % 0 centered, -.5 -> +.5
 Ys   = Ys + opts.plotsposition(2)+.5*opts.plotsposition(4);
 
 % subtract the inter-plot gap if necessary.
