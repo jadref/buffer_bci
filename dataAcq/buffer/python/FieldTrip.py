@@ -70,7 +70,7 @@ wordSize = [1,1,2,4,8,1,2,4,8,4,8]
 dataType = [-1, 5, 1, 6, 2, 7, 3, 8, 4, -1, -1, 9, 10]
 
 try:
-    import numpydoesntexist
+    import numpy
     
     def serialize(A):
         """Returns Fieldtrip data type and string representation of the given object, if possible."""
