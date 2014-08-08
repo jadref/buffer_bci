@@ -23,7 +23,7 @@ pred=zeros(2,size(stimSeqRow,2)+size(stimSeqCol,2)); % stores the classifier pre
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
 set(h(:),'color',[.5 .5 .5]);
-sendEvent('stimulus.training','start');
+sendEvent('stimulus.feedback','start');
 drawnow; pause(5); % N.B. use pause so the figure window redraws
 
 for si=1:nSeq;
