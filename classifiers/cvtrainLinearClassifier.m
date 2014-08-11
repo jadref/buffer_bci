@@ -18,6 +18,8 @@ function [classifier,res,Y]=cvtrainLinearClassifier(X,Y,Cs,fIdxs,varargin)
 %            [1 x 1] number of folds to use (only for Y=trial labels).     (10)
 %            or
 %            [size(Y) x nFold x nCls] logical matrix indicating trials for each sub-prob per fold
+%  spMx   - [nSp x nCls] mapping from clases into sub-problems to train.    (mkspMx(1:nCls,'1vR'))
+%              N.B. see mkspMx for how to make a sub-problem matrix
 % Options:
 %  dim    - [int] the dimension(s) of X which contain the trials            (ndims(X))
 %  objFn  - [str] which objetive function to optimise,                      ('klr_cg')
@@ -51,14 +53,16 @@ dim(dim<0)=dim(dim<0)+ndims(X)+1; % convert negative to positive indicies
 if( ndims(Y)==2 && size(Y,1)==1 && size(Y,2)>1 ) Y=Y'; end; % col vector only
 % build a multi-class decoding matrix
 spKey=opts.spKey; spMx =opts.spMx;
-if ( ~(isempty(spKey) && isempty(spMx)) ) % sub-prob decomp already done, so trust it
+if ( ~isempty(spKey) && ~isempty(spMx) ) % sub-prob decomp already done, so trust it
   if ( ~all(Y(:)==-1 | Y(:)==0 | Y(:)==1) ) 
     error('spKey/spMx given but Y isnt an set of binary sub-problems');
   end
-elseif ( isnumeric(Y) && size(Y,2)==1 && all(Y(:)==-1 | Y(:)==0 | Y(:)==1) && ~(opts.zeroLab && any(Y(:)==0)) ) % already a valid binary problem
-    spKey=[1 -1]; % binary problem
-    spMx =[1 -1];
-elseif ( opts.binsp )
+
+% already a valid binary problem indicator matrix
+elseif ( isnumeric(Y) &&  all(Y(:)==-1 | Y(:)==0 | Y(:)==1) && ~(size(Y,2)==1 && opts.zeroLab && any(Y(:)==0)) ) 
+  if ( size(Y,2)==1 ) spKey=[1 -1]; spMx =[1 -1];   % binary problem
+  else                spKey=[1:size(Y,2)]; spMx=spKey; end;
+elseif ( opts.binsp ) % decompose into set of binary problems
   if ( isempty(spMx) ) spMx=opts.spType; end;
   [Y,spKey,spMx]=lab2ind(Y,spKey,spMx,opts.zeroLab); % convert to binary sub-problems
 end
