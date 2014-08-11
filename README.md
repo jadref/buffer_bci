@@ -72,12 +72,14 @@ An overview of the included directories is:
 
 Copy these directories somewhere on your local drive.
 
-Note: is using MATLAB/Octave and the executable is not found
+Note: If using MATLAB/Octave and the .bat/.sh files do not work because the MATLAB/Octave executable is not found
 automatically then modify the path in the file
-utilities/findMatlab.bat (windows) or utilities/findMatlab.sh
-(Linux/MacOSX) to point to the executable location
+`utilities/findMatlab.bat` (windows) or `utilities/findMatlab.sh`
+(Linux/MacOSX) to point to the executable location.
 
 Note2: For Linux there is a [Docker image]( https://github.com/dokterbob/docker-bci) which can be used to simply install buffer_bci and all it's dependencies directly 
+
+Note3: *MacOS* to run the *.sh files from the finder you need to set them to open with the *Terminal* application (which is in the utilities sub-directory of applications).  Set this by Control-clicking any .sh file and choosing 'Open With' then browse to the *Terminal* application and choose open all .sh files this way.
 
 
 ## QuickStart
