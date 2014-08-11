@@ -96,12 +96,16 @@ elseif (iscell(exitSet))
   if ( isequal(exitSet{1},'data') ) dataExit=true; exitSet(1)=[];
   elseif ( iscell(exitSet{1}) && isequal(exitSet{1}{1},'data') ) dataExit=true; exitSet{1}(1)=[]; 
   end
-  if ( isnumeric(exitSet{1}) && numel(exitSet{1})==1 ) timeExit=exitSet{1}; exitSet(1)=[];
-  elseif ( iscell(exitSet{1}) && isnumeric(exitSet{1}{1})) timeExit=exitSet; exitSet{1}(1)=[]; 
+  if ( ~isempty(exitSet) )
+    if ( isnumeric(exitSet{1}) && numel(exitSet{1})==1 ) timeExit=exitSet{1}; exitSet(1)=[];
+    elseif ( iscell(exitSet{1}) && isnumeric(exitSet{1}{1})) timeExit=exitSet; exitSet{1}(1)=[]; 
+    end
   end
-  if ( isequal(exitSet{1},'data') ) dataExit=true; exitSet(1)=[];
-  elseif ( iscell(exitSet{1}) && isequal(exitSet{1}{1},'data') ) dataExit=true; exitSet{1}(1)=[]; 
-  end  
+  if ( ~isempty(exitSet) )
+    if ( isequal(exitSet{1},'data') ) dataExit=true; exitSet(1)=[];
+    elseif ( iscell(exitSet{1}) && isequal(exitSet{1}{1},'data') ) dataExit=true; exitSet{1}(1)=[]; 
+    end  
+  end
 end
 if ( ~iscell(exitSet) ) exitSet={exitSet}; end;
 if ( ~isempty(endSet) ) warning('endSet not supported yet! option ignored'); end;
