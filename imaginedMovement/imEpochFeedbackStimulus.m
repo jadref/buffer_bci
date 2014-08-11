@@ -58,7 +58,8 @@ for si=1:nSeq;
   
   % wait for classifier prediction event
   if( verb>0 ) fprintf(1,'Waiting for predictions\n'); end;
-  [data,devents,state]=buffer_waitData(buffhost,buffport,state,'exitSet',{500 'classifier.prediction'},'verb',verb);
+  [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],trlen_ms);  
+  %[data,devents,state]=buffer_waitData(buffhost,buffport,state,'exitSet',{500 'classifier.prediction'},'verb',verb);
   % do something with the prediction (if there is one), i.e. give feedback
   if( isempty(devents) ) % extract the decision value
     fprintf(1,'Error! no predictions, continuing');

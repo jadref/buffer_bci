@@ -17,13 +17,14 @@ while (ishandle(contFig))
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until capFitting is done
-    buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);       
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
 
    case 'eegviewer';
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until capFitting is done
-    buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);           
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
+    %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);           
     
    case 'practice';
     sendEvent('subject',info.subject);
@@ -55,7 +56,8 @@ while (ishandle(contFig))
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until training is done
-    buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);  
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
+    %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);  
     
    case 'freespell';
     sendEvent('subject',info.subject);

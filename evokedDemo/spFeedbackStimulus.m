@@ -63,7 +63,8 @@ for si=1:nSeq;
   % combine the classifier predictions with the stimulus used
   % wait for the signal processing pipeline to return the sequence of epoch predictions
   if( verb>0 ) fprintf(1,'Waiting for predictions\n'); end;
-  [data,devents,state]=buffer_waitData(buffhost,buffport,[],'exitSet',{trlen_ms 'classifier.prediction'});
+  [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],trlen_ms);
+  %[data,devents,state]=buffer_waitData(buffhost,buffport,[],'exitSet',{trlen_ms 'classifier.prediction'});
   if ( 0 && isempty(devents) ) devents=mkEvent('prediction',randn(nFlash,1)); end; % testing code ONLY
   if ( ~isempty(devents) ) 
     % correlate the stimulus sequence with the classifier predictions to identify the most likely

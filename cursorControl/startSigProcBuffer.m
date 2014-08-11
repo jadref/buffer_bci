@@ -7,12 +7,13 @@
 %  (startPhase.cmd,exit)       -- stop everything
 configureCursor();
 
-thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
-if ( ~exist('capFile','var') ) capFile='1010'; 
-else %'cap_tmsi_mobita_num'; 
-    overridechnms=1;
-    if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4;  end;
+if( ~exist('capFile','var') || isempty(capFile) ) 
+  [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); capFile=fullfile(pth,fn);
+  if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
 end
+if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
+thresh=[.5 3];  badchThresh=.5;
+if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4; end;
 datestring = datestr(now,'yymmdd');
 dname='training_data';
 cname='clsfr';
@@ -22,7 +23,7 @@ trlen_ms = 600;
 subject='test';
 
 % main loop waiting for commands and then executing them
-state=struct('pending',[],'nevents',[],'nsamples',[],'hdr',hdr); 
+state=struct('nevents',[],'nsamples',[]); 
 phaseToRun=[]; clsSubj=[]; trainSubj=[];
 while ( true )
 
@@ -31,13 +32,14 @@ while ( true )
   
   % wait for a phase control event
   if ( verb>0 ) fprintf('Waiting for phase command\n'); end;
-  [data,devents,state]=buffer_waitData(buffhost,buffport,state,'trlen_ms',0,'exitSet',{{'startPhase.cmd' 'subject'}},'verb',verb,'timeOut_ms',5000);   
+  [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,{'startPhase.cmd' 'subject'},[],5000);
+  %[data,devents,state]=buffer_waitData(buffhost,buffport,state,'trlen_ms',0,'exitSet',{{'startPhase.cmd' 'subject'}},'verb',verb,'timeOut_ms',5000);   
   if ( numel(devents)==0 ) 
     continue;
   elseif ( numel(devents)>1 ) 
     % ensure events are processed in *temporal* order
     [ans,eventsorder]=sort([devents.sample],'ascend');
-    data=data(eventsorder); devents=devents(eventsorder);
+    devents=devents(eventsorder);
   end
   if ( verb>0 ) fprintf('Got Event: %s\n',ev2str(devents)); end;
   
@@ -96,7 +98,7 @@ while ( true )
         erpclsfr=[];
       end
       if ( any(strcmpi(classifierType,'ersp')) )
-        [erspclsfr,res(2)]=buffer_train_ersp_clsfr(traindata,traindevents,state.hdr,'spatialfilter','slap','freqband',[6 10 26 30],'badchrm',1,'badtrrm',1,'objFn','lr_cg','compKernel',0,'dim',3,'capFile',capFile,'overridechnms',overridechnms,'visualize',2);
+        [erspclsfr,res(2)]=buffer_train_ersp_clsfr(traindata,traindevents,hdr,'spatialfilter','slap','freqband',[6 10 26 30],'badchrm',1,'badtrrm',1,'objFn','lr_cg','compKernel',0,'dim',3,'capFile',capFile,'overridechnms',overridechnms,'visualize',2);
         fname=[cname '_ERsP_' subject '_' datestring]; fprintf('Saving ERsP classifier to : %s\n',fname);
         save(fname,'-struct','erspclsfr');
       else

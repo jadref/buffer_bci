@@ -27,15 +27,6 @@ if ( ~exist('configured','var') || ~isequal(configured,true) )
   configured=true;
 end
 
-capFile='cap_tmsi_mobita_black';%'1010'; %'emotiv';%cap_tmsi_mobita_im2'; N.B. use 1010 for emotiv so non-eeg are labelled correctly
-% set cap-fitting and position information thresholds
-thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
-if ( ~exist('capFile','var') ) capFile='1010'; 
-else %'cap_tmsi_mobita_num'; 
-    overridechnms=1;
-    if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4;  end;
-end
-
 verb=0;
 buffhost='localhost';
 buffport=1972;

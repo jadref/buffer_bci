@@ -61,7 +61,8 @@ for si=1:nSeq;
   while (timetogo>0)
     timetogo = trialDuration - (getwTime()-trlStartTime); % time left to run in this trial
     % wait for events to process *or* end of trial *or* out of time
-    [dat,events,state]=buffer_waitData(buffhost,buffport,state,'exitSet',{timetogo*1000 {'stimulus.prediction' 'stimulus.testing'}},'verb',verb);
+    [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,{'stimulus.prediction' 'stimulus.testing'},[],timetogo*1000);
+    %[dat,events,state]=buffer_waitData(buffhost,buffport,state,'exitSet',{timetogo*1000 {'stimulus.prediction' 'stimulus.testing'}},'verb',verb);
     for ei=1:numel(events);
       ev=events(ei);
       if ( strcmp(ev.type,'stimulus.prediction') ) 

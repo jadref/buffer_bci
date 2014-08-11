@@ -21,7 +21,7 @@ if ( ~exist('verb','var') ) verb =2; end;
 subject='test';
 
 % main loop waiting for commands and then executing them
-state=struct('pending',[],'nevents',[],'nsamples',[],'hdr',hdr); 
+state=struct('nevents',[],'nsamples',[]); 
 phaseToRun=[]; clsSubj=[]; trainSubj=[];
 while ( true )
 
@@ -30,13 +30,15 @@ while ( true )
   
   % wait for a phase control event
   if ( verb>0 ) fprintf('Waiting for phase command\n'); end;
-  [data,devents,state]=buffer_waitData(buffhost,buffport,state,'trlen_ms',0,'exitSet',{{'startPhase.cmd' 'subject'}},'verb',verb,'timeOut_ms',5000);   
+  [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,{'startPhase.cmd' 'subject'},[],5000);
+  %[data,devents,state]=buffer_waitData(buffhost,buffport,state,'trlen_ms',0,'exitSet',{{'startPhase.cmd' 'subject'}},'verb',verb,'timeOut_ms',5000);   
+  fprintf('.');
   if ( numel(devents)==0 ) 
     continue;
   elseif ( numel(devents)>1 ) 
     % ensure events are processed in *temporal* order
     [ans,eventsorder]=sort([devents.sample],'ascend');
-    data=data(eventsorder); devents=devents(eventsorder);
+    devents=devents(eventsorder);
   end
   if ( verb>0 ) fprintf('Got Event: %s\n',ev2str(devents)); end;
   

@@ -171,7 +171,7 @@ if ( opts.badtrrm )
   fprintf('2.5) bad trial removal');
   [isbadtr,trstds,trthresh]=idOutliers(X,3,opts.badtrthresh);
   X=X(:,:,~isbadtr);
-  Y=Y(~isbadtr);
+  Y=Y(~isbadtr,:);
   fprintf(' %d tr removed\n',sum(isbadtr));
 end;
 
@@ -207,17 +207,22 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
 end;
 
 %5.5) Visualise the input?
+aucfig=[];erpfig=[];
 if ( opts.visualize )
-   uY=unique(Y);sidx=[]; labels=opts.class_names;
-   for ci=1:numel(uY);     
-     if(iscell(uY)) tmp=strmatch(uY(ci),Y); Yci=false(size(Y)); Yci(tmp)=true; else Yci=(Y==uY(ci)); end;
-      mu(:,:,ci)=mean(X(:,:,Yci),3);
-      if(~(ci>1 && numel(uY)<=2)) 
-        [aucci,sidx]=dv2auc(Yci*2-1,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
-        aucesp=auc_confidence(numel(Y),sum(Yci)./numel(Y),.2);
-        aucci(aucci<.5+aucesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
-        auc(:,:,ci)=aucci;
-      end;
+   uY=unique(Y,'rows'); sidx=[]; labels=opts.class_names;
+   for ci=1:size(uY,1);     
+     if(iscell(uY)) tmp=strmatch(uY(ci),Y); Yci=false(size(Y,1),1); Yci(tmp)=true; else 
+       if (size(Y,2)==1) Yci=(Y==uY(ci)); 
+       else Yci=false(size(Y,1),1);for i=1:size(Y,1); Yci(i)=isequal(Y(i,:),uY(ci,:)); end; 
+       end;
+     end;
+     mu(:,:,ci)=mean(X(:,:,Yci),3);
+     if(~(ci>1 && numel(uY)<=2)) 
+       [aucci,sidx]=dv2auc(Yci*2-1,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
+       aucesp=auc_confidence(numel(Y),sum(Yci)./numel(Y),.2);
+       aucci(aucci<.5+aucesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
+       auc(:,:,ci)=aucci;
+     end;
       if ( isempty(labels) || numel(labels)<ci || isempty(labels{ci}) ) 
         if ( iscell(uY) ) labels{ci}=uY{ci}; else labels{ci}=sprintf('%d',uY(ci)); end
       end;

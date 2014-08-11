@@ -1,4 +1,16 @@
 configureSSEP();
+
+% get the cap information.... 2X
+%N.B. use 1010 for emotiv so non-eeg are labelled correctly
+if( ~exist('capFile','var') || isempty(capFile) ) 
+  [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); capFile=fullfile(pth,fn);
+  if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
+end
+if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
+thresh=[.5 3];  badchThresh=.5;
+if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4; end;
+fprintf('Capfile: %s\n',capFile);
+
 sendEvent('experiment.ssep','start');
 % create the control window and execute the phase selection loop
 contFig=controller(); info=guidata(contFig); 

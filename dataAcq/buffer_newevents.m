@@ -46,7 +46,7 @@ elseif ( numel(state)==3 ) nevents=state(2);
 elseif ( numel(state)==1 ) nevents=state(1);
 else warning('Dont understand state format');
 end
-if ( nevents<=0 ) % first call
+if ( isempty(nevents) || nevents<=0 ) % first call
   status=buffer('wait_dat',[-1 -1 -1],host,port); nevents=status.nevents;
 end; 
 status=buffer('wait_dat',[inf nevents timeOut_ms],host,port);
@@ -59,5 +59,6 @@ if( status.nevents>nevents )
   mi=matchEvents(events,mtype,mval);
   events=events(mi);
 end
-state=status;  
+state=status;
+nevents=state.nevents;nsamples=state.nsamples;
 return;

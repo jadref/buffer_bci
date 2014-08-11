@@ -31,8 +31,6 @@ if ( exist('OCTAVE_VERSION','builtin') )
   end
 end
 
-capFile='1010';%'cap_tmsi_mobita_im';
-
 verb=1;
 buffhost='localhost';
 buffport=1972;

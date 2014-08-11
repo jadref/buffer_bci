@@ -6,7 +6,7 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 % Inputs:
 %  X         - [ ch x time x epoch ] data set
 %  Y         - [ nEpoch x 1 ] set of data class labels
-% Options:
+% Options:  (specify as 'name',value pairs, e.g. train_ersp_clsfr(X,Y,'fs',10);
 %  ch_names  - {str} cell array of strings which label each channel
 %  ch_pos    - [3 x nCh] 3-d co-ordinates of the data electrodes
 %              OR
@@ -18,14 +18,21 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %  timeband  - [2 x 1] band of times to use for classification, all if empty ([])
 %  freqband  - [2 x 1] or [3 x 1] or [4 x 1] band of frequencies to use
 %              EMPTY for *NO* spectral filter
-%  downsample - [1x1] downsample to this frequency before use
-%  spatialfilter -- [str] one of 'slap','car','none'  ('slap')
+%              OR
+%              { nFreq x 1 } cell array of discrete frequencies to pick
+%  width_ms  - [float] width in millisecs for the windows in the welch spectrum (250)
+%              estimation.  
+%              N.B. the output frequency resolution = 1000/width_ms, so 4Hz with 250ms
+%  spatialfilter -- [str] one of 'slap','car','none','csp','ssep'              ('slap')
+%       WARNING: CSP is particularly prone to *overfitting* so treat any performance estimates with care...
 %  badchrm   - [bool] do we do bad channel removal    (1)
 %  badchthresh - [float] threshold in std-dev units to id channel as bad (3.5)
 %  badtrrm   - [bool] do we do bad trial removal      (1)
 %  badtrthresh - [float] threshold in std-dev units to id trial as bad (3)
-%  detrend   - [bool] do we detrend the data          (1)
-%  classify  - [bool] do we train a classifier        (1)
+%  detrend   - [int] do we detrend/center the data          (1)
+%              0 - do nothing
+%              1 - detrend the data
+%              2 - center the data (i.e. subtract the mean)
 %  visualize - [int] visualize the data
 %               0 - don't visualize
 %               1 - visualize, but don't wait
@@ -58,8 +65,13 @@ end
 
 %1) Detrend
 if ( opts.detrend )
-  fprintf('1) Detrend\n');
-  X=detrend(X,2); % detrend over time
+  if ( isequal(opts.detrend,1) )
+    fprintf('1) Detrend\n');
+    X=detrend(X,2); % detrend over time
+  elseif ( isequal(opts.detrend,2) )
+    fprintf('1) Center\n');
+    X=repop(X,'-',mean(X,2));
+  end
 end
 
 %2) Bad channel identification & removal
@@ -88,7 +100,8 @@ end
 %3) Spatial filter/re-reference
 R=[];
 if ( size(X,1)> 5 ) % only spatial filter if enough channels
-  switch lower( opts.spatialfilter )
+  sftype=lower(opts.spatialfilter);
+  switch ( sftype )
    case 'slap';
     fprintf('3) Slap\n');
     if ( ~isempty(ch_pos) )       
@@ -140,16 +153,20 @@ if ( opts.badtrrm )
   fprintf('4.5) bad trial removal');
   [isbadtr,trstds,trthresh]=idOutliers(X,3,opts.badtrthresh);
   X=X(:,:,~isbadtr);
-  Y=Y(~isbadtr);
+  Y=Y(~isbadtr,:);
   fprintf(' %d tr removed\n',sum(isbadtr));
 end;
 
 %5.5) Visualise the input?
 aucfig=[];erpfig=[];
 if ( opts.visualize )
-   uY=unique(Y);sidx=[]; labels=opts.class_names;
-   for ci=1:numel(uY);
-     if(iscell(uY)) tmp=strmatch(uY(ci),Y); Yci=false(size(Y)); Yci(tmp)=true; else Yci=(Y==uY(ci)); end;
+   uY=unique(Y,'rows'); sidx=[]; labels=opts.class_names;
+   for ci=1:size(uY,1);     
+     if(iscell(uY)) tmp=strmatch(uY(ci),Y); Yci=false(size(Y,1),1); Yci(tmp)=true; else 
+       if (size(Y,2)==1) Yci=(Y==uY(ci)); 
+       else Yci=false(size(Y,1),1);for i=1:size(Y,1); Yci(i)=isequal(Y(i,:),uY(ci,:)); end; 
+       end;
+     end;
       mu(:,:,ci)=mean(X(:,:,Yci),3);
       if(~(ci>1 && numel(uY)<=2)) 
         [aucci,sidx]=dv2auc(Yci*2-1,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
@@ -208,15 +225,17 @@ clsfr.dvstats.std = [std(tstf(res.Y(:,1)>0))  std(tstf(res.Y(:,1)<=0))  std(tstf
 %  bins=[-inf -200:5:200 inf]; clf;plot([bins(1)-1 bins(2:end-1) bins(end)+1],[histc(tstf(Y>0),bins) histc(tstf(Y<=0),bins)]); 
 
 if ( opts.visualize > 1 ) 
-   b=msgbox({sprintf('Classifier performance : %s',sprintf('%4.1f ',res.tstbin(:,:,res.opt.Ci)*100)) 'OK to continue!'},'Results');
-   while ( ishandle(b) ) pause(.1); end; % wait to close auc figure
+  summary = sprintf('%4.1f ',res.tstbin(:,:,res.opt.Ci)*100);
+  if(size(res.tstbin,2)>1)summary=[summary sprintf(' = %4.1f <ave>',mean(res.tstbin(:,:,res.opt.Ci),2)*100)];end
+   b=msgbox({sprintf('Classifier performance : %s',summary) 'OK to continue!'},'Results');
+   while ( ishandle(b) ) drawnow; pause(.2); end; % wait to close auc figure
    if ( ishandle(aucfig) ) close(aucfig); end;
    if ( ishandle(erpfig) ) close(erpfig); end;
    if ( ishandle(b) ) close(b); end;
    drawnow;
 end
-return;
 
+return;
 
 %---------------------------------
 function xy=xyz2xy(xyz)
@@ -236,3 +255,8 @@ h = xyz(3,:)-cent(3);  % height
 rr=sqrt(2*(r.^2-r*h)./(r.^2-h.^2)); % arc-length to radial length ratio
 xy = [xyz(1,:).*rr; xyz(2,:).*rr];
 return
+%---------------------------------------
+function testCase()
+z=jf_mksfToy('Y',sign(round(rand(600,1))-.5));
+[clsfr]=train_ersp_clsfr(z.X,z.Y,'fs',z.di(2).info.fs,'ch_pos',[z.di(1).extra.pos3d],'ch_names',z.di(1).vals,'freqband',[0 .1 10 12],'visualize',1,'verb',1);
+f=apply_ersp_clsfr(X,clsfr);
