@@ -106,7 +106,7 @@ try:
         return numpy.ndarray(shape, dtype=numpyType[datatype], buffer=raw)
         
     def arraysize(array):
-        return (D.shape[0], D.shape[1])
+        return (array.shape[0], array.shape[1])
         
     def validatearray(array):
         if not(isinstance(array, numpy.ndarray)) or len(array.shape)!=2:
