@@ -252,6 +252,8 @@ while ( ~endTraining )
         isbad = chPow>(mean(chPow(~isbad))+3*std(chPow(~isbad))) | chPow<eps;
       end
       ppdat(isbad,:)=0; % zero out the bad channels
+    else
+      isbad(:)=false;
     end
     
     % spatial filter
@@ -408,6 +410,8 @@ while ( ~endTraining )
   end
   drawnow;
 end
+% close the options figure as well
+if ( exist('optsFigh') && ishandle(optsFigh) ) close(optsFigh); end;
 return;
 
 function freqIdx=getfreqIdx(freqs,freqbands)
@@ -430,7 +434,6 @@ if( nargout>1 && nargin>1)
     damage(4)= ~isequal(oldopts.freqbands,sigprocopts.freqbands);
   end
 end
-
 %-----------------------
 function testCase();
 % start the buffer proxy
