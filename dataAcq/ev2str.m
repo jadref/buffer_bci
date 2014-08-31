@@ -5,7 +5,7 @@ for i=1:numel(events);
   if ( ~isstruct(event) ) event=struct(event); end;
   val = event.value; 
   if ( isempty(val) ) val='[]';
-  elseif( isnumeric(val) ) 
+  elseif( isnumeric(val(1)) ) 
     vstr=sprintf('%g',val(1));
     if ( numel(val)>1) vstr=['[' vstr sprintf(' %g',val(2:end)) ']']; end;
     val=vstr;
