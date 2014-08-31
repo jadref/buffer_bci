@@ -29,8 +29,8 @@ end
 
 
 % set the real-time-clock to use
-initgetwTime();
-initsleepSec();
+initgetwTime;
+initsleepSec;
 
 verb=1;
 nSeq=5;%15;%

@@ -1,6 +1,6 @@
 % setup the global variable which contains the pointer to the high-resolution wall-time clock
 %
-% []=initgetwTime();
+% []=initgetwTime;
 %
 % N.B. use t=getwTime() to use
 %

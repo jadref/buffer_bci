@@ -109,7 +109,7 @@ while ( true )
       clsSubj = subject;
     end;
 
-    spFeedbackSignals()
+    spFeedbackSignals
     
     %---------------------------------------------------------------------------------
    case {'contfeedback'};
@@ -121,7 +121,7 @@ while ( true )
       clsSubj = subject;
     end;
 
-    spContFeedbackSignals()
+    spContFeedbackSignals
     
    case 'exit';
     break;

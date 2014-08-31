@@ -18,8 +18,8 @@ while ( isempty(hdr) || ~isstruct(hdr) || (isfield(hdr,'nchans') && hdr.nchans==
 end;
 
 % set the real-time-clock to use
-initgetwTime();
-initsleepSec();
+initgetwTime;
+initsleepSec;
 
 if ( exist('OCTAVE_VERSION','builtin') ) 
   page_output_immediately(1); % prevent buffering output

@@ -13,8 +13,8 @@ while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffe
   pause(1);
 end;
 % set the real-time-clock to use
-initgetwTime();
-initsleepSec();
+initgetwTime;
+initsleepSec;
 
 % wait for new events of a particular type
 state=[]; % initial state

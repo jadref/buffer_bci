@@ -1,4 +1,4 @@
-configureSSEP();
+configureSSEP;
 
 % get the cap information.... 2X
 %N.B. use 1010 for emotiv so non-eeg are labelled correctly
@@ -47,7 +47,7 @@ while (ishandle(contFig))
     onSeq=nSeq; nSeq=4; % override sequence number
     onRepetitions=nRepetitions; nRepetitions=3;
     %try
-      ssepCalibrateStimulus();
+      ssepCalibrateStimulus;
     %catch
       % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
     %end
@@ -61,7 +61,7 @@ while (ishandle(contFig))
     sendEvent('startPhase.cmd',phaseToRun);
     sendEvent(phaseToRun,'start');
     %try
-      ssepCalibrateStimulus();
+      ssepCalibrateStimulus;
     %catch
       % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.training','end');    
@@ -74,7 +74,7 @@ while (ishandle(contFig))
     sendEvent('startPhase.cmd',phaseToRun);
     sendEvent(phaseToRun,'start');
     %try
-      ssepCalibrateStimulusPTB();
+      ssepCalibrateStimulusPTB;
     %catch
       % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.training','end');    

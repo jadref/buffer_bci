@@ -1,4 +1,4 @@
-configureDemo();
+configureDemo;
 % create the control window and execute the phase selection loop
 contFig=controller(); info=guidata(contFig); 
 while (ishandle(contFig))
@@ -31,7 +31,7 @@ while (ishandle(contFig))
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     %try
-      evokedDemoERPStimulus();
+      evokedDemoERPStimulus;
     %catch
       % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       % do nothing
@@ -42,7 +42,7 @@ while (ishandle(contFig))
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     %try
-      evokedDemoERPStimulusPTB();
+      evokedDemoERPStimulusPTB;
     %catch
       % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       % do nothing
@@ -56,7 +56,7 @@ while (ishandle(contFig))
     onSeq=nSeq; nSeq=4; % override sequence number
     onRepetitions=nRepetitions; nRepetitions=3;
     %try
-      spCalibrateStimulus();
+      spCalibrateStimulus;
     %catch
       % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
     %end
@@ -69,7 +69,7 @@ while (ishandle(contFig))
     sendEvent('startPhase.cmd',phaseToRun)
     sendEvent(phaseToRun,'start');
     %try
-      spCalibrateStimulus();
+      spCalibrateStimulus;
     %catch
       % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.training','end');    

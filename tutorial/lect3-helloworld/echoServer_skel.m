@@ -14,8 +14,8 @@ while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffe
   pause(1);
 end;
 % set the real-time-clock to use
-initgetwTime();
-initsleepSec();
+initgetwTime;
+initsleepSec;
 
 % ----------------------------------------------------------------------------
 %    FILL IN YOUR CODE BELOW HERE

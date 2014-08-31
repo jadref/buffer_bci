@@ -1,4 +1,4 @@
-configureDemo();
+configureDemo;
 
 % wait for the buffer to return valid header information
 hdr=[];

@@ -1,5 +1,5 @@
 run ../utilities/initPaths.m
-global getwTime; getwTime=[];initgetwTime();
+global getwTime; getwTime=[];initgetwTime;
 buffhost='localhost';buffport=1972;
 global ft_buff; ft_buff=struct('host',buffhost,'port',buffport);
 if ( 1 )

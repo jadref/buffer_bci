@@ -1,4 +1,4 @@
-configureDemo();
+configureDemo;
 
 % make the stimulus
 fig=gcf;

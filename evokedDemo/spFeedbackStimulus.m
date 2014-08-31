@@ -1,4 +1,4 @@
-if ( ~exist('runConfig','var') || ~runConfig ) configureDemo(); end;
+if ( ~exist('runConfig','var') || ~runConfig ) configureDemo; end;
 
 % make the stimulus
 clf;
