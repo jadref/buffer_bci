@@ -4,6 +4,6 @@ source ../utilities/findMatlab.sh
 if [[ $matexe == *matlab ]]; then  args=-nodesktop; fi
 cat <<EOF | $matexe $args
 overridechnms=1;
-startSigProcBuffer();
+startSigProcBuffer;
 %quit;
 EOF

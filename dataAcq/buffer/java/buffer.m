@@ -137,11 +137,19 @@ switch cmd;
     evt(ei).offset=evtjei.offset;
     evt(ei).duration=evtjei.duration;
     if ( exist('OCTAVE_VERSION','builtin') ) % in octave have to manually convert arrays..
-      if ( strcmp(class(evt(ei).type),'octave_java') )
+      if ( strcmp(typeinfo(evt(ei).type),'octave_java') )
+	tmp = zeros(size(evt(ei).type));
         for i=1:numel(evt(ei).type); tmp(i)=evt(ei).type(i); end; evt(ei).type=tmp;
       end
-      if ( strcmp(class(evt(ei).value),'octave_java') )
-        for i=1:numel(evt(ei).value); tmp(i)=evt(ei).value(i); end; evt(ei).value=tmp;
+      if ( strcmp(typeinfo(evt(ei).value),'octave_java') )
+	tmp = zeros(size(evt(ei).value));
+        for i=1:numel(evt(ei).value) 
+	  if isNumeric(evt(ei).value(i))
+	    tmp(i)=evt(ei).value(i).intValue(); 
+	  else
+	    tmp(i)=evt(ei).value(i);
+	  end; 
+	evt(ei).value=tmp;
       end
     end;
   end

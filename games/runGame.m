@@ -37,7 +37,7 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'start');
     onSeq=nSeq; nSeq=4; % override sequence number
     try
-      gameCalibrateStimulus()
+      gameCalibrateStimulus
     catch
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       % do nothing
@@ -50,7 +50,7 @@ while (ishandle(contFig))
     sendEvent('startPhase.cmd',phaseToRun)
     sendEvent(phaseToRun,'start');
     try
-      gameCalibrateStimulus()
+      gameCalibrateStimulus
     catch
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.training','end');    

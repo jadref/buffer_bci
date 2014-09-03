@@ -1,4 +1,4 @@
-configureGame(); 
+configureGame; 
 
 
 % make stim seq with an extra invisible symbol to increase the ISI

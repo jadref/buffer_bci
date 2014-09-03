@@ -1,4 +1,4 @@
-configureSpeller();
+configureSpeller;
 
 % make the stimulus
 fig=gcf;

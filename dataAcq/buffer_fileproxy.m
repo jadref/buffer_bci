@@ -38,8 +38,8 @@ if ( nargin<3 || isempty(filename) )
 end;
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../utilities/initPaths.m'); end;
 % init the accurate real-time-clock
-initgetwTime();
-initsleepSec();
+initgetwTime;
+initsleepSec;
 
 opts=struct('blockSize',5,'verb',0,'speedup',1,'excludeSet',[],...
             'startSamp',[],'endSamp',[],'startEvent',[],'endEvent',[]);

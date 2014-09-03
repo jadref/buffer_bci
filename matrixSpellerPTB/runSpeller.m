@@ -32,7 +32,7 @@ while (ishandle(contFig))
     onSeq=nSeq; nSeq=4; % override sequence number
     onRepetitions=nRepetitions; nRepetitions=3;
     %try
-      spCalibrateStimulusPTB();
+      spCalibrateStimulusPTB;
     %catch
       % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
     %end
@@ -45,7 +45,7 @@ while (ishandle(contFig))
     sendEvent('startPhase.cmd',phaseToRun)
     sendEvent(phaseToRun,'start');
     %try
-      spCalibrateStimulusPTB();
+      spCalibrateStimulusPTB;
     %catch
       % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.training','end');    

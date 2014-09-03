@@ -14,8 +14,8 @@ while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffe
 end;
 
 % set the real-time-clock to use
-initgetwTime();
-initsleepSec();
+initgetwTime;
+initsleepSec;
 
 % make the target sequence
 nSeq=5;

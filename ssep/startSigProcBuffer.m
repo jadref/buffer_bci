@@ -5,7 +5,7 @@
 %  (startPhase.cmd,calibrate)  -- start calibration phase processing (i.e. cat data)
 %  (startPhase.cmd,testing)    -- start test phase, i.e. on-line prediction generation
 %  (startPhase.cmd,exit)       -- stop everything
-configureSSEP();
+configureSSEP;
 
 %N.B. use 1010 for emotiv so non-eeg are labelled correctly
 if( ~exist('capFile','var') || isempty(capFile) ) 
@@ -113,7 +113,7 @@ while ( true )
       clsSubj = subject;
     end;
 
-    spFeedbackSignals()
+    spFeedbackSignals
 
       
    case 'exit';

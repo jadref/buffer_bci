@@ -5,7 +5,7 @@
 %  (startPhase.cmd,calibrate)  -- start calibration phase processing (i.e. cat data)
 %  (startPhase.cmd,testing)    -- start test phase, i.e. on-line prediction generation
 %  (startPhase.cmd,exit)       -- stop everything
-configureDemo();
+configureDemo;
 if( ~exist('capFile','var') || isempty(capFile) ) 
   [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); capFile=fullfile(pth,fn);
   if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
@@ -115,7 +115,7 @@ while ( true )
       clsSubj = subject;
     end;
 
-    spFeedbackSignals()
+    spFeedbackSignals
     
    case 'exit';
     break;

@@ -1,4 +1,4 @@
-configureSpeller();
+configureSpeller;
 
 if ( ~exist('cname','var') ) cname='clsfr'; end;
 if ( ~exist('clsfr','var') ) clsfr=load(cname); end;

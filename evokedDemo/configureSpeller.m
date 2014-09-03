@@ -19,8 +19,8 @@ while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffe
 end;
 
 % set the real-time-clock to use
-initgetwTime();
-initsleepSec();
+initgetwTime;
+initsleepSec;
 if ( exist('OCTAVE_VERSION','builtin') ) 
   page_output_immediately(1); % prevent buffering output
   if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )

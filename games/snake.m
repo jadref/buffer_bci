@@ -1,4 +1,4 @@
-configureGame();
+configureGame;
 
 zoomed=false;
 %moveInterval=maxMoveInterval;

@@ -1,4 +1,4 @@
-configureIM();
+configureIM;
 % create the control window and execute the phase selection loop
 contFig=controller(); info=guidata(contFig); 
 while (ishandle(contFig))
@@ -35,7 +35,7 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'start');
     onSeq=nSeq; nSeq=4; % override sequence number
     try
-      imCalibrateStimulus();
+      imCalibrateStimulus;
     catch
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
     end
@@ -48,7 +48,7 @@ while (ishandle(contFig))
     sendEvent('startPhase.cmd',phaseToRun)
     sendEvent(phaseToRun,'start');
     try
-      imCalibrateStimulus();
+      imCalibrateStimulus;
     catch
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.training','end');    

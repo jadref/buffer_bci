@@ -1,4 +1,4 @@
-configureGame();
+configureGame;
 
 %moveInterval=maxMoveInterval;
 zoomed=false; if ( level>2 ) zoomed=true; end;

@@ -120,7 +120,7 @@ while ( true )
       clsSubj = subject;
     end;
 
-    spContFeedbackSignals()
+    spContFeedbackSignals
     
    case 'exit';
     break;

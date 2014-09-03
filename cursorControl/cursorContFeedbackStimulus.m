@@ -1,4 +1,4 @@
-configureCursor();
+configureCursor;
 
 % struct representing types moves available, N.B. ensure aligns with the stim order!
 %  Also N.B. the y-axis is reversed! so +=down, -=up!

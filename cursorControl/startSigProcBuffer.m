@@ -5,7 +5,7 @@
 %  (startPhase.cmd,calibrate)  -- start calibration phase processing (i.e. cat data)
 %  (startPhase.cmd,testing)    -- start test phase, i.e. on-line prediction generation
 %  (startPhase.cmd,exit)       -- stop everything
-configureCursor();
+configureCursor;
 
 if( ~exist('capFile','var') || isempty(capFile) ) 
   [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); capFile=fullfile(pth,fn);

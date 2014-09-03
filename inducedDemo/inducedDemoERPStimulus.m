@@ -1,4 +1,4 @@
-if ( ~exist('imConfig','var') || ~imConfig ) configureIM(); end;
+if ( ~exist('imConfig','var') || ~imConfig ) configureIM; end;
 
 % make the stimulus
 fig=gcf;
