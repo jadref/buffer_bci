@@ -57,7 +57,7 @@ opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],'downsample',[],...
             'badtrrm',1,'badtrthresh',3,'badtrscale',2,...
             'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
             'visualize',1,...
-            'badCh',[],'nFold',10,'class_names',[],'Y',[],'hdr',[]);
+            'badCh',[],'nFold',10,'class_names',[],'Y',[],'hdr',[],'zeroLab',1);
 opts=parseOpts(opts,varargin);
 
 % get the sampling rate
@@ -229,21 +229,44 @@ end;
 
 %5.5) Visualise the input?
 if ( opts.visualize )
-   uY=unique(Y);sidx=[]; labels=opts.class_names;
-   for ci=1:numel(uY);     
-     if(iscell(uY)) tmp=strmatch(uY(ci),Y); Yci=false(size(Y)); Yci(tmp)=true; else Yci=(Y==uY(ci)); end;
-      mu(:,:,ci)=mean(X(:,:,Yci),3);
-      if(~(ci>1 && numel(uY)<=2)) 
-        if( numel(uY)==2 )  aucci=dv2auc(Yci*2-1,X,3); % don't store seed for binary
-        else                [aucci,sidx]=dv2auc(Yci*2-1,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
-        end
-        aucesp=auc_confidence(numel(Y),sum(Yci)./numel(Y),.2);
-        aucci(aucci<.5+aucesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
-        auc(:,:,ci)=aucci;
+  % Compute the labeling and set of sub-problems and classes to plot
+  Yidx=Y; sidx=[]; labels=opts.class_names; auclabels=labels;
+  %convert from labels to 1vR sub-problems
+  if ( size(Y,2)==1 && ~(isnumeric(Y) && ~opts.zeroLab && all(Y(:)==1 | Y(:)==0 | Y(:)==-1)))
+    uY=unique(Y,'rows'); Yidx=-ones([size(Y,1),numel(uY)],'int8');    
+    for ci=1:size(uY,1); 
+      if(iscell(uY)) 
+        tmp=strmatch(uY(ci),Y); Yidx(tmp,ci)=1; 
+      else 
+        for i=1:size(Y,1); Yidx(i,ci)=isequal(Y(i,:),uY(ci,:))*2-1; end
       end;
       if ( isempty(labels) || numel(labels)<ci || isempty(labels{ci}) ) 
-        if ( iscell(uY) ) labels{ci}=uY{ci}; else labels{ci}=sprintf('%d',uY(ci)); end
+        if ( iscell(uY) ) labels{1,ci}=uY{ci}; else labels{1,ci}=sprintf('%d',uY(ci,:)); end
+      end
+    end
+    auclabels=labels;
+  else
+    if ( isempty(labels) ) 
+      for spi=1:size(Yidx,2); 
+        labels{1,spi}=sprintf('sp%d +',spi);labels{2,spi}=sprintf('sp%d -',spi); 
+        auclabels{spi}=sprintf('sp%d',spi);
       end;
+    end
+  end
+  % Compute the averages and per-sub-problem AUC scores
+  for spi=1:size(Yidx,2);
+    Yci=Yidx(:,spi);
+    if( size(labels,1)==1 ) % plot sub-prob positive response only
+      mu(:,:,spi)=mean(X(:,:,Yci>0),3);      
+    else % pos and neg sub-problem average responses
+      mu(:,:,1,spi)=mean(X(:,:,Yci>0),3); mu(:,:,2,spi)=mean(X(:,:,Yci<0),3);
+    end
+    if(~(all(Yci(:)==Yci(1)))) 
+      [aucci,sidx]=dv2auc(Yci,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
+      aucesp=auc_confidence(sum(Yci~=0),single(sum(Yci>0))./single(sum(Yci~=0)),.2);
+      aucci(aucci<.5+aucesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
+      auc(:,:,spi)=aucci;
+    end
    end
    times=(1:size(mu,2))/fs;
    yvals=times;
@@ -256,7 +279,7 @@ if ( opts.visualize )
    zoomplots;
    try; saveaspdf('ERP'); catch; end;
    aucfig=figure('Name','Data Visualisation: ERP AUC');
-   image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',yvals,'zlabel','class','Zvals',labels,'disptype','imaget','ticklabs','sw','clim',[.2 .8]);
+   image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8]);
    colormap ikelvin; zoomplots;
    drawnow;
    try; saveaspdf('AUC'); catch; end;

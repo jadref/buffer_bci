@@ -65,7 +65,7 @@ if ( isnumeric(key) && strncmp('int',class(key),3) ) key=single(Y); end;
 nClass=numel(key); nSp=nClass; 
 %deal with bin special case
 if ( compBinp && nClass==2 ) nSp=1; end;
-if ( isstr(spMx) ) spMx=mkspMx(1:nClass,spMx); nSp=size(spMx,1);
+if ( isstr(spMx) ) spMx=mkspMx(1:nClass,spMx,compBinp); nSp=size(spMx,1);
 else
    if( isnumeric(spMx) )
       if ( ndims(spMx)==2 && size(spMx,2)==1 && all(ismember(spMx,key)) && numel(key)>2 ) % vector of +ve class labels input
@@ -149,3 +149,6 @@ Y=floor(rand(100,1)*1.9)*2-1;
 % test with cell array of strings as input
 Y={'left' 'left' 'right' 'right'}
 [Yi,key,spMx]=lab2ind(Y);
+
+% test with binary input and non-compression of output
+Yi=lab2ind(sign(randn(100,1)),[],[],[],0); size(Yi,2)==2
