@@ -24,7 +24,12 @@ function [data,devents,hdr,events]=sliceraw(fname,varargin)
 %           PID is the buffer process ID (usually a 5 digit number)
 % Outputs:
 %  data  - [struct 1xN] structure with the data for each epoch
-%  devents-[struct 1xN] structure with the event used to slice for each epoch
+%         This structure contains:
+%          data.buf -- [nCh x nSamp] matrix of the raw data in channels x time format
+%  devents-[struct 1xN] structure with the event used to slice for each epoch, 
+%                       i.e. devents(1) is event for data(1) etc..
+%         Each of these structures is a normal event structure as made by mkEvent.  The basic format it:
+%          devent=struct('type',*type-string*,'sample',*eventSample*,'value',*value*)
 %  hdr   - [struct] the data header
 %  events- [struct 1xM] all events in this data file
 % Options:
