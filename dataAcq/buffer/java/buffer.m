@@ -142,14 +142,15 @@ switch cmd;
         for i=1:numel(evt(ei).type); tmp(i)=evt(ei).type(i); end; evt(ei).type=tmp;
       end
       if ( strcmp(typeinfo(evt(ei).value),'octave_java') )
-	tmp = zeros(size(evt(ei).value));
+        tmp = zeros(size(evt(ei).value));
         for i=1:numel(evt(ei).value) 
-	  if isNumeric(evt(ei).value(i))
-	    tmp(i)=evt(ei).value(i).intValue(); 
-	  else
-	    tmp(i)=evt(ei).value(i);
-	  end; 
-	evt(ei).value=tmp;
+          if isNumeric(evt(ei).value(i))
+            tmp(i)=evt(ei).value(i).doubleValue(); 
+          else
+            tmp(i)=evt(ei).value(i);
+          end;
+        end
+        evt(ei).value=tmp;
       end
     end;
   end
