@@ -27,7 +27,7 @@ run ../utilities/initPaths.m
 [data,devents,hdr,allevents]=sliceraw('example_data/raw_buffer/0001','startSet',{'stimulus.target'});
 
 % 2) train a ERsP classifier on this data.
-[clsfr,X]=buffer_train_ersp_clsfr(data,devents,hdr,'freqband',[8 10 24 28],'capFile',capFile);
+[clsfr,res,X]=buffer_train_ersp_clsfr(data,devents,hdr,'freqband',[8 10 24 28],'capFile',capFile);
 % N.B. X now contains the pre-processed data which can be used for other purposes, e.g. making better plots.
 
 % 3) apply this classifier to the same data (or new data)
