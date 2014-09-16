@@ -4,7 +4,7 @@ if ( nargin<3 || isempty(isi) ) isi=6/60; end; % default to 10Hz
 if ( nargin<4 || isempty(tti) ) tti=isi*10; end; % default to ave target every 5th event
 if ( nargin<5 || isempty(oddp) ) oddp=false; end;
 % make a simple visual intermittent flash stimulus
-colors=[0 1 0;... % color(1)=tgt
+colors=[ 0  1  0;... % color(1)=tgt
         .8 .8 .8]';     % color(2)=std
 stimTime=0:isi:duration; % 10Hz, i.e. event every 100ms
 stimSeq =-ones(numel(h),numel(stimTime)); % make stimSeq which is all off

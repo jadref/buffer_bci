@@ -1,20 +1,30 @@
-function [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(h,duration,isi,tti)
+function [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(h,duration,isi,tti,oddp)
 if ( nargin<2 || isempty(duration) ) duration=3; end; % default to 3sec
 if ( nargin<3 || isempty(isi) ) isi=6/60; end; % default to 5hz
 if ( nargin<4 || isempty(tti) ) tti=isi*8; end; % default to ave target every 3rd event
+if ( nargin<5 || isempty(oddp) ) oddp=false; end;
 % make a simple visual intermittent flash stimulus
-colors=[1 1 1;...;  % color(1) = flash
+colors=[1 1 1;...  % color(1) = flash
         0 1 0]';    % color(2) = target
 stimTime=0:isi:duration; % event every isi
 stimSeq =-ones(numel(h),numel(stimTime)); % make stimSeq where everything is turned off
 stimSeq(2:end-1,:)=0; % turn-on all symbols, to background color
+if ( oddp ) 
+  colors=[0 0 1;...   % flash
+          0 1 0;...   % target
+          .5 .5 .5]'; % std
+  stimSeq(2:end-1,2:2:end-1)=3;
+end
 eventSeq=cell(numel(stimTime),1);
 % Pick who is going to be the target
 tgt=randi(numel(h)-2);
 
 % seq is random flash about 1/sec
 for stimi=1:numel(h)-2;
-  flashStim=-ones(numel(h),1); flashStim(2:end-1)=0; flashStim(1+stimi)=1; % flash only has symbol 1 set
+  flashStim=-ones(numel(h),1); 
+  flashStim(2:end-1)=0; 
+  if ( oddp ) flashStim(2:end-1)=3; end;
+  flashStim(1+stimi)=1; % flash only has symbol 1 set
   t=isi+fix(rand(1)*10)/10;
   while (t<max(stimTime)) % loop to find a flash time not at the same time as another symbol
     [ans,si]=min(abs(stimTime-t)); % find nearest stim time    
