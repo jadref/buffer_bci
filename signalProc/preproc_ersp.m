@@ -107,7 +107,7 @@ if(isempty(Y))
   Y=ones(size(X,3),1);
 else
   % buffer event type input? assume Y.value is the event value
-  if (isstruct(Y) && isfield(Y,'value')) Y=[Y.value]; end;
+  if (isstruct(Y) && isfield(Y,'value')) Y=[Y.value]; Y=Y(:); end;
 end
 
 %1) Detrend
