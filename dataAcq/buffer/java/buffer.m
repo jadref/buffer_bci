@@ -138,7 +138,7 @@ switch cmd;
     evt(ei).duration=evtjei.duration;
     if ( exist('OCTAVE_VERSION','builtin') ) % in octave have to manually convert arrays..
       if ( strcmp(typeinfo(evt(ei).type),'octave_java') )
-	tmp = zeros(size(evt(ei).type));
+        tmp = zeros(size(evt(ei).type));
         for i=1:numel(evt(ei).type); tmp(i)=evt(ei).type(i); end; evt(ei).type=tmp;
       end
       if ( strcmp(typeinfo(evt(ei).value),'octave_java') )
@@ -148,7 +148,7 @@ switch cmd;
             tmp(i)=evt(ei).value(i).doubleValue(); 
           else
             tmp(i)=evt(ei).value(i);
-          end;
+          end; 
         end
         evt(ei).value=tmp;
       end
