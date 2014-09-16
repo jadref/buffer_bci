@@ -1,7 +1,9 @@
+if ( ~isempty(which('WaitSecs')) && ~isempty(which('Screen')) ) continue; end; % don't bother if already in the path
+
 psychpath='/home/jdrf/source/matfiles/toolboxes/Psychtoolbox';%hard code PTB location, N.B. *MUST* be absolute path
-if ( ~exist(psychpath,'dir') ) % search relative to here..
+if ( ~exist(psychpath,'dir') ) % search relative to here, 2 dir up
   mdir=fileparts(mfilename('fullpath'));
-  psychpath=fullfile(mdir,'toolboxes','Psychtoolbox');
+  psychpath=fullfile(mdir,'..','..','toolboxes','Psychtoolbox');
 end
 % look 1 layer deeper for source distributions
 if ( exist(fullfile(psychpath,'Psychtoolbox'),'dir') )
