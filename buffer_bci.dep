@@ -27,6 +27,7 @@
 ~/source/matfiles/signalproc/oversample.m signalProc
 ~/source/matfiles/signalproc/spectrogram.m signalProc
 ~/source/matfiles/signalproc/subsample.m signalProc
+~/source/matfiles/signalproc/optShrinkage.m signalProc
 ~/source/matfiles/numutil/idOutliers.m signalProc
 ~/source/matfiles/numutil/sphericalSplineInterpolate.m signalProc
 ~/source/matfiles/numutil/mvar.m utilities
