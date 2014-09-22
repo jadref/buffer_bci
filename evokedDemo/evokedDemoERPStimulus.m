@@ -76,7 +76,6 @@ while ( ~endTraining )
     switch lower(key)
      case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration);     seqStart=true;
      case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration,1/5,[],1);seqStart=true;
-     %case {'a','2'}; seqStart=false; % not implemented yet! %[stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(h);     seqStart=true;
      case {'a'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(h,trialDuration,1/3);seqStart=true;
      case {'s','3'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,trialDuration,1/ssvepFreq(1)/2,sprintf('SSVEP %g',ssvepFreq(1)));   seqStart=true;
      case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(h,trialDuration,[],[],1);      seqStart=true;
@@ -99,6 +98,7 @@ while ( ~endTraining )
       colors=[tgtColor;bgColor]'; % key for color to use for each stimulus
       eventSeq=cell(1,numel(stimTime)); [eventSeq{1:end-1}]=deal({'stimulus' 'right'}); % markers to send
       seqStart=true;
+     case {'a'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(texels,trialDuration,1/4,1.5);seqStart=true;
      case {'q','escape'};         endTraining=true; break; % end the phase
      %case {'7'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,trialDuration,1/ssvepFreq(2)/2,sprintf('SSVEP %g',ssvepFreq(2)));  seqStart=true;
      %case {'8'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,trialDuration,1/ssvepFreq(3)/2,sprintf('SSVEP %g',ssvepFreq(3)));  seqStart=true;
