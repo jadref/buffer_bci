@@ -43,7 +43,10 @@ function [res,Cs,fIdxs]=cvtrainFn(objFn,X,Y,Cs,fIdxs,varargin)
 %             1-re-order decreasing reg, 0-do nothing, -1=re-order increasing reg
 %  verb     - [int] verbosity level
 %  keyY     - [size(Y,2) x 1 cell] description of what's in each of Y's sub-probs
-%  outerSoln- [bool] compute the outer, i.e. all data, solutions also?
+%  outerSoln- [bool] compute the outer (i.e. all data) solutions also?  (-1)
+%                1 = compute solution for all regularisation parameters
+%                0 = don't compute outer solution at all
+%               -1 = compute outer solution only for the 'optimal' parameter setting
 %  calibrate- [str] calibrate the final classifier predictions using;    ('cr')
 %               ''   -- no calibration
 %               'cr' -- cv-estimated classification rate
@@ -86,7 +89,7 @@ function [res,Cs,fIdxs]=cvtrainFn(objFn,X,Y,Cs,fIdxs,varargin)
 % fIdxs -- the fold structure used. (may be different from input if input is scalar)
 opts = struct('binsp',1,'aucNoise',0,'recSoln',0,'dim',[],...
               'reuseParms',1,'seed',[],'seedNm','alphab','verb',0,'reorderC',1,...
-              'spDesc',[],'outerSoln',1,'calibrate','bal','lossType','bal','dispType','bin',...
+              'spDesc',[],'outerSoln',-1,'calibrate','bal','lossType','bal','dispType','bin',...
               'subIdx',[],'aucWght',.1);
 [opts,varargin]=parseOpts(opts,varargin);
 
@@ -136,7 +139,7 @@ end;
 if(ndims(fIdxs)<=2) fIdxs=reshape(fIdxs,[size(fIdxs,1),1,size(fIdxs,2)]); end; %include subProb dim
 
 % First compute the whole data solutions for each Cs
-if ( opts.outerSoln )
+if ( opts.outerSoln>0 )
 for spi=1:nSubProbs; % loop over sub-problems
    if ( ~opts.binsp ) spi=1:size(Y,2); end; % set spi to set sub-probs if not binary
    if ( opts.verb > -1 ) 
@@ -144,7 +147,7 @@ for spi=1:nSubProbs; % loop over sub-problems
    end
    seed=opts.seed; % reset seed for each sub-prob
    Ytrn = Y(:,spi);
-   exInd = all(fIdxs(:,min(end,spi),:)==0,3); Ytrn(exInd)=0; % excluded points
+   exInd = all(fIdxs(:,min(end,spi),:)==0,3); Ytrn(exInd,:)=0; % excluded points
    for ci=1:size(Cs,2);%siCs; % proc in sorted order
       if( ~opts.reuseParms ) seed=opts.seed; end;
       if( ~isempty(seed) ) 
@@ -185,8 +188,8 @@ for foldi=1:size(fIdxs,ndims(fIdxs));
       tstInd=fIdxs(:,min(end,spi),foldi)>0;  % testing points
       exInd =fIdxs(:,min(end,spi),foldi)==0; % excluded points
       
-      Ytrn  =Y(:,spi); Ytrn(tstInd)=0; Ytrn(exInd)=0;
-      Ytst  =Y(:,spi); Ytst(trnInd)=0; Ytst(exInd)=0;
+      Ytrn  =Y(:,spi); Ytrn(tstInd,:)=0; Ytrn(exInd,:)=0;
+      Ytst  =Y(:,spi); Ytst(trnInd,:)=0; Ytst(exInd,:)=0;
 
       if ( opts.verb > -1 )
         if ( size(fIdxs,ndims(fIdxs))>1 ) 
@@ -283,11 +286,35 @@ res.opt.Ci  =optCi;
 res.opt.C   =Cs(optCi);
 res.opt.tstbin=res.tstbin(:,:,optCi); 
 res.opt.trnbin=res.trnbin(:,:,optCi); 
-if ( opts.outerSoln ) % use classifier trained on all the data
+if ( opts.outerSoln>0 ) % use classifier trained on all the data
    res.opt.soln=res.soln(:,optCi);
    res.opt.f   =res.f(:,:,optCi);   
    res.opt.tstf=res.tstf(:,:,optCi);
-else % estimate from per fold solutions
+elseif( opts.outerSoln<0 ) % re-train with the optimal parameters found
+  for spi=1:nSubProbs; % loop over sub-problems
+    if ( ~opts.binsp ) spi=1:size(Y,2); end; % set spi to set sub-probs if not binary
+    if ( opts.verb > -1 ) 
+      if ( nSubProbs>1 ) fprintf('(opt/%2d)\t',spi); else; fprintf('(opt)\t'); end;
+    end
+    Ytrn = Y(:,spi);
+    exInd = all(fIdxs(:,min(end,spi),:)==0,3); Ytrn(exInd,:)=0; % excluded points    
+    [seed,f,J]=feval(objFn,X,Ytrn,res.opt.C,'verb',opts.verb-1,...
+                     'dim',opts.dim,varargin{:});
+    if ( isstruct(seed) && isfield(seed,'soln') ) sol=seed.soln; else sol=seed; end;
+    if ( opts.binsp ) res.opt.soln{spi}=sol; else res.opt.soln=sol; end;
+    res.opt.f(:,spi)=f;      
+    if( opts.verb > -1 ) 
+      if( numel(spi)>1 ) fprintf('['); end;
+      for spii=1:numel(spi); % N.B. we need to loop as dv2conf etc. only work on 1 sub-prob at a time
+        fprintf('%0.2f/NA  ',conf2loss(dv2conf(Ytrn(:,spii),f(:,spii)),1,opts.lossType)); 
+        if( spii<numel(spi) ) fprintf('|'); end;
+      end
+      if(numel(spi)>1) fprintf(']'); if(numel(spi)<5) fprintf(' '); else fprintf('\n');end;
+      elseif ( numel(spi)==1 ) fprintf('\n'); end;
+    end
+  end % spi
+elseif( opts.outerSoln==0 ) % estimate from per fold solutions
+  
   if ( opts.binsp ) opt=soln(:,optCi,:); else opt=soln(optCi,:); end; % spi x 1 x fold
   if ( isnumeric(soln{1}) || (iscell(soln{1}) && isnumeric(soln{1}{1})) ) % use average over all folds solutions
     if ( opts.binsp ) res.opt.soln = opt(:,1,1); else res.opt.soln=opt(1,1); end;
