@@ -1,5 +1,5 @@
 run ../utilities/initPTBPaths.m;
-configureDemo;
+configureDemo();
 
 % make the stimulus
 ws=Screen('windows'); % re-use existing window 
@@ -11,6 +11,30 @@ if ( isempty(ws) )
   [flipInterval nrValid stddev]=Screen('GetFlipInterval',wPtr); % get flip-time (i.e. refresh rate)
 else
   wPtr=ws(1);
+end
+
+% setup psych-port-audio also
+if ( isequal(strfind(lower(computer()),'gln'),1)) % linux
+  fprintf('Warning port-audio only works well with ALSA -- if you hear nothing then you should disable\n')
+  fprintf(' pulseaudio with:\n echo autospawn = no|tee -a ~/.pulse/client.conf && killall pulseaudio\n');
+  fprintf(' re-enable pulseaudio with:\n sed -e ''/autospawn.*/d'' < ~/.pulse/client.conf > ~/.pulse/client.conf && pulseaudio --start\n');
+end
+nd=PsychPortAudio('GetOpenDeviceCount');
+if ( nd==0 )
+  InitializePsychSound(1); %Initialize sound with low-latency!
+else % close all existing audio devices
+  for i=0:nd-1; PsychPortAudio('Close',i); end;
+end
+reqlatencyclass = 3; % class 2 empirically the best, 3 & 4 == 2
+fs              = 44100;       % Must set this. 96khz, 48khz, 44.1khz.
+paPtr = PsychPortAudio('Open', [], [], reqlatencyclass, fs)
+
+% load the audio fragments
+audio={};
+[audio{1},fs1] = wavread('auditoryStimuli/550.wav'); audio{1}=audio{1}'; %oddball
+[audio{2},fs2] = wavread('auditoryStimuli/500.wav'); audio{2}=audio{2}';%standard
+if ( fs1~=fs2 || fs1~=fs ) 
+  Warning('Audio files and audio-device use different sampling rates');
 end
 
 % Now make the boxes
@@ -76,10 +100,9 @@ while ( ~endTraining )
       
     switch lower(key(1))
      case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(texels,trialDuration);     seqStart=true;
-     case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration,1);   seqStart=true;
-     %case {'a','2'}; seqStart=false; % not implemented yet! %[stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(texels);     seqStart=true;
+     case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(texels,trialDuration,1/5,[],1);seqStart=true;
      case {'s','3'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,trialDuration,1/ssvepFreq(1)/2,sprintf('SSVEP %g',ssvepFreq(1)));   seqStart=true;
-     case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(texels,trialDuration);      seqStart=true;
+     case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(texels,trialDuration,1/5,[],1);  seqStart=true;
      case {'f','5'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(texels,trialDuration,isi,1./(flickerFreq*isi)); seqStart=true;
      case {'l','6'}; % left box only
       stimTime=0:1:trialDuration; % times something happens, i.e. every second send event
@@ -99,11 +122,8 @@ while ( ~endTraining )
       colors=[tgtColor;bgColor]'; % key for color to use for each stimulus
       eventSeq=cell(1,numel(stimTime)); [eventSeq{1:end-1}]=deal({'stimulus' 'right'}); % markers to send
       seqStart=true;
+     case {'a'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(texels,trialDuration,1/4,1.5);seqStart=true;
      case {'q','escape'};         endTraining=true; break; % end the phase
-     % case {'7'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,trialDuration,1/ssvepFreq(2)/2,sprintf('SSVEP %g',ssvepFreq(2)));  seqStart=true;
-     % case {'8'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,trialDuration,1/ssvepFreq(3)/2,sprintf('SSVEP %g',ssvepFreq(3)));  seqStart=true;
-     % case {'9'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,3,1/ssvepFreq(4)/2,sprintf('SSVEP %g',ssvepFreq(4)));  seqStart=true;
-     % case {'0'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,3,1/ssvepFreq(5)/2,sprintf('SSVEP %g',ssvepFreq(5)));  seqStart=true;
      otherwise; fprintf('Unrecog key: %s\n',lower(key)); seqStart=false;
     end
   end
@@ -125,10 +145,11 @@ while ( ~endTraining )
     ei=min(numel(stimTime),ei+1);
     frametime(ei,1)=getwTime()-seqStartTime;
     % find nearest stim-time
-    if ( frametime(ei,1)>=stimTime(min(numel(stimTime),ei+1)) ) 
-      if ( verb>=0 ) fprintf('%d) Dropped Frame!!!\n',ei); end;
-      ndropped=ndropped+1;
-      ei=min(numel(stimTime),ei+1);
+    if ( ei<numel(stimTime) && frametime(ei,1)>=stimTime(ei+1) ) 
+      oei = ei;
+      for ei=ei+1:numel(stimTime); if ( frametime(oei,1)<stimTime(ei) ) break; end; end; % find next valid frame
+      if ( verb>=0 ) fprintf('%d) Dropped %d Frame(s)!!!\n',ei,ei-oei); end;
+      ndropped=ndropped+(ei-oei);
     end
     ss=stimSeq(:,ei);
     Screen('Drawtextures',wPtr,texels(ss>=0),srcR(:,ss>=0),destR(:,ss>=0),[],[],[],bgColor*255); 
@@ -141,12 +162,24 @@ while ( ~endTraining )
     if(any(ss==3))
       Screen('Drawtextures',wPtr,texels(ss==3),srcR(:,ss==3),destR(:,ss==3),[],[],[],colors(:,3)*255); 
     end;
+    if(any(ss==-4))
+      PsychPortAudio('Stop', paPtr,1,2); % hard stop of currently playing sound
+      PsychPortAudio('FillBuffer', paPtr, audio{1});
+    end;
+    if(any(ss==-5))
+      PsychPortAudio('Stop', paPtr,1,2); % hard stop of currently playing sound
+      PsychPortAudio('FillBuffer', paPtr, audio{2});
+    end; 
 
-    % sleep until time to re-draw the screen
+    % sleep until time to update the stimuli screen
+    if ( verb>1 ) fprintf('%d) Sleep : %gs\n',ei,stimTime(ei)-(getwTime()-seqStartTime)-flipInterval/2); end;
     sleepSec(max(0,stimTime(ei)-(getwTime()-seqStartTime)-flipInterval/2)); 
     if ( verb>0 ) frametime(ei,2)=getwTime()-seqStartTime; end;
     Screen('flip',wPtr,0,0,0);% re-draw the display, but wait for the re-fresh
-    if ( verb>0 ) 
+    if ( any(ss==-4) || any(ss==-5) ) % immeadiately start the audio playing also       
+      PsychPortAudio('Start', paPtr);
+    end
+    if ( verb>1 ) 
       frametime(ei,3)=getwTime()-seqStartTime;
       fprintf('%d) dStart=%8.6f dEnd=%8.6f stim=[%s] lag=%g\n',ei,...
               frametime(ei,2),frametime(ei,3),...
@@ -156,7 +189,7 @@ while ( ~endTraining )
     if ( ~isempty(eventSeq{ei}) ) 
       ev=sendEvent(eventSeq{ei}{:}); 
       %sendEvent('stimulus.tgtFlash',stimSeqRow(tgtRow,ei),stimSamp); % indicate if it was a 'target' flash
-      if (1||verb>0) fprintf('Event: %s\n',ev2str(ev)); end;
+      if (1||verb>0) fprintf('%d) Event: %s\n',ei,ev2str(ev)); end;
     end
   end
   if ( verb>0 ) % summary info

@@ -1,4 +1,4 @@
-configureDemo;
+configureDemo();
 
 % make the stimulus
 fig=gcf;
@@ -37,6 +37,13 @@ instructstr={'Stimulus Type Keys',
             };
 instructh=text(min(get(ax,'xlim'))+.25*diff(get(ax,'xlim')),mean(get(ax,'ylim')),instructstr,'HorizontalAlignment','left','VerticalAlignment','middle','color',[0 1 0],'fontunits','normalized','FontSize',.05,'visible','off');
 
+% load the audio fragments
+tmp = wavread('auditoryStimuli/550.wav'); %oddball
+beepStd = audioplayer(tmp, 44100);
+tmp  = wavread('auditoryStimuli/500.wav'); %standard
+beepOdd = audioplayer(tmp, 44100);
+audio = {beepStd beepOdd};
+
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
 set(h(:),'visible','off'); % make them all invisible
@@ -68,11 +75,11 @@ while ( ~endTraining )
     set(fig,'userData',[]);
     switch lower(key)
      case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration);     seqStart=true;
-     case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration,1/4,[],1);seqStart=true;
+     case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration,1/5,[],1);seqStart=true;
      %case {'a','2'}; seqStart=false; % not implemented yet! %[stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(h);     seqStart=true;
-     case {'a'}; [stimSeq,stimTime,eventSeq,colors,audio]=mkStimSeq_Aud(h,trialDuration,1/2,[],1);     seqStart=true;
+     case {'a'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(h,trialDuration,1/3);seqStart=true;
      case {'s','3'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,trialDuration,1/ssvepFreq(1)/2,sprintf('SSVEP %g',ssvepFreq(1)));   seqStart=true;
-     case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(h,trialDuration);      seqStart=true;
+     case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(h,trialDuration,[],[],1);      seqStart=true;
      case {'f','5'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(h,trialDuration,isi,1./(flickerFreq*isi)); seqStart=true;
      case {'l','6'}; % left box only
       stimTime=0:1:trialDuration; % times something happens, i.e. every second send event
@@ -119,9 +126,10 @@ while ( ~endTraining )
     frametime(ei,1)=getwTime()-seqStartTime;
     % find nearest stim-time
     if ( frametime(ei,1)>=stimTime(min(numel(stimTime),ei+1)) ) 
-      if ( verb>=0 ) fprintf('%d) Dropped Frame!!!\n',ei); end;
-      ndropped=ndropped+1;
-      ei=min(numel(stimTime),ei+1);
+      oei = ei;
+      for ei=ei+1:numel(stimTime); if ( frametime(oei,1)<stimTime(ei) ) break; end; end; % find next valid frame
+      if ( verb>=0 ) fprintf('%d) Dropped %d Frame(s)!!!\n',ei,ei-oei); end;
+      ndropped=ndropped+(ei-oei);
     end
     set(h(:),'facecolor',bgColor); % everybody starts as background color
     ss=stimSeq(:,ei);
@@ -130,13 +138,13 @@ while ( ~endTraining )
     if(any(ss==1))set(h(ss==1),'facecolor',colors(:,1)); end% stimSeq codes into a colortable
     if(any(ss==2))set(h(ss==2),'facecolor',colors(:,min(size(colors,2),2)));end;
     if(any(ss==3))set(h(ss==3),'facecolor',colors(:,min(size(colors,2),3)));end;
-    if(any(ss==-4))play(audio{1});end;
-    if(any(ss==-5))play(audio{2});end; 
     
-    % sleep until time to re-draw the screen
+    % sleep until time to update the stimuli the screen
     sleepSec(max(0,stimTime(ei)-(getwTime()-seqStartTime))); % wait until time to call the draw-now
     if ( verb>0 ) frametime(ei,2)=getwTime()-seqStartTime; end;
     drawnow;
+    if(any(ss==-4))play(audio{1});end;
+    if(any(ss==-5))play(audio{2});end; 
     if ( verb>0 ) 
       frametime(ei,3)=getwTime()-seqStartTime;
       fprintf('%d) dStart=%8.6f dEnd=%8.6f stim=[%s] lag=%g\n',ei,...
