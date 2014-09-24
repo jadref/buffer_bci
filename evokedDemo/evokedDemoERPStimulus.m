@@ -125,7 +125,7 @@ while ( ~endTraining )
     ei=min(numel(stimTime),ei+1);
     frametime(ei,1)=getwTime()-seqStartTime;
     % find nearest stim-time
-    if ( frametime(ei,1)>=stimTime(min(numel(stimTime),ei+1)) ) 
+    if ( ei<numel(stimTime) && frametime(ei,1)>=stimTime(min(numel(stimTime),ei+1)) ) 
       oei = ei;
       for ei=ei+1:numel(stimTime); if ( frametime(oei,1)<stimTime(ei) ) break; end; end; % find next valid frame
       if ( verb>=0 ) fprintf('%d) Dropped %d Frame(s)!!!\n',ei,ei-oei); end;

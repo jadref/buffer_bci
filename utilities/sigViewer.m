@@ -208,7 +208,7 @@ while ( ~endTraining )
   key=[]; if ( ~isempty(modehdl) ) key=get(modehdl,'value'); end;
   if ( ~isempty(get(fig,'userdata')) ) key=get(fig,'userdata'); end; % key-overrides drop-down
   if ( ~isempty(key) )
-    switch ( key );
+    switch ( key(1) );
      case {1,'t'}; tmp=1;curvistype='time';
      case {2,'f'}; tmp=2;curvistype='freq';
      case {3,'p'}; tmp=3;curvistype='power';
