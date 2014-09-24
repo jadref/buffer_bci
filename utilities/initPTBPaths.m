@@ -17,3 +17,8 @@ if ( usejava('jvm') && ~any(strcmp(javaclasspath,psychJavadir)) )
   warning('Modifying javaclass path -- this clears all Global & JAVA variables!');
   javaaddpath(exGenPath(psychJavadir,[],0,1));
 end
+
+if ( isempty(which('Screen')) ) % error if PTB not found
+  uiwait(msgbox({'Error couldnt find Psychtoolbox on your path!' 'Aborting'},'Error','modal'),10);
+  error('Couldnt find Psychtoolbox on your path!');
+end
