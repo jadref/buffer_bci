@@ -18,6 +18,7 @@ ax=axes('position',[0.025 0.025 .975 .975],'units','normalized','visible','off',
 % reset the cue and fixation point to indicate trial has finished  
 set(h(:),'color',[.5 .5 .5]);
 sendEvent('stimulus.training','start');
+state=[];
 for si=1:nSeq;
 
   if ( ~ishandle(fig) ) break; end;
