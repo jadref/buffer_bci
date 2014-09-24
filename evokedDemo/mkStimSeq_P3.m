@@ -1,8 +1,8 @@
 function [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(h,duration,isi,tti,oddp)
 if ( nargin<2 || isempty(duration) ) duration=3; end; % default to 3sec
-if ( nargin<3 || isempty(isi) ) isi=6/60; end; % default to 5hz
-if ( nargin<4 || isempty(tti) ) tti=isi*8; end; % default to ave target every 3rd event
+if ( nargin<3 || isempty(isi) ) isi=1/5; end; % default to 5hz, N.B. stimulus events happen every 2nd-isi
 if ( nargin<5 || isempty(oddp) ) oddp=false; end;
+if ( nargin<4 || isempty(tti) ) tti=isi*8; if ( oddp ) tti=tti*2; end;end; % default to ave target every 4rd event
 % make a simple visual intermittent flash stimulus
 colors=[1 1 1;...  % color(1) = flash
         0 1 0]';    % color(2) = target
@@ -13,7 +13,7 @@ if ( oddp )
   colors=[0 0 1;...   % flash
           0 1 0;...   % target
           .5 .5 .5]'; % std
-  stimSeq(2:end-1,2:2:end-1)=3;
+  stimSeq(2:end-1,2:2:end-1)=3; % every stimulus event
 end
 eventSeq=cell(numel(stimTime),1);
 % Pick who is going to be the target
@@ -39,9 +39,9 @@ for stimi=1:numel(h)-2;
 end
 % make the event seq from the stimSeq
 for si=1:size(stimSeq,2);
-  if ( stimSeq(tgt+1,si)>0 )
-    eventSeq{si}={'stimulus','P3 Tgt'}; % this is a target event
-  else
+  if ( stimSeq(tgt+1,si)==1 ) % this is a target event
+    eventSeq{si}={'stimulus','P3 Tgt'}; 
+  elseif( stimSeq(tgt+1,si)>1 || (~oddp && stimSeq(tgt+1,si)==0) ) % non-target stimulus event
     eventSeq{si}={'stimulus','P3 Non-Tgt'}; % this is a target event
   end
 end

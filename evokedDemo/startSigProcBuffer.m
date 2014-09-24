@@ -89,7 +89,7 @@ while ( true )
 
     %---------------------------------------------------------------------------------
    case {'train','training'};
-    try
+    %try
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
         fprintf('Loading training data from : %s\n',[dname '_' subject '_' datestr]);
         load([dname '_' subject '_' datestr]); 
@@ -101,9 +101,10 @@ while ( true )
       clsSubj=subject;
       fprintf('Saving classifier to : %s\n',[cname '_' subject '_' datestr]);
       save([cname '_' subject '_' datestr],'-struct','clsfr');
-    catch
+    %catch
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);      
       fprintf('Error in train classifier!');
-    end
+    %end
 
     %---------------------------------------------------------------------------------
    case {'test','testing'};

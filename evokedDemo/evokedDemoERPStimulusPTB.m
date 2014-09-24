@@ -57,19 +57,6 @@ srcR(:,4) = [0 destR(3,4)-destR(1,4) destR(2,4)-destR(4,4) 0];
 texels(4)  = Screen('MakeTexture',wPtr,ones(srcR([3 2],4)')*255);
 
 % instructions object
-instructstr={'Stimulus Type Keys',
-             '';
-             '1 or v : visual reponse',
-             '2 or o : visual oddball',
-             sprintf('3 or s : SSVEP (%ghz)',ssvepFreq(1)),
-             '4 or p : visual P300',
-             sprintf('5 or f : flicker (SSVEP %g or %ghz)',flickerFreq(1),flickerFreq(2)),
-             '6 or l : left cue task',
-             '7 or n : nothing cue task',
-             '8 or r : right cue task',
-             'a      : auditory oddball',
-             'q      : quit'
-            };
 Screen('FillRect',wPtr,bgColor*255); % blank background
 [ans,ans,instructSrcR]=DrawFormattedText(wPtr,sprintf('%s\n',instructstr{:}),0,0,[1 1 1]*255);
 %extract image, back buffer and make into texture

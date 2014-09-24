@@ -1,15 +1,15 @@
 function [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,duration,isi,tti,oddp)
 if ( nargin<2 || isempty(duration) ) duration=3; end; % default to 3sec
-if ( nargin<3 || isempty(isi) ) isi=6/60; end; % default to 10Hz
-if ( nargin<4 || isempty(tti) ) tti=isi*10; end; % default to ave target every 5th event
-if ( nargin<5 || isempty(oddp) ) oddp=false; end;
+if ( nargin<3 || isempty(isi) ) isi=1/10; end; % default to 10Hz
+if ( nargin<5 || isempty(oddp) ) oddp=false; end; % standard between stimuli, and stimuli only on even event times
+if ( nargin<4 || isempty(tti) ) tti=isi*10; if (oddp) tti=tti*2; end; end; % default to ave target every 5th event
 % make a simple visual intermittent flash stimulus
 colors=[ 0  1  0;... % color(1)=tgt
         .8 .8 .8]';     % color(2)=std
 stimTime=0:isi:duration; % 10Hz, i.e. event every 100ms
 stimSeq =-ones(numel(h),numel(stimTime)); % make stimSeq which is all off
 stimSeq(1,:)=0; % turn-on only the central square
-if ( oddp ) stimSeq(1,2:2:end-1)=2; end;
+if ( oddp ) stimSeq(1,2:2:end-1)=2; tti=tti*2; end; % stimulus events only on even times
 eventSeq=cell(numel(stimTime),1);
 % seq is random flash about 1/sec
 t=tti/2+fix(rand(1)*5)/10*tti/2;

@@ -1,8 +1,8 @@
 function [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(h,duration,isi,tti,oddp)
 if ( nargin<2 || isempty(duration) ) duration=3; end; % default to 3sec
-if ( nargin<3 || isempty(isi) ) isi=6/60; end; % default to 10Hz
-if ( nargin<4 || isempty(tti) ) tti=isi*10; end; % default to ave target every 5th event
+if ( nargin<3 || isempty(isi) ) isi=1/10; end; % default to 10Hz
 if ( nargin<5 || isempty(oddp) ) oddp=false; end; % only stimulate on odd events, even cause reset to no stim
+if ( nargin<4 || isempty(tti) ) tti=isi*10; if( oddp ) tti=tti*2; end; end; % default to ave target every 5th event
 % make a simple visual intermittent flash stimulus
 colors=[0 1 0;... % color(1)=tgt
         0 1 0;...
@@ -12,7 +12,7 @@ stimSeq =-ones(numel(h),numel(stimTime)); % make stimSeq which is all off
 % default to the standard
 stimSeq(1,:)=-5;
 stimSeq(4,:)=1; % turn-on only the central square
-if ( oddp ) stimSeq(1,1:2:end-1)=0; stimSeq(4,2:2:end-1)=3;end; % Nothing on even events
+if ( oddp ) stimSeq(1,1:2:end-1)=0; stimSeq(4,2:2:end-1)=3; end; % Nothing on even events
 eventSeq=cell(numel(stimTime),1);
 % seq is random flash about 1/sec
 t=tti/2+fix(rand(1)*5)/10*tti/2;

@@ -2,7 +2,8 @@ configureDemo;
 
 % wait for the buffer to return valid header information
 hdr=[];
-while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
+% wait for the buffer to contain valid data
+while ( isempty(hdr) || ~isstruct(hdr) || (isfield(hdr,'nchans')&&hdr.nchans==0) ) 
   try 
     hdr=buffer('get_hdr',[],buffhost,buffport); 
   catch
@@ -25,14 +26,14 @@ while ( ~endTest )
   nFlash=0; % number flashes processed
   while ( ~endSeq && ~endTest )
     % wait for data to apply the classifier to
-    [data,devents,state]=buffer_waitData(buffhost,buffport,state,'startSet',{{'stimulus.rowFlash' 'stimulus.colFlash'}},'trlen_samp',trlen_samp,'exitSet',{'data' {'stimulus.sequence' 'stimulus.feedback'} 'end'},'verb',verb);
+    [data,devents,state]=buffer_waitData(buffhost,buffport,state,'startSet',{{'stimulus.rowFlash' 'stimulus.colFlash'}},'trlen_samp',trlen_samp,'exitSet',{'data' {'stimulus.sequence' 'stimulus.feedback' 'stimulus.test'} 'end'},'verb',verb);
   
     % process these events
     for ei=1:numel(devents)
       if ( matchEvents(devents(ei),'stimulus.sequence','end') ) % end sequence
         if ( verb>0 ) fprintf('Got sequence end event\n'); end;
         endSeq=true;
-      elseif (matchEvents(devents(ei),'stimulus.feedback','end') ) % end training
+      elseif (matchEvents(devents(ei),{'stimulus.feedback' 'stimulus.test'},'end') ) % end training
         if ( verb>0 ) fprintf('Got end feedback event\n'); end;
         endTest=true;
       elseif ( matchEvents(devents(ei),{'stimulus.rowFlash','stimulus.colFlash'}) ) % flash, apply the classifier

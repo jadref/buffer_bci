@@ -21,20 +21,6 @@ h(4) =rectangle('curvature',[1 1],'position',[[0;0]-.5/4;.5/2*[1;1]],'facecolor'
 set(gca,'visible','off');
 set(fig,'keypressfcn',@keyListener);
 set(fig,'userdata',[]); % clear any old key info
-% instructions object
-instructstr={'Stimulus Type Keys',
-             '';
-             '1 or v : visual reponse',
-             '2 or o : visual oddball',
-             sprintf('3 or s : SSVEP (%ghz)',ssvepFreq(1)),
-             '4 or p : visual P300',
-             sprintf('5 or f : flicker (SSVEP %g or %ghz)',flickerFreq(1),flickerFreq(2)),
-             '6 or l : left cue task',
-             '7 or n : nothing cue task',
-             '8 or r : right cue task',
-             'a      : auditory oddball',
-             'q      : quit'
-            };
 instructh=text(min(get(ax,'xlim'))+.25*diff(get(ax,'xlim')),mean(get(ax,'ylim')),instructstr,'HorizontalAlignment','left','VerticalAlignment','middle','color',[0 1 0],'fontunits','normalized','FontSize',.05,'visible','off');
 
 % load the audio fragments
@@ -63,17 +49,21 @@ while ( ~endTraining )
     if ( ~ishandle(fig) ) endTraining=true; break; end;  
     inswait=0;
     key=get(fig,'userData');
-    while ( isempty(key) )
-      if ( ~ishandle(fig) ) endTraining=true; break; end;  
+    while ( ishandle(fig) && isempty(key) )
       key=get(fig,'userData');
       if ( inswait>6 ) set(instructh,'visible','on');drawnow; end;
       pause(.25);
       inswait=inswait+1;
     end
+    if ( ~ishandle(fig) ) endTraining=true; break; end;
+    % turn off the instructions screen
+    set(instructh,'visible','off');drawnow;sleepSec(.5);
+    if ( ~ishandle(fig) ) endTraining=true; break; end;
+
     %fprintf('key=%s\n',key);
-    key=get(fig,'currentkey');
+    %key=get(fig,'currentkey');
     set(fig,'userData',[]);
-    switch lower(key)
+    switch lower(key(1))
      case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration);     seqStart=true;
      case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration,1/5,[],1);seqStart=true;
      case {'a'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(h,trialDuration,1/3);seqStart=true;
@@ -107,10 +97,8 @@ while ( ~endTraining )
      otherwise; fprintf('Unrecog key: %s\n',lower(key)); seqStart=false;
     end        
   end
-  if ( ~ishandle(fig) ) endTraining=true; end;  
-  set(instructh,'visible','off');drawnow;sleepSec(.5);
-  if ( endTraining ) break; end;
-
+  if ( ~ishandle(fig) || endTraining ) break; end;
+  
   % show the screen to alert the subject to trial start
   set(h(1:end-1),'visible','off');
   set(h(end),'visible','on','facecolor',fixColor); % red fixation indicates trial about to start/baseline
@@ -174,7 +162,9 @@ end % sequences
 sendEvent('stimulus.training','end');
 
 % thanks message
+if ( ishandle(fig) ) 
 text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the training phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.1);
 pause(3);
+end
 
 

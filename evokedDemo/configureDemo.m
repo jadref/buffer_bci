@@ -57,6 +57,21 @@ flashColor=[1 1 1]; % the 'flash' color (white)
 fixColor=[1 0 0];
 trlen_ms=1000;
 
+% instructions object
+instructstr={'Stimulus Type Keys',
+             '';
+             '1 or v : visual reponse',
+             '2 or o : visual oddball',
+             sprintf('3 or s : SSVEP (%ghz)',ssvepFreq(1)),
+             '4 or p : visual P300',
+             sprintf('5 or f : flicker (%g or %ghz)',flickerFreq(1),flickerFreq(2)),
+             '6 or l : left cue task',
+             '7 or n : no cue task',
+             '8 or r : right cue task',
+             'a      : auditory oddball',
+             'q      : quit'
+            };
+
 % the set of options the user will pick from
 symbols={'1' '2' '3';...
          '4' '5' '6';...

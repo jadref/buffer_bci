@@ -27,7 +27,7 @@ for si=1:nSeq;
   sleepSec(interSeqDuration);
   sendEvent('stimulus.sequence','start');
   
-  if( verb>0 ) fprintf(1,'Rows'); end;
+  if( verb>0 ) fprintf(1,'Rows  '); end;
   % rows stimulus
   for ei=1:size(stimSeqRow,2);
     % record the stimulus state, needed for decoding the classifier predictions later
@@ -83,5 +83,7 @@ for si=1:nSeq;
 end % sequences
 % end training marker
 sendEvent('stimulus.feedback','end');
-text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the training phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.1);
-pause(3);
+if ( ishandle(fig) )
+  text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the training phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.1);
+  pause(3);
+end
