@@ -205,18 +205,19 @@ while ( ~endTraining )
   %------------------------------------------------------------------------
   % Get updated user input
   % switch visualization mode if wanted
-  key=[]; if ( ~isempty(modehdl) ) key=get(modehdl,'value'); end;
-  if ( ~isempty(get(fig,'userdata')) ) key=get(fig,'userdata'); end; % key-overrides drop-down
-  if ( ~isempty(key) )
-    switch ( key(1) );
-     case {1,'t'}; tmp=1;curvistype='time';
-     case {2,'f'}; tmp=2;curvistype='freq';
-     case {3,'p'}; tmp=3;curvistype='power';
-     case {4,'s'}; tmp=4;curvistype='spect';
-     case 'q'; break;
+  modekey=[]; if ( ~isempty(modehdl) ) modekey=get(modehdl,'value'); end;
+  if ( ~isempty(get(fig,'userdata')) ) modekey=get(fig,'userdata'); end; % key-overrides drop-down
+  if ( ~isempty(modekey) )
+    switch ( modekey(1) );
+     case {1,'t'}; modekey=1;curvistype='time';
+     case {2,'f'}; modekey=2;curvistype='freq';
+     case {3,'p'}; modekey=3;curvistype='power';
+     case {4,'s'}; modekey=4;curvistype='spect';
+     case 'q';     break;
+     otherwise;    modekey=1;
     end;
     set(fig,'userdata',[]);
-    if ( ~isempty(modehdl) ) set(modehdl,'value',tmp); end;
+    if ( ~isempty(modehdl) ) set(modehdl,'value',modekey); end;
   end
   % get updated sig-proc parameters if needed
   if ( ~isempty(optsFighandles) && ishandle(optsFighandles.figure1) )
@@ -224,7 +225,10 @@ while ( ~endTraining )
     ppopts=getSigProcOpts(optsFighandles);
     % compute updated spectral filter information, if needed
     if ( ~isequal(tmp,ppopts.freqbands) )
-      filt    =mkFilter(trlen_samp/2,ppopts.freqbands,fs/trlen_samp);    
+      filt=[];
+      if ( ~isempty(ppopts.freqbands) ) % filter bands given
+        filt=mkFilter(trlen_samp/2,ppopts.freqbands,fs/trlen_samp); 
+      end
       freqIdx =getfreqIdx(freqs,ppopts.freqbands);
     end
   end
@@ -415,6 +419,7 @@ if ( exist('optsFigh') && ishandle(optsFigh) ) close(optsFigh); end;
 return;
 
 function freqIdx=getfreqIdx(freqs,freqbands)
+if ( nargin<1 || isempty(freqbands) ) freqIdx=[1 numel(freqs)]; return; end;
 [ans,freqIdx(1)]=min(abs(freqs-freqbands(1))); 
 [ans,freqIdx(2)]=min(abs(freqs-freqbands(end)));
 
@@ -423,8 +428,11 @@ function [sigprocopts,damage]=getSigProcOpts(optsFighandles,oldopts)
 sigprocopts.badchrm=get(optsFighandles.badchrm,'value');
 sigprocopts.spatfilttype=get(get(optsFighandles.spatfilt,'SelectedObject'),'String');
 sigprocopts.preproctype=get(get(optsFighandles.preproc,'SelectedObject'),'String');
-sigprocopts.freqbands=[str2num(get(optsFighandles.lowcutoff,'string')) 
+sigprocopts.freqbands=[str2num(get(optsFighandles.lowcutoff,'string')) ...
                     str2num(get(optsFighandles.highcutoff,'string'))];  
+if ( numel(sigprocopts.freqbands)>4 ) sigprocopts.freqbands=sigprocopts.freqbands(1:min(end,4));
+elseif ( numel(sigprocopts.freqbands)<2 ) sigprocopts.freqbands=[];
+end;
 damage=false(4,1);
 if( nargout>1 && nargin>1) 
   if ( isstruct(oldopts) )
