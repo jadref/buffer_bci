@@ -5,6 +5,7 @@ outdir=
 # use GUI to update the save location
 if [ -x $buffdir/startBuffer.py ] && [ ! -z `which python` ]; then
    outdir=`python $buffdir/startBuffer.py`;
+	outdir=`eval echo $outdir` # force ~ expansion
 fi
 
 # fall back code to compute save location
@@ -47,4 +48,5 @@ fi
 if [ -r $buffdir/buffer/${arch}/recording ]; then
 	 buffexe=$buffdir"/buffer/${arch}/recording";
 fi
+echo $buffexe ${outdir}/raw_buffer \> $logfile 
 $buffexe ${outdir}/raw_buffer > $logfile 
