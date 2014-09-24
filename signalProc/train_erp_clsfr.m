@@ -172,9 +172,10 @@ if ( opts.visualize )
       end;
       if ( isempty(labels) || numel(labels)<ci || isempty(labels{ci}) ) 
         if ( iscell(uY) ) labels{1,ci}=uY{ci}; else labels{1,ci}=sprintf('%d',uY(ci,:)); end
+        auclabels{1,ci}=labels{1,ci};
+        labels{1,ci} = sprintf('%s (%d)',labels{1,ci},sum(Yidx(:,ci)>0));
       end
     end
-    auclabels=labels;
   else
     if ( isempty(labels) ) 
       for spi=1:size(Yidx,2); 
@@ -191,7 +192,8 @@ if ( opts.visualize )
     else % pos and neg sub-problem average responses
       mu(:,:,1,spi)=mean(X(:,:,Yci>0),3); mu(:,:,2,spi)=mean(X(:,:,Yci<0),3);
     end
-    if(~(all(Yci(:)==Yci(1)))) 
+    % if not all same class, or simple binary problem
+    if(~(all(Yci(:)==Yci(1))) && ~(spi>1 && all(Yidx(:,1)==-Yidx(:,spi)))) 
       [aucci,sidx]=dv2auc(Yci,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
       aucesp=auc_confidence(sum(Yci~=0),single(sum(Yci>0))./single(sum(Yci~=0)),.2);
       aucci(aucci<.5+aucesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
