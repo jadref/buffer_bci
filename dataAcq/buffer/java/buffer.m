@@ -45,7 +45,17 @@ if ( nargin<1 ) cmd=[]; end;
 if ( nargin<2 ) detail=[]; end;
 if ( nargin<3 ) host=[]; end;
 if ( nargin<4 ) port=[]; end;
-if ( isequal(TESTING,true) ) varargout{1}=struct(); return; end;
+if ( isequal(TESTING,true) ) 
+  switch lower( cmd ) 
+   case 'get_hdr'; % simulate a header
+      res=struct('nChans',0,'nSamples',0,'nEvents',0,'fSample',0,'labels',{{}},'dataType',10);
+   case 'put_evt'; % simulate put
+    res=detail;
+   otherwise; res=struct();
+  end
+  varargout{1}=res;
+  return; 
+end;
 
 if ( isempty(bufferClient) )
   buffer_bcidir=fileparts(fileparts(fileparts(mfilename('fullpath')))); % buffer_bci directory
