@@ -68,7 +68,7 @@ To run the games demo:
 1) Start the data Acquisation system.
 
  If you have *no* EEG hardware, but just want to test:
-  1.1) start a buffer by running: dataAcq/startBuffer.bat or buffer/startBuffer.sh
+  1.1) start a buffer by running: dataAcq/startBuffer.bat or dataAcq/startBuffer.sh
   1.2) start a *simulated* data source by running: dataAcq/startSignalProxy.bat or .sh
 
  If you have EEG hardware connected then depending on the hardware:
