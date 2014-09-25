@@ -221,10 +221,9 @@ while ( ~endTraining )
   end
   % get updated sig-proc parameters if needed
   if ( ~isempty(optsFighandles) && ishandle(optsFighandles.figure1) )
-    tmp=ppopts.freqbands;
-    ppopts=getSigProcOpts(optsFighandles);
+    [ppopts,damage]=getSigProcOpts(optsFighandles,ppopts);
     % compute updated spectral filter information, if needed
-    if ( ~isequal(tmp,ppopts.freqbands) )
+    if ( damage(4) ) % freq range changed
       filt=[];
       if ( ~isempty(ppopts.freqbands) ) % filter bands given
         filt=mkFilter(trlen_samp/2,ppopts.freqbands,fs/trlen_samp); 
@@ -290,7 +289,7 @@ while ( ~endTraining )
     
    case 'power'; % 50Hz power, N.B. on the last 2s data only!
     ppdat = welchpsd(ppdat(:,find(times>-2,1):end),2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'aveType','amp');
-    ppdat = mean(ppdat(:,freqIdx(1):freqIdx(2)),2); % ave power in this range
+    ppdat = mean(ppdat(:,noiseIdx(1):noiseIdx(2)),2); % ave power in this range
     ppdat = sqrt(ppdat); % BODGE: extra transformation to squeeze the large power values...
     
    case 'spect'; % spectrogram
@@ -307,7 +306,7 @@ while ( ~endTraining )
 
   %---------------------------------------------------------------------------------
   % Do visualisation mode switching work
-  if ( ~isequal(vistype,curvistype) ) % reset the axes
+  if ( ~isequal(vistype,curvistype) || any(damage(4)) ) % reset the axes
     datlim=datrange;
     if ( datlim(1)>=datlim(2) || any(isnan(datlim)) ) datlim=[-1 1]; end;
     switch ( vistype ) % do pre-work dependent on current mode
