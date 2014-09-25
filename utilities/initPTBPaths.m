@@ -17,6 +17,9 @@ if ( exist(fullfile(psychpath,'Psychtoolbox'),'dir') )
 end
 if ( isempty(strfind(path,psychpath)) ) % only if not already there
   addpath(exGenPath(psychpath));
+  if ( isequal(strfind(lower(computer()),'pcwin'),1))
+    addpath(fullfile(psychpath,'PsychBasic','MatlabWindowsFilesR2007a'))
+  end
 end
 psychJavadir = fullfile(psychpath,'PsychJava');
 if ( usejava('jvm') && ~any(strcmp(javaclasspath,psychJavadir)) )
