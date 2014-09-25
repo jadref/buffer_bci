@@ -8,7 +8,7 @@ function []=buffer_signalproxy(host,port,varargin);
 %  port - [int] port number on which to contact the server     (1972)
 % Options:
 %  fsample - [int] data sample rate                            (100)
-%  nCh     - [int] number of simulated channels                (10)
+%  nCh     - [int] number of simulated channels                (3)
 %  blockSize- [int] number of samples to send at a time to buffer (2)
 %  Cnames   - {str} cell array of strings with the channel names in ([])
 %               if empty, channel names are 'rand01', 'rand02', etc
