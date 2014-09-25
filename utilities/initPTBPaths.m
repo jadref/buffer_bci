@@ -1,6 +1,12 @@
 if ( ~isempty(which('WaitSecs')) && ~isempty(which('Screen')) ) continue; end; % don't bother if already in the path
 
-psychpath='/home/jdrf/source/matfiles/toolboxes/Psychtoolbox';%hard code PTB location, N.B. *MUST* be absolute path
+if ( isequal(strfind(lower(computer()),'pcwin'),1) )
+    psychpath='C:/toolbox';
+elseif( isequal(strfind(lower(computer()),'mac'),1))
+    psychpath='/Applications/Psychtoolbox';
+else
+    psychpath='/Pyschtoolbox';
+end
 if ( ~exist(psychpath,'dir') ) % search relative to here, 2 dir up
   mdir=fileparts(mfilename('fullpath'));
   psychpath=fullfile(mdir,'..','..','toolboxes','Psychtoolbox');

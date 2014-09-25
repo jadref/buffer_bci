@@ -78,4 +78,4 @@ symbols={'1' '2' '3';...
          '7' '8' '9'}';
 
 % PTB stuff
-windowPos=[0 0 500 500]; %[];% in sub-window set to [] for full screen
+windowPos=[];%[0 0 500 500]; %[];% in sub-window set to [] for full screen

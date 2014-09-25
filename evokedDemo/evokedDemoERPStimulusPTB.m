@@ -19,22 +19,21 @@ if ( isequal(strfind(lower(computer()),'gln'),1)) % linux
   fprintf(' pulseaudio with:\n echo autospawn = no|tee -a ~/.pulse/client.conf && killall pulseaudio\n');
   fprintf(' re-enable pulseaudio with:\n sed -e ''/autospawn.*/d'' < ~/.pulse/client.conf > ~/.pulse/client.conf && pulseaudio --start\n');
 end
+%Initialize sound with low-latency!
+InitializePsychSound(1);
 nd=PsychPortAudio('GetOpenDeviceCount');
-if ( nd==0 )
-  InitializePsychSound(1); %Initialize sound with low-latency!
-else % close all existing audio devices
+if ( nd>0 ) % close all existing audio devices
   for i=0:nd-1; PsychPortAudio('Close',i); end;
 end
-reqlatencyclass = 3; % class 2 empirically the best, 3 & 4 == 2
+reqlatencyclass = 0; % class 2 empirically the best, 3 & 4 == 2
 fs              = 44100;       % Must set this. 96khz, 48khz, 44.1khz.
-paPtr = PsychPortAudio('Open', [], [], reqlatencyclass, fs)
-
+paPtr = PsychPortAudio('Open', [], [], reqlatencyclass, fs,[],2)
 % load the audio fragments
 audio={};
 [audio{1},fs1] = wavread('auditoryStimuli/550.wav'); audio{1}=audio{1}'; %oddball
 [audio{2},fs2] = wavread('auditoryStimuli/500.wav'); audio{2}=audio{2}';%standard
 if ( fs1~=fs2 || fs1~=fs ) 
-  Warning('Audio files and audio-device use different sampling rates');
+  warning('Audio files and audio-device use different sampling rates');
 end
 
 % Now make the boxes
@@ -77,7 +76,7 @@ while ( ~endTraining )
   seqStart=false;
   while ( ~seqStart )    
     key=[];
-    while( isempty(key) ) 
+    while( isempty(key) || numel(key)>1 ) 
       KbWait([],2,GetSecs()+2); % wait for a key press *and release*, or until 2 sec has passed
       [keyIsDown, t, keyCode] = KbCheck;  key=KbName(keyCode); % get the pressed key
       % show the instructions
@@ -115,6 +114,7 @@ while ( ~endTraining )
     end
   end
   if ( endTraining ) break; end;
+  Screen('FillRect',wPtr,bgColor*255);
   Screen('flip',wPtr);% re-draw the display, to clear instructions if needed
   sleepSec(.5);
   
@@ -164,7 +164,7 @@ while ( ~endTraining )
     if ( verb>0 ) frametime(ei,2)=getwTime()-seqStartTime; end;
     Screen('flip',wPtr,0,0,0);% re-draw the display, but wait for the re-fresh
     if ( any(ss==-4) || any(ss==-5) ) % immeadiately start the audio playing also       
-      PsychPortAudio('Start', paPtr);
+      PsychPortAudio('Start', paPtr,1,0,0);
     end
     if ( verb>1 ) 
       frametime(ei,3)=getwTime()-seqStartTime;
