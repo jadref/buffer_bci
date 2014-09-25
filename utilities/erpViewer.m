@@ -299,8 +299,8 @@ return;
 
 function freqIdx=getfreqIdx(freqs,freqbands)
 if ( nargin<1 || isempty(freqbands) ) freqIdx=[1 numel(freqs)]; return; end;
-[ans,freqIdx(1)]=min(abs(freqs-freqbands(1))); 
-[ans,freqIdx(2)]=min(abs(freqs-freqbands(end)));
+[ans,freqIdx(1)]=min(abs(freqs-max(freqs(1),freqbands(1)))); 
+[ans,freqIdx(2)]=min(abs(freqs-min(freqs(end),freqbands(end))));
 
 function [sigprocopts,damage]=getSigProcOpts(optsFighandles,oldopts)
 % get the current options from the sig-proc-opts figure
