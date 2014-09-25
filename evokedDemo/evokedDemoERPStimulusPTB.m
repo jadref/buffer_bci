@@ -114,7 +114,7 @@ while ( ~endTraining )
     end
   end
   if ( endTraining ) break; end;
-  Screen('FillRect',wPtr,bgColor*255);
+  Screen('FillRect',wPtr,bgColor*255); % clear BG buffer before flip to ensure is blank screen
   Screen('flip',wPtr);% re-draw the display, to clear instructions if needed
   sleepSec(.5);
   
@@ -163,8 +163,9 @@ while ( ~endTraining )
     sleepSec(max(0,stimTime(ei)-(getwTime()-seqStartTime)-flipInterval/2)); 
     if ( verb>0 ) frametime(ei,2)=getwTime()-seqStartTime; end;
     Screen('flip',wPtr,0,0,0);% re-draw the display, but wait for the re-fresh
-    if ( any(ss==-4) || any(ss==-5) ) % immeadiately start the audio playing also       
-      PsychPortAudio('Start', paPtr,1,0,0);
+    % immeadiately start the audio playing, but wait for it to start playing
+    if ( any(ss==-4) || any(ss==-5) ) 
+      PsychPortAudio('Start', paPtr,1,0,1);
     end
     if ( verb>1 ) 
       frametime(ei,3)=getwTime()-seqStartTime;
