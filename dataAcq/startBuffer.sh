@@ -5,7 +5,6 @@ outdir=
 # use GUI to update the save location
 if [ -x $buffdir/startBuffer.py ] && [ ! -z `which python` ]; then
    outdir=`python $buffdir/startBuffer.py`;
-	outdir=`eval echo $outdir` # force ~ expansion
 fi
 
 # fall back code to compute save location
