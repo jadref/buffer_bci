@@ -39,7 +39,7 @@ while ( ~endTest )
     end % devents 
   end % sequences
   if ( endSeq ) % send the accumulated predictions
-    if ( verb>0 ) fprintf('Sending classifier prediction.\n'); end;
-    sendEvent('classifier.prediction',fs(:,1:nFlash));
+    ev=sendEvent('classifier.prediction',fs(:,1:nFlash));
+    if (verb>=0) fprintf('Sending classifier prediction: %s\n',ev2str(ev)); end;
   end
 end % feedback phase
