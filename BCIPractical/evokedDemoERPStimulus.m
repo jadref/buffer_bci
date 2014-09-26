@@ -62,11 +62,11 @@ while ( ~endTraining )
     %key=get(fig,'currentkey');
     set(fig,'userData',[]);
     switch lower(key(1))
-     case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration);     seqStart=true;
-     case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration,1/5,[],1);seqStart=true;
-     case {'a'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(h,trialDuration,1/3);seqStart=true;
+     case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration);          seqStart=true;
+     case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration,1/5,2,1);seqStart=true;
+     case {'a'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(h,trialDuration,1/3,2);        seqStart=true;
      case {'s','3'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,trialDuration,1/ssvepFreq(1)/2,sprintf('SSVEP %g',ssvepFreq(1)));   seqStart=true;
-     case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(h,trialDuration,[],[],1);      seqStart=true;
+     case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(h,trialDuration,1/5,2,1); seqStart=true;
      case {'f','5'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(h,trialDuration,isi,1./(flickerFreq*isi)); seqStart=true;
      case {'l','6'}; % left box only
       stimTime=0:1:trialDuration; % times something happens, i.e. every second send event
@@ -117,15 +117,15 @@ while ( ~endTraining )
       if ( verb>=0 ) fprintf('%d) Dropped %d Frame(s)!!!\n',ei,ei-oei); end;
       ndropped=ndropped+(ei-oei);
     end
-    set(h(:),'facecolor',bgColor); % everybody starts as background color
     ss=stimSeq(:,ei);
     set(h(ss<0),'visible','off');  % neg stimSeq codes for invisible stimulus
-    set(h(ss>=0),'visible','on');  % positive are visible    
+    set(h(ss>=0),'visible','on','facecolor',bgColor); % everybody starts as background color
     if(any(ss==1))set(h(ss==1),'facecolor',colors(:,1)); end% stimSeq codes into a colortable
     if(any(ss==2))set(h(ss==2),'facecolor',colors(:,min(size(colors,2),2)));end;
     if(any(ss==3))set(h(ss==3),'facecolor',colors(:,min(size(colors,2),3)));end;
     
     % sleep until time to update the stimuli the screen
+    if ( verb>1 ) fprintf('%d) Sleep : %gs\n',ei,stimTime(ei)-(getwTime()-seqStartTime)-flipInterval/2); end;
     sleepSec(max(0,stimTime(ei)-(getwTime()-seqStartTime))); % wait until time to call the draw-now
     if ( verb>0 ) frametime(ei,2)=getwTime()-seqStartTime; end;
     drawnow;
@@ -140,7 +140,7 @@ while ( ~endTraining )
     % send event saying what the updated display was
     if ( ~isempty(eventSeq{ei}) ) 
       ev=sendEvent(eventSeq{ei}{:}); 
-      if (verb>0) fprintf('Event: %s\n',ev2str(ev)); end;
+      if (verb>0) fprintf('%d) Event: %s\n',ei,ev2str(ev)); end;
     end
   end
   if ( verb>0 ) % summary info
@@ -160,9 +160,9 @@ end % sequences
 sendEvent('stimulus.training','end');
 
 % thanks message
-if ( ishandle(fig) ) 
-text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the training phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.1);
-pause(3);
-end
+% if ( ishandle(fig) ) 
+% text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the training phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.1);
+% pause(3);
+% end
 
 

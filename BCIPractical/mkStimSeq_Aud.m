@@ -2,7 +2,7 @@ function [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(h,duration,isi,tti,odd
 if ( nargin<2 || isempty(duration) ) duration=3; end; % default to 3sec
 if ( nargin<3 || isempty(isi) ) isi=1/10; end; % default to 10Hz
 if ( nargin<5 || isempty(oddp) ) oddp=false; end; % only stimulate on odd events, even cause reset to no stim
-if ( nargin<4 || isempty(tti) ) tti=isi*10; if( oddp ) tti=tti*2; end; end; % default to ave target every 5th event
+if ( nargin<4 || isempty(tti) ) tti=isi*8; if( oddp ) tti=tti*2; end; end; % default to ave target every 5th event
 % make a simple visual intermittent flash stimulus
 colors=[0 1 0;... % color(1)=tgt
         0 1 0;...

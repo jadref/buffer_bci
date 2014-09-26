@@ -74,7 +74,7 @@ while ( true )
 
     %---------------------------------------------------------------------------------
    case {'erspvis','erpvis','erpviewer','erpvisptb'};
-    [X,Y,key]=erpViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix','stimulus','endType',lower(phaseToRun),'trlen_ms',trlen_ms,'freqbands',[.0 .3 45 47]);
+    [X,Y,key]=erpViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix','stimulus','endType',lower(phaseToRun),'trlen_ms',ersptrlen_ms,'freqbands',[.0 .3 45 47]);
     fn=sprintf('erpvis_%s_%s',subject,datestr);fprintf('Saving to: %s\n',fn); % save results
     save(fn,'X','Y','key');
     

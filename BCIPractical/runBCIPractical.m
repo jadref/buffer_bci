@@ -31,10 +31,10 @@ while (ishandle(contFig))
    % brain responses
    
    case {'erspvis','erpvis','erpviewer'};
+    trialDuration=ersptrialDuration;
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     %try
-      trialDuration=ersptrialDuration;
       evokedDemoERPStimulus;
     %catch
       % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
@@ -43,6 +43,7 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'end');    
 
    case {'erpvisptb'};
+    trialDuration=ersptrialDuration;
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     try
@@ -171,7 +172,7 @@ while (ishandle(contFig))
   %    set(getfield(info,[info.phasesCompleted{i} 'But']),'ForegroundColor',[0 1 0]);
   %end
 end
-uiwait(msgbox({'Thank you for participating in our experiment.'},'Thanks','modal'),10);
+%uiwait(msgbox({'Thank you for participating in our experiment.'},'Thanks','modal'),10);
 pause(1);
 % shut down signal proc
 sendEvent('startPhase.cmd','exit');

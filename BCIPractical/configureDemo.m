@@ -31,7 +31,7 @@ if ( exist('OCTAVE_VERSION','builtin') )
 end
 
 %capFile='cap_tmsi_mobita_black';%'1010'; %'emotiv';%cap_tmsi_mobita_im2'; N.B. use 1010 for emotiv so non-eeg are labelled correctly
-verb=1;
+verb=0;
 buffhost='localhost'; buffport=1972;
 
 % Brain response parameters
@@ -48,14 +48,14 @@ intertrialDuration=2;
 ersptrlen_ms=1000;
 
 % general cue color specifications
-bgColor=[.5 .5 .5]; % background color (grey)
+bgColor=[.2 .2 .2]; % background color (grey)
 flashColor=[1 1 1]; % the 'flash' color (white)
 tgtColor=[0 1 0]; % the target indication color (green)
 fixColor=[1 0 0];
 fbColor=[0 0 1]; % feedback color - (blue)
 
 % PTB stuff
-windowPos=[];%[0 0 500 500]; %[];% in sub-window set to [] for full screen
+windowPos=[0 0 500 500]; %[];% in sub-window set to [] for full screen
 
 % instructions object
 instructstr={'Stimulus Type Keys',

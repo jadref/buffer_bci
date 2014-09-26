@@ -10,9 +10,9 @@ stimTime=0:isi:duration; % event every isi
 stimSeq =-ones(numel(h),numel(stimTime)); % make stimSeq where everything is turned off
 stimSeq(2:end-1,:)=0; % turn-on all symbols, to background color
 if ( oddp ) 
-  colors=[0 0 1;...   % flash
-          0 1 0;...   % target
-          .5 .5 .5]'; % std
+  colors=[0  1  0;...   % flash
+          0  1  0;...   % target
+          .7 .7 .7]';   % std - approx iso-luminant
   stimSeq(2:end-1,2:2:end-1)=3; % every stimulus event
 end
 eventSeq=cell(numel(stimTime),1);
@@ -25,14 +25,16 @@ for stimi=1:numel(h)-2;
   flashStim(2:end-1)=0; 
   if ( oddp ) flashStim(2:end-1)=3; end;
   flashStim(1+stimi)=1; % flash only has symbol 1 set
-  t=isi+fix(rand(1)*10)/10;
+  t=isi+fix(rand(1)*10)/10; dt=0;
   while (t<max(stimTime)) % loop to find a flash time not at the same time as another symbol
     [ans,si]=min(abs(stimTime-t)); % find nearest stim time    
     si=2*fix(si/2);
-    if ( all(stimSeq(2:end-1,si)<=0) || rand(1)>.5 ) % only insert if nothing else happening
+    if ( ~any(stimSeq(2:end-1,si)==1) || rand(1)>.99 ) % only insert if nothing else happening
       stimSeq(:,si)=flashStim;
+      t=stimTime(si); % only update t if we inserted something
+    else
+      t=t-dt; % revert the previous candidate and try again
     end; 
-    t=stimTime(si);
     dt=(.5+rand(1)/2)*tti;
     t=t+dt;
   end

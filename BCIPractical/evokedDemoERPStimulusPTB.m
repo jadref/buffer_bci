@@ -5,8 +5,8 @@ ws=Screen('windows'); % re-use existing window
 if ( isempty(ws) )
   if ( IsLinux() ) PsychGPUControl('FullScreenWindowDisablesCompositor', 1); end % exclusive disp access in FS
   screenNum = max(Screen('Screens')); % get 2nd display
-  wPtr= Screen('OpenWindow',screenNum,bgColor,windowPos)
-  Screen('BlendFunction',wPtr,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA); % enable alpha blending
+  wPtr= Screen('OpenWindow',screenNum,0,windowPos)
+  %Screen('BlendFunction',wPtr,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA); % enable alpha blending
   [flipInterval nrValid stddev]=Screen('GetFlipInterval',wPtr); % get flip-time (i.e. refresh rate)
 else
   wPtr=ws(1);
@@ -55,11 +55,11 @@ srcR(:,4) = [0 destR(3,4)-destR(1,4) destR(2,4)-destR(4,4) 0];
 texels(4)  = Screen('MakeTexture',wPtr,ones(srcR([3 2],4)')*255);
 
 % instructions object
-Screen('FillRect',wPtr,bgColor*255); % blank background
+Screen('FillRect',wPtr,[0 0 0]*255); % blank background
 [ans,ans,instructSrcR]=DrawFormattedText(wPtr,sprintf('%s\n',instructstr{:}),0,0,[1 1 1]*255);
 %extract image, back buffer and make into texture
 instructTexel=Screen('MakeTexture',wPtr,Screen('GetImage',wPtr,instructSrcR,'backBuffer'));
-Screen('FillRect',wPtr,bgColor*255); % blank background
+Screen('FillRect',wPtr,[0 0 0 ]*255); % blank background
 [instructDestR]=rel2pixel(wPtr,[.2 .2 .8 .8]);
 
 % play the stimulus
@@ -79,15 +79,16 @@ while ( ~endTraining )
       KbWait([],2,GetSecs()+2); % wait for a key press *and release*, or until 2 sec has passed
       [keyIsDown, t, keyCode] = KbCheck;  key=KbName(keyCode); % get the pressed key
       % show the instructions
-      Screen('Drawtextures',wPtr,instructTexel,instructSrcR,instructDestR,[],[],[],tgtColor*255); 
+      Screen('Drawtextures',wPtr,instructTexel,instructSrcR,instructDestR,[],[],[],[1 1 1]*255); 
       Screen('flip',wPtr,1,1);% re-draw the display
     end
       
     switch lower(key(1))
-     case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(texels,trialDuration);     seqStart=true;
-     case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(texels,trialDuration,1/5,[],1);seqStart=true;
+     case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(texels,trialDuration);          seqStart=true;
+     case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(texels,trialDuration,1/5,2,1);seqStart=true;
+     case {'a'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(texels,trialDuration,1/3,2);    seqStart=true;
      case {'s','3'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,trialDuration,1/ssvepFreq(1)/2,sprintf('SSVEP %g',ssvepFreq(1)));   seqStart=true;
-     case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(texels,trialDuration,1/5,[],1);  seqStart=true;
+     case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(texels,trialDuration,1/5,2,1); seqStart=true;
      case {'f','5'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(texels,trialDuration,isi,1./(flickerFreq*isi)); seqStart=true;
      case {'l','6'}; % left box only
       stimTime=0:1:trialDuration; % times something happens, i.e. every second send event
@@ -107,13 +108,12 @@ while ( ~endTraining )
       colors=[tgtColor;bgColor]'; % key for color to use for each stimulus
       eventSeq=cell(1,numel(stimTime)); [eventSeq{1:end-1}]=deal({'stimulus' 'right'}); % markers to send
       seqStart=true;
-     case {'a'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(texels,trialDuration,1/4,1.5);seqStart=true;
      case {'q','escape'};         endTraining=true; break; % end the phase
      otherwise; fprintf('Unrecog key: %s\n',lower(key)); seqStart=false;
     end
   end
   if ( endTraining ) break; end;
-  Screen('FillRect',wPtr,bgColor*255); % clear BG buffer before flip to ensure is blank screen
+  Screen('FillRect',wPtr,[0 0 0]*255); % clear BG buffer before flip to ensure is blank screen
   Screen('flip',wPtr);% re-draw the display, to clear instructions if needed
   sleepSec(.5);
   
@@ -138,10 +138,11 @@ while ( ~endTraining )
       ndropped=ndropped+(ei-oei);
     end
     ss=stimSeq(:,ei);
+    % everybody active starts as background color
     Screen('Drawtextures',wPtr,texels(ss>=0),srcR(:,ss>=0),destR(:,ss>=0),[],[],[],bgColor*255); 
-    if(any(ss==1))
+    if(any(ss==1)) % stimSeq codes into a colortable
       Screen('Drawtextures',wPtr,texels(ss==1),srcR(:,ss==1),destR(:,ss==1),[],[],[],colors(:,1)*255); 
-    end% stimSeq codes into a colortable
+    end
     if(any(ss==2))
       Screen('Drawtextures',wPtr,texels(ss==2),srcR(:,ss==2),destR(:,ss==2),[],[],[],colors(:,2)*255); 
     end;
@@ -149,11 +150,11 @@ while ( ~endTraining )
       Screen('Drawtextures',wPtr,texels(ss==3),srcR(:,ss==3),destR(:,ss==3),[],[],[],colors(:,3)*255); 
     end;
     if(any(ss==-4))
-      PsychPortAudio('Stop', paPtr,1,2); % hard stop of currently playing sound
+      PsychPortAudio('Stop', paPtr,1,0); % soft stop of currently playing sound
       PsychPortAudio('FillBuffer', paPtr, audio{1});
     end;
     if(any(ss==-5))
-      PsychPortAudio('Stop', paPtr,1,2); % hard stop of currently playing sound
+      PsychPortAudio('Stop', paPtr,1,0); % soft stop of currently playing sound
       PsychPortAudio('FillBuffer', paPtr, audio{2});
     end; 
 
@@ -162,7 +163,7 @@ while ( ~endTraining )
     sleepSec(max(0,stimTime(ei)-(getwTime()-seqStartTime)-flipInterval/2)); 
     if ( verb>0 ) frametime(ei,2)=getwTime()-seqStartTime; end;
     Screen('flip',wPtr,0,0,0);% re-draw the display, but wait for the re-fresh
-    % immeadiately start the audio playing, but wait for it to start playing
+    % start the audio playing, but wait for it to start playing
     if ( any(ss==-4) || any(ss==-5) ) 
       PsychPortAudio('Start', paPtr,1,0,1);
     end
@@ -175,8 +176,7 @@ while ( ~endTraining )
     % send event saying what the updated display was
     if ( ~isempty(eventSeq{ei}) ) 
       ev=sendEvent(eventSeq{ei}{:}); 
-      %sendEvent('stimulus.tgtFlash',stimSeqRow(tgtRow,ei),stimSamp); % indicate if it was a 'target' flash
-      if (1||verb>0) fprintf('%d) Event: %s\n',ei,ev2str(ev)); end;
+      if (verb>0) fprintf('%d) Event: %s\n',ei,ev2str(ev)); end;
     end
   end
   if ( verb>0 ) % summary info
