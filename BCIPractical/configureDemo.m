@@ -1,6 +1,6 @@
 % guard to prevent running multiple times
 %if ( exist('runConfig','var') && ~isempty(runConfig) ) return; end;
-%runConfig=true;
+runConfig=true;
 run ../utilities/initPaths.m;
 
 buffhost='localhost';buffport=1972;
@@ -31,31 +31,31 @@ if ( exist('OCTAVE_VERSION','builtin') )
 end
 
 %capFile='cap_tmsi_mobita_black';%'1010'; %'emotiv';%cap_tmsi_mobita_im2'; N.B. use 1010 for emotiv so non-eeg are labelled correctly
-verb=0;
+verb=1;
 buffhost='localhost'; buffport=1972;
 
-verb=0;
-nSeq=15;
-nRepetitions=5;  % the number of complete row/col stimulus before sequence is finished
-cueDuration=3;
+% Brain response parameters
 stimDuration=.15;% the length a row/col is highlighted
 interSeqDuration=2;
 feedbackDuration=5;
 stimRadius=.6;
-
 ssvepFreq = [15 7.5 10 20 30];
 isi=1/60;
 flickerFreq=[15 20];
-
-nSymbs=2;
-trialDuration=8;
+ersptrialDuration=8;
 baselineDuration=2;
 intertrialDuration=2;
-bgColor=[.1 .1 .1]; % background color (grey)
-tgtColor=[0 1 0]; % the target indication color (green)
+ersptrlen_ms=1000;
+
+% general cue color specifications
+bgColor=[.5 .5 .5]; % background color (grey)
 flashColor=[1 1 1]; % the 'flash' color (white)
+tgtColor=[0 1 0]; % the target indication color (green)
 fixColor=[1 0 0];
-trlen_ms=1000;
+fbColor=[0 0 1]; % feedback color - (blue)
+
+% PTB stuff
+windowPos=[];%[0 0 500 500]; %[];% in sub-window set to [] for full screen
 
 % instructions object
 instructstr={'Stimulus Type Keys',
@@ -72,10 +72,28 @@ instructstr={'Stimulus Type Keys',
              'q      : quit'
             };
 
+% speller config options
+spnSeq=15;
+nRepetitions=5;  % the number of complete row/col stimulus before sequence is finished
+cueDuration=2;
+stimDuration=.15; % the length a row/col is highlighted
+dataDuration=.6;  % amount of data used for classifier
+%interSeqDuration=2;
+feedbackDuration=5;
 % the set of options the user will pick from
 symbols={'1' '2' '3';...
          '4' '5' '6';...
          '7' '8' '9'}';
+symbSize=.1;
+sptrlen_ms=dataDuration*1000;
 
-% PTB stuff
-windowPos=[];%[0 0 500 500]; %[];% in sub-window set to [] for full screen
+% IM config options
+nSymbs=2;
+imnSeq=30;
+imtrialDuration=3;
+baselineDuration=2;
+intertrialDuration=2;
+%feedbackDuration=1;
+moveScale = .1;
+imtrlen_ms = imtrialDuration*1000;
+

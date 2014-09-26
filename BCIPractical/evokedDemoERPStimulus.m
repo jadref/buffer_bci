@@ -1,5 +1,3 @@
-configureDemo();
-
 % make the stimulus
 fig=gcf;
 set(fig,'Name','Evoked/Induced Response Stimulus.  Press key to start trial','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');

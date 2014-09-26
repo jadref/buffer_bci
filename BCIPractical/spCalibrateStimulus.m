@@ -1,5 +1,3 @@
-configureDemo;
-
 % make the stimulus
 clf;fig=gcf;
 set(fig,'Name','Matrix Speller','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');

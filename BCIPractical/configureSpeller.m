@@ -31,6 +31,8 @@ if ( exist('OCTAVE_VERSION','builtin') )
 end
 
 verb=0;
+
+% speller config options
 nSeq=15;
 nRepetitions=5;  % the number of complete row/col stimulus before sequence is finished
 cueDuration=2;
@@ -38,14 +40,29 @@ stimDuration=.15; % the length a row/col is highlighted
 dataDuration=.6;  % amount of data used for classifier
 interSeqDuration=2;
 feedbackDuration=5;
-bgColor=[.5 .5 .5]; % background color (grey)
-flashColor=[1 1 1]; % the 'flash' color (white)
-tgtColor=[0 1 0]; % the target indication color (green)
-
 % the set of options the user will pick from
 symbols={'1' '2' '3';...
          '4' '5' '6';...
          '7' '8' '9'}';
 symbSize=.1;
+sptrlen_ms=dataDuration*1000;
 
-trlen_ms=600;
+% IM config options
+nSymbs=3;
+nSeq=20;
+nBlock=2;%10; % number of stim blocks to use
+trialDuration=3;
+baselineDuration=1;
+intertrialDuration=2;
+%feedbackDuration=1;
+moveScale = .1;
+imtrlen_ms = trialDuration*1000;
+
+% general cue color specifications
+bgColor=[.5 .5 .5]; % background color (grey)
+flashColor=[1 1 1]; % the 'flash' color (white)
+tgtColor=[0 1 0]; % the target indication color (green)
+fixColor=[1 0 0];
+fbColor=[0 0 1];
+moveScale = .1;
+

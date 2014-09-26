@@ -27,10 +27,14 @@ while (ishandle(contFig))
     buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
     %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);           
 
+   %--------------------------------------------------------------
+   % brain responses
+   
    case {'erspvis','erpvis','erpviewer'};
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     %try
+      trialDuration=ersptrialDuration;
       evokedDemoERPStimulus;
     %catch
       % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
@@ -41,16 +45,16 @@ while (ishandle(contFig))
    case {'erpvisptb'};
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
-    %try
+    try
       evokedDemoERPStimulusPTB;
-    %catch
-      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-      % do nothing
-    %end
+    catch
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    end
     sendEvent(phaseToRun,'end');    
     
-    
-   case 'practice';
+    %--------------------------------------------------------------
+    % speller    
+   case 'sppractice';
     sendEvent('subject',info.subject);
     sendEvent(phaseToRun,'start');
     onSeq=nSeq; nSeq=4; % override sequence number
@@ -64,9 +68,11 @@ while (ishandle(contFig))
     nSeq=onSeq;
     nRepetitions=onRepetitions;
     
-   case {'calibrate','calibration'};
+   case {'spcalibrate','spcalibration'};
+    nSeq=spnSeq;
+    trlen_ms=sptrlen_ms;
     sendEvent('subject',info.subject);
-    sendEvent('startPhase.cmd',phaseToRun)
+    sendEvent('startPhase.cmd',phaseToRun);
     sendEvent(phaseToRun,'start');
     %try
       spCalibrateStimulus;
@@ -76,25 +82,79 @@ while (ishandle(contFig))
     %end
     sendEvent(phaseToRun,'end');
 
-   case {'train','classifier'};
+   case {'sptrain','spclassifier'};
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until training is done
     buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
     %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);  
        
-   case {'testing','test','freespell'};
+   case {'sptesting','sptest','freespell'};
+    trlen_ms=sptrlen_ms;
     sendEvent('subject',info.subject);
-    sleepSec(.1);
-    sendEvent(phaseToRun,'start');
+    sendEvent('startPhase.cmd',phaseToRun);
     try
-      sendEvent('startPhase.cmd','testing');
       spFeedbackStimulus;
     catch
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-      sendEvent('stimulus.test','end');
+    end
+    sendEvent('stimulus.test','end');
+    sendEvent(phaseToRun,'end');
+  
+   %---------------------------------------------------------------------------
+   % Movement BCI
+   case 'impractice';
+    sendEvent('subject',info.subject);
+    sendEvent(phaseToRun,'start');
+    onSeq=nSeq; nSeq=4; % override sequence number
+    trialDuration=imtrialDuration;
+    try
+      imCalibrateStimulus;
+    catch
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
     end
     sendEvent(phaseToRun,'end');
+    nSeq=onSeq;
+    
+   case {'imcalibrate','imcalibration'};
+    nSeq=imnSeq;
+    trialDuration=imtrialDuration;
+    sendEvent('subject',info.subject);
+    sendEvent('startPhase.cmd',phaseToRun)
+    sendEvent(phaseToRun,'start');
+    try
+      imCalibrateStimulus;
+    catch
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+      sendEvent('stimulus.training','end');    
+    end
+    sendEvent(phaseToRun,'end');
+
+   %---------------------------------------------------------------------------
+   case {'imtrain','imclassifier'};
+    nSeq=imnSeq;
+    trialDuration=imtrialDuration;
+    sendEvent('subject',info.subject);
+    sendEvent('startPhase.cmd',phaseToRun);
+    % wait until training is done
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
+    %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);  
+
+   case {'imtest','imtesting','imepochfeedback','epochfeedback'};
+    trialDuration=imtrialDuration;
+    trlen_ms=imtrlen_ms;
+    nSeq=imnSeq;
+    sendEvent('subject',info.subject);
+    %sleepSec(.1);
+    try
+      sendEvent('startPhase.cmd',phaseToRun);
+      imEpochFeedbackStimulus;
+    catch
+       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    end
+    sendEvent('stimulus.test','end');
+    sendEvent(phaseToRun,'end');
+  
   end
   info.phasesCompleted={info.phasesCompleted{:} info.phaseToRun};
   if ( ~ishandle(contFig) ) 
@@ -111,7 +171,7 @@ while (ishandle(contFig))
   %    set(getfield(info,[info.phasesCompleted{i} 'But']),'ForegroundColor',[0 1 0]);
   %end
 end
-uiwait(msgbox({'Thankyou for participating in our experiment.'},'Thanks','modal'),10);
+uiwait(msgbox({'Thank you for participating in our experiment.'},'Thanks','modal'),10);
 pause(1);
 % shut down signal proc
 sendEvent('startPhase.cmd','exit');

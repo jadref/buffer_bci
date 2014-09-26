@@ -24,7 +24,7 @@ function varargout = controller(varargin)
 
 % Edit the above text to modify the response to help controller
 
-% Last Modified by GUIDE v2.5 01-Feb-2014 02:53:17
+% Last Modified by GUIDE v2.5 26-Sep-2014 13:41:32
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -116,9 +116,9 @@ guidata(hObject,handles);
 uiresume;
 
 
-% --- Executes on button press in calibration.
-function calibration_Callback(hObject, eventdata, handles)
-% hObject    handle to calibration (see GCBO)
+% --- Executes on button press in spcalibration.
+function spcalibration_Callback(hObject, eventdata, handles)
+% hObject    handle to spcalibration (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles.phaseToRun=get(hObject,'Tag');
@@ -126,12 +126,12 @@ guidata(hObject,handles);
 uiresume;
 
 
-% --- Executes on button press in classifier.
-function classifier_Callback(hObject, eventdata, handles)
-% hObject    handle to classifier (see GCBO)
+% --- Executes on button press in spclassifier.
+function spclassifier_Callback(hObject, eventdata, handles)
+% hObject    handle to spclassifier (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles.phaseToRun='train';
+handles.phaseToRun=get(hObject,'Tag');
 guidata(hObject,handles);
 uiresume;
 
@@ -156,9 +156,9 @@ guidata(hObject,handles);
 uiresume;
 
 
-% --- Executes on button press in testing.
+% --- Executes on button press in sptesting.
 function freespelling_Callback(hObject, eventdata, handles)
-% hObject    handle to testing (see GCBO)
+% hObject    handle to sptesting (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles.phaseToRun=get(hObject,'Tag');
@@ -166,9 +166,9 @@ guidata(hObject,handles);
 uiresume;
 
 
-% --- Executes on button press in practice.
-function practice_Callback(hObject, eventdata, handles)
-% hObject    handle to practice (see GCBO)
+% --- Executes on button press in sppractice.
+function sppractice_Callback(hObject, eventdata, handles)
+% hObject    handle to sppractice (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles.phaseToRun=get(hObject,'Tag');
@@ -186,9 +186,9 @@ guidata(hObject,handles);
 uiresume;
 
 
-% --- Executes on button press in testing.
-function testing_Callback(hObject, eventdata, handles)
-% hObject    handle to testing (see GCBO)
+% --- Executes on button press in sptesting.
+function sptesting_Callback(hObject, eventdata, handles)
+% hObject    handle to sptesting (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles.phaseToRun=get(hObject,'Tag');
@@ -216,3 +216,41 @@ guidata(hObject,handles);
 uiresume;
 
 
+% --- Executes on button press in imtesting.
+function imtesting_Callback(hObject, eventdata, handles)
+% hObject    handle to imtesting (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.phaseToRun=get(hObject,'Tag');
+guidata(hObject,handles);
+uiresume;
+
+
+% --- Executes on button press in impractice.
+function impractice_Callback(hObject, eventdata, handles)
+% hObject    handle to impractice (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.phaseToRun=get(hObject,'Tag');
+guidata(hObject,handles);
+uiresume;
+
+
+% --- Executes on button press in imcalibration.
+function imcalibration_Callback(hObject, eventdata, handles)
+% hObject    handle to imcalibration (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.phaseToRun=get(hObject,'Tag');
+guidata(hObject,handles);
+uiresume;
+
+
+% --- Executes on button press in imclassifier.
+function imclassifier_Callback(hObject, eventdata, handles)
+% hObject    handle to imclassifier (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.phaseToRun=get(hObject,'Tag');
+guidata(hObject,handles);
+uiresume;

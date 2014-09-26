@@ -26,12 +26,11 @@ phaseToRun=[]; clsSubj=[]; trainSubj=[];
 while ( true )
 
   if ( ~isempty(phaseToRun) ) state=[]; end
-  drawnow;
+  pause(.1);
   
   % wait for a phase control event
   if ( verb>0 ) fprintf('Waiting for phase command\n'); end;
-  [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,{'startPhase.cmd' 'subject'},[],5000);
-  %[data,devents,state]=buffer_waitData(buffhost,buffport,state,'trlen_ms',0,'exitSet',{{'startPhase.cmd' 'subject'}},'verb',verb,'timeOut_ms',5000);   
+  [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,{'startPhase.cmd' 'subject'},[],1000);
   fprintf('.');
   if ( numel(devents)==0 ) 
     continue;
@@ -80,43 +79,82 @@ while ( true )
     save(fn,'X','Y','key');
     
    %---------------------------------------------------------------------------------
-   case {'calibrate','calibration'};
-    [traindata,traindevents]=buffer_waitData(buffhost,buffport,[],'startSet',{'stimulus.tgtFlash'},'exitSet',{'stimulus.training' 'end'},'verb',verb+1,'trlen_ms',trlen_ms);
+   %  Speller
+   case {'spcalibrate','spcalibration'};
+    [traindata,traindevents]=buffer_waitData(buffhost,buffport,[],'startSet',{'stimulus.tgtFlash'},'exitSet',{'stimulus.training' 'end'},'verb',verb+1,'trlen_ms',sptrlen_ms);
     mi=matchEvents(traindevents,'stimulus.training','end'); traindevents(mi)=[]; traindata(mi)=[];%remove exit event
-    fprintf('Saving %d epochs to : %s\n',numel(traindevents),[dname '_' subject '_' datestr]);
-    save([dname '_' subject '_' datestr],'traindata','traindevents','hdr');
+    fprintf('Saving %d epochs to : %s\n',numel(traindevents),['sp_' dname '_' subject '_' datestr]);
+    save(['sp_' dname '_' subject '_' datestr],'traindata','traindevents','hdr');
     trainSubj=subject;
 
-    %---------------------------------------------------------------------------------
-   case {'train','training'};
+   case {'sptrain','sptraining','spclassifier'};
     %try
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
-        fprintf('Loading training data from : %s\n',[dname '_' subject '_' datestr]);
-        load([dname '_' subject '_' datestr]); 
+        fprintf('Loading training data from : %s\n',['sp_' dname '_' subject '_' datestr]);
+        load(['sp_' dname '_' subject '_' datestr]); 
         trainSubj=subject;
       end;
       if ( verb>0 ) fprintf('%d epochs\n',numel(traindevents)); end;
 
       [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','freqband',[.1 .3 8 10],'badchrm',1,'badtrrm',1,'objFn','lr_cg','compKernel',0,'dim',3,'capFile',capFile,'overridechnms',overridechnms);
       clsSubj=subject;
-      fprintf('Saving classifier to : %s\n',[cname '_' subject '_' datestr]);
-      save([cname '_' subject '_' datestr],'-struct','clsfr');
+      fprintf('Saving classifier to : %s\n',['sp_' cname '_' subject '_' datestr]);
+      save(['sp_' cname '_' subject '_' datestr],'-struct','clsfr');
     %catch
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);      
       fprintf('Error in train classifier!');
     %end
 
     %---------------------------------------------------------------------------------
-   case {'test','testing'};
+   case {'sptest','sptesting'};
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
-      clsfrfile = [cname '_' subject '_' datestr];
-      if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=[cname '_' subject]; end;
+      clsfrfile = ['sp_' cname '_' subject '_' datestr];
+      if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=['sp_' cname '_' subject]; end;
       if(verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
       clsfr=load(clsfrfile);
       clsSubj = subject;
     end;
 
     spFeedbackSignals
+    
+    %---------------------------------------------------------------------------------
+    % Movement BCI
+   case {'imcalibrate','imcalibration'};
+    [traindata,traindevents,state]=buffer_waitData(buffhost,buffport,state,'startSet',{'stimulus.target'},'exitSet',{'stimulus.training' 'end'},'verb',verb,'trlen_ms',imtrlen_ms);
+    mi=matchEvents(traindevents,'stimulus.training','end'); traindevents(mi)=[];traindata(mi)=[];%remove exit event
+    fname=['im_' dname '_' subject '_' datestr];
+    fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save(fname,'traindata','traindevents','hdr');
+    trainSubj=subject;
+
+   case {'imtrain','imtraining','imclassifier'};
+    %try
+      if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
+        fprintf('Loading training data from : %s\n',['im_' dname '_' subject '_' datestr]);
+        load(['im_' dname '_' subject '_' datestr]); 
+        trainSubj=subject;
+      end;
+      if ( verb>0 ) fprintf('%d epochs\n',numel(traindevents)); end;
+
+      clsfr=buffer_train_ersp_clsfr(traindata,traindevents,hdr,'spatialfilter','slap','freqband',[6 10 26 30],'badchrm',1,'badtrrm',1,'objFn','lr_cg','compKernel',0,'dim',3,'capFile',capFile,'overridechnms',overridechnms,'visualize',2);
+      clsSubj=subject;
+      fname=['im_' cname '_' subject '_' datestr];
+      fprintf('Saving classifier to : %s\n',fname); save(fname,'-struct','clsfr');
+    %catch
+    %  fprintf('Error in train classifier!');
+    %end
+
+   case {'imtest','imtesting','imepochfeedback'};
+    if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
+      clsfrfile = ['im_' cname '_' subject '_' datestr];
+      if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=['im_' cname '_' subject]; end;
+      if(verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
+      clsfr=load(clsfrfile);
+      clsSubj = subject;
+    end;
+
+    [testdata,testdevents]=imEpochFeedbackSignals(clsfr,'buffhost',buffhost,'buffport',buffport,'hdr',hdr,'trlen_ms',imtrlen_ms,'verb',verb)
+    fname=['im_' dname '_' subject '_' datestr '_test'];
+    fprintf('Saving %d epochs to : %s\n',numel(testdevents),fname);save(fname,'testdata','testdevents');
     
    case 'exit';
     break;

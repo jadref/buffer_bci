@@ -1,5 +1,4 @@
 run ../utilities/initPTBPaths.m;
-configureDemo();
 
 % make the stimulus
 ws=Screen('windows'); % re-use existing window 
