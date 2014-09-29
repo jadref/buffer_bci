@@ -57,6 +57,7 @@ subject_entry.focus()
 updateSaveLoc()
 root.mainloop()
 
+updateSaveLoc()
 outpath=os.path.expanduser(saveloc.get())
 if not os.path.exists(outpath):
     os.makedirs(outpath)
