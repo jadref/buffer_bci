@@ -22,7 +22,7 @@ session = Tkinter.StringVar()
 session.set(os.path.normpath(time.strftime("%y%m%d/%H%M")))
 
 def updateSaveLoc(ignored=None):
-    saveloc.set(os.path.join(os.path.expanduser(dataroot.get()),experiment.get(),subject.get(),session.get()))
+    saveloc.set(os.path.join(os.path.expanduser(os.path.normpath(dataroot.get())),experiment.get(),subject.get(),session.get()))
 
 def pickDir():
     dnm=tkFileDialog.askdirectory(initialdir=dataroot.get(),title="Choose saving directory root")
@@ -57,4 +57,7 @@ subject_entry.focus()
 updateSaveLoc()
 root.mainloop()
 
-print os.path.expanduser(saveloc.get())
+outpath=os.path.expanduser(saveloc.get())
+if not os.path.exists(outpath):
+    os.makedirs(outpath)
+print outpath
