@@ -1,5 +1,10 @@
 set batdir=%~dp0
 set drive=%~d0
+if exist %batdir%\startBuffer.py (
+  rem This is a horrible hack to get the output of the sub-command into a variable
+  For /f "usebackq delims=" %%out in (`python.exe %batdir%\startBuffer.py`) do (set folder=%%out)
+) 
+if not exist %folder% (
 set bciroot=output\raw_buffer
 set subject=test
 rem get date/session
@@ -13,6 +18,8 @@ mkdir "%folder%"
 set folder="%drive%\%bciroot%\%subject%\%session%\%block%"
 if exist "%folder%" ( set folder="%folder%_1" )
 mkdir "%folder%"
+)
+
 rem Search for the buffer executable
 if exist "%batdir%buffer\bin\win32\demo_buffer.exe" ( set buffexe="%batdir%buffer\bin\win32\demo_buffer.exe" )
 if exist "%batdir%buffer\win32\demo_buffer.exe" ( set buffexe="%batdir%buffer\win32\demo_buffer.exe" )
