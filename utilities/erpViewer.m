@@ -211,7 +211,7 @@ while ( ~endTraining )
 
     %---------------------------------------------------------------------------------
     % Do visualisation mode switching work
-    if ( curvistype~=vistype ) % all to be updated!
+    if ( ~isequal(curvistype,vistype) ) % all to be updated!
       fprintf('vis switch detected\n');
       updateLines(1)=true; updateLines(:)=true;
     end; 

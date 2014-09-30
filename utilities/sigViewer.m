@@ -248,7 +248,7 @@ while ( ~endTraining )
   if ( ~strcmp(curvistype,'power') ) % BODGE: 50Hz power doesn't do any spatial filtering, or bad-channel removal
 
     % bad channel removal
-    if ( ppopts.badchrm || strcmp(ppopts.badchrm,'1') )
+    if ( ppopts.badchrm>0 || strcmp(ppopts.badchrm,'1') )
       chPow = chCov(1:size(chCov,1)+1:end);
       fprintf('%s < %g\n',sprintf('%g ',chPow),mean(chPow)+3*std(chPow));
       for i=1:3;

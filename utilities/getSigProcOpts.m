@@ -1,5 +1,6 @@
 function sigprocopts=getSigProcOpts(optsFighandles)
 % get the current options from the sig-proc-opts figure
+if( numel(optsFighandles)==1 ) optsFighandles=guihandles(optsFighandles); end;
 sigprocopts.badchrm=get(optsFighandles.badchrm,'value');
 sigprocopts.spatfilttype=get(get(optsFighandles.spatfilt,'SelectedObject'),'String');
 sigprocopts.preproctype=get(get(optsFighandles.preproc,'SelectedObject'),'String');

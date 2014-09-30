@@ -46,11 +46,11 @@ while (ishandle(contFig))
     trialDuration=ersptrialDuration;
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
-    try
+    %try
       evokedDemoERPStimulusPTB;
-    catch
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-    end
+    %catch
+    %  le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    %end
     sendEvent(phaseToRun,'end');    
     
     %--------------------------------------------------------------
