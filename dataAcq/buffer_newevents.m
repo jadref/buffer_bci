@@ -51,7 +51,7 @@ if ( isempty(nevents) || nevents<=0 ) % first call
 end; 
 events=[]; 
 timeToGo_ms=timeOut_ms;
-while ( isempty(events) && timeToGo_ms>0 ) % until there are some matching events
+while ( isempty(events) ) % until there are some matching events
   % wait for any new events, keeping track of elapsed time for time-based exits
   tic;status=buffer('wait_dat',[inf nevents timeToGo_ms],host,port);timeToGo_ms=timeToGo_ms-toc*1000;
   if( status.nevents>nevents )
@@ -63,6 +63,7 @@ while ( isempty(events) && timeToGo_ms>0 ) % until there are some matching event
     events=events(mi);
   end
   nevents=status.nevents;
+  if ( timeToGo_ms<=0 ) break; end;
 end
 state=status;
 nevents=state.nevents;nsamples=state.nsamples;

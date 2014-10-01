@@ -65,7 +65,7 @@ erpSamp=inf(1,3);
 nsamp=0; nblk=0; nevents=0;
 scaling=[0;ones(hdr.nchans-1,1)];
 %fprintf(stderr,'Scaling = [%s]\n',sprintf('%g ',scaling));
-tic;stopwatch=toc; printtime=stopwatch; fstart=stopwatch;
+stopwatch=getwTime(); printtime=stopwatch; fstart=stopwatch;
 % key listener
 if ( opts.keyboardEvents || opts.key2signal ) 
   fig=figure(1);clf;
@@ -99,16 +99,16 @@ while( true )
     end
   end
   % sleep until the next data sample is due
-  curtime=toc-fstart; sendtime=nblk*blockSize./fsample;% current time, time at which data should be sent
+  curtime=getwTime()-fstart; sendtime=nblk*blockSize./fsample;% current time, time at which data should be sent
   % check for v.long gap between calls (missed at least 2 block times) => suspend, reset if so
-  if ( curtime>sendtime+2*blockSize./fsample ) fstart=sendtime-(curtime+fstart);  curtime=toc-fstart; end
-  trem=max(0,sendtime-curtime);sleepSec(trem);%fstart=toc; 
+  if ( curtime>sendtime+2*blockSize./fsample ) fstart=sendtime-(curtime+fstart);  curtime=getwTime()-fstart; end
+  trem=max(0,sendtime-curtime);sleepSec(trem);
   buffer('put_dat',dat,host,port);
   %fprintf('%g) trem=%g\n',toc-stopwatch,trem)
   if ( opts.verb~=0 )
-    if ( opts.verb>0 || (opts.verb<0 && toc-printtime>-opts.verb) )
-      fprintf('%d %d %d %f (blk,samp,event,sec)\r',nblk,nsamp,nevents,toc-stopwatch);
-      printtime=toc;
+    if ( opts.verb>0 || (opts.verb<0 && getwTime()-printtime>-opts.verb) )
+      fprintf('%d %d %d %f (blk,samp,event,sec)\r',nblk,nsamp,nevents,getwTime()-stopwatch);
+      printtime=getwTime();
     end
   end  
   if ( opts.stimEventRate>0 && mod(nblk,ceil(opts.stimEventRate/blockSize))==0 )
@@ -188,6 +188,14 @@ if ( exist('java')==2 )
 else
   pause(t);
 end
+
+function [t]=getwTime()
+if ( exist('java')==2 )
+  t=javaMethod('currentTimeMillis','java.lang.System')/1000;
+else
+  t=clock()*[0 0 86400 3600 60 1]';
+end
+
 
 %-------------
 function testCase();
