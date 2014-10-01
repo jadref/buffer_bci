@@ -182,8 +182,9 @@ cursamp=hdr.nSamples;
 while ( ~endTraining )  
 
   %------------------------------------------------------------------------
-  % wait for new data to be available
-  status=buffer('wait_dat',[cursamp+update_samp inf opts.timeOut_ms],buffhost,buffport);
+  % wait for new data, 
+  % N.B. wait_data returns based on Number of samples, get_data uses sample index = #samples-1
+  status=buffer('wait_dat',[cursamp+update_samp+1 inf opts.timeOut_ms],buffhost,buffport);
   if( status.nSamples < cursamp+update_samp )
     fprintf('Buffer stall detected...\n');
     pause(1);
@@ -192,7 +193,7 @@ while ( ~endTraining )
   elseif ( status.nSamples > cursamp+update_samp*2 ) % missed a whole update window
     cursamp=status.nSamples - update_samp-1; % jump to the current time
   end;
-  dat   =buffer('get_dat',[cursamp+1 cursamp+update_samp],buffhost,buffport);
+  dat   =buffer('get_dat',[cursamp cursamp+update_samp-1],buffhost,buffport);
   cursamp = cursamp+update_samp;
   
   % shift and insert into the data buffer
