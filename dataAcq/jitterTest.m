@@ -3,6 +3,7 @@ buffer('con');
 pause(3);
 t0=buffer('get_time');
 times=0:3:60*10; tic; 
+clear sampest time
 for ti=1:numel(times)-1; 
   sampest(ti)=buffer('get_samp'); time(ti)=(buffer('get_time')-t0)/1000;
   fprintf('%3g)\test =%6d\t dEst =%3d\n',time(ti),sampest(ti),sampest(ti)-sampest(max(1,ti-1)));
