@@ -73,8 +73,9 @@ instructstr={'Stimulus Type Keys',
             };
 
 % speller config options
-spnSeq=15;
-nRepetitions=5;  % the number of complete row/col stimulus before sequence is finished
+spnSeq=20;
+nRepetitions=5;    % the number of complete row/col stimulus before sequence is finished
+nTestRepetitions=7;% the number of complete row/col stim for test phase
 cueDuration=2;
 stimDuration=.15; % the length a row/col is highlighted
 dataDuration=.6;  % amount of data used for classifier

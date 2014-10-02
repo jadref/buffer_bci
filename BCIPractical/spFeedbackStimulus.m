@@ -11,8 +11,9 @@ ax=axes('position',[0.025 0.025 .975 .975],'units','normalized','visible','off',
 [h,symbs]=initGrid(symbols);
 
 % make the row/col flash sequence for each sequence
-[stimSeqRow]=mkStimSeqRand(size(symbols,1),nRepetitions*size(symbols,1));
-[stimSeqCol]=mkStimSeqRand(size(symbols,2),nRepetitions*size(symbols,2));
+if ( ~exist('nTestRepetitions','var') ) nTestRepetitions=nRepetitions; end;
+[stimSeqRow]=mkStimSeqRand(size(symbols,1),nTestRepetitions*size(symbols,1));
+[stimSeqCol]=mkStimSeqRand(size(symbols,2),nTestRepetitions*size(symbols,2));
 
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  

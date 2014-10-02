@@ -17,7 +17,11 @@ ax=axes('position',[0.025 0.025 .975 .975],'units','normalized','visible','off',
 % reset the cue and fixation point to indicate trial has finished  
 set(h(:),'color',bgColor*.5);
 sendEvent('stimulus.training','start');
-sleepSec(5);
+% Waik for key-press to being stimuli
+t=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'Concentrate on the Green Letter','Press key when ready to begin'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.07);
+% wait for key to begin
+set(fig,'keypressfcn',@(x,y) uiresume);drawnow; uiwait(fig);set(fig,'keypressfcn',[]);delete(t);drawnow;
+sleepSec(3);
 for si=1:nSeq;
 
   if ( ~ishandle(fig) ) break; end;
