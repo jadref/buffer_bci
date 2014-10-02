@@ -99,15 +99,18 @@ while( true )
     end
   end
   % sleep until the next data sample is due
-  curtime=getwTime()-fstart; sendtime=nblk*blockSize./fsample;% current time, time at which data should be sent
-  % check for v.long gap between calls (missed at least 2 block times) => suspend, reset if so
-  if ( curtime>sendtime+2*blockSize./fsample ) fstart=sendtime-(curtime+fstart);  curtime=getwTime()-fstart; end
+  sendtime=nblk*blockSize./fsample; % time at which data should be sent, rel to start
+  curtime =getwTime()-fstart;        % current time, rel to start
+  % check for v.long gap between calls (missed at least 2 block times) => suspend, reset start time if so
+  if ( curtime>sendtime+2*blockSize./fsample ) 
+    fstart=fstart+(curtime-sendtime);  curtime=getwTime()-fstart;
+  end
   trem=max(0,sendtime-curtime);sleepSec(trem);
   buffer('put_dat',dat,host,port);
-  %fprintf('%g) trem=%g\n',toc-stopwatch,trem)
+  %fprintf('fstart=%g cur=%g send=%g ',fstart,curtime,sendtime);
   if ( opts.verb~=0 )
     if ( opts.verb>0 || (opts.verb<0 && getwTime()-printtime>-opts.verb) )
-      fprintf('%d %d %d %f (blk,samp,event,sec)\r',nblk,nsamp,nevents,getwTime()-stopwatch);
+      fprintf('%d %d %d %f (blk,samp,event,sec)\r',nblk,nsamp,nevents,getwTime()-fstart);
       printtime=getwTime();
     end
   end  
