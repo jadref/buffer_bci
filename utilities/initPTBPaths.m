@@ -4,8 +4,10 @@ mdir=fileparts(mfilename('fullpath'));
 
 if ( isequal(strfind(lower(computer()),'pcwin'),1) ) % default windows location
     psychpath='C:/toolbox';
+    if ( ~exist(psychpath,'dir') ) psychpath='C:/Toolboxes'; end;
 elseif( isequal(strfind(lower(computer()),'mac'),1)) % default MacOs location
     psychpath='/Applications/Psychtoolbox';
+    if ( ~exist(psychpath,'dir') ) psychpath='/Users/Share/Psychtoolbox'; end
 else
     psychpath=fullfile(mdir,'..','Psychtoolbox'); % otherwise guess?
 end
