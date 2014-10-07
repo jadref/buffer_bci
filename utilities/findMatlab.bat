@@ -4,7 +4,6 @@ FOR /d %%f in ("C:\Program Files\MATLAB\*" "C:\Program Files (x86)\MATLAB\*") DO
 	 set matexe="%%f\bin\matlab.exe"
 rem	 exit /b 
 	 )
-)
 
 
 
