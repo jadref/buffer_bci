@@ -1,9 +1,12 @@
 run ../utilities/initPTBPaths.m;
+initgetwTime;
+initsleepSec;
 
 % make the stimulus
 ws=Screen('windows'); % re-use existing window 
 if ( isempty(ws) )
   if ( IsLinux() ) PsychGPUControl('FullScreenWindowDisablesCompositor', 1); end % exclusive disp access in FS
+  if ( isequal(strfind(lower(computer()),'pcwin'),1) )  Screen('Preference','SkipSyncTests', 1); end;
   screenNum = max(Screen('Screens')); % get 2nd display
   wPtr= Screen('OpenWindow',screenNum,0,windowPos)
   %Screen('BlendFunction',wPtr,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA); % enable alpha blending
