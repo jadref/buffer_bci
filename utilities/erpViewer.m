@@ -143,8 +143,6 @@ while ( ~endTraining )
     switch ( modekey(1) );
      case {1,'t'}; modekey=1;curvistype='time';
      case {2,'f'}; modekey=2;curvistype='freq';
-     case {3,'p'}; modekey=3;curvistype='power';
-     case {4,'s'}; modekey=4;curvistype='spect';
      case {'r'};   modekey=1;resetval=true; set(resethdl,'value',resetval); % press the reset button
      case 'q'; break;
      otherwise;    modekey=1;
@@ -291,6 +289,9 @@ while ( ~endTraining )
     drawnow;      
   end
 if ( ishandle(fig) ) close(fig); end;
+% close the options figure as well
+if ( exist('optsFigh') && ishandle(optsFigh) ) close(optsFigh); end;
+
 if( nargout>0 ) 
   rawIds=rawIds(1:nTarget);
   rawEpochs=rawEpochs(:,:,1:nTarget);
