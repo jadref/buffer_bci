@@ -22,7 +22,7 @@ function []=sigViewer(buffhost,buffport,varargin);
 %  noisebands -- [2x1] frequency bands to display for the 50 Hz noise plot   ([45 47 53 55])
 %  sigprocoptsgui -- [bool] show the on-line option changing gui             (0)
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../utilities/initPaths.m'); end;
-opts=struct('endType','end.training','verb',1,'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',128,'spatfilt','car','badchrm',0,'capFile',[],'overridechnms',0,'welch_width_ms',500,'noisebands',[45 47 53 55],'noiseBins',[0 1.75],'timeOut_ms',1000,'spectBaseline',1,'sigProcOptsGui',1,'dataStd',2.5,'covhalflife',20);
+opts=struct('endType','end.training','verb',1,'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',128,'spatfilt','car','badchrm',0,'badchthresh',3,'capFile',[],'overridechnms',0,'welch_width_ms',500,'noisebands',[45 47 53 55],'noiseBins',[0 1.75],'timeOut_ms',1000,'spectBaseline',1,'sigProcOptsGui',1,'dataStd',2.5,'covhalflife',20);
 opts=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
@@ -96,7 +96,7 @@ start_s=-start_samp(end:-1:1)/hdr.fsample;
 % and the data summary statistics
 chCov     = zeros(sum(iseeg),sum(iseeg));
 covAlpha  = exp(log(.5)./opts.covhalflife);
-isbad     = false(sum(iseeg),1);
+isbadch   = false(sum(iseeg),1);
 
 % pre-compute the SLAP spatial filter
 slapfilt=[];
@@ -251,28 +251,28 @@ while ( ~endTraining )
     % bad channel removal
     if ( ppopts.badchrm>0 || strcmp(ppopts.badchrm,'1') )
       chPow = chCov(1:size(chCov,1)+1:end);
-      fprintf('%s < %g\n',sprintf('%g ',chPow),mean(chPow)+3*std(chPow));
+      fprintf('%s < %g\n',sprintf('%g ',chPow),mean(chPow)+opts.badchthresh*std(chPow));
       for i=1:3;
-        isbad = chPow>(mean(chPow(~isbad))+3*std(chPow(~isbad))) | chPow<eps;
+        isbadch = chPow>(mean(chPow(~isbadch))+opts.badchthresh*std(chPow(~isbadch))) | chPow<eps;
       end
-      ppdat(isbad,:)=0; % zero out the bad channels
+      ppdat(isbadch,:)=0; % zero out the bad channels
     else
-      isbad(:)=false;
+      isbadch(:)=false;
     end
     
     % spatial filter
     switch(lower(ppopts.spatfilttype))
      case 'none';
-     case 'car';    ppdat(~isbad,:,:)=repop(ppdat(~isbad,:,:),'-',mean(ppdat(~isbad,:,:),1));
+     case 'car';    ppdat(~isbadch,:,:)=repop(ppdat(~isbadch,:,:),'-',mean(ppdat(~isbadch,:,:),1));
      case 'slap';   
       if ( ~isempty(slapfilt) ) % only use and update from the good channels
-        ppdat(~isbad,:,:)=tprod(ppdat(~isbad,:,:),[-1 2 3],slapfilt(~isbad,~isbad),[-1 1]); 
+        ppdat(~isbadch,:,:)=tprod(ppdat(~isbadch,:,:),[-1 2 3],slapfilt(~isbadch,~isbadch),[-1 1]); 
       end;
      case 'whiten'; % use the current data-cov to estimate the whitener
-      [U,s]=eig(chCov(~isbad,~isbad)); s=diag(s); % eig-decomp
+      [U,s]=eig(chCov(~isbadch,~isbadch)); s=diag(s); % eig-decomp
       si=s>0 & ~isinf(s) & ~isnan(s);
       W    = U(:,si) * diag(1./s(si)) * U(:,si)';
-      ppdat(~isbad,:,:)=tprod(ppdat(~isbad,:,:),[-1 2 3],W,[-1 1]);      
+      ppdat(~isbadch,:,:)=tprod(ppdat(~isbadch,:,:),[-1 2 3],W,[-1 1]);      
      otherwise; warning(sprintf('Unrecognised spatial filter type : %s',ppopts.spatfilttype));
     end
   end

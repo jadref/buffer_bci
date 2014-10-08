@@ -3,7 +3,7 @@ function [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin);
 %
 % [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin)
 %
-opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,'nSymbols',0,'trlen_ms',1000,'trlen_samp',[],'detrend',1,'fftfilter',[],'freqbands',[],'downsample',128,'spatfilt','car','badchrm',1,'capFile',[],'overridechnms',0,'welch_width_ms',500,'redraw_ms',500,'sigProcOptsGui',1);
+opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,'nSymbols',0,'trlen_ms',1000,'trlen_samp',[],'detrend',1,'fftfilter',[],'freqbands',[],'downsample',128,'spatfilt','car','badchrm',0,'badchthresh',3,'badtrthresh',3,'capFile',[],'overridechnms',0,'welch_width_ms',500,'redraw_ms',500,'sigProcOptsGui',1);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
@@ -226,54 +226,60 @@ while ( ~endTraining )
     %---------------------------------------------------------------------------------
     % compute the updated ERPs (if any)
     if ( any(updateLines) )
-      damagedLines=find(updateLines(1:numel(key)));
-      for mi=damagedLines(:)';
-        ppdat=rawEpochs(:,:,rawIds==mi);
-        if ( isempty(ppdat) ) erp(:,:,mi)=0; continue; end;
-
-        % pre-process the data
-        switch(lower(ppopts.preproctype));
-         case 'none';   
-         case 'center'; ppdat=repop(ppdat,'-',mean(ppdat,2));
-         case 'detrend';ppdat=detrend(ppdat,2);
-         otherwise; warning(sprintf('Unrecognised pre-proc type: %s',lower(ppopts.preproctype)));
-        end
+      damagedLines=find(updateLines(1:numel(key)));      
+      ppdat=rawEpochs;
+      % common pre-processing which needs access to all the data
+      % pre-process the data
+      switch(lower(ppopts.preproctype));
+       case 'none';   
+       case 'center'; ppdat=repop(ppdat,'-',mean(ppdat,2));
+       case 'detrend';ppdat=detrend(ppdat,2);
+       otherwise; warning(sprintf('Unrecognised pre-proc type: %s',lower(ppopts.preproctype)));
+      end
         
-        % bad-channel identify and remove
-        if( ~isempty(ppopts.badchrm) && ppopts.badchrm>0 )
-          isbad=idOutliers(rawEpochs,1,ppopts.badchrm);
-          % set the data in this channel to 0
-          ppdat(isbad,:)=0;
-        end
+      % bad-channel identify and remove
+      if( ~isempty(ppopts.badchrm) && ppopts.badchrm>0 )
+        isbadch=idOutliers(rawEpochs,1,opts.badchthresh);
+        % set the data in this channel to 0
+        ppdat(isbadch,:)=0;
+        
+        % bad-ch rm also implies bad trial
+        isbadtr=idOutliers(ppdat,3,opts.badtrthresh);
+        ppdat(:,:,isbadtr)=0;
+      end
       
+      for mi=damagedLines(:)';
+        ppdatmi=ppdat(:,:,rawIds==mi);
+        if ( isempty(ppdatmi) ) erp(:,:,mi)=0; continue; end;
+
         % spatial filter
         switch(lower(ppopts.spatfilttype))
          case 'none';
-         case 'car';    ppdat(~isbad,:,:)=repop(ppdat(~isbad,:,:),'-',mean(ppdat(~isbad,:,:),1));
+         case 'car';    ppdatmi(~isbad,:,:)=repop(ppdatmi(~isbad,:,:),'-',mean(ppdatmi(~isbad,:,:),1));
          case 'slap';   
           if ( ~isempty(slapfilt) ) % only use and update from the good channels
-            ppdat(~isbad,:,:)=tprod(ppdat(~isbad,:,:),[-1 2 3],slapfilt(~isbad,~isbad),[-1 1]); 
+            ppdatmi(~isbad,:,:)=tprod(ppdatmi(~isbad,:,:),[-1 2 3],slapfilt(~isbad,~isbad),[-1 1]); 
           end;
-         case 'whiten'; [W,D,ppdat(~isbad,:,:)]=whiten(ppdat(~isbad,:,:),1,'opt',1,0,1); %symetric whiten
+         case 'whiten'; [W,D,ppdatmi(~isbad,:,:)]=whiten(ppdatmi(~isbad,:,:),1,'opt',1,0,1); %symetric whiten
          otherwise; warning(sprintf('Unrecognised spatial filter type : %s',ppopts.spatfilttype));
-        end
-      
+        end        
+        
         % compute the visualisation
         switch (curvistype) 
         
          case 'time'; % time-domain, spectral filter
-          if ( ~isempty(filt) )      ppdat=fftfilter(ppdat,filt,outsz,2);  % N.B. downsample at same time
-          elseif ( ~isempty(outsz) ) ppdat=subsample(ppdat,outsz(2),2);    % manual downsample
+          if ( ~isempty(filt) )      ppdatmi=fftfilter(ppdatmi,filt,outsz,2);  % N.B. downsample at same time
+          elseif ( ~isempty(outsz) ) ppdatmi=subsample(ppdatmi,outsz(2),2);    % manual downsample
           end
         
          case 'freq'; % freq-domain
-          ppdat = welchpsd(ppdat,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'aveType','amp');
-          ppdat = ppdat(:,freqIdx(1):freqIdx(2),:);
+          ppdatmi = welchpsd(ppdatmi,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'aveType','amp');
+          ppdatmi = ppdatmi(:,freqIdx(1):freqIdx(2),:);
         
          otherwise; error('Unrecognised visualisation type: ');
         end
 
-        erp(:,:,mi) = mean(ppdat,3);
+        erp(:,:,mi) = mean(ppdatmi,3);
         if ( isnumeric(key{mi}) ) % line label -- including number of times seen
           label{mi}=sprintf('%g (%d)',key{mi},sum(rawIds(1:nTarget)==mi));
         else
