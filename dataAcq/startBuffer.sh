@@ -25,9 +25,10 @@ fi
 logfile=${outdir}.log
 echo outdir: $outdir
 echo logfile : $logfile
-mkdir -p $outdir
-touch $logfile
-if [ `uname -s` == 'Linux' ]; then
+mkdir -p "$outdir"
+touch "$logfile"
+# Identify the OS and search for the appropriate executable
+if [[ `uname -s` == 'Linux'* ]]; then
 	 if  [ "`uname -a`" == 'armv6l' ]; then
 		  arch='raspberrypi'
     else
@@ -37,9 +38,12 @@ if [ `uname -s` == 'Linux' ]; then
    if [ -r $buffdir/recording ]; then
       buffexe=$buffdir'/recording';
    fi
+elif [[ `uname -s` = 'MINGW'* ]]; then
+	 arch='win32'
+	 buffexe=$bufdir'/buffer/win32/demo_buffer_unix'
 else # Mac
 	 arch='maci'
-   buffexe=$buffdir"/buffer/bin/saving_buffer";
+    buffexe=$buffdir"/buffer/bin/saving_buffer";
 fi
 if [ -r $buffdir/buffer/bin/${arch}/recording ]; then
 	 buffexe=$buffdir"/buffer/bin/${arch}/recording";
@@ -48,4 +52,4 @@ if [ -r $buffdir/buffer/${arch}/recording ]; then
 	 buffexe=$buffdir"/buffer/${arch}/recording";
 fi
 echo $buffexe ${outdir}/raw_buffer \> $logfile 
-$buffexe ${outdir}/raw_buffer > $logfile 
+$buffexe "${outdir}"/raw_buffer > "$logfile" 

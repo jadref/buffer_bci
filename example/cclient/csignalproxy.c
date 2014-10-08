@@ -243,7 +243,9 @@ int main(int argc, char *argv[]) {
 		  sleepcount ++;
 		}
 		/* get the new data */
-		for ( chi=0; chi<nchans; chi++) { ampsamples[chi]=(float)nsamp; }
+		for ( chi=0; chi<nchans; chi++) { 
+		  ampsamples[chi]=ampsamples[chi]+ (float)(rand()-RAND_MAX/2)/((float)RAND_MAX); 
+		}
 
 		// copy the samples into the data buffer, 1 amp sample per buffer sample */
 		for (chi=0; chi<nchans; chi++){ samples[(si*nchans)+chi]=ampsamples[chi]; }
