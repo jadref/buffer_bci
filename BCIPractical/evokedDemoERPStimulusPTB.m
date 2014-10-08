@@ -79,8 +79,12 @@ while ( ~endTraining )
   while ( ~seqStart )    
     key=[];
     while( isempty(key) ) 
-      KbWait([],2,GetSecs()+2); % wait for a key press *and release*, or until 2 sec has passed
-      [keyIsDown, t, keyCode] = KbCheck;  key=KbName(keyCode); % get the pressed key
+      % Wait for a key press
+      %KbWait([],2,GetSecs()+2); % wait for a key press *and release*, or until 2 sec has passed -- only in PTB>3.08
+      for i=1:100; 
+        [keyIsDown, t, keyCode] = KbCheck; if ( any(keyIsDown) ) key=KbName(keyCode); break; end; 
+        sleepSec(.02); 
+      end;
       % show the instructions
       Screen('Drawtextures',wPtr,instructTexel,instructSrcR,instructDestR,[],[],[],[1 1 1]*255); 
       Screen('flip',wPtr,1,1);% re-draw the display
