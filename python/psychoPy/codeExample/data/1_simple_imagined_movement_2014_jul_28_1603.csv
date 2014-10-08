@@ -1,0 +1,6 @@
+trailText,trail,bodyPart,instruction,feedback,trials.thisRepN,trials.thisTrialN,trials.thisN,trials.thisIndex,stimuli.thisRepN,stimuli.thisTrialN,stimuli.thisN,stimuli.thisIndex,key_resp_2.keys,key_resp_2.rt,date,frameRate,expName,session,participant,
+,,,,,,,,,,,,,space,3.07555794716,2014_jul_28_1603,50.2886411541,simple_imagined_movement,001,1,
+ Trail 1,1,left_foot, Left Foot, Left foot moved,0,0,0,0,0,0,0,2,,,2014_jul_28_1603,50.2886411541,simple_imagined_movement,001,1,
+ Trail 1,1,right_foot, Right Foot, Right foot moved.,0,0,0,0,0,1,1,3,,,2014_jul_28_1603,50.2886411541,simple_imagined_movement,001,1,
+ Trail 1,1,left_hand, Left Hand, Left hand moved.,0,0,0,0,0,2,2,0,,,2014_jul_28_1603,50.2886411541,simple_imagined_movement,001,1,
+ Trail 1,1,right_hand, Right Hand, Right hand moved.,0,0,0,0,0,3,3,1,,,2014_jul_28_1603,50.2886411541,simple_imagined_movement,001,1,
