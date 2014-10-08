@@ -29,10 +29,10 @@ set(gca,'visible','off');
 set(h(:),'facecolor',bgColor);
 sendEvent('stimulus.training','start');
 % Wait for key-press to being stimuli
-t=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'Concentrate on the Green Letter','Press key when ready to begin'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.1);
+t=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'Perform the task as indicated','by the Green symbol.','Press key when ready to begin.'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.1);
 % wait for key to begin
 set(fig,'keypressfcn',@(x,y) uiresume);drawnow; uiwait(fig);set(fig,'keypressfcn',[]);delete(t);drawnow;
-drawnow; pause(5); % N.B. pause so fig redraws
+drawnow; pause(1); % N.B. pause so fig redraws
 for si=1:nSeq;
 
   if ( ~ishandle(fig) ) break; end;
