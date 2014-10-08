@@ -12,12 +12,12 @@ EXTENSION=
 # turn-on optimization
 #CXXFLAGS += -O3 -g
 # turn-on profile code
-CXXFLAGS += -g #-pg
+#CXXFLAGS += -g #-pg
 
 #windows
 ifneq (,$(findstring mingw, $(PLATFORM)))
 #	BINDIR = $(FTPATH)/realtime/bin/win32
-	BINDIR = ../buffer/win32
+	BINDIR = ../../dataAcq/buffer/win32
 	EXTENSION = .exe
 #	LDLIBS += -lws2_32 $(BINDIR)/pthreadGC2.dll 
 	LDLIBS += -lws2_32
@@ -31,7 +31,7 @@ endif
 
 ifneq (,$(findstring i686-apple-darwin,$(PLATFORM))) # MacOS
 #	BINDIR = $(FTPATH)/realtime/bin/maci
-	BINDIR = ../buffer/maci
+	BINDIR = ../../dataAcq/buffer/maci
 	CFLAGS += -m32
 	CXXFLAGS += -m32 -DDISABLE_NAGLE
 	LDLIBS += -lpthread -m32
@@ -42,7 +42,7 @@ endif
 ifneq (,$(findstring linux,$(PLATFORM))) # linux
 	CXX = gcc
 #	BINDIR = $(FTPATH)/realtime/bin/glnx86
-	BINDIR = ../buffer/glnx86
+	BINDIR = ../../dataAcq/buffer/glnx86
    # Only Linux has BLUEz support
 	CXXFLAGS += -DDISABLE_NAGLE
 endif
@@ -61,7 +61,7 @@ cclient$(EXTENSION): $(CLIENTSOURCES) $(bufferSOURCES)
 
 csignalproxy$(EXTENSION): $(PROXYSOURCES) $(bufferSOURCES)
 	$(CXX) -o csignalproxy $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
-	$(CXX) -o csignalproxy.split $^ $(CXXFLAGS) -DSPLITREQ -DREADLATE $(LDFLAGS) $(LDLIBS)
+	cp csignalproxy${EXTENSION} ${BINDIR}
 
 clean:
 	$(RM) *.o $(call fixpath, $(TARGETS)) cclient$(EXTENSION)
