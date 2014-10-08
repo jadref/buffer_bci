@@ -21,7 +21,7 @@ sendEvent('stimulus.training','start');
 t=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'Concentrate on the Green Letter','Press key when ready to begin'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.07);
 % wait for key to begin
 set(fig,'keypressfcn',@(x,y) uiresume);drawnow; uiwait(fig);set(fig,'keypressfcn',[]);delete(t);drawnow;
-sleepSec(3);
+sleepSec(1);
 for si=1:nSeq;
 
   if ( ~ishandle(fig) ) break; end;
