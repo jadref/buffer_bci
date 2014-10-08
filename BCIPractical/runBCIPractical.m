@@ -58,7 +58,7 @@ while (ishandle(contFig))
    case 'sppractice';
     sendEvent('subject',info.subject);
     sendEvent(phaseToRun,'start');
-    onSeq=nSeq; nSeq=4; % override sequence number
+    onSeq=spnSeq; nSeq=4; % override sequence number
     onRepetitions=nRepetitions; nRepetitions=3;
     %try
       spCalibrateStimulus;
@@ -107,7 +107,7 @@ while (ishandle(contFig))
    case 'impractice';
     sendEvent('subject',info.subject);
     sendEvent(phaseToRun,'start');
-    onSeq=nSeq; nSeq=4; % override sequence number
+    onSeq=imnSeq; nSeq=4; % override sequence number
     trialDuration=imtrialDuration;
     try
       imCalibrateStimulus;
