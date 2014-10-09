@@ -148,9 +148,9 @@ int main(int argc, char *argv[]) {
   //-------------------------------------------------------------------------------
   /* define the stuff for the channel names */
   /* compute the size of the channel names set */
-  channamesize=nchans*3; /* 3 characters per channel, %2d + \0 */
+  channamesize=3; /* 3 characters per channel, %2d + \0 */
   /* allocate the memory for the channel names, and copy them into it */
-  labelsbuf = malloc(WORDSIZE_CHAR*channamesize);
+  labelsbuf = malloc(WORDSIZE_CHAR*channamesize*nchans);
   for( i=0; i<nchans; i++){
 	 snprintf(&(labelsbuf[i*channamesize]),channamesize,"%02d",i);
   }
@@ -189,6 +189,7 @@ int main(int argc, char *argv[]) {
   FREE(response->buf);
   free(response->def);
   free(response);
+  response=NULL;
 
   /* add a small pause between writing header + first data block */
   usleep(200000);
@@ -268,6 +269,7 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr,"csignalproxy: Error when writing samples.\n");
 	 }
 	 cleanup_message((void**)&response);
+	 response=NULL;
 #else
 	 /* this is an alternative way to send the data where we split 
 		 sending the data from waiting for the response.  Thus the
@@ -318,6 +320,8 @@ int main(int argc, char *argv[]) {
   free(requestbuf);
   free(labelsbuf);
   free(samples);
+  free(data.def);
+  free(header.def);
 
 #if defined(__WIN32__) || defined(__WIN64__)
     WSACleanup();

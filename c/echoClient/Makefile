@@ -3,7 +3,7 @@ FTBUFFER = ../../dataAcq/buffer/c
 
 
 CXX = gcc
-CXXFLAGS = -I$(FTBUFFER) -Wall
+CXXFLAGS = -I$(FTBUFFER) -Wall  -DSPLITREQ -DREADLATE
 ##LDFLAGS = -L$(FTBUFFER)/src
 LDLIBS = -lm
 LIBEXT=so
@@ -12,7 +12,7 @@ EXTENSION=
 # turn-on optimization
 #CXXFLAGS += -O3 -g
 # turn-on profile code
-#CXXFLAGS += -g #-pg
+CXXFLAGS += -g #-pg
 
 #windows
 ifneq (,$(findstring mingw, $(PLATFORM)))
@@ -64,4 +64,4 @@ csignalproxy$(EXTENSION): $(PROXYSOURCES) $(bufferSOURCES)
 	cp csignalproxy${EXTENSION} ${BINDIR}
 
 clean:
-	$(RM) *.o $(call fixpath, $(TARGETS)) cclient$(EXTENSION)
+	$(RM) *.o $(call fixpath, $(TARGETS)) cclient$(EXTENSION) csignalproxy$(EXTENSION)
