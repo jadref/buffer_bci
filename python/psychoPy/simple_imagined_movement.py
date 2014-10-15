@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
-This experiment was created using PsychoPy2 Experiment Builder (v1.80.06), ma 28 jul 2014 16:33:51 CEST
+This experiment was created using PsychoPy2 Experiment Builder (v1.80.06), ma 28 jul 2014 16:33:10 CEST
 If you publish work using this script please cite the relevant PsychoPy publications
   Peirce, JW (2007) PsychoPy - Psychophysics software in Python. Journal of Neuroscience Methods, 162(1-2), 8-13.
   Peirce, JW (2009) Generating stimuli for neuroscience using PsychoPy. Frontiers in Neuroinformatics, 2:10. doi: 10.3389/neuro.11.010.2008
@@ -14,6 +14,7 @@ import numpy as np  # whole numpy lib is available, prepend 'np.'
 from numpy import sin, cos, tan, log, log10, pi, average, sqrt, std, deg2rad, rad2deg, linspace, asarray
 from numpy.random import random, randint, normal, shuffle
 import os  # handy system and path functions
+import time # for the sleep method
 
 # Store info about the experiment session
 expName = u'simple_imagined_movement'  # from the Builder filename that created this script
@@ -29,7 +30,7 @@ filename = 'data/%s_%s_%s' %(expInfo['participant'], expName, expInfo['date'])
 # An ExperimentHandler isn't essential but helps with data saving
 thisExp = data.ExperimentHandler(name=expName, version='',
     extraInfo=expInfo, runtimeInfo=None,
-    originPath=u'/home/wieke/git/buffer_bci/psychoPy/pythonComponent/simple_imagined_movement.psyexp',
+    originPath=None,
     savePickle=True, saveWideText=True,
     dataFileName=filename)
 #save a log file for detail verbose info
@@ -43,7 +44,7 @@ endExpNow = False  # flag for 'escape' or other condition => quit the exp
 # Setup the Window
 win = visual.Window(size=(1920, 1080), fullscr=True, screen=0, allowGUI=False, allowStencil=False,
     monitor='testMonitor', color=[0,0,0], colorSpace='rgb',
-    blendMode='avg', useFBO=True,
+    blendMode='avg'#, useFBO=True
     )
 # store frame rate of monitor if we can measure it successfully
 expInfo['frameRate']=win.getActualFrameRate()
@@ -61,7 +62,7 @@ text_3 = visual.TextStim(win=win, ori=0, name='text_3',
     depth=0.0)
 # buffer_bci Handling the requered imports
 import sys
-sys.path.append("/home/wieke/git/buffer_bci/dataAcq/buffer/python/")
+sys.path.append("../../dataAcq/buffer/python/")
 from FieldTrip import Client, Event
 from time import sleep
 
@@ -69,17 +70,23 @@ from time import sleep
 host = 'localhost'
 port = 1972
 ftc = Client()
-ftc.connect(host,port)
-
-# buffer_bci Waiting for a valid header
-
-header = ftc.getHeader()
-
-while (header is None):
-    print "Waiting for valid header..."
-    sleep(1)
-    header = ftc.getHeader()
-    
+hdr = None;
+while hdr is None :
+    print 'Trying to connect to buffer on %s:%i ...'%(host,port)
+    try:
+        ftc.connect(host, port)
+        print '\nConnected - trying to read header...'
+        hdr = ftc.getHeader()
+    except IOError:
+        pass
+	
+    if hdr is None:
+        print 'Invalid Header... waiting'
+        time.sleep(1)
+    else:
+        print hdr
+        print hdr.labels
+            
 # buffer_bci Defining a usefull helper functions
 
 def sendEvent(eventType, eventValue):
@@ -150,12 +157,12 @@ sendFeedbackCounter = 0
 
 # Initialize components for Routine "feedback"
 feedbackClock = core.Clock()
-getFeedbackCounter = 0
 text_5 = visual.TextStim(win=win, ori=0, name='text_5',
     text='default text',    font='Arial',
     pos=[0, 0], height=0.1, wrapWidth=None,
     color='white', colorSpace='rgb', opacity=1,
-    depth=-1.0)
+    depth=0.0)
+getFeedbackCounter = 0
 
 # Create some handy timers
 globalClock = core.Clock()  # to track the time since experiment started
@@ -191,7 +198,7 @@ while continueRoutine:
         text_3.tStart = t  # underestimates by a little under one frame
         text_3.frameNStart = frameN  # exact frame index
         text_3.setAutoDraw(True)
-    elif text_3.status == STARTED and t >= (0.0 + (3600-win.monitorFramePeriod*0.75)): #most of one frame period left
+    elif text_3.status == STARTED and t >= (0.0 + (3600-frameDur*0.75)): #most of one frame period left
         text_3.setAutoDraw(False)
     
     # *key_resp_2* updates
@@ -252,7 +259,7 @@ thisExp.nextEntry()
 
 # set up handler to look after randomisation of conditions etc
 trials = data.TrialHandler(nReps=1, method='sequential', 
-    extraInfo=expInfo, originPath=u'/home/wieke/git/buffer_bci/psychoPy/pythonComponent/simple_imagined_movement.psyexp',
+    extraInfo=expInfo, originPath=None,
     trialList=data.importConditions('trails.csv'),
     seed=None, name='trials')
 thisExp.addLoop(trials)  # add the loop to the experiment
@@ -299,7 +306,7 @@ for thisTrial in trials:
             text.tStart = t  # underestimates by a little under one frame
             text.frameNStart = frameN  # exact frame index
             text.setAutoDraw(True)
-        elif text.status == STARTED and t >= (0.0 + (2-win.monitorFramePeriod*0.75)): #most of one frame period left
+        elif text.status == STARTED and t >= (0.0 + (2-frameDur*0.75)): #most of one frame period left
             text.setAutoDraw(False)
         
         
@@ -329,7 +336,7 @@ for thisTrial in trials:
     
     # set up handler to look after randomisation of conditions etc
     stimuli = data.TrialHandler(nReps=1, method='random', 
-        extraInfo=expInfo, originPath=u'/home/wieke/git/buffer_bci/psychoPy/pythonComponent/simple_imagined_movement.psyexp',
+        extraInfo=expInfo, originPath=None,
         trialList=data.importConditions('stimulus_conditions.csv'),
         seed=None, name='stimuli')
     thisExp.addLoop(stimuli)  # add the loop to the experiment
@@ -376,7 +383,7 @@ for thisTrial in trials:
                 imagination_instruction_2.tStart = t  # underestimates by a little under one frame
                 imagination_instruction_2.frameNStart = frameN  # exact frame index
                 imagination_instruction_2.setAutoDraw(True)
-            elif imagination_instruction_2.status == STARTED and t >= (0.0 + (4-win.monitorFramePeriod*0.75)): #most of one frame period left
+            elif imagination_instruction_2.status == STARTED and t >= (0.0 + (4-frameDur*0.75)): #most of one frame period left
                 imagination_instruction_2.setAutoDraw(False)
             
             # *ISI_2* period
@@ -443,7 +450,7 @@ for thisTrial in trials:
             text_2.tStart = t  # underestimates by a little under one frame
             text_2.frameNStart = frameN  # exact frame index
             text_2.setAutoDraw(True)
-        elif text_2.status == STARTED and t >= (0.0 + (5-win.monitorFramePeriod*0.75)): #most of one frame period left
+        elif text_2.status == STARTED and t >= (0.0 + (5-frameDur*0.75)): #most of one frame period left
             text_2.setAutoDraw(False)
         
         # check if all components have finished
@@ -502,7 +509,7 @@ while continueRoutine:
         text_4.tStart = t  # underestimates by a little under one frame
         text_4.frameNStart = frameN  # exact frame index
         text_4.setAutoDraw(True)
-    elif text_4.status == STARTED and t >= (0.0 + (3600-win.monitorFramePeriod*0.75)): #most of one frame period left
+    elif text_4.status == STARTED and t >= (0.0 + (3600-frameDur*0.75)): #most of one frame period left
         text_4.setAutoDraw(False)
     
     # *key_resp_3* updates
@@ -561,7 +568,7 @@ thisExp.nextEntry()
 
 # set up handler to look after randomisation of conditions etc
 trials_2 = data.TrialHandler(nReps=1, method='random', 
-    extraInfo=expInfo, originPath=u'/home/wieke/git/buffer_bci/psychoPy/pythonComponent/simple_imagined_movement.psyexp',
+    extraInfo=expInfo, originPath=None,
     trialList=data.importConditions('stimulus_conditions.csv'),
     seed=None, name='trials_2')
 thisExp.addLoop(trials_2)  # add the loop to the experiment
@@ -609,7 +616,7 @@ for thisTrial_2 in trials_2:
             imagination_instruction.tStart = t  # underestimates by a little under one frame
             imagination_instruction.frameNStart = frameN  # exact frame index
             imagination_instruction.setAutoDraw(True)
-        elif imagination_instruction.status == STARTED and t >= (0.0 + (4-win.monitorFramePeriod*0.75)): #most of one frame period left
+        elif imagination_instruction.status == STARTED and t >= (0.0 + (4-frameDur*0.75)): #most of one frame period left
             imagination_instruction.setAutoDraw(False)
         
         # *ISI* period
@@ -651,9 +658,9 @@ for thisTrial_2 in trials_2:
     frameN = -1
     routineTimer.add(2.000000)
     # update component parameters for each repeat
+    text_5.setText("Feedback " + feedback)
     feedback = geteventvalue("feedbackStimulusResponse" + str(getFeedbackCounter))
     getFeedbackCounter = getFeedbackCounter + 1 
-    text_5.setText("Feedback " + feedback)
     # keep track of which components have finished
     feedbackComponents = []
     feedbackComponents.append(text_5)
@@ -669,15 +676,15 @@ for thisTrial_2 in trials_2:
         frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
         # update/draw components on each frame
         
-        
         # *text_5* updates
         if t >= 0.0 and text_5.status == NOT_STARTED:
             # keep track of start time/frame for later
             text_5.tStart = t  # underestimates by a little under one frame
             text_5.frameNStart = frameN  # exact frame index
             text_5.setAutoDraw(True)
-        elif text_5.status == STARTED and t >= (0.0 + (2-win.monitorFramePeriod*0.75)): #most of one frame period left
+        elif text_5.status == STARTED and t >= (0.0 + (2-frameDur*0.75)): #most of one frame period left
             text_5.setAutoDraw(False)
+        
         
         # check if all components have finished
         if not continueRoutine:  # a component has requested a forced-end of Routine
