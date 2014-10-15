@@ -109,27 +109,36 @@ if ( ~isempty(linMapMx) ) % smooth the covariance estimates
 end
 
 % give the covariance matrix unit norm to improve numerical accuracy
-if ( unitCov )  unitCov=median(diag(Sigma)); Sigma=Sigma./unitCov; end;
+if ( unitCov )  
+  unitCov=median(diag(mean(Sigma,3))); Sigma=Sigma./unitCov; 
+end;
 
 W=zeros(size(Sigma),class(X));
 if(numel(dim)>1) Dsz=[sz(dim(1)) sz(dim(2:end))];else Dsz=[sz(dim(1)) 1];end
 D=zeros(Dsz,class(X));
 nF=0;
 for dd=1:size(Sigma(:,:,:),3); % for each dir
+  Xdd=X; sXdd=sX;
    [Udd,Ddd]=eig(Sigma(:,:,dd)); Ddd=diag(Ddd); 
    [ans,si]=sort(abs(Ddd),'descend'); Ddd=Ddd(si); Udd=Udd(:,si); % dec abs order
    % compute the regularised eigen-spectrum
    if ( isstr(alpha) )     
      switch (alpha);
       case 'opt'; % optimal shrinkage regularisation estimate
+       if ( numel(dim)>1 )
+         if ( dim(2)~=3 ) error('Opt shrink only supported for dim=[1 3]'); end;
+         Xdd=X(:,:,dd); sXdd=sX(:,:,dd);
+       end       
        if ( unitCov ) 
-          alpha=optShrinkage(X,dim(1),sum(Sigma,3)*unitCov,sum(sX,2)./N,centerp); 
+          alphaopt=optShrinkage(Xdd,dim(1),sum(Sigma,3)*unitCov,sum(sXdd,2)./N,centerp); 
        else
-          alpha=optShrinkage(X,dim(1),sum(Sigma,3),sum(sX,2)./N,centerp); 
+          alphaopt=optShrinkage(Xdd,dim(1),sum(Sigma,3),sum(sXdd,2)./N,centerp); 
        end
-       alpha=1-alpha; % invert type of alpha to be strength of whitening
+       alphaopt=max(0,min(1,alphaopt));
+       alphaopt=1-alphaopt; % invert type of alpha to be strength of whitening
        %error('not fixed yet!');
-       rDdd = alpha*Ddd + (1-alpha)*mean(Ddd);
+       fprintf('%d) alpha=%g\n',dd,alphaopt);
+       rDdd = alphaopt*Ddd + (1-alphaopt)*mean(Ddd);
       case 'none';
        rDdd = ones(size(Ddd));
       otherwise; error('Unrec alpha type');
@@ -198,6 +207,9 @@ clf;image3ddi(z.X,z.di,1,'colorbar','nw','ticklabs','sw');packplots('sizes','equ
 imagesc(wX(:,:)*wX(:,:)'./size(wX(:,:),2)); % plot output covariance
 
 [W,D,wX,U,mu,Sigma]=whiten(z.X,1,'opt'); % opt-shrinkage
+
+% with whiten for each example
+[W,D,wX,U,mu,Sigma]=whiten(z.X,[1 3],1); % opt-shrinkage
 
 % test with covariance matrices as input
 C=tprod(z.X,[1 -2 3],[],[2 -2 3])./size(z.X,2);
