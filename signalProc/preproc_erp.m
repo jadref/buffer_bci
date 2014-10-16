@@ -130,7 +130,7 @@ if ( opts.badchrm || ~isempty(opts.badCh) )
   if ( ~isempty(opts.badCh) )  isbadch(opts.badCh)=true; end
   if ( opts.badchrm ) 
     goodCh=find(~isbadch);
-    [isbad2,chstds,chthresh]=idOutliers(X(goodCh,:,:),1,opts.badchthresh);
+    [isbad2,chstds,chthresh]=idOutliers(X(goodCh,:,:),1,[1 1]*opts.badchthresh);
     isbadch(goodCh(isbad2))=true;
   end
   X=X(~isbadch,:,:);
@@ -223,7 +223,7 @@ if ( opts.badtrrm )
   fprintf('2.5) bad trial removal');
   [isbadtr,trstds,trthresh]=idOutliers(X,3,opts.badtrthresh);
   X=X(:,:,~isbadtr);
-  if (~isempty(Y)) Y=Y(~isbadtr);end
+  if (~isempty(Y)) Y=Y(~isbadtr,:);end
   fprintf(' %d tr removed\n',sum(isbadtr));
 end;
 
