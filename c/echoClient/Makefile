@@ -29,7 +29,7 @@ endif
 ifneq (,$(findstring cygwin, $(PLATFORM))) # cygwin is *not* w32!
 endif
 
-ifneq (,$(findstring i686-apple-darwin,$(PLATFORM))) # MacOS
+ifneq (,$(findstring apple-darwin,$(PLATFORM))) # MacOS
 #	BINDIR = $(FTPATH)/realtime/bin/maci
 	BINDIR = ../../dataAcq/buffer/maci
 	CFLAGS += -m32
