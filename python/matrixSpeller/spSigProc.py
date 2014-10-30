@@ -1,6 +1,10 @@
-import bufferbci.preproc as preproc
-import bufferbci.fieldtrip.bufhelp as bufhelp
-import bufferbci.ml.linear as linear
+#!/usr/bin/python
+import sys
+sys.path.append("../../dataAcq/buffer/python")
+sys.path.append("../signalProc")
+import preproc
+import bufhelp
+#import linear
 import pickle
 
 bufhelp.connect()
@@ -13,10 +17,12 @@ while run:
     e = bufhelp.waitforevent("startPhase.cmd",1000, False)
     
     if e is not None:
+
         if e.value == "calibration":
             print "Calibration phase"
             data, events, stopevents = bufhelp.gatherdata("stimulus.tgtFlash",trlen_ms,("stimulus.training","end"), milliseconds=True)
             pickle.dump({"events":events,"data":data}, open("subject_data", "w"))
+
         elif e.value == "train":
             print "Training classifier"
             data = preproc.detrend(data)
@@ -28,6 +34,7 @@ while run:
             linear.fit(data,events,mapping)
             bufhelp.update()
             bufhelp.sendevent("sigproc.training","done")
+
         elif e.value =="testing":
             print "Feedback phase"
             while True:
@@ -49,6 +56,7 @@ while run:
                 predictions = linear.predict(data)
                 
                 bufhelp.sendevent("classifier.prediction",predictions)  
+
         elif e.value =="exit":
             run = False
             

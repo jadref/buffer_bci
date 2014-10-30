@@ -1,4 +1,6 @@
-from . import Client, Event
+import sys
+sys.path.append("../../dataAcq/buffer/python")
+from FieldTrip import Client, Event
 from time import time, sleep
 from math import ceil
 import socket

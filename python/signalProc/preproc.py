@@ -116,9 +116,9 @@ def spatialfilter(data, type="car",whitencutoff=1e-15):
     Examples
     --------
     >>> data, events = ftc.getData(0,100)
-    >>> data = preproc.spatialfilter(data, type="whitten")
+    >>> data = preproc.spatialfilter(data, type="whiten") #train
     >>> data = bufhelp.gatherdata("start",10,"stop")
-    >>> data = preproc.spatialfilter(data)
+    >>> data = preproc.spatialfilter(data) #apply
     '''
         
     if not isinstance(type,str):

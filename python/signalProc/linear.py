@@ -1,5 +1,5 @@
 import sklearn.linear_model
-from ..ml import skwrap
+import skwrap
 
 def fit(data, events, mapping):
     global classifier
