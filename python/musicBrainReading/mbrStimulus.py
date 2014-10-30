@@ -227,7 +227,6 @@ pygame.display.set_caption('BCI Music Experiment')
 nrStimuli = 7;
 
 wf = map(lambda x: wave.open("stimuli/BR7_" + str(x) + ".wav" , 'rb'), range(1,nrStimuli+1))
-wf += map(lambda x: wave.open("stimuli/BR7_" + str(x) + "_lowered.wav" , 'rb'), range(1,nrStimuli+1))
 data = map(lambda x: x.readframes(x.getnframes()),wf)
 
 names = ["Nutcracker Suite: March (Tchaikovsky)",
