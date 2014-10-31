@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
 
   int32_t i, n=0, nsamp = 0, nblk=0, si=0, chi=0, status = 0, verbose = 1;
   int32_t putdatrequestsize=0;
-  long int elapsedusec=0, sampleusec=0, printtime=0;
+  double elapsedusec=0, sampleusec=0, printtime=0;
   host_t buffhost;
 
   /* these represent the acquisition system properties */
@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
 		// -- assumes 1 sample per call!
 		/* wait until next sample should be generated */
 		gettimeofday(&curtime,NULL);
-		elapsedusec=(curtime.tv_usec + 1000000 * curtime.tv_sec) - (starttime.tv_usec + 1000000 * starttime.tv_sec);
+		elapsedusec=(curtime.tv_usec + 1000000.0*curtime.tv_sec) - (starttime.tv_usec + 1000000.0*starttime.tv_sec);
 		sampleusec =nsamp*(1000000/fsample); /* time at which to send the next sample */
 		if( VERBOSE > 0 ) 
 		  fprintf(stderr,"%d) e=%ld s=%ld delta=%ld\n",nsamp,elapsedusec,sampleusec,sampleusec-elapsedusec);
