@@ -70,7 +70,8 @@ public class Application extends JFrame
     public Application(String bufferHost, int bufferPort)
     {
         this.addWindowListener(new ApplicationWindowListener());
-        
+		  this.addKeyListener(new ApplicationKeyListener());
+
         // Buffer.
         try
         {
@@ -87,7 +88,7 @@ public class Application extends JFrame
         
         this.state = new State();
         this.state.reset();
-        this.state.setText("Welcome to the Sphero Golf experiment.");
+        this.state.setText("Welcome to the experiment.");
 
         // Create panels.
         // Plain panel.
@@ -103,19 +104,7 @@ public class Application extends JFrame
         {
             System.out.println(String.format("Unable to load direction meter configuration: %s", e.getMessage()));
         }
-        
-        // Webcam panel.
-        //https://github.com/sarxos/webcam-capture/blob/master/webcam-capture/src/example/java/CustomResolutionExample.java
-        //this.webcam = Webcam.getWebcams().get(Webcam.getWebcams().size() - 1);
-        //this.webcam.setViewSize(this.webcam.getViewSizes()[this.webcam.getViewSizes().length - 1]);
-        //this.webcamPanel = new WebcamPanel(this.webcam);
-        //this.webcamPanel.setFillArea(true);
-        
-        // for(Webcam w : Webcam.getWebcams())
-        // {
-        //     System.out.printf("Webcam: %s\n", w.getName());
-        // }
- 
+         
         // Direction meter panel.
         try
         {
@@ -176,7 +165,6 @@ public class Application extends JFrame
         
         this.cardPanel.add(this.plainPanel, Application.PLAIN_PANEL);
         this.cardPanel.add(this.textPanel, Application.TEXT_PANEL);
-        //this.cardPanel.add(this.webcamPanel, Application.WEBCAM_PANEL);
         this.cardPanel.add(this.directionMeterPanel, Application.DIRECTION_METER_PANEL);
         this.cardPanel.add(this.powerMeterPanel, Application.POWER_METER_PANEL);
         this.getContentPane().add(this.cardPanel);
@@ -285,21 +273,21 @@ public class Application extends JFrame
 
         public void windowClosing(WindowEvent e)
         {
+				dispose();
         }
 
         public void windowClosed(WindowEvent e)
         {
-            //webcam.close();
+				dispose();
+				System.exit(0);
         }
 
         public void windowIconified(WindowEvent e)
         {
-            //webcamPanel.resume();
         }
 
         public void windowDeiconified(WindowEvent e)
         {
-            //webcamPanel.pause();
         }
 
         public void windowActivated(WindowEvent e)
@@ -319,7 +307,50 @@ public class Application extends JFrame
     {
         public void keyTyped(KeyEvent e)
         {
-            System.out.println("[Key types]: " + e.getKeyCode());
+            System.out.println("[Key types]: " + e.getKeyChar() + " = " + KeyEvent.getKeyText(e.getKeyCode()));
+				switch(e.getKeyChar())
+                {
+                        
+					 case 'd': case 'D':
+                        cardLayout.show(cardPanel, Application.DIRECTION_METER_PANEL);
+                        break;
+                                                
+					 // case DIRECTION_METER_ROTATION:
+					 // 	  state.setRotation(State.Rotation.valueOf(event.getValue().toString()));
+					 // 	  break;
+                        
+					 // case DIRECTION_METER_VALUE:
+					 // 	  state.setDirection(Double.parseDouble(event.getValue().toString()));
+					 // 	  break;
+                        
+					 case 'p': case 'P':
+						  cardLayout.show(cardPanel, Application.POWER_METER_PANEL);
+						  break;
+						  
+					 // case POWER_METER_VALUE:
+					 // 	  state.setPower(Double.parseDouble(event.getValue().toString()));
+					 // 	  break;
+                        
+					 case 't': case 'T':
+						  cardLayout.show(cardPanel, Application.TEXT_PANEL);
+						  break;
+                                                                        
+					 // case TEXT_VALUE:
+					 // 	  state.setText(event.getValue().toString());
+					 // 	  break;
+
+					 case 'h': case 'H':
+						  cardLayout.show(cardPanel, Application.PLAIN_PANEL);
+						  break;
+                        
+					 case 'r': case 'R':
+						  state.reset();
+						  break;
+
+					 case 'q': case 'Q': // simulate window close event
+						  this.processWindowEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+						  break;
+					 }
         }
 
         public void keyPressed(KeyEvent e)
