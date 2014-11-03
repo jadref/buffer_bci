@@ -65,6 +65,7 @@ N    = prod(sz(accDims));
 
 if ( covIn ) % covariance matrices input
   Sigma=X; for d=1:numel(accDims) Sigma=sum(Sigma,accDims(d)); end; Sigma=Sigma./N;
+  sX   = [];
 else
   % covariance + eigenvalue method
   idx1 = -(1:ndims(X)); idx1(dim)=[1 1+(2:numel(dim))]; % skip for OP dim
@@ -130,9 +131,9 @@ for dd=1:size(Sigma(:,:,:),3); % for each dir
          Xdd=X(:,:,dd); sXdd=sX(:,:,dd);
        end       
        if ( unitCov ) 
-          alphaopt=optShrinkage(Xdd,dim(1),sum(Sigma,3)*unitCov,sum(sXdd,2)./N,centerp); 
+          alphaopt=optShrinkage(Xdd,dim(1),Sigma(:,:,dd)*unitCov,sum(sXdd,2)./N,centerp); 
        else
-          alphaopt=optShrinkage(Xdd,dim(1),sum(Sigma,3),sum(sXdd,2)./N,centerp); 
+          alphaopt=optShrinkage(Xdd,dim(1),Sigma(:,:,dd),sum(sXdd,2)./N,centerp); 
        end
        alphaopt=max(0,min(1,alphaopt));
        alphaopt=1-alphaopt; % invert type of alpha to be strength of whitening
