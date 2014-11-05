@@ -29,24 +29,24 @@ if ( ~exist(capFile,'file') )
 end
 
 if ( strfind(cap,'xyz') ) % contains xyz coords
-   [Cname x y z]=textread(capFile,'%s %f %f %f');
+   [Cname x y z]=textread(capFile,'%s %f %f %f','commentstyle','shell');
    xyz     = [x y z]';
    xy      = xyz2xy(xyz);
    latlong = xy2latlong(xy);
 elseif ( strfind(cap,'xy') ) % contains xy coords
-   [Cname x y]=textread(capFile,'%s %f %f');
+   [Cname x y]=textread(capFile,'%s %f %f','commentstyle','shell');
    xy     = [x y]';
    latlong= xy2latlong(xy);
    xyz    = latlong2xyz(latlong);
 elseif ( isequal(capExt,'.lay') ) % fieldtrip layout file
-   [ans x y w h Cname]=textread(capFile,'%d %f %f %f %f %s');
+   [ans x y w h Cname]=textread(capFile,'%d %f %f %f %f %s','commentstyle','shell');
    xy     = [x y]'; 
    xy     = repop(xy,'-',mean(xy,2)); 
    xy     = repop(xy,'./',sqrt(mean(xy.^2,2))); % map to unit circle and center
    latlong= xy2latlong(xy);
    xyz    = latlong2xyz(latlong);   
 else % contains lat/long co-ords
-   [Cname lat long]=textread(capFile,'%s %f %f');
+   [Cname lat long]=textread(capFile,'%s %f %f','commentstyle','shell');
    latlong = [lat long]';
    if( max(abs(latlong(:)))>2*pi ) latlong=latlong/180*pi; end;
    xyz     = latlong2xyz(latlong);

@@ -20,7 +20,7 @@ function []=sigViewer(buffhost,buffport,varargin);
 %                      -> defines the frequency resolution for the frequency view of the data.   
 %  freqbands  -- [2x1] frequency bands to display in the freq-domain plot    (opts.fftfilter)
 %  noisebands -- [2x1] frequency bands to display for the 50 Hz noise plot   ([45 47 53 55])
-%  sigprocoptsgui -- [bool] show the on-line option changing gui             (0)
+%  sigprocoptsgui -- [bool] show the on-line option changing gui             (1)
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../utilities/initPaths.m'); end;
 opts=struct('endType','end.training','verb',1,'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',128,'spatfilt','car','badchrm',0,'badchthresh',3,'capFile',[],'overridechnms',0,'welch_width_ms',500,'noisebands',[45 47 53 55],'noiseBins',[0 1.75],'timeOut_ms',1000,'spectBaseline',1,'sigProcOptsGui',1,'dataStd',2.5,'covhalflife',20);
 opts=parseOpts(opts,varargin);
@@ -55,7 +55,7 @@ if ( ~isempty(capFile) )
   ch_pos3d=cat(2,di.extra.pos3d);
   ch_names=di.vals; 
   iseeg=[di.extra.iseeg];
-  if ( ~any(iseeg) ) % fall back on showing all data
+  if ( ~any(iseeg) || strcmp(capFile,'showAll') ) % fall back on showing all data
     warning('Capfile didnt match any data channels -- no EEG?');
     ch_names=hdr.channel_names;
     ch_pos=[];
