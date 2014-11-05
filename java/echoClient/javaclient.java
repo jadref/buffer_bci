@@ -40,7 +40,7 @@ class javaclient {
 				  System.out.println("Connecting to "+hostname+":"+port);
 				  C.connect(hostname, port);
 				  //C.setAutoReconnect(true);
-				  if ( C.isconnected() ) { hdr = C.getHeader(); }
+				  if ( C.isConnected() ) { hdr = C.getHeader(); }
 			 } catch (IOException e) {
 				  hdr=null;
 			 }
@@ -75,6 +75,8 @@ class javaclient {
 				  for ( int ei=0; ei<evs.length; ei++){
 						BufferEvent evt=evs[ei];
 						String evttype = evt.getType().toString(); // N.B. to*S*tring, not upper case!
+						// Print the even to the console
+						System.out.println(ei + ") t:" + evt.getType().toString() + " v:" + evt.getValue().toString() + " s:" + evt.sample);
 						// only process if it's an event of a type we care about
 						// In our case, don't echo our own echo events....
 						if ( !evttype.equals("echo") ){  // N.B. use equals, not == to compare string contents!
