@@ -10,11 +10,12 @@ function [FX]=fft_posfreq(X,len,dim,feat,taper,detrendp,centerp,corMag,MAXEL,ver
 %         neg values count back from ndims(X)
 %  feat - [str] type of feature to compute, one-of       ('complex')
 %           'complex' - normal fourier coefficients
-%           'l2'      - squared length of the complex coefficient
+%           'l2','pow' - power, i.e. squared length of the complex coefficient
 %           'abs'     - absolute length of the coefficients
 %           'angle'   - angle of the complex coefficient
 %           'real'    - real part
 %           'imag'    - imaginary part
+%           'db'      - power in decibles, ie. 10*log10(F(X).^2)
 %  taper-  [size(X,dim) x1] time domain window to apply before the fft  ([])
 %  detrendp - [bool] detrend before computing the fft? (0)
 %  centerp  - [bool] center before computing the fft? (0)
@@ -43,7 +44,7 @@ if ( ~isempty(taper) ) taper=shiftdim(taper,-dim+1); end;
 switch lower(feat);
  case 'complex'; 
   FX = complex(zeros([sizeX(1:dim-1) ceil((sizeX(dim)-1)/2)+1 sizeX(dim+1:end)],class(X))); % pre-alloc
- case {'abs','real','imag','angle'};
+ case {'abs','amp','real','imag','angle','pow','db'};
   FX = zeros([sizeX(1:dim-1) ceil((sizeX(dim)-1)/2)+1 sizeX(dim+1:end)],class(X)); % pre-alloc
  otherwise;
   error('Unrec feature type to compute');
@@ -69,12 +70,13 @@ while ( ~isempty(idx) )
    % Do the extraction
    tX=tX(tmpIdx{:});
    switch lower(feat);
-    case 'complex'; FX(FXidx{:}) = tX;
-    case 'l2';      FX(FXidx{:}) = 2*(real(tX).^2 + imag(tX).^2);    
-    case 'abs';     FX(FXidx{:}) = 2*sqrt(real(tX).^2 + imag(tX).^2);
-    case 'angle';   FX(FXidx{:}) = angle(tX);
-    case 'real';    FX(FXidx{:}) = real(tX);
-    case 'imag';    FX(FXidx{:}) = imag(tX);     
+    case 'complex';     FX(FXidx{:}) = tX;
+    case {'l2','pow'};  FX(FXidx{:}) = 2*(real(tX).^2 + imag(tX).^2);    
+    case {'abs','amp'}; FX(FXidx{:}) = 2*sqrt(real(tX).^2 + imag(tX).^2);
+    case 'angle';       FX(FXidx{:}) = angle(tX);
+    case 'real';        FX(FXidx{:}) = real(tX);
+    case 'imag';        FX(FXidx{:}) = imag(tX);     
+    case 'db';          FX(FXidx{:}) = 10*log10(2*(real(tX).^2 + imag(tX).^2));
    end
         
    if ( corMag ) % correct double mag of fs/2 entry
@@ -96,11 +98,11 @@ return
 function testCase()
 nCh=2; nSamp=100; N=10;
 X=randn(nCh,nSamp,N);
-FXp=fft_posfreq(X,[],2,1);
+FXp=fft_posfreq(X,[],2);
 
 nCh=2; nSamp=100; N=10;
 X=single(randn(nCh,nSamp,N));
-FXp=fft_posfreq(X,[],2,1);
+FXp=fft_posfreq(X,[],2);
 
 % Using the positive_freq only
 mimage(tprod(X,[1 -2 3],conj(X),[2 -2 3]),...

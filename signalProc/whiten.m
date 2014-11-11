@@ -22,6 +22,8 @@ function [W,D,wX,U,mu,Sigma,alpha]=whiten(X,dim,alpha,centerp,stdp,symp,linMapMx
 %  symp   - [bool] generate the symetric whitening transform (0)
 %  linMapMx - [size(X,dim(2:end)) x size(X,dim(2:end))] linear mapping over non-acc dim 
 %              use to smooth over these dimensions ([])
+%           e.g. to use the average of 2 epochs to compute the covariance use:
+%              linMapMx=spdiags(repmat([1 1]/2,size(X,dim(2)),1),[1 0],size(X,dim(2)),size(X,dim(2)))
 %  tol  - [float] relative tolerance w.r.t. largest eigenvalue used to        (1e-6)
 %                 reject eigen-values as being effectively 0. 
 %           <0 >-1 : reject this percentage of the smallest eigenvalues
@@ -55,13 +57,13 @@ if ( nargin < 10 || isempty(order) ) order=-.5; end;
 dim(dim<0)=dim(dim<0)+ndims(X)+1;
 if( dim(1)==0 ) covIn=true; dim(1)=1; else covIn=false; end;
 
-sz=size(X); sz(end+1:max(dim))=1; % pad with unit dims as necessary
+szX=size(X); szX(end+1:max(dim))=1; % pad with unit dims as necessary
 if ( covIn ) 
   accDims=setdiff(1:ndims(X),[2 dim(:)']); % set the dims we should accumulate over
 else
   accDims=setdiff(1:ndims(X),dim); % set the dims we should accumulate over
 end
-N    = prod(sz(accDims));
+N    = prod(szX(accDims));
 
 if ( covIn ) % covariance matrices input
   Sigma=X; for d=1:numel(accDims) Sigma=sum(Sigma,accDims(d)); end; Sigma=Sigma./N;
@@ -106,7 +108,13 @@ else
 end
    
 if ( ~isempty(linMapMx) ) % smooth the covariance estimates
-   Sigma=tprod(Sigma,[1 2 -(1:ndims(Sigma)-2)],full(linMapMx),[-(1:ndims(Sigma-2)) 1:ndims(Sigma)-2]);
+  if ( numel(dim)>2 ) error('Not supported yet!'); end;
+  if ( size(linMapMx,1)==1 ) 
+    nrm=sum(linMapMx);
+    linMapMx=spdiags(repmat(linMapMx,szX(dim(2)),1),numel(linMapMx)-1:-1:0,szX(dim(2)),szX(dim(2)));
+    linMapMx=repop(full(linMapMx),'.*',nrm./sum(linMapMx,1)); % equal weight for all offsets
+  end
+  Sigma=tprod(Sigma,[1 2 -(3:ndims(Sigma))],full(linMapMx),[-(3:ndims(Sigma)) 3:ndims(Sigma)]);
 end
 
 % give the covariance matrix unit norm to improve numerical accuracy
@@ -115,7 +123,7 @@ if ( unitCov )
 end;
 
 W=zeros(size(Sigma),class(X));
-if(numel(dim)>1) Dsz=[sz(dim(1)) sz(dim(2:end))];else Dsz=[sz(dim(1)) 1];end
+if(numel(dim)>1) Dsz=[szX(dim(1)) szX(dim(2:end))];else Dsz=[szX(dim(1)) 1];end
 D=zeros(Dsz,class(X));
 nF=0;
 for dd=1:size(Sigma(:,:,:),3); % for each dir
@@ -128,7 +136,7 @@ for dd=1:size(Sigma(:,:,:),3); % for each dir
       case 'opt'; % optimal shrinkage regularisation estimate
        if ( numel(dim)>1 )
          if ( dim(2)~=3 ) error('Opt shrink only supported for dim=[1 3]'); end;
-         Xdd=X(:,:,dd); sXdd=sX(:,:,dd);
+         Xdd=X(:,:,dd); if ( ~isempty(sX) ) sXdd=sX(:,:,dd); else sXdd=[]; end
        end       
        if ( unitCov ) 
           alphaopt=optShrinkage(Xdd,dim(1),Sigma(:,:,dd)*unitCov,sum(sXdd,2)./N,centerp); 
@@ -138,7 +146,7 @@ for dd=1:size(Sigma(:,:,:),3); % for each dir
        alphaopt=max(0,min(1,alphaopt));
        alphaopt=1-alphaopt; % invert type of alpha to be strength of whitening
        %error('not fixed yet!');
-       fprintf('%d) alpha=%g\n',dd,alphaopt);
+       %fprintf('%d) alpha=%g\n',dd,alphaopt);
        rDdd = alphaopt*Ddd + (1-alphaopt)*mean(Ddd);
       case 'none';
        rDdd = ones(size(Ddd));
@@ -160,10 +168,12 @@ for dd=1:size(Sigma(:,:,:),3); % for each dir
    elseif( tol<-1 ) % number to reject
      si(end-(-tol)+1:end)=false;
    end
+   if ( ~any(si) ) continue; end;
    % Now we've got a regularised spectrum compute it's inverse square-root to get a whitener
    iDdd=ones(size(Ddd),class(Ddd)); 
    if( order==-.5 ) iDdd(si) = 1./sqrt(rDdd(si)); else iDdd(si)=power(rDdd(si),order); end;
    % Use the principle-directions mapping and the re-scaling operator to compute the desired whitener
+   
    if ( symp ) % symetric whiten
       W(:,:,dd) = repop(Udd(:,si),'*',iDdd(si)')*Udd(:,si)';
       nF=size(W,1);
@@ -175,8 +185,8 @@ for dd=1:size(Sigma(:,:,:),3); % for each dir
    D(1:sum(si),dd)   = Ddd(si);
 end
 % Only keep the max nF
-W=reshape(W(:,1:nF,:),[sz(dim(1)) nF sz(dim(2:end)) 1]);
-D=reshape(D(1:nF,:),[nF sz(dim(2:end)) 1]);
+W=reshape(W(:,1:nF,:),[szX(dim(1)) nF szX(dim(2:end)) 1]);
+D=reshape(D(1:nF,:),[nF szX(dim(2:end)) 1]);
 
 % undo the effects of the standardisation
 if ( stdp && dim(1)~=0 ) W=repop(W,'*',istdX); end
@@ -210,7 +220,21 @@ imagesc(wX(:,:)*wX(:,:)'./size(wX(:,:),2)); % plot output covariance
 [W,D,wX,U,mu,Sigma]=whiten(z.X,1,'opt'); % opt-shrinkage
 
 % with whiten for each example
-[W,D,wX,U,mu,Sigma]=whiten(z.X,[1 3],1); % opt-shrinkage
+[W,D,wX,U,mu,Sigma]=whiten(z.X,[1 3],1); 
+
+% with opt and per-example whiten
+[W,D,wX,U,mu,Sigma]=whiten(z.X,[1 3],'opt');
+
+% with weighted whitent for each example
+% wght averages with previous cov-mx
+N=2; wght=spdiags(repmat(ones(1,N)/N,size(z.X,3),1),N-1:-1:0,size(z.X,3),size(z.X,3));
+[W,D,wX,U,mu,Sigma]=whiten(z.X,[1 3],1,[],[],[],wght); 
+[W,D,wX,U,mu,Sigma]=whiten(z.X,[1 3],1,[],[],[],ones(1,N)/N); 
+
+clf;image3d(W,2)
+N=4;wght=spdiags(repmat(ones(1,N)/N,size(z.X,3),1),N-1:-1:0,size(z.X,3),size(z.X,3));
+[W,D,wX,U,mu,Sigma]=whiten(z.X,[1 3],1,[],[],[],wght); 
+clf;image3d(W,2)
 
 % test with covariance matrices as input
 C=tprod(z.X,[1 -2 3],[],[2 -2 3])./size(z.X,2);
