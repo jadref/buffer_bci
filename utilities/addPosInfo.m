@@ -1,19 +1,23 @@
-function [di]=addPosInfo(di,capFile,overridenms,prefixMatch,verb)
+function [di]=addPosInfo(di,capFile,overridenms,prefixMatch,verb,capDir)
 % add electrode position info to a dimInfo structure
 %
-% [di]=addPosInfo(di,capFile,overridenms)
+% [di]=addPosInfo(di,capFile,overridenms,prefixMatch,verb,capDir)
 %
 % Inputs:
 %  di -- dim-info for the channels *only*
+%        OR
+%        {chnms} cell array of channel names to get pos-info for
 %  capFile -- file name of a file which contains the pos-info for this cap
 %  overridedims -- flag that we should ignore the channel names in di
 %  prefixMatch  -- [bool] match channel names if only the start matches?
 %  verb         -- [int] verbosity level  (0)
+%  capDir       -- 'str' directory to search for capFile
 if ( nargin < 2 || isempty(capFile) ) capFile='1010'; end;
 if ( nargin < 3 ) overridenms=0; end; % override di's vals info with info from capfile?
-if ( nargin < 4 ) prefixMatch=0; end;
+if ( nargin < 4 || isempty(prefixMatch) ) prefixMatch=0; end;
 if ( nargin < 5 || isempty(verb) ) verb=0; end;
-[Cnames latlong xy xyz]        =readCapInf(capFile);
+if ( nargin < 6 ) capDir=[]; end;
+[Cnames latlong xy xyz]        =readCapInf(capFile,capDir);
 if ( isstruct(di) ) vals=di.vals; 
 else 
   vals=di; 

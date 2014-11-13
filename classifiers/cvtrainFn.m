@@ -347,15 +347,16 @@ elseif( opts.outerSoln==0 ) % estimate from per fold solutions
     res.opt.tstf=res.tstf(:,:,optCi);
   end
 end
-if ( ~isempty(opts.calibrate) && ~isequal(opts.calibrate,0) ) % N.B. only for linear classifiers!
+exInd = all(fIdxs<=0,3); % tst points
+if ( ~all(exInd) && ~isempty(opts.calibrate) && ~isequal(opts.calibrate,0) ) % N.B. only for linear classifiers!
   cr=res.tstbin(:,:,optCi); % cv-estimated probability of being correct - target for calibration
   %if ( strcmp(opts.calibrate,'bal') ) cr = cr([1 1],:,:); end; % balanced calibration
   % correct the targets to prevent overfitting
   cwght=[];
   if ( strcmp(opts.calibrate,'bal') ) % balanced calibration, so equal class weights
-    cwght(1,:)=sum(Y~=0,1)./sum(Y<0)/2; cwght(2,:)=sum(Y~=0,1)./sum(Y>0)./2;
+    cwght(1,:)=sum(Y(~exInd,:)~=0,1)./sum(Y(~exInd,:)<0)/2; cwght(2,:)=sum(Y(~exInd,:)~=0,1)./sum(Y(~exInd,:)>0)./2;
   end
-  [Ab]=dvCalibrate(Y,res.tstf(:,:,res.opt.Ci),cr,cwght);
+  [Ab]=dvCalibrate(Y(~exInd,:),res.tstf(~exInd,:,res.opt.Ci),cr,cwght);
   for i=1:numel(res.opt.soln);
     if ( iscell(res.opt.soln{i}) ) % cell, assume W is full and b is separate!
       res.opt.soln{i}{1}  =res.opt.soln{i}{1}*Ab(1,i);

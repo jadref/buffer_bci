@@ -22,3 +22,8 @@ if ( nargout>1 ) mu=sX./N; end;
 return;
 %-------------------------------------------------------------------------
 function testCase()
+X=randn(100,99,98);
+Xc=repop(X,'-',mmean(X,[1 2]));  vc=shiftdim(msum(Xc.^2,[1 2])./size(X,3));
+v =shiftdim(mvar(X,[1 2]));
+mad(vc,v)
+clf;plot([vc v])

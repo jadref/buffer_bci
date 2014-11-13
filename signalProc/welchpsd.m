@@ -15,6 +15,8 @@ function [W,opts,winFn]=welchpsd(X,dim,varargin);
 %  detrend    -- [bool] remove linear trends before fft'ing (0)
 %  aveType    -- 'str' one of:                              ('amp')
 %                'amp' - ave amp, 'power' - ave power, 'db' - ave db
+%  outType    -- 'str' type of output to produce.  one of:
+%                'amp' - ave amp, 'power' - ave power, 'db' - ave db
 %  MAXEL      -- max number of elements to run at a time in chunking code
 % Output
 %  W          -- [size(X)] the power spectrum of the input data

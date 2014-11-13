@@ -28,7 +28,7 @@ function [W,D,wX,U,mu,Sigma,alpha]=whiten(X,dim,alpha,centerp,stdp,symp,linMapMx
 %                 reject eigen-values as being effectively 0. 
 %           <0 >-1 : reject this percentage of the smallest eigenvalues
 %           <-1    : keep only this number of eigenvalues
-%  unitCov - [bool] make the covariance have unit norm for numerical accuracy (1)
+%  unitCov - [bool] make the covariance have unit norm for numerical accuracy (0)
 %  order - [float] order of inverse to use (-.5)
 % Outputs:
 %  W    - [size(X,dim(1)) x nF x size(X,dim(2:end))] 

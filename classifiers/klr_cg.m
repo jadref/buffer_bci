@@ -77,10 +77,20 @@ else % negative value means absolute ridge
    ridge = abs(opts.ridge);
 end
 
+% check if it's more efficient to sub-set the kernel, because of lots of ignored points
+oK=K; oY=Y;
+incIdx=Y(:)~=0;
+if ( sum(incIdx)./numel(Y) < opts.incThresh ) % if enough ignored to be worth it
+   if ( sum(incIdx)==0 ) error('Empty training set!'); end;
+   K=K(incIdx,incIdx); Y=Y(incIdx);
+end
+
 % generate an initial seed solution if needed
 wb=opts.alphab;   % N.B. set the initial solution
-if ( isempty(wb) )    
-  wb=zeros(N+1,1,class(K)); 
+if ( ~isempty(wb) )
+  if ( size(K,1)~=numel(wb)-1 ) wb=[wb(incIdx);wb(end)]; end;
+else
+  wb=zeros(size(K,1)+1,1,class(K)); 
   %N.B. this doesn't actually seem to help reduce the total number of iterations cv. prototype clsfr
   if ( 0 && size(K,1)>=1.5*opts.maxTr && all(wb==0) ) % use sub-set to get seed solution
     subidx =false(size(Y)); 
@@ -92,20 +102,13 @@ if ( isempty(wb) )
   else % use a prototype classifier to get initial seed solution    
    % prototype classifier seed
    wb(Y>0)=.5./sum(Y>0); wb(Y<0)=-.5./sum(Y<0); % vector between pos/neg class centers
-   wK = wb(1:end-1)'*K;
+   wK = wb(1:end-1)'*K; 
+   if(sum(incIdx)<size(K,2)) wK(~incIdx)=0; end % prevent cheating by using test-trial information
    % find least squares optimal scaling and bias
    sb = pinv([C(1)*wK*wb(1:end-1)+wK*wK' sum(wK); sum(wK) sum(Y~=0)])*[wK*Y; sum(Y)];
    wb(1:end-1)=wb(1:end-1)*sb(1); wb(end)=sb(2);
  end
 end 
-
-% check if it's more efficient to sub-set the kernel, because of lots of ignored points
-oK=K; oY=Y;
-incIdx=(Y(:)~=0 | wb(1:end-1)~=0);
-if ( sum(incIdx)./numel(Y) < opts.incThresh ) % if enough ignored to be worth it
-   if ( sum(incIdx)==0 ) error('Empty training set!'); end;
-   K=K(incIdx,incIdx); Y=Y(incIdx); wb=wb([incIdx; true]);
-end
 
 % N.B. this form of loss weighting has no true probabilistic interpertation!
 wght=1;wghtY=Y;
@@ -434,7 +437,10 @@ dv=K(tstInd,trnInd)*alphab(1:end-1)+alphab(end);
 dv2conf(Y(tstInd),dv)
 
 % test implicit ignored
-[alphab0,f0,J0]=klr_cg(K,Y.*single(fInds(:,end)<0),1,'verb',1,'ridge',1e-7);
+[alphab0,f0,J0]=klr_cg(K,Y.*single(trnInd),1,'verb',1,'ridge',1e-7);
+mad(alphab0,[alphab(trnInd);alphab(end)])
+
+
 
 % for linear kernel
 alpha=zeros(N,1);alpha(find(trnInd))=alphab(1:end-1); % equiv alpha
@@ -460,6 +466,3 @@ mu0=randn(N,1);
 % compare with the raw version
 [wb,J,fl]=lr_cg(X,Y,1,'mu',X*mu0,'verb',2,'objTol0',1e-8);
 mad(fk,fl)
-
-
-

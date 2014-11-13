@@ -44,7 +44,7 @@ if ( ~isempty(taper) ) taper=shiftdim(taper,-dim+1); end;
 switch lower(feat);
  case 'complex'; 
   FX = complex(zeros([sizeX(1:dim-1) ceil((sizeX(dim)-1)/2)+1 sizeX(dim+1:end)],class(X))); % pre-alloc
- case {'abs','amp','real','imag','angle','pow','db'};
+ case {'abs','real','imag','angle','pow','db'};
   FX = zeros([sizeX(1:dim-1) ceil((sizeX(dim)-1)/2)+1 sizeX(dim+1:end)],class(X)); % pre-alloc
  otherwise;
   error('Unrec feature type to compute');

@@ -42,11 +42,11 @@ dim(dim<0)=dim(dim<0)+ndims(X)+1; % convert neg dim specs
 
 % convert win-specs from time to samples if necessary
 fs=opts.fs;
-if ( isempty(opts.width_samp) && ~isempty(opts.width_ms) ) 
+if ( isempty(opts.width_samp) ) 
   if ( isempty(fs) ) warning('Unknown sample rate, fs=1 assumed'); fs=1; end;
   ms2samp = fs/1000; opts.width_samp=floor(opts.width_ms*ms2samp); 
 end;
-if ( isempty(opts.start_samp) && ~isempty(opts.start_ms) ) 
+if ( isempty(opts.start_samp) ) 
   if ( isempty(fs) ) warning('Unknown sample rate, fs=1 assumed'); fs=1; end;  
   ms2samp = fs/1000; opts.start_samp=floor(opts.start_ms*ms2samp); 
 end;
@@ -62,7 +62,7 @@ else
 end;
 X     = windowData(X,start_samp,width_samp,dim);
 X     = fft_posfreq(X,[],dim,opts.feat,winFn,opts.detrend,opts.center,0,[],opts.verb);  % nCh x nFreq x nWin x N
-X     = X./nF; % map to average per sample
+X     = X./nF; % map to average power per sample
 if ( nargout > 2 ) freqs = fftBins(width_samp,[],fs,1); end;
 return;
 %--------------------------------------------------------------------------
