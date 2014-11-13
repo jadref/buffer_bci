@@ -33,24 +33,29 @@ if ( (isnumeric(vals) || (~isempty(overridenms) && overridenms)) )%...
    end
 end
 % Add the channel position info, and iseeg status
-chnm={};
+chnm={}; matchedCh=false(numel(Cnames),1);
 for i=1:numel(vals);
    ti=0;
    if ( iscell(vals) ) chnm{i}=vals{i};  else chnm{i}=vals(i); end;
    if ( isstr(chnm{i}) )
       for j=1:numel(Cnames);  
         % case insenstive match
-        if ( strcmp(lower(chnm{i}),lower(Cnames{j})) ) ti=j; break; end; 
+        if ( ~matchedCh(j) && strcmp(lower(chnm{i}),lower(Cnames{j})) ) 
+          ti=j; matchedCh(j)=true; break; 
+        end; 
       end;
       if ( prefixMatch && ti==0 ) % try prefix match
         for j=1:numel(Cnames);  
           % case insenstive match
-          if ( ~isempty(strmatch(lower(Cnames{j}),lower(chnm{i}))) ) ti=j; break; end; 
+          if ( ~matchedCh(j) && ~isempty(strmatch(lower(Cnames{j}),lower(chnm{i}))) ) 
+            ti=j; matchedCh(j)=true; break; 
+          end; 
         end;
       end
    elseif ( isnumeric(chnm{i}) && i<=numel(Cnames) ) % numeric mean exact order          
      chnm{i}=Cnames{i}; % over-ride input name with Cname
      ti = i;
+     matchedCh(i)=true;
    else
       ti = 0;
       warning('Channel names are difficult');      
