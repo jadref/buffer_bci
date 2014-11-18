@@ -94,7 +94,7 @@ def update(verbose = True):
     if verbose:
         print "Updated. nSamples = " + str(nSamples) + " at lastupdate " + str(lastupdate)
 
-
+procnEvents=0
 def waitnewevents(evtype, timeout_ms=1000,verbose = True):      
     """Function that blocks until a certain type of event is recieved. evttype defines what
     event termintes the block.  Only the first such matching event is returned
