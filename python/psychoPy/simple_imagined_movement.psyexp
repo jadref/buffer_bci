@@ -1,15 +1,15 @@
 <PsychoPy2experiment version="1.79.01" encoding="utf-8">
   <Settings>
-    <Param name="Show mouse" val="False" valType="bool" updates="None"/>
+    <Param name="Show mouse" val="True" valType="bool" updates="None"/>
     <Param name="Save csv file" val="False" valType="bool" updates="None"/>
     <Param name="Monitor" val="testMonitor" valType="str" updates="None"/>
     <Param name="Enable Escape" val="True" valType="bool" updates="None"/>
     <Param name="color" val="$[0,0,0]" valType="str" updates="None"/>
-    <Param name="Window size (pixels)" val="[1024, 768]" valType="code" updates="None"/>
-    <Param name="Full-screen window" val="True" valType="bool" updates="None"/>
+    <Param name="Window size (pixels)" val="[1024, 600]" valType="code" updates="None"/>
+    <Param name="Full-screen window" val="False" valType="bool" updates="None"/>
     <Param name="colorSpace" val="rgb" valType="str" updates="None"/>
     <Param name="Save log file" val="True" valType="bool" updates="None"/>
-    <Param name="Experiment info" val="{'participant':'', 'session':'001'}" valType="code" updates="None"/>
+    <Param name="Experiment info" val="{u'session': u'001', u'participant': u''}" valType="code" updates="None"/>
     <Param name="Save excel file" val="False" valType="bool" updates="None"/>
     <Param name="Save wide csv file" val="True" valType="bool" updates="None"/>
     <Param name="Save psydat file" val="True" valType="bool" updates="None"/>
@@ -48,7 +48,7 @@
         <Param name="Begin Experiment" val="getFeedbackCounter = 0" valType="extendedCode" updates="constant"/>
         <Param name="name" val="receiveEvent" valType="code" updates="None"/>
         <Param name="Each Frame" val="" valType="extendedCode" updates="constant"/>
-        <Param name="Begin Routine" val="feedback = geteventvalue(&quot;feedbackStimulusResponse&quot; + str(getFeedbackCounter))&#10;getFeedbackCounter = getFeedbackCounter + 1 " valType="extendedCode" updates="constant"/>
+        <Param name="Begin Routine" val="feedbackEvt = waitnewevents(&quot;feedback&quot;,1000)&#10;if feedbackEvt is None:&#10;    feedbackTxt='None'&#10;else:&#10;    feedback=str(feedbackEvt.value)&#10;getFeedbackCounter = getFeedbackCounter + 1 " valType="extendedCode" updates="constant"/>
         <Param name="End Routine" val="" valType="extendedCode" updates="constant"/>
         <Param name="End Experiment" val="" valType="extendedCode" updates="constant"/>
       </CodeComponent>
@@ -58,7 +58,7 @@
         <Param name="name" val="text_5" valType="code" updates="None"/>
         <Param name="wrapWidth" val="" valType="code" updates="constant"/>
         <Param name="color" val="white" valType="str" updates="constant"/>
-        <Param name="text" val="&quot;Feedback &quot; + $feedback" valType="str" updates="set every repeat"/>
+        <Param name="text" val="&quot;Feedback = &quot; + $feedbackTxt" valType="str" updates="set every repeat"/>
         <Param name="stopVal" val="2" valType="code" updates="constant"/>
         <Param name="durationEstim" val="" valType="code" updates="None"/>
         <Param name="pos" val="[0, 0]" valType="code" updates="constant"/>
@@ -120,7 +120,7 @@
         <Param name="name" val="text_4" valType="code" updates="None"/>
         <Param name="wrapWidth" val="" valType="code" updates="constant"/>
         <Param name="color" val="white" valType="str" updates="constant"/>
-        <Param name="text" val="Simple Imagined Movement Experiment&#10;&#10;During the trails imagine yourself vigerously shaking the indicated body part (left hand, right hand, left foot or right foot). After each trail the system's classification of the brain signals will be shown.&#10;&#10;Press &lt;space&gt; to continue." valType="str" updates="constant"/>
+        <Param name="text" val="Feedback Phase" valType="str" updates="constant"/>
         <Param name="stopVal" val="3600" valType="code" updates="constant"/>
         <Param name="durationEstim" val="" valType="code" updates="None"/>
         <Param name="pos" val="[0, 0]" valType="code" updates="constant"/>
@@ -225,7 +225,7 @@
         <Param name="opacity" val="1" valType="code" updates="constant"/>
         <Param name="colorSpace" val="rgb" valType="str" updates="constant"/>
         <Param name="name" val="text_3" valType="code" updates="None"/>
-        <Param name="wrapWidth" val="" valType="code" updates="constant"/>
+        <Param name="wrapWidth" val="80" valType="code" updates="constant"/>
         <Param name="color" val="white" valType="str" updates="constant"/>
         <Param name="text" val="Simple Imagined Movement Experiment&#10;&#10;During the trails imagine yourself vigerously shaking the indicated body part (left hand, right hand, left foot or right foot).&#10;&#10;Press &lt;space&gt; to continue." valType="str" updates="constant"/>
         <Param name="stopVal" val="3600" valType="code" updates="constant"/>
@@ -257,7 +257,7 @@
         <Param name="store" val="last key" valType="str" updates="constant"/>
       </KeyboardComponent>
       <CodeComponent name="connectToBuffer">
-        <Param name="Begin Experiment" val="# buffer_bci Handling the requered imports&#10;import sys&#10;import time&#10;sys.path.append(&quot;../../dataAcq/buffer/python/&quot;)&#10;from FieldTrip import Client, Event&#10;from time import sleep&#10;&#10;# buffer_bci Connecting to the buffer.&#10;host = 'localhost'&#10;port = 1972&#10;ftc = Client()&#10;hdr = None;&#10;while hdr is None :&#10;    print 'Trying to connect to buffer on %s:%i ...'%(host,port)&#10;    try:&#10;        ftc.connect(host, port)&#10;        print '\nConnected - trying to read header...'&#10;        hdr = ftc.getHeader()&#10;    except IOError:&#10;        pass&#10;    if hdr is None:&#10;        print 'Invalid Header... waiting'&#10;        time.sleep(1)&#10;    else:&#10;        print hdr&#10;        print hdr.labels&#10;# buffer_bci Defining a usefull helper functions&#10;&#10;def sendEvent(eventType, eventValue):&#10;    e = Event()&#10;    e.type = eventType&#10;    e.value = eventValue&#10;    ftc.putEvents(e)&#10;    &#10;def geteventvalue(event_type):&#10;    for event in ftc.getEvents():&#10;        if event.type == event_type:&#10;            return event.value&#10;&#10;    start, nEvents = ftc.poll()&#10;    stop = False&#10;    &#10;    while not stop:    &#10;        ftc.wait(-1,nEvents, 3*1000)&#10;        event = ftc.getEvents([nEvents])[0]&#10;        stop = event.type == event_type&#10;        &#10;    return event.value" valType="extendedCode" updates="constant"/>
+        <Param name="Begin Experiment" val="# buffer_bci Handling the requered imports&#10;import sys&#10;import time&#10;sys.path.append(&quot;../../dataAcq/buffer/python/&quot;)&#10;from FieldTrip import Client, Event&#10;from time import sleep&#10;&#10;# buffer_bci Connecting to the buffer.&#10;host = 'localhost'&#10;port = 1972&#10;ftc = Client()&#10;hdr = None;&#10;while hdr is None :&#10;    print 'Trying to connect to buffer on %s:%i ...'%(host,port)&#10;    try:&#10;        ftc.connect(host, port)&#10;        print '\nConnected - trying to read header...'&#10;        hdr = ftc.getHeader()&#10;    except IOError:&#10;        pass&#10;    if hdr is None:&#10;        print 'Invalid Header... waiting'&#10;        time.sleep(1)&#10;    else:&#10;        print hdr&#10;        print hdr.labels&#10;# buffer_bci Defining a usefull helper functions&#10;&#10;def sendEvent(eventType, eventValue):&#10;    e = Event()&#10;    e.type = eventType&#10;    e.value = eventValue&#10;    ftc.putEvents(e)&#10;    &#10;procnEvents=0&#10;def waitnewevents(evtype, timeout_ms=1000,verbose = True):      &#10;    &quot;&quot;&quot;Function that blocks until a certain type of event is recieved. evttype defines what&#10;    event termintes the block.  Only the first such matching event is returned&#10;    &quot;&quot;&quot;    &#10;    global ftc, nEvents, nSamples&#10;    global procnEvents&#10;    start = time.time()&#10;    nEvents,nSamples=ftc.poll()&#10;    elapsed_ms = 0&#10;    &#10;    if verbose:&#10;        print &quot;Waiting for event &quot; + str(evtype) + &quot; with timeout_ms &quot; + str(timeout_ms)&#10;    &#10;    evt=None&#10;    while elapsed_ms &lt; timeout_ms and evt is None:&#10;        nSamples, nEvents2 = ftc.wait(-1,procnEvents, timeout_ms - elapsed_ms)     &#10;&#10;        if nEvents != nEvents2: # new events to process&#10;            procnEvents = nEvents2&#10;            evts = ftc.getEvents((nEvents, nEvents2 -1))&#10;            for ev in evts:&#10;                if ev.type == evtype:&#10;                    evt = ev&#10;                    break&#10;        &#10;        elapsed_ms = (time.time() - start)*1000&#10;        nEvents = nEvents2            &#10;    return evt" valType="extendedCode" updates="constant"/>
         <Param name="name" val="connectToBuffer" valType="code" updates="None"/>
         <Param name="Each Frame" val="" valType="extendedCode" updates="constant"/>
         <Param name="Begin Routine" val="" valType="extendedCode" updates="constant"/>

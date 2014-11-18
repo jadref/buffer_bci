@@ -86,12 +86,44 @@ def update(verbose = True):
     """Requests a poll of the buffer and updates the global variables used by 
     sendevent to estimate the current nSamples."""
     
-    hdr = ftc.getHeader()
-    global nSamples, lastupdate
-    nSamples = hdr.nSamples
+    (nsamp,nevent) = ftc.poll()
+    global nSamples, lastupdate, nEvents
+    nSamples = nsamp
+    nEvents  = nevent
     lastupdate = time()
     if verbose:
         print "Updated. nSamples = " + str(nSamples) + " at lastupdate " + str(lastupdate)
+
+
+def waitnewevents(evtype, timeout_ms=1000,verbose = True):      
+    """Function that blocks until a certain type of event is recieved. evttype defines what
+    event termintes the block.  Only the first such matching event is returned
+    """    
+    global ftc, nEvents, nSamples
+    global procnEvents
+    start = time.time()
+    update()
+    elapsed_ms = 0
+    
+    if verbose:
+        print "Waiting for event " + str(evtype) + " with timeout_ms " + str(timeout_ms)
+    
+    evt=None
+    while elapsed_ms < timeout_ms and evt is None:
+        nSamples, nEvents2 = ftc.wait(-1,procnEvents, timeout_ms - elapsed_ms)     
+
+        if nEvents != nEvents2: # new events to process
+            procnEvents = nEvents2
+            evts = ftc.getEvents((nEvents, nEvents2 -1))
+            for ev in evts:
+                if ev.type == evtype:
+                    evt = ev
+                    break
+        
+        elapsed_ms = (time.time() - start)*1000
+        nEvents = nEvents2            
+    return evt
+
     
 def waitforevent(trigger, timeout=1000,verbose = True):
     """Function that blocks until a certain event is sent. Trigger defines what
