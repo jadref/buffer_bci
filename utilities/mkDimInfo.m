@@ -65,7 +65,6 @@ for i=1:nd;
          di(i).vals=int32(1:max(1,sz(i)));  % default to row vectors
       end
    end;
-   if( numel(di(i).vals)==sz(i) ) di(i).vals=di(i).vals(:)'; end; % flatten if needed
    if( size(di(i).vals,1)>1 ) di(i).vals = di(i).vals'; end; % ensure row vector
    di(i).extra = repmat(struct(),1,numel(di(i).vals));
    if ( i <= numel(sz) ) di(i).extra = repmat(struct(),1,sz(i)); end;
