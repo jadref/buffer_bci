@@ -262,11 +262,11 @@ elseif ( ~isempty(opts.plotPos) ) % pre-build all the figure handles
 else
     for pi=1:N; hdls(pi)=subplot(w,h,pi); end;
 end
-legendpos=[];if ( numel(hdls)>N ) legendpos=get(hdls(N+1),'outerposition'); end;
+legendpos=[];if ( numel(hdls)>N ) legendpos=get(hdls(N+1),'position'); end;
 
 % pre-identify the axes which have tickmarks and/or axeslabels
 % turn on/off the tick marks / axes labels as requested
-pos = get(hdls(1:N),'outerposition'); if ( iscell(pos) ) pos=cat(1,pos{:}); end;
+pos = get(hdls(1:N),'position'); if ( iscell(pos) ) pos=cat(1,pos{:}); end;
 if ( isstr(opts.ticklabs) )
    switch lower(opts.ticklabs);
     case 'sw'; [ans,tickIdxs] = min((pos(:,1)-0).^2+(pos(:,2)-0).^2);
@@ -517,7 +517,7 @@ end;
 if ( ~isempty(opts.legend) && ~isequal(opts.legend,0) )
   i=N+1;
   if ( numel(hdls)>N && ishandle(hdls(i)) )
-    pos=get(hdls(i),'outerposition');
+    pos=get(hdls(i),'position');
   else % try to compute a good location
      % default to se position
      if ( isnumeric(opts.legend) && numel(opts.legend)==1 ) opts.legend='se'; end; 
@@ -554,14 +554,14 @@ if ( ~isempty(opts.legend) && ~isequal(opts.legend,0) )
   good=false(size(lines));for li=1:numel(lines);if(~isempty(get(lines(li),'DisplayName')))good(li)=true;end; end;
   leghdl=legend(hdls(N),lines(good));
   % get the size of the legend window and use it for the new window
-  tpos=get(leghdl,'outerposition'); 
+  tpos=get(leghdl,'position'); 
   pos(3:4)=tpos(3:4); 
   if ( ischar(opts.legend) )
     if( strfind(lower(opts.legend),'e') ) pos(1)=min(pos(1),1-pos(3)); end; 
     if( strfind(lower(opts.legend),'n') ) pos(2)=min(pos(2),1-pos(4)); end;
   end
   if ( all(pos(3:4)>0) ) % only if possible
-    set(leghdl,'outerposition',[pos(1:2) pos(3:4)],'box','off');
+    set(leghdl,'position',[pos(1:2) pos(3:4)],'box','off');
   end
   hdls(N+1)=leghdl;
 end % if legend
@@ -575,12 +575,13 @@ if ( ~isempty(opts.colorbar) && opts.colorbar && ~isempty(opts.clim) )  % true c
     pos=legendpos;
   end
   if ( exist('OCTAVE_VERSION','builtin') ) % in octave have to manually convert arrays..
-    tmp=get(hdls(N),'outerposition');
-    hdls(N+1)=colorbar('peer',hdls(N),'outerposition',pos); %BUG: octave resizes axes even if give colorbar size
-    set(hdls(N),'outerposition',tmp);
-    set(hdls(N+1),'outerposition',pos);
+    tmp=get(hdls(N),'position');
+    hdls(N+1)=colorbar('peer',hdls(N),'position',pos); %BUG: octave resizes axes even if give colorbar size
+    set(hdls(N),'position',tmp);
+    set(hdls(N+1),'position',pos);
   else    
-    hdls(N+1)=colorbar('peer',hdls(N),'outerposition',pos);
+    hdls(N+1)=colorbar('peer',hdls(N));
+    set(hdls(N+1),'position',pos);xs
   end
   if ( ~isempty(opts.clabel) ) title(hdls(end),opts.clabel); end;
 end % if colorbar
