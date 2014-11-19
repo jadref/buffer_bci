@@ -581,7 +581,7 @@ if ( ~isempty(opts.colorbar) && opts.colorbar && ~isempty(opts.clim) )  % true c
     set(hdls(N+1),'position',pos);
   else    
     hdls(N+1)=colorbar('peer',hdls(N));
-    set(hdls(N+1),'position',pos);xs
+    set(hdls(N+1),'position',pos);
   end
   if ( ~isempty(opts.clabel) ) title(hdls(end),opts.clabel); end;
 end % if colorbar
