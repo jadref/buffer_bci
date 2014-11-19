@@ -34,11 +34,11 @@ function [ind,key,spMx]=lab2ind(Y,key,spMx,zeroLab,compBinp)
 %            class.
 if ( nargin < 5 || isempty(compBinp) ) compBinp=true; end;
 if ( nargin < 4 || isempty(zeroLab) ) zeroLab=false; end;
-if ( nargin < 3 ) spMx=[]; end;
+if ( nargin < 3 || isempty(spMx) ) spMx='1vR'; end;
 if ( nargin < 2 || isempty(key) ) % default key
    key=unique(Y(:)); key=key(:)'; 
    if( iscell(key) ) key=sort(key); else key=sort(key,1,'ascend'); end % ascending label order
-   if( ~isempty(spMx) && ((iscell(spMx) && numel(spMx)~=numel(key)) || (size(spMx,2)~=numel(key))) )
+   if( ~isempty(spMx) && ~isstr(spMx) && ((iscell(spMx) && numel(spMx)~=numel(key)) || (size(spMx,2)~=numel(key))) )
       warning('subProb matrix and unique in Y dont agree -- spMx overrides');
       key=1:size(spMx,2);
    end
@@ -54,8 +54,6 @@ else
 end
 if ( isstr(Y) )    Y =single(Y); end;
 if ( islogical(Y)) Y =single(Y); key=single(key); zeroLab=1; end;
-% BODGE: cell array of char's as integers
-if ( iscell(key) && isstr(key{1}) && numel(key{1})==1 ) key=strvcat(key{:}); end; 
 if ( isstr(key) ) key=single(key); end;
 key=key(:); % ensure key is col vector
 
@@ -67,8 +65,7 @@ if ( isnumeric(key) && strncmp('int',class(key),3) ) key=single(Y); end;
 nClass=numel(key); nSp=nClass; 
 %deal with bin special case
 if ( compBinp && nClass==2 ) nSp=1; end;
-if ( isempty(spMx) ) 
-   spMx=-ones(nSp,nClass); spMx(1:size(spMx)+1:end)=1; % 1vR sub-prob Mx
+if ( isstr(spMx) ) spMx=mkspMx(1:nClass,spMx,compBinp); nSp=size(spMx,1);
 else
    if( isnumeric(spMx) )
       if ( ndims(spMx)==2 && size(spMx,2)==1 && all(ismember(spMx,key)) && numel(key)>2 ) % vector of +ve class labels input
@@ -92,7 +89,7 @@ else
 end
 
 % special case for the no class distinction case
-if ( nClass<2 && nSp==1 && all(Y==Y(1)) ) ind=ones(size(Y)); return; end;
+if ( nClass<2 && nSp==1 && (isnumeric(Y) && all(Y==Y(1))) ) ind=ones(size(Y)); return; end;
 
 % build the actual sub-problem indicator matrix
 ind=single(zeros(numel(Y),nSp));
@@ -152,3 +149,6 @@ Y=floor(rand(100,1)*1.9)*2-1;
 % test with cell array of strings as input
 Y={'left' 'left' 'right' 'right'}
 [Yi,key,spMx]=lab2ind(Y);
+
+% test with binary input and non-compression of output
+Yi=lab2ind(sign(randn(100,1)),[],[],[],0); size(Yi,2)==2

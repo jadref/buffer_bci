@@ -1,9 +1,15 @@
 #!/bin/bash
 export matexe=`which matlab`
-if [ -z "$matexe" ]; then
+if [ ! -f "$matexe" ]; then
     if [ `uname -s` == 'Darwin' ]; then # MAC
         mdirs=`\ls -dt /Applications/MATLAB*`;
-        matexe=${mdirs%%$'\n'*}/bin/matlab;
+		  if [ ! -z "$mdirs" ]; then # use the last one in the list
+				matexe=${mdirs%%$'\n'*}/bin/matlab;
+		  fi
+	 fi
+	 if [ ! -f "$matexe" ]; then  # see if Octave is installed, use it as fall-back
+		  export matexe=`which octave`
+		  echo $matexe
     fi
 fi
 export matexe

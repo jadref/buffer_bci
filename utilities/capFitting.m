@@ -16,7 +16,8 @@ function [dat,key,state]=capFitting(varargin);
 %  offsetThresholds - [2x1] lower and upper noise power thresholds for the [green and red] colors ([5 15])
 %  timeOut_ms    - [int] timeOut to wait for data from the buffer (5000)
 %  host,port     - [str] host and port where the buffer lives ('localhost',1972)
-opts=struct('updateInterval',.5,'capFile','1010','overridechnms',0,'verb',1,'mafactor',.1,...
+wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../utilities/initPaths.m'); end;
+opts=struct('updateInterval',.5,'capFile',[],'overridechnms',0,'verb',1,'mafactor',.1,...
     'noiseband',[45 55],'noiseThresholds',[.5 5],'offsetThresholds',[5 15],'badChThreshold',1e-8,'fig',[],...
     'host','localhost','port',1972,'timeOut_ms',5000,'showOffset',true);
 opts=parseOpts(opts,varargin);
@@ -43,9 +44,23 @@ while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffe
     end;
 end;
 
-di = addPosInfo(hdr.channel_names,opts.capFile,opts.overridechnms); % get 3d-coords
+capFile=opts.capFile; overridechnms=opts.overridechnms; 
+if(isempty(capFile)) 
+  [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); capFile=fullfile(pth,fn);
+  if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
+end
+if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
+di = addPosInfo(hdr.channel_names,capFile,overridechnms); % get 3d-coords
 ch_pos=cat(2,di.extra.pos2d); ch_names=di.vals; % extract pos and channels names
 iseeg=find([di.extra.iseeg]);  
+
+% add number prefix to ch-names for display
+for ci=1:numel(ch_names); ch_names{ci} = sprintf('%d %s',ci,ch_names{ci}); end;
+
+% amplifier specific thresholds
+if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4; overridechnms=1;
+else                                     thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
+end
 
 % use complete available figure area
 if (isempty(iseeg)) % cope with unrecog electrode positions

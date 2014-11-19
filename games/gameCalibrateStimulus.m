@@ -1,4 +1,4 @@
-configureGame(); 
+configureGame; 
 
 
 % make stim seq with an extra invisible symbol to increase the ISI
@@ -20,7 +20,7 @@ tgtSeq=mkStimSeqRand(nSymbs,nSeq);
 clf;
 set(gcf,...%'units','normalized','position',[0 0 1 1],...
     'toolbar','none','menubar','none','color',[0 0 0],...
-    'backingstore','on','renderer','painters');
+    'backingstore','on','renderer','painters','Name','Calibration Phase');
 arenaax=axes('position',[0.025 0.05 .825 .85],'units','normalized','visible','off','box','off',...
          'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
          'color',[0 0 0],'drawmode','fast',...
@@ -113,5 +113,5 @@ sendEvent('stimulus.training','end');
 % show the end training message
 pause(1);
 axes(arenaax);
-text(mean(get(arenaax,'xlim')),mean(get(arenaax,'ylim')),{'That ends the training phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.1);
+text(mean(get(arenaax,'xlim')),mean(get(arenaax,'ylim')),{'That ends the calibration phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.1);
 pause(3);

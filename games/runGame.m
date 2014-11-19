@@ -22,22 +22,24 @@ while (ishandle(contFig))
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until capFitting is done
-    buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);       
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
+    %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);       
     
    case 'eegviewer';
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until capFitting is done
-    buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);               
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
+    %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);               
     
    case 'practice';
     sendEvent('subject',info.subject);
     sendEvent(phaseToRun,'start');
     onSeq=nSeq; nSeq=4; % override sequence number
     try
-      gameCalibrateStimulus()
+      gameCalibrateStimulus
     catch
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       % do nothing
     end
     sendEvent(phaseToRun,'end');
@@ -48,9 +50,9 @@ while (ishandle(contFig))
     sendEvent('startPhase.cmd',phaseToRun)
     sendEvent(phaseToRun,'start');
     try
-      gameCalibrateStimulus()
+      gameCalibrateStimulus
     catch
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.training','end');    
     end
     sendEvent(phaseToRun,'end');
@@ -59,7 +61,8 @@ while (ishandle(contFig))
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until training is done
-    buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);  
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
+    %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);  
     
    case 'snake';
     sendEvent('subject',info.subject);
@@ -69,7 +72,7 @@ while (ishandle(contFig))
       sendEvent('startPhase.cmd','testing');
       snake;
     catch
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.test','end');
     end
     sendEvent(phaseToRun,'end');
@@ -82,7 +85,7 @@ while (ishandle(contFig))
       sendEvent('startPhase.cmd','testing');
       sokoban;
     catch
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.test','end');
     end
     sendEvent(phaseToRun,'end');
@@ -95,7 +98,7 @@ while (ishandle(contFig))
       sendEvent('startPhase.cmd','testing');
       pacman;
     catch
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.test','end');
     end
     sendEvent(phaseToRun,'end');
@@ -109,7 +112,7 @@ while (ishandle(contFig))
       sendEvent('startPhase.cmd','contfeedback');
       spContFeedbackStimulus;
     catch
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifer,le.message);
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.test','end');
     end
     sendEvent('spelling','end');    

@@ -1,5 +1,19 @@
 function [stimSeq,stimTime,eventSeq]=mkStimSeqRowCol(mxSz,nStim,isi)
 % make a random rows-then-cols flash sequence for given matrix size
+%
+% [stimSeq,stimTime,eventSeq,stimCode]=mkStimSeqRowCol(nSymbols,nStim,isi,mintti)
+%
+% Inputs:
+%  mxSz     -- [2 x 1] number of [rows cols] in the matrix
+%  nStim    -- [int] number of stimulus events to make the sequence for
+%  isi      -- [float] inter-stimulus interval in seconds                (1)
+% Outputs:
+%  stimSeq  -- [bool nSymbols x nStim] logical matrix with true indicating that this symbol 
+%                       should flashed at this time
+%  stimTime -- [1 x nStim] time in seconds each stimulus event should take place
+%  eventSeq -- {1 x nStim} cell array containing {2x1} event info which should be sent at each stimulus time.
+%                   Each entry is either empty (i.e. {}) indicating no event to be sent or
+%                   {type value} a cell array with the event type and value to send
 subSeqR=1:mxSz(1); subSeqC=numel(subSeqR)+(1:mxSz(2));
 % stimKey - translates from stimCode into who's highlighted
 stimKey=false([mxSz,numel(subSeqR)+numel(subSeqC)]);
@@ -19,6 +33,6 @@ end
 % add the time information
 stimTime=(0:size(stimSeq,2)-1)*isi(1);
 % and when the events are
-eventSeq=true(1,size(stimSeq,2));
+eventSeq=cell(1,size(stimSeq,2));
 return;
 

@@ -1,4 +1,4 @@
-function [clsfr,res,X]=train_erp_clsfr(X,Y,varargin)
+function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 % train a simple ERP classifer.
 % 
 % [clsfr,res,X]=train_erp_clsfr(X,Y....);
@@ -6,49 +6,72 @@ function [clsfr,res,X]=train_erp_clsfr(X,Y,varargin)
 % Inputs:
 %  X         - [ ch x time x epoch ] data set
 %  Y         - [ nEpoch x 1 ] set of data class labels
-% Options:
+% Options:  (specify as 'name',value pairs, e.g. train_ersp_clsfr(X,Y,'fs',10);
+%  ch_names  - {str} cell array of strings which label each channel
 %  ch_pos    - [3 x nCh] 3-d co-ordinates of the data electrodes
 %              OR
 %              {str} cell array of strings which label each channel in *1010 system*
+%  capFile   - 'filename' file from which to load the channel position information.
+%              *this overrides* ch_pos if given
+%  overridechnms - [bool] flag if channel order from 'capFile' overrides that from the 'ch_names' option
 %  fs        - sampling rate of the data
 %  timeband  - [2 x 1] band of times to use for classification, all if empty ([])
 %  freqband  - [2 x 1] or [3 x 1] or [4 x 1] band of frequencies to use
 %              EMPTY for *NO* spectral filter
-%  downsample - [1x1] downsample to this frequency before use
-%  spatialfilter -- [str] one of 'slap','car','none'  ('slap')
+%              OR
+%              { nFreq x 1 } cell array of discrete frequencies to pick
+%  width_ms  - [float] width in millisecs for the windows in the welch spectrum (250)
+%              estimation.  
+%              N.B. the output frequency resolution = 1000/width_ms, so 4Hz with 250ms
+%  spatialfilter -- [str] one of 'slap','car','none','csp','ssep'              ('slap')
+%       WARNING: CSP is particularly prone to *overfitting* so treat any performance estimates with care...
 %  badchrm   - [bool] do we do bad channel removal    (1)
 %  badchthresh - [float] threshold in std-dev units to id channel as bad (3.5)
 %  badtrrm   - [bool] do we do bad trial removal      (1)
 %  badtrthresh - [float] threshold in std-dev units to id trial as bad (3)
-%  detrend   - [bool] do we detrend the data          (1)
+%  detrend   - [int] do we detrend/center the data          (1)
+%              0 - do nothing
+%              1 - detrend the data
+%              2 - center the data (i.e. subtract the mean)
 %  visualize - [int] visualize the data
 %               0 - don't visualize
 %               1 - visualize, but don't wait
 %               2 - visualize, and wait for user before continuing
 %  verb      - [int] verbosity level
-%  ch_names  - {str} cell array of strings which label each channel
+%  class_names - {str} names for each of the classes in Y in *increasing* order ([])
 % Outputs:
 %  clsfr  - [struct] structure contining the stuff necessary to apply the trained classifier
 %  res    - [struct] results structure
 %  X      - [size(X)] the pre-processed data
-opts=struct('fs',[],'timeband',[],'freqband',[],'downsample',[],'detrend',1,'spatialfilter','car',...
+opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],'downsample',[],'detrend',1,'spatialfilter','car',...
     'badchrm',1,'badchthresh',3.1,'badchscale',2,...
     'badtrrm',1,'badtrthresh',3,'badtrscale',2,...
-    'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','visualize',2,...
-    'badCh',[],'nFold',10);
+    'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
+    'visualize',2,'badCh',[],'nFold',10,'class_names',[],'zeroLab',1);
 [opts,varargin]=parseOpts(opts,varargin);
 
 di=[]; ch_pos=opts.ch_pos; ch_names=opts.ch_names;
 if ( iscell(ch_pos) && isstr(ch_pos{1}) ) ch_names=ch_pos; ch_pos=[]; end;
-if ( isempty(ch_pos) && ~isempty(ch_names) ) % convert names to positions
-  di = addPosInfo(ch_names,opts.capFile); % get 3d-coords
-  ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names
+% convert names to positions
+if ( isempty(ch_pos) && ~isempty(opts.capFile) && (~isempty(ch_names) || opts.overridechnms) ) 
+  di = addPosInfo(ch_names,opts.capFile,opts.overridechnms); % get 3d-coords
+  if ( any([di.extra.iseeg]) ) 
+    ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names    
+  else % fall back on showing all data
+    warning('Capfile didnt match any data channels -- no EEG?');
+    ch_pos=[];
+  end
 end
 
 %1) Detrend
 if ( opts.detrend )
-  fprintf('1) Detrend\n');
-  X=detrend(X,2); % detrend over time
+  if ( isequal(opts.detrend,1) )
+    fprintf('1) Detrend\n');
+    X=detrend(X,2); % detrend over time
+  elseif ( isequal(opts.detrend,2) )
+    fprintf('1) Center\n');
+    X=repop(X,'-',mean(X,2));
+  end
 end
 
 %2) Bad channel identification & removal
@@ -56,6 +79,7 @@ isbadch=[]; chthresh=[];
 if ( opts.badchrm || ~isempty(opts.badCh) )
   fprintf('2) bad channel removal, ');
   isbadch = false(size(X,1),1);
+  if ( ~isempty(ch_pos) ) isbadch(numel(ch_pos)+1:end)=true; end;
   if ( ~isempty(opts.badCh) )
       isbadch(opts.badCh)=true;
       goodCh=find(~isbadch);
@@ -67,7 +91,7 @@ if ( opts.badchrm || ~isempty(opts.badCh) )
   end;
   X=X(~isbadch,:,:);
   if ( ~isempty(ch_names) ) % update the channel info
-    ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names)));
+    if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names))); end;
     ch_names=ch_names(~isbadch(1:numel(ch_names)));
   end
   fprintf('%d ch removed\n',sum(isbadch));
@@ -76,7 +100,8 @@ end
 %3) Spatial filter/re-reference
 R=[];
 if ( size(X,1)> 5 ) % only spatial filter if enough channels
-  switch lower( opts.spatialfilter )
+  sftype=lower(opts.spatialfilter);
+  switch ( sftype )
    case 'slap';
     fprintf('3) Slap\n');
     if ( ~isempty(ch_pos) )       
@@ -128,17 +153,52 @@ if ( opts.badtrrm )
   fprintf('4.5) bad trial removal');
   [isbadtr,trstds,trthresh]=idOutliers(X,3,opts.badtrthresh);
   X=X(:,:,~isbadtr);
-  Y=Y(~isbadtr);
+  Y=Y(~isbadtr,:);
   fprintf(' %d tr removed\n',sum(isbadtr));
 end;
 
 %5.5) Visualise the input?
-if ( opts.visualize && ~isempty(ch_pos) )
-   uY=unique(Y);sidx=[];
-   for ci=1:numel(uY);
-      mu(:,:,ci)=mean(X(:,:,Y==uY(ci)),3);
-      if(~(ci>1 && numel(uY)<=2)) [auc(:,:,ci),sidx]=dv2auc((Y==uY(ci))*2-1,X,3,sidx); end;
-      labels{ci}=sprintf('%d',uY(ci));
+aucfig=[];erpfig=[];
+if ( opts.visualize )
+  % Compute the labeling and set of sub-problems and classes to plot
+  Yidx=Y; sidx=[]; labels=opts.class_names; auclabels=labels;
+  if ( size(Y,2)==1 && ~(isnumeric(Y) && ~opts.zeroLab && all(Y(:)==1 | Y(:)==0 | Y(:)==-1)))%convert from labels to 1vR sub-problems
+    uY=unique(Y,'rows'); Yidx=-ones([size(Y,1),numel(uY)],'int8');    
+    for ci=1:size(uY,1); 
+      if(iscell(uY)) 
+        tmp=strmatch(uY(ci),Y); Yidx(tmp,ci)=1; 
+      else 
+        for i=1:size(Y,1); Yidx(i,ci)=isequal(Y(i,:),uY(ci,:))*2-1; end
+      end;
+      if ( isempty(labels) || numel(labels)<ci || isempty(labels{ci}) ) 
+        if ( iscell(uY) ) labels{1,ci}=uY{ci}; else labels{1,ci}=sprintf('%d',uY(ci,:)); end
+        auclabels{1,ci}=labels{1,ci};
+        labels{1,ci} = sprintf('%s (%d)',labels{1,ci},sum(Yidx(:,ci)>0));
+      end
+    end
+  else
+    if ( isempty(labels) ) 
+      for spi=1:size(Yidx,2); 
+        labels{1,spi}=sprintf('sp%d +',spi);labels{2,spi}=sprintf('sp%d -',spi); 
+        auclabels{spi}=sprintf('sp%d',spi);
+      end;
+    end
+  end
+  % Compute the averages and per-sub-problem AUC scores
+  for spi=1:size(Yidx,2);
+    Yci=Yidx(:,spi);
+    if( size(labels,1)==1 ) % plot sub-prob positive response only
+      mu(:,:,spi)=mean(X(:,:,Yci>0),3);      
+    else % pos and neg sub-problem average responses
+      mu(:,:,1,spi)=mean(X(:,:,Yci>0),3); mu(:,:,2,spi)=mean(X(:,:,Yci<0),3);
+    end
+    % if not all same class, or simple binary problem
+    if(~(all(Yci(:)==Yci(1))) && ~(spi>1 && all(Yidx(:,1)==-Yidx(:,spi)))) 
+      [aucci,sidx]=dv2auc(Yci,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
+      aucesp=auc_confidence(sum(Yci~=0),single(sum(Yci>0))./single(sum(Yci~=0)),.2);
+      aucci(aucci<.5+aucesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
+      auc(:,:,spi)=aucci;
+    end
    end
    times=(1:size(mu,2))/opts.fs;
    erpfig=figure('Name','Data Visualisation: ERP');
@@ -148,15 +208,21 @@ if ( opts.visualize && ~isempty(ch_pos) )
    end
    image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',labels,'disptype','plot','ticklabs','sw');
    zoomplots;
+   try; saveaspdf('ERP'); catch; end;
    aucfig=figure('Name','Data Visualisation: ERP AUC');
-   image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',labels,'disptype','imaget','ticklabs','sw','clim',[.2 .8]);
+   image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8]);
    colormap ikelvin; zoomplots;
    drawnow;
+   try; saveaspdf('AUC'); catch; end;
 end
 
 %6) train classifier
-fprintf('6) train classifier\n');
-[clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',1,varargin{:});
+if ( opts.classify ) 
+  fprintf('6) train classifier\n');
+  [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',opts.zeroLab,varargin{:});
+else
+  clsfr=struct();
+end
 
 %7) combine all the info needed to apply this pipeline to testing data
 clsfr.fs          = fs;   % sample rate of training data
@@ -175,21 +241,23 @@ clsfr.badtrthresh = []; if ( ~isempty(trthresh) ) clsfr.badtrthresh = trthresh(e
 clsfr.badchthresh = []; if ( ~isempty(chthresh) ) clsfr.badchthresh = chthresh(end)*opts.badchscale; end
 % record some dv stats which are useful
 tstf = res.tstf(:,res.opt.Ci); % N.B. this *MUST* be calibrated to be useful
-clsfr.dvstats.N   = [sum(Y>0) sum(Y<=0) numel(Y)]; % [pos-class neg-class pooled]
-clsfr.dvstats.mu  = [mean(tstf(Y>0)) mean(tstf(Y<=0)) mean(tstf)];
-clsfr.dvstats.std = [std(tstf(Y>0))  std(tstf(Y<=0))  std(tstf)];
+clsfr.dvstats.N   = [sum(res.Y>0) sum(res.Y<=0) numel(res.Y)]; % [pos-class neg-class pooled]
+clsfr.dvstats.mu  = [mean(tstf(res.Y(:,1)>0)) mean(tstf(res.Y(:,1)<=0)) mean(tstf)];
+clsfr.dvstats.std = [std(tstf(res.Y(:,1)>0))  std(tstf(res.Y(:,1)<=0))  std(tstf)];
 %  bins=[-inf -200:5:200 inf]; clf;plot([bins(1)-1 bins(2:end-1) bins(end)+1],[histc(tstf(Y>0),bins) histc(tstf(Y<=0),bins)]); 
 
 if ( opts.visualize > 1 ) 
-   b=msgbox({sprintf('Classifier performance : %s',sprintf('%4.1f ',res.tstbin(:,:,res.opt.Ci)*100)) 'OK to continue!'},'Results');
-   while ( ishandle(b) ) pause(.1); end; % wait to close auc figure
+  summary = sprintf('%4.1f ',res.tstbin(:,:,res.opt.Ci)*100);
+  if(size(res.tstbin,2)>1)summary=[summary sprintf(' = %4.1f <ave>',mean(res.tstbin(:,:,res.opt.Ci),2)*100)];end
+   b=msgbox({sprintf('Classifier performance : %s',summary) 'OK to continue!'},'Results');
+   while ( ishandle(b) ) drawnow; pause(.2); end; % wait to close auc figure
    if ( ishandle(aucfig) ) close(aucfig); end;
    if ( ishandle(erpfig) ) close(erpfig); end;
    if ( ishandle(b) ) close(b); end;
    drawnow;
 end
-return;
 
+return;
 
 %---------------------------------
 function xy=xyz2xy(xyz)
@@ -209,3 +277,8 @@ h = xyz(3,:)-cent(3);  % height
 rr=sqrt(2*(r.^2-r*h)./(r.^2-h.^2)); % arc-length to radial length ratio
 xy = [xyz(1,:).*rr; xyz(2,:).*rr];
 return
+%---------------------------------------
+function testCase()
+z=jf_mksfToy('Y',sign(round(rand(600,1))-.5));
+[clsfr]=train_ersp_clsfr(z.X,z.Y,'fs',z.di(2).info.fs,'ch_pos',[z.di(1).extra.pos3d],'ch_names',z.di(1).vals,'freqband',[0 .1 10 12],'visualize',1,'verb',1);
+f=apply_ersp_clsfr(X,clsfr);

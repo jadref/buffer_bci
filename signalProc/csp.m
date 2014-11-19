@@ -1,4 +1,4 @@
-function [sf,d,Sigmac,SigmaAll]=csp(X,Y,dim,nfeat,ridge)
+function [sf,d,Sigmac,SigmaAll]=csp(X,Y,dim,nf_cent,ridge,singThresh,powThresh)
 % Generate spatial filters using CSP
 %
 % [sf,d,Sigmac,SigmaAll]=csp(X,Y,[dim,nfilt,ridge]);
@@ -20,12 +20,16 @@ function [sf,d,Sigmac,SigmaAll]=csp(X,Y,dim,nfeat,ridge)
 %           N.B. sf is normalised such that: mean_i sf'*cov(X_i)*sf = I
 %           N.B. to obtain spatial *patterns* just use, sp = Sigma*sf ;
 %  d     -- [nCh x nClass] spatial filter eigen values, N.B. d==0 indicates bad direction
+if( nargin>4 ) 
+  warning('extra options ignored'); 
+  if ( nargin>3 && nfeat<=1 ) nfeat=[]; end; % reset to default number features
+end;
 if ( nargin < 3 || isempty(dim) ) dim=[-1 1]; end;
 if ( numel(dim) < 2 ) if ( dim(1)==1 ) dim(2)=2; else dim(2)=1; end; end
 dim(dim<0)=ndims(X)+dim(dim<0)+1; % convert negative dims
 if ( nargin < 4 || isempty(nfeat) ) nfeat=3; end;
 if ( nargin < 5 || isempty(ridge) ) 
-   if ( isequal(class(X),'single') ) ridge=1e-7; else ridge=0; end;
+  if ( isequal(class(X),'single') ) ridge=1e-7; else ridge=0; end;
 end;
 nCh = size(X,dim(2)); N=size(X,dim(1)); nSamp=prod(size(X))./nCh./N;
 
@@ -54,7 +58,7 @@ for c=1:nClass; % generate sf's for each sub-problem
     Sigma        =Sigma        +eye(size(Sigma))*ridge*mean(diag(Sigma));
   end
   % N.B. use double to avoid rounding issues with the inv(Sigma) bit
-  [W D]=eig(Sigmac(:,:,c),Sigmaall);D=diag(D); % generalised eigen-value formulation!
+  [W D]=eig(double(Sigmac(:,:,c)),double(Sigmaall));D=diag(D); % generalised eigen-value formulation!
   W=real(W); % only real part is useful
   [D,di]=sort(D,'descend'); W=W(:,di); % order in decreasing eigenvalue
    

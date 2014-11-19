@@ -33,15 +33,29 @@ function [varargout]=buffer(cmd,detail,host,port)
 %   buffer('sync_clk',wait, host, port) % sync the real-time and sample clocks with points at wait
 %   buffer('con', [], host, port) % create connection to host/port
 %
+% N.B. if the GLOBAL variable TESTING=true, then returns immediately for all cases with an empty structure
+%      useful for stimulus development without a buffer/signal proxy running
+%
 % N.B. datatype IDs
 %	 CHAR    = 0;	 UINT8   = 1;	 UINT16  = 2;	 UINT32  = 3;	 UINT64  = 4;	 INT8    = 5;
 %	 INT16   = 6;	 INT32   = 7;	 INT64   = 8;	 FLOAT32 = 9;	 FLOAT64 = 10;
     
-global bufferClient; % globals used to hold the java object, and connection info
+global bufferClient TESTING; % globals used to hold the java object, and connection info
 if ( nargin<1 ) cmd=[]; end;
 if ( nargin<2 ) detail=[]; end;
 if ( nargin<3 ) host=[]; end;
 if ( nargin<4 ) port=[]; end;
+if ( isequal(TESTING,true) ) 
+  switch lower( cmd ) 
+   case 'get_hdr'; % simulate a header
+      res=struct('nChans',0,'nSamples',0,'nEvents',0,'fSample',0,'labels',{{}},'dataType',10);
+   case 'put_evt'; % simulate put
+    res=detail;
+   otherwise; res=struct();
+  end
+  varargout{1}=res;
+  return; 
+end;
 
 if ( isempty(bufferClient) )
   buffer_bcidir=fileparts(fileparts(fileparts(mfilename('fullpath')))); % buffer_bci directory
@@ -63,6 +77,7 @@ end
 
 if ( isempty(cmd) ) return; end;
 switch cmd;
+ 
  case 'get_hdr';  
   hdrj=bufClient.getHeader();  
   hdr=struct('nChans',hdrj.nChans,...
@@ -72,7 +87,7 @@ switch cmd;
              'labels',{{}},...
              'dataType',hdrj.dataType);
   labj=hdrj.labels; for ci=1:numel(labj); hdr.labels{ci}=char(labj(ci)); end;
-  if ( exist('OCTAVE_VERSION','builtin') ) hdr.fSample=hdr.fSample.doubleValue(); end;
+  if ( ~isnumeric(hdr.fSample) && exist('OCTAVE_VERSION','builtin') ) hdr.fSample=hdr.fSample.doubleValue(); end;
   % Argh! duplicte field names to also be in the mex-version format, i.e non-camelCase
   hdr.nchans  =hdr.nChans;
   hdr.nsamples=hdr.nSamples;
@@ -81,6 +96,7 @@ switch cmd;
   hdr.data_type=hdr.dataType;
   hdr.channel_names=hdr.labels; % N.B. inconsistent names btw java and mex versions
   varargout{1}=hdr;
+ 
  case 'put_hdr';  
   if ( isfield(detail,'nChans') ) % java or mex-buffer version of the header field names
     if ( isfield(detail,'Fs') ) fs=detail.Fs; else fs=detail.fSample; end;
@@ -102,8 +118,8 @@ switch cmd;
     hdr.labels=detail.label;
   end
   bufClient.putHeader(hdr);
- case 'get_dat';
-  
+ 
+ case 'get_dat'; 
   bufj=bufClient.getDoubleData(detail(1),detail(2));
   buf=bufj; 
   % N.B. matlab is col-major, java is row-major.  Need to transpose results
@@ -113,10 +129,13 @@ switch cmd;
     buf=buf'; 
   end
   varargout{1}=struct('buf',buf);
+ 
  case 'put_dat';
   % N.B. java stores in *column major order* so transpose the data before putting it!
   if ( isstruct(detail) ) detail=detail.buf; end;
-  bufClient.putData(detail');
+  % N.B. java-Order = Row-Major so reverse size
+  bufClient.putData(detail(:),[size(detail,2) size(detail,1)]); 
+ 
  case 'get_evt';
   evtj=bufClient.getEvents(detail(1),detail(2));
   evt =repmat(struct('type',[],'value',[],'sample',-1,'offset',0,'duration',0),size(evtj)); % pre-alloc array
@@ -128,16 +147,26 @@ switch cmd;
     evt(ei).offset=evtjei.offset;
     evt(ei).duration=evtjei.duration;
     if ( exist('OCTAVE_VERSION','builtin') ) % in octave have to manually convert arrays..
-      if ( strcmp(class(evt(ei).type),'octave_java') )
+      if ( strcmp(typeinfo(evt(ei).type),'octave_java') )
+        tmp = zeros(size(evt(ei).type));
         for i=1:numel(evt(ei).type); tmp(i)=evt(ei).type(i); end; evt(ei).type=tmp;
       end
-      if ( strcmp(class(evt(ei).value),'octave_java') )
-        for i=1:numel(evt(ei).value); tmp(i)=evt(ei).value(i); end; evt(ei).value=tmp;
+      if ( strcmp(typeinfo(evt(ei).value),'octave_java') )
+        tmp = zeros(size(evt(ei).value));
+        for i=1:numel(evt(ei).value) 
+          if isNumeric(evt(ei).value(i))
+            tmp(i)=evt(ei).value(i).doubleValue(); 
+          else
+            tmp(i)=evt(ei).value(i);
+          end; 
+        end
+        evt(ei).value=tmp;
       end
     end;
   end
   % argh! different names from mex version
   varargout{1}=evt;
+ 
  case 'put_evt';
   if ( numel(detail)==1 ) 
     e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.BufferEvent',detail.type,detail.value,detail.sample));
@@ -151,6 +180,7 @@ switch cmd;
     e =struct('type',detail(end).type,'value',detail(end).value,'sample',e.sample,'offset',e.offset,'duration',e.duration);
   end
   varargout{1}=e;
+ 
  case {'wait_dat','poll'};
   if ( isempty(detail) ) detail=[-1 -1 -1]; end;
   if ( all(detail<0) ) detail(:)=0; end; % diff between mex and java  
@@ -159,18 +189,23 @@ switch cmd;
   % argh! different names from mex version
   sampevents.nsamples=sampevents.nSamples; sampevents.nevents=sampevents.nEvents;
   varargout{1}=sampevents;
+ 
  case 'get_samp';
   if ( isempty(detail) ) 
     varargout{1}=bufClient.getSamp();
   else
     varargout{1}=bufClient.getSamp(detail);
   end
+  if ( ~isnumeric(varargout{1}) && exist('OCTAVE_VERSION','builtin') )%in octave have to manually convert arrays..
+    varargout{1}=varargout{1}.doubleValue();
+  end
+ 
  case 'get_time';
   varargout{1}=bufClient.getTime();
+ 
  case 'sync_clk'; 
   if ( ~isempty(detail) ) bufClient.syncClocks(detail); else bufClient.syncClocks(); end;
 end
-
 
 % connection/reconnection helper function
 function [bufClient,host,port]=reconnect(host,port)
@@ -197,7 +232,8 @@ if ( isempty(clientIdx) ) % make a new connection
     bufferClient{clientIdx}.setAutoReconnect(true);
   catch
     le=lasterr;
-    error('Couldnt connect to the buffer: %s %d',host,port);
+    fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    error('Couldnt connect to the buffer: %s %d',host,port);    
   end  
 end
 if ( ~bufferClient{clientIdx}.isConnected() ) % re-connect if wanted/needed

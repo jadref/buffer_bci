@@ -1,16 +1,4 @@
-configureSpeller();
-
-% wait for the buffer to return valid header information
-hdr=[];
-while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
-  try 
-    hdr=buffer('get_hdr',[],buffhost,buffport); 
-  catch
-    hdr=[];
-    fprintf('Invalid header info... waiting.\n');
-  end;
-  pause(1);
-end;
+configureSpeller;
 
 if ( ~exist('cname','var') ) cname='clsfr'; end;
 if ( ~exist('clsfr','var') ) clsfr=load(cname); end;
@@ -51,7 +39,7 @@ while ( ~endTest )
     end % devents 
   end % sequences
   if ( endSeq ) % send the accumulated predictions
-    if ( verb>0 ) fprintf('Sending classifier prediction.\n'); end;
-    sendEvent('classifier.prediction',fs(:,1:nFlash));
+    ev=sendEvent('classifier.prediction',fs(:,1:nFlash));
+    if (verb>=0) fprintf('Sending classifier prediction: %s\n',ev2str(ev)); end;
   end
 end % feedback phase

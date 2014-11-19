@@ -6,7 +6,9 @@ function [data,devents,state,opts]=buffer_waitData(host,port,state,varargin);
 % Inputs:
 %  host -- buffer host name
 %  port -- buffer port
-%  state -- [struct] current state of the waitData.  This contains 3 fields:
+%  state -- [struct] current state of the waitData, use this between subsequent calls to buffer_waitData
+%            to resume processing from when the previous call finished.
+%           This contains 3 fields:
 %           .pending -- [struct] list of events for which we are still waiting for data
 %           .nevents -- [int] number of events processed so far
 %           .nsamples - [int] number of samples processed so far
@@ -18,16 +20,25 @@ function [data,devents,state,opts]=buffer_waitData(host,port,state,varargin);
 %               
 % Options:
 %  hdr  -- buffer header, got from state.hdr or read_hdr if empty. ([])
-%  startSet -- {2x1} cell array of match strings/numbers for matching 
+%  startSet -- {type value} OR {{types} {values}} cell array of match strings/numbers for matching 
 %              events based on their type and/or value as used in matchEvents.
-%              {type value} OR {{types} {values}}
-%               See matchEvents for details
-%  exitSet  -- {2x1} cell array of type,value sets on which to *STOP* waiting for
-%               more events.
+%               The first element of this array is the *set* of event types to match
+%               The second element of this array is the *set* of event values to match
+%               An event which matches one of the types *and* one of the values is counted as a match.
+%                [N.B. internally matchEvents is used to matching mi=matchEvents(events,startSet{:})]
+%               See matchEvents for more details on the structure of startSet
+%  exitSet  -- {type value} OR {{types} {values}} cell array of type,value sets on which to *STOP* waiting for
+%               more events in the same structure as for the startSet (see matchEvents for more details)
 %              OR
 %               'data' - stop as soon as we have the data for *ANY* matching event
 %              OR
 %                [int] - time to wait in ms before returning
+%              Note: These types of match can be combined, e.g. 
+%                 {1000 'data' {'cmd' 'stimulus'} 'end'} exits when:
+%                    1000ms have pased,   OR
+%                    a startEvent has data available,    OR
+%                    a type:'cmd' value:'end' event is recieved,          OR 
+%                    a type:'stimulus' value:'end' event is recieved
 %  offset_ms/samp -- offset from start/end event from/to which we gather data in ms or samples
 %  trlen_ms/samp  -- trial length from start event in ms or samples
 %  hdr      -- [struct] cached header structure for the attached buffer
@@ -39,13 +50,16 @@ function [data,devents,state,opts]=buffer_waitData(host,port,state,varargin);
 %  state -- [struct] current waitData state in the same format as the input state
 %
 % Examples:
-% % Example 1: get 1s of data after every event with type 'stimulus' until we recieve a 'cmd','exit' event
-%  [data,devents]=buffer_waitData([],[],[],'startSet',{'stimulus'},'trlen_ms',1000,'exitSet',{'cmd' 'exit');
+% % Example 1: block until an event of type 'stimulus' is recieved and return it immeadiately:
+%  [data,devents]=buffer_waitData([],[],[],'exitSet',{'stimulus'});
 %
+% % Example 2: get 1s of data after every event with type 'stimulus' until we recieve a 'cmd','exit' event
+%  [data,devents]=buffer_waitData([],[],[],'startSet',{'stimulus'},'trlen_ms',1000,'exitSet',{'cmd' 'exit');
 % % Example 2: loop geting data and processing it forever
 % state=[];
 % while ( true ) 
 %  % block until we've got new events *and* data to process
+%  % Note: we pass the 'state' back into call so no events are missed between calls.
 %  [data,devents,state]=buffer_waitData([],[],state,'startSet',{'stimulus'},'trlen_ms',1000,'exitSet',{'data' 'cmd' 'exit'});
 %  if ( any(matchEvents(devents,'cmd','exit')) ) % check for exit events, stop if found
 %    break;
@@ -55,6 +69,12 @@ function [data,devents,state,opts]=buffer_waitData(host,port,state,varargin);
 %     process_events(data,devents);
 %  end
 % end
+if ( nargin<1 || isempty(host) ) host='localhost'; end;
+if ( nargin<2 || isempty(port) ) port=1972; end;
+if ( nargin<3 || isempty(state)) % get the current info fast so don't miss things...
+  status=buffer('wait_dat',[-1 -1 -1],host,port);
+  state =struct('pending',[],'nevents',status.nevents,'nsamples',status.nsamples,'hdr',[]);  
+end;
 if ( numel(varargin)==1 && isstruct(varargin{1}) ) % shortcut option parsing!
   opts=varargin{1}; 
 else
@@ -62,9 +82,6 @@ else
   opts=parseOpts(opts,varargin);
   if ( opts.getOpts ) data=[];devents=[];state=[]; return; end;
 end
-if ( nargin<1 || isempty(host) ) host='localhost'; end;
-if ( nargin<2 || isempty(port) ) port=1972; end;
-if ( nargin<3 || isempty(state)) state=struct('pending',[],'nevents',[],'nsamples',[],'hdr',[]); end;
 if ( ~isempty(state) && isnumeric(state) ) % called in same way as buffer('wait_dat');
   opts.timeOut_ms=state(3);
   state=struct('pending',[],'nevents',state(2),'nsamples',state(1),'hdr',[]);  
@@ -79,12 +96,16 @@ elseif (iscell(exitSet))
   if ( isequal(exitSet{1},'data') ) dataExit=true; exitSet(1)=[];
   elseif ( iscell(exitSet{1}) && isequal(exitSet{1}{1},'data') ) dataExit=true; exitSet{1}(1)=[]; 
   end
-  if ( isnumeric(exitSet{1}) && numel(exitSet{1})==1 ) timeExit=exitSet{1}; exitSet(1)=[];
-  elseif ( iscell(exitSet{1}) && isnumeric(exitSet{1}{1})) timeExit=exitSet; exitSet{1}(1)=[]; 
+  if ( ~isempty(exitSet) )
+    if ( isnumeric(exitSet{1}) && numel(exitSet{1})==1 ) timeExit=exitSet{1}; exitSet(1)=[];
+    elseif ( iscell(exitSet{1}) && isnumeric(exitSet{1}{1})) timeExit=exitSet; exitSet{1}(1)=[]; 
+    end
   end
-  if ( isequal(exitSet{1},'data') ) dataExit=true; exitSet(1)=[];
-  elseif ( iscell(exitSet{1}) && isequal(exitSet{1}{1},'data') ) dataExit=true; exitSet{1}(1)=[]; 
-  end  
+  if ( ~isempty(exitSet) )
+    if ( isequal(exitSet{1},'data') ) dataExit=true; exitSet(1)=[];
+    elseif ( iscell(exitSet{1}) && isequal(exitSet{1}{1},'data') ) dataExit=true; exitSet{1}(1)=[]; 
+    end  
+  end
 end
 if ( ~iscell(exitSet) ) exitSet={exitSet}; end;
 if ( ~isempty(endSet) ) warning('endSet not supported yet! option ignored'); end;
@@ -94,13 +115,20 @@ hdr=[]; if ( isfield(state,'hdr') ) hdr=state.hdr; end; if ( isempty(hdr) ) hdr=
 % convert offsets etc from ms to samples
 fs=opts.fs; 
 if ( isempty(fs) && ( ~isempty(opts.trlen_ms) || ~isempty(opts.offset_ms) ) ) 
-  if ( isempty(hdr) ) hdr=buffer('get_hdr',[],host,port); end
+  if ( isempty(hdr) ) 
+    try;
+      hdr=buffer('get_hdr',[],host,port); 
+    catch;
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);      
+      fprintf('Error: Header not set!  Is the amplifier connected?\nTry again later.\n');
+    end
+  end
   fs=hdr.fsample; 
-elseif ( isempty(hdr) ) 
+elseif ( isempty(hdr) && ~isempty(fs) ) 
   hdr=struct('fsample',fs,'nevents',[],'nsamples',[]);
 end;
 % Use the given trial length to over-ride the status info if wanted
-if ( ~isempty(opts.trlen_ms) )
+if ( ~isempty(opts.trlen_ms) || ~isempty(opts.offset_ms) )
   if ( isempty(fs) ) error('no fs: cant compute ms2samp'); end;
   samp2ms = 1000/fs; ms2samp = fs/1000;
   opts.trlen_samp = floor(opts.trlen_ms*ms2samp);
@@ -147,7 +175,12 @@ while( ~exitEvent )
   onevents=nevents;
   if ( opts.verb>=0 ) t1=toc; end;
   % N.B. nevents-1... because test is >nevents events!
-  status=buffer('wait_dat',[endsamp nevents timeout_ms],host,port);
+  try
+    status=buffer('wait_dat',[endsamp nevents timeout_ms],host,port);
+  catch % catch buffer failures and restart
+    warning('Buffer crash!');
+    break;
+  end
   if ( status.nevents < onevents )
       warning('Buffer restarted!')
       nevents=0; endsamp=status.nsamples;

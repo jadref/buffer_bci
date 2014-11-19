@@ -1,4 +1,4 @@
-run ../../utilities/initPaths;
+run ../../utilities/initPaths.m;
 
 buffhost='localhost';buffport=1972;
 global ft_buff; ft_buff=struct('host',buffhost,'port',buffport);
@@ -15,8 +15,8 @@ while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffe
 end;
 
 % set the real-time-clock to use
-initgetwTime();
-initsleepSec();
+initgetwTime;
+initsleepSec;
 
 % ----------------------------------------------------------------------------
 %    FILL IN YOUR CODE BELOW HERE

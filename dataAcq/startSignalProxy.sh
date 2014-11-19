@@ -1,8 +1,9 @@
 #!/bin/bash
 cd `dirname ${BASH_SOURCE[0]}`
 source ../utilities/findMatlab.sh
-cat <<EOF | $matexe -nodesktop  -nosplash
-run ../utilities/initPaths; 
+if [[ $matexe == *matlab ]]; then  args=-nodesktop; fi
+cat <<EOF | $matexe $args
+run ../utilities/initPaths.m; 
 buffer_signalproxy('localhost',1972,'stimEventRate',0,'queueEventRate',0);
 quit;
 EOF

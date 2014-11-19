@@ -57,7 +57,7 @@ function [varargout]=image3d(varargin)
 % check for (X,Y,Z,dim,varargin) calling format
 opts = struct('plotPos',[],'handles',[],'layout',[],...
               'X',[],'Y',[],'Z',[],...
-              'Xvals',[],'Yvals',[],'Zvals',[],'xVals',[],'yVals',[],'zVals',[],...
+              'Xvals',[],'Yvals',[],'Zvals',[],'xVals',[],'yVals',[],'zVals',[],'xvals',[],'yvals',[],'zvals',[],...
               'xlabel','','ylabel','','zlabel','',...
               'xmask',[],'ymask',[],'zmask',[],...
               'colorbar',[],'legend',[],'clim','minmax','clabel','',...
@@ -119,11 +119,17 @@ if ( dim > 3 ) warning('Only for 3d inputs'); dim=3; end;
 
 sizeA=size(A); sizeA(end+1:3)=1;
 N=sizeA(dim);
-if(~isempty(opts.Xvals)) Xvals=opts.Xvals; end;if(isempty(Xvals) && ~isempty(opts.xVals)) Xvals=opts.xVals; end 
+if(~isempty(opts.Xvals)) Xvals=opts.Xvals; end;
+if(isempty(Xvals) && ~isempty(opts.xVals)) Xvals=opts.xVals; end 
+if(isempty(Xvals) && ~isempty(opts.xvals)) Xvals=opts.xvals; end 
 if( isempty(Xvals) ) Xvals=1:sizeA(1); end; 
-if(~isempty(opts.Yvals)) Yvals=opts.Yvals; end;if(isempty(Yvals) && ~isempty(opts.yVals)) Yvals=opts.yVals; end;
+if(~isempty(opts.Yvals)) Yvals=opts.Yvals; end;
+if(isempty(Yvals) && ~isempty(opts.yVals)) Yvals=opts.yVals; end;
+if(isempty(Yvals) && ~isempty(opts.yvals)) Yvals=opts.yvals; end;
 if( isempty(Yvals) ) Yvals=1:sizeA(2); end;
-if(~isempty(opts.Zvals)) Zvals=opts.Zvals; end;if(isempty(Zvals) && ~isempty(opts.zVals)) Zvals=opts.zVals; end; 
+if(~isempty(opts.Zvals)) Zvals=opts.Zvals; end;
+if(isempty(Zvals) && ~isempty(opts.zVals)) Zvals=opts.zVals; end; 
+if(isempty(Zvals) && ~isempty(opts.zvals)) Zvals=opts.zvals; end; 
 if( isempty(Zvals) ) Zvals=1:sizeA(3); end;
 if( isempty(opts.xmask) ) opts.xmask=true(1,sizeA(1)); end;
 if( isempty(opts.ymask) ) opts.ymask=true(1,sizeA(2)); end;
@@ -152,17 +158,17 @@ switch dim  % setup the axes labels and finish index expression
      if ( iscell(axscale{2}) ) % cell array of strings
        axscale{2}=axscale{2}(:); tmp=axscale{2};
        for i=1:prod(sizeA(4:end)); 
-         for j=1:size(axscale{2},1); axscale{2}{j,i}=[num2str(i) ' ' tmp{j}]; end;
+         for j=1:numel(tmp); axscale{2}{j,i}=[num2str(i) ' ' tmp{j}]; end;
        end
      elseif (isnumeric(axscale{2}) )
        tmp=axscale{2};
        for i=1:prod(sizeA(4:end)); 
-         for j=1:size(axscale{2},1); axscale{2}(j,i)=axscale{2}(j) + 100*i; end;
+         for j=1:numel(tmp); axscale{2}(j,i)=tmp(j) + 100*i; end;
        end
-       axscale{2}=axscale{2}(:)';
      end
      axscale{2}=axscale{2}(:)';
-     axlab{2}  =sprintf('[extra,%s]',opts.zlabel); 
+     zlab=opts.zlabel; if ( isempty(zlab) ) zlab=['d3']; end;
+     axlab{2}  =sprintf('[extra,%s]',zlab); 
      axmask{2} =1:prod(sizeA(3:end)); 
   else
      axscale{2} = Zvals(1:axsz(2)); axmask{2}=opts.zmask; axlab{2}=opts.zlabel;
@@ -179,13 +185,17 @@ switch dim  % setup the axes labels and finish index expression
      if ( iscell(axscale{2}) ) % cell array of strings
        axscale{2}=axscale{2}(:); tmp=axscale{2};
        for i=1:prod(sizeA(4:end)); 
-         for j=1:size(axscale{2},1); axscale{2}{j,i}=[num2str(i) ' ' tmp{j}]; end;
+         for j=1:numel(tmp); axscale{2}{j,i}=[num2str(i) ' ' tmp{j}]; end;
        end
      elseif (isnumeric(axscale{2}) )
-       axscale{2}=single(axscale{2}(:))+repmat(100*(1:prod(sizeA(4:end))),[numel(axscale{2}),1]); 
-       axscale{2}=axscale{2}(:)';
+       tmp=axscale{2};
+       for i=1:prod(sizeA(4:end)); 
+         for j=1:numel(tmp); axscale{2}(j,i)=tmp(j) + 100*i; end;
+       end
      end
-     axlab{2}   = sprintf('[extra,%s]',opts.zlabel); 
+     axscale{2}=axscale{2}(:)';
+     zlab=opts.zlabel; if ( isempty(zlab) ) zlab=['d3']; end;
+     axlab{2}   = sprintf('[extra,%s]',zlab); 
   else
      axscale{2} = Zvals(1:axsz(2)); axlab{2}=opts.zlabel; axmask{2}=opts.zmask; 
   end 
@@ -199,17 +209,20 @@ switch dim  % setup the axes labels and finish index expression
      warning('Extra dimensions after 3 compressed into 3rd'); 
      axscale{3}=Zvals(1:axsz(3)); 
      if ( iscell(axscale{3}) ) % cell array of strings
-       axscale{3}=axscale{3}(:); tmp=axscale{2};
+       axscale{3}=axscale{3}(:); tmp=axscale{3};
        for i=1:prod(sizeA(4:end)); 
-         for j=1:size(axscale{3},1); axscale{3}{j,i}=[num2str(i) ' ' tmp{j}]; end;
+         for j=1:numel(tmp); axscale{3}{j,i}=[num2str(i) ' ' tmp{j}]; end;
        end
      elseif (isnumeric(axscale{3}) )
-       axscale{3}=single(axscale{3}(:))+repmat(100*(1:prod(sizeA(4:end))),[numel(axscale{3}),1]); 
-       axscale{3}=axscale{3}(:)';
+       tmp=axscale{3};
+       for i=1:prod(sizeA(4:end)); 
+         for j=1:numel(tmp); axscale{3}(j,i)=tmp(j) + 100*i; end;
+       end
      end
-     %axscale{3} = repmat(Zvals(1:axsz(3)),1,prod(sizeA(4:end)));  axscale{3}=axscale{3}(:)';
-     axsz(3)=prod(sizeA(3:end)); %A=reshape(A,[sizeA(1:2) prod(sizeA(3:end))]);
-     axlab{3}   = sprintf('[extra,%s]',opts.zlabel); 
+     axscale{3}=axscale{3}(:)';
+     axsz(3)=prod(sizeA(3:end));
+     zlab=opts.zlabel; if ( isempty(zlab) ) zlab=['d3']; end;
+     axlab{3}   = sprintf('[extra,%s]',zlab); 
      N = prod(sizeA(3:end));
   else
      axscale{3}= Zvals(1:axsz(3)); axlab{3}=opts.zlabel; axmask{3}=opts.zmask;
@@ -249,11 +262,11 @@ elseif ( ~isempty(opts.plotPos) ) % pre-build all the figure handles
 else
     for pi=1:N; hdls(pi)=subplot(w,h,pi); end;
 end
-legendpos=[];if ( numel(hdls)>N ) legendpos=get(hdls(N+1),'outerposition'); end;
+legendpos=[];if ( numel(hdls)>N ) legendpos=get(hdls(N+1),'position'); end;
 
 % pre-identify the axes which have tickmarks and/or axeslabels
 % turn on/off the tick marks / axes labels as requested
-pos = get(hdls(1:N),'outerposition'); if ( iscell(pos) ) pos=cat(1,pos{:}); end;
+pos = get(hdls(1:N),'position'); if ( iscell(pos) ) pos=cat(1,pos{:}); end;
 if ( isstr(opts.ticklabs) )
    switch lower(opts.ticklabs);
     case 'sw'; [ans,tickIdxs] = min((pos(:,1)-0).^2+(pos(:,2)-0).^2);
@@ -328,7 +341,7 @@ for pi=1:N;
         tickIdx(tickIdx<1)=[]; tickIdx(tickIdx>numel(axmark{1}))=[];
         axsettings={axsettings{:} 'XTick',tickIdx,'XTickLabel',axmark{1}(tickIdx),...
                     'XTickMode','manual','XTickLabelMode','manual'};
-     elseif( any(abs(diff(diff(axmark{1})))>1e-6) ) % non-uniform scaling
+     elseif( any(abs(diff(diff(axmark{1}(:)')))>1e-6) ) % non-uniform scaling
         tickIdx = [true abs(diff(diff(axmark{1})))>1e-6 true]; % locations of changes
         axsettings={axsettings{:} 'XTick' find(tickIdx) 'XTickLabel',axmark{1}(tickIdx) ...
                     'XTickMode','manual','XTickLabelMode','manual'};       
@@ -367,7 +380,7 @@ for pi=1:N;
         axsettings={axsettings{:} 'XTick',tickIdx,'XTickLabel',axmark{2}(tickIdx),...
                     'XTickMode','manual','XTickLabelMode','manual'};
      elseif( any(abs(diff(diff(axmark{2})))>1e-6) ) % non-uniform scaling
-        tickIdx = [true abs(diff(diff(axmark{2})))>1e-6 true]; % locations of changes
+        tickIdx = [true abs(diff(diff(axmark{2}(:)')))>1e-6 true]; % locations of changes
         axsettings={axsettings{:} 'XTick' find(tickIdx) 'XTickLabel',axmark{2}(tickIdx) ...
                     'XTickMode','manual','XTickLabelMode','manual'};       
      else
@@ -398,7 +411,7 @@ for pi=1:N;
         axsettings={'XTickLabel',axmark{1}(tickIdx),...
                     'XTickMode','manual','XTickLabelMode','manual'};
      elseif( any(abs(diff(diff(axmark{1})))>1e-6) ) % non-uniform scaling
-        tickIdx = [true abs(diff(diff(axmark{1})))>1e-6 true]; % locations of changes
+        tickIdx = [true abs(diff(diff(axmark{1}(:)')))>1e-6 true]; % locations of changes
         axsettings={axsettings{:} 'XTick' find(tickIdx) 'XTickLabel',axmark{1}(tickIdx) ...
                     'XTickMode','manual','XTickLabelMode','manual'};       
      else
@@ -488,7 +501,7 @@ for pi=1:N;
    
 end
 % store axlimits in the figures userdata info, so works with clickplots
-set(gcf,'userdata',axsettings);
+setappdata(gcf,'axsettings',axsettings);
 
 if ( 0 )
 % BODGE: change the drawing order to be from top to bottom so titles overlap the plot above
@@ -504,7 +517,7 @@ end;
 if ( ~isempty(opts.legend) && ~isequal(opts.legend,0) )
   i=N+1;
   if ( numel(hdls)>N && ishandle(hdls(i)) )
-    pos=get(hdls(i),'outerposition');
+    pos=get(hdls(i),'position');
   else % try to compute a good location
      % default to se position
      if ( isnumeric(opts.legend) && numel(opts.legend)==1 ) opts.legend='se'; end; 
@@ -541,14 +554,14 @@ if ( ~isempty(opts.legend) && ~isequal(opts.legend,0) )
   good=false(size(lines));for li=1:numel(lines);if(~isempty(get(lines(li),'DisplayName')))good(li)=true;end; end;
   leghdl=legend(hdls(N),lines(good));
   % get the size of the legend window and use it for the new window
-  tpos=get(leghdl,'outerposition'); 
+  tpos=get(leghdl,'position'); 
   pos(3:4)=tpos(3:4); 
   if ( ischar(opts.legend) )
     if( strfind(lower(opts.legend),'e') ) pos(1)=min(pos(1),1-pos(3)); end; 
     if( strfind(lower(opts.legend),'n') ) pos(2)=min(pos(2),1-pos(4)); end;
   end
   if ( all(pos(3:4)>0) ) % only if possible
-    set(leghdl,'outerposition',[pos(1:2) pos(3:4)],'box','off');
+    set(leghdl,'position',[pos(1:2) pos(3:4)],'box','off');
   end
   hdls(N+1)=leghdl;
 end % if legend
@@ -561,7 +574,15 @@ if ( ~isempty(opts.colorbar) && opts.colorbar && ~isempty(opts.clim) )  % true c
   else
     pos=legendpos;
   end
-  hdls(N+1)=colorbar('peer',hdls(N),'outerposition',pos);
+  if ( exist('OCTAVE_VERSION','builtin') ) % in octave have to manually convert arrays..
+    tmp=get(hdls(N),'position');
+    hdls(N+1)=colorbar('peer',hdls(N),'position',pos); %BUG: octave resizes axes even if give colorbar size
+    set(hdls(N),'position',tmp);
+    set(hdls(N+1),'position',pos);
+  else    
+    hdls(N+1)=colorbar('peer',hdls(N));
+    set(hdls(N+1),'position',pos);xs
+  end
   if ( ~isempty(opts.clabel) ) title(hdls(end),opts.clabel); end;
 end % if colorbar
 

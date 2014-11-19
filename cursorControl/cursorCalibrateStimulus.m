@@ -1,4 +1,4 @@
-configureCursor();
+configureCursor;
 
 % make stim seq with an extra invisible symbol to increase the ISI
 [stimSeq,stimTime]=mkStimSeqRand2Color(vnSymbs,ceil(seqDuration/isi/vnSymbs)*vnSymbs*10,isi);

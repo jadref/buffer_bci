@@ -1,16 +1,4 @@
-configureSpeller();
-
-% wait for the buffer to return valid header information
-hdr=[];
-while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
-  try 
-    hdr=buffer('get_hdr',[],buffhost,buffport); 
-  catch
-    hdr=[];
-    fprintf('Invalid header info... waiting.\n');
-  end;
-  pause(1);
-end;
+configureSpeller;
 
 % make the stimulus
 fig=gcf;
@@ -35,7 +23,7 @@ pred=zeros(2,size(stimSeqRow,2)+size(stimSeqCol,2)); % stores the classifier pre
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
 set(h(:),'color',[.5 .5 .5]);
-sendEvent('stimulus.training','start');
+sendEvent('stimulus.feedback','start');
 drawnow; pause(5); % N.B. use pause so the figure window redraws
 
 for si=1:nSeq;
@@ -163,7 +151,7 @@ for si=1:nSeq;
     % update the feedback display
     for hi=1:numel(h); set(h(hi),'fontSize',symbSize*(1+.5*(p(hi)-1/numel(symbols)))); end;     
     % show the classifier prediction
-    set(h(predTgt),'color',tgtColor);
+    set(h(predTgt),'color',predColor);
     drawnow;
     sendEvent('stimulus.prediction',symbols{predTgt});
   end

@@ -1,14 +1,20 @@
 % setup the global variable which contains the pointer to the high-resolution wall-time clock
 %
-% []=initgetwTime();
+% []=initgetwTime;
 %
 % N.B. use t=getwTime() to use
 %
 % See also: getwTime, toc
 % set the real-time-clock to use
-global getwTime;
+global getwTime TESTING;
 evalin('caller','global getwTime');
 evalin('base','global getwTime');
+if ( isequal(TESTING,true) ) 
+  getwTime=@() clock()*[0 0 86400 3600 60 1]'; % in seconds
+else
+  getwTime=@() buffer('get_time')/1000; % use the rtc provided by the buffer
+end
+return;
 if ( isempty(getwTime) && exist('GetSecs') )
   try % PTB method may break!
     GetSecs();

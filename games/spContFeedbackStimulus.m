@@ -1,17 +1,5 @@
 configureGame;
 
-% wait for the buffer to return valid header information
-hdr=[];
-while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
-  try 
-    hdr=buffer('get_hdr',[],buffhost,buffport); 
-  catch
-    hdr=[];
-    fprintf('Invalid header info... waiting.\n');
-  end;
-  pause(1);
-end;
-
 % make the stimulus
 clf;
 fig=gcf;
@@ -161,7 +149,7 @@ for si=1:nSeq;
   
     for hi=1:numel(h); set(h(hi),'fontSize',symbSize*(1+.5*(p(hi)-1/numel(symbols)))); end;     % update the feedback display
     % show the classifier prediction
-    set(h(predTgt),'color',tgtColor);
+    set(h(predTgt),'color',predColor);
     drawnow;
     sendEvent('stimulus.prediction',symbols{predTgt});
   end

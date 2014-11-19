@@ -1,7 +1,8 @@
 #!/bin/bash
 cd `dirname ${BASH_SOURCE[0]}`
 source ../utilities/findMatlab.sh
-cat <<EOF | $matexe -nodesktop -nosplash
-startSigProcBuffer();
+if [[ $matexe == *matlab ]]; then  args=-nodesktop; fi
+cat <<EOF | $matexe $args
+startSigProcBuffer;
 quit;
 EOF

@@ -56,7 +56,7 @@ else
   opts=struct('wb',[],'alphab',[],'dim',[],'rdim',[],'mu',0,'Jconst',0,...
               'maxIter',inf,'maxEval',[],'tol',0,'tol0',0,'lstol0',1e-5,'objTol',0,'objTol0',1e-4,...            
               'verb',0,'step',0,'wght',[],'X',[],'maxLineSrch',50,...
-              'maxStep',3,'minStep',5e-2,'marate',.95,'bPC',[],'wPC',[],'incThresh',.75,'optBias',0,'maxTr',inf,...
+              'maxStep',3,'minStep',5e-2,'marate',.95,'bPC',[],'wPC',[],'incThresh',.66,'optBias',0,'maxTr',inf,...
               'getOpts',0);
   [opts,varargin]=parseOpts(opts,varargin{:});
   if ( opts.getOpts ) wb=opts; return; end;
@@ -122,7 +122,7 @@ oX=X; oY=Y;
 incIdx=Y(:)~=0;
 if ( sum(incIdx)./numel(Y) < opts.incThresh ) % if enough ignored to be worth it
    if ( sum(incIdx)==0 ) error('Empty training set!'); end;
-   X=X(:,incIdx); Y=Y(incIdx); wghtY=wghtY(incIdx);
+   X=X(:,incIdx); Y=Y(incIdx); if ( numel(wghtY)==numel(oY) ) wghtY=wghtY(incIdx); end;
 end
 
 % generate an initial seed solution if needed

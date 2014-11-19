@@ -4,6 +4,7 @@ function []=sleepSec(t);
 % []=sleepSec(t);
 %
 % N.B. use initsleepSec to initialize!
+% N.B. this function is only a placeholder the actual function is in the global variable: sleepSec
 %
 % See also: initsleepSec
 global sleepSec;

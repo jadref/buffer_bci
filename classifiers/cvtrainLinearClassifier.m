@@ -18,51 +18,64 @@ function [classifier,res,Y]=cvtrainLinearClassifier(X,Y,Cs,fIdxs,varargin)
 %            [1 x 1] number of folds to use (only for Y=trial labels).     (10)
 %            or
 %            [size(Y) x nFold x nCls] logical matrix indicating trials for each sub-prob per fold
+%  spMx   - [nSp x nCls] mapping from clases into sub-problems to train.    (mkspMx(1:nCls,'1vR'))
+%              N.B. see mkspMx for how to make a sub-problem matrix
 % Options:
 %  dim    - [int] the dimension(s) of X which contain the trials            (ndims(X))
 %  objFn  - [str] which objetive function to optimise,                      ('klr_cg')
 %  Cscale - [float] scaling parameter for the penalties                     (.1*var(X))
 %             N.B. usually auto computed from the data, set to 1 to force input Cs  
 %  balYs  - [bool] balance the labels of sets                               (0)
+%  binsp  - [bool] do we break multi-class problems into sets of binary problems (1)
 %  spType - [str] sub-problem decomposition to use for multi-class. one-of '1v1' '1vR' ('1v1')
 %  spKey  - [Nx1] set of all possible label values                          ([])
 %  spMx   - [nSp x nClass] encoding/decoding matrix to map from class labels to/from binary 
 %           subProblems                                                     ([])
+%  cv2    - [bool] use double nested cross-validation to produce performance estimates? (0)
+%           Note: use the cv2trainFn option 'nInner' to set the number of inner folds
 % Outputs:
 %  classifier -- [struct] containing all the information about the linear classifier
 %           |.w -- [size(X) x nSp] weighting over X (for each subProblem)
 %           |.b -- [nSp x 1] bias term
 %           |.dim -- [ind] dimensions of X which contain the trails
 %  res   -- [struct] results structure as returned by cvtrainFn
-opts=struct('objFn','klr_cg','dim',[],'spType','1v1','spKey',[],'spMx',[],'zeroLab',0,...
-            'balYs',0,'verb',0,'Cscale',[],'compKernel',1);
+%
+% See also: cvtrainFn, cv2trainFn, lr_cg, klr_cg, l2svm_cg, rls_cg
+opts=struct('objFn','lr_cg','dim',-1,'spType','1vR','spKey',[],'spMx',[],'zeroLab',0,...
+            'balYs',0,'verb',0,'Cscale',[],'compKernel',0,'binsp',1,'cv2',0);
 [opts,varargin]=parseOpts(opts,varargin);
 if( nargin < 3 ) Cs=[]; end;
 if( nargin < 4 || isempty(fIdxs) ) fIdxs=10; end;
 
-dim=opts.dim; if ( isempty(dim) ) dim=ndims(X); end;
+dim=opts.dim; if ( isempty(dim) ) dim=ndims(X); end; % default to 
 dim(dim<0)=dim(dim<0)+ndims(X)+1; % convert negative to positive indicies
 
 if( ndims(Y)==2 && size(Y,1)==1 && size(Y,2)>1 ) Y=Y'; end; % col vector only
 % build a multi-class decoding matrix
 spKey=opts.spKey; spMx =opts.spMx;
-if ( ~(isempty(spKey) && isempty(spMx)) ) % sub-prob decomp already done, so trust it
+if ( ~isempty(spKey) && ~isempty(spMx) ) % sub-prob decomp already done, so trust it
   if ( ~all(Y(:)==-1 | Y(:)==0 | Y(:)==1) ) 
     error('spKey/spMx given but Y isnt an set of binary sub-problems');
   end
-elseif ( size(Y,2)==1 && all(Y(:)==-1 | Y(:)==0 | Y(:)==1) && ~(opts.zeroLab && any(Y(:)==0)) ) % already a valid binary problem
-    spKey=[1 -1]; % binary problem
-    spMx =[1 -1];
-else
+
+% already a valid binary problem indicator matrix
+elseif ( isnumeric(Y) &&  all(Y(:)==-1 | Y(:)==0 | Y(:)==1) && ~(size(Y,2)==1 && opts.zeroLab && any(Y(:)==0)) ) 
+  if ( size(Y,2)==1 ) spKey=[1 -1]; spMx =[1 -1];   % binary problem
+  else                spKey=[1:size(Y,2)]; spMx=spKey; end;
+elseif ( opts.binsp ) % decompose into set of binary problems
+  if ( isempty(spMx) ) spMx=opts.spType; end;
   [Y,spKey,spMx]=lab2ind(Y,spKey,spMx,opts.zeroLab); % convert to binary sub-problems
 end
-spDesc=mkspDesc(spMx,spKey);
+spDesc=[];
+if ( ~isempty(spMx) && ~isempty(spKey) )
+  spDesc=mkspDesc(spMx,spKey);
+end
   
 % build a folding -- which is label aware, and aware of the sub-prob encoding type
 if ( numel(fIdxs)==1 ) fIdxs=gennFold(Y,fIdxs,'dim',numel(dim)+1); end;
 if ( opts.balYs ) [fIdxs] = balanceYs(Y,fIdxs); end % balance the folding if wanted
 
-% estimate good range hype-params
+% estimate good range hyper-params
 Cscale=opts.Cscale;
 if ( isempty(Cscale) || isequal(Cscale,'l2') )  Cscale=CscaleEst(X,2,[],0);
 elseif ( isequal(Cscale,'l1') )                 Cscale=sqrt(CscaleEst(X,2,[],0));
@@ -90,23 +103,42 @@ if ( opts.compKernel )
    if ( opts.verb>0 ) fprintf('..done\n'); end;
    % call cvtrain to do the actual work
    % N.B. note we use dim 2 because of the kernel transformation
-   res=cvtrainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',2,'verb',opts.verb,varargin{:}); 
+   if ( opts.cv2 ) 
+     res=cv2trainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',2,'verb',opts.verb,'binsp',opts.binsp,varargin{:}); 
+   else
+     res=cvtrainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',dim,'verb',opts.verb,'binsp',opts.binsp,varargin{:}); 
+   end   
 else
    % call cvtrain to do the actual work
-   res=cvtrainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',dim,'verb',opts.verb,varargin{:}); 
+   if ( opts.cv2 ) 
+     res=cv2trainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',dim,'verb',opts.verb,'binsp',opts.binsp,varargin{:}); 
+   else
+     res=cvtrainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',dim,'verb',opts.verb,'binsp',opts.binsp,varargin{:}); 
+   end
 end
 
 
 % Extract the classifier weight vector(s)
 % best hyper-parameter for all sub-probs, N.B. use the same C for all sub-probs to ensure multi-class is OK
-[opttstbin,optCi]=max(mean(res.tstbin,2)+mean(res.tstauc,2),[],3); 
-for isp=1:size(Y,2); % get soln for each subproblem
-   if ( isfield(res,'opt') && isfield(res.opt,'soln') ) % optimal calibrated solution trained on all data
-      soln  = res.opt.soln{isp};
-   else
+if ( isfield(res,'opt') && isfield(res.opt,'soln') ) % optimal calibrated solution trained on all data
+  for isp=1:numel(res.opt.soln); % get soln for each subproblem
+    soln  = res.opt.soln{isp};
+    W(:,isp) = soln(1:end-1); b(isp)=soln(end);
+  end
+else
+  if ( opts.binsp ) 
+    [opttstbin,optCi]=max(mean(res.tstbin,2)+mean(res.tstauc,2),[],3); 
+  else
+    [opttstbin,optCi]=max(mean(res.tstbin,2),[],3); 
+  end
+  for isp=1:size(Y,2); % get soln for each subproblem
+    if ( isfield(res.soln) )
       soln  = res.soln{isp,optCi(isp)}; 
-   end
-   W(:,isp) = soln(1:end-1); b(isp)=soln(end);
+    elseif ( isfield(res.fold,'soln') ) % only per-fold solutions available. pick the first
+      soln  = res.fold.soln{isp,optCi(isp)}; 
+    end
+    W(:,isp) = soln(1:end-1); b(isp)=soln(end);      
+  end
 end
 if ( ~opts.compKernel ) % input space classifier, just extract
    W=reshape(W,[szX(1:min(odim)-1) size(W,2)]);
@@ -117,13 +149,15 @@ else % kernel method. extract the weights
 end
 
 % put all the parameters into 1 structure
-classifier = struct('W',W,'b',b,'dim',dim,'spMx',spMx,'spKey',spKey);
+if ( iscell(spKey) ) spKey={spKey}; end; % BODGE: need double nest cell-arrays when making structs
+classifier = struct('W',W,'b',b,'dim',dim,'spMx',spMx,'spKey',spKey,'spDesc',{spDesc},'binsp',opts.binsp);
 return;
 %-----------------------------------------------------------------------------
 function testCase()
 
 [X,Y]=mkMultiClassTst([-1 0 0 0; 1 0 0 0; .2 .5 0 0],[400 400 50],[.3 .3 0 0; .3 .3 0 0; .2 .2 0 0],[],[-1 1 1]);
 [classifier,res]=cvtrainLinearClassifier(X,Y,[],10);
+plotLinDecisFn(X,Y,classifier.W,classifier.b)
 % 2d features
 X=reshape(X,[2 2 size(X,2)]);
 [classifier,res]=cvtrainLinearClassifier(X,Y,[],10);

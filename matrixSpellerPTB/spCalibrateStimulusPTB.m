@@ -1,4 +1,4 @@
-configureSpeller();
+configureSpeller;
 
 % make the stimulus
 ws=Screen('windows'); % re-use existing window 

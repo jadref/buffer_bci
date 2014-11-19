@@ -32,12 +32,14 @@ function []=buffer_signalproxy(host,port,filename,varargin);
 
 if ( nargin<2 || isempty(port) ) port=1972; end;
 if ( nargin<1 || isempty(host) ) host='localhost'; end;
-if ( nargin<3 || isempty(filename) ) error('Insufficient arguments -- must specify file name!'); end;
-mdir=fileparts(mfilename('fullpath'));
-run(fullfile(mdir,'..','utilities','initPaths'));
+if ( nargin<3 || isempty(filename) ) 
+  [fn,pth]=uigetfile('~/output/*.txt','Pick header.txt in a data save directory!'); drawnow;
+  if ( ~isequal(fn,0) ) filename=fullfile(pth,fn); end;
+end;
+wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../utilities/initPaths.m'); end;
 % init the accurate real-time-clock
-initgetwTime();
-initsleepSec();
+initgetwTime;
+initsleepSec;
 
 opts=struct('blockSize',5,'verb',0,'speedup',1,'excludeSet',[],...
             'startSamp',[],'endSamp',[],'startEvent',[],'endEvent',[]);
@@ -60,6 +62,8 @@ datafname =fullfile(fdir,'samples');
 
 % read the header
 hdr=read_buffer_offline_header(hdrfname);
+hdr.data_type=10; % force double
+hdr.dataType=10;
 buffer('put_hdr',hdr,host,port);
 
 % cope with different hdr formats/name conventions
@@ -83,6 +87,7 @@ dat=struct('nchans',nChans,'nsamples',opts.blockSize,'data_type',dataType,'buf',
 % read all the events
 events=read_buffer_offline_events(eventfname,hdr);
 % and make-sure they are in sample order
+if ( numel(events)>0 )
 oevstartsamp=cat(1,events.sample);
 [oevstartsamp,si]=sort(oevstartsamp,'ascend');
 events=events(si); 
@@ -92,6 +97,7 @@ if ( ~isempty(opts.excludeSet) )
   % remove excluded events from all events and time-indication for it
   oevstartsamp=oevstartsamp(~mi);
   events=events(~mi);  
+end
 end
 
 % get the sample rate
@@ -151,6 +157,7 @@ while( nsamp < nSamples )
 
   % read the data, N.B. -1 at the end so don't send the same sample twice!
   dat.buf = read_buffer_offline_data(datafname,hdr,[onsamp nsamp-1]);
+  dat.buf = double(dat.buf); % force double
   % put the data
   buffer('put_dat',dat,host,port);
   % put any events

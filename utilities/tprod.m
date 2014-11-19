@@ -126,7 +126,18 @@ function [varargout]=tprod(varargin)
 persistent compileOK;
 mlock % weirdly this is needed for the persistent variable to remain set between calls
 
-if ( isempty(compileOK) ) % only try to compile the function once
+% only try to compile the function once
+if ( isempty(compileOK) )
+  if ( exist(fullfile(fileparts(mfilename('fullpath')),'compileFailed'),'file')...
+       || exist('OCTAVE_VERSION','builtin') ) % if it's there stop
+    % mark as bad and use the fall-back code
+    compileOK=false;
+    [varargout{1:nargout}] = tprodm(varargin{:}); 
+    return;
+  end
+  % mark as failed, remove on success
+  compileOK=false;
+  fid=fopen(fullfile(fileparts(mfilename('fullpath')),'compileFailed'),'w');fprintf(fid,'1');fclose(fid);
   % The rest of this code is a mex-hiding mechanism which compilies the mex if
   % this runs and recursivly calls itself.  
   % Based upon code from: http://theoval.sys.uea.ac.uk/matlab
@@ -134,6 +145,7 @@ if ( isempty(compileOK) ) % only try to compile the function once
   name = mfilename('fullpath'); % get the directory where we are
                                 % find out what directory it is defined in
   name(name=='\')='/';
+  if(isequal(name(end-1:end),'.m')) name=name(1:end-2); end;
   dir=name(1:max(find(name == '/')-1));
   try % try changing to that directory
     cd(dir);
@@ -151,9 +163,9 @@ if ( isempty(compileOK) ) % only try to compile the function once
     end
     fprintf('done\n');
     compileOK=true;
+    % remove the failed file
+    delete(fullfile(mfilename('fullpath'),'compileFailed'))
   catch
-    % this may well happen happen, get back to current working directory!
-    compileOK=false;
     cd(cwd);
     warning(sprintf('unable to compile MEX version of ''%s'',\n, please make sure your MEX compilier is setup correctly\n(try ''mex -setup'')\nUsing fallback matlab implementation from now on!', name));
   end

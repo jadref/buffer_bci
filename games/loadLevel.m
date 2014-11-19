@@ -22,8 +22,10 @@ maxx=[];
 xi=0;yj=1; ci=0;
 while ci<numel(char)
   ci=ci+1;
-  if double(char(ci))==10  % This occurs at the end of a line
+  if int32(char(ci))==10 || int32(char(ci))==13 % This occurs at the end of a line
     ci=ci+1; % Just read the next character
+    if ( ci>numel(char) ) break; end; % check for eof
+    if ( int32(char(ci))==10 ) ci=ci+1; end; %skip \l on windows
     if ( ci>numel(char) ) break; end; % check for eof
     if ( isempty(maxx) ) maxx=xi; 
     elseif ( xi~=maxx ) 
@@ -46,7 +48,7 @@ while ci<numel(char)
      case {'B'};             map(xi,yj)=key.empty;       agents(xi,yj)=key.block; % block
      case {'C'};             map(xi,yj)=key.empty;       agents(xi,yj)=key.man;   % pacman
      case {'G'};             map(xi,yj)=key.goal;        % ghost
-     otherwise; error(sprintf('Unrecog map spec: %c',char(ci)));
+     otherwise; error(sprintf('Level: %s:%d - Unrecog map spec: %c',fname,ci,char(ci)));
     end
   elseif ( strcmp(type,'snake') )
     switch char(ci);
@@ -56,7 +58,7 @@ while ci<numel(char)
      case {'-','|','W','1','B'}; map(xi,yj)=key.wall;    % wall
      case {'C'};             map(xi,yj)=key.empty;       agents(xi,yj)=key.snakehead; % snake-head
      case {'S'};             map(xi,yj)=key.empty;       agents(xi,yj)=key.snakebody; % snake-body
-     otherwise; error(sprintf('Unrecog map spec: %c',char(ci)));
+     otherwise; error(sprintf('Level: %s:%d - Unrecog map spec: %c',fname,ci,char(ci)));
     end    
   elseif ( isempty(type) || strcmp(type,'pacman') )
     switch char(ci);
@@ -68,7 +70,7 @@ while ci<numel(char)
      case {'D'};             map(xi,yj)=key.ghostdoor;   % ghostbox door
      case {'C'};             map(xi,yj)=key.empty;       agents(xi,yj)=key.pacman; % pacman
      case {'G'};             map(xi,yj)=key.empty;       agents(xi,yj)=key.ghost; % ghost
-     otherwise; error(sprintf('Unrecog map spec: %c',char(ci)));
+     otherwise; error(sprintf('Level: %s:%d - Unrecog map spec: %c',fname,ci,char(ci)));
     end
   end
 end

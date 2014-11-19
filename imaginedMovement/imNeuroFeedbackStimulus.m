@@ -1,4 +1,4 @@
-configureIM();
+configureIM;
 
 % make the target sequence
 tgtSeq=mkStimSeqRand(nSymbs,nSeq);

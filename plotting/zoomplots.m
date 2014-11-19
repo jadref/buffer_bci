@@ -37,6 +37,7 @@ elseif ( fighdl>0 && strcmp(get(fighdl,'SelectionType'),'normal') ) % zoom in
    
   % find all axes completely within the bounding box
   hdls = findobj(fighdl,'type','axes','visible','on'); % *visible* sub-axes of the current figure
+  if ( isempty(hdls) ) return; end;
   pos=get(hdls,opts.postype); if(iscell(pos)) pos=cell2mat(pos)'; else pos=pos(:); end;
   idx = pos(1,:)>=bbox(1) & pos(2,:)>=bbox(2) & ...
         pos(1,:)+pos(3,:)<=bbox(1)+bbox(3) & pos(2,:)+pos(4,:)<=bbox(2)+bbox(4);

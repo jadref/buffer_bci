@@ -5,6 +5,8 @@ function [fg,g]=fftfilter(f,g,len,dim,detrendp,win,hilbertp,MAXEL,verb);
 % Inputs:
 %  f   -- [n-d] signal 
 %  g   -- [Lx1] spectral filter vector.  L <= size(f,dim)
+%         (Note: use mkFilter to make this filter, e.g.
+%          mkFilter(floor(size(f,dim)/2),[8 10 24 28],1/duration); % 10-24 Hz band pass)
 %  len -- [2x1] len(1) = N-point fft to use for *f*, ([size(f,dim), size(f,dim)])
 %               len(2) = Output sample size (for up/down sample) 
 %  dim -- dimension to filter along. (first non-singlenton dimension)
@@ -18,6 +20,9 @@ function [fg,g]=fftfilter(f,g,len,dim,detrendp,win,hilbertp,MAXEL,verb);
 % Outputs:
 %  fg  -- [size(f) with dim=len(2)] f convolved with g
 %  g   -- the actual filter we used
+%
+% Example:
+%   fftfilter(X,mkFilter(floor(size(X,2)/2),[0 0 30 40],1/3),[],2); % low-pass @30 for X with time in dim2
 if ( nargin < 3 || isempty(len) ) len=size(f,dim); end;
 if ( nargin < 4 || isempty(dim) ) dim=find(size(f)>1,1); end;
 if ( nargin < 5 || isempty(detrendp) ) detrendp=1; end;
@@ -86,7 +91,11 @@ while ( ~isempty(idx) )
       tmpIdx={};for di=1:ndims(tmp); tmpIdx{di}=1:size(tmp,di); end; tmpIdx{dim}=1:len(2);
       tmp=tmp(tmpIdx{:});    % only keep the points we want
    end
-   if(hilbertp==1) tmp=2*abs(tmp); elseif(hilbertp==2) tmp=angle(tmp); elseif(hilbertp==3) tmp=2*tmp; end; % amp/phase?
+   if(hilbertp==0)     tmp=real(tmp); % real-only
+   elseif(hilbertp==1) tmp=2*abs(tmp); 
+   elseif(hilbertp==2) tmp=angle(tmp); 
+   elseif(hilbertp==3) tmp=2*tmp; 
+   end; % amp/phase?
    outIdx=idx; outIdx{dim}=1:len(2);
    fg(outIdx{:})=tmp; % only store the non-padded bit
    idx=nextChunk(idx,szf,chkStrides);

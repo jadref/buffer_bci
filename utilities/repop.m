@@ -80,11 +80,15 @@ persistent compileOK;
 mlock % weirdly this is needed for the persistent variable to remain set between calls
 
 if ( isempty(compileOK) ) % only try to compile the function once
-  if ( exist('bsxfun','builtin') ) % matlab R2008 or later, don't even bother to compile!
+  if ( exist('bsxfun','builtin') || exist(fullfile(fileparts(mfilename('fullpath')),'compileFailed'),'file') ...
+       || exist('OCTAVE_VERSION','builtin') ) % matlab R2008 or later, don't even bother to compile!
     compileOK=false;
     [varargout{1:nargout}] = repopm(varargin{:});
     return;
   end
+  % mark as failed, remove on success
+  compileOK=false;
+  fid=fopen(fullfile(fileparts(mfilename('fullpath')),'compileFailed'),'w');fprintf(fid,'1');fclose(fid);
   
   % The rest of this code is a mex-hiding mechanism which compilies the mex if
   % this runs and recursivly calls itself.  
@@ -96,6 +100,7 @@ if ( isempty(compileOK) ) % only try to compile the function once
   name = mfilename('fullpath'); % get the directory where we are
                                 % find out what directory it is defined in
   name(name=='\')='/'; % deal with dos'isms
+  if(isequal(name(end-1:end),'.m')) name=name(1:end-2); end;
   dir=name(1:max(find(name == '/')-1)); % dir is everything before final '/'
   try % try changing to that directory
     cd(dir);
@@ -112,6 +117,8 @@ if ( isempty(compileOK) ) % only try to compile the function once
       mex(cfiles{:},'-O','-output',mfilename);
     end
     fprintf('done\n');
+    % remove the failed file
+    delete(fullfile(mfilename('fullpath'),'compileFailed'))
   catch
     % this may well happen happen, get back to current working directory!
     cd(cwd);

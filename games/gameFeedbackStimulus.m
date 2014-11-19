@@ -1,4 +1,4 @@
-configureGame();
+configureGame;
 fbtype='epoch';%'cont';%
 
 % hack set nsymbs lower

@@ -1,7 +1,7 @@
-function [clsfr,res,X]=buffer_train_erp_clsfr(X,Y,hdr,varargin);
+function [clsfr,res,X,Y]=buffer_train_erp_clsfr(X,Y,hdr,varargin);
 % train ERP (time-domain) classifier with ft-buffer based data/events input
 %
-%   [clsfr,res]=buffer_train_erp_clsfr(X,Y,hdr,varargin);
+%   [clsfr,res,X,Y]=buffer_train_erp_clsfr(X,Y,hdr,varargin);
 %
 % Inputs:
 %  X -- [ch x time x epoch] data
@@ -20,7 +20,8 @@ function [clsfr,res,X]=buffer_train_erp_clsfr(X,Y,hdr,varargin);
 % Outputs:
 %  clsfr   -- [struct] a classifer structure
 %  res     -- [struct] a results structure
-%
+%  X       -- [ppch x pptime x ppepoch] pre-processed data (N.B. may/will have different size to input X)
+%  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
 % See Also: train_erp_clsfr
 opts=struct('capFile','1010','overridechnms',0);
 [opts,varargin]=parseOpts(opts,varargin);
@@ -36,23 +37,43 @@ elseif ( isstruct(X) )
   X=cat(3,X.buf);
 end 
 X=single(X);
-if ( isstruct(Y) ) Y=cat(1,Y.value); end; % convert event struct into labels
+if ( isstruct(Y) ) % convert event struct into labels
+  if ( isnumeric(Y(1).value) ) Y=cat(1,Y.value); 
+  elseif(isstr(Y(1).value) )   Y=cat(1,{Y.value});
+  else error('Dont know how to handle Y value type');
+  end
+end; 
 
 fs=[]; chNames=[];
 if ( isstruct(hdr) )
-  if ( isfield(hdr,'channel_names') ) chNames=hdr.channel_names; end;
-  if ( isfield(hdr,'fsample') ) fs=hdr.fsample; end;
+  if ( isfield(hdr,'channel_names') ) chNames=hdr.channel_names; 
+  elseif( isfield(hdr,'label') )      chNames=hdr.label;
+  end;
+  if ( isfield(hdr,'fsample') )       fs=hdr.fsample; 
+  elseif ( isfield(hdr,'Fs') )        fs=hdr.Fs;
+  elseif( isfield(hdr,'SampleRate') ) fs=hdr.SampleRate; 
+  else warning('Couldnt find sample rate in header, using 100'); fs=100;
+  end;
 elseif ( iscell(hdr) && isstr(hdr{1}) )
   chNames=hdr;
+end
+if ( isempty(chNames) ) 
+  warning('No channel names set');
+  chNames={}; for di=1:size(X,1); chNames{di}=sprintf('%d',di); end;
 end
 
 % get position info and identify the eeg channels
 di = addPosInfo(chNames,opts.capFile,opts.overridechnms); % get 3d-coords
-ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names
 iseeg=false(size(X,1),1); iseeg([di.extra.iseeg])=true;
+if ( any(iseeg) ) 
+  ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names    
+else % fall back on showing all data
+  warning('Capfile didnt match any data channels -- no EEG?');
+  ch_pos=[]; ch_names=di.vals; iseeg(:)=true;
+end
 
 % call the actual function which does the classifier training
-[clsfr,res,X]=train_erp_clsfr(X,Y,'ch_names',ch_names,'ch_pos',ch_pos,'fs',fs,'badCh',~iseeg,varargin{:});
+[clsfr,res,X,Y]=train_erp_clsfr(X,Y,'ch_names',ch_names,'ch_pos',ch_pos,'fs',fs,'badCh',~iseeg,varargin{:});
 return;
 %---------
 function testcase();

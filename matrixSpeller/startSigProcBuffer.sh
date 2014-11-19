@@ -1,9 +1,9 @@
 #!/bin/bash
 cd `dirname ${BASH_SOURCE[0]}`
 source ../utilities/findMatlab.sh
-cat <<EOF | $matexe -nodesktop -nosplash #> sigProc.log 
-capFile='cap_tmsi_mobita_black';
+if [[ $matexe == *matlab ]]; then  args=-nodesktop; fi
+cat <<EOF | $matexe $args
 overridechnms=1;
-startSigProcBuffer();
+startSigProcBuffer;
 %quit;
 EOF

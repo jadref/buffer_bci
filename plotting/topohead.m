@@ -14,12 +14,13 @@ if ( nargin < 2 || isempty(coords) ) coords=1; end;
 rmax=opts.rmax; if ( isempty(rmax) ) rmax = max(sqrt(sum(coords.^2))); end;
 
 % plot head, ears, nose
-plot(cos(linspace(0,2*pi,40)).*rmax,sin(linspace(0,2*pi,40)).*rmax, 'k-', 'LineWidth', opts.head,'Color',opts.color);hold on;
-plot( opts.nose2d(1,:)*rmax, opts.nose2d(2,:)*rmax, 'k-', 'LineWidth', opts.head,'Color',opts.color); hold on;
-plot( opts.ear2d(1,:)*rmax, opts.ear2d(2,:)*rmax, 'k-', 'LineWidth', opts.head,'Color',opts.color);hold on;
-plot(-opts.ear2d(1,:)*rmax, opts.ear2d(2,:)*rmax, 'k-', 'LineWidth', opts.head,'Color',opts.color);hold on;  
+hdls(1)=plot(cos(linspace(0,2*pi,40)).*rmax,sin(linspace(0,2*pi,40)).*rmax, 'k-', 'LineWidth', opts.head,'Color',opts.color);
+hold on;
+hdls(2)=plot( opts.nose2d(1,:)*rmax, opts.nose2d(2,:)*rmax, 'k-', 'LineWidth', opts.head,'Color',opts.color);
+hdls(3)=plot( opts.ear2d(1,:)*rmax, opts.ear2d(2,:)*rmax, 'k-', 'LineWidth', opts.head,'Color',opts.color);
+hdls(4)=plot(-opts.ear2d(1,:)*rmax, opts.ear2d(2,:)*rmax, 'k-', 'LineWidth', opts.head,'Color',opts.color);
 set(gca,'xlim',[-1.15 1.15]*rmax,'ylim',[-1.15 1.15]*rmax);
-
+hold off;
 return;
 %-----------------------------------------------------------------
 function testcase();

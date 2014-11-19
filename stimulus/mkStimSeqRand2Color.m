@@ -1,4 +1,22 @@
 function [stimSeq,stimTime,eventSeq]=mkStimSeqRand2Color(nSymbols,nStim,isi,mintti)
+% make a random stimulus sequence of a set of symbols with 2 stimulus types (colors)
+%
+% [stimSeq,stimTime,eventSeq,stimCode]=mkStimSeqRand2Color(nSymbols,nStim,isi,mintti)
+%
+% N.B. The 2nd color flash happens only *once* per "repetition", that is once every nSymbols
+%
+% Inputs:
+%  mxSz     -- [2 x 1] number of [rows cols] in the matrix
+%  nStim    -- [int] number of stimulus events to make the sequence for
+%  isi      -- [float] inter-stimulus interval in seconds                (1)
+% Outputs:
+%  stimSeq  -- [int nSymbols x nStim] logical matrix with true indicating that this symbol 
+%                       should flashed at this time
+%                 This has 2 possible values:  0=don't flash, 1=normal flash, 2=2nd color flash
+%  stimTime -- [1 x nStim] time in seconds each stimulus event should take place
+%  eventSeq -- {1 x nStim} cell array containing {2x1} event info which should be sent at each stimulus time.
+%                   Each entry is either empty (i.e. {}) indicating no event to be sent or
+%                   {type value} a cell array with the event type and value to send
 if ( nargin<4 || isempty(mintti) ) mintti=max(round(nSymbols)/2,nSymbols-2); end;
 % make normal 1 color stim seq
 [stimSeq,stimTime,eventSeq,stimCode]=mkStimSeqRand(nSymbols,nStim,isi,mintti);

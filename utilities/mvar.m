@@ -17,7 +17,13 @@ else             sX2=tprod(real(x),idx,[],idx)+tprod(imag(x),idx,[],idx);
 end
 N        =prod(sz(dims));
 v        =sX2/N - sX.^2/N.^2; % var = ( \sum_i x_i^2 - (\sum_i x_i)^2/N ) / N
+v        =max(0,v); % threshold at 0 for numerical issues
 if ( nargout>1 ) mu=sX./N; end;
 return;
 %-------------------------------------------------------------------------
 function testCase()
+X=randn(100,99,98);
+Xc=repop(X,'-',mmean(X,[1 2]));  vc=shiftdim(msum(Xc.^2,[1 2])./size(X,3));
+v =shiftdim(mvar(X,[1 2]));
+mad(vc,v)
+clf;plot([vc v])

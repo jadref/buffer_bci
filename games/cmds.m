@@ -1,6 +1,6 @@
 dbstop if error;
-initPaths();
-configureGame();
+initPaths;
+configureGame;
 
 % put a fake header so we don't need a signal proxy to proceed
 hdr=struct('fsample',100,'channel_names',{{'Cz'}},'nchans',1,'nsamples',0,'nsamplespre',0,'ntrials',1,'nevents',0,'data_type',10);

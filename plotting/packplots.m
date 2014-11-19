@@ -20,7 +20,7 @@ function [varargout]=packplots(varargin);
 if ( nargin>0 && isnumeric(varargin{1}) ) hdls=varargin{1}; varargin(1)=[]; 
 else hdls=[]; 
 end;
-opts = struct('interplotgap',.003,'plotsposition',[0.05 0.05 .93 .90],'scaling','any','sizes','any','postype','position');
+opts = struct('interplotgap',.003,'plotsposition',[0.05 0.05 .93 .90],'scaling','any','sizes','any','postype','position','emptySize',.05);
 [opts,varargin]=parseOpts(opts,varargin{:});
 if ( nargin<1 || isempty(hdls) ) 
    hdls=findobj(gcf,'type','axes');
@@ -69,9 +69,9 @@ minY = min(Ys-rY(:,1)); maxY=max(Ys+rY(:,2));  % y-range (inc plot radius)
 W    = maxX-minX; W = W / opts.plotsposition(3);
 H    = maxY-minY; H = H / opts.plotsposition(4);
 if ( isequal(opts.scaling,'square') ) W=max(W,H); H=max(W,H); end;
-Xs   = (Xs-(maxX+minX)/2)/W; rX = rX/W; % 0 centered, -.5 -> +.5
+if ( W>0 ) Xs   = (Xs-(maxX+minX)/2)/W; rX = rX/W; end % 0 centered, -.5 -> +.5
 Xs   = Xs + opts.plotsposition(1)+.5*opts.plotsposition(3);
-Ys   = (Ys-(maxY+minY)/2)/H; rY = rY/H; % 0 centered, -.5 -> +.5
+if ( H>0 ) Ys   = (Ys-(maxY+minY)/2)/H; rY = rY/H; end % 0 centered, -.5 -> +.5
 Ys   = Ys + opts.plotsposition(2)+.5*opts.plotsposition(4);
 
 % subtract the inter-plot gap if necessary.
@@ -79,6 +79,13 @@ rX(:,1) = rX(:,1) - opts.interplotgap(1); % left
 rX(:,2) = rX(:,2) - opts.interplotgap(2); % right
 rY(:,1) = rY(:,1) - opts.interplotgap(3); % bottom
 rY(:,2) = rY(:,2) - opts.interplotgap(4); % top
+
+% Check if this is a reasonable layout
+if( opts.emptySize>0 && (any(rX(:)<=0) | any(rY(:)<=0) | any(isnan(rY(:))) | any(isnan(rX(:)))) ) 
+   warning('Not enough room between points to make plot');
+   rX(rX<=0 | isnan(rX))=opts.emptySize(1); 
+   rY(rY<=0 | isnan(rY))=opts.emptySize(min(end,2));
+end
 
 % Now that we've computed the new centers and widths set the new plot
 % positions
