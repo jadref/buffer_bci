@@ -30,6 +30,7 @@
 ~/source/matfiles/signalproc/optShrinkage.m signalProc
 ~/source/matfiles/numutil/idOutliers.m signalProc
 ~/source/matfiles/numutil/sphericalSplineInterpolate.m signalProc
+~/source/matfiles/numutil/mmean.m utilities
 ~/source/matfiles/numutil/mvar.m utilities
 ~/source/matfiles/numutil/msum.m utilities
 ~/source/matfiles/numutil/mad.m utilities
