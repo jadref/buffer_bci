@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
 	 snprintf(&(labelsbuf[i*channamesize]),channamesize,"%02d",i);
   }
   chunkdef.type = FT_CHUNK_CHANNEL_NAMES;
-  chunkdef.size = channamesize;
+  chunkdef.size = channamesize*nchans*WORDSIZE_CHAR;
   // add this info to the header buffer
   header.def->bufsize = append(&header.buf, header.def->bufsize, &chunkdef, sizeof(ft_chunkdef_t));
   header.def->bufsize = append(&header.buf, header.def->bufsize, labelsbuf, chunkdef.size);
