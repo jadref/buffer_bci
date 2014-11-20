@@ -1,4 +1,4 @@
-# import necessary libraries from Psychopy and fieldtrip buffer
+# import necessary libraries from Psychopy and buffer_bci-master
 from psychopy import visual, core, event, gui, sound, data, monitors
 from random import shuffle
 import numpy as np
@@ -61,30 +61,31 @@ mywin = visual.Window(size=(1920, 1080), fullscr=True, screen=0, allowGUI=False,
     monitor='testMonitor', units="pix",color=[0,0,0], colorSpace='rgb',blendMode='avg', useFBO=True)
 
 #create some stimuli
-instruction = visual.TextStim(mywin, text='Welkom!\n\n' +
-            'U krijgt een reeks plaatjes te zien waarop telkens een object staat afgebeeld.\n'+
-            'Wanneer u weet welk object er op het plaatje staat kunt u met uw rechterhand op SPATIE drukken om door te gaan naar het volgende plaatje.\n\n' +
-            'Als u tijdens het bekijken van het plaatje een piep hoort en:\n' +
-            '(1) u wilde reeds op SPATIE drukken: doe dit dan NIET en wacht tot het volgende plaatje verschijnt.\n' +
-            '(2) u wilde nog niet op SPATIE drukken: negeer de piep en ga door met waar u mee bezig was.\n\n' +
-            'Dit experiment zal ongeveer 15 minuten duren, om de 10 minuten is er tijd voor pauze.\n' +
-            'Probeer a.u.b. zo min mogelijk te knipperen en bewegen tijdens zolang een plaatje zichtbaar is.\n\n' +
-            'Succes!',color=(1,1,1),wrapWidth = 800) # instructions
+instruction = visual.TextStim(mywin, text='Welcome!\n\n' +
+            'You will view a sequence of images, each displaying an object.\n'+
+            'When you recognize the object in the image, press SPACE with your right hand in order to continue to the next image.\n\n' +
+            'When you hear a beep while you are looking at an image and:\n' +
+            '(1) you already intended to press SPACE: do NOT press SPACE and wait fot the next image to appear.\n' +
+            '(2) you did not yet intend to press SPACE: ignore the beep and continue what you were doing.\n\n' +
+            'This experiment will last about 10 minutes.\n' +
+            'Please try to blink and move as little as possible while there is an image present on the screen.\n\n' +
+            'Good luck!',color=(1,1,1),wrapWidth = 800) # instructions
 fixation = visual.TextStim(mywin, text='+',color=(1,1,1),height=40) # fixation cross
-breaktext = visual.TextStim(mywin, text='Pauze\n\n Druk op een knop als u klaar bent om verder te gaan...',color=(1,1,1)) # break
-thankyou = visual.TextStim(mywin, text='Einde van het experiment',color=(1,1,1)) # thank you screen
-question = visual.TextStim(mywin, text='Wilde u reeds op de knop drukken op het moment dat u de toon hoorde? \n [z = JA] [m = NEE]',color=(1,1,1)) # intention question
+breaktext = visual.TextStim(mywin, text='Break\n\nPress a button to continue...',color=(1,1,1)) # break
+thankyou = visual.TextStim(mywin, text='End of the experiment',color=(1,1,1)) # thank you screen
+question = visual.TextStim(mywin, text='Did you already intend to press SPACE when you heard the beep? \n [z = JA] [m = NEE]',color=(1,1,1)) # intention question
 beep = sound.SoundPyo(value='C',secs=0.2,octave=5,stereo=True,volume=1.0,loops=0,sampleRate=44100,bits=16,hamming=True,start=0,stop=-1) # beep sound
 
 #set experiment parameters
-nr_images = 100
+nr_images = 15
 opacity = np.arange(0.0,1.0,0.025)
 sizeMask = 8
-nr_trials_per_block = 25
-nr_blocks = 4
+nr_trials_per_block = 5
+nr_blocks = 3
 current_trial = 0
 current_block = 1
 order = list(xrange(1,nr_images+1))
+print "Order", order
 shuffle(order)
 timer = core.Clock()
 
@@ -105,9 +106,7 @@ print "Total number of trials = " + str(nr_images)
 for block in range (1,nr_blocks+1):
     sendEvent("experiment.block","Block_"+str(block))
     for trial in range (0,nr_trials_per_block):
-        current_trial += 1
         print "Current trial = ", current_trial
-        
         # set current image and image mask
         image = visual.ImageStim(mywin, image="stimuli_BOSS_database/IMG" + str(order[current_trial]) + ".png") # set current image
         image.setSize([500,500])
@@ -210,7 +209,8 @@ for block in range (1,nr_blocks+1):
             str(round(soundEnd,3)) + "\t" + str(round(rt,3)) + "\t" + str(answer) + "\n")
         mywin.flip()
         core.wait(0.2)
-    if block < 4:
+        current_trial += 1
+    if block < nr_blocks:
         # break
         breaktext.draw()
         mywin.flip()
