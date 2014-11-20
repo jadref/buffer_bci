@@ -39,7 +39,7 @@ end
 X=single(X);
 if ( isstruct(Y) ) % convert event struct into labels
   if ( isnumeric(Y(1).value) ) Y=cat(1,Y.value); 
-  elseif(isstr(Y(1).value) )   Y=cat(1,{Y.value});
+  elseif(isstr(Y(1).value) )   Y=cat(1,{Y.value}); Y=Y(:);
   else error('Dont know how to handle Y value type');
   end
 end; 
