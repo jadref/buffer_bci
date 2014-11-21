@@ -273,11 +273,11 @@ while( ~exitEvent )
           dat=buffer('get_dat',[pending.bgns(ei) pending.ends(ei)-1],host,port);
         end
         if ( isempty(data) )
-          data=dat;
+          data   =dat;
           devents=pending.events(ei);          
         else
-          data(end+1,1)   =dat;
-          devents(end+1,1)=pending.events(ei);
+          devents(end+1,1)       =pending.events(ei);
+          data(numel(devents),1) =dat; % ensure data and events remain aligned, even if no data saved
         end
       end
       % remove these ones from the pending queue
