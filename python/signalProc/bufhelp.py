@@ -95,30 +95,29 @@ def update(verbose = True):
         print "Updated. nSamples = " + str(nSamples) + " at lastupdate " + str(lastupdate)
 
 procnEvents=0
-def waitnewevents(evtype, timeout_ms=1000,verbose = True):      
-    """Function that blocks until a certain type of event is recieved. evttype defines what
-    event termintes the block.  Only the first such matching event is returned
+def waitnewevents(evtypes, timeout_ms=1000,verbose = True):      
+    """Function that blocks until a certain type of event is recieved. 
+    evttypes is a list of event type strings, recieving any of these event types termintes the block.  
+    All such matching events are returned
     """    
-    global ftc, nEvents, nSamples
-    global procnEvents
+    global ftc, nEvents, nSamples, procnEvents
     start = time.time()
     update()
     elapsed_ms = 0
     
     if verbose:
-        print "Waiting for event " + str(evtype) + " with timeout_ms " + str(timeout_ms)
+        print "Waiting for event(s) " + str(evtypes) + " with timeout_ms " + str(timeout_ms)
     
     evt=None
     while elapsed_ms < timeout_ms and evt is None:
         nSamples, nEvents2 = ftc.wait(-1,procnEvents, timeout_ms - elapsed_ms)     
 
-        if nEvents != nEvents2: # new events to process
+        if nEvents2 > nEvents : # new events to process
             procnEvents = nEvents2
             evts = ftc.getEvents((nEvents, nEvents2 -1))
-            for ev in evts:
-                if ev.type == evtype:
-                    evt = ev
-                    break
+            evts = filter(lambda x: x.type in evtype, evts)
+            if len(evts) > 0 :
+                evt=evts
         
         elapsed_ms = (time.time() - start)*1000
         nEvents = nEvents2            
