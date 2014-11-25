@@ -238,25 +238,18 @@ class Header:
         
 class Event:
     """Class for storing events in the FieldTrip buffer format"""
-    def __init__(self, S = None):
-        if S is None:
-            self.type = ''
-            self.value = ''
-            self.sample = 0
-            self.offset = 0
-            self.duration = 0
-        else:
+    def __init__(self, type = None, value=None, sample=-1, offset=0, duration=0):
+        if isinstance(type,Event):
             self.deserialize(S)
-
-    def __init__(self, type, value, sample=-1, offset=0, duration=0):
-            self.type = type
-            self.value = value
+        else: 
+            if type is None: self.type = ''
+            if value is None: self.value = ''
             self.sample = sample
             self.offset = offset
             self.duration = duration
     
     def __str__(self):
-        return 'Type.....: %s\nValue....: %s\nSample...: %i\nOffset...: %i\nDuration.: %i\n'%(str(self.type),str(self.value), self.sample, self.offset, self.duration)
+        return '(t:%s v:%s s:%i o:%i d:%i)\n'%(str(self.type),str(self.value), self.sample, self.offset, self.duration)
     
     def deserialize(self, buf):
         bufsize = len(buf)
