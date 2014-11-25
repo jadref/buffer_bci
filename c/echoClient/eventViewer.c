@@ -1,6 +1,5 @@
 /*
- * This code sends data from a TMSi mobita device to a buffer-device
- * using the put_dat methods.
+ * This code is a example of a simple event viewer/logger written in c
  *
  */
 
