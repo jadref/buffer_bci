@@ -1,3 +1,4 @@
+#!/usr/bin/evn python
 import sys
 sys.path.append("../../dataAcq/buffer/python")
 import numpy
