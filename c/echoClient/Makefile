@@ -50,9 +50,10 @@ endif
 # dependencies info
 CLIENTSOURCES = cclient.c 
 PROXYSOURCES  = csignalproxy.c 
+EVENTSOURCES  = eventViewer.c 
 bufferSOURCES = $(FTBUFFER)/util.c $(FTBUFFER)/tcprequest.c $(FTBUFFER)/cleanup.c
 
-TARGETS = cclient$(EXTENSION) csignalproxy$(EXTENSION)
+TARGETS = cclient$(EXTENSION) csignalproxy$(EXTENSION) eventViewer$(EXTENSION)
 
 all: $(TARGETS)
 
@@ -62,6 +63,10 @@ cclient$(EXTENSION): $(CLIENTSOURCES) $(bufferSOURCES)
 csignalproxy$(EXTENSION): $(PROXYSOURCES) $(bufferSOURCES)
 	$(CXX) -o csignalproxy $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 	cp csignalproxy${EXTENSION} ${BINDIR}
+
+eventViewer$(EXTENSION): $(EVENTSOURCES) $(bufferSOURCES)
+	$(CXX) -o eventViewer $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
+	cp eventViewer${EXTENSION} ${BINDIR}
 
 clean:
 	$(RM) *.o $(call fixpath, $(TARGETS)) cclient$(EXTENSION) csignalproxy$(EXTENSION)
