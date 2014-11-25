@@ -1,4 +1,4 @@
-#!/bin/python
+#!/usr/bin/env python
 # import necessary libraries from Psychopy and buffer_bci-master
 from psychopy import visual, core, event, gui, sound, data, monitors
 from random import shuffle
