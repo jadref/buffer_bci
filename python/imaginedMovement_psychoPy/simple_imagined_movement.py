@@ -42,7 +42,7 @@ def waitnewevents(evtype, timeout_ms=1000,verbose = True):
         if nEvents != nEvents2: # new events to process
             procnEvents = nEvents2
             evts = ftc.getEvents((nEvents, nEvents2 -1))
-            evts = filter(lambda x: x.type in evtype)
+            evts = filter(lambda x: x.type in evtype,evts)
             if len(evts) > 0:
                 evt=evts
         
@@ -121,11 +121,11 @@ def run_exp(nr_blocks,stimulus_conditions, stimulus_instructions,maxTime,feedbac
                     feedbackTxt='None'
                 else:
                     feedbackTxt=str(feedbackEvt.value)
-                getFeedbackCounter = getFeedbackCounter + 1 
-                
-                sendEvent("experiment.feedback",feedbackTxt)
+                getFeedbackCounter = getFeedbackCounter + 1
+                visual.TextStim(mywin,text="Feedback = " + feedbackTxt,color=(1,1,1),height=50).draw()
                 mywin.flip()
-                core.wait(2 )
+                sendEvent("experiment.feedback",feedbackTxt)
+                core.wait(2)
                 
             mywin.flip()
             core.wait(1)
