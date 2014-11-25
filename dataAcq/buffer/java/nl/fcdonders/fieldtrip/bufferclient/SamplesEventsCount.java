@@ -5,7 +5,7 @@
  * Kapittelweg 29, 6525 EN Nijmegen, The Netherlands
  */
  
-package nl.fcdonders.fieldtrip;
+package nl.fcdonders.fieldtrip.bufferclient;
  
 /** Simple class for describing data blocks as used in GET_DAT and PUT_DAT requests */
 public class SamplesEventsCount {

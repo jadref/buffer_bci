@@ -4,7 +4,7 @@
  * Centre for Cognitive Neuroimaging, Radboud University Nijmegen,
  * Kapittelweg 29, 6525 EN Nijmegen, The Netherlands
  */
-package nl.fcdonders.fieldtrip;
+package nl.fcdonders.fieldtrip.bufferclient;
 import java.nio.*;
 
 /** A class for wrapping a FieldTrip buffer header structure.

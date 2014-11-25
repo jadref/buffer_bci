@@ -137,7 +137,7 @@ switch cmd;
   bufClient.putData(detail(:),[size(detail,2) size(detail,1)]); 
  
  case 'get_evt';
-  evtj=bufClient.getEvents(detail(1),detail(2));
+  evtj=bufClient.getEvents(detail(1),detail(min(end,2)));
   evt =repmat(struct('type',[],'value',[],'sample',-1,'offset',0,'duration',0),size(evtj)); % pre-alloc array
   for ei=1:numel(evtj); % Note this conversion is *VERY VERY* slow...
     evtjei=evtj(ei);

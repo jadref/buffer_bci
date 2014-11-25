@@ -4,7 +4,7 @@ cd `dirname $0`
 echo Building bufferclient
 javac -target 1.4 -source 1.4 nl/fcdonders/fieldtrip/bufferclient/*.java
 echo Making bufferclient.jar
-jar cf BufferClient.jar nl
+jar cf BufferClient.jar nl/fcdonders/fieldtrip/bufferclient
 
 # build the buffer server
 echo Building bufferserver

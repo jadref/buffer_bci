@@ -1,0 +1,1 @@
+java -cp ../../dataAcq/buffer/java/BufferClient.jar:. javaclient

@@ -3,7 +3,7 @@
  * Donders Institute for Donders Institute for Brain, Cognition and Behaviour,
  * Centre for Cognition, Radboud University Nijmegen,
  */
-package nl.fcdonders.fieldtrip;
+package nl.fcdonders.fieldtrip.bufferclient;
 
 public class ClockSync {
 	 double S0, T0; // starting samples, time

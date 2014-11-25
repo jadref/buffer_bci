@@ -71,12 +71,46 @@ dataType = [-1, 5, 1, 6, 2, 7, 3, 8, 4, -1, -1, 9, 10]
 
 try:
     import numpy
+
+    def dataType(A):
+        """ return the fieldtrip datatype of the input object """
+        if isinstance(A, str):
+            return DATATYPE_CHAR
+        if isinstance(A, numpy.ndarray):
+            dt = A.dtype
+            if not(dt.isnative) or dt.num<1 or dt.num>=len(dataType):
+                return DATATYPE_UNKNOWN
+            ft = dataType[dt.num]
+            if ft == -1:
+                return DATATYPE_UNKNOWN
+            else:
+                return ft
+        if isinstance(A, int):
+            return DATATYPE_INT32        
+        if isinstance(A, float):
+            return DATATYPE_FLOAT64    
+        return DATATYPE_UNKNOWN
+        
+        
     
     def serialize(A):
         """Returns Fieldtrip data type and string representation of the given object, if possible."""
         if isinstance(A, str):
             return (0,A)
         
+        if isinstance(A, list) or isinstance(A,tuple):            
+            # check list has all the same type
+            dt0=dataType(A[0]);
+            if all(dataType(x)==dt0 for x in A):                
+                if dt0==DATATYPE_CHAR:
+                    return (dt0, struct.pack('c'*len(A), *A))
+                elif dt0==DATATYPE_INT32:
+                    return (dt0, struct.pack('i'*len(A), *A))
+                elif dt0==DATATYPE_FLOAT32:
+                    return (dt0, struct.pack('f'*len(A), *A))
+                elif dt0==DATATYPE_FLOAT64:
+                    return (dt0, struct.pack('d'*len(A), *A))
+
         if isinstance(A, numpy.ndarray):
             dt = A.dtype
             if not(dt.isnative) or dt.num<1 or dt.num>=len(dataType):
@@ -112,17 +146,40 @@ try:
         if not(isinstance(array, numpy.ndarray)) or len(array.shape)!=2:
                 raise ValueError('Data must be given as a NUMPY array (samples x channels)')
 except ImportError:
+
+    def dataType(A):
+        """ return the fieldtrip datatype of the input object """
+        if isinstance(A, str):
+            return DATATYPE_CHAR
+        if isinstance(A, int):
+            return DATATYPE_INT32        
+        if isinstance(A, float):
+            return DATATYPE_FLOAT64    
+        return DATATYPE_UNKNOWN
     
     def serialize(A):
         if isinstance(A, str):
-            return (0,A);
+            return (DATATYPE_CHAR,A);
         
+        if isinstance(A, list) or isinstance(A,tuple):            
+            # check list has all the same type
+            dt0=dataType(A[0]);
+            if all(dataType(x)==dt0 for x in A):                
+                if dt0==DATATYPE_CHAR:
+                    return (dt0, struct.pack('c'*len(A), *A))
+                elif dt0==DATATYPE_INT32:
+                    return (dt0, struct.pack('i'*len(A), *A))
+                elif dt0==DATATYPE_FLOAT32:
+                    return (dt0, struct.pack('f'*len(A), *A))
+                elif dt0==DATATYPE_FLOAT64:
+                    return (dt0, struct.pack('d'*len(A), *A))
+
         """I couldn't think of an elegant way of handling different datatypes since
         python only has a limited number of datatypes (int, long, float). So I just
         expect the user ot explicitly provide the datatype during input"""
         if isinstance(A, tuple):
             data, datatype = A
-            nSamp, nChans = arraysize(A)
+            nSamp, nChans = arraysize(data)
             raw = ""
             packformat = ['c','B','H','I','Q', 'b', 'h', 'i', 'q', 'f', 'd'][datatype] * nChans
             
@@ -137,11 +194,10 @@ except ImportError:
         if isinstance(shape, tuple):
             nSamp, nChan = shape
             packformat = ['c','B','H','I','Q', 'b', 'h', 'i', 'q', 'f', 'd'][datatype] * nSamp * nChan
-            data = struct.unpack(packformat, raw)
-    
-    
+
+            data = struct.unpack(packformat, raw)    
             array = list()
-                    
+            
             for sample in range(0,shape[0]):
                 start = sample*nChan;
                 end = (sample+1)*nChan
@@ -151,8 +207,6 @@ except ImportError:
         else:
             packformat = ['c','B','H','I','Q', 'b', 'h', 'i', 'q', 'f', 'd'][datatype] * shape
             return list(struct.unpack(packformat, raw))
-            
-
         
     def arraysize(array):
         return (len(array[0]), len(array[0][0]))
@@ -193,6 +247,13 @@ class Event:
             self.duration = 0
         else:
             self.deserialize(S)
+
+    def __init__(self, type, value, sample=-1, offset=0, duration=0):
+            self.type = type
+            self.value = value
+            self.sample = sample
+            self.offset = offset
+            self.duration = duration
     
     def __str__(self):
         return 'Type.....: %s\nValue....: %s\nSample...: %i\nOffset...: %i\nDuration.: %i\n'%(str(self.type),str(self.value), self.sample, self.offset, self.duration)
@@ -243,11 +304,12 @@ class Event:
         if value_type == DATATYPE_UNKNOWN:
             return None
         value_size = len(value_buf)
+        print str(value_size) + " = " + str(value_buf)
         value_numel = value_size / wordSize[value_type]
         
         bufsize = type_size + value_size
         
-        S = struct.pack('IIIIIiiI', type_type, type_numel, value_type, value_numel, int(self.sample), int(self.offset), int(self.duration), bufsize)
+        S = struct.pack('IIIIiiiI', type_type, type_numel, value_type, value_numel, int(self.sample), int(self.offset), int(self.duration), bufsize)
         return S + type_buf + value_buf 
         
 class Client:
@@ -435,6 +497,8 @@ class Client:
                 indE = indS
             else:
                 indE = int(indices[-1])
+            if indE > indS : 
+                return None
             request = struct.pack('HHIII', VERSION, GET_EVT, 8, indS, indE)
         self.sendRaw(request)
         

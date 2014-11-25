@@ -2,7 +2,7 @@ import java.io.*;
 import java.nio.*;
 import nl.fcdonders.fieldtrip.bufferclient.*;
 
-class javaclient {
+class eventViewer {
 	 public static void main(String[] args) throws IOException,InterruptedException {
 		String hostname = "localhost";
 		int port = 1972;
@@ -61,7 +61,7 @@ class javaclient {
 						}
 				  }
 						
-		// Now do the echo-server
+		// Now do the event viewer
 		int nEvents=hdr.nEvents;
 		boolean endExpt=false;
 		while ( !endExpt ) {
@@ -71,27 +71,15 @@ class javaclient {
 				  BufferEvent[] evs = C.getEvents(nEvents,sec.nEvents-1);
 				  nEvents=sec.nEvents;// update record of which events we've seen
 				  // filter for ones we want
-				  System.out.println("Got " + evs.length + " events");
 				  for ( int ei=0; ei<evs.length; ei++){
 						BufferEvent evt=evs[ei];
-						String evttype = evt.getType().toString(); // N.B. to*S*tring, not upper case!
-						// only process if it's an event of a type we care about
-						// In our case, don't echo our own echo events....
-						if ( !evttype.equals("echo") ){  // N.B. use equals, not == to compare string contents!
-							 if ( evttype.equals("exit")) { // check for a finish event
-								  endExpt=true;
-							 } 
-							 // Print the even to the console
-							 System.out.println(ei + ") t:" + evt.getType().toString() + " v:" + evt.getValue().toString() + " s:" + evt.sample);
-							 // Now create the echo event, with auto-completed sample number
-							 // N.B. -1 for sample means auto-compute based on the real-time-clock
-							 C.putEvent(new BufferEvent("echo",evt.getValue().toString(),-1)); 
-						}
+						// Print the even to the console
+						System.out.println(ei + ") t:" + evt.getType().toString() + " v:" + evt.getValue().toString() + " s:" + evt.sample);
 				  }
 			 } else { // timed out without new events
 				  System.out.println("Timeout waiting for events");
 			 }
-		}		
+		}
 		C.disconnect();
 	}
 }

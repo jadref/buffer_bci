@@ -1,3 +1,2 @@
-javac -classpath ../../dataAcq/buffer/java/Buffer.jar javaclient.java
-# to run use:
-java -cp ../../dataAcq/buffer/java/Buffer.jar:. javaclient
+javac -classpath ../../dataAcq/buffer/java/BufferClient.jar javaclient.java
+javac -classpath ../../dataAcq/buffer/java/BufferClient.jar eventViewer.java

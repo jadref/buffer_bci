@@ -4,7 +4,7 @@
  * Extension of bufferclien to add ability to fill in event sample number if it is negative
  * based on the output of the system clock and tracking the mapping between clock-time and sample-time
  */
-package nl.fcdonders.fieldtrip;
+package nl.fcdonders.fieldtrip.bufferclient;
 import java.nio.*;
 import java.io.*;
 
