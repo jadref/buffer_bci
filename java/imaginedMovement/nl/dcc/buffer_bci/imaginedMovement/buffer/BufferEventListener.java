@@ -1,6 +1,6 @@
 package nl.dcc.buffer_bci.imaginedMovement.buffer;
 
-import nl.fcdonders.fieldtrip.BufferEvent;
+import nl.fcdonders.fieldtrip.bufferclient.BufferEvent;
 
 /**
  *

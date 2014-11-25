@@ -18,7 +18,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
-import nl.fcdonders.fieldtrip.BufferEvent;
+import nl.fcdonders.fieldtrip.bufferclient.BufferEvent;
 import nl.dcc.buffer_bci.imaginedMovement.views.DirectionMeterPanel;
 import nl.dcc.buffer_bci.imaginedMovement.views.PlainPanel;
 import nl.dcc.buffer_bci.imaginedMovement.views.PowerMeterPanel;

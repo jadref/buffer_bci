@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.SwingWorker;
-import nl.fcdonders.fieldtrip.BufferClient;
-import nl.fcdonders.fieldtrip.BufferEvent;
-import nl.fcdonders.fieldtrip.SamplesEventsCount;
+import nl.fcdonders.fieldtrip.bufferclient.BufferClient;
+import nl.fcdonders.fieldtrip.bufferclient.BufferEvent;
+import nl.fcdonders.fieldtrip.bufferclient.SamplesEventsCount;
 
 /**
  *

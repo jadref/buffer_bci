@@ -6,9 +6,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import nl.fcdonders.fieldtrip.BufferClient;
-import nl.fcdonders.fieldtrip.BufferEvent;
-import nl.fcdonders.fieldtrip.Header;
+import nl.fcdonders.fieldtrip.bufferclient.BufferClient;
+import nl.fcdonders.fieldtrip.bufferclient.BufferEvent;
+import nl.fcdonders.fieldtrip.bufferclient.Header;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
