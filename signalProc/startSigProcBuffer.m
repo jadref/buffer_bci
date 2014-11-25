@@ -25,12 +25,14 @@ function []=startSigProcBuffer(varargin)
 %                     pre-processing
 %   capFile        -- [str] filename for the channel positions                         ('1010')
 %   verb           -- [int] verbosity level                                            (1)
+%   buffhost       -- str, host name on which ft-buffer is running                     ('localhost')
+%   buffport       -- int, port number on which ft-buffer is running                   (1972)
 % 
 % Examples:
-%   startSigProcBuffer_ERP(); % run with standard paramters
+%   startSigProcBuffer(); % run with standard paramters
 %
 %  % Run where epoch is any of row/col or target flash and saving 600ms after these events for classifier training
-%   startSigProcBuffer_ERP('epochEventType',{'stimulus.target','stimulus.rowFlash','stimulus.colFlash'},'trlen_ms',600); 
+%   startSigProcBuffer('epochEventType',{'stimulus.target','stimulus.rowFlash','stimulus.colFlash'},'trlen_ms',600); 
 
 % setup the paths if needed
 wb=which('buffer'); 
@@ -38,7 +40,7 @@ if ( isempty(wb) || isempty(strfind('dataAcq',wb)) )
   mdir=fileparts(mfilename('fullfile')); run(fullfile(mdir,'../utilities/initPaths.m')); 
 end;
 opts=struct('epochEventType','stimulus.target','clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],...
-            'capFile',[],'subject','test','verb',0);
+            'capFile',[],'subject','test','verb',0,'buffhost',[],'buffport',[]);
 opts=parseOpts(opts,varargin);
 
 thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
@@ -66,7 +68,7 @@ while ( true )
   
   % wait for a phase control event
   if ( opts.verb>0 ) fprintf('Waiting for phase command\n'); end;
-  [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,{'startPhase.cmd' 'subject'},[],5000);
+  [devents,state,nevents,nsamples]=buffer_newevents(opts.buffhost,opts.buffport,state,{'startPhase.cmd' 'subject'},[],5000);
   if ( numel(devents)==0 ) 
     continue;
   elseif ( numel(devents)>1 ) 
@@ -103,11 +105,11 @@ while ( true )
 
     %---------------------------------------------------------------------------------
    case 'eegviewer';
-    eegViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms);
+    eegViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms);
     
    %---------------------------------------------------------------------------------
    case {'calibrate','calibration'};
-    [traindata,traindevents,state]=buffer_waitData(buffhost,buffport,[],'startSet',opts.epochEventType,'exitSet',{'stimulus.calibrate' 'end'},'verb',opts.verb,'trlen_ms',trlen_ms);
+    [traindata,traindevents,state]=buffer_waitData(opts.buffhost,opts.buffport,[],'startSet',opts.epochEventType,'exitSet',{'stimulus.calibrate' 'end'},'verb',opts.verb,'trlen_ms',trlen_ms);
     mi=matchEvents(traindevents,'stimulus.training','end'); traindevents(mi)=[]; traindata(mi)=[];%remove exit event
     fprintf('Saving %d epochs to : %s\n',numel(traindevents),[dname '_' subject '_' datestr]);
     save([dname '_' subject '_' datestr],'traindata','traindevents','hdr');
@@ -164,7 +166,8 @@ while ( true )
       warning('Cant use an ERP classifier in continuous application mode. Ignored');
     else
       cont_applyClsfr(clsfr,'overlap',.5,'endType',{'testing','test','contfeedback'});
-
+    end
+      
    case 'exit';
     break;
     
