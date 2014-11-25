@@ -1,0 +1,110 @@
+function [testdata,testevents]=cont_applyClsfr(clsfr,varargin)
+% continuously apply this classifier to the new data
+%
+%  [testdata,testevents]=cont_applyClsfr(clsfr,varargin)
+%
+% Options:
+%  buffhost, buffport, hdr
+%  endType, endValue  -- event type and value to match to stop giving feedback
+%  trlen_ms/samp -- [int] length of trial to apply classifier to               ([])
+%                     if empty, then = windowFn size used in the classifier training
+%  overlap       -- [float] fraction of trlen_samp between successive classifier predictions, i.e.
+%                    prediction at, t, t+trlen_samp*overlap, t+2*(trlen_samp*overlap), ...
+%  alpha         -- [float] decay constant for exp-weighted moving average,     ([])
+%                     for continuous Neurofeedback style feedback. N.B. alpha = exp(log(.5)/halflife)
+%                     if alpha isempty, then simply sum the decision values between prediction events
+opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
+            'endType','stimulus.test','endValue','end','verb',0,...
+            'trlen_ms',[],'trlen_samp',[],'overlap',.5,...
+            'alpha',[],'timeout_ms',1000); % exp moving average constant, half-life=10 trials
+[opts,varargin]=parseOpts(opts,varargin);
+% if not explicitly given work out from the classifier information the trial length needed
+% to apply the classifier
+trlen_samp=opts.trlen_samp; 
+if ( isempty(trlen_samp) ) 
+  trlen_samp=0;
+  if ( ~isempty(opts.trlen_ms) ) 
+    if(~isempty(opts.hdr)) fs=opts.hdr.fsample; 
+    else hdr=buffer('get_hdr',buffhost,buffport); fs=hdr.fsample; 
+    end;
+    trlen_samp = opts.trlen_ms /1000 * fs; 
+  end
+  % ensure is at least a big as the welch window size!
+  if ( isfield(clsfr,'windowFn') ) % est from size welch window function
+    trlen_samp=max(trlen_samp,size(clsfr.windowFn,2)); 
+  end
+end;
+step_samp = round(trlen_samp * opts.overlap);
+
+% for returning the data used by the classifier if wanted
+testdata={}; testevents={}; %N.B. cell array to avoid expensive mem-realloc during execution loop
+
+% get the current number of samples, so we can start from now
+status=buffer('wait_dat',[-1 -1 -1],opts.buffhost,opts.buffport);
+nEvents=status.nevents; nSamples=status.nsamples;
+
+
+dv=[];
+nEpochs=0;
+endTest=false;
+tic;t1=0;
+while( ~endTest )
+
+  % block until new data to process
+  status=buffer('wait_dat',[nSamples+trlen_samp -1 opts.timeout_ms],opts.buffhost,opts.buffport);
+  if ( status.nsamples < nSamples ) 
+    fprintf('Buffer restart detected!'); 
+    nSamples=status.nsamples;
+    dv(:)=0;
+    continue;
+  end
+
+  % logging stuff for when nothing is happening... 
+  if ( opts.verb>=0 ) 
+    t=toc;
+    if ( t-t1>=5 ) 
+      fprintf(' %5.3f seconds, %d samples %d events\r',t,status.nsamples,status.nevents);
+      if ( ispc() ) drawnow; end; % re-draw display
+      t1=t;
+    end;
+  end;
+  
+  % process any new data
+  onSamples=nSamples;
+  start = onSamples:step_samp:status.nsamples-trlen_samp-1; % window start positions
+  if( ~isempty(start) ) nSamples=start(end)+step_samp; end % start of next trial for which not enough data yet
+  for si = 1:numel(start);    
+    % get the data
+    data = buffer('get_dat',[start(si) start(si)+trlen_samp-1],opts.buffhost,opts.buffport);
+
+    if ( opts.verb>1 ) fprintf('Got data @ %d->%d samp\n',start(si),start(si)+trlen_samp-1); end;
+    % save the data used by the classifier if wanted
+    if ( nargout>0 ) nepochs=nepochs+1;testdata{nepochs}=data;testevents{nepochs}=mkEvent('data',0,start(si)); end;
+    
+    % apply classification pipeline to this events data
+    [f,fraw,p]=buffer_apply_ersp_clsfr(data.buf,clsfr);
+    % smooth the classifier predictions if wanted
+    if ( isempty(dv) || isempty(opts.alpha) ) 
+      dv=f;
+    else % exp weighted moving average
+      dv=dv*opts.alpha + (1-opts.alpha)*f;
+    end
+    
+    % Send prediction events when wanted
+    sendEvent('classifier.prediction',dv,start(si));
+    if ( opts.verb>0 ) fprintf('%d) Clsfr Pred: [%s]\n',start(si),sprintf('%g ',f)); end;
+    end
+  end
+  
+  % deal with any events which have happened
+  if ( status.nevents > nEvents )
+    devents=buffer('get_evt',[nEvents status.nevents-1],opts.buffhost,opts.buffport);
+    mi=matchEvents(devents,opts.endType,opts.endValue);
+    if ( any(mi) ) fprintf('Got exit event. Stopping'); endTest=true; end;
+    nEvents=status.nevents;
+  end
+end % while not endTest
+return;
+%--------------------------------------
+function testCase()
+cont_applyClsfr(clsfr,'overlap',.1)

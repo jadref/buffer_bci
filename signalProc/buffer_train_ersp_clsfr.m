@@ -20,6 +20,24 @@ function [clsfr,res,X,Y]=buffer_train_ersp_clsfr(X,Y,hdr,varargin);
 %              freqband,timeband,spatialfilter,badchrm,badtrrm,detrend,etc..
 % Outputs:
 %  clsfr   -- [struct] a classifer structure
+%           |.w      -- [size(X) x nSp] weighting over X (for each subProblem)
+%           |.b      -- [nSp x 1] bias term
+%           |.dim    -- [ind] dimensions of X which contain the trails
+%           |.spMx   -- [nSp x nClass] mapping between sub-problems and input classes
+%           |.spKey  -- [nClass] label for each class in the spMx, thus:
+%                        spKey(spMx(1,:)>0) gives positive class labels for subproblem 1
+%           |.spDesc -- {nSp} set of strings describing the sub-problem, e.g. 'lh v rh'
+%           |.binsp  -- [bool] flag if this is treated as a set of independent binary sub-problems
+%           |.fs     -- [float] sample rate of training data
+%           |.detrend -- [bool] detrend the data
+%           |.isbad   -- [bool nCh x 1] flag for channels detected as bad and to be removed
+%           |.spatialfilt [nCh x nCh] spatial filter used
+%           |.filt    -- [float] filter weights for spectral filtering (ERP only)
+%           |.outsz   -- [float] info on size after spectral filter for downsampling
+%           |.timeIdx -- [2x1] time range (start/end sample) to apply the classifer to
+%           |.windowFn -- [float] window used in frequency domain transformation (ERsP only)
+%           |.welchAveType -- [str] type of averaging used in frequency domain transformation (ERsP only)
+%           |.freqIdx     -- [2x1] range of frequency to keep  (ERsP only)
 %  res     -- [struct] a results structure
 %  X       -- [ppch x pptime x ppepoch] pre-processed data (N.B. may/will have different size to input X)
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
@@ -41,7 +59,7 @@ end
 X=single(X);
 if ( isstruct(Y) ) % convert event struct into labels
   if ( isnumeric(Y(1).value) ) Y=cat(1,Y.value); 
-  elseif(isstr(Y(1).value) )   Y=cat(1,{Y.value});
+  elseif(isstr(Y(1).value) )   Y=cat(1,{Y.value}); Y=Y(:);
   else error('Dont know how to handle Y value type');
   end
 end; 
