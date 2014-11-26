@@ -69,4 +69,4 @@ eventViewer$(EXTENSION): $(EVENTSOURCES) $(bufferSOURCES)
 	cp eventViewer${EXTENSION} ${BINDIR}
 
 clean:
-	$(RM) *.o $(call fixpath, $(TARGETS)) cclient$(EXTENSION) csignalproxy$(EXTENSION)
+	$(RM) *.o $(call fixpath, $(TARGETS)) cclient$(EXTENSION) csignalproxy$(EXTENSION) eventViewer$(EXTENSION)

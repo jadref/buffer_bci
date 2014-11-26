@@ -30,8 +30,12 @@ if ( isempty(trlen_samp) )
     trlen_samp = opts.trlen_ms /1000 * fs; 
   end
   % ensure is at least a big as the welch window size!
-  if ( isfield(clsfr,'windowFn') ) % est from size welch window function
-    trlen_samp=max(trlen_samp,size(clsfr.windowFn,2)); 
+  for ci=1:numel(clsfr); 
+    if(isfield(clsfr(ci),'outsz') && ~isempty(clsfr(ci).outsz)) trlen_samp=max(trlen_samp,clsfr(ci).outsz(1));
+    elseif ( isfield(clsfr(ci),'timeIdx') && ~isempty(clsfr(ci).timeIdx) ) trlen_samp = max(trlen_samp,clsfr(ci).timeIdx(2)); 
+    elseif ( isfield(clsfr,'windowFn') ) % est from size welch window function
+      trlen_samp=max(trlen_samp,size(clsfr.windowFn,2)); 
+    end
   end
 end;
 step_samp = round(trlen_samp * opts.overlap);
@@ -82,7 +86,13 @@ while( ~endTest )
     if ( nargout>0 ) nepochs=nepochs+1;testdata{nepochs}=data;testevents{nepochs}=mkEvent('data',0,start(si)); end;
     
     % apply classification pipeline to this events data
-    [f,fraw,p]=buffer_apply_ersp_clsfr(data.buf,clsfr);
+    for ci=1:numel(clsfr);
+      [f(:,ci),fraw(:,ci),p(:,ci)]=buffer_apply_clsfr(data(ei).buf,clsfr(ci));
+      if ( opts.verb>1 ) fprintf('clsfr%d pred=[%s]\n',ci,sprintf('%g ',f(:,ci))); end;
+    end
+    if ( numel(ci)>1 ) % combine individual classifier predictions, simple max-likelihood sum
+      f=sum(f,2); fraw=sum(fraw,2);
+    end
     % smooth the classifier predictions if wanted
     if ( isempty(dv) || isempty(opts.alpha) ) 
       dv=f;
