@@ -11,6 +11,11 @@ function []=startSigProcBuffer(varargin)
 %  (testing,end)               -- end testing phase
 %  (startPhase.cmd,exit)       -- stop everything
 %
+% Prediction Events
+%  During the testing phase the classifier will send predictions with the type
+%  (classifier.prediction)     -- classifier prediction events.  
+%                                 Value is decision value where <0 = negative class, >0 = positive class
+%
 %  []=startSigProcBuffer(varargin)
 %
 % Options:
@@ -38,9 +43,12 @@ function []=startSigProcBuffer(varargin)
 wb=which('buffer'); 
 if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) 
   mdir=fileparts(mfilename('fullfile')); run(fullfile(mdir,'../utilities/initPaths.m')); 
+  % set the real-time-clock to use
+  initgetwTime;
+  initsleepSec;
 end;
 opts=struct('epochEventType',[],'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],...
-            'capFile',[],'subject','test','verb',0,'buffhost',[],'buffport',[],'useGUI',1);
+            'capFile',[],'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1);
 opts=parseOpts(opts,varargin);
 
 thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
@@ -75,8 +83,22 @@ cname='clsfr';
 testname='testing_data';
 subject=opts.subject;
 
+
+% wait for the buffer to return valid header information
+hdr=[];
+while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
+  try 
+    hdr=buffer('get_hdr',[],opts.buffhost,opts.buffport); 
+  catch
+    hdr=[];
+    fprintf('Invalid header info... waiting.\n');
+  end;
+  pause(1);
+end;
+
 % main loop waiting for commands and then executing them
-state=struct('nevents',[],'nsamples',[]); 
+nevents=hdr.nEvents; nsamples=hdr.nsamples;
+state=struct('nevents',nevents,'nsamples',nsamples); 
 phaseToRun=[]; clsSubj=[]; trainSubj=[];
 while ( true )
 
@@ -84,7 +106,7 @@ while ( true )
   drawnow;
   
   % wait for a phase control event
-  if ( opts.verb>0 ) fprintf('Waiting for phase command\n'); end;
+  if ( opts.verb>0 ) fprintf('%d) Waiting for phase command\n',nsamples); end;
   [devents,state,nevents,nsamples]=buffer_newevents(opts.buffhost,opts.buffport,state,{'startPhase.cmd' 'subject'},[],5000);
   if ( numel(devents)==0 ) 
     continue;
@@ -110,15 +132,15 @@ while ( true )
   end
   if ( isempty(phaseToRun) ) continue; end;
 
-  fprintf('%d) Starting phase : %s\n',getwTime(),phaseToRun);
-  if ( opts.verb>0 ) fprintf('Starting : %s\n',phaseToRun); ptime=getwTime(); end;
+  fprintf('%d) Starting phase : %s\n',devents(di).sample,phaseToRun);
+  if ( opts.verb>0 ) ptime=getwTime(); end;
   sendEvent(lower(phaseToRun),'start'); % mark start/end testing
   
   switch lower(phaseToRun);
     
     %---------------------------------------------------------------------------------
    case 'capfitting';
-    capFitting('noiseThresholds',thresh,'badChThreshold',badchThresh,'verb',opts.verb,'showOffset',0,'capFile',capFile,'overridechnms',overridechnms);
+    capFitting('buffhost',opts.buffhost,'buffport',opts.buffport,'noiseThresholds',thresh,'badChThreshold',badchThresh,'verb',opts.verb,'showOffset',0,'capFile',capFile,'overridechnms',overridechnms);
 
     %---------------------------------------------------------------------------------
    case 'eegviewer';
@@ -126,39 +148,42 @@ while ( true )
     
    %---------------------------------------------------------------------------------
    case {'calibrate','calibration'};
-    [traindata,traindevents,state]=buffer_waitData(opts.buffhost,opts.buffport,[],'startSet',opts.epochEventType,'exitSet',{'stimulus.calibrate' 'end'},'verb',opts.verb,'trlen_ms',trlen_ms);
-    mi=matchEvents(traindevents,'stimulus.training','end'); traindevents(mi)=[]; traindata(mi)=[];%remove exit event
-    fprintf('Saving %d epochs to : %s\n',numel(traindevents),[dname '_' subject '_' datestr]);
-    save([dname '_' subject '_' datestr],'traindata','traindevents','hdr');
+    [traindata,traindevents,state]=buffer_waitData(opts.buffhost,opts.buffport,[],'startSet',opts.epochEventType,'exitSet',{{'calibrate' 'calibration'} 'end'},'verb',opts.verb,'trlen_ms',opts.trlen_ms);
+    mi=matchEvents(traindevents,{'calibrate' 'calibration'},'end'); traindevents(mi)=[]; traindata(mi)=[];%remove exit event
+    fname=[dname '_' subject '_' datestr];
+    fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save(fname,'traindata','traindevents','hdr');
     trainSubj=subject;
 
     %---------------------------------------------------------------------------------
    case {'train','training'};
-    try
+    %try
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
-        fprintf('Loading training data from : %s\n',[dname '_' subject '_' datestr]);
-        load([dname '_' subject '_' datestr]); 
+        fname=[dname '_' subject '_' datestr];
+        fprintf('Loading training data from : %s\n',fname);load(fname); 
         trainSubj=subject;
       end;
       if ( opts.verb>0 ) fprintf('%d epochs\n',numel(traindevents)); end;
 
       switch lower(opts.clsfr_type);
+       
        case {'erp','evoked'};
-         [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','freqband',opts.freqband,'badchrm',1,'badtrrm',1,'objFn','lr_cg','compKernel',0,'dim',3,'capFile',capFile,'overridechnms',overridechnms);
+         [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','freqband',opts.freqband,'badchrm',1,'badtrrm',1,'capFile',capFile,'overridechnms',overridechnms);
+       
        case {'ersp','induced'};
-         [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','freqband',opts.freqband,'badchrm',1,'badtrrm',1,'objFn','lr_cg','compKernel',0,'dim',3,'capFile',capFile,'overridechnms',overridechnms);
+         [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','freqband',opts.freqband,'badchrm',1,'badtrrm',1,'capFile',capFile,'overridechnms',overridechnms);
+       
        otherwise;
         error('Unrecognised classifer type');
       end
       clsSubj=subject;
-      fprintf('Saving classifier to : %s\n',[cname '_' subject '_' datestr]);
-      save([cname '_' subject '_' datestr],'-struct','clsfr');
-    catch
-      fprintf('Error in train classifier!');
-    end
+      fname=[cname '_' subject '_' datestr];
+      fprintf('Saving classifier to : %s\n',fname);save(fname,'-struct','clsfr');
+    %catch
+    %  fprintf('Error in train classifier!');
+    %end
 
     %---------------------------------------------------------------------------------
-   case {'test','testing'};
+   case {'test','testing','epochfeedback','eventfeedback'};
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
       clsfrfile = [cname '_' subject '_' datestr];
       if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=[cname '_' subject]; end;
@@ -167,22 +192,22 @@ while ( true )
       clsSubj = subject;
     end;
 
-    event_applyClsfr(clsfr,'startSet',{'stimulus.target'},'endType',{'testing','test'});
+    event_applyClsfr(clsfr,'startSet',opts.epochEventType,'endType',{'testing','test','epochfeedback','eventfeedback'},'verb',opts.verb);
 
         %---------------------------------------------------------------------------------
    case {'contfeedback'};
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
       clsfrfile = [cname '_' subject '_' datestr];
       if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=[cname '_' subject]; end;
-      if(verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
+      if(opts.verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
       clsfr=load(clsfrfile);
       clsSubj = subject;
     end;
 
-    if ( isempty(strmatch(lower(opts.clsfr_type),{'ersp','induced'})) )
+    if ( ~any(strcmp(lower(opts.clsfr_type),{'ersp','induced'})) )
       warning('Cant use an ERP classifier in continuous application mode. Ignored');
     else
-      cont_applyClsfr(clsfr,'overlap',.5,'endType',{'testing','test','contfeedback'});
+      cont_applyClsfr(clsfr,'overlap',.5,'endType',{'testing','test','contfeedback'},'verb',opts.verb);
     end
       
    case 'exit';

@@ -53,7 +53,7 @@ nEpochs=0;
 endTest=false;
 while ( ~endTest )
   % wait for data to apply the classifier to, or got an stop-predicting event
-  [data,devents,state]=buffer_waitData(opts.buffhost,opts.buffport,state,'startSet',opts.startSet,'trlen_samp',trlen_samp,'exitSet',{'data' {opts.endType}},'verb',opts.verb);
+  [data,devents,state]=buffer_waitData(opts.buffhost,opts.buffport,state,'startSet',opts.startSet,'trlen_samp',trlen_samp,'exitSet',{'data' opts.endType},'verb',opts.verb);
   
   % process these events
   for ei=1:numel(devents)

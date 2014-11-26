@@ -107,6 +107,7 @@ function cancelbut_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 handles.ok=0;
 guidata(hObject,handles);
+set(handles.figure1,'visible','off')
 uiresume;
 
 
