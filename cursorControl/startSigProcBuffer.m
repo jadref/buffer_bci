@@ -133,7 +133,7 @@ while ( true )
       clsSubj = subject;
     end;
 
-    event_applyClsfr(clsfr,'epochEventType','stimulus.arrows');
+    event_applyClsfr(clsfr,'startSet','stimulus.arrows');
     
    case 'exit';
     break;
