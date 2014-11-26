@@ -35,9 +35,14 @@ function [classifier,res,Y]=cvtrainLinearClassifier(X,Y,Cs,fIdxs,varargin)
 %           Note: use the cv2trainFn option 'nInner' to set the number of inner folds
 % Outputs:
 %  classifier -- [struct] containing all the information about the linear classifier
-%           |.w -- [size(X) x nSp] weighting over X (for each subProblem)
-%           |.b -- [nSp x 1] bias term
-%           |.dim -- [ind] dimensions of X which contain the trails
+%           |.w      -- [size(X) x nSp] weighting over X (for each subProblem)
+%           |.b      -- [nSp x 1] bias term
+%           |.dim    -- [ind] dimensions of X which contain the trails
+%           |.spMx   -- [nSp x nClass] mapping between sub-problems and input classes
+%           |.spKey  -- [nClass] label for each class in the spMx, thus:
+%                        spKey(spMx(1,:)>0) gives positive class labels for subproblem 1
+%           |.spDesc -- {nSp} set of strings describing the sub-problem, e.g. 'lh v rh'
+%           |.binsp  -- [bool] flag if this is treated as a set of independent binary sub-problems
 %  res   -- [struct] results structure as returned by cvtrainFn
 %
 % See also: cvtrainFn, cv2trainFn, lr_cg, klr_cg, l2svm_cg, rls_cg
@@ -75,13 +80,6 @@ end
 if ( numel(fIdxs)==1 ) fIdxs=gennFold(Y,fIdxs,'dim',numel(dim)+1); end;
 if ( opts.balYs ) [fIdxs] = balanceYs(Y,fIdxs); end % balance the folding if wanted
 
-% estimate good range hyper-params
-Cscale=opts.Cscale;
-if ( isempty(Cscale) || isequal(Cscale,'l2') )  Cscale=CscaleEst(X,2,[],0);
-elseif ( isequal(Cscale,'l1') )                 Cscale=sqrt(CscaleEst(X,2,[],0));
-end
-if ( isempty(Cs) ) Cs=[5.^(3:-1:-3)]; end;
-
 oX=X; odim=dim; szX=size(X); szY=size(Y); szF=size(fIdxs);
 if ( numel(dim)>1 ) % make n-d problem into 1-d problem
   X=reshape(X,[prod(szX(1:min(dim)-1)) prod(szX(dim))]);
@@ -94,6 +92,14 @@ if ( numel(dim)>1 ) % make n-d problem into 1-d problem
   fIdxs=reshape(fIdxs,[prod(szY(1:numel(dim))) szF(numel(dim)+1:end) 1]);
   dim=2; % now trial dim is 2nd dimension
 end
+
+% estimate good range hyper-params
+% N.B. ONLY run after the flatten to 2-d inputs!
+Cscale=opts.Cscale;
+if ( isempty(Cscale) || isequal(Cscale,'l2') )  Cscale=CscaleEst(X,2,[],0);
+elseif ( isequal(Cscale,'l1') )                 Cscale=sqrt(CscaleEst(X,2,[],0));
+end
+if ( isempty(Cs) ) Cs=[5.^(3:-1:-3)]; end;
 
 % compute the kernel if needed for kernel methods
 if ( opts.compKernel ) 
