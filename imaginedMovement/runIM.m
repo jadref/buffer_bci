@@ -51,7 +51,7 @@ while (ishandle(contFig))
       imCalibrateStimulus;
     catch
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-      sendEvent('stimulus.training','end');    
+      sendEvent('training','end');    
     end
     sendEvent(phaseToRun,'end');
 
@@ -68,13 +68,13 @@ while (ishandle(contFig))
     sendEvent('subject',info.subject);
     %sleepSec(.1);
     sendEvent(phaseToRun,'start');
-    %try
+    try
       sendEvent('startPhase.cmd','epochfeedback');
       imEpochFeedbackStimulus;
-    %catch
-    %   le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-    %end
-    sendEvent('stimulus.test','end');
+    catch
+       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    end
+    sendEvent('test','end');
     sendEvent(phaseToRun,'end');
    
    %---------------------------------------------------------------------------
@@ -89,7 +89,7 @@ while (ishandle(contFig))
        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
        sleepSec(.1);
     end
-    sendEvent('stimulus.test','end');
+    sendEvent('test','end');
     sendEvent(phaseToRun,'end');
 
    %---------------------------------------------------------------------------
@@ -103,7 +103,8 @@ while (ishandle(contFig))
     catch
        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
     end
-    sendEvent('stimulus.test','end');
+    sendEvent('contfeedback','end');
+    sendEvent('test','end');
     sendEvent(phaseToRun,'end');
         
   end

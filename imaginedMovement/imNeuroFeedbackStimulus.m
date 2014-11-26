@@ -37,38 +37,24 @@ set(h(:),'faceColor',bgColor);
 drawnow;% expose; % N.B. needs a full drawnow for some reason
 
 % for the trial duration update the fixatation point in response to prediction events
-status=buffer('wait_dat',[-1 -1 -1],buffhost,buffport); % get current state
-nevents=status.nevents; nsamples=status.nsamples;
 % initial fixation point position
 fixPos = stimPos(:,end);
 trlStartTime=getwTime();
+state=[];
 trialDuration = 60*60; % 1hr...
 timetogo=trialDuration;
 dv = zeros(nSymbs,1);
 while (timetogo>0)
   if ( ~ishandle(fig) ) break; end;
   timetogo = trialDuration - (getwTime()-trlStartTime); % time left to run in this trial
-  % wait for events to process *or* end of trial
-  status=buffer('wait_dat',[-1 nevents min(5000,timetogo*1000/4)],buffhost,buffport); 
-  fprintf('.');
-  stime =getwTime();
-  if ( status.nevents <= nevents ) % new events to process
-    fprintf('Timeout waiting for prediction events\n');
-    drawnow;
-    continue;
-  end
-  
-  events=[];
-  if (status.nevents>nevents) events=buffer('get_evt',[nevents status.nevents-1],buffhost,buffport); end;
-  nevents=status.nevents;
-  mi    =matchEvents(events,{'stimulus.prediction'});
-  predevents=events(mi);
-  % make a random testing event
-  if ( 0 ) predevents=struct('type','stimulus.prediction','sample',0,'value',ceil(rand()*nSymbs+eps)); end;
-  if ( ~isempty(predevents) ) 
-    [ans,si]=sort([predevents.sample],'ascend'); % proc in *temporal* order
-    for ei=1:numel(predevents);
-      ev=predevents(si(ei));% event to process
+  % wait for new prediction events to process *or* end of trial
+  [events,state,nsamples,nevents] = buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],min(1000,timetogo*1000));
+
+  % process the prediction events
+  if ( ~isempty(events) ) 
+    [ans,si]=sort([events.sample],'ascend'); % proc in *temporal* order
+    for ei=1:numel(events);
+      ev=events(si(ei));% event to process
       pred=ev.value;
       % now do something with the prediction....
       if ( numel(pred)==1 )
@@ -88,8 +74,8 @@ while (timetogo>0)
       fixPos = stimPos(:,1:end-1)*prob(:); % position is weighted by class probabilties
       set(h(end),'position',[fixPos-stimRadius/2;stimRadius/2*[1;1]]);
     end
-    drawnow; % update the display after all events processed
   end % if prediction events to processa  
+  drawnow; % update the display after all events processed
 end % loop over epochs in the sequence
 
 % end training marker
