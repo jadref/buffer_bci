@@ -19,6 +19,11 @@ set(gcf,'color',[0 0 0]); set(gca,'visible','off');
 set(gca,'YDir','reverse');
 set(gca,'xlim',[0 1],'ylim',[0 1]);
 
+% compute the fontsize in pixels
+set(opts.fig,'Units','pixel');
+wSize=get(opts.fig,'position');
+fontSize = opts.fontSize*wSize(4);
+
 % init the symbols
 hdls   =zeros([size(symbols),1]);
 w = 1/(size(symbols,1)+1); h=1/(size(symbols,2)+1);
@@ -28,10 +33,11 @@ for i = 1:size(symbols,1)
     rect = [x-.5*w+opts.interBoxGap,y-.5*h+opts.interBoxGap,w-2*opts.interBoxGap,h-2*opts.interBoxGap];
     hdls(i,j,1) = ...
         text(x,y-h*.1,symbols{i,j},...
-             'FontUnits','normalized','fontsize',opts.fontSize,'HorizontalAlignment','center','FontWeight','bold','Color',[.1 .1 .1]);
+             'fontunits','pixel','fontsize',fontSize,'HorizontalAlignment','center','FontWeight','bold','Color',[.1 .1 .1]);
   end
 end
 drawnow;
 return;
 function testCase()
-grid=initGrid({'1' '2';'3' '4'},[]);
+grid=initGrid({'1' '2';'3' '4'});
+grid=initGrid({'alpha' 'beta';'gamma' 'delta'});
