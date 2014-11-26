@@ -61,7 +61,7 @@ while( ~endTest )
     
     if ( nevents>opts.minEvents && nevents >= opts.maxEvents || endSeq ) 
       % send event with prediction
-      predevt=sendEvent('stimulus.prediction',dv);
+      predevt=sendEvent('classifier.prediction',dv);
       fprintf('Classification output: event %s\n',ev2str(predevt));
       dv(:)=0;  nevents=0;     % clear accumulated info      
       if ( endSeq ) state.pending=[]; end % clear waiting data also

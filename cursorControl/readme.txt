@@ -34,5 +34,4 @@ Experiment Phase Files:
 initCursorStim.m           -- Create the figure window and stimulus
 cursorCalibrateStimulus.m  -- generate the calibration phase stimulus, i.e. show targets, flash, wait etc.
 cursorFeedbackStimulus.m   -- generate the feedback phase stimulus, i.e. show and flash the matrix, gather the classifier predictions to make a letter prediction and show the predicted classifier output.
-cursorFeedbackSignals.m    -- signal analyis for the feedback phase, i.e. get per flash data, apply the trained classifier, and send prediction events.
-filterPredEvents.m         -- Take a sequence of prediction events and filter them to generate a final command (essentially just a moving average filter, but could use a more advanced method such as HMM, Kalman-filter)
+cursorFeedbackSignals.m    -- signal analyis for the feedback phase, i.e. get per flash data, apply the trained classifier, combine with stimulus information and send prediction events.
