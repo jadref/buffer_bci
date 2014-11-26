@@ -13,6 +13,8 @@ function [testdata,testevents]=event_applyClsfr(clsfr,varargin)
 %  startSet      -- {2 x 1} cell array of {event.type event.value} to match to start getting data to 
 %                   apply the classifier to.                                   ({'stimulus.target'})
 %  endType, endValue  -- event type and value to match to stop giving feedback ('stimulus.test','end')
+%  sendPredEventType -- [str] send all predictions generated so far *only* after the event  ([])
+%                          type is recieved.  If empty then send all predictions immeadiately.
 %  trlen_ms/samp -- [int] length of trial to apply classifier to               ([])
 %                     if empty, then = windowFn size used in the classifier training
 %  alpha         -- [float] decay constant for exp-weighted moving average,     ([])
@@ -21,6 +23,7 @@ function [testdata,testevents]=event_applyClsfr(clsfr,varargin)
 opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
             'startSet',{'stimulus.target'},...
             'endType','stimulus.test','endValue','end','verb',0,...
+            'sendPredEventType',[],...
             'trlen_ms',[],'trlen_samp',[],...
             'alpha',[],'timeout_ms',1000); 
 [opts,varargin]=parseOpts(opts,varargin);
@@ -43,17 +46,32 @@ if ( isempty(trlen_samp) )
   end
 end
 
+endType=opts.endType;
+if ( ~iscell(endType) ) endType={endType}; end;
+if ( ~isempty(opts.sendPredEventType) ) 
+  if ( iscell(opts.sendPredEventType) ) endType={endType{:} opts.sendPredEventType{:}};
+  else                                  endType={endType{:} opts.sendPredEventType};
+  end
+end
+
+% get startSet in the right format for buffer_waitdata
+startSet=opts.startSet;
+if ( ~iscell(startSet) || numel(startSet)~=2 ) startSet={startSet}; end;
+
 % for returning the data used by the classifier if wanted
 testdata={}; testevents={}; %N.B. cell array to avoid expensive mem-realloc during execution loop
 
-state=[]; % start from the current time
+% get info on the current time (do it this way for debugging purposes)
+state=buffer('wait_dat',[-1 -1 -1],opts.buffhost,opts.buffport);
 
 dv=[];
 nEpochs=0;
+nPred=0;
+sendPred=false;
 endTest=false;
 while ( ~endTest )
   % wait for data to apply the classifier to, or got an stop-predicting event
-  [data,devents,state]=buffer_waitData(opts.buffhost,opts.buffport,state,'startSet',opts.startSet,'trlen_samp',trlen_samp,'exitSet',{'data' opts.endType},'verb',opts.verb);
+  [data,devents,state]=buffer_waitData(opts.buffhost,opts.buffport,state,'startSet',startSet,'trlen_samp',trlen_samp,'exitSet',{'data' endType},'verb',opts.verb);
   
   % process these events
   for ei=1:numel(devents)
@@ -61,6 +79,10 @@ while ( ~endTest )
     if ( matchEvents(devents(ei),opts.endType,opts.endValue) ) % end training
       if ( opts.verb>0 ) fprintf('Got end feedback event\n'); end;
       endTest=true;
+    
+    elseif ( matchEvents(devents(ei),opts.sendPredEventType,opts.endValue) ) % send accumulated predictions
+      if ( opts.verb>0 ) fprintf('Got send predictions event\n'); end;
+      sendPred=true;
     
     elseif ( matchEvents(devents(ei),opts.startSet) ) % flash, apply the classifier
       if ( opts.verb>0 ) fprintf('Processing event: %s',ev2str(devents(ei))); end;      
@@ -85,15 +107,28 @@ while ( ~endTest )
       end          
       
       % Send prediction events when wanted
-      sendEvent('classifier.prediction',f,devents(ei).sample);
+      if ( isempty(opts.sendPredEventType) ) % send predictions immeadiately
+        sendEvent('classifier.prediction',f,devents(ei).sample);
+      else % accumulate predictions
+        nPred=nPred+1;
+        fs(1:numel(f),nPred)=f; % add to the stored set of predictions
+      end
       if ( opts.verb>0 ) fprintf('%d) Clsfr Pred: [%s]\n',devents(ei).sample,sprintf('%g ',f)); end;
     else
       if ( opts.verb>0 ) fprintf('Unmatched event : %s\n',ev2str(devents(ei))); end;
     end
   end % devents 
+  if ( sendPred ) % send the accumulated prediction information
+    sendEvent('classifier.prediction',fs(:,1:nPred));
+    if (opts.verb>=0) fprintf('%d) Saved Clsfr Pred: [%s]\n',devents(ei).sample,sprintf('%g ',fs)); end;
+    sendPred=false; nPred=0; fs(:)=0;
+  end
 end % feedback phase
 if( nargout>0 ) testdata=cat(1,testdata{:}); testevents=cat(1,testevents{:}); end;
 return;
 %--------------------------------------
 function testCase()
+% send immeadiately mode
 event_applyClsfr(clsfr,'startSet',{'stimulus.target'},'endType','stimulus.test')
+% send on cue mode
+event_applyClsfr(clsfr,'startSet',{'stimulus.target'},'endType','stimulus.test','sendPredEventType','stimulus.sequence')
