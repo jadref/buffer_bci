@@ -292,6 +292,7 @@ else
 end
 
 %7) combine all the info needed to apply this pipeline to testing data
+clsfr.type        = 'ERsP';
 clsfr.fs          = fs;   % sample rate of training data
 clsfr.detrend     = opts.detrend; % detrend?
 clsfr.isbad       = isbadch;% bad channels to be removed
