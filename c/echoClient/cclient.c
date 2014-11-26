@@ -18,6 +18,12 @@
 #define DEFAULTPORT     1972
 #define WAITTIMEOUT     5000
 
+int   exitExpt=0;
+/* if get a ctrl-c then exit experiment at next good point. */
+void SIGINT_handler(int sig){
+  fprintf(stderr,"Caught <ctrl-c> stopping...");
+  exitExpt=1;
+}
 
 int main(int argc, char *argv[]) {
   host_t buffhost;
@@ -45,6 +51,7 @@ int main(int argc, char *argv[]) {
   WSADATA wsa_data;
   WSAStartup(MAKEWORD(1,1), &wsa_data);
 #endif    
+  signal(SIGINT, SIGINT_handler); /* register signal handler for ctrl-c */
   
   if (argc>1) {
 	 char *fname=argv[1];
@@ -93,7 +100,6 @@ int main(int argc, char *argv[]) {
   FREE(response->def); FREE(response);
   
   nEvents=header.def->nevents;
-  exitExpt=0;
   while ( exitExpt==0 ) {
 
 	 /* wait until we have more events to process */

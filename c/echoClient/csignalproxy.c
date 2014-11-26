@@ -25,12 +25,13 @@ long int sleepcount=0;
  #define SIGALRM -1
 #endif
 
+int exitExpt=0;
 void sig_handler(int32_t sig) 
 {
   fprintf(stdout,"\nStop grabbing with signal %d\n",sig);
   fprintf(stdout,"Sleep Ave = %fusec\n",(float)(sleeptime)/(float)(sleepcount));
   //raise(SIGALRM);  
-  exit(sig);
+  exitExpt=1;
 }
 
 int readresponse(int serverfd, messagedef_t *responsedef){
@@ -226,7 +227,7 @@ int main(int argc, char *argv[]) {
   //-------------------------------------------------------------------------------
   // Loop sending the data in blocks as it becomes available
   gettimeofday(&starttime,NULL); /* get time we started to compute delay before next sample */
-  while (1) {
+  while ( exitExpt==0 ) {
 
 	 //-------------------------------------------------------------------------------
 	 // get the data	 
@@ -326,4 +327,5 @@ int main(int argc, char *argv[]) {
 #if defined(__WIN32__) || defined(__WIN64__)
     WSACleanup();
 #endif
+	 return 0;
 }
