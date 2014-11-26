@@ -39,8 +39,8 @@ wb=which('buffer');
 if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) 
   mdir=fileparts(mfilename('fullfile')); run(fullfile(mdir,'../utilities/initPaths.m')); 
 end;
-opts=struct('epochEventType','stimulus.target','clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],...
-            'capFile',[],'subject','test','verb',0,'buffhost',[],'buffport',[]);
+opts=struct('epochEventType',[],'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],...
+            'capFile',[],'subject','test','verb',0,'buffhost',[],'buffport',[],'useGUI',1);
 opts=parseOpts(opts,varargin);
 
 thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
@@ -51,6 +51,23 @@ if( isempty(capFile) )
 end
 if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
 if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4; end;
+
+if ( isempty(opts.epochEventType) && opts.useGUI )
+  optsFig=bufferSignalProcOpts(); 
+  uiwait(optsFig); 
+  info=guidata(optsFig);
+  if ( info.ok )
+    % use the input for the options names
+    fn=fieldnames(info.opts); for fi=1:numel(fn); opts.(fn)=info.opts.(fn); end;
+    % add additional information to the freqbands arguments
+    if ( opts.freqband(1)<0 ) opts.freqband(1)=max(0,opts.freqband(2)-1); end;
+    if ( opts.freqband(2)<0 ) opts.freqband(2)=max(8,opts.freqband(1)+1); end;
+    if ( opts.freqband(3)<0 ) opts.freqband(3)=max(28,opts.freqband(2)+10); end;
+    if ( opts.freqband(4)<0 ) opts.freqband(4)=min(inf,opts.freqband(3)+1); end;    
+  else
+    error('User cancelled the run');
+  end
+end
 
 datestr = datevec(now); datestr = sprintf('%02d%02d%02d',datestr(1)-2000,datestr(2:3));
 dname='training_data';
