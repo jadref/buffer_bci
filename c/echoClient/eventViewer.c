@@ -145,10 +145,12 @@ int main(int argc, char *argv[]) {
 		  event.buf = (char*)getevtresponse->buf+offset+sizeof(eventdef_t);
 
 		  /* print debug info about this event */
+		  fprintf(stderr,"s:%d ",event.def->sample);
 		  if (event.def->type_type == DATATYPE_CHAR ){
 			 fprintf(stderr,"t:%.*s",event.def->type_numel, (char *) event.buf);
+			 for ( i=event.def->type_numel; i<20; i++)fprintf(stderr," "); /* white-space	pad */
 		  }else{
-			 fprintf(stderr,"t:unknown");
+			 fprintf(stderr,"t:%20s","unknown");
 		  }
 		  if ( event.def->value_type == DATATYPE_CHAR) {
 			 fprintf(stderr," v:%.*s ",event.def->value_numel, (char *) event.buf + event.def->type_numel);
@@ -175,7 +177,7 @@ int main(int argc, char *argv[]) {
 		  } else {
 			 fprintf(stderr," v:unknown ");
 		  }
-		  fprintf(stderr," s:%d\n",event.def->sample);
+		  fprintf(stderr,"\n");
 		}
 		/* deallocate memory used to store the received events */
 		FREE(getevtresponse->buf);FREE(getevtresponse->def); FREE(getevtresponse);
