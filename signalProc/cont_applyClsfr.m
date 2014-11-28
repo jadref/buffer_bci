@@ -14,11 +14,22 @@ function [testdata,testevents]=cont_applyClsfr(clsfr,varargin)
 %  alpha         -- [float] decay constant for exp-weighted moving average,     ([])
 %                     for continuous Neurofeedback style feedback. N.B. alpha = exp(log(.5)/halflife)
 %                     if alpha isempty, then simply sum the decision values between prediction events
+%
+% Examples:
+%  % 1) Default: apply clsfr every 100ms and send predictions as 'classifier.predicition'
+%  %    stop processing when get a 'stimulus.test','end' event.
+%  cont_applyClsfr(clsfr,'step_ms',100)
+%  % 2) apply clsfr every 500ms and send weighted average of the last 10 predictions as 
+%  %    an 'alphaPower' event type
+%  %    stop processing when get a 'neurofeedback','end' event.
+%  cont_applyClsfr(clsfr,'step_ms',500,'alpha',exp(log(.5)/10),'predEventType','alphaPower','endType','neurofeedback')
 opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
             'endType','stimulus.test','endValue','end','verb',0,...
+            'predEventType','classifier.prediction',...
             'trlen_ms',[],'trlen_samp',[],'overlap',.5,'step_ms',[],...
             'alpha',[],'timeout_ms',1000); % exp moving average constant, half-life=10 trials
 [opts,varargin]=parseOpts(opts,varargin);
+
 % if not explicitly given work out from the classifier information the trial length needed
 % to apply the classifier
 trlen_samp=opts.trlen_samp; 
@@ -39,6 +50,8 @@ if ( isempty(trlen_samp) )
     end
   end
 end;
+
+% get time to wait between classifier applications
 if ( ~isempty(opts.step_ms) )
   if(~isempty(opts.hdr)) fs=opts.hdr.fsample; 
   else opts.hdr=buffer('get_hdr',buffhost,buffport); fs=opts.hdr.fsample; 
@@ -54,7 +67,6 @@ testdata={}; testevents={}; %N.B. cell array to avoid expensive mem-realloc duri
 % get the current number of samples, so we can start from now
 status=buffer('wait_dat',[-1 -1 -1],opts.buffhost,opts.buffport);
 nEvents=status.nevents; nSamples=status.nsamples;
-
 
 dv=[];
 nEpochs=0;
@@ -108,9 +120,9 @@ while( ~endTest )
       dv=dv*opts.alpha + (1-opts.alpha)*f;
     end
       
-    % Send prediction events when wanted
-    sendEvent('classifier.prediction',dv,start(si));
-    if ( opts.verb>0 ) fprintf('%d) Clsfr Pred: [%s]\n',start(si),sprintf('%g ',f)); end;
+    % Send prediction event
+    sendEvent(opts.predEventType,dv,start(si));
+    if ( opts.verb>0 ) fprintf('%d) Clsfr Pred: [%s]\n',start(si),sprintf('%g ',dv)); end;
   end
     
   % deal with any events which have happened

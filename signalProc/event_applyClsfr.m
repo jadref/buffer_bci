@@ -15,18 +15,36 @@ function [testdata,testevents]=event_applyClsfr(clsfr,varargin)
 %  endType, endValue  -- event type and value to match to stop giving feedback ('stimulus.test','end')
 %  sendPredEventType -- [str] send all predictions generated so far *only* after the event  ([])
 %                          type is recieved.  If empty then send all predictions immeadiately.
+%  predEventType -- [str] the type to use when sending prediction events       ('classifier.prediction')
 %  trlen_ms/samp -- [int] length of trial to apply classifier to               ([])
 %                     if empty, then = windowFn size used in the classifier training
 %  alpha         -- [float] decay constant for exp-weighted moving average,     ([])
 %                     for continuous Neurofeedback style feedback. N.B. alpha = exp(log(.5)/halflife)
 %                     if alpha isempty, then simply sum the decision values between prediction events
+%
+% Examples:
+%  % 1) Default: apply clsfr on 'stimulus.target' events and 
+%  %    immeadiately send predictions as 'classifier.predicition'
+%  %    stop processing when get a 'stimulus.test','end' event.
+%   event_applyClsfr(clsfr)
+%  % 2) apply clsfr on 'stimulus.target' events
+%  %    but accmulate predictions until recieve 'send.prediction' event
+%  %    then send all accumulated predictions as 'classifier.prediction' event
+%  %    stop processing when get a 'stimulus.test','end' event.
+%   event_applyClsfr(clsfr,'sendPredEvent','send.prediction')
+%  % 3) apply clsfr on 'stimulus.rowFlash' or 'stimulus.colFlash' events and 
+%  %    accumulate predictions until recieve 'send.prediction' event
+%  %    stop processing when get a 'stimulus.test','end' event.
+%   event_applyClsfr(clsfr,'startSet',{'stimulus.rowFlash','stimulus.colFlash},'sendPredEvent','send.prediction')
 opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
             'startSet',{'stimulus.target'},...
             'endType','stimulus.test','endValue','end','verb',0,...
             'sendPredEventType',[],...
+            'predEventType','classifier.prediction',...
             'trlen_ms',[],'trlen_samp',[],...
             'alpha',[],'timeout_ms',1000); 
 [opts,varargin]=parseOpts(opts,varargin);
+
 % if not explicitly given work out from the classifier information the trial length needed
 % to apply the classifier
 trlen_samp=opts.trlen_samp; 
@@ -46,6 +64,8 @@ if ( isempty(trlen_samp) )
   end
 end
 
+% combine the endType info and the sendPrediction event type info, to make a complete set of events for which
+% we should stop gathering data and do something
 endType=opts.endType;
 if ( ~iscell(endType) ) endType={endType}; end;
 if ( ~isempty(opts.sendPredEventType) ) 
@@ -61,7 +81,7 @@ if ( ~iscell(startSet) || numel(startSet)~=2 ) startSet={startSet}; end;
 % for returning the data used by the classifier if wanted
 testdata={}; testevents={}; %N.B. cell array to avoid expensive mem-realloc during execution loop
 
-% get info on the current time (do it this way for debugging purposes)
+% get info on the current state (do it this way for debugging purposes)
 state=buffer('wait_dat',[-1 -1 -1],opts.buffhost,opts.buffport);
 
 dv=[];
@@ -70,7 +90,8 @@ nPred=0;
 sendPred=false;
 endTest=false;
 while ( ~endTest )
-  % wait for data to apply the classifier to, or got an stop-predicting event
+
+  % wait for data to apply the classifier to, or got an stop-predicting/send Predictions event
   [data,devents,state]=buffer_waitData(opts.buffhost,opts.buffport,state,'startSet',startSet,'trlen_samp',trlen_samp,'exitSet',{'data' endType},'verb',opts.verb);
   
   % process these events
@@ -84,7 +105,7 @@ while ( ~endTest )
       if ( opts.verb>0 ) fprintf('Got send predictions event\n'); end;
       sendPred=true;
     
-    elseif ( matchEvents(devents(ei),opts.startSet) ) % flash, apply the classifier
+    elseif ( matchEvents(devents(ei),opts.startSet) ) % apply the classifier event
       if ( opts.verb>0 ) fprintf('Processing event: %s',ev2str(devents(ei))); end;      
 
       % save the data used by the classifier if wanted
@@ -106,22 +127,26 @@ while ( ~endTest )
         dv=dv*opts.alpha + (1-opts.alpha)*f;      
       end          
       
-      % Send prediction events when wanted
+      % Send prediction event
       if ( isempty(opts.sendPredEventType) ) % send predictions immeadiately
-        sendEvent('classifier.prediction',f,devents(ei).sample);
+        sendEvent(opts.predEventType,dv,devents(ei).sample);
       else % accumulate predictions
         nPred=nPred+1;
         fs(1:numel(f),nPred)=f; % add to the stored set of predictions
       end
-      if ( opts.verb>0 ) fprintf('%d) Clsfr Pred: [%s]\n',devents(ei).sample,sprintf('%g ',f)); end;
-    else
+      if ( opts.verb>0 ) fprintf('%d) Clsfr Pred: [%s]\n',devents(ei).sample,sprintf('%g ',dv)); end;
+    
+    else % another event type we're not sure how to process  (Should never happen)
       if ( opts.verb>0 ) fprintf('Unmatched event : %s\n',ev2str(devents(ei))); end;
+    
     end
   end % devents 
-  if ( sendPred ) % send the accumulated prediction information
-    sendEvent('classifier.prediction',fs(:,1:nPred));
+
+  % if got a send-predictionns event, then send the accumulated prediction information
+  if ( sendPred )
+    sendEvent(opts.predEventType,fs(:,1:nPred));
     if (opts.verb>=0) fprintf('%d) Saved Clsfr Pred: [%s]\n',devents(ei).sample,sprintf('%g ',fs)); end;
-    sendPred=false; nPred=0; fs(:)=0;
+    sendPred=false; nPred=0; fs(:)=0; % reset the accumulated info
   end
 end % feedback phase
 if( nargout>0 ) testdata=cat(1,testdata{:}); testevents=cat(1,testevents{:}); end;
