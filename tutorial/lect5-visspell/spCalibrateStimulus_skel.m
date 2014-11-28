@@ -35,9 +35,6 @@ symbols={'1' '2' '3';...
 %    FILL IN YOUR CODE BELOW HERE
 % ----------------------------------------------------------------------------
 
-% setup the PTB path
-run ../utilities/initPTBPaths;
-
 % useful functions 
 % make the stimulus
 [h,symbs]=initGrid(symbols);

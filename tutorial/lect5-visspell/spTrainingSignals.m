@@ -21,7 +21,7 @@ fname='clsfr';
 
 load(dname);
 % train classifier
-clsfr=buffer_train_erp_clsfr(data,devents,hdr,'spatialfilter','slap','freqband',[0 .3 10 12],'badchrm',0,'capFile',capFile,'overridechnm',overridechnm);
+clsfr=buffer_train_erp_clsfr(data,devents,hdr,'spatialfilter','slap','freqband',[0 .3 10 12],'badchrm',0,'capFile',capFile,'overridechnms',overridechnm);
 % save result
 fprintf(1,'Saving clsfr to : %s',fname);
 save(fname,'-struct','clsfr');
