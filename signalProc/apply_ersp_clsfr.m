@@ -78,6 +78,8 @@ else
   X=repop(X,'*',clsfr.windowFn(:)');
   %3.2) fft
   X=fft(X,[],2);
+  %3.2.5 positive frequencies only
+  X=X(:,1:ceil((size(X,2)-1)/2)+1,:);
   %3.3) convert to powers
   X=2*(real(X).^2 + imag(X).^2); 
   %3.4) convert to output type
@@ -85,7 +87,8 @@ else
    case 'db';
     X=10*log10(X)./sum(clsfr.windowFn); % map to db (and normalise)
    case 'power'; % do nothing
-   otherwise; X=sqrt(abs(X)); % map to amplitudes
+   case {'amp','abs'}; X=sqrt(abs(X)); % map to amplitudes
+   otherwise; error('Unrecognised welch averaging type');
   end
   X=X./sum(clsfr.windowFn(:));
 end
