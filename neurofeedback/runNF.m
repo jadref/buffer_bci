@@ -26,20 +26,7 @@ while (ishandle(contFig))
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until capFitting is done
     buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
-    
-   %---------------------------------------------------------------------------
-   case {'epochfeedback'};
-    sendEvent('subject',info.subject);
-    sendEvent(phaseToRun,'start');
-    try
-      sendEvent('startPhase.cmd','epochfeedback');
-      imEpochFeedbackStimulus;
-    catch
-       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-    end
-    sendEvent('test','end');
-    sendEvent(phaseToRun,'end');
-   
+       
    %---------------------------------------------------------------------------
    case {'neurofeedback'};
     sendEvent('subject',info.subject);

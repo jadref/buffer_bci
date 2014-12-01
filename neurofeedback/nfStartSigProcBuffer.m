@@ -5,7 +5,7 @@
 %  (startPhase.cmd,calibrate)  -- start calibration phase processing (i.e. cat data)
 %  (startPhase.cmd,testing)    -- start test phase, i.e. on-line prediction generation
 %  (startPhase.cmd,exit)       -- stop everything
-configureCursor;
+configureNF;
 
 if( ~exist('capFile','var') || isempty(capFile) ) 
   [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); capFile=fullfile(pth,fn);
@@ -72,68 +72,22 @@ while ( true )
    case 'eegviewer';
     eegViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms);
     
-   %---------------------------------------------------------------------------------
-   case {'calibrate','calibration'};
-    [traindata,traindevents,state]=buffer_waitData(buffhost,buffport,[],'startSet',{'stimulus.tgtFlash'},'exitSet',{'stimulus.training' 'end'},'verb',verb,'trlen_ms',trlen_ms);
-    mi=matchEvents(traindevents,'stimulus.training','end'); traindevents(mi)=[]; traindata(mi)=[];%remove exit event
-    fprintf('Saving %d epochs to : %s\n',numel(traindevents),[dname '_' subject '_' datestring]);
-    save([dname '_' subject '_' datestring],'traindata','traindevents','hdr');
-    trainSubj=subject;
-
-    %---------------------------------------------------------------------------------
-   case {'train','training'};
-%    try
-      if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
-        fprintf('Loading training data from : %s\n',[dname '_' subject '_' datestring]);
-        load([dname '_' subject '_' datestring]); 
-        trainSubj=subject;
-      end;
-      if ( verb>0 ) fprintf('%d epochs\n',numel(traindevents)); end;
-      clsSubj=subject;
-      if ( any(strcmpi(classifierType,'erp')) )
-        [erpclsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','timeband',[0 .6],'freqband',[.1 .3 8 10],'badchrm',1,'badtrrm',1,'objFn','lr_cg','compKernel',0,'dim',3,'capFile',capFile,'overridechnms',overridechnms);
-        fname=[cname '_ERP_' subject '_' datestring]; fprintf('Saving ERP classifier to : %s\n',fname);
-        save(fname,'-struct','erpclsfr');
-      else
-        erpclsfr=[];
-      end
-      if ( any(strcmpi(classifierType,'ersp')) )
-        [erspclsfr,res(2)]=buffer_train_ersp_clsfr(traindata,traindevents,hdr,'spatialfilter','slap','freqband',[6 10 26 30],'badchrm',1,'badtrrm',1,'objFn','lr_cg','compKernel',0,'dim',3,'capFile',capFile,'overridechnms',overridechnms,'visualize',2);
-        fname=[cname '_ERsP_' subject '_' datestring]; fprintf('Saving ERsP classifier to : %s\n',fname);
-        save(fname,'-struct','erspclsfr');
-      else
-        erspclsfr=[];
-      end
-      clsfr=cat(1,erpclsfr,erspclsfr);
-      fname=[cname '_' subject '_' datestring]; fprintf('Saving classifier(s) to : %s\n',fname);
-      save(fname,'-V6','clsfr');
-%    catch
-%      fprintf('Error in train classifier!');
-%    end
-
-    %---------------------------------------------------------------------------------
-   case {'test','testing'};
-    if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
-      clsfrfile = [cname '_' subject '_' datestring];
-      if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=[cname '_' subject]; end;
-      clsfr=load(clsfrfile);
-      if ( isfield(clsfr,'clsfr') ) clsfr=clsfr.clsfr; end; 
-      clsSubj = subject;
-    end;
-
-    cursorFeedbackSignals(clsfr);
-
     %---------------------------------------------------------------------------------
    case {'contfeedback'};
+    % build the classifier     
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
       clsfrfile = [cname '_' subject '_' datestring];
       if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=[cname '_' subject]; end;
-      clsfr=load(clsfrfile);
+      if ( ~exist([cslfrfile '.mat'],'file') )
+        clsfr = buffer_train_nf_clsfr(width_ms,feedback,hdr,'capFile',capFile,'overridechnms',overridechnms);
+        clsfrfile = [cname '_' subject '_' datestring];
+        fprintf('saving to : %s',clsfrfile);  save(clsfrfile,'clsfr');
+      end
       if ( isfield(clsfr,'clsfr') ) clsfr=clsfr.clsfr; end; 
       clsSubj = subject;
     end;
 
-    event_applyClsfr(clsfr,'startSet','stimulus.arrows');
+    cont_applyClsfr(clsfr,'step_ms',step_ms,'alpha',expSmoothFactor,'predEventType','alphaLat','endType','neurofeedback');
     
    case 'exit';
     break;
