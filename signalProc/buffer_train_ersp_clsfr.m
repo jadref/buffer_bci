@@ -20,7 +20,7 @@ function [clsfr,res,X,Y]=buffer_train_ersp_clsfr(X,Y,hdr,varargin);
 %              freqband,timeband,spatialfilter,badchrm,badtrrm,detrend,etc..
 % Outputs:
 %  clsfr   -- [struct] a classifer structure
-%           |.w      -- [size(X) x nSp] weighting over X (for each subProblem)
+%           |.W      -- [size(X) x nSp] weighting over X (for each subProblem)
 %           |.b      -- [nSp x 1] bias term
 %           |.dim    -- [ind] dimensions of X which contain the trails
 %           |.spMx   -- [nSp x nClass] mapping between sub-problems and input classes
