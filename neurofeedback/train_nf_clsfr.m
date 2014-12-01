@@ -145,8 +145,8 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
       elseif(numel(opts.freqband)==4 ) opts.freqband=[mean(opts.freqband([1 2])) mean(opts.freqband([3 4]))];
       end
     end
-    [ans,fIdx(1)]=min(abs(freqs-opts.freqband(1))); % lower frequency bin
-    [ans,fIdx(2)]=min(abs(freqs-opts.freqband(2))); % upper frequency bin
+    [ans,fIdx(1)]=min(abs(freqs-max(freqs(1),opts.freqband(1)))); % lower frequency bin
+    [ans,fIdx(2)]=min(abs(freqs-min(freqs(end),opts.freqband(2)))); % upper frequency bin
     fIdx = int32(fIdx(1):fIdx(2));
   elseif ( iscell(opts.freqband) ) %set of discrete-frequencies to pick
     freqband=[opts.freqband{:}]; % convert to vector
@@ -161,7 +161,8 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
 end;
 
 %6) configure classifier(s)
-W=zeros(numel(ch_names),numel(freqs),numel(nfParams)); b=zeros(numel(nfParams),1);
+W=zeros(numel(ch_names),numel(freqs),numel(nfParams)); 
+b=zeros(1,numel(nfParams));
 for ci=1:numel(nfParams)  
   parmsci=nfParams(ci);
   % get the weighting over channels
@@ -183,14 +184,20 @@ for ci=1:numel(nfParams)
       end
     end
   end
-  chWght = chWght ./ sum(chWght); % average over electrodes
+  chWght(chWght>0) = chWght(chWght>0) ./ sum(abs(chWght(chWght>0))); % average over electrodes
+  chWght(chWght<0) = chWght(chWght<0) ./ sum(abs(chWght(chWght<0))); % average over electrodes
+  if ( sum(abs(chWght))>0 ) chWght = chWght./sum(abs(chWght)); end;
   
   % get the weighting over frequencies
   freqWght = zeros(numel(freqs),1);
-  [ans,tmpfIdx(1)]=min(abs(freqs-max(freqs(1)  ,parmsci.freqband(1)))); % lower frequency bin
-  [ans,tmpfIdx(2)]=min(abs(freqs-min(freqs(end),parmsci.freqband(2)))); % upper frequency bin
-  freqWght(tmpfIdx(1):tmpfIdx(2))=1;
-  freqWght=freqWght./sum(freqWght); % average over electrodes
+  if( numel(parmsci.freqband)>4 ) % direct weighting over frequencies
+    freqWght(1:min(end,numel(parmsci.freqband)))=parmsci.freqband(1:min(end,numel(freqs)));
+  else % start,stop frequencies
+    [ans,tmpfIdx(1)]=min(abs(freqs-max(freqs(1)  ,parmsci.freqband(1)))); % lower frequency bin
+    [ans,tmpfIdx(2)]=min(abs(freqs-min(freqs(end),parmsci.freqband(2)))); % upper frequency bin
+    freqWght(tmpfIdx(1):tmpfIdx(2))=1;
+    if ( sum(abs(freqWght))>0 ) freqWght=freqWght./sum(abs(freqWght));  end % average over frequencies
+  end
 
   % make the combined weighting
   W(:,:,ci) = chWght * freqWght' ;
@@ -203,7 +210,7 @@ clsfr.b=b;
 clsfr.dim=3;
 clsfr.spMx=[];
 clsfr.spKey=[];
-clsfr.spDesc=nfParams.label; % label for each output
+clsfr.spDesc={nfParams.label}; % label for each output
 clsfr.binsp=1;
 
 %7) combine all the info needed to apply this pipeline to testing data

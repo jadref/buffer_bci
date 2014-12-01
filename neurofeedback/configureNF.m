@@ -44,6 +44,7 @@ fbColor=[0 0 1];
 % how large a time window to use to compute the spectral power
 % N.B. frequency resolution = 1/width_ms
 width_ms=500; 
+freqs=fftBins([],width_ms/1000,hdr.fSample,1);
 step_ms =100; % how often to compute the average output
 % parameters to use for feedback
 %  freqband = specifies te frequency range to use.
@@ -53,14 +54,14 @@ step_ms =100; % how often to compute the average output
 %     {'str'} - gives a list of electrode names to sum together
 %               N.B. use -Cz to negate before summing, 
 %                  e.g. to feedback on the lateralisation between C3 and C4 use: {'C3' '-C4'}
-% 1) whole head alpha
-feedback(1).label    = 'alpha';
-feedback(1).freqband = [8 12]; % alpha
-feedback(1).electrodes= []; % [] = all electrodes, otherwise
-% 2) hand region lateralisation: C3 - C4
-feedback(2) = struct('label','handLat','freqband',[10 14],'electrodes',{{'C3' '-C4'}}); 
-% 3) beta power in Cz (central motor strip)
-feedback(3) = struct('label','beta_Cz','freqband',[18 24],'electrodes','Cz'); 
+% 1) frontal alpha lateralisation
+feedback = struct('label','alphaLat',...
+                  'freqband',[8 12],...
+                  'electrodes',{{'F5' 'AF3' '-AF4' '-F6'}}); % don't forget double cell for struct
+% 2) EMG (= high freq power) + eye (=low freq power)
+feedback(2) = struct('label','badness',...
+                     'freqband',mkFilter(freqs,[0 0 4 4])/10 + mkFilter(freqs,[15 45]),...
+                     'electrodes',[]); 
 
 % set smoothing rate for the estimated spectral powers
 expSmoothFactor = log(2)/log(10); %exp(log(.5)/10)
