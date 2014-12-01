@@ -11,9 +11,11 @@ function [testdata,testevents]=cont_applyClsfr(clsfr,varargin)
 %  overlap       -- [float] fraction of trlen_samp between successive classifier predictions, i.e.
 %                    prediction at, t, t+trlen_samp*overlap, t+2*(trlen_samp*overlap), ...
 %  step_ms       -- [float] time between classifier predictions                 ([])
-%  alpha         -- [float] decay constant for exp-weighted moving average,     ([])
-%                     for continuous Neurofeedback style feedback. N.B. alpha = exp(log(.5)/halflife)
-%                     if alpha isempty, then simply sum the decision values between prediction events
+%  alpha         -- [float] moving average specification     ([])
+%                     alpha=[] - no averaging 
+%                     alpha>=0 - coefficient for exp-decay moving average. f=alpha(f) + (1-alpha)f_new
+%                                N.B. alpha = exp(log(.5)/halflife)
+%                     alpha<0  - #components to average                    f=mean(f(end-alpha:end))
 %
 % Examples:
 %  % 1) Default: apply clsfr every 100ms and send predictions as 'classifier.predicition'
@@ -98,12 +100,14 @@ while( ~endTest )
   start = onSamples:step_samp:status.nsamples-trlen_samp-1; % window start positions
   if( ~isempty(start) ) nSamples=start(end)+step_samp; end % start of next trial for which not enough data yet
   for si = 1:numel(start);    
+    nEpochs=nEpochs+1;
+    
     % get the data
     data = buffer('get_dat',[start(si) start(si)+trlen_samp-1],opts.buffhost,opts.buffport);
       
     if ( opts.verb>1 ) fprintf('Got data @ %d->%d samp\n',start(si),start(si)+trlen_samp-1); end;
     % save the data used by the classifier if wanted
-    if ( nargout>0 ) nepochs=nepochs+1;testdata{nepochs}=data;testevents{nepochs}=mkEvent('data',0,start(si)); end;
+    if ( nargout>0 ) testdata{nepochs}=data;testevents{nepochs}=mkEvent('data',0,start(si)); end;
       
     % apply classification pipeline to this events data
     for ci=1:numel(clsfr);
@@ -116,8 +120,13 @@ while( ~endTest )
     % smooth the classifier predictions if wanted
     if ( isempty(dv) || isempty(opts.alpha) ) 
       dv=f;
-    else % exp weighted moving average
-      dv=dv*opts.alpha + (1-opts.alpha)*f;
+    elseif ( isnumeric(opts.alpha) )
+      if ( opts.alpha>=0 ) % exp weighted moving average
+        dv=dv*opts.alpha + (1-opts.alpha)*f;
+      else
+        fbuff(:,mod(nEpochs-1,abs(opts.alpha))+1)=f; % store predictions in a ring buffer
+        dv=mean(fbuff,2);
+      end
     end
       
     % Send prediction event

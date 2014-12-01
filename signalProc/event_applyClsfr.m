@@ -123,8 +123,13 @@ while ( ~endTest )
       % smooth the classifier predictions if wanted
       if ( isempty(dv) || isempty(opts.alpha) ) % moving average
         dv=f;
-      else % exp-weighted moving average
-        dv=dv*opts.alpha + (1-opts.alpha)*f;      
+      elseif ( isnumeric(opts.alpha) )
+        if ( opts.alpha>=0 ) % exp weighted moving average
+          dv=dv*opts.alpha + (1-opts.alpha)*f;
+        else
+          fbuff(:,mod(nEpochs-1,abs(opts.alpha))+1)=f; % store predictions in a ring buffer
+          dv=mean(fbuff,2);
+        end
       end          
       
       % Send prediction event
