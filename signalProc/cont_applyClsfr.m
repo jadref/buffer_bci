@@ -11,12 +11,20 @@ function [testdata,testevents]=cont_applyClsfr(clsfr,varargin)
 %  overlap       -- [float] fraction of trlen_samp between successive classifier predictions, i.e.
 %                    prediction at, t, t+trlen_samp*overlap, t+2*(trlen_samp*overlap), ...
 %  step_ms       -- [float] time between classifier predictions                 ([])
-%  alpha         -- [float] moving average specification     ([])
-%                     alpha=[] - no averaging 
-%                     alpha>=0 - coefficient for exp-decay moving average. f=alpha(f) + (1-alpha)f_new
-%                                N.B. alpha = exp(log(.5)/halflife)
-%                     alpha<0  - #components to average                    f=mean(f(end-alpha:end))
-%
+%  predFilt         -- [float] prediction filter  ([])
+%                     predFilt=[] - no filtering 
+%                     predFilt>=0 - coefficient for exp-decay moving average. f=predFilt(f) + (1-predFilt)f_new
+%                                N.B. predFilt = exp(log(.5)/halflife)
+%                     predFilt<0  - #components to average                    f=mean(f(:,end-predFilt:end),2)
+%                  OR
+%                   {str} {function_handle}  a function to 'filter' the predictions through
+%                             before sending prediction event.  This function should have the signature:
+%                         [f,state]=func(f,state)
+%                             where state is the internal state of the filter, e.g. the history of past values
+%                      Examples: 
+%                        'predFilt',@(x,s) avefilt(x,s,10)   % moving average filter, length 10
+%                        'predFilt',@(x,s) biasFilt(x,s,50)  % bias adaptation filter, length 50
+%                        'predFilt',@(x,s) stdFilt(x,s,100)  % normalising filter (0-mean,1-std-dev), length 100
 % Examples:
 %  % 1) Default: apply clsfr every 100ms and send predictions as 'classifier.predicition'
 %  %    stop processing when get a 'stimulus.test','end' event.
@@ -29,7 +37,7 @@ opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
             'endType','stimulus.test','endValue','end','verb',0,...
             'predEventType','classifier.prediction',...
             'trlen_ms',[],'trlen_samp',[],'overlap',.5,'step_ms',[],...
-            'alpha',[],'timeout_ms',1000); % exp moving average constant, half-life=10 trials
+            'predFilt',[],'timeout_ms',1000); % exp moving average constant, half-life=10 trials
 [opts,varargin]=parseOpts(opts,varargin);
 
 % if not explicitly given work out from the classifier information the trial length needed
@@ -71,7 +79,7 @@ status=buffer('wait_dat',[-1 -1 -1],opts.buffhost,opts.buffport);
 nEvents=status.nevents; nSamples=status.nsamples;
 
 dv=[];
-nEpochs=0;
+nEpochs=0; filtstate=[];
 endTest=false;
 tic;t1=0;
 while( ~endTest )
@@ -118,14 +126,15 @@ while( ~endTest )
       f=sum(f,2); fraw=sum(fraw,2);
     end
     % smooth the classifier predictions if wanted
-    if ( isempty(dv) || isempty(opts.alpha) ) 
+    if ( isempty(dv) || isempty(opts.predFilt) ) 
       dv=f;
-    elseif ( isnumeric(opts.alpha) )
-      if ( opts.alpha>=0 ) % exp weighted moving average
-        dv=dv*opts.alpha + (1-opts.alpha)*f;
-      else
-        fbuff(:,mod(nEpochs-1,abs(opts.alpha))+1)=f; % store predictions in a ring buffer
-        dv=mean(fbuff,2);
+    else
+      if ( isnumeric(opts.predFilt) )
+        if ( opts.predFilt>=0 ) % exp weighted moving average
+          dv=dv*opts.predFilt + (1-opts.predFilt)*f;
+        end
+      elseif ( isstr(opts.predFilt) || isa(opts.predFilt,'function_handle') )
+        [dv,filtstate]=feval(opts.predFilt,f,filtstate);
       end
     end
       
@@ -146,3 +155,4 @@ return;
 %--------------------------------------
 function testCase()
 cont_applyClsfr(clsfr,'overlap',.1)
+cont_applyClsfr(clsfr,'predFilt',@(x,s) stdFilt(x,s,exp(log(.5)/100)))
