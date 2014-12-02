@@ -7,7 +7,7 @@ import com.illposed.osc.*;
 import com.illposed.osc.utility.OSCByteArrayToJavaConverter;
 
 class osc2ft {
-	 static int VERB=1; // global verbosity level
+	 static int VERB=0; // global verbosity level
 	 static int BUFFERSIZE = 65500;
 
 	 public static void main(String[] args) throws IOException,InterruptedException {
