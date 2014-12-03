@@ -109,7 +109,9 @@ while ( true )
       clsSubj = subject;
     end;
 
-    spFeedbackSignals
+    event_applyClsfr(clsfr,'startSet',{'stimulus.rowFlash' 'stimulus.colFlash' 'stimulus.flash'},...
+                     'sendPredEventType','stimulus.sequence','verb',verb);
+    %spFeedbackSignals
     
     %---------------------------------------------------------------------------------
    case {'contfeedback'};
@@ -121,7 +123,8 @@ while ( true )
       clsSubj = subject;
     end;
 
-    spContFeedbackSignals
+    event_applyClsfr(clsfr,'startSet',{'stimulus.rowFlash' 'stimulus.colFlash' 'stimulus.flash'},'verb',verb);
+    %spContFeedbackSignals
     
    case 'exit';
     break;

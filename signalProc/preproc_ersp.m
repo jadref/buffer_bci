@@ -209,7 +209,7 @@ if ( opts.badtrrm )
   fprintf('2.5) bad trial removal');
   [isbadtr,trstds,trthresh]=idOutliers(X,3,opts.badtrthresh);
   X=X(:,:,~isbadtr);
-  if (~isempty(Y)) Y=Y(~isbadtr);end
+  if (~isempty(Y)) Y=Y(~isbadtr,:);end
   fprintf(' %d tr removed\n',sum(isbadtr));
 end;
 

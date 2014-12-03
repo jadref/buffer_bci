@@ -41,7 +41,26 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %  class_names - {str} names for each of the classes in Y in *increasing* order ([])
 % Outputs:
 %  clsfr  - [struct] structure contining the stuff necessary to apply the trained classifier
-%  res    - [struct] results structure
+%           |.w      -- [size(X) x nSp] weighting over X (for each subProblem)
+%           |.b      -- [nSp x 1] bias term
+%           |.dim    -- [ind] dimensions of X which contain the trails
+%           |.spMx   -- [nSp x nClass] mapping between sub-problems and input classes
+%           |.spKey  -- [nClass] label for each class in the spMx, thus:
+%                        spKey(spMx(1,:)>0) gives positive class labels for subproblem 1
+%           |.spDesc -- {nSp} set of strings describing the sub-problem, e.g. 'lh v rh'
+%           |.binsp  -- [bool] flag if this is treated as a set of independent binary sub-problems
+%           |.fs     -- [float] sample rate of training data
+%           |.detrend -- [bool] detrend the data
+%           |.isbad   -- [bool nCh x 1] flag for channels detected as bad and to be removed
+%           |.spatialfilt [nCh x nCh] spatial filter used
+%           |.filt    -- [float] filter weights for spectral filtering (ERP only)
+%           |.outsz   -- [float] info on size after spectral filter for downsampling
+%           |.timeIdx -- [2x1] time range (start/end sample) to apply the classifer to
+%           |.windowFn -- [float] window used in frequency domain transformation (ERsP only)
+%           |.welchAveType -- [str] type of averaging used in frequency domain transformation (ERsP only)
+%           |.freqIdx     -- [2x1] range of frequency to keep  (ERsP only)
+%  res    - [struct] results structure as returned by 'cvtrainFn'. 
+%                    use: help cvtrainFn for more information on its structure
 %  X      - [size(X)] the pre-processed data
 opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],'downsample',[],'detrend',1,'spatialfilter','car',...
     'badchrm',1,'badchthresh',3.1,'badchscale',2,...
@@ -172,9 +191,10 @@ if ( opts.visualize )
       end;
       if ( isempty(labels) || numel(labels)<ci || isempty(labels{ci}) ) 
         if ( iscell(uY) ) labels{1,ci}=uY{ci}; else labels{1,ci}=sprintf('%d',uY(ci,:)); end
+        auclabels{1,ci}=labels{1,ci};
+        labels{1,ci} = sprintf('%s (%d)',labels{1,ci},sum(Yidx(:,ci)>0));
       end
     end
-    auclabels=labels;
   else
     if ( isempty(labels) ) 
       for spi=1:size(Yidx,2); 
@@ -191,7 +211,8 @@ if ( opts.visualize )
     else % pos and neg sub-problem average responses
       mu(:,:,1,spi)=mean(X(:,:,Yci>0),3); mu(:,:,2,spi)=mean(X(:,:,Yci<0),3);
     end
-    if(~(all(Yci(:)==Yci(1)))) 
+    % if not all same class, or simple binary problem
+    if(~(all(Yci(:)==Yci(1))) && ~(spi>1 && all(Yidx(:,1)==-Yidx(:,spi)))) 
       [aucci,sidx]=dv2auc(Yci,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
       aucesp=auc_confidence(sum(Yci~=0),single(sum(Yci>0))./single(sum(Yci~=0)),.2);
       aucci(aucci<.5+aucesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
@@ -223,6 +244,7 @@ else
 end
 
 %7) combine all the info needed to apply this pipeline to testing data
+clsfr.type        = 'ERP';
 clsfr.fs          = fs;   % sample rate of training data
 clsfr.detrend     = opts.detrend; % detrend?
 clsfr.isbad       = isbadch;% bad channels to be removed

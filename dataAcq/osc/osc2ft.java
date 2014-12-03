@@ -7,7 +7,7 @@ import com.illposed.osc.*;
 import com.illposed.osc.utility.OSCByteArrayToJavaConverter;
 
 class osc2ft {
-	 static int VERB=1; // global verbosity level
+	 static int VERB=0; // global verbosity level
 	 static int BUFFERSIZE = 65500;
 
 	 public static void main(String[] args) throws IOException,InterruptedException {
@@ -122,7 +122,7 @@ class osc2ft {
 					 if ( address.equals(oscaddress) ) { // data to work with
 						  if ( VERB>0 ){ System.out.println("Message matches data address, proc arguments"); }
 						  // extract the data and store in the dataBuffer to be sent to the FT buffer
-						  // all agruments should be data to forward, and hence convertable to double
+						  // all arguments should be data to forward, and hence convertable to double
 						  for ( int di=0; di<msgargs.length; di++){
 								if ( msgargs[di] instanceof Integer ) {
 									 databuff[buffsamp][buffch] += ((Integer)msgargs[di]).doubleValue()*calgain+caloffset;
@@ -137,7 +137,9 @@ class osc2ft {
 								// increment the cursor position
 								if ( VERB>0 ){ System.out.print('.');}
 								buffch++; numel++;
-								if(buffch>=databuff[buffsamp].length){ // move to next buffer sample
+								// move to next buffer sample
+								// assume each osc packet corresponds to *at least* all channels for 1 sample
+								if(buffch>=databuff[buffsamp].length || buffch==msgargs.length-1){ 
 									 if ( VERB>0 ){ System.out.println("Got 1 samples worth of data"); }
 									 buffch=0; oscsamp++; // start new sample
 									 buffsamp++; // move to next buffer sample

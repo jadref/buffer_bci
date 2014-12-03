@@ -5,6 +5,8 @@ function [filt]=mkFilter(len,bands,xscale)
 % simple code to make a temporal/spectral window given a set of pass-bands
 % Inputs
 %  len   -- Number of elements in the output filter
+%         OR
+%           [len x 1] vector of bin centers
 %  bands -- Either:
 %         a) vector with the band limits, 
 %             [ min max ] or [ min cent max ] or [ mstart mend maxstart maxend]
@@ -33,8 +35,8 @@ function [filt]=mkFilter(len,bands,xscale)
 %  blackman=.37,kaiser(2)=.46, rest=.5
 if ( nargin < 3 ) xscale=1; end;
 % BODGE: make old calling convention still work (mostly)
-if ( (~isnumeric(len) || numel(len)>1) && isnumeric(bands) && numel(bands)==1 ) tmp=bands; bands=len; len=tmp; end;
 if ( ~iscell(bands) ) bands={bands}; end;
+if ( numel(len)>1 ) xscale=len; len=numel(xscale); end;
 if ( isempty(len) && numel(xscale)>1 ) len=numel(xscale); end;
 
 if ( isempty(bands{1}) )  

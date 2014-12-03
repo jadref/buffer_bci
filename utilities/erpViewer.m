@@ -3,7 +3,7 @@ function [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin);
 %
 % [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin)
 %
-opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,'nSymbols',0,'trlen_ms',1000,'trlen_samp',[],'detrend',1,'fftfilter',[],'freqbands',[],'downsample',128,'spatfilt','car','badchrm',1,'capFile',[],'overridechnms',0,'welch_width_ms',500,'redraw_ms',500,'sigProcOptsGui',1);
+opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,'nSymbols',0,'trlen_ms',1000,'trlen_samp',[],'detrend',1,'fftfilter',[],'freqbands',[],'downsample',128,'spatfilt','car','badchrm',0,'badchthresh',3,'badtrthresh',3,'capFile',[],'overridechnms',0,'welch_width_ms',500,'redraw_ms',500,'sigProcOptsGui',1);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
@@ -141,15 +141,14 @@ while ( ~endTraining )
   if ( ~isempty(get(fig,'userdata')) ) modekey=get(fig,'userdata'); end; % modekey-overrides drop-down
   if ( ~isempty(modekey) )
     switch ( modekey(1) );
-     case {1,'t'}; tmp=1;curvistype='time';
-     case {2,'f'}; tmp=2;curvistype='freq';
-     case {3,'p'}; tmp=3;curvistype='power';
-     case {4,'s'}; tmp=4;curvistype='spect';
-     case {'r'};   resetval=true; set(resethdl,'value',resetval); % press the reset button
+     case {1,'t'}; modekey=1;curvistype='time';
+     case {2,'f'}; modekey=2;curvistype='freq';
+     case {'r'};   modekey=1;resetval=true; set(resethdl,'value',resetval); % press the reset button
      case 'q'; break;
+     otherwise;    modekey=1;
     end;
     set(fig,'userdata',[]);
-    if ( ~isempty(modehdl) ) set(modehdl,'value',tmp); end;
+    if ( ~isempty(modehdl) ) set(modehdl,'value',modekey); end;
   end
   % get updated sig-proc parameters if needed
   if ( ~isempty(optsFighandles) && ishandle(optsFighandles.figure1) )
@@ -160,7 +159,10 @@ while ( ~endTraining )
       updateLines(1)=true; updateLines(:)=true; 
     end; 
     if ( damage(4) )
-      filt    =mkFilter(trlen_samp/2,ppopts.freqbands,fs/trlen_samp);    
+      filt=[];
+      if ( ~isempty(ppopts.freqbands) ) % filter bands given
+        filt=mkFilter(trlen_samp/2,ppopts.freqbands,fs/trlen_samp); 
+      end
       freqIdx =getfreqIdx(freqs,ppopts.freqbands);
     end
   end
@@ -207,7 +209,7 @@ while ( ~endTraining )
 
     %---------------------------------------------------------------------------------
     % Do visualisation mode switching work
-    if ( curvistype~=vistype ) % all to be updated!
+    if ( ~isequal(curvistype,vistype) ) % all to be updated!
       fprintf('vis switch detected\n');
       updateLines(1)=true; updateLines(:)=true;
     end; 
@@ -224,54 +226,60 @@ while ( ~endTraining )
     %---------------------------------------------------------------------------------
     % compute the updated ERPs (if any)
     if ( any(updateLines) )
-      damagedLines=find(updateLines(1:numel(key)));
-      for mi=damagedLines(:)';
-        ppdat=rawEpochs(:,:,rawIds==mi);
-        if ( isempty(ppdat) ) erp(:,:,mi)=0; continue; end;
-
-        % pre-process the data
-        switch(lower(ppopts.preproctype));
-         case 'none';   
-         case 'center'; ppdat=repop(ppdat,'-',mean(ppdat,2));
-         case 'detrend';ppdat=detrend(ppdat,2);
-         otherwise; warning(sprintf('Unrecognised pre-proc type: %s',lower(ppopts.preproctype)));
-        end
+      damagedLines=find(updateLines(1:numel(key)));      
+      ppdat=rawEpochs;
+      % common pre-processing which needs access to all the data
+      % pre-process the data
+      switch(lower(ppopts.preproctype));
+       case 'none';   
+       case 'center'; ppdat=repop(ppdat,'-',mean(ppdat,2));
+       case 'detrend';ppdat=detrend(ppdat,2);
+       otherwise; warning(sprintf('Unrecognised pre-proc type: %s',lower(ppopts.preproctype)));
+      end
         
-        % bad-channel identify and remove
-        if( ~isempty(ppopts.badchrm) && ppopts.badchrm>0 )
-          isbad=idOutliers(rawEpochs,1,ppopts.badchrm);
-          % set the data in this channel to 0
-          ppdat(isbad,:)=0;
-        end
+      % bad-channel identify and remove
+      if( ~isempty(ppopts.badchrm) && ppopts.badchrm>0 )
+        isbadch=idOutliers(rawEpochs,1,opts.badchthresh);
+        % set the data in this channel to 0
+        ppdat(isbadch,:)=0;
+        
+        % bad-ch rm also implies bad trial
+        isbadtr=idOutliers(ppdat,3,opts.badtrthresh);
+        ppdat(:,:,isbadtr)=0;
+      end
       
+      for mi=damagedLines(:)';
+        ppdatmi=ppdat(:,:,rawIds==mi);
+        if ( isempty(ppdatmi) ) erp(:,:,mi)=0; continue; end;
+
         % spatial filter
         switch(lower(ppopts.spatfilttype))
          case 'none';
-         case 'car';    ppdat(~isbad,:,:)=repop(ppdat(~isbad,:,:),'-',mean(ppdat(~isbad,:,:),1));
+         case 'car';    ppdatmi(~isbad,:,:)=repop(ppdatmi(~isbad,:,:),'-',mean(ppdatmi(~isbad,:,:),1));
          case 'slap';   
           if ( ~isempty(slapfilt) ) % only use and update from the good channels
-            ppdat(~isbad,:,:)=tprod(ppdat(~isbad,:,:),[-1 2 3],slapfilt(~isbad,~isbad),[-1 1]); 
+            ppdatmi(~isbad,:,:)=tprod(ppdatmi(~isbad,:,:),[-1 2 3],slapfilt(~isbad,~isbad),[-1 1]); 
           end;
-         case 'whiten'; [W,D,ppdat(~isbad,:,:)]=whiten(ppdat(~isbad,:,:),1,'opt',1,0,1); %symetric whiten
+         case 'whiten'; [W,D,ppdatmi(~isbad,:,:)]=whiten(ppdatmi(~isbad,:,:),1,'opt',1,0,1); %symetric whiten
          otherwise; warning(sprintf('Unrecognised spatial filter type : %s',ppopts.spatfilttype));
-        end
-      
+        end        
+        
         % compute the visualisation
         switch (curvistype) 
         
          case 'time'; % time-domain, spectral filter
-          if ( ~isempty(filt) )      ppdat=fftfilter(ppdat,filt,outsz,2);  % N.B. downsample at same time
-          elseif ( ~isempty(outsz) ) ppdat=subsample(ppdat,outsz(2),2);    % manual downsample
+          if ( ~isempty(filt) )      ppdatmi=fftfilter(ppdatmi,filt,outsz,2);  % N.B. downsample at same time
+          elseif ( ~isempty(outsz) ) ppdatmi=subsample(ppdatmi,outsz(2),2);    % manual downsample
           end
         
          case 'freq'; % freq-domain
-          ppdat = welchpsd(ppdat,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'aveType','amp');
-          ppdat = ppdat(:,freqIdx(1):freqIdx(2),:);
+          ppdatmi = welchpsd(ppdatmi,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'aveType','amp');
+          ppdatmi = ppdatmi(:,freqIdx(1):freqIdx(2),:);
         
          otherwise; error('Unrecognised visualisation type: ');
         end
 
-        erp(:,:,mi) = mean(ppdat,3);
+        erp(:,:,mi) = mean(ppdatmi,3);
         if ( isnumeric(key{mi}) ) % line label -- including number of times seen
           label{mi}=sprintf('%g (%d)',key{mi},sum(rawIds(1:nTarget)==mi));
         else
@@ -287,6 +295,9 @@ while ( ~endTraining )
     drawnow;      
   end
 if ( ishandle(fig) ) close(fig); end;
+% close the options figure as well
+if ( exist('optsFigh') && ishandle(optsFigh) ) close(optsFigh); end;
+
 if( nargout>0 ) 
   rawIds=rawIds(1:nTarget);
   rawEpochs=rawEpochs(:,:,1:nTarget);
@@ -294,16 +305,20 @@ end
 return;
 
 function freqIdx=getfreqIdx(freqs,freqbands)
-[ans,freqIdx(1)]=min(abs(freqs-freqbands(1))); 
-[ans,freqIdx(2)]=min(abs(freqs-freqbands(end)));
+if ( nargin<1 || isempty(freqbands) ) freqIdx=[1 numel(freqs)]; return; end;
+[ans,freqIdx(1)]=min(abs(freqs-max(freqs(1),freqbands(1)))); 
+[ans,freqIdx(2)]=min(abs(freqs-min(freqs(end),freqbands(end))));
 
 function [sigprocopts,damage]=getSigProcOpts(optsFighandles,oldopts)
 % get the current options from the sig-proc-opts figure
 sigprocopts.badchrm=get(optsFighandles.badchrm,'value');
 sigprocopts.spatfilttype=get(get(optsFighandles.spatfilt,'SelectedObject'),'String');
 sigprocopts.preproctype=get(get(optsFighandles.preproc,'SelectedObject'),'String');
-sigprocopts.freqbands=[str2num(get(optsFighandles.lowcutoff,'string')) 
+sigprocopts.freqbands=[str2num(get(optsFighandles.lowcutoff,'string')) ...
                     str2num(get(optsFighandles.highcutoff,'string'))];  
+if ( numel(sigprocopts.freqbands)>4 ) sigprocopts.freqbands=sigprocopts.freqbands(1:min(end,4));
+elseif ( numel(sigprocopts.freqbands)<2 ) sigprocopts.freqbands=[];
+end;
 damage=false(4,1);
 if( nargout>1 && nargin>1) 
   if ( isstruct(oldopts) )

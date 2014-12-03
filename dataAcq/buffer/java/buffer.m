@@ -45,7 +45,17 @@ if ( nargin<1 ) cmd=[]; end;
 if ( nargin<2 ) detail=[]; end;
 if ( nargin<3 ) host=[]; end;
 if ( nargin<4 ) port=[]; end;
-if ( isequal(TESTING,true) ) varargout{1}=struct(); return; end;
+if ( isequal(TESTING,true) ) 
+  switch lower( cmd ) 
+   case 'get_hdr'; % simulate a header
+      res=struct('nChans',0,'nSamples',0,'nEvents',0,'fSample',0,'labels',{{}},'dataType',10);
+   case 'put_evt'; % simulate put
+    res=detail;
+   otherwise; res=struct();
+  end
+  varargout{1}=res;
+  return; 
+end;
 
 if ( isempty(bufferClient) )
   buffer_bcidir=fileparts(fileparts(fileparts(mfilename('fullpath')))); % buffer_bci directory
@@ -127,7 +137,7 @@ switch cmd;
   bufClient.putData(detail(:),[size(detail,2) size(detail,1)]); 
  
  case 'get_evt';
-  evtj=bufClient.getEvents(detail(1),detail(2));
+  evtj=bufClient.getEvents(detail(1),detail(min(end,2)));
   evt =repmat(struct('type',[],'value',[],'sample',-1,'offset',0,'duration',0),size(evtj)); % pre-alloc array
   for ei=1:numel(evtj); % Note this conversion is *VERY VERY* slow...
     evtjei=evtj(ei);
@@ -144,7 +154,7 @@ switch cmd;
       if ( strcmp(typeinfo(evt(ei).value),'octave_java') )
         tmp = zeros(size(evt(ei).value));
         for i=1:numel(evt(ei).value) 
-          if isNumeric(evt(ei).value(i))
+          if isnumeric(evt(ei).value(i)) && numel(evt(ei).value)>1
             tmp(i)=evt(ei).value(i).doubleValue(); 
           else
             tmp(i)=evt(ei).value(i);

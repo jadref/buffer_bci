@@ -133,7 +133,7 @@ while ( true )
       clsSubj = subject;
     end;
 
-    cursorContFeedbackSignals(clsfr)
+    event_applyClsfr(clsfr,'startSet','stimulus.arrows');
     
    case 'exit';
     break;

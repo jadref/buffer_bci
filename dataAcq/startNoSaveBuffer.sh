@@ -14,17 +14,10 @@ else # Mac
 	arch='maci';
 fi
 # Search for the exec in the standard places
-buffexe="$buffdir/buffer/bin/demo_buffer";
-if [ -r "$buffdir/buffer/bin/${arch}/demo_buffer" ]; then
-	 buffexe="$buffdir/buffer/bin/${arch}/demo_buffer";
-fi
-if [ -r "$buffdir/buffer/${arch}/demo_buffer" ]; then
-	 buffexe="$buffdir/buffer/${arch}/demo_buffer";
-fi
-if [ -r "$buffdir/buffer/bin/${arch}/buffer" ]; then
+if [ -r $buffdir/buffer/bin/${arch}/buffer ]; then
 	 buffexe=$buffdir"/buffer/bin/${arch}/buffer";
 fi
-if [ -r "$buffdir/buffer/${arch}/buffer" ]; then
+if [ -r $buffdir/buffer/${arch}/buffer ]; then
 	 buffexe=$buffdir"/buffer/${arch}/buffer";
 fi
 

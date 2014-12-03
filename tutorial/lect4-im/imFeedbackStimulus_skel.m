@@ -29,3 +29,8 @@ trialDuration=3;
 baselineDuration=1;
 intertrialDuration=2;
 moveScale = .1; % used to transform between predictions and size of move on screen
+state=[];
+
+% wait for classifier prediction event, or give up after 500ms if nothing received
+[devents,state]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],500);
+

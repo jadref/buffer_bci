@@ -1,0 +1,3 @@
+Main-Class: nl.dcc.buffer_bci.imaginedMovement/Application
+Class-Path: ../../dataAcq/buffer/java/BufferClient.jar commons-configuration-1.10/commons-configuration-1.10.jar commons-lang-2.6/commons-lang-2.6.jar commons-logging-1.2/commons-logging-1.2.jar
+

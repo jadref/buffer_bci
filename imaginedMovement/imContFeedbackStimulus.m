@@ -54,52 +54,41 @@ for si=1:nSeq;
   sendEvent('stimulus.trial','start');
   
   % for the trial duration update the fixatation point in response to prediction events
-  status=buffer('wait_dat',[-1 -1 -1],buffhost,buffport); % get current state
-  nevents=status.nevents; nsamples=status.nsamples;
   % initial fixation point position
   fixPos = stimPos(:,end);
+  state  = [];
   trlStartTime=getwTime();
   timetogo = trialDuration;
   while (timetogo>0)
     timetogo = trialDuration - (getwTime()-trlStartTime); % time left to run in this trial
-    % wait for events to process *or* end of trial
-    status=buffer('wait_dat',[-1 -1 timetogo*1000/4],buffhost,buffport); 
-    stime =getwTime();
-    if ( status.nevents > nevents ) % new events to process
-      events=[];
-      if (status.nevents>nevents) events=buffer('get_evt',[nevents status.nevents-1],buffhost,buffport); end;
-      mi    =matchEvents(events,{'stimulus.prediction'});
-      predevents=events(mi);
-      % make a random testing event
-      if ( 0 ) predevents=struct('type','stimulus.prediction','sample',0,'value',ceil(rand()*nSymbs+eps)); end;
-      if ( ~isempty(predevents) ) 
-        [ans,si]=sort([predevents.sample],'ascend'); % proc in *temporal* order
-        for ei=1:numel(predevents);
-          ev=predevents(si(ei));% event to process
-          pred=ev.value;
-          % now do something with the prediction....
-          if ( numel(pred)==1 )
-            if ( pred>0 && pred<=nSymbs && isinteger(pred) ) % predicted symbol, convert to dv equivalent
-              tmp=pred; pred=zeros(nSymbs,1); pred(tmp)=1;
-            else % binary problem
-              pred=[pred -pred];
-            end
+    % wait for new prediction events to process *or* end of trial
+    [events,state,nsamples,nevents] = buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],min(1000,timetogo*1000));
+    if ( ~isempty(events) ) 
+      [ans,si]=sort([events.sample],'ascend'); % proc in *temporal* order
+      for ei=1:numel(events);
+        ev=events(si(ei));% event to process
+        pred=ev.value;
+        % now do something with the prediction....
+        if ( numel(pred)==1 )
+          if ( pred>0 && pred<=nSymbs && isinteger(pred) ) % predicted symbol, convert to dv equivalent
+            tmp=pred; pred=zeros(nSymbs,1); pred(tmp)=1;
+          else % binary problem
+            pred=[pred -pred];
           end
-          prob = 1./(1+exp(-pred)); prob=prob./sum(prob); % convert from dv to normalised probability
-          if ( verb>=0 ) 
-              fprintf('dv:');fprintf('%5.4f ',pred);fprintf('\t\tProb:');fprintf('%5.4f ',prob);fprintf('\n'); 
-          end;
-          
-          % feedback information... simply move in direction detected by the BCI
-          dx = stimPos(:,1:end-1)*prob(:); % change in position is weighted by class probs
-          fixPos = fixPos + dx*moveScale;
-          set(h(end),'position',[fixPos-stimRadius/2;stimRadius/2*[1;1]]);
         end
-        drawnow; % update the display after all events processed
-      end % prediction events to processa  
+        prob = 1./(1+exp(-pred)); prob=prob./sum(prob); % convert from dv to normalised probability
+        if ( verb>=0 ) 
+          fprintf('dv:');fprintf('%5.4f ',pred);fprintf('\t\tProb:');fprintf('%5.4f ',prob);fprintf('\n'); 
+        end;
+          
+        % feedback information... simply move in direction detected by the BCI
+        dx = stimPos(:,1:end-1)*prob(:); % change in position is weighted by class probs
+        fixPos = fixPos + dx*moveScale;
+        set(h(end),'position',[fixPos-stimRadius/2;stimRadius/2*[1;1]]);
+      end
     end % if feedback events to process
-    
-  end % loop over epochs in the sequence
+    drawnow; % update the display after all events processed    
+  end % while time to go
 
   % reset the cue and fixation point to indicate trial has finished  
   set(h(:),'facecolor',bgColor);

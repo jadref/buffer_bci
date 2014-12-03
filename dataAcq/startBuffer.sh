@@ -3,8 +3,8 @@ buffdir=`dirname $0`
 outdir=
 
 # use GUI to update the save location
-if [ -x startBuffer.py ] && [ ! -z `which python` ]; then
-   outdir=`python startBuffer.py`;
+if [ -x $buffdir/startBuffer.py ] && [ ! -z `which python` ]; then
+   outdir=`python $buffdir/startBuffer.py`;
 fi
 
 # fall back code to compute save location
@@ -25,7 +25,6 @@ fi
 logfile=${outdir}.log
 echo outdir: $outdir
 mkdir -p "$outdir"
-
 # Identify the OS and search for the appropriate executable
 if [[ `uname -s` == 'Linux'* ]]; then
 	 if  [ "`uname -a`" == 'armv6l' ]; then
@@ -37,9 +36,12 @@ if [[ `uname -s` == 'Linux'* ]]; then
    if [ -r $buffdir/recording ]; then
       buffexe=$buffdir'/recording';
    fi
+elif [[ `uname -s` = 'MINGW'* ]]; then
+	 arch='win32'
+	 buffexe=$bufdir'/buffer/win32/demo_buffer_unix'
 else # Mac
 	 arch='maci'
-   buffexe=$buffdir"/buffer/bin/saving_buffer";
+    buffexe=$buffdir"/buffer/bin/saving_buffer";
 fi
 if [ -r $buffdir/buffer/bin/${arch}/recording ]; then
 	 buffexe=$buffdir"/buffer/bin/${arch}/recording";
@@ -47,4 +49,11 @@ fi
 if [ -r $buffdir/buffer/${arch}/recording ]; then
 	 buffexe=$buffdir"/buffer/${arch}/recording";
 fi
-$buffexe ${outdir}/raw_buffer > $logfile 
+echo $buffexe ${outdir}/raw_buffer
+
+# turn return into carriage return to stop endless scrolling of the window
+if [ -z `which tr` ]; then
+  $buffexe "${outdir}"/raw_buffer
+else
+  $buffexe "${outdir}"/raw_buffer | tr '\n' '\r'
+fi

@@ -33,7 +33,13 @@ else
    error('Couldnt determine the window locations');
 end
 % treat start as start point only
-if ( numel(start)==1 && ~isempty(nwindows) && ~isempty(overlap) ) % non-1 start point
-   start = round(start-1:width*(1-overlap):N-width)'+1;
+if ( numel(start)==1 )
+  if ( isempty(nwindows) && ~isempty(overlap) ) % non-1 start point
+    start = round(start-1:width*(1-overlap):N-width)'+1;
+  elseif ( ~isempty(nwindows) && isempty(overlap) ) % given num windows
+    start = round(linspace(start-1,N,nwindows)');
+  elseif ( ~isempty(nwindows) && ~isempty(overlap) ) % given max size
+    start = start-1+width*(1-overlap)*(0:nwindows-1)'+1;
+  end
 end
 return;

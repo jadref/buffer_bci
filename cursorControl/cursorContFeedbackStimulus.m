@@ -28,10 +28,6 @@ state=struct('ax',ax,'hdls',h,'stimSeq',stimSeq,'stimTime',stimTime,...
              'bgColor',bgColor,'tgtColor',tgtColor,'tgt2Color',tgt2Color,...
              'cursorPos',[0;0],'stimPos',stimPos,'stimPCoords',stimPCoords,'sizeStim',sizeStim);
 
-% init state
-status=buffer('wait_dat',[-1 -1 -1]); % current sample info
-nevents=status.nevents; nsamples=status.nsamples;
-
 % 5 sec pause to get to the right window
 drawnow;
 pause(5); % N.B. pause allows to redraw figure window
@@ -49,7 +45,7 @@ stimSeq=zeros(numel(h)-1,seqFlashes); % to store the actual stimulus state
 flash=zeros(1,seqFlashes); % stores the flash times
 pred=zeros(2,seqFlashes); % stores the classifier predictions
 nFlash=0; nPred=0;
-
+state=[];
 dxy=zeros(2,1);
 while ( nMoves<feedbackMoves)
 
@@ -97,30 +93,20 @@ while ( nMoves<feedbackMoves)
   end;
 
   % process and accumulate any prediction events whilst the stimulus is running
-  status=buffer('wait_dat',[-1 -1 -1],buffhost,buffport); % get current state
-  stime =getwTime();     frametime(nframe,5)=stime;
-  if ( status.nevents > nevents && nFlash>0 ) % new events to process, and new stimuli have happened
-    if ( nevents< status.nevents-50 ) 
-      fprintf('warning lost %d events.\n',status.nevents-50-nevents); 
-      nevents=status.nevents-50;  
-    end;
-    events=buffer('get_evt',[nevents status.nevents-1],buffhost,buffport);    
-    mi=matchEvents(events,'classifier.prediction');
-    % store the predictions
-    for ei=find(mi(:)');      
-      nPredei = find(flash(1:nFlash)==events(ei).sample); % find the flash this prediction is for
-      if ( isempty(nPredei) ) 
-        if ( verb>0 ) fprintf('Pred without flash =%d\n',events(ei).value); end;
-        continue;
-      end
-      nPred=max(nPred,nPredei);
-      pred(:,nPredei)=[events(ei).sample; events(ei).value];
-      if ( verb>0 ) fprintf('%d) samp=%d pred=%g\n',nPredei,pred(:,nPredei)); end;
-      dv = stimSeq(:,1:min(nPred,nFlash))*pred(2,1:nPred)'; 
-      p  = 1./(1+exp(-dv)); p=p./sum(p); % norm letter prob      
+  [events,state,nsamples,nevents]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],0);
+  % process the predictions we've got
+  for ei=1:numel(events);
+    nPredei = find(flash(1:nFlash)==events(ei).sample); % find the flash this prediction is for
+    if ( isempty(nPredei) ) 
+      if ( verb>0 ) fprintf('Pred without flash =%d\n',events(ei).value); end;
+      continue;
     end
+    nPred=max(nPred,nPredei);
+    pred(:,nPredei)=[events(ei).sample; events(ei).value];
+    if ( verb>0 ) fprintf('%d) samp=%d pred=%g\n',nPredei,pred(:,nPredei)); end;
+    dv = stimSeq(:,1:min(nPred,nFlash))*pred(2,1:nPred)'; 
+    p  = 1./(1+exp(-dv)); p=p./sum(p); % norm letter prob      
   end
-  nevents=status.nevents; nsamples=status.nsamples; % record which events we've processed
   frametime(nframe,6)=getwTime();        
 end % Move while
 

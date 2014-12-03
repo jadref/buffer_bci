@@ -1,2 +1,2 @@
 call ..\utilities\findMatlab.bat
-start "matlab" %matexe% -nodesktop -nosplash -minimize -singleCompThread -r "startSigProcBuffer;quit;"
+start "matlab" %matexe% -nodesktop -nosplash -minimize -singleCompThread -r "configureIM;startSigProcBuffer('epochEventType','stimulus.target','freqband',[6 8 28 30],'clsfr_type','ersp','trlen_ms',trlen_ms);quit;"

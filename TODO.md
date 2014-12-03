@@ -1,6 +1,7 @@
 [] - Python support
 [] - Android support
-[] - Validate the 50Hz power as a bad-channel indicator.  
+[] - Add async put_data and put_evt methods to the java buffer client
+[x] - Validate the 50Hz power as a bad-channel indicator.  
   [] - Add channel offset mode to sigViewer
 [] - Simple (induced) Neuro-feedback example
 [] - Finish ssep example
@@ -13,7 +14,7 @@
 [x] - AUC plots work with pre-specified sub-problems
 [] - Documentation
 [] - c-based, java-based and python-based signal proxies
-  [] - fix the c-sig proxy so runs a the correct data rate
+  [x] - fix the c-sig proxy so runs a the correct data rate
 [] - universum-SVM classifier support
 [] - second order baseline adaptive sig-processing support in classifier
 [] - convert demos to use string event values when possible to improve readability

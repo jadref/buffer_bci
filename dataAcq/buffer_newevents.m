@@ -49,15 +49,21 @@ end
 if ( isempty(nevents) || nevents<=0 ) % first call
   status=buffer('wait_dat',[-1 -1 -1],host,port); nevents=status.nevents;
 end; 
-status=buffer('wait_dat',[inf nevents timeOut_ms],host,port);
-events=[];
-if( status.nevents>nevents )
-  % N.B. event range is counted from start -> end-1!
-  % N.B. event Id start from 0
-  events=buffer('get_evt',[max(nevents,status.nevents-50) status.nevents-1],host,port); 
-  % filter for the event types we care about
-  mi=matchEvents(events,mtype,mval);
-  events=events(mi);
+events=[]; 
+timeToGo_ms=timeOut_ms;
+while ( isempty(events) ) % until there are some matching events
+  % wait for any new events, keeping track of elapsed time for time-based exits
+  tic;status=buffer('wait_dat',[inf nevents timeToGo_ms],host,port);timeToGo_ms=timeToGo_ms-toc*1000;
+  if( status.nevents>nevents )
+    % N.B. event range is counted from start -> end-1!
+    % N.B. event Id start from 0
+    events=buffer('get_evt',[max(nevents,status.nevents-50) status.nevents-1],host,port); 
+    % filter for the event types we care about
+    mi=matchEvents(events,mtype,mval);
+    events=events(mi);
+  end
+  nevents=status.nevents;
+  if ( timeToGo_ms<=0 ) break; end;
 end
 state=status;
 nevents=state.nevents;nsamples=state.nsamples;

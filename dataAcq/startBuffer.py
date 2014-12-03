@@ -5,6 +5,7 @@ import Tkinter
 #from Tkinter import ttk
 import  tkFileDialog
 import time
+import os
 
 root = Tkinter.Tk()
 root.title("Choose saving location")
@@ -14,14 +15,14 @@ subject.set('test')
 experiment = Tkinter.StringVar()
 experiment.set('expt')
 dataroot= Tkinter.StringVar()
-dataroot.set('~/output/')
+dataroot.set('~/output')
 saveloc = Tkinter.StringVar()
 saveloc.set('')
 session = Tkinter.StringVar()
-session.set(time.strftime("%y%m%d/%H%M"))
+session.set(os.path.normpath(time.strftime("%y%m%d/%H%M")))
 
 def updateSaveLoc(ignored=None):
-    saveloc.set(dataroot.get() + '/' + experiment.get() + '/' + subject.get() + '/' + session.get())
+    saveloc.set(os.path.join(os.path.expanduser(os.path.normpath(dataroot.get())),experiment.get(),subject.get(),session.get()))
 
 def pickDir():
     dnm=tkFileDialog.askdirectory(initialdir=dataroot.get(),title="Choose saving directory root")
@@ -56,4 +57,8 @@ subject_entry.focus()
 updateSaveLoc()
 root.mainloop()
 
-print saveloc.get()
+updateSaveLoc()
+outpath=os.path.expanduser(saveloc.get())
+if not os.path.exists(outpath):
+    os.makedirs(outpath)
+print outpath

@@ -28,9 +28,6 @@ state=struct('ax',ax,'hdls',h,'stimSeq',stimSeq,'stimTime',stimTime,...
              'bgColor',bgColor,'tgtColor',tgtColor,'tgt2Color',tgt2Color,...
              'cursorPos',[0;0],'stimPos',stimPos,'stimPCoords',stimPCoords,'sizeStim',sizeStim);
 
-% init state
-status=buffer('wait_dat',[-1 -1 -1]); % current sample info
-nevents=status.nevents; nsamples=status.nsamples;
 
 % 5 sec pause to get to the right window
 drawnow;
@@ -43,7 +40,7 @@ ftime=startTime;
 startTime=startTime; curStim=1; pred=[]; 
 frametime=[]; drawTime=ftime; moveTime=ftime; speedupTime=ftime;
 sendEvent('stimulus.test','start'); % mark start play
-
+state=[];
 dxy=zeros(2,1);
 while ( nMoves<feedbackMoves)
 
@@ -63,12 +60,15 @@ while ( nMoves<feedbackMoves)
     % get most up-to-date direction prediction
     % send the end sequence event
     sendEvent('stimulus.endSeq',true,-1);
-    % now wait for the final prediction
-    status=buffer('wait_dat',[-1 -1 60],buffhost,buffport); % get current state, 60ms for this to happen
-    if ( status.nevents > nevents ) % new events to process
-      events=buffer('get_evt',[nevents status.nevents-1],buffhost,buffport);
-      [dv,predevIdx]=filterPredEvents(events,{{'stimulus.prediction'}},dv,predAlpha,verb+1);
-      nevents = status.nevents;
+    % now wait for the final prediction -- max of 60ms
+    [events,state,nsamples,nevents]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],60);
+    % process the predictions we've got
+    for ei=1:numel(events);
+      pred = events(ei).value;
+      pred(end+1:numel(dv))=0;
+      if ( ~isempty(alpha) )     dv = alpha*dv(:) + (1-alpha)*pred(1:numel(dv));
+      else                       dv =       dv(:) +           pred(1:numel(dv));
+      end
     end
     % move direction is the weighted sum of all the symbol directions
     prob = 1./(1+exp(dv)); prob=prob./sum(prob); % convert to valid class probabilities
@@ -102,17 +102,16 @@ while ( nMoves<feedbackMoves)
   end;
 
   % process and accumulate any prediction events whilst the stimulus is running
-  status=buffer('wait_dat',[-1 -1 -1],buffhost,buffport); % get current state
-  stime =getwTime();     frametime(nframe,5)=stime;
-  if ( status.nevents > nevents ) % new events to process
-    if ( nevents< status.nevents-50 ) 
-      fprintf('warning lost %d events.\n',status.nevents-50-nevents); 
-      nevents=status.nevents-50;  
-    end;
-    events=buffer('get_evt',[nevents status.nevents-1],buffhost,buffport);
-    [dv,predevIdx]=filterPredEvents(events,{{'stimulus.prediction'}},dv,predAlpha,verb+1);
+  % now wait for the final prediction -- max of 60ms
+  [events,state,nsamples,nevents]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],60);
+  % process the predictions we've got
+  for ei=1:numel(events);
+    pred = events(ei).value;
+    pred(end+1:numel(dv))=0;
+    if ( ~isempty(alpha) )     dv = alpha*dv(:) + (1-alpha)*pred(1:numel(dv));
+    else                       dv =       dv(:) +           pred(1:numel(dv));
+    end
   end
-  nevents=status.nevents; nsamples=status.nsamples;
   frametime(nframe,6)=getwTime();        
 end % Move while
 

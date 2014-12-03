@@ -42,6 +42,24 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %  class_names - {str} names for each of the classes in Y in *increasing* order ([])
 % Outputs:
 %  clsfr  - [struct] structure contining the stuff necessary to apply the trained classifier
+%           |.w      -- [size(X) x nSp] weighting over X (for each subProblem)
+%           |.b      -- [nSp x 1] bias term
+%           |.dim    -- [ind] dimensions of X which contain the trails
+%           |.spMx   -- [nSp x nClass] mapping between sub-problems and input classes
+%           |.spKey  -- [nClass] label for each class in the spMx, thus:
+%                        spKey(spMx(1,:)>0) gives positive class labels for subproblem 1
+%           |.spDesc -- {nSp} set of strings describing the sub-problem, e.g. 'lh v rh'
+%           |.binsp  -- [bool] flag if this is treated as a set of independent binary sub-problems
+%           |.fs     -- [float] sample rate of training data
+%           |.detrend -- [bool] detrend the data
+%           |.isbad   -- [bool nCh x 1] flag for channels detected as bad and to be removed
+%           |.spatialfilt [nCh x nCh] spatial filter used
+%           |.filt    -- [float] filter weights for spectral filtering (ERP only)
+%           |.outsz   -- [float] info on size after spectral filter for downsampling
+%           |.timeIdx -- [2x1] time range (start/end sample) to apply the classifer to
+%           |.windowFn -- [float] window used in frequency domain transformation (ERsP only)
+%           |.welchAveType -- [str] type of averaging used in frequency domain transformation (ERsP only)
+%           |.freqIdx     -- [2x1] range of frequency to keep  (ERsP only)
 %  res    - [struct] detailed results for each fold
 %  X       -- [ppch x pptime x ppepoch] pre-processed data (N.B. may/will have different size to input X)
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
@@ -87,12 +105,12 @@ if ( opts.badchrm || ~isempty(opts.badCh) )
   isbadch = false(size(X,1),1);
   if ( ~isempty(ch_pos) ) isbadch(numel(ch_pos)+1:end)=true; end;
   if ( ~isempty(opts.badCh) )
-      isbadch(opts.badCh)=true;
-      goodCh=find(~isbadch);
-      if ( opts.badchrm ) 
-          [isbad2,chstds,chthresh]=idOutliers(X(goodCh,:,:),1,opts.badchthresh);
-          isbadch(goodCh(isbad2))=true;
-      end
+    isbadch(opts.badCh)=true;
+    goodCh=find(~isbadch);
+    if ( opts.badchrm ) 
+      [isbad2,chstds,chthresh]=idOutliers(X(goodCh,:,:),1,opts.badchthresh);
+      isbadch(goodCh(isbad2))=true;
+    end
   elseif ( opts.badchrm ) [isbadch,chstds,chthresh]=idOutliers(X,1,opts.badchthresh); 
   end;
   X=X(~isbadch,:,:);
@@ -191,8 +209,8 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
       elseif(numel(opts.freqband)==4 ) opts.freqband=[mean(opts.freqband([1 2])) mean(opts.freqband([3 4]))];
       end
     end
-    [ans,fIdx(1)]=min(abs(freqs-opts.freqband(1))); % lower frequency bin
-    [ans,fIdx(2)]=min(abs(freqs-opts.freqband(2))); % upper frequency bin
+    [ans,fIdx(1)]=min(abs(freqs-max(freqs(1),  opts.freqband(1)))); % lower frequency bin
+    [ans,fIdx(2)]=min(abs(freqs-MIN(freqs(end),opts.freqband(2)))); % upper frequency bin
     fIdx = int32(fIdx(1):fIdx(2));
   elseif ( iscell(opts.freqband) ) %set of discrete-frequencies to pick
     freqband=[opts.freqband{:}]; % convert to vector
@@ -204,6 +222,7 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
     end    
   end
   X=X(:,fIdx,:); % sub-set to the interesting frequency range
+  freqs=freqs(fIdx); % update labelling info
 end;
 
 %5.5) Visualise the input?
@@ -253,7 +272,7 @@ if ( opts.visualize )
    else   xy=[];
    end
    erpfig=gcf;figure(erpfig);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');
-   yvals=freqs; if( ~isempty(fIdx) ) yvals=freqs(fIdx); end
+   yvals=freqs;
    image3d(mu(:,:,:),1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels(:),'disptype','plot','ticklabs','sw','clabel',opts.aveType);
    zoomplots;
    try; saveaspdf('ERSP'); catch; end;
@@ -274,6 +293,7 @@ else
 end
 
 %7) combine all the info needed to apply this pipeline to testing data
+clsfr.type        = 'ERsP';
 clsfr.fs          = fs;   % sample rate of training data
 clsfr.detrend     = opts.detrend; % detrend?
 clsfr.isbad       = isbadch;% bad channels to be removed

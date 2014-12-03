@@ -19,9 +19,10 @@ function [dat,key,state]=capFitting(varargin);
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../utilities/initPaths.m'); end;
 opts=struct('updateInterval',.5,'capFile',[],'overridechnms',0,'verb',1,'mafactor',.1,...
     'noiseband',[45 55],'noiseThresholds',[.5 5],'offsetThresholds',[5 15],'badChThreshold',1e-8,'fig',[],...
-    'host','localhost','port',1972,'timeOut_ms',5000,'showOffset',true);
+    'host',[],'buffhost','localhost','port',[],'buffport',1972,'timeOut_ms',5000,'showOffset',true);
 opts=parseOpts(opts,varargin);
-host=opts.host; port=opts.port;
+host=opts.buffhost; if ( isempty(host) ) host=opts.host; end
+port=opts.buffport; if ( isempty(port) ) port=opts.port; end;
 
 % create the plot
 fig=opts.fig; if ( isempty(fig) ) fig=gcf; end;
@@ -82,7 +83,7 @@ else
     hold on;
 end
 set(gca,'visible','off');
-text(mean(get(gca,'xlim')),max(get(gca,'ylim')),'Sluit het scherm om door te gaan','FontUnits','normalized','fontsize',.1,'HorizontalAlignment','center');
+text(mean(get(gca,'xlim')),max(get(gca,'ylim')),'Close window to continue.','FontUnits','normalized','fontsize',.1,'HorizontalAlignment','center');
 
 % draw the channel names and electrodes
 for i=1:numel(iseeg);
