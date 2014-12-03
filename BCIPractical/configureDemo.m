@@ -55,7 +55,7 @@ fixColor=[1 0 0];
 fbColor=[0 0 1]; % feedback color - (blue)
 
 % PTB stuff
-windowPos=[0 0 500 500]; %[];% in sub-window set to [] for full screen
+windowPos=[];%[0 0 500 500]; % in sub-window set to [] for full screen
 
 % instructions object
 instructstr={'Stimulus Type Keys',

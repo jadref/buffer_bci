@@ -122,7 +122,8 @@ class osc2ft {
 					 if ( address.equals(oscaddress) ) { // data to work with
 						  if ( VERB>0 ){ System.out.println("Message matches data address, proc arguments"); }
 						  // extract the data and store in the dataBuffer to be sent to the FT buffer
-						  // all agruments should be data to forward, and hence convertable to double
+						  // all arguments should be data to forward, and hence convertable to double
+						  buffch=0; // assume each osc packet corresponds to all channels for 1 sample
 						  for ( int di=0; di<msgargs.length; di++){
 								if ( msgargs[di] instanceof Integer ) {
 									 databuff[buffsamp][buffch] += ((Integer)msgargs[di]).doubleValue()*calgain+caloffset;
