@@ -135,8 +135,6 @@ int main(int argc, char *argv[]) {
   header.buf = NULL; /* header buf contains the channel names */
   //header->buf = labels;
 
-  data.def = malloc(sizeof(datadef_t));
-  data.buf = NULL;
 
   /* define the header */
   header.def->nchans    = nchans;
@@ -182,6 +180,7 @@ int main(int argc, char *argv[]) {
   }
   free(request.buf);
   free(request.def);
+  free(header.buf);
 		
   if (response->def->command != PUT_OK) {
 	 fprintf(stderr, "csignalproxy: error in 'put header' request.\n");
@@ -202,7 +201,7 @@ int main(int argc, char *argv[]) {
   blocksize   = fsample/BUFFRATE;
   if (verbose>0) fprintf(stderr, "csignalproxy: blocksize = %d\n", blocksize); 
   putdatrequestsize = sizeof(messagedef_t) + sizeof(datadef_t) + WORDSIZE_PROXY*nchans*blocksize;
-  requestbuf  = malloc(putdatrequestsize);
+  requestbuf  = calloc(putdatrequestsize,1);
   /* define the constant part of the send-data request and allocate space for the variable part */
   request.def = requestbuf ;
   /* request.buf = (char*)(request.def) + sizeof(messagedef_t);  */  /* N.B. cast char so pointer math works */
@@ -222,7 +221,7 @@ int main(int argc, char *argv[]) {
   data.def->bufsize   = WORDSIZE_PROXY * nchans * blocksize;
 
   /* define where we hold the single sample stuff */
-  ampsamples = malloc(nchans * WORDSIZE_PROXY);
+  ampsamples = calloc(nchans * WORDSIZE_PROXY,1);
 
   //-------------------------------------------------------------------------------
   // Loop sending the data in blocks as it becomes available
@@ -238,7 +237,7 @@ int main(int argc, char *argv[]) {
 		elapsedusec=(curtime.tv_usec + 1000000.0*curtime.tv_sec) - (starttime.tv_usec + 1000000.0*starttime.tv_sec);
 		sampleusec =nsamp*(1000000/fsample); /* time at which to send the next sample */
 		if( VERBOSE > 0 ) 
-		  fprintf(stderr,"%d) e=%ld s=%ld delta=%ld\n",nsamp,elapsedusec,sampleusec,sampleusec-elapsedusec);
+		  fprintf(stderr,"%d) e=%f s=%f delta=%f\n",nsamp,elapsedusec,sampleusec,sampleusec-elapsedusec);
 		if( sampleusec>elapsedusec )  {
 		  usleep(sampleusec-elapsedusec);/*sleep until next sample should be generated */
 		  sleeptime += sampleusec-elapsedusec;
@@ -320,9 +319,8 @@ int main(int argc, char *argv[]) {
   // free all the stuff we've allocated
   free(requestbuf);
   free(labelsbuf);
-  free(samples);
-  free(data.def);
   free(header.def);
+  free(ampsamples);
 
 #if defined(__WIN32__) || defined(__WIN64__)
     WSACleanup();
