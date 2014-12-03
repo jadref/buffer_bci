@@ -155,4 +155,5 @@ return;
 %--------------------------------------
 function testCase()
 cont_applyClsfr(clsfr,'overlap',.1)
-cont_applyClsfr(clsfr,'predFilt',@(x,s) stdFilt(x,s,exp(log(.5)/100)))
+% smooth output with standardising filter, such that mean=0 and variance=1 over last 100 predictions
+cont_applyClsfr(clsfr,'predFilt',@(x,s) stdFilt(x,s,exp(log(.5)/100)));
