@@ -39,7 +39,7 @@ if ( nargin < 2 || isempty(key) ) % default key
    key=unique(Y(:)); key=key(:)'; 
    if( iscell(key) ) key=sort(key); else key=sort(key,1,'ascend'); end % ascending label order
    if( ~isempty(spMx) && ~isstr(spMx) && ((iscell(spMx) && numel(spMx)~=numel(key)) || (size(spMx,2)~=numel(key))) )
-      warning('subProb matrix and unique in Y dont agree -- spMx overrides');
+      warning(sprintf('subProb matrix and unique in Y dont agree -- using key=1:%d',size(spMx,2)));
       key=1:size(spMx,2);
    end
    if ( numel(key) > 50 ) warning('More than 50 labels!'); end

@@ -1,23 +1,25 @@
 #!/bin/bash
 buffdir=`dirname $0`
+cd `dirname ${BASH_SOURCE[0]}`
+execname='csignalproxy'
 if [ `uname -s` == 'Linux' ]; then
-   buffexe=$buffdir'/buffer/bin/';
-   if [ -r $buffdir/csignalproxy ]; then
-    buffexe=$buffdir'/csignalproxy';
-   fi
-   if [ -r $buffdir/buffer/bin/glnx86/csignalproxy ]; then
-	 buffexe=$buffdir'/buffer/bin/glnx86/csignalproxy';
-   fi
-   if [ -r $buffdir/buffer/glnx86/csignalproxy ]; then
-	 buffexe=$buffdir'/buffer/glnx86/csignalproxy';
+	 if  [ "`uname -a`" == 'armv6l' ]; then
+		  arch='raspberrypi'
+    else
+		  arch='glnx86';
    fi
 else # Mac
-   buffexe=$buffdir'/buffer/bin/csignalproxy';
-   if [ -r $buffdir/buffer/bin/maci/csignalproxy ]; then
-	 buffexe=$buffdir'/buffer/bin/maci/csignalproxy'
-   fi
-   if [ -r $buffdir/buffer/maci/csignalproxy ]; then
-	 buffexe=$buffdir'/buffer/maci/csignalproxy'
-   fi
+	 arch='maci'
 fi
+buffexe="$buffdir/buffer/bin/${execname}";
+if [ -r "$buffdir/${execname}" ]; then
+    buffexe="$buffdir/${execname}";
+fi
+if [ -r "$buffdir/buffer/bin/${arch}/${execname}" ]; then
+	 buffexe="$buffdir/buffer/bin/${arch}/${execname}";
+fi
+if [ -r "$buffdir/buffer/${arch}/${execname}" ]; then
+	 buffexe="$buffdir/buffer/${arch}/${execname}";
+fi
+
 $buffexe 

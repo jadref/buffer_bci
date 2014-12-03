@@ -14,29 +14,33 @@ echo outdir: $outdir
 echo logfile : $logfile
 mkdir -p $bciroot/$subject/$session/$block/raw_gdf
 touch $logfile
-buffexe=$buffdir'/buffer/bin/emotiv2ft';
+
+execname=emotive2ft
 if [ `uname -s` == 'Linux' ]; then
-   if [ -r $buffdir/buffer/bin/glnx86/emotiv2ft ]; then
-	 buffexe=$buffdir'/buffer/bin/glnx86';
+	 if  [ "`uname -a`" == 'armv6l' ]; then
+		  arch='raspberrypi'
+    else
+		  arch='glnx86';
    fi
-   if [ -r $buffdir/buffer/glnx86/emotiv2ft ]; then
-	 buffexe=$buffdir'/buffer/glnx86';
-   fi
-	if [ -r $buffdir/emokit/emokit2ft/emokit2ft ] ; then
-	 buffexe=$buffdir'/emokit/emokit2ft';
-	fi
 else # Mac
-   if [ -r $buffdir/buffer/bin/maci/emotiv2ft ]; then
-    # Argh, annoyingly the emotive driver only works if run in it's own directory
-    cd $buffdir/buffer/bin/maci
-	 # add exec directory to library load path
-	 export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$buffdir'/buffer/bin/maci'
-   fi
-   if [ -r $buffdir/buffer/maci/emotiv2ft ]; then
-    # Argh, annoyingly the emotive driver only works if run in it's own directory
-    cd $buffdir/buffer/maci
-	 export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$buffdir'/buffer/maci'
-   fi
-   buffexe='./emotiv2ft'
+   arch='maci'
 fi
+buffexe="$buffdir/buffer/bin/${execname}";
+if [ -r $buffdir/buffer/bin/${arch}/${execname} ]; then
+	 buffexe="$buffdir/buffer/bin/${arch}/${execname}";
+fi
+if [ -r $buffdir/buffer/${arch}/${execname} ]; then
+	 buffexe="$buffdir/buffer/${arch}/${execname}";
+fi
+if [ -r $buffdir/buffer/${arch}/emokit2ft ] ; then
+	 buffexe="$buffdir'/buffer/${arch}/emokit2ft";
+fi
+
+if [ ${arch} == 'maci' ]; then
+    # Argh, annoyingly the emotive driver only works if run in it's own directory
+    cd ${buffexe%/*}
+	 export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:${buffexe%/*}
+	 buffexe=./${execname}
+fi
+
 $buffexe ${buffdir}/emotiv.cfg $outfile > $logfile 

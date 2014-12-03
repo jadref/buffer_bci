@@ -24,12 +24,12 @@ if [ -r $outdir ] ; then # already exists?  add postfix
 fi
 logfile=${outdir}.log
 echo outdir: $outdir
-echo logfile : $logfile
-mkdir -p $outdir
-touch $logfile
-if [ `uname -s` == 'Linux' ]; then
+mkdir -p "$outdir"
+
+# Identify the OS and search for the appropriate executable
+if [[ `uname -s` == 'Linux'* ]]; then
 	 if  [ "`uname -a`" == 'armv6l' ]; then
-		  arch='raspberrypi'
+		  arch='raspberrypi';
     else
 		  arch='glnx86';
    fi

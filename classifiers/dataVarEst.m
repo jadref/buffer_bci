@@ -38,10 +38,26 @@ if ( kernelp ) % kernel input
   end
   var = sum(var);
 else
-  varx=mvar(X,dim); % variance along each dir
+  % compute the centered power in each trial
+  szX=size(X);
+  sX = mmean(X,dim); % mean feature
+  idx= -(1:ndims(X)); idx(dim)=dim; sidx=idx; sidx(dim)=0;
+  varx= tprod(X,idx,[],idx) - 2*tprod(X,idx,sX,sidx) + tprod(sX,sidx,[],sidx);
   si=varx(:)>0;
   stdvarx = sqrt(sum((varx(si)-mean(varx(si))).^2)./sum(si));
   si=(varx(si)<=median(varx(si))+varThresh*stdvarx+eps); % outlier detection
-  var = sum(varx(si)); % var is ave var
+  var = mean(varx(si)); % var is ave var
 end
 return;
+%--------
+function testCase()
+X=randn(100,99,98);
+Xc=repop(X,'-',mmean(X,3));  
+vc=shiftdim(msum(Xc.^2,[1 2]));
+v=dataVarEst(X); % direct input
+k=tprod(X,[-1 -2 1],[],[-1 -2 2]);
+kc=centKer(k);
+diagkc = diag(k) - 2*sum(k,2)/size(k,1) + sum(k(:))/size(k,1)/size(k,1); % kernel centering
+mad(diag(kc),diagkc)
+vk=dataVarEst(k); % kernel input
+mad(vc,v)

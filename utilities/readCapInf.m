@@ -27,6 +27,9 @@ end
 if ( ~exist(capFile,'file') ) 
   capFile=which([capFn '.txt']);
 end
+if ( ~exist(capFile,'file') ) 
+  error('Couldnt find the capFile: %s',cap)
+end
 
 if ( strfind(cap,'xyz') ) % contains xyz coords
    [Cname x y z]=textread(capFile,'%s %f %f %f');
