@@ -34,11 +34,11 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'start');
     try
       sendEvent('startPhase.cmd','contfeedback');
-      neuroFeedbackStimulus;
+      neurofeedbackStimulus;
     catch
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
     end
-    sendEvent('contfeedback','end');
+    sendEvent('neurofeedback','end');
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');
     

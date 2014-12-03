@@ -34,7 +34,11 @@ end
 verb=1;
 buffhost='localhost';
 buffport=1972;
+nSymbs=2; % number of points to move towards, need this many classifier predicitons
+baselineDuration=3; % initial base-line time
 moveScale = .1;
+feedbackEventType='alphaLat';
+
 bgColor=[.5 .5 .5];
 fixColor=[1 0 0];
 tgtColor=[0 1 0];
@@ -45,7 +49,7 @@ fbColor=[0 0 1];
 % N.B. frequency resolution = 1/width_ms
 width_ms=500; 
 freqs=fftBins([],width_ms/1000,hdr.fSample,1);
-step_ms =100; % how often to compute the average output
+step_ms =100; % how often to compute the average output, 100ms=10x / s
 % parameters to use for feedback
 %  freqband = specifies te frequency range to use.
 %  electrodes = specifies the set of electrodes to use. One of:
