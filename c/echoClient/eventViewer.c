@@ -118,8 +118,11 @@ int main(int argc, char *argv[]) {
 	 FREE(response->buf); FREE(response->def); FREE(response);/* free the memory allocated for the response */
 
 
-	 if ( sampevents.nevents <= nEvents ) {
+	 if ( sampevents.nevents == nEvents ) {
 		fprintf(stderr,"wait timeout\n");
+	 } else if ( sampevents.nevents < nEvents ) {
+		fprintf(stderr,"Buffer reset detected!\n");
+		nEvents=sampevents.nevents;
 	 } else {  /* new events to process */
 		
 		/* get the events we haven't processed yet */
