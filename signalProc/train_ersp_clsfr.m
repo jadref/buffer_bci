@@ -105,12 +105,12 @@ if ( opts.badchrm || ~isempty(opts.badCh) )
   isbadch = false(size(X,1),1);
   if ( ~isempty(ch_pos) ) isbadch(numel(ch_pos)+1:end)=true; end;
   if ( ~isempty(opts.badCh) )
-      isbadch(opts.badCh)=true;
-      goodCh=find(~isbadch);
-      if ( opts.badchrm ) 
-          [isbad2,chstds,chthresh]=idOutliers(X(goodCh,:,:),1,opts.badchthresh);
-          isbadch(goodCh(isbad2))=true;
-      end
+    isbadch(opts.badCh)=true;
+    goodCh=find(~isbadch);
+    if ( opts.badchrm ) 
+      [isbad2,chstds,chthresh]=idOutliers(X(goodCh,:,:),1,opts.badchthresh);
+      isbadch(goodCh(isbad2))=true;
+    end
   elseif ( opts.badchrm ) [isbadch,chstds,chthresh]=idOutliers(X,1,opts.badchthresh); 
   end;
   X=X(~isbadch,:,:);
@@ -209,8 +209,8 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
       elseif(numel(opts.freqband)==4 ) opts.freqband=[mean(opts.freqband([1 2])) mean(opts.freqband([3 4]))];
       end
     end
-    [ans,fIdx(1)]=min(abs(freqs-opts.freqband(1))); % lower frequency bin
-    [ans,fIdx(2)]=min(abs(freqs-opts.freqband(2))); % upper frequency bin
+    [ans,fIdx(1)]=min(abs(freqs-max(freqs(1),  opts.freqband(1)))); % lower frequency bin
+    [ans,fIdx(2)]=min(abs(freqs-MIN(freqs(end),opts.freqband(2)))); % upper frequency bin
     fIdx = int32(fIdx(1):fIdx(2));
   elseif ( iscell(opts.freqband) ) %set of discrete-frequencies to pick
     freqband=[opts.freqband{:}]; % convert to vector
@@ -222,6 +222,7 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
     end    
   end
   X=X(:,fIdx,:); % sub-set to the interesting frequency range
+  freqs=freqs(fIdx); % update labelling info
 end;
 
 %5.5) Visualise the input?
@@ -271,7 +272,7 @@ if ( opts.visualize )
    else   xy=[];
    end
    erpfig=gcf;figure(erpfig);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');
-   yvals=freqs; if( ~isempty(fIdx) ) yvals=freqs(fIdx); end
+   yvals=freqs;
    image3d(mu(:,:,:),1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels(:),'disptype','plot','ticklabs','sw','clabel',opts.aveType);
    zoomplots;
    try; saveaspdf('ERSP'); catch; end;

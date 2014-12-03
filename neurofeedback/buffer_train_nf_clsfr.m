@@ -1,17 +1,20 @@
-function [clsfr,res,X,Y]=buffer_train_ersp_clsfr(X,Y,hdr,varargin);
+function [clsfr]=buffer_train_nf_clsfr(trlen_ms,nfParams,hdr,varargin);
 % train ERSP (frequency-domain) classifier with ft-buffer based data/events input
 %
-%   [clsfr,res,X,Y]=buffer_train_ersp_clsfr(X,Y,hdr,varargin);
+%   clsfr=buffer_train_ersp_clsfr(X,Y,hdr,varargin);
 %
 % Inputs:
-%  X -- [ch x time x epoch] data
-%       OR
-%       [struct epoch x 1] where the struct contains a buf field of buffer data
-%       OR
-%       {[float ch x time] epoch x 1} cell array of data
-%  Y -- [epoch x 1] set of labels for the data epochs
-%       OR
-%       [struct epoch x 1] set of buf event structures which contain epoch labels in value field
+%  trlen_ms  - [int] length of 1 analysis window in milliseconds
+%            OR
+%              [ ch x time x epoch ] example pieces of analysis data
+%  nfParams  - [ struct nCls x 1 ] neurofeedback paramters structure
+%            |.freqband = [2x1] specifies the frequency range to use. Output is average over this range
+%            |.electrodes = specifies the set of electrodes to use. One of:
+%                    [] - empty means average over all electrodes
+%                    [nElect x 1] - gives a weighting over electrodes
+%                    {'str'} - gives a list of electrode names to sum together
+%                       N.B. use -Cz to negate before summing, 
+%                           e.g. to feedback on the lateralisation between C3 and C4 use: {'C3' '-C4'}
 %  hdr-- [struct] buffer header structure
 % Options:
 %  capFile -- [str] name of file which contains the electrode position info  ('1010')
@@ -38,31 +41,11 @@ function [clsfr,res,X,Y]=buffer_train_ersp_clsfr(X,Y,hdr,varargin);
 %           |.windowFn -- [float] window used in frequency domain transformation (ERsP only)
 %           |.welchAveType -- [str] type of averaging used in frequency domain transformation (ERsP only)
 %           |.freqIdx     -- [2x1] range of frequency to keep  (ERsP only)
-%  res     -- [struct] a results structure
-%  X       -- [ppch x pptime x ppepoch] pre-processed data (N.B. may/will have different size to input X)
-%  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
 %
 % See Also: train_ersp_clsfr
 opts=struct('capFile','1010','overridechnms',0);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( nargin<3 ) error('Insufficient arguments'); end;
-% extract the data - from field begining with trainingData
-if ( iscell(X) ) 
-  if ( isnumeric(X{1}) ) 
-    X=cat(3,X{:});
-  else
-    error('Unrecognised data format!');
-  end
-elseif ( isstruct(X) )
-  X=cat(3,X.buf);
-end 
-X=single(X);
-if ( isstruct(Y) ) % convert event struct into labels
-  if ( isnumeric(Y(1).value) ) Y=cat(1,Y.value); 
-  elseif(isstr(Y(1).value) )   Y=cat(1,{Y.value}); Y=Y(:);
-  else error('Dont know how to handle Y value type');
-  end
-end; 
 
 fs=[]; chNames={};
 if ( isstruct(hdr) )
@@ -84,7 +67,7 @@ end
     
 % get position info and identify the eeg channels
 di = addPosInfo(chNames,opts.capFile,opts.overridechnms); % get 3d-coords
-iseeg=false(size(X,1),1); iseeg([di.extra.iseeg])=true;
+iseeg=false(numel(chNames),1); iseeg([di.extra.iseeg])=true;
 if ( any(iseeg) ) 
   ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names    
 else % fall back on showing all data
@@ -93,5 +76,9 @@ else % fall back on showing all data
 end
 
 % call the actual function which does the classifier training
-[clsfr,res,X,Y]=train_ersp_clsfr(X,Y,'ch_names',ch_names,'ch_pos',ch_pos,'fs',fs,'badCh',~iseeg,varargin{:});
+[clsfr]=train_nf_clsfr(trlen_ms,nfParams,'ch_names',ch_names,'ch_pos',ch_pos,'fs',fs,'badCh',~iseeg,varargin{:});
 return;
+%-------------
+function testCase()
+hdr=buffer('get_hdr',[]);
+buffer_train_nf_clsfr(500,struct('label','alpha','freqband',[8 10],'electrodes','Fz'),'hdr',hdr);
