@@ -83,7 +83,7 @@ else
     hold on;
 end
 set(gca,'visible','off');
-text(mean(get(gca,'xlim')),max(get(gca,'ylim')),'Sluit het scherm om door te gaan','FontUnits','normalized','fontsize',.1,'HorizontalAlignment','center');
+text(mean(get(gca,'xlim')),max(get(gca,'ylim')),'Close window to continue.','FontUnits','normalized','fontsize',.1,'HorizontalAlignment','center');
 
 % draw the channel names and electrodes
 for i=1:numel(iseeg);
