@@ -24,9 +24,7 @@ if [ -r $outdir ] ; then # already exists?  add postfix
 fi
 logfile=${outdir}.log
 echo outdir: $outdir
-echo logfile : $logfile
 mkdir -p "$outdir"
-touch "$logfile"
 # Identify the OS and search for the appropriate executable
 if [[ `uname -s` == 'Linux'* ]]; then
 	 if  [ "`uname -a`" == 'armv6l' ]; then
@@ -51,5 +49,11 @@ fi
 if [ -r $buffdir/buffer/${arch}/recording ]; then
 	 buffexe=$buffdir"/buffer/${arch}/recording";
 fi
-echo $buffexe ${outdir}/raw_buffer \> $logfile 
-$buffexe "${outdir}"/raw_buffer > "$logfile" 
+echo $buffexe ${outdir}/raw_buffer
+
+# turn return into carriage return to stop endless scrolling of the window
+if [ -z `which tr` ]; then
+  $buffexe "${outdir}"/raw_buffer
+else
+  $buffexe "${outdir}"/raw_buffer | tr '\n' '\r'
+fi

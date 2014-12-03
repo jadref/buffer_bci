@@ -31,4 +31,9 @@ if [ -r $buffdir/buffer/${arch}/buffer ]; then
 	 buffexe=$buffdir"/buffer/${arch}/buffer";
 fi
 echo Starting: $buffexe
-$buffexe
+# turn return into carriage return to stop endless scrolling of the window
+if [ -z `which tr` ]; then
+  $buffexe
+else
+  $buffexe | tr '\n' '\r'
+fi
