@@ -1,4 +1,4 @@
-configureIM;
+configureNF;
 % create the control window and execute the phase selection loop
 contFig=controller(); info=guidata(contFig); 
 while (ishandle(contFig))
