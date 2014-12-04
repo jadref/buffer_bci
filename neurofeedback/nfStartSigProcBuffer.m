@@ -88,7 +88,7 @@ while ( true )
       clsSubj = subject;
     end;
 
-    cont_applyClsfr(clsfr,'step_ms',step_ms,'alpha',@(x,s) stdFilt(x,s,exp(log(.5)/100)),'predEventType',feedbackEventType,'endType','neurofeedback');
+    cont_applyClsfr(clsfr,'step_ms',step_ms,'predFilt',@(x,s) stdFilt(x,s,exp(log(.5)/100)),'predEventType',feedbackEventType,'endType','neurofeedback');
     
    case 'exit';
     break;

@@ -27,6 +27,7 @@ std=sqrt(abs((s.sx2-s.sx.^2./s.N)./s.N));
 std(std<eps)=1; % deal with 0-variance channels
 if ( s.N>(1-alpha) ) x=(x-mu)./std; end;
 return;
+%-------------------------------------------------------------
 function testCase()
 x=cumsum(randn(2,10000),2);
 mu=zeros(size(x)); std=zeros(size(x)); fx=zeros(size(x)); 
