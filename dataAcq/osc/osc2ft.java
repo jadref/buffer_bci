@@ -135,7 +135,7 @@ class osc2ft {
 								}
 
 								// increment the cursor position
-								if ( VERB>0 ){ System.out.print('.');}
+								if ( VERB>0 ){ System.out.print('.');} 
 								buffch++; numel++;
 								// move to next buffer sample
 								// assume each osc packet corresponds to *at least* all channels for 1 sample
