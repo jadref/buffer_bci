@@ -2,7 +2,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.io.*;
-import nl.fcdonders.fieldtrip.*;
+import nl.fcdonders.fieldtrip.bufferclient.*;
 import com.illposed.osc.*;
 import com.illposed.osc.utility.OSCByteArrayToJavaConverter;
 
