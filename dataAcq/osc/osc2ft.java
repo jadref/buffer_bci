@@ -2,7 +2,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.io.*;
-import nl.fcdonders.fieldtrip.*;
+import nl.fcdonders.fieldtrip.bufferclient.*;
 import com.illposed.osc.*;
 import com.illposed.osc.utility.OSCByteArrayToJavaConverter;
 
@@ -139,7 +139,7 @@ class osc2ft {
 								buffch++; numel++;
 								// move to next buffer sample
 								// assume each osc packet corresponds to *at least* all channels for 1 sample
-								if(buffch>=databuff[buffsamp].length || buffch==msgargs.length-1){ 
+								if(buffch>=databuff[buffsamp].length || buffch==msgargs.length){ 
 									 if ( VERB>0 ){ System.out.println("Got 1 samples worth of data"); }
 									 buffch=0; oscsamp++; // start new sample
 									 buffsamp++; // move to next buffer sample
