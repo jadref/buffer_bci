@@ -15,7 +15,8 @@ opts=parseOpts(opts,varargin);
 % prepare figure
 if ( ~isempty(opts.fig) ) figure(opts.fig); else opts.fig=gcf; end;
 % set the axes to invisible
-set(gcf,'color',[0 0 0]); set(gca,'visible','off');
+set(gcf,'color',[0 0 0]); 
+set(gca,'visible','off');
 set(gca,'YDir','reverse');
 set(gca,'xlim',[0 1],'ylim',[0 1]);
 
