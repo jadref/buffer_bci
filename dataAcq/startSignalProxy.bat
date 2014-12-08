@@ -1,4 +1,7 @@
-call ..\utilities\findMatlab.bat
+setlocal enabledelayedexpansion
 set batdir=%~dp0
-cd %batdir%
-start "Matlab" %matexe% -nodesktop -r "run ../utilities/initPaths;buffer_signalproxy('localhost',1972,'stimEventRate',0,'queueEventRate',0);quit;"
+rem Search for the executable
+if exist "%batdir%buffer\bin\win32\csignalproxy.exe" ( set buffexe="%batdir%buffer\bin\win32\csignalproxy.exe" )
+if exist "%batdir%buffer\win32\csignalproxy.exe" ( set buffexe="%batdir%buffer\win32\csignalproxy.exe" )
+if exist "%batdir%csignalproxy.exe" ( set buffexe="csignalproxy.exe" )
+start /b "signalproxy" %buffexe%
