@@ -18,14 +18,15 @@ datestring = datestr(now,'yymmdd');
 dname='training_data';
 cname='clsfr';
 if ( ~exist('verb','var') ) verb =1; end;
-subject='test';
+if ( ~exist('subject','var') ) subject='test'; end;
+if ( ~exist('clsSubj','var') ) clsSubj=''; end;
 
 % main loop waiting for commands and then executing them
 if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
   clsfrfile = [cname '_' subject '_' datestring];
   if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=[cname '_' subject]; end;
   if ( ~exist([clsfrfile '.mat'],'file') )
-    clsfr = buffer_train_nf_clsfr(width_ms,feedback,hdr,'capFile',capFile,'overridechnms',overridechnms);
+    clsfr = buffer_train_nf_clsfr(width_ms,feedback,hdr,'spatialfilter','none','capFile',capFile,'overridechnms',overridechnms);
     clsfrfile = [cname '_' subject '_' datestring];
     fprintf('saving to : %s',clsfrfile);  save(clsfrfile,'clsfr');
   end
@@ -35,4 +36,4 @@ if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') )
 end;
 
 % apply prediction generator until we get told to stop
-cont_applyClsfr(clsfr,'step_ms',step_ms,'predFilt',@(x,s) stdFilt(x,s,exp(log(.5)/100)),'predEventType',feedbackEventType,'endType','neurofeedback');
+cont_applyClsfr(clsfr,'step_ms',step_ms,'predFilt',@(x,s) stdFilt(x,s,expSmoothFactor),'predEventType',feedbackEventType,'endType','neurofeedback');

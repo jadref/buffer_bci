@@ -10,5 +10,5 @@ if exist "%batdir%buffer\bin\win32\%execname%" ( set buffexe="%batdir%buffer\bin
 if exist "%batdir%buffer\win32\%execname%.exe" ( set buffexe="%batdir%buffer\win32\%execname%.exe" )
 if exist "%batdir%%execname%.exe" ( set buffexe="%batdir%%execname%.exe" )
 rem start /b "buffer" %buffexe% %1 %2 %3
-%buffexe% --preset ab --osc osc.udp://localhost:%oscport%
+%buffexe% --preset 10 --50hz --osc osc.udp://localhost:%oscport%
 rem %buffexe% --device %oscdevice% --preset ab --osc osc.udp://localhost:%oscport%
