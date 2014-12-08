@@ -24,9 +24,9 @@ run ../utilities/initPaths.m
 %  1.3) read the data for the selected events
 % If you have a more complex criteria for which events to slice and return
 % then you should modify step 1.2 in the sliceraw.m file
-[data,devents,hdr,allevents]=sliceraw('example_data/raw_buffer/0001','startSet',{'stimulus.target'});
+[data,devents,hdr,allevents]=sliceraw('example_data/raw_buffer/0001','startSet',{'stimulus.target'},'trlen_ms',3000);
 
-% 2) train a ERsP classifier on this data.
+% 2) train a ERsP classifier on this data, and visualise the results
 [clsfr,res,X]=buffer_train_ersp_clsfr(data,devents,hdr,'freqband',[8 10 24 28],'capFile',capFile);
 % N.B. X now contains the pre-processed data which can be used for other purposes, e.g. making better plots.
 
