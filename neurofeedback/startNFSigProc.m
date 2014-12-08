@@ -18,7 +18,8 @@ datestring = datestr(now,'yymmdd');
 dname='training_data';
 cname='clsfr';
 if ( ~exist('verb','var') ) verb =1; end;
-subject='test';
+if ( ~exist('subject','var') ) subject='test'; end;
+if ( ~exist('clsSubj','var') ) clsSubj=''; end;
 
 % main loop waiting for commands and then executing them
 if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 

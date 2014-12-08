@@ -68,4 +68,4 @@ feedback(2) = struct('label','badness',...
                      'electrodes',{{'FP1' 'FP2'}}); 
 
 % set smoothing rate for the estimated spectral powers
-expSmoothFactor = log(2)/log(10); %exp(log(.5)/10)
+expSmoothFactor = exp(log(.5)/10000);%log(2)/log(10); %exp(log(.5)/10)
