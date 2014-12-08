@@ -31,7 +31,7 @@ if ( exist('OCTAVE_VERSION','builtin') )
   end
 end
 
-verb=1;
+verb=2;
 buffhost='localhost';
 buffport=1972;
 nSymbs=2; % number of points to move towards, need this many classifier predicitons
@@ -39,6 +39,8 @@ baselineDuration=3; % initial base-line time
 moveScale = .1;
 feedbackEventType='alphaLat';
 
+% set how the mode for how the feedback updates the display
+controlMode = 'cursor'; % position in x(y) is probability for 1st (2nd) classifier prediction
 bgColor=[.5 .5 .5];
 fixColor=[1 0 0];
 tgtColor=[0 1 0];

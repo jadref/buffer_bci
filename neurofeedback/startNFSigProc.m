@@ -36,4 +36,5 @@ if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') )
 end;
 
 % apply prediction generator until we get told to stop
-cont_applyClsfr(clsfr,'step_ms',step_ms,'predFilt',@(x,s) stdFilt(x,s,expSmoothFactor),'predEventType',feedbackEventType,'endType','neurofeedback');
+expSmoothFactor2=expSmoothFactor; % needed for weird in-line function variable scoping rules -- apparently
+cont_applyClsfr(clsfr,'step_ms',step_ms,'predFilt',@(x,s) stdFilt(x,s,expSmoothFactor2),'predEventType',feedbackEventType,'endType','neurofeedback','verb',verb);
