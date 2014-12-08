@@ -75,21 +75,8 @@ while ( true )
     %---------------------------------------------------------------------------------
    case {'contfeedback'};
     % build the classifier     
-    if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
-      clsfrfile = [cname '_' subject '_' datestring];
-      if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=[cname '_' subject]; end;
-      if ( ~exist([clsfrfile '.mat'],'file') )
-        clsfr = buffer_train_nf_clsfr(width_ms,feedback,hdr,'capFile',capFile,'overridechnms',overridechnms);
-        clsfrfile = [cname '_' subject '_' datestring];
-        fprintf('saving to : %s',clsfrfile);  save(clsfrfile,'clsfr');
-      end
-      load(clsfrfile);
-      if ( isfield(clsfr,'clsfr') ) clsfr=clsfr.clsfr; end; 
-      clsSubj = subject;
-    end;
-
-    cont_applyClsfr(clsfr,'step_ms',step_ms,'predFilt',@(x,s) stdFilt(x,s,exp(log(.5)/100)),'predEventType',feedbackEventType,'endType','neurofeedback');
-    
+	startNFSigProc;
+	
    case 'exit';
     break;
     
