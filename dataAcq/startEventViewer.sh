@@ -1,6 +1,5 @@
 #!/bin/bash
 buffdir=`dirname $0`
-<<<<<<< HEAD
 execname=eventViewer
 if [ `uname -s` == 'Linux' ]; then
 	 if  [ "`uname -a`" == 'armv6l' ]; then
