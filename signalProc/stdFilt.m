@@ -25,7 +25,7 @@ s.sx2= alpha(1)*s.sx2+ (1-alpha(1))*x.^2;
 mu=s.sx./s.N;
 std=sqrt(abs((s.sx2-s.sx.^2./s.N)./s.N));
 std(std<eps)=1; % deal with 0-variance channels
-if ( s.N>(1-alpha) ) x=(x-mu)./std; end;
+if ( s.N(1)>(1-alpha(1)) ) x=(x-mu)./std; end;
 return;
 %-------------------------------------------------------------
 function testCase()
