@@ -1,6 +1,3 @@
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.SocketException;
 import java.io.*;
 import nl.fcdonders.fieldtrip.bufferclient.*;
 //import OpenBCI_ADS1299;
@@ -9,13 +6,43 @@ class openBCI2ft {
 	 static int VERB=0; // global verbosity level
 	 static int BUFFERSIZE = 65500;
 
-	 static private int openBCIbaud = 115200;
-	 static private int openBCIvaluesperpacket = 8;
+	 //these settings are for a single OpenBCI board
+	 static int openBCIbaud = 115200;
+	 static int OpenBCI_Nchannels = 8; //normal OpenBCI has 8 channels
+	 static int openBCIvaluesperpacket = 8;
+	 static int openBCIDataMode = OpenBCI_ADS1299.DATAMODE_BIN;
+
+	 String openBCI_portName = "COM12";  
+
+	 //use this for when daisy-chaining two OpenBCI boards
+	 //int openBCIbaud = 2*115200; //baud rate from the Arduino
+	 //final int OpenBCI_Nchannels = 16; //daisy chain has 16 channels
+
+	 //properties of the openBCI board
+	 static float fs_Hz = 250.0f;  //sample rate used by OpenBCI board
+	 static private float ADS1299_Vref = 4.5f;  //reference voltage for ADC in ADS1299
+	 static private float ADS1299_gain = 24;    //assumed gain setting for ADS1299
+	 static private float scale_fac_uVolts_per_count = ADS1299_Vref / ((float)Math.pow(2,23)-1) / ADS1299_gain  * 1000000.f; //ADS1299 datasheet Table 7, confirmed through experiment
+	 static private float openBCI_impedanceDrive_amps = (float)6.0e-9;  //6 nA
+	 boolean isBiasAuto = true;
+
+	 //other data fields
+	 static int nchan = OpenBCI_Nchannels; //normally, nchan = OpenBCI_Nchannels
+	 static int nchan_active_at_startup = nchan;  //how many channels to be LIVE at startup
+	 static int n_aux_ifEnabled = 1;  //if DATASOURCE_NORMAL_W_AUX then this is how many aux channels there will be
+	 static int prev_time_millis = 0;
+	 DataStatus is_railed[];
+	 final int threshold_railed = ((int)Math.pow(2,23))-1000;
+	 final int threshold_railed_warn = (int)(Math.pow(2,23)*0.75);
+
+	 //program constants
+	 int openBCI_byteCount = 0;
+	 int inByte = -1;    // Incoming serial data
 
 	 public static void main(String[] args) throws IOException,InterruptedException {
 		  
 		  if ( args.length==0 ) {
-				System.out.println("openBCI2ft openBCIport bufferhost:bufferport nchannels openBCIsamplerate buffdownsampleratio buffpacketsize calgain caloffset");
+				System.out.println("openBCI2ft openBCIport bufferhost:bufferport nchannels openBCIsamplerate buffdownsampleratio buffpacketsize");
 		  }
 		  
 		  // openBCI port
@@ -36,27 +63,45 @@ class openBCI2ft {
 		  }
 		  int nch = 4;
 		  if (args.length>=3) { nch = Integer.parseInt(args[2]);	}
-		  int sampleRate = 100;
-		  if (args.length>=4) { sampleRate = Integer.parseInt(args[3]); }		  
+		  int sampleRate = (int)fs_Hz;
+		  if (args.length>=4) { 
+				System.out.println("Warning, samplerate fixed for this hardware. Argument ignored.");
+				//sampleRate = Integer.parseInt(args[3]); 
+		  }		  
 		  int buffdownsample=1;
-		  if (args.length>=5) { buffdownsample = Integer.parseInt(args[4]); }		  
+		  if (args.length>=5) { 
+				System.out.println("Warning, buff-down-sample currently isn't supported.  Argument ignored.");
+				//buffdownsample = Integer.parseInt(args[4]); 
+		  }		  
 		  int buffpacketsize=1;		  
 		  if (args.length>=6) { buffpacketsize = Integer.parseInt(args[5]); }		  
-		  double calgain=1;		  
-		  if (args.length>=7) { calgain = Double.parseDouble(args[6]); }		  
-		  double caloffset=0;		  
-		  if (args.length>=8) { caloffset = Double.parseDouble(args[7]); }		  
 		  
 		  // print the current settings
 		  System.out.println("OPENBCI port: " + openBCIport);
 		  System.out.println("Buffer server: " + buffhostname + " : " + buffport);
 		  System.out.println("nCh : " + nch + " fs : " + sampleRate);
 		  System.out.println("#samp/buf : " + buffdownsample + " buff_packet : " + buffpacketsize);
-		  System.out.println("calgain : " + calgain + " caloffset : " + caloffset);
 		  
 		
-		  // open the listening connection to the OSC server
-		  OpenBCI_ADS1299 openBCI = new OpenBCI_ADS1299(openBCIport,openBCIbaud,nch);
+		  // open the openBCI port and start the data streaming
+		  int nDataValuesPerPacket = nchan;
+		  if (openBCIDataMode == OpenBCI_ADS1299.DATAMODE_BIN_WAUX) nDataValuesPerPacket += n_aux_ifEnabled;		  
+		  DataPacket_ADS1299 curPacket = new DataPacket_ADS1299(nDataValuesPerPacket); 
+		  OpenBCI_ADS1299 openBCI = null; ;
+		  while ( true ) {
+				try {
+					 openBCI = new OpenBCI_ADS1299(openBCIport,openBCIbaud,nDataValuesPerPacket); // open port
+					 break;
+				} catch (Exception e) {
+					 System.out.println("Trying to connect to serial port : " + openBCIport);
+					 Thread.sleep(1000); 
+				}
+		  }
+		  while ( openBCI.updateState()<=0 ){ // start data streaming					 break;
+				System.out.println("Waiting for startup of streaming to complete, on port : " + openBCIport);
+				Thread.sleep(1000); 
+		  }
+		  
 		  byte[] buffer = new byte[BUFFERSIZE];
 		  int openBCIsamp=0;  // current sample number in buffer-packet recieved from openBCI
 		  int buffsamp=0; // current sample number in buffer-packet to send to buffer
@@ -70,7 +115,7 @@ class openBCI2ft {
 		  while ( !C.isConnected() ) {
 				System.out.println("Connecting to "+buffhostname+":"+buffport);
 				try { 
-				C.connect(buffhostname, buffport);
+					 C.connect(buffhostname, buffport);
 				} catch (IOException ex){
 				}
 				if ( !C.isConnected() ) { 
@@ -87,65 +132,43 @@ class openBCI2ft {
 		  // Now do the data forwarding
 		  while ( true ) {			 
 				// wait for an OPENBCI message
-				//openBCIsock.receive(packet);
-				// parse the message and extract (if needed) into a set of messages to process
-				java.util.Date timeStamp;
-				// if ( VERB>0 ){ System.out.println("Got " + packets.length + " OPENBCI packet(s).");}
-				// for ( int pi=0; pi<packets.length; pi++ ) { 
-				// 	 OPENBCIPacket curPacket = packets[pi];
-				// 	 if ( curPacket instanceof OPENBCIBundle ) {
-				// 		  System.out.println("Error bundle within bundle! igored");
-				// 		  continue;
-				// 	 } 
-				// 	 // OPENBCI message
-				// 	 // OPENBCIMessage curMessage = (OPENBCIMessage)curPacket;
-				// 	 // String address = curMessage.getAddress();
-				// 	 // Object[] msgargs  = curMessage.getArguments();
-				// 	 // if ( VERB>0 ){ System.out.println(pi + ") " + address + " (" + msgargs.length + ")"); }
-				// 	 // if ( address.equals(openBCIaddress) ) { // data to work with
-				// 	 // 	  if ( VERB>0 ){ System.out.println("Message matches data address, proc arguments"); }
-				// 	 // 	  // extract the data and store in the dataBuffer to be sent to the FT buffer
-				// 	 // 	  // all arguments should be data to forward, and hence convertable to double
-				// 	 // 	  for ( int di=0; di<msgargs.length; di++){
-				// 	 // 			if ( msgargs[di] instanceof Integer ) {
-				// 	 // 				 databuff[buffsamp][buffch] += ((Integer)msgargs[di]).doubleValue()*calgain+caloffset;
-				// 	 // 			} else if ( msgargs[di] instanceof Float ) {
-				// 	 // 				 databuff[buffsamp][buffch] += ((Float)msgargs[di]).doubleValue()*calgain+caloffset;
-				// 	 // 			} else if ( msgargs[di] instanceof Double ) {
-				// 	 // 				 databuff[buffsamp][buffch] += ((Double)msgargs[di]).doubleValue()*calgain+caloffset;
-				// 	 // 			} else { // not something we can work with!
-				// 	 // 				 System.out.println("Unsupported data type, ignored");
-				// 	 // 			}
+				// read from serial port until a complete packet is available
+				// Question: does this block intelligently?
+				while ( !openBCI.isNewDataPacketAvailable ) {
+					 try { 
+						  openBCI.read();
+					 } catch (Exception e){ // Catch all exceptions.. including SerialPortException
+						  System.out.println("Serial port exception!");
+					 }
+				}
+				if ( VERB>0 ){ System.out.println("Got a data packet from openBCI"); }
+				// get (a copy of) the data just read
+				openBCI.copyDataPacketTo(curPacket); 
+				//next, gather the new data into the "little buffer"
+				for (int Ichan=0; Ichan < nchan; Ichan++) {   //loop over each cahnnel
+					 //scale the data into engineering units ("microvolts") and save to the "little buffer"
+					 databuff[buffsamp][Ichan] += curPacket.values[Ichan] * scale_fac_uVolts_per_count;
+				} 				
+				// increment the cursor position
+				if ( VERB>0 ){ System.out.print('.');}
 
-				// 	 // 			// increment the cursor position
-				// 	 // 			if ( VERB>0 ){ System.out.print('.');}
-				// 	 // 			buffch++; numel++;
-				// 	 // 			// move to next buffer sample
-				// 	 // 			// assume each openBCI packet corresponds to *at least* all channels for 1 sample
-				// 	 // 			if(buffch>=databuff[buffsamp].length || buffch==msgargs.length-1){ 
-				// 	 // 				 if ( VERB>0 ){ System.out.println("Got 1 samples worth of data"); }
-				// 	 // 				 buffch=0; openBCIsamp++; // start new sample
-				// 	 // 				 buffsamp++; // move to next buffer sample
-				// 	 // 				 if ( buffsamp >= databuff.length ) { // got a full buffer packet's worth
-				// 	 // 					  if ( VERB>0 ){ System.out.println("Got buffer packets worth of data. Sending");}
-				// 	 // 					  // so forward to the buffer
-				// 	 // 					  // N.B. for efficiency this should probably be double-buffered (sic)
-				// 	 // 					  C.putData(databuff);
-				// 	 // 					  // clear out all the old data
-				// 	 // 					  for ( int i=0; i<databuff.length; i++){
-				// 	 // 							for ( int j=0; j<databuff[i].length; j++){
-				// 	 // 								 databuff[i][j]=0;
-				// 	 // 							}
-				// 	 // 					  }
-				// 	 // 					  openBCIsamp=0; buffsamp=0;
-				// 	 // 				 }
-				// 	 // 			}
-				// 	 // 	  }
-				// 	 // }
-				// } // messages in the received packet
+				// move to next buffer sample
+				buffsamp++; // move to next buffer sample
+				if ( buffsamp >= databuff.length ) { // got a full buffer packet's worth
+					 if ( VERB>0 ){ System.out.println("Got buffer packets worth of data. Sending");}
+					 // so forward to the buffer
+					 // N.B. for efficiency this should probably be double-buffered (sic)
+					 C.putData(databuff);
+					 // clear out all the old data
+					 for ( int i=0; i<databuff.length; i++){
+						  for ( int j=0; j<databuff[i].length; j++){
+								databuff[i][j]=0;
+						  }
+					 }
+					 buffsamp=0;
+				}
 		  }
 		  // should cleanup correctly... but java doesn't allow unreachable code..
 		  // C.disconnect();
-		  // openBCIsock.close();
 	 }
-}
+} // class
