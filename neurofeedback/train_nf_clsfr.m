@@ -167,9 +167,16 @@ for ci=1:numel(nfParams)
   parmsci=nfParams(ci);
   % get the weighting over channels
   chWght = zeros(numel(ch_names),1);
-  if ( isempty(parmsci.electrodes) ) chWght(:)=1; 
+  if ( isempty(parmsci.electrodes) ) 
+    chWght(:)=1; 
+  
   elseif ( numel(parmsci.electrodes)==numel(ch_names) && isnumeric(parmsci.electrodes))
     chWght=parmsci.electrodes;
+  
+  elseif ( isnumeric(parmsci.electrodes) ) % indices of the electrodes to average
+    chWght( parmsci.electrodes(parmsci.electrodes>0)) =  1;
+    chWght(-parmsci.electrodes(parmsci.electrodes<0)) = -1;
+  
   elseif ( iscell(parmsci.electrodes) || isstr(parmsci.electrodes) )
     if ( isstr(parmsci.electrodes) ) parmsci.electrodes={parmsci.electrodes}; end;
     for ei=1:numel(parmsci.electrodes);
