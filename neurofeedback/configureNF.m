@@ -31,7 +31,7 @@ if ( exist('OCTAVE_VERSION','builtin') )
   end
 end
 
-verb=1;
+verb=2;
 buffhost='localhost';
 buffport=1972;
 nSymbs=2; % number of points to move towards, need this many classifier predicitons
@@ -39,6 +39,8 @@ baselineDuration=3; % initial base-line time
 moveScale = .1;
 feedbackEventType='alphaLat';
 
+% set how the mode for how the feedback updates the display
+controlMode = 'cursor'; % position in x(y) is probability for 1st (2nd) classifier prediction
 bgColor=[.5 .5 .5];
 fixColor=[1 0 0];
 tgtColor=[0 1 0];
@@ -61,11 +63,11 @@ step_ms =100; % how often to compute the average output, 100ms=10x / s
 % 1) frontal alpha lateralisation
 feedback = struct('label','alphaLat',...
                   'freqband',[8 12],...
-                  'electrodes',{{'F5' 'AF3' '-AF4' '-F6'}}); % don't forget double cell for struct
+                  'electrodes',{{'FP1' '-FP2'}}); % don't forget double cell for struct
 % 2) EMG (= high freq power) + eye (=low freq power)
 feedback(2) = struct('label','badness',...
-                     'freqband',mkFilter(freqs,[0 0 4 4])/10 + mkFilter(freqs,[15 45]),...
-                     'electrodes',[]); 
+                     'freqband',mkFilter(freqs,[0 0 4 4])*10 + mkFilter(freqs,[15 45]),...
+                     'electrodes',{{'FP1' 'FP2'}}); 
 
 % set smoothing rate for the estimated spectral powers
-expSmoothFactor = log(2)/log(10); %exp(log(.5)/10)
+expSmoothFactor = [exp(log(.5)/10000) exp(log(.5)/10)];%log(2)/log(10); %exp(log(.5)/10)
