@@ -43,7 +43,10 @@ class osc2ft {
 		  int sampleRate = 100;
 		  if (args.length>=4) { sampleRate = Integer.parseInt(args[3]); }		  
 		  int buffdownsample=1;
-		  if (args.length>=5) { buffdownsample = Integer.parseInt(args[4]); }		  
+		  if (args.length>=5) { 
+				System.out.println("Warning, buff-down-sample currently isn't supported.  Argument ignored.");
+				//buffdownsample = Integer.parseInt(args[4]); 
+		  }		  
 		  int buffpacketsize=1;		  
 		  if (args.length>=6) { buffpacketsize = Integer.parseInt(args[5]); }		  
 		  double calgain=1;		  
