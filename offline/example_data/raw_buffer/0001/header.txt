@@ -1,0 +1,10 @@
+version=1
+endian=little
+dataType=float64
+fSample=100.000000
+nChans=3
+1:Cz
+2:CPz
+3:Oz
+nSamples=9000
+nEvents=0

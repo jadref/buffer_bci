@@ -14,6 +14,10 @@ function [f,fraw,p,X,isbadch,isbadtr]=apply_erp_clsfr(X,clsfr,verb)
 %  X     - [n-d] the pre-processed data
 if( nargin<3 || isempty(verb) ) verb=0; end;
 
+if( isfield(clsfr,'type') && ~strcmpi(clsfr.type,'erp') )
+  warning(sprintf('Wrong type of classifier given, expected ERP got : %s',clsfr.type));
+end
+
 
 %0) convert to singles (for speed)
 X=single(X);
