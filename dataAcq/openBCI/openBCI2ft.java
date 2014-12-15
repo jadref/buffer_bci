@@ -1,9 +1,10 @@
 import java.io.*;
 import nl.fcdonders.fieldtrip.bufferclient.*;
 //import OpenBCI_ADS1299;
+//import jssc.SerialPortList;
 
 class openBCI2ft {
-	 static int VERB=0; // global verbosity level
+	 static int VERB=1; // global verbosity level
 	 static int BUFFERSIZE = 65500;
 
 	 //these settings are for a single OpenBCI board
@@ -11,8 +12,6 @@ class openBCI2ft {
 	 static int OpenBCI_Nchannels = 8; //normal OpenBCI has 8 channels
 	 static int openBCIvaluesperpacket = 8;
 	 static int openBCIDataMode = OpenBCI_ADS1299.DATAMODE_BIN;
-
-	 String openBCI_portName = "COM12";  
 
 	 //use this for when daisy-chaining two OpenBCI boards
 	 //int openBCIbaud = 2*115200; //baud rate from the Arduino
@@ -46,7 +45,7 @@ class openBCI2ft {
 		  }
 		  
 		  // openBCI port
-		  String    openBCIport    = "COM1";
+		  String    openBCIport    = null;
 		  if (args.length>=1) {
 				openBCIport=args[0];
 		  }
@@ -75,6 +74,16 @@ class openBCI2ft {
 		  }		  
 		  int buffpacketsize=1;		  
 		  if (args.length>=6) { buffpacketsize = Integer.parseInt(args[5]); }		  
+
+		  if ( openBCIport == null ) { // list available ports and exit
+				System.out.println("No serial port defined.  Current serial ports connected are:");
+				String[] portNames = jssc.SerialPortList.getPortNames();
+				for(int i = 0; i < portNames.length; i++){
+					 System.out.println(portNames[i]);
+				}
+				System.out.println();
+				System.exit(1);
+		  }
 		  
 		  // print the current settings
 		  System.out.println("OPENBCI port: " + openBCIport);
@@ -101,6 +110,8 @@ class openBCI2ft {
 				System.out.println("Waiting for startup of streaming to complete, on port : " + openBCIport);
 				Thread.sleep(1000); 
 		  }
+		  System.out.println("Connected to serial port.  Streaming begun!");
+
 		  
 		  byte[] buffer = new byte[BUFFERSIZE];
 		  int openBCIsamp=0;  // current sample number in buffer-packet recieved from openBCI
@@ -123,6 +134,7 @@ class openBCI2ft {
 					 Thread.sleep(1000);
 				}
 		  }
+		  System.out.println("Connected to buffer!");
 		
 		  // send the header information
 		  Header hdr = new Header(nch,sampleRate,DataType.FLOAT64);
@@ -135,6 +147,7 @@ class openBCI2ft {
 				// read from serial port until a complete packet is available
 				// Question: does this block intelligently?
 				while ( !openBCI.isNewDataPacketAvailable ) {
+					 if ( VERB>0 ){ System.out.println("Waiting for data packet from openBCI."); }
 					 try { 
 						  openBCI.read();
 					 } catch (Exception e){ // Catch all exceptions.. including SerialPortException

@@ -119,12 +119,14 @@ class OpenBCI_ADS1299 {
 		  serial_openBCI = new SerialPort(comPort); //open the com port
 		  // Need to set port parameters....
 		  try { 
+				serial_openBCI.openPort();
 				serial_openBCI.setParams(baud, dataBits, stopBits, parity);
 				serial_openBCI.purgePort(0); // clear anything in the com port's buffer    
 				openBCIPort=comPort;
 				openBCIBaud=baud;
 		  } catch (SerialPortException e){
-				System.err.println("OpenBCI_ADS1299::openSerialPort: Serial exception caught!");
+				System.err.println("OpenBCI_ADS1299::openSerialPort: Serial exception setting parameters:!");
+				System.err.println(e);
 				throw e;
 		  }
 		  changeState(STATE_COMINIT);
@@ -141,18 +143,18 @@ class OpenBCI_ADS1299 {
 		  if (state == STATE_COMINIT) {
 				if ((System.currentTimeMillis() - prevState_millis) > COM_INIT_MSEC) {
 					 //serial_openBCI.writeBytes(command_activates + "\n"); 
-					 changeState(STATE_NORMAL);
 					 try{
+						  changeState(STATE_NORMAL);
 						  startDataTransfer(prefered_datamode);
 					 } catch (SerialPortException e){
+						  changeState(STATE_COMINIT);
 						  System.err.println("OpenBCI_ADS1299::updateState Serial exception caught!");
 						  return -1;
-					 }
-		  
+					 }		  
+					 return 1; // successfull init
 				}
-				return 1;
 		  }
-		  return 0;
+		  return 0; // default to unsuccessfull init
 	 }    
 
 	 int closeSerialPort() {
