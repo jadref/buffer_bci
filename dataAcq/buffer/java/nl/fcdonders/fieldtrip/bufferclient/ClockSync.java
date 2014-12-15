@@ -20,7 +20,9 @@ public class ClockSync {
 	 // Note to make this work reliabily we use a combination of a long averagering interval
 	 // AND a rapid outlier detection to rapidly detect systematic changes which require 
 	 // discarding the memory
-	 //N.B. half-life = log(.5)/log(alpha) .8=3, .9=7, .95=13, .97=22, .98=34, .99=69 seconds
+	 //N.B. half-life = log(.5)/log(alpha) 
+	 //     alpha     = exp(log(.5)/half-life) .8=3, .9=7, .95=13, .97=22, .98=34, .99=69 updates
+ 	 // Summed updates = 1/(1-alpha)
 	 public ClockSync() {this(.97);}  
 	 public ClockSync(double alpha){ 
 		  this.alpha=alpha; 
