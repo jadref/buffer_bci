@@ -164,7 +164,8 @@ class openBCI2ft {
 		  int openBCIsamp=0;  // current sample number in buffer-packet recieved from openBCI
 		  int buffsamp=0; // current sample number in buffer-packet to send to buffer
 		  int buffch=0;   // current channel number in buffer-packet to send to buffer
-		  int numel=0;
+		  int nBlk=0;
+		  int nSamp=0;
 		  int[] buffpacksz = new int[] {nch,buffpacketsize};
 		  double[][] databuff = new double[buffpacketsize][nch];
 		
@@ -199,7 +200,8 @@ class openBCI2ft {
 				if ( VERB>0 ){
 					 if ( System.currentTimeMillis()-updateT > 10*1000 ) {
 						  updateT=System.currentTimeMillis();
-						  System.out.print((float)(System.currentTimeMillis()-startT)/1000.0 + "," + buffsamp + "\r");
+						  System.out.print((float)(System.currentTimeMillis()-startT)/1000.0 
+												 + "," + nSamp + "," + nBlk + "\r");
 					 }
 				}
 
@@ -217,7 +219,9 @@ class openBCI2ft {
 						  }
 					 }
 					 buffsamp=0;
+					 nBlk++;
 				}
+				nSamp++;
 		  }
 		  // should cleanup correctly... but java doesn't allow unreachable code..
 		  // C.disconnect();
