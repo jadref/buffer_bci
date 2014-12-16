@@ -1,0 +1,3865 @@
+ <!DOCTYPE html>
+<html>
+<head>
+ <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+ <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" >
+ 
+ <meta name="ROBOTS" content="NOARCHIVE">
+ 
+ <link rel="icon" type="image/vnd.microsoft.icon" href="https://ssl.gstatic.com/codesite/ph/images/phosting.ico">
+ 
+ 
+ <link rel="canonical" href="https://code.google.com/p/java-simple-serial-connector/wiki/jSSC_examples" />
+ 
+ <script type="text/javascript">
+ 
+ 
+ 
+ 
+ var codesite_token = "ABZ6GAfgVl3E5F_gYwgcgiuGb6k5q0toTw:1418659926357";
+ 
+ 
+ var CS_env = {"assetHostPath": "https://ssl.gstatic.com/codesite/ph", "domainName": null, "profileUrl": "/u/107166564761719909261/", "projectHomeUrl": "/p/java-simple-serial-connector", "token": "ABZ6GAfgVl3E5F_gYwgcgiuGb6k5q0toTw:1418659926357", "relativeBaseUrl": "", "loggedInUserEmail": "jadref@gmail.com", "assetVersionPath": "https://ssl.gstatic.com/codesite/ph/1729405847801014513", "projectName": "java-simple-serial-connector"};
+ var _gaq = _gaq || [];
+ _gaq.push(
+ ['siteTracker._setAccount', 'UA-18071-1'],
+ ['siteTracker._trackPageview']);
+ 
+ _gaq.push(
+ ['projectTracker._setAccount', 'UA-21628608-1'],
+ ['projectTracker._trackPageview']);
+ 
+ (function() {
+ var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+ ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+ (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ga);
+ })();
+ 
+ </script>
+ 
+ 
+ <title>jSSC_examples - 
+ java-simple-serial-connector -
+ 
+ 
+ jSSC - java serial port communication library - Google Project Hosting
+ </title>
+ <link type="text/css" rel="stylesheet" href="https://ssl.gstatic.com/codesite/ph/1729405847801014513/css/core.css">
+ 
+ <link type="text/css" rel="stylesheet" href="https://ssl.gstatic.com/codesite/ph/1729405847801014513/css/ph_detail.css" >
+ 
+ 
+ 
+ <link type="application/atom+xml" rel="alternate" href="/feeds/p/java-simple-serial-connector/svnchanges/basic?path=/wiki/jSSC_examples.wiki">
+ 
+ 
+<!--[if IE]>
+ <link type="text/css" rel="stylesheet" href="https://ssl.gstatic.com/codesite/ph/1729405847801014513/css/d_ie.css" >
+<![endif]-->
+ <style type="text/css">
+ .menuIcon.off { background: no-repeat url(https://ssl.gstatic.com/codesite/ph/images/dropdown_sprite.gif) 0 -42px }
+ .menuIcon.on { background: no-repeat url(https://ssl.gstatic.com/codesite/ph/images/dropdown_sprite.gif) 0 -28px }
+ .menuIcon.down { background: no-repeat url(https://ssl.gstatic.com/codesite/ph/images/dropdown_sprite.gif) 0 0; }
+ 
+ 
+ #maincol {
+ padding-top: 0;
+ padding-bottom: 0;
+ }
+
+ 
+ </style>
+</head>
+<body class="t6">
+<script type="text/javascript">
+ window.___gcfg = {lang: 'en'};
+ (function() 
+ {var po = document.createElement("script");
+ po.type = "text/javascript"; po.async = true;po.src = "https://apis.google.com/js/plusone.js";
+ var s = document.getElementsByTagName("script")[0];
+ s.parentNode.insertBefore(po, s);
+ })();
+</script>
+<div class="headbg">
+
+ <div id="gaia">
+ 
+
+ <span>
+ 
+ 
+ 
+ <a href="#" id="multilogin-dropdown" onclick="return false;"
+ ><u><b>jadref@gmail.com</b></u> <small>&#9660;</small></a>
+ 
+ 
+ | <a href="/u/107166564761719909261/" id="projects-dropdown" onclick="return false;"
+ ><u>My favorites</u> <small>&#9660;</small></a>
+ | <a href="/u/107166564761719909261/" onclick="_CS_click('/gb/ph/profile');"
+ title="Profile, Updates, and Settings"
+ ><u>Profile</u></a>
+ | <a href="https://www.google.com/accounts/Logout?continue=https%3A%2F%2Fcode.google.com%2Fp%2Fjava-simple-serial-connector%2Fwiki%2FjSSC_examples" 
+ onclick="_CS_click('/gb/ph/signout');"
+ ><u>Sign out</u></a>
+ 
+ </span>
+
+ </div>
+
+ <div class="gbh" style="left: 0pt;"></div>
+ <div class="gbh" style="right: 0pt;"></div>
+ 
+ 
+ <div style="height: 1px"></div>
+<!--[if lte IE 7]>
+<div style="text-align:center;">
+Your version of Internet Explorer is not supported. Try a browser that
+contributes to open source, such as <a href="http://www.firefox.com">Firefox</a>,
+<a href="http://www.google.com/chrome">Google Chrome</a>, or
+<a href="http://code.google.com/chrome/chromeframe/">Google Chrome Frame</a>.
+</div>
+<![endif]-->
+
+
+
+ <table style="padding:0px; margin: 0px 0px 10px 0px; width:100%" cellpadding="0" cellspacing="0"
+ itemscope itemtype="http://schema.org/CreativeWork">
+ <tr style="height: 58px;">
+ 
+ 
+ 
+ <td id="plogo">
+ <link itemprop="url" href="/p/java-simple-serial-connector">
+ <a href="/p/java-simple-serial-connector/">
+ 
+ <img src="https://ssl.gstatic.com/codesite/ph/images/defaultlogo.png" alt="Logo" itemprop="image">
+ 
+ </a>
+ </td>
+ 
+ <td style="padding-left: 0.5em">
+ 
+ <div id="pname">
+ <a href="/p/java-simple-serial-connector/"><span itemprop="name">java-simple-serial-connector</span></a>
+ </div>
+ 
+ <div id="psum">
+ <a id="project_summary_link"
+ href="/p/java-simple-serial-connector/"><span itemprop="description">jSSC - java serial port communication library</span></a>
+ 
+ </div>
+ 
+ 
+ </td>
+ <td style="white-space:nowrap;text-align:right; vertical-align:bottom;">
+ 
+ <form action="/hosting/search">
+ <input size="30" name="q" value="" type="text">
+ 
+ <input type="submit" name="projectsearch" value="Search projects" >
+ </form>
+ 
+ </tr>
+ </table>
+
+</div>
+
+ 
+<div id="mt" class="gtb"> 
+ <a href="/p/java-simple-serial-connector/" class="tab ">Project&nbsp;Home</a>
+ 
+ 
+ 
+ 
+ <a href="/p/java-simple-serial-connector/downloads/list" class="tab ">Downloads</a>
+ 
+ 
+ 
+ 
+ 
+ <a href="/p/java-simple-serial-connector/w/list" class="tab active">Wiki</a>
+ 
+ 
+ 
+ 
+ 
+ <a href="/p/java-simple-serial-connector/issues/list"
+ class="tab ">Issues</a>
+ 
+ 
+ 
+ 
+ 
+ <a href="/p/java-simple-serial-connector/source/checkout"
+ class="tab ">Source</a>
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ <div class=gtbc></div>
+</div>
+<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0" class="st">
+ <tr>
+ 
+ 
+ 
+ <td class="subt">
+ <div class="issueDetail">
+<div class="isf">
+ 
+ <span class="inIssueList"> 
+ <span>Search</span>
+ <form action="/p/java-simple-serial-connector/w/list" method="GET" style="display:inline">
+ <select id="can" name="can" >
+ <option disabled="disabled">Search within:</option>
+ 
+ <option value="1" >&nbsp;All wiki pages</option>
+ <option value="3" >&nbsp;Featured pages</option>
+ <option value="2" selected="selected">&nbsp;Current pages</option>
+ 
+ 
+ <option value="5" >&nbsp;My starred pages</option>
+ 
+ <option value="4" >&nbsp;Deprecated pages</option>
+ 
+ </select>
+ <span>for</span>
+ <span id="qq"><input type="text" size="38" id="searchq" name="q" value=""
+ autocomplete="off" ></span>
+ 
+ 
+ 
+ <input type="submit" value="Search" >
+ </form>
+ </span>
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+</div>
+</div>
+
+ </td>
+ 
+ 
+ 
+ 
+ 
+ 
+ <td align="right" valign="top" class="bevel-right"></td>
+ </tr>
+</table>
+
+
+<script type="text/javascript">
+ var cancelBubble = false;
+ function _go(url) { document.location = url; }
+</script>
+<div id="maincol"
+ 
+>
+
+ 
+
+
+
+
+
+
+
+ <style type="text/css">
+ .delcom { background: #e8e8e8 }
+ .commentcontent {
+ margin: 2em;
+ padding: 0px 10px;
+ width: 66em;
+ }
+ .artifactcomment {
+ border-top: 3px solid #c3d9ff;
+ }
+ #commentform {
+ border-top: 3px solid #c3d9ff;
+ }
+ </style>
+
+<div id="wikipage">
+<table>
+ <tr>
+ 
+ 
+ <td style="vertical-align:top; padding-left:5px">
+ 
+ <div id="wikiheader">
+ 
+ <img width="15" height="15" id="star_img"
+ src="https://ssl.gstatic.com/codesite/ph/images/star_off.gif"
+ style="cursor:pointer"
+ onclick="_CS_toggleStar(this,
+ {'scope': 'wiki',
+ 'user': '_CURRENT_USER',
+ 'item': 'java-simple-serial-connector:jSSC_examples'
+ });"/>
+ 
+ <span style="font-size:120%;font-weight:bold">jSSC_examples</span>
+ &nbsp;
+ <div> 
+ 
+ 
+ 
+ <div id="wikiauthor" style="float:right">
+ Updated <span title="Sun Sep 26 23:34:45 2010">
+ Sep 26, 2010</span>
+ 
+ by 
+
+ <a class="userlink"
+ href="/u/scream3r.org@gmail.com/">scream3r.org@gmail.com</a
+>
+ 
+ </div>
+ </div>
+ </div>
+ 
+ <div id="wikicontent">
+ <div class="vt" id="wikimaincol">
+ <h1><a name="jSSC-0.7_examples"></a>jSSC-0.7 examples<a href="#jSSC-0.7_examples" class="section_anchor"></a></h1><h2><a name="Getting_serial_ports_names"></a>Getting serial ports names<a href="#Getting_serial_ports_names" class="section_anchor"></a></h2><pre class="prettyprint">
+import jssc.SerialPortList;
+
+public class Main {
+   
+    public static void main(String[] args) {
+        String[] portNames = SerialPortList.getPortNames();
+        for(int i = 0; i &lt; portNames.length; i++){
+            System.out.println(portNames[i]);
+        }
+    }
+}
+</pre><h2><a name="Writing_data_to_serial_port"></a>Writing data to serial port<a href="#Writing_data_to_serial_port" class="section_anchor"></a></h2><pre class="prettyprint">
+import jssc.SerialPort;
+import jssc.SerialPortException;
+
+public class Main {
+
+    public static void main(String[] args) {
+        SerialPort serialPort = new SerialPort(&quot;COM1&quot;);
+        try {
+            serialPort.openPort();//Open serial port
+            serialPort.setParams(SerialPort.BAUDRATE_9600, 
+                                 SerialPort.DATABITS_8,
+                                 SerialPort.STOPBITS_1,
+                                 SerialPort.PARITY_NONE);//Set params. Also you can set params by this string: serialPort.setParams(9600, 8, 1, 0);
+            serialPort.writeBytes(&quot;This is a test string&quot;.getBytes());//Write data to port
+            serialPort.closePort();//Close serial port
+        }
+        catch (SerialPortException ex) {
+            System.out.println(ex);
+        }
+    }
+}
+</pre><h2><a name="Reading_data_from_serial_port"></a>Reading data from serial port<a href="#Reading_data_from_serial_port" class="section_anchor"></a></h2><pre class="prettyprint">
+import jssc.SerialPort;
+import jssc.SerialPortException;
+
+public class Main {
+
+    public static void main(String[] args) {
+        SerialPort serialPort = new SerialPort(&quot;COM1&quot;);
+        try {
+            serialPort.openPort();//Open serial port
+            serialPort.setParams(9600, 8, 1, 0);//Set params.
+            byte[] buffer = serialPort.readBytes(10);//Read 10 bytes from serial port
+            serialPort.closePort();//Close serial port
+        }
+        catch (SerialPortException ex) {
+            System.out.println(ex);
+        }
+    }
+}
+</pre><h2><a name="Event_mask_&amp;_interface"></a>Event mask &amp; <strong>SerialPortEventListener</strong> interface<a href="#Event_mask_&amp;_interface" class="section_anchor"></a></h2><h4><a name="Note:_The_mask_is_an_additive_quantity,_thus_to_set_a_mask_on_th"></a>Note: The mask is an additive quantity, thus to set a mask on the expectation of the arrival of Event Data (MASK_RXCHAR) and change the status lines CTS (MASK_CTS), DSR (MASK_DSR) we just need to combine all three masks.<a href="#Note:_The_mask_is_an_additive_quantity,_thus_to_set_a_mask_on_th" class="section_anchor"></a></h4><pre class="prettyprint">
+import jssc.SerialPort;
+import jssc.SerialPortEvent;
+import jssc.SerialPortEventListener;
+import jssc.SerialPortException;
+
+public class Main {
+
+    static SerialPort serialPort;
+
+    public static void main(String[] args) {
+        serialPort = new SerialPort(&quot;COM1&quot;); 
+        try {
+            serialPort.openPort();//Open port
+            serialPort.setParams(9600, 8, 1, 0);//Set params
+            int mask = SerialPort.MASK_RXCHAR + SerialPort.MASK_CTS + SerialPort.MASK_DSR;//Prepare mask
+            serialPort.setEventsMask(mask);//Set mask
+            serialPort.addEventListener(new SerialPortReader());//Add SerialPortEventListener
+        }
+        catch (SerialPortException ex) {
+            System.out.println(ex);
+        }
+    }
+    
+    /*
+     * In this class must implement the method serialEvent, through it we learn about 
+     * events that happened to our port. But we will not report on all events but only 
+     * those that we put in the mask. In this case the arrival of the data and change the 
+     * status lines CTS and DSR
+     */
+    static class SerialPortReader implements SerialPortEventListener {
+
+        public void serialEvent(SerialPortEvent event) {
+            if(event.isRXCHAR()){//If data is available
+                if(event.getEventValue() == 10){//Check bytes count in the input buffer
+                    //Read data, if 10 bytes available 
+                    try {
+                        byte buffer[] = serialPort.readBytes(10);
+                    }
+                    catch (SerialPortException ex) {
+                        System.out.println(ex);
+                    }
+                }
+            }
+            else if(event.isCTS()){//If CTS line has changed state
+                if(event.getEventValue() == 1){//If line is ON
+                    System.out.println(&quot;CTS - ON&quot;);
+                }
+                else {
+                    System.out.println(&quot;CTS - OFF&quot;);
+                }
+            }
+            else if(event.isDSR()){///If DSR line has changed state
+                if(event.getEventValue() == 1){//If line is ON
+                    System.out.println(&quot;DSR - ON&quot;);
+                }
+                else {
+                    System.out.println(&quot;DSR - OFF&quot;);
+                }
+            }
+        }
+    }
+}
+</pre>
+ </div>
+ </div>
+ </td><tr>
+</table>
+ </div>
+
+
+ 
+ <div id="wikicommentcol">
+ 
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+<div class="collapse">
+
+
+ 
+
+
+<div id="commentlist">
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/102627081039602321862/">developp...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Tue Jan  3 13:27:19 2012">Jan 3, 2012</span>
+ <div>
+<div class="commentcontent">
+<p>Hello, really a great work, but I think that there is some problemes with windows, when I use my own dll written in C it works better but I compile hence :(MinGW) gcc  -O2 -IF:\jdk1.6.0_27\include  -IF:\jdk1.6.0_27\include\win32  -shared serial.c  -o Serial.dll -Wl,--subsystem,windows,--kill-at </p><p>I&#x27;ll try the same with g++ to see, with jssc using mingw. </p><p>I don&#x27;t think that the C++ is the probleme but I can&#x27;t find why . </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/114174183561562456599/">travis.t...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Sat Feb 18 11:14:27 2012">Feb 18, 2012</span>
+ <div>
+<div class="commentcontent">
+<p>It looks like selecting the port name happens only when creating the instance of the object. Is there a good method to change the port name after closing the port without creating a new instance.  </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by  project member 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/scream3r.org@gmail.com/">scream3r.org@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Sun Feb 19 09:56:34 2012">Feb 19, 2012</span>
+ <div>
+<div class="commentcontent">
+<p>There is no way for doing it. Only create new object. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/102866764965428862212/">dier...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Wed Apr  4 09:10:23 2012">Apr 4, 2012</span>
+ <div>
+<div class="commentcontent">
+<p>I have test the library and works so so so fine! Thanks to the developers!!! </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/102866764965428862212/">dier...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Fri Apr  6 15:05:00 2012">Apr 6, 2012</span>
+ <div>
+<div class="commentcontent">
+<p>Hello! I am developing an application that reads SMS from a GSM modem. When receiving an SMS that contains any other letter that is not contained in the English alphabet then produces an output very rare. For example: </p><p>- If you receive an SMS with the text &quot;Holá&quot; produces the following output: </p><pre class="prettyprint">+CMGL: 1,&quot;REC UNREAD&quot;,&quot;+543513931161&quot;,&quot;&quot;,&quot;12/04/06,18:43:27-12&quot;
+0048006F006C00E1</pre><p>In other words, becomes &quot;Holá&quot; in &quot;0048006F006C00E1&quot;. To read text from the USB port COM I used the source code is available here, with a tiny modification: </p><pre class="prettyprint">	if (event.isRXCHAR()) {// If data is available
+
+		try {
+			final byte buffer[] = sp.readBytes(event.getEventValue());
+			final String readed = new String(buffer);
+
+			System.out.println(&quot;««Readed from COM&quot; + commPort + &quot;: &quot; + readed);
+
+		} catch (Exception ex) {
+			System.err.println(&quot;EX: &quot; + ex);
+		}
+
+	}</pre><p>Is there any solution for this problem? Thank you very much! </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by  project member 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/scream3r.org@gmail.com/">scream3r.org@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Sun Apr 15 22:48:43 2012">Apr 15, 2012</span>
+ <div>
+<div class="commentcontent">
+<p>As I see this is the feature of your device. Non ASCII sybmols it send like a HEX string of unicode symbols. You need to parse this HEX string and create new string in &quot;UTF-16BE&quot; encoding. For example:  </p><pre class="prettyprint">String s = &quot;0048006F006C00E1&quot;;
+byte byteArray = new byte[s.length()/2];
+for(int i = 0; i &lt; s.length(); i += 2) {
+    byteArray[i/2] = (byte)Integer.parseInt(s.substring(i, i + 2), 16); 
+}
+try {
+    System.out.println(new String(byteArray, &quot;UTF-16BE&quot;)); 
+}
+catch (Exception ex) {
+    ex.printStackTrace(); 
+}</pre><p>Best regards, Sokolov Alexey. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/102866764965428862212/">dier...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Tue Apr 17 18:20:34 2012">Apr 17, 2012</span>
+ <div>
+<div class="commentcontent">
+<p>Alexey Sokolov, thank you very much for your reply. Greetings! </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/102866764965428862212/">dier...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Tue Apr 17 18:23:38 2012">Apr 17, 2012</span>
+ <div>
+<div class="commentcontent">
+<p>A small correction in the following line: </p><pre class="prettyprint">byte byteArray[] = new byte[s.length() / 2];</pre><p>Thanks again Sokolov Alexey!! </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/115255617432748539668/">richlo...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Sat Apr 28 22:49:51 2012">Apr 28, 2012</span>
+ <div>
+<div class="commentcontent">
+<p>Alexey, </p><p>I am trying to use JSSC-Terminal to communicate with a Kantronics KPC-3 terminal node controller. It expects to receive a carriage return to indicate the end of a line.  I tried sending &quot;\r&quot; but it is not recognized by the KPC-3.  How can I append a one byte ascii code for the carriage return character? </p><p>I am new to Java programming and have learned a lot by reviewing your source code. </p><p>Rich </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by  project member 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/scream3r.org@gmail.com/">scream3r.org@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Sun Apr 29 03:14:32 2012">Apr 29, 2012</span>
+ <div>
+<div class="commentcontent">
+<p>Hello Rich. You can send &quot;\r&quot; in HEX with method writeByte((byte)0x0D). For HEX values see ASCII table <a href="http://www.asciitable.com/" rel="nofollow">http://www.asciitable.com/</a> </p><p>Also, are you sure that your device needs only &quot;\r&quot;, most of devices need CR+LF (&quot;\r\n&quot;) </p><p>Regards, Alexey. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/115255617432748539668/">richlo...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Sun Apr 29 08:34:48 2012">Apr 29, 2012</span>
+ <div>
+<div class="commentcontent">
+<p>Alexey, </p><p>Thanks for the info.  I contacted the manufacturer and they said it only needs &quot;\r&quot;. </p><p>Rich </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/115255617432748539668/">richlo...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Sun Apr 29 09:43:46 2012">Apr 29, 2012</span>
+ <div>
+<div class="commentcontent">
+<p>Alexey, </p><p>I tried using serialPort.writeByte(byte(0x0D)); and Java was not happy with that.  Do I have to define a variable first with a value of 0x0D and then reference that in the method? I am learning Java the hard way and must apologize for my simple question. </p><p>Rich </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by  project member 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/scream3r.org@gmail.com/">scream3r.org@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Sun Apr 29 09:51:03 2012">Apr 29, 2012</span>
+ <div>
+<div class="commentcontent">
+<p>byte(0x0D)is not correct, you should write (byte)0x0D </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/115618370587182246221/">andreas....@voxtronic.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Sun May 13 08:17:53 2012">May 13, 2012</span>
+ <div>
+<div class="commentcontent">
+<p>Hi, can you provide me the command line to use to compile the windows version (e.g. with mingw)? </p><p>BTW, I&#x27;m interested if this code works save (taken from windows version 0.9): </p><blockquote>char prefix<a href=""></a> = &quot;\\\\.\\&quot;; 
+const char<strong> port = env-&gt;GetStringUTFChars(portName, JNI_FALSE); 
+strcat(prefix, port); 
+</blockquote><p>Isn&#x27;t &quot;strncat&quot; overwriting the string constant in an unsafe manner? IMHO should look like this: </strong></p><blockquote>char prefix+ 1<a href="/p/java-simple-serial-connector/w/edit/1024">?</a> = &quot;\\\\.\\&quot;; 
+const char<strong> port = env-&gt;GetStringUTFChars(portName, JNI_FALSE); 
+strncat(prefix, port, sizeof(prefix - 1)); 
+prefix[sizeof(prefix - 1)] = &#x27;\0&#x27;; 
+</blockquote><p>maybe I&#x27;m wrong ;-) </strong></p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/115945949995105587613/">9w2...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Wed Oct  3 18:23:26 2012">Oct 3, 2012</span>
+ <div>
+<div class="commentcontent">
+<p>great job! how can i integrate this to read from website? </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/105948281039149169135/">gautamli...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Thu Jan 10 23:33:26 2013">Jan 10, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Writing data to serial port : How to integrate this code into Web Page Applet Tag. Please Help </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/115142936096019301577/">m...@ai-solution.pl</a
+>,
+ 
+ </span>
+ <span class="date" title="Tue Feb 19 13:12:30 2013">Feb 19, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>This library is great! Thanks Alex! </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ 
+ <span class="userlink">ahsen.as...@gmail.com</span>,
+ 
+ </span>
+ <span class="date" title="Tue Feb 26 05:07:33 2013">Feb 26, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Hi, I wanted to read data from the serial port (RS232), is it possible to use your code? If yes, then could you please guide me how to. I would really appreciate your kind help. Ahsen </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by  project member 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/scream3r.org@gmail.com/">scream3r.org@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Tue Feb 26 20:42:57 2013">Feb 26, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Please read the code examples on this page, they contains all needed for you information. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ 
+ <span class="userlink">ShobhitT...@gmail.com</span>,
+ 
+ </span>
+ <span class="date" title="Sun Mar  3 16:44:37 2013">Mar 3, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>serialPort.writeBytes(&quot;test&quot;.getBytes()); this is not working when used with arduino. plzzz help!!!! </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by  project member 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/scream3r.org@gmail.com/">scream3r.org@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Sun Mar  3 20:45:21 2013">Mar 3, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>All methods are working, please provide additional information: </p><p>1. Your OS 2. Java version 3. Source code </p><p>And check that you have selected correct serial port params for your Arduino board. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ 
+ <span class="userlink">ShobhitT...@gmail.com</span>,
+ 
+ </span>
+ <span class="date" title="Mon Mar  4 03:33:48 2013">Mar 4, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>1. os=&gt;window7 </p><p>2. JDK 7 </p><p>3. Source Code:  </p><p>import jssc.SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>; import jssc.SerialPortException<a href="/p/java-simple-serial-connector/w/edit/SerialPortException">?</a>; import java.math.<strong>; import java.io.</strong>; </p><p>public class Reader  { </p><blockquote>public static void main(String<a href=""></a> args) { 
+<blockquote>SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a> serialPort = new SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>(&quot;COM3&quot;); 
+String str = &quot;TEST&quot;; 
+try { 
+<blockquote>serialPort.openPort();//Open serial port 
+//serialPort.setParams(9600, 8, 1, 0); 
+serialPort.setParams(SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.BAUDRATE_9600,  
+<blockquote>SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.DATABITS_8, 
+SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.STOPBITS_1, 
+SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.PARITY_NONE); 
+</blockquote>try { 
+<blockquote>serialPort.writeBytes(str.getBytes()); 
+} 
+</blockquote><blockquote>catch (Exception ex) { 
+<blockquote>//Do Nothing 
+</blockquote><blockquote>} 
+</blockquote></blockquote>System.out.println(serialPort.writeBytes(str.getBytes())); 
+File f = new File (&quot;Data.txt&quot;); 
+</blockquote></blockquote></blockquote><p>        	 <blockquote>FileWriter<a href="/p/java-simple-serial-connector/w/edit/FileWriter">?</a> fos = new FileWriter<a href="/p/java-simple-serial-connector/w/edit/FileWriter">?</a>(f);   	 
+<blockquote>byte<a href=""></a> buffer = serialPort.readBytes(10);//Read 10 bytes from serial port 
+</blockquote></blockquote>        	 <blockquote>String s = new String(buffer); 
+</blockquote><blockquote>System.out.println(s); 
+fos.write(s);    		 
+</blockquote>           <blockquote>serialPort.closePort();//Close serial port 
+fos.close(); 
+</blockquote><blockquote>} 
+catch(Exception e) 
+</blockquote><blockquote>{ 
+<blockquote>e.printStackTrace(); 
+</blockquote>} 
+</blockquote><blockquote>} 
+</blockquote>} </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ 
+ <span class="userlink">ShobhitT...@gmail.com</span>,
+ 
+ </span>
+ <span class="date" title="Mon Mar  4 03:39:15 2013">Mar 4, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>int ledpin = 13;  void setup()  { </p><p>//Create Serial Port  Serial.begin(9600);  pinMode( ledpin, OUTPUT); } int i=0;  void loop()  { Serial.begin(9600);  if(i&gt;=30000) i=0; //Have arduino Wait to recieve i/p  while (Serial.available() == 0);  int val =Serial.readBytes(); Serial.println(&quot;ledstate&quot;);  digitalWrite(ledpin, HIGH); delay(15); Serial.end(); } </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/101266650936947950951/">justinbr...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Mon Mar  4 18:43:47 2013">Mar 4, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>ShobhitT...@gmail.com, I believe I have seen the same problem and know of a solution. For whatever reason the set params function (e.g. serialPort.setParams(9600, 8, 1, 0); ) restarts the arduino. You can tell because the L led blinks three times. To fix the problem, just give your program time for the arduino to restart before you try to write to it. Tell you java program to sleep for 4 seconds or so. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by  project member 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/scream3r.org@gmail.com/">scream3r.org@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Mon Mar  4 20:51:30 2013">Mar 4, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Arduino restarts then you change state of RTS or DTR line. Then you open port system setup these lines and your board restarts. For more information read &quot;Automatic (Software) Reset&quot; here: <a href="http://arduino.cc/en/Main/arduinoBoardDuemilanove" rel="nofollow">http://arduino.cc/en/Main/arduinoBoardDuemilanove</a> </p><p>For making your code working try to instert delay before &quot;serialPort.writeBytes(str.getBytes());&quot;, for example Thread.sleep(5000), how said justinbrowe. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ 
+ <span class="userlink">ShobhitT...@gmail.com</span>,
+ 
+ </span>
+ <span class="date" title="Wed Mar  6 08:03:26 2013">Mar 6, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>it worked...!!! Thanx guys... </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/110692057514222531795/">alessand...@progettoedp.it</a
+>,
+ 
+ </span>
+ <span class="date" title="Thu Mar 14 01:35:11 2013">Mar 14, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Real great work my friend!!! Thank you so much </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/110692057514222531795/">alessand...@progettoedp.it</a
+>,
+ 
+ </span>
+ <span class="date" title="Thu Mar 14 02:22:03 2013">Mar 14, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Exscuse me guys. When i buffered my string back from serialPort i get strange bytes. What can be my problem?  </p><p>serialPort.openPort(); serialPort.setParams(9600, 8, 1, 0); </p><p>byte buffer<a href=""></a> = serialPort.readBytes(10); String s = new String(buffer); System.out.println(s);  </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/101326987180211265231/">ahmetbug...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Mon Apr  1 04:08:19 2013">Apr 1, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Sorry Guys However I could not work it , because eclipse didnt find jssc&#x27;s library ,  i think there is a mistake , how can I Use this library for win32 , please help me  </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ 
+ <span class="userlink">e...@infoflow.co.id</span>,
+ 
+ </span>
+ <span class="date" title="Tue Apr  2 21:31:10 2013">Apr 2, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>how to integrate this library in order that can send sms via modem? </p><p>Thanks </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/111289689022662039520/">ezequiel...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Tue Apr 30 04:57:02 2013">Apr 30, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Alexey, how can detect the parity of each readed byte? even, odd, mark or space? </p><p>Thanks,  Ezequiel </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/101350351750974055721/">pus...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Tue May  7 10:17:45 2013">May 7, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>nice work! seems to work faster than rxtx library! </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/110615539743163570958/">abbra...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Wed May 22 01:14:31 2013">May 22, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Hello, I have a problem when i use the methode readString(), i receive all the imput buffer (like it said in doc) but my problem is that i receive all the sends from the begining of connection and not only the last. So my question is : how can i clean the imput buffer? I tried purgePort() but it done nothing. OS : Windows XP JDK 6 Thank you! </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/110615539743163570958/">abbra...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Wed May 22 02:54:23 2013">May 22, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>It seems i have some garbage reading from another application in fact... </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/101652156202044982754/">3ah...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Wed May 29 03:14:44 2013">May 29, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>what is the differences between  </p><p>IOCTL_SERIAL_GET_MODEMSTATUS: Retrieve modem status And  IOCTL_SERIAL_GET_COMMSTATUS: Retrieve COM status </p><hr/><p>i want to read daa from com port with the example in this page when i sniff the port a have the first message and i dont get any information from the device but when i une an other program i have the second message i i receive data  </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/104697139215334622617/">cbenav...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Mon Jun  3 02:59:19 2013">Jun 3, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Right now i am using RXTX to perform read/write of data between my app and device over serial port. I am looking some API which allows me to transfer files ( ~100MB ) over serial port. </p><p>Does this jSSC provide capabilities to transfer a file to device over serial port?  </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by  project member 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/scream3r.org@gmail.com/">scream3r.org@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Mon Jun  3 03:12:20 2013">Jun 3, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>jSSC provide only the serial port API, but you can write your own wrapper for transferring files. It&#x27;s not to difficult. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/112072098720409423253/">eds...@bysat.com.br</a
+>,
+ 
+ </span>
+ <span class="date" title="Sat Jun 22 07:50:21 2013">Jun 22, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>With this library it is possible to get a notification that the converter USB / Serial was removed? </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/blogicalbmath@gmail.com/">blogicalbmath@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Tue Jul  9 02:49:03 2013">Jul 9, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>I have followed the listener example...I&#x27;m getting strange strings back from the modem with my program issue an AT command. I would expected &quot;OK&quot; reply. Instead I got &quot;k=}&quot; instead. Any idea? Here&#x27;s the code to send an AT command. The default charset is &quot;UTF-8&quot;. What am I doing wrong?  </p><p>// sending an AT command int mask = SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.MASK_RXCHAR + SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.MASK_CTS + SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.MASK_DSR; serialPort.setEventsMask(mask); serialPort.addEventListener(new SerialPortReader<a href="/p/java-simple-serial-connector/w/edit/SerialPortReader">?</a>()); serialPort.writeBytes(&quot;AT\r\n&quot;.getBytes(Charset.defaultCharset())); </p><blockquote>// reading from the listener 
+if(event.isRXCHAR()){//If data is available 
+<blockquote>try { 
+<blockquote>byte<a href=""></a> buffer = serialPort.readBytes(event.getEventValue()); 
+System.out.print(new String(buffer)); 
+</blockquote></blockquote></blockquote><p>... </p><p>output: k=} </p><p>How does jSSC detect the modem&#x27;s character encoding? Or is a way to tell the modem which encoding to use? Thank you. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ 
+ <span class="userlink">MaulanaK...@gmail.com</span>,
+ 
+ </span>
+ <span class="date" title="Sun Jul 14 15:53:37 2013">Jul 14, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Hi there,  I tried to use your applet with web page, I followed your example how to embed the code inside web page, but no luck. nothing appear. am I miss something? I tried with jsp  thanks before  </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ 
+ <span class="userlink">carlospa...@gmail.com</span>,
+ 
+ </span>
+ <span class="date" title="Fri Jul 26 10:58:50 2013">Jul 26, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Hi, I am trying to communicate with an rfid reader using hexadecimal sequences : </p><blockquote>SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a> serialPort = new SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>(&quot;COM3&quot;); 
+<blockquote>try { 
+<blockquote>serialPort.openPort();//Open serial port 
+serialPort.setParams(SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.BAUDRATE_9600,  
+<blockquote>SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.DATABITS_8, 
+SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.STOPBITS_1, 
+SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.PARITY_NONE); 
+</blockquote><blockquote>serialPort.setParams(9600, 8, 1, 0); 
+</blockquote></blockquote></blockquote></blockquote><p>	           <blockquote>serialPort.writeByte((byte)0x0A); 
+serialPort.writeByte((byte)0x09); 
+serialPort.writeByte((byte)0x81); 
+serialPort.writeByte((byte)0x00); 
+serialPort.writeByte((byte)0x00); 
+serialPort.writeByte((byte)0x01); 
+serialPort.writeByte((byte)0x02); 
+serialPort.writeByte((byte)0x01); 
+serialPort.writeByte((byte)0x12); 
+serialPort.writeByte((byte)0x34); 
+serialPort.writeByte((byte)0x8C); 
+</blockquote>	        	             <blockquote>byte<a href=""></a> buffer = serialPort.readBytes(10); 
+System.out.println(buffer); 
+serialPort.closePort();//Close serial port 
+</blockquote><blockquote>} 
+catch (SerialPortException<a href="/p/java-simple-serial-connector/w/edit/SerialPortException">?</a> ex) { 
+<blockquote>System.out.println(ex); 
+</blockquote>} 
+</blockquote>I am awaiting for the answer (an hexa sequence) but i always get an exception that says that the port is busy, is there a way to send a message and then wait for the answer? do I need to close the port and re-open it in order to read the answer? </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/100067338105339344944/">eduardo....@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Wed Aug 14 07:03:14 2013">Aug 14, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Hi, Im trying to receive data on the serial port through the listener method of the jSSC library. It happens that when I try to read bytes I get always the java.NullpointerException<a href="/p/java-simple-serial-connector/w/edit/NullpointerException">?</a> that means that something is wrong with the byte array. I tried different code configuration, even to receive a single byte but it keeps throuwing the same exception. The code is this: </p><blockquote>static class SerialPortReader<a href="/p/java-simple-serial-connector/w/edit/SerialPortReader">?</a> implements SerialPortEventListener<a href="/p/java-simple-serial-connector/w/edit/SerialPortEventListener">?</a>  
+{ 
+</blockquote><blockquote>public void serialEvent(SerialPortEvent<a href="/p/java-simple-serial-connector/w/edit/SerialPortEvent">?</a> event)  
+{ 
+<blockquote>if(event.isRXCHAR())	//If data is available 
+{ 
+<blockquote>if(event.getEventValue() == 1) 
+{//Check bytes count in the input buffer 
+<blockquote>//Read data, if 10 bytes available  
+try  
+{ 
+<blockquote>byte buffer<a href=""></a> = serialPort.readBytes(1); 
+System.out.println(&quot;&quot; + buffer); 
+</blockquote>} 
+catch (SerialPortException<a href="/p/java-simple-serial-connector/w/edit/SerialPortException">?</a> ex)  
+{ 
+<blockquote>System.out.println(ex); 
+</blockquote>} 
+</blockquote><blockquote>}  
+</blockquote></blockquote>} 
+</blockquote>} 
+</blockquote><blockquote>} 
+</blockquote><p>  </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/109667323430059621889/">alim.s.a...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Wed Aug 21 06:56:56 2013">Aug 21, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Sorry for my stupid question and bad English. </p><p>I can&#x27;t understand, when end how the listener is executed. Whether is it executed just when the event has happened in a separate thread or is it executed in the same thread but when some SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>&#x27;s method is called? </p><p>Thank you in advance! </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ 
+ <span class="userlink">carlospa...@gmail.com</span>,
+ 
+ </span>
+ <span class="date" title="Fri Aug 23 09:19:02 2013">Aug 23, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Is there a method for stopping the execution of the listener and closing the port?  </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/113957878223032882091/">dennis.v...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Fri Oct  4 00:00:39 2013">Oct 4, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>there is no 2400 baud constant. Does this mean i can not use 2400 baud? </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by  project member 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/scream3r.org@gmail.com/">scream3r.org@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Fri Oct  4 00:11:44 2013">Oct 4, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>You can use 2400 baudrate. Also you can use any non standart baurates, that your system supports. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/tobiascapin/">tobiascapin</a
+>,
+ 
+ </span>
+ <span class="date" title="Sun Oct 20 23:48:37 2013">Oct 20, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Hi, if I need a software flow control (XON/XOFF) may I just set serialPort.setFlowControlMode(SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.FLOWCONTROL_XONXOFF_IN | SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.FLOWCONTROL_XONXOFF_OUT) or I had to manage it in my application? I have some trouble with long serial transimission that fills the receiver buffer, but seems that both tx and rx are set with xon/xoff flow control. Do you have a suggestion for me? Thanks. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/103598204551166599319/">carlostd...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Mon Oct 21 15:10:07 2013">Oct 21, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Hi, I need to implements RTS signal, I paste my code below, the problem is RTS not active after the last line </p><p>try { <blockquote>System.out.println(&quot;Port name: &quot;   + serialPort.getPortName()); 
+System.out.println(&quot;Port opened: &quot; + serialPort.openPort()); 
+System.out.println(&quot;Params setted: &quot; + serialPort.setParams(9600, 8, 1, 0)); 
+System.out.println(&quot;Set Flow Control Mode setted: &quot; + serialPort.setFlowControlMode(1 | 2)); 
+</blockquote>             <blockquote>System.out.println(&quot;Get Flow Control Mode: &quot; + serialPort.getFlowControlMode()); 
+</blockquote></p><blockquote>System.out.println(&quot;RTS signal: &quot; + serialPort.setRTS(true)); 
+</blockquote><blockquote>} 
+</blockquote><p>The result is FALSE and a led that I connected through a MAX232 does not light never. After that the next line is not executed and the soft stop: </p><p>System.out.println(&quot;Sending: &quot; + serialPort.writeInt(datoRX)); </p><p>I really appreciate any help. Thanks. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by  project member 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/scream3r.org@gmail.com/">scream3r.org@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Tue Oct 22 01:33:31 2013">Oct 22, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>2 carlostdeleon </p><p>While using hardware flow-control you can&#x27;t manage RTS/DTR lines, because they used by serial port driver. These lines will UP-DOWN while sending or reading data. If you need to manage it manually, you should not use &quot;serialPort.setFlowControlMode(1 | 2))&quot; </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/115144749707986399035/">and...@twinlogix.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Tue Oct 22 02:54:52 2013">Oct 22, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Hi, this library seems very usefull but how can I detect that the USB/converter was removed? Thanks! </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/111350252101042066813/">dev...@anavirxinc.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Thu Nov  7 10:42:46 2013">Nov 7, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Hi Can you provide an example of how I write code to purge the port? Thanks </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/103598204551166599319/">carlostd...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Tue Nov 12 15:19:55 2013">Nov 12, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Scream3r, I want to thank you very much for your help and congratulate you because this library works excellent. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ 
+ <span class="userlink">fcarva...@movielismotion.pt</span>,
+ 
+ </span>
+ <span class="date" title="Wed Nov 13 06:37:21 2013">Nov 13, 2013</span>
+ <div>
+<div class="commentcontent">
+<p>Hi, I&#x27;m developing a application that communicates with a Electronic Payment Terminal and I not sure why I don&#x27;t receive any FeedBack<a href="/p/java-simple-serial-connector/w/edit/FeedBack">?</a> from the Terminal... </p><p>So, I can connect with the Terminal and I send data to terminal, but I don&#x27;t receive anything and I&#x27;m not sure if I&#x27;m making something wrong. </p><p>I&#x27;m using your code, sending a byte and waiting for a response (0x06 or 0x15)... But any SerialPortEvent<a href="/p/java-simple-serial-connector/w/edit/SerialPortEvent">?</a> appears to raise. Can you help me? Or tell me a suggestion of debugging...? </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/106296151006835371682/">martin.n...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Thu Jan  2 19:41:34 2014">Jan 2, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>Can this easily support threads for simultaneous send and receive? Thanks. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/105331181943417917864/">nktiwari...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Sun Jan  5 00:57:41 2014">Jan 5, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>Hi Dear all, I,m .net developer Let&#x27;s discuss my purpose and problem from the sketch... </p><p>I&#x27;ve integrated Body Composition analyzer machine for health checkup purpose in .net website and it works fine on my local machine (cpu) but after hosting my website project to the server machine&#x27;s iis whenever i try for a test through live url, The Bca machine is not detecting because it&#x27;s connected to client machine&#x27;s usb port. I know the problem why it&#x27;s happening.....and  To resolve it i tried activex but it&#x27;s working only with IE browser then Now i tried your following applet code inside aspx page(web page) to open client pc port from live url <blockquote>&lt;script src=&quot;http://java.com/js/deployJava.js&quot;&gt;&lt;/script&gt; 
+<blockquote>&lt;script&gt; 
+var attributes = { 
+<blockquote>code:       &quot;applet.Main&quot;, 
+archive:    &quot;jSSC-Terminal.jar, lib/jssc.jar, lib/swing-layout-1.0.4.jar&quot;, 
+width:      700, 
+height:     500 
+</blockquote>}; 
+var parameters = {separate_jvm:&quot;true&quot;, draggable:&quot;true&quot;, jnlp_href:&quot;<a href="http://java-simple-serial-connector.googlecode.com/svn/trunk/terminal/launch.jnlp" rel="nofollow">http://java-simple-serial-connector.googlecode.com/svn/trunk/terminal/launch.jnlp</a>&quot;}; &lt;!-- Applet Parameters --&gt; 
+var version = &quot;1.5&quot;; &lt;!-- Required Java Version --&gt; 
+deployJava.runApplet(attributes, parameters, version); 
+&lt;/script&gt; 
+</blockquote></blockquote>and i open my client machine COM1 port successfully by clicking openport button of applet. But when i click on webpage&#x27;s test button unable to communicate with device because of server side coding. </p><p>now is this possible to add reference or import existing dlls that works perfectly in my web project to communicate with bca machine. </p><p>I have installed netbean and jdk on my pc but do not know how to add or import third party dlls. Plz it&#x27;s very urgent dear, guide me step by step how to import dll and modify ur code in net bean. </p><p>plz guide me dear, thanks in advance. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/100236570486995379246/">jay20...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Fri Jan 10 22:57:09 2014">Jan 10, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>Is that possible to read data via usb port from external device instead of serial com port? Device is also connected via usb port at the other end. Or is there any other way using which we can read data through usb port from external device. Please guide me, thanks. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/103426628229887597135/">J2eeIns...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Mon Jan 13 13:58:30 2014">Jan 13, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>Hi, </p><p>Have problem with &#x27;Writing data to serial port&#x27; example The programs hangs on the following statement: </p><blockquote>serialPort.writeBytes(&quot;This is a test string&quot;.getBytes());//Write data to port 
+</blockquote><p>and never riched following statement. No exception, nothing, simply just stops. Tried on Win 7/8, 64 bit. </p><p>What can be, how to diagnose problem ? Any advice </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/104469294094053350204/">ingej...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Wed Jan 29 11:35:08 2014">Jan 29, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>Hello, </p><p>I have this proudcts <a href="http://www.telegesis.com/ETRX3-development-Kit.htm" rel="nofollow">http://www.telegesis.com/ETRX3-development-Kit.htm</a> Can I program own aplication (jSSC) and send AT commands via COM port ??? Will it work? I need it to bachelor&#x27;s work. </p><p>Thank very </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/112912231678622659520/">laurid.m...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Wed Feb 19 13:49:24 2014">Feb 19, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>This is an awesome Library! Thanks a lot!! But how do I receive a &quot;disconnected&quot;-Event, when my device get&#x27;s unplugged? In RXTX this was quite easy. Thanks again. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/109466412905098862651/">arnepl...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Thu Feb 20 12:00:04 2014">Feb 20, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>Thank You for this! </p><p>but is there a way can I open the port blocking? I am work with Streams (you can have the sources) - so blocking until the byte arrives is not a problem, but polling the port 1000 times per sec is. </p><p>Arne </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ 
+ <span class="userlink">martin.s...@lexon.at</span>,
+ 
+ </span>
+ <span class="date" title="Thu Feb 27 10:05:42 2014">Feb 27, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>I also need a disconnected/unplugged event? What is the correct way, to handle unplugged devices. Thanks a lot!!! </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/sergiupopov86@gmail.com/">sergiupopov86@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Sun Mar  9 14:24:39 2014">Mar 9, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>Hello guys, please help me with receive data from EventListner<a href="/p/java-simple-serial-connector/w/edit/EventListner">?</a>. It will be my fully week where I cant sleep normal..:(  In my task I need listen serialport and when data incomming from device I need to work with this data. Incomming data can be with different length for example 8, 9, 11, and 31 Byte. When in event listner i write only one type off length it works normal, but if i put condition then work with different length it work with problem. Please help with this issue maybe it simple but for the moment i cant view where is problem. Below i put all example of my terminal. In console when i recieve data this data will be displayed in hexadecimal for example:input - 313233343536373839 need to be displayed in condition 2: 313233343536373839 condition 2 </p><p>package listner; </p><p>import jssc.SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>; import jssc.SerialPortEvent<a href="/p/java-simple-serial-connector/w/edit/SerialPortEvent">?</a>; import jssc.SerialPortEventListener<a href="/p/java-simple-serial-connector/w/edit/SerialPortEventListener">?</a>; import jssc.SerialPortException<a href="/p/java-simple-serial-connector/w/edit/SerialPortException">?</a>; </p><p>public class Main { <blockquote>static SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a> serialPort; 
+static String message_incoming = &quot;&quot;; 
+</blockquote>	 	 <blockquote>public static void main(String<a href=""></a> args) { 
+<blockquote>serialPort = new SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>(&quot;COM3&quot;); 
+try { 
+serialPort.openPort(); 
+serialPort.setParams(4800, 8, 1, 0); 
+int mask = SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.MASK_RXCHAR; 
+serialPort.setEventsMask(mask); 
+serialPort.purgePort(SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.PURGE_RXCLEAR | SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.PURGE_TXCLEAR); 
+serialPort.addEventListener(new SerialPortReader<a href="/p/java-simple-serial-connector/w/edit/SerialPortReader">?</a>()); 
+} 
+catch (SerialPortException<a href="/p/java-simple-serial-connector/w/edit/SerialPortException">?</a> ex) { 
+System.out.println(ex); 
+} 
+</blockquote>} 
+static class SerialPortReader<a href="/p/java-simple-serial-connector/w/edit/SerialPortReader">?</a> implements SerialPortEventListener<a href="/p/java-simple-serial-connector/w/edit/SerialPortEventListener">?</a> {  
+<blockquote>public void serialEvent(SerialPortEvent<a href="/p/java-simple-serial-connector/w/edit/SerialPortEvent">?</a> event) { 
+<blockquote>if(event.isRXCHAR()){ 
+<blockquote>if(event.getEventValue() == 11 ){ 
+<blockquote>try { 
+String buffer<a href=""></a> = serialPort.readHexStringArray(11); 
+for(int i=0; i&lt;buffer.length; i++){ 
+<blockquote>message_incoming += bufferi<a href="/p/java-simple-serial-connector/w/edit/i">?</a>; 
+</blockquote>} 
+String Text = message_incoming; 
+System.out.println(Text + &quot; condition 1&quot;); 
+message_incoming = &quot;&quot;; 
+} 
+catch (SerialPortException<a href="/p/java-simple-serial-connector/w/edit/SerialPortException">?</a> ex) { 
+System.out.println(ex); 
+} 
+} 
+</blockquote>else if(event.getEventValue()==9){ 
+<blockquote>try { 
+String buffer<a href=""></a> = serialPort.readHexStringArray(9); 
+for(int i=0; i&lt;buffer.length; i++){ 
+<blockquote>message_incoming += bufferi<a href="/p/java-simple-serial-connector/w/edit/i">?</a>; 
+</blockquote>} 
+String Text = message_incoming; 
+System.out.println(Text + &quot; condition 2&quot;); 
+message_incoming = &quot;&quot;; 
+} 
+catch (SerialPortException<a href="/p/java-simple-serial-connector/w/edit/SerialPortException">?</a> ex) { 
+System.out.println(ex); 
+} 
+} 
+</blockquote>else if(event.getEventValue()==8){ 
+<blockquote>try { 
+String buffer<a href=""></a> = serialPort.readHexStringArray(8); 
+for(int i=0; i&lt;buffer.length; i++){ 
+<blockquote>message_incoming += bufferi<a href="/p/java-simple-serial-connector/w/edit/i">?</a>; 
+</blockquote>} 
+String Text = message_incoming; 
+System.out.println(Text+&quot; condition 3&quot;); 
+message_incoming = &quot;&quot;; 
+} 
+catch (SerialPortException<a href="/p/java-simple-serial-connector/w/edit/SerialPortException">?</a> ex) { 
+System.out.println(ex); 
+} 
+} 
+</blockquote></blockquote></blockquote></blockquote></blockquote>					  				  <blockquote>} 
+</blockquote><blockquote>}} 
+</blockquote>} </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/106294594736101006741/">liujiaxi...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Wed Mar 12 20:54:47 2014">Mar 12, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>您好，把JSSC想用在WEB项目中，一个服务器电脑可能有多个项目要用到JSCC,但当我将两个以上的项目部署到服务器后，只能运行一个，另外一个运行时，会出现java.lang.UnsatisfiedLinkError<a href="/p/java-simple-serial-connector/w/edit/UnsatisfiedLinkError">?</a>: Native Library C:\Documents and Settings\Administrator\.jssc\windows\jSSC-2.8_x86.dll already loaded in another classloader 错误，原因是jSSC-2.8_x86.dll不能重复加载。我的项目是用SSH2(Struts2,spring,Hibernate)开发的。请问怎么解决？ </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/106294594736101006741/">liujiaxi...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Wed Mar 12 20:59:35 2014">Mar 12, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>jSSC-2.8_x86.dll是否可以复制到项目所在的文件夹？ </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/106294594736101006741/">liujiaxi...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Wed Mar 12 21:01:14 2014">Mar 12, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>java.lang.UnsatisfiedLinkError<a href="/p/java-simple-serial-connector/w/edit/UnsatisfiedLinkError">?</a>: Native Library C:\Documents and Settings\Administrator\.jssc\windows\jSSC-2.8_x86.dll already loaded in another classloader <blockquote>java.lang.ClassLoader<a href="/p/java-simple-serial-connector/w/edit/ClassLoader">?</a>.loadLibrary1(Unknown Source) 
+java.lang.ClassLoader<a href="/p/java-simple-serial-connector/w/edit/ClassLoader">?</a>.loadLibrary0(Unknown Source) 
+java.lang.ClassLoader<a href="/p/java-simple-serial-connector/w/edit/ClassLoader">?</a>.loadLibrary(Unknown Source) 
+java.lang.Runtime.load0(Unknown Source) 
+java.lang.System.load(Unknown Source) 
+jssc.SerialNativeInterface<a href="/p/java-simple-serial-connector/w/edit/SerialNativeInterface">?</a>.&lt;clinit&gt;(SerialNativeInterface<a href="/p/java-simple-serial-connector/w/edit/SerialNativeInterface">?</a>.java:172) 
+jssc.SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.&lt;init&gt;(SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.java:120) 
+cn.kbb.zs.dctrl.common.DCtrlCommon.openPort(DCtrlCommon.java:29) 
+cn.kbb.zs.dctrl.action.DCtrlCommonAction.openDoor(DCtrlCommonAction.java:32) 
+sun.reflect.NativeMethodAccessorImpl<a href="/p/java-simple-serial-connector/w/edit/NativeMethodAccessorImpl">?</a>.invoke0(Native Method) 
+sun.reflect.NativeMethodAccessorImpl<a href="/p/java-simple-serial-connector/w/edit/NativeMethodAccessorImpl">?</a>.invoke(Unknown Source) 
+sun.reflect.DelegatingMethodAccessorImpl<a href="/p/java-simple-serial-connector/w/edit/DelegatingMethodAccessorImpl">?</a>.invoke(Unknown Source) 
+java.lang.reflect.Method.invoke(Unknown Source) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invokeAction(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:452) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invokeActionOnly(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:291) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:254) 
+com.opensymphony.xwork2.interceptor.DefaultWorkflowInterceptor<a href="/p/java-simple-serial-connector/w/edit/DefaultWorkflowInterceptor">?</a>.doIntercept(DefaultWorkflowInterceptor<a href="/p/java-simple-serial-connector/w/edit/DefaultWorkflowInterceptor">?</a>.java:176) 
+com.opensymphony.xwork2.interceptor.MethodFilterInterceptor<a href="/p/java-simple-serial-connector/w/edit/MethodFilterInterceptor">?</a>.intercept(MethodFilterInterceptor<a href="/p/java-simple-serial-connector/w/edit/MethodFilterInterceptor">?</a>.java:98) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:248) 
+com.opensymphony.xwork2.validator.ValidationInterceptor<a href="/p/java-simple-serial-connector/w/edit/ValidationInterceptor">?</a>.doIntercept(ValidationInterceptor<a href="/p/java-simple-serial-connector/w/edit/ValidationInterceptor">?</a>.java:263) 
+org.apache.struts2.interceptor.validation.AnnotationValidationInterceptor<a href="/p/java-simple-serial-connector/w/edit/AnnotationValidationInterceptor">?</a>.doIntercept(AnnotationValidationInterceptor<a href="/p/java-simple-serial-connector/w/edit/AnnotationValidationInterceptor">?</a>.java:68) 
+com.opensymphony.xwork2.interceptor.MethodFilterInterceptor<a href="/p/java-simple-serial-connector/w/edit/MethodFilterInterceptor">?</a>.intercept(MethodFilterInterceptor<a href="/p/java-simple-serial-connector/w/edit/MethodFilterInterceptor">?</a>.java:98) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:248) 
+com.opensymphony.xwork2.interceptor.ConversionErrorInterceptor<a href="/p/java-simple-serial-connector/w/edit/ConversionErrorInterceptor">?</a>.intercept(ConversionErrorInterceptor<a href="/p/java-simple-serial-connector/w/edit/ConversionErrorInterceptor">?</a>.java:133) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:248) 
+com.opensymphony.xwork2.interceptor.ParametersInterceptor<a href="/p/java-simple-serial-connector/w/edit/ParametersInterceptor">?</a>.doIntercept(ParametersInterceptor<a href="/p/java-simple-serial-connector/w/edit/ParametersInterceptor">?</a>.java:207) 
+com.opensymphony.xwork2.interceptor.MethodFilterInterceptor<a href="/p/java-simple-serial-connector/w/edit/MethodFilterInterceptor">?</a>.intercept(MethodFilterInterceptor<a href="/p/java-simple-serial-connector/w/edit/MethodFilterInterceptor">?</a>.java:98) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:248) 
+com.opensymphony.xwork2.interceptor.ParametersInterceptor<a href="/p/java-simple-serial-connector/w/edit/ParametersInterceptor">?</a>.doIntercept(ParametersInterceptor<a href="/p/java-simple-serial-connector/w/edit/ParametersInterceptor">?</a>.java:207) 
+com.opensymphony.xwork2.interceptor.MethodFilterInterceptor<a href="/p/java-simple-serial-connector/w/edit/MethodFilterInterceptor">?</a>.intercept(MethodFilterInterceptor<a href="/p/java-simple-serial-connector/w/edit/MethodFilterInterceptor">?</a>.java:98) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:248) 
+com.opensymphony.xwork2.interceptor.StaticParametersInterceptor<a href="/p/java-simple-serial-connector/w/edit/StaticParametersInterceptor">?</a>.intercept(StaticParametersInterceptor<a href="/p/java-simple-serial-connector/w/edit/StaticParametersInterceptor">?</a>.java:190) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:248) 
+org.apache.struts2.interceptor.MultiselectInterceptor<a href="/p/java-simple-serial-connector/w/edit/MultiselectInterceptor">?</a>.intercept(MultiselectInterceptor<a href="/p/java-simple-serial-connector/w/edit/MultiselectInterceptor">?</a>.java:75) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:248) 
+org.apache.struts2.interceptor.CheckboxInterceptor<a href="/p/java-simple-serial-connector/w/edit/CheckboxInterceptor">?</a>.intercept(CheckboxInterceptor<a href="/p/java-simple-serial-connector/w/edit/CheckboxInterceptor">?</a>.java:94) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:248) 
+org.apache.struts2.interceptor.FileUploadInterceptor<a href="/p/java-simple-serial-connector/w/edit/FileUploadInterceptor">?</a>.intercept(FileUploadInterceptor<a href="/p/java-simple-serial-connector/w/edit/FileUploadInterceptor">?</a>.java:243) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:248) 
+com.opensymphony.xwork2.interceptor.ModelDrivenInterceptor<a href="/p/java-simple-serial-connector/w/edit/ModelDrivenInterceptor">?</a>.intercept(ModelDrivenInterceptor<a href="/p/java-simple-serial-connector/w/edit/ModelDrivenInterceptor">?</a>.java:100) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:248) 
+com.opensymphony.xwork2.interceptor.ScopedModelDrivenInterceptor<a href="/p/java-simple-serial-connector/w/edit/ScopedModelDrivenInterceptor">?</a>.intercept(ScopedModelDrivenInterceptor<a href="/p/java-simple-serial-connector/w/edit/ScopedModelDrivenInterceptor">?</a>.java:141) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:248) 
+org.apache.struts2.interceptor.debugging.DebuggingInterceptor<a href="/p/java-simple-serial-connector/w/edit/DebuggingInterceptor">?</a>.intercept(DebuggingInterceptor<a href="/p/java-simple-serial-connector/w/edit/DebuggingInterceptor">?</a>.java:267) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:248) 
+com.opensymphony.xwork2.interceptor.ChainingInterceptor<a href="/p/java-simple-serial-connector/w/edit/ChainingInterceptor">?</a>.intercept(ChainingInterceptor<a href="/p/java-simple-serial-connector/w/edit/ChainingInterceptor">?</a>.java:142) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:248) 
+com.opensymphony.xwork2.interceptor.PrepareInterceptor<a href="/p/java-simple-serial-connector/w/edit/PrepareInterceptor">?</a>.doIntercept(PrepareInterceptor<a href="/p/java-simple-serial-connector/w/edit/PrepareInterceptor">?</a>.java:166) 
+com.opensymphony.xwork2.interceptor.MethodFilterInterceptor<a href="/p/java-simple-serial-connector/w/edit/MethodFilterInterceptor">?</a>.intercept(MethodFilterInterceptor<a href="/p/java-simple-serial-connector/w/edit/MethodFilterInterceptor">?</a>.java:98) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:248) 
+com.opensymphony.xwork2.interceptor.I18nInterceptor<a href="/p/java-simple-serial-connector/w/edit/I18nInterceptor">?</a>.intercept(I18nInterceptor<a href="/p/java-simple-serial-connector/w/edit/I18nInterceptor">?</a>.java:176) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:248) 
+org.apache.struts2.interceptor.ServletConfigInterceptor<a href="/p/java-simple-serial-connector/w/edit/ServletConfigInterceptor">?</a>.intercept(ServletConfigInterceptor<a href="/p/java-simple-serial-connector/w/edit/ServletConfigInterceptor">?</a>.java:164) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:248) 
+com.opensymphony.xwork2.interceptor.AliasInterceptor<a href="/p/java-simple-serial-connector/w/edit/AliasInterceptor">?</a>.intercept(AliasInterceptor<a href="/p/java-simple-serial-connector/w/edit/AliasInterceptor">?</a>.java:190) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:248) 
+com.opensymphony.xwork2.interceptor.ExceptionMappingInterceptor<a href="/p/java-simple-serial-connector/w/edit/ExceptionMappingInterceptor">?</a>.intercept(ExceptionMappingInterceptor<a href="/p/java-simple-serial-connector/w/edit/ExceptionMappingInterceptor">?</a>.java:187) 
+com.opensymphony.xwork2.DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.invoke(DefaultActionInvocation<a href="/p/java-simple-serial-connector/w/edit/DefaultActionInvocation">?</a>.java:248) 
+org.apache.struts2.impl.StrutsActionProxy<a href="/p/java-simple-serial-connector/w/edit/StrutsActionProxy">?</a>.execute(StrutsActionProxy<a href="/p/java-simple-serial-connector/w/edit/StrutsActionProxy">?</a>.java:52) 
+org.apache.struts2.dispatcher.Dispatcher.serviceAction(Dispatcher.java:485) 
+org.apache.struts2.dispatcher.ng.ExecuteOperations<a href="/p/java-simple-serial-connector/w/edit/ExecuteOperations">?</a>.executeAction(ExecuteOperations<a href="/p/java-simple-serial-connector/w/edit/ExecuteOperations">?</a>.java:77) 
+org.apache.struts2.dispatcher.ng.filter.StrutsPrepareAndExecuteFilter<a href="/p/java-simple-serial-connector/w/edit/StrutsPrepareAndExecuteFilter">?</a>.doFilter(StrutsPrepareAndExecuteFilter<a href="/p/java-simple-serial-connector/w/edit/StrutsPrepareAndExecuteFilter">?</a>.java:91) 
+</blockquote></p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/101402481471715641803/">zax...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Thu Mar 13 14:25:15 2014">Mar 13, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>Hello, anyone could help me with bridge between two COM ports? I tried something like this: </p><blockquote>try { 
+byte<a href=""></a> bufferConbyte = ConnectCOM.serialPortConsole.readBytes(128); 
+String bufferCon = new String(bufferConbyte); 
+ConnectCOM.serialPortPC.writeBytes(bufferCon.getBytes()); 
+bufferCon = &quot;&quot;; 
+} 
+<blockquote>catch (SerialPortException<a href="/p/java-simple-serial-connector/w/edit/SerialPortException">?</a> ex){ 
+<blockquote>System.out.println(ex); 
+<blockquote>} 
+</blockquote></blockquote></blockquote></blockquote><blockquote>//pobranie buffora z D8B PC i wyslanie do konsoli 
+<blockquote>try { 
+byte<a href=""></a> bufferPCbyte = ConnectCOM.serialPortPC.readBytes(128); 
+String bufferPC = new String(bufferPCbyte); 
+ConnectCOM.serialPortConsole.writeBytes(bufferPC.getBytes()); 
+bufferPC = &quot;&quot;; 
+} 
+catch (SerialPortException<a href="/p/java-simple-serial-connector/w/edit/SerialPortException">?</a> ex){ 
+<blockquote>System.out.println(ex); 
+<blockquote>} 
+</blockquote></blockquote></blockquote></blockquote><blockquote>} 
+</blockquote><p>It works, but it seems, that the delay is something about 1 minute or so. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/115802438493072897639/">nguyenbi...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Sun Mar 30 19:15:08 2014">Mar 30, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>Hello,I have problem in reading ascii with code bigger 128. I always receive the char &quot;?&quot;(63). Help me please    </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/104498235000046234775/">abhayson...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Sun Mar 30 23:47:26 2014">Mar 30, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>thank you thank you thank you so much!!! you save my time!!! great job!! </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/107773688971993390040/">varadi83...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Tue Apr 15 01:49:46 2014">Apr 15, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>Hello, </p><p>I tried to send some string to my arduino: t11:45#d2014.04.15#p# </p><p>on this way: </p><blockquote>if (params.get(COMMAND).equals(PRINT)) { 
+<blockquote>this.openPort(); 
+</blockquote></blockquote><blockquote>try { 
+<blockquote>String message = (String) params.get(MESSAGE); 
+System.out.println(&quot;SENT:&quot; + port.writeBytes(message.getBytes())); // SENT:true 
+System.out.println(params.get(MESSAGE)); // t11:45#d2014.04.15#p# 
+</blockquote>} catch (SerialPortException<a href="/p/java-simple-serial-connector/w/edit/SerialPortException">?</a> e) { 
+<blockquote>System.out.println(e.toString()); 
+</blockquote>} 
+this.closePort(); 
+</blockquote><blockquote>} 
+</blockquote><p>But nothing happened on my Arduino. If I send this string &quot;t11:45#d2014.04.15#p#&quot; direct from the Arduino IDE, the program on my Arduino is work normal. </p><p>here is my Arduino C++ code: </p><p>#include &quot;SoftwareSerial<a href="/p/java-simple-serial-connector/w/edit/SoftwareSerial">?</a>.h&quot; #include &quot;Adafruit_Thermal<a href="/p/java-simple-serial-connector/w/edit/Adafruit_Thermal">?</a>.h&quot; #include &quot;logo.h&quot; #include &lt;avr/pgmspace.h&gt; #define vPerStep 0.0048828125 #define PRINTING &quot;p&quot; #define MEASURING &quot;m&quot; #define DATE &quot;d&quot; #define TIME &quot;t&quot; #define delimiter &quot;#&quot; </p><p>int printer_RX_Pin = 5;  // This is the green wire int printer_TX_Pin = 6;  // This is the yellow wire Adafruit_Thermal<a href="/p/java-simple-serial-connector/w/edit/Adafruit_Thermal">?</a> printer(printer_RX_Pin, printer_TX_Pin); </p><p>int pin = A1; String inputString = &quot;&quot;; String command = &quot;&quot;; String date = &quot;&quot;; String time = &quot;&quot;; </p><p>boolean inputStringComplete = false; </p><p>void setup() { <blockquote>Serial.begin(9600); 
+printer.begin(100); 
+</blockquote>} </p><p>void loop() { <blockquote>if (inputStringComplete) { 
+<blockquote>command = inputString.substring(0, 1); 
+inputString.replace(delimiter, &quot;&quot;); 
+inputString.replace(command, &quot;&quot;); 
+if (command == DATE) 
+{ 
+<blockquote>date = inputString; 
+</blockquote>} 
+if (command == TIME) 
+{ 
+<blockquote>time = inputString; 
+</blockquote>} 
+if (command == PRINTING) 
+{ 
+<blockquote>printText(); 
+parkingTime(); 
+printBitmap(); 
+printerEnd(); 
+time = &quot;&quot;; 
+date = &quot;&quot;; 
+</blockquote>} 
+if (command == MEASURING) 
+{ 
+<blockquote>Serial.println(&quot;distance:&quot; + (String) distance()); 
+</blockquote>} 
+command = &quot;&quot;; 
+inputString = &quot;&quot;; 
+inputStringComplete = false; 
+</blockquote>} 
+</blockquote>} </p><p>float distance() { <blockquote>double volts = analogRead(pin) <strong> vPerStep; 
+</blockquote></strong></p><blockquote>double dr100 = 0.01; 
+double dr150 = 0.0066666667; 
+</blockquote><blockquote>float v100 = 2.51; 
+float v150 = 2.04; 
+float dr = dr150 + (volts - v150) <strong> (dr100 - dr150) / (v100 - v150); 
+return (1 / dr); 
+</blockquote><p>} </strong></p><p>void printBitmap() { <blockquote>printer.printBitmap(logo_width, logo_height, logo); 
+</blockquote>} </p><p>void printText() { </p><blockquote>printer.setSize(&#x27;L&#x27;); 
+printer.print(&quot;Gratul\xA0lunk&quot;); 
+printer.setSize(&#x27;M&#x27;); 
+printer.println(&quot;j\x95l \x82rzed a biciklisek\x93l&quot;); 
+</blockquote><blockquote>printer.println(&quot;tartand\xA2 1,5 m\x82ter t\xA0vols\xA0got!&quot;); 
+printer.feed(1); 
+</blockquote><blockquote>printer.setSize(&#x27;S&#x27;); 
+printer.println(&quot;K\x94sz\x94nj\x81k&quot;); 
+printer.println(&quot;hogy vezet\x82s k\x94zben&quot;); 
+printer.println(&quot;is mind\x8Dg tartod&quot;); 
+printer.print(&quot;\x82s figyelsz a t\x94&quot;); 
+printer.println(&quot;bbiekre!&quot;); 
+</blockquote><p>} </p><p>void parkingTime() { <blockquote>printer.setSize(&#x27;S&#x27;); 
+printer.println(&quot;parkol\xA0si&quot;); 
+printer.println(&quot;id\x93 v\x82ge:&quot;); 
+</blockquote></p><blockquote>printer.justify(&#x27;C&#x27;); 
+printer.setSize(&#x27;M&#x27;); 
+printer.println(date); 
+printer.setSize(&#x27;L&#x27;); 
+printer.println(time); 
+</blockquote><p>} </p><p>void printerEnd() { <blockquote>printer.feed(3); 
+printer.sleep();      // Tell printer to sleep 
+printer.wake();       // MUST call wake() before printing again, even if reset 
+printer.setDefault(); // Restore printer to defaults 
+</blockquote>} </p><p>void printLine() { <blockquote>printer.setSize(&#x27;L&#x27;); 
+for (int i = 0; i &lt; 15; i++) 
+<blockquote>printer.write(0xC4); 
+</blockquote>printer.println(&quot;&quot;); 
+printer.setDefault(); 
+</blockquote>} </p><p>void serialEvent() { <blockquote>while (Serial.available()) { 
+<blockquote>char inChar = (char)Serial.read(); 
+inputString += inChar; 
+if (inChar == &#x27;#&#x27;) 
+{ 
+<blockquote>inputStringComplete = true; 
+</blockquote>} 
+</blockquote>} 
+</blockquote>} What have I do for work this from my java application? </p><p>thanks for the help </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/105126317098258490429/">samuel...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Mon Apr 21 20:50:09 2014">Apr 21, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>Answer to :  J2eeIns<a href="/p/java-simple-serial-connector/w/edit/J2eeIns">?</a>...@gmail.com </p><p>You have set the parameters correctly after opening a port. </p><p>Use this function before trying to write data : serialPort.setParams(BAUDRATE, DATABITS, STOPBITS, PARITY); </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/107423543721507232044/">iwestbur...@googlemail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Tue Apr 22 09:37:56 2014">Apr 22, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>I&#x27;m still on a learning curve but I would like to say that in Java it is so much faster than RXTX. </p><p>Thanks </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/111999028342311422835/">j...@snelders.net</a
+>,
+ 
+ </span>
+ <span class="date" title="Mon Jul 21 11:59:01 2014">Jul 21, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>I discovered that SerialPortEventListener<a href="/p/java-simple-serial-connector/w/edit/SerialPortEventListener">?</a>-implementation as mentioned above doesn&#x27;t work for me and might not work for others as well. </p><p>The reason is that there is no event fired for every single byte received and thus checking for an exact length of the buffer before reading the buffer might leave you with a buffer which already exceeded the expected length. </p><p>Changing this </p><pre class="prettyprint">static class SerialPortReader implements SerialPortEventListener {
+        public void serialEvent(SerialPortEvent event) {
+            if(event.isRXCHAR()){//If data is available
+                if(event.getEventValue() == 10){//Check bytes count in the input buffer
+                    //Read data, if 10 bytes available 
+                    try {
+                        byte buffer[] = serialPort.readBytes(10);
+                    }
+                    catch (SerialPortException ex) {
+                        System.out.println(ex);
+                    }
+                }
+.....</pre><p>    to </p><pre class="prettyprint">static class SerialPortReader implements SerialPortEventListener {
+        public void serialEvent(SerialPortEvent event) {
+            int eventValue = event.getEventValue();
+            if(event.isRXCHAR()){//If data is available
+                if(eventValue &gt;= 10){// &lt;---- don&#x27;t check for exact length but also for anything larger
+                    //Read data, if 10 bytes or more available 
+                    try {
+                        byte buffer[] = serialPort.readBytes(eventValue);
+                    }
+                    catch (SerialPortException ex) {
+                        System.out.println(ex);
+                    }
+                }
+....</pre><p>fixed the problem for me (Windows 7, 64bit) </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ 
+ <span class="userlink">dias.cha...@gmail.com</span>,
+ 
+ </span>
+ <span class="date" title="Tue Aug 19 20:01:47 2014">Aug 19, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>thanks.... </p><p>On Mon, Aug 18, 2014 at 3:35 PM, &lt; java-simple-serial-connector@googlecode.com&gt; wrote: </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/102257269739461025189/">aarfi.mi...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Mon Sep  1 04:37:07 2014">Sep 1, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>I am developing a project for verifone pinpad 1000se . I am using this code for serial commnunication, above code opens ports successfully and when i call writeBytes() it returns true but not write anything in device..... </p><p>please help me for this problem. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/112027421294179603222/">patelviv...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Fri Sep 12 05:16:22 2014">Sep 12, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>If we use event mask RXFLAG then it never goes into the SerialPortEventListener<a href="/p/java-simple-serial-connector/w/edit/SerialPortEventListener">?</a> interface... is there some bug in it?? </p><p>os: win7 64 bit </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/104666441371043594787/">sabbirbi...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Fri Oct  3 01:58:02 2014">Oct 3, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>I am using JSSC to develop an application that reads a COMPORT(COM1) which is connected virtually by another comport(COM2)by a software named free-virtual-serial ports.exe. When I try to read the COM1 using an infinite while loop (by serialPort.readString()) it reads every input from COM1 that is  written in COM2 (since COM1 and COM2 are virtually connected). But when I try to implement a listener it reads the first byte and rest of available bytes separately, i.e. if I write 123 on COM2 then my reader reads 1 at first and then 23 together. What is the problem. I use event listener as per it is written in the example. Please help to find out the problem and if you guys think of any better solution than this, then please share. I want to implement my application to interface with an Rs-232 enable weight indicator when I complete the project. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/110040277740284728116/">ba...@barrycomer.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Sun Oct 12 08:09:52 2014">Oct 12, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>I am seeing the same issue as sabbirbi. I have a sample Java program that writes a string (e.g. to a paired virtual serial port). </p><p>public void test() { <blockquote>serialPort = new SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>(&quot;COM10&quot;); 
+try { 
+<blockquote>serialPort.openPort(); 
+serialPort.setParams(SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.BAUDRATE_9600, SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.DATABITS_8, SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.STOPBITS_1, SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.PARITY_NONE); 
+int mask = SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.MASK_RXCHAR + SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.MASK_CTS + SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>.MASK_DSR; 
+serialPort.setEventsMask(mask); 
+</blockquote>} catch (SerialPortException<a href="/p/java-simple-serial-connector/w/edit/SerialPortException">?</a> ex) { 
+<blockquote>System.out.println(ex); 
+</blockquote>} 
+</blockquote>		 <blockquote>while(true) { 
+<blockquote>try { 
+<blockquote>serialPort.writeString(&quot;ZZSM0;&quot;); 
+Thread.sleep(CAT_SEND_INTERVAL); 
+</blockquote><blockquote>} catch (Exception ex) { 
+<blockquote>System.out.println(ex); 
+</blockquote>} 
+</blockquote></blockquote>}	 
+</blockquote>} </p><p>On the receiving end I expect to get an event for the entire string. In reality I am getting varying groupings of characters while other times I get the entire string. </p><p>What is wrong here? </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/110040277740284728116/">ba...@barrycomer.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Sun Oct 12 08:13:37 2014">Oct 12, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>If I lower the baud rate to 300 or so there is an event for each character. Almost like it is sending the events on a timed basis for what ever happens  to be in the buffer are the time. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/104666441371043594787/">sabbirbi...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Tue Oct 14 21:44:41 2014">Oct 14, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>I do not see anyone helping me out with my problem yet. Using infinite while loop keeps my processor busy whenever I run the application on my computer, I know event listener will help in this regard. But the listeners listens separately by isolating the entire String into two and sometimes it works but most of the time it does the same thing.  </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/117762312945948206799/">eugens...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Tue Oct 21 04:30:12 2014">Oct 21, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>Hi sabbirbi... Think You have the same problem described hier: <a href="https://code.google.com/p/qextserialport/issues/detail?id=156" rel="nofollow">https://code.google.com/p/qextserialport/issues/detail?id=156</a> </p><p>&quot;So in your case read returns as many bytes as already transmitted by the moment when you doing read. The easy solution for you is adding sleep after you transmitted message to wait for some time while reply is being received. You need to know what amount of time in you application is reasonable to wait for reply, probably it is 20 ms you are putting in port settings. Please note, that providing higher value for time-out in port setting also might not work. In this case read also may return with less data than expected.&quot; </p><p>Try to organize the communication in packages (communication protocol) with defined termination char. In Your listener parse received data for termination char. So you can put all pices together. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ 
+ <span class="userlink">charliem...@gmail.com</span>,
+ 
+ </span>
+ <span class="date" title="Sat Oct 25 15:12:36 2014">Oct 25, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>Hi, </p><p>I have an unusual serial stream in that the parity bit is used to mark the start of a message on a shared serial bus.... so I really need to know when it occurs. I think I can set things up as 8,S,1 and I receive the stream, now I&#x27;m trying to detect the parity error and use some logic to mark in my data where I got it. Question 1 - is this the best way, or can anyone think of a smart way to receive all 9 bits and then process them as real data. Or anyone got any examples of detecting parity errors - so far not working so well, but it might just be me :-) </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ 
+ <span class="userlink">mrab...@gmail.com</span>,
+ 
+ </span>
+ <span class="date" title="Wed Oct 29 08:35:25 2014">Oct 29, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>//package jssc_test; </p><p>import java.io.UnsupportedEncodingException<a href="/p/java-simple-serial-connector/w/edit/UnsupportedEncodingException">?</a>; import java.util.Arrays; import jssc.SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>; import jssc.SerialPortException<a href="/p/java-simple-serial-connector/w/edit/SerialPortException">?</a>; </p><p>/<strong></strong> <ul><li> </li><li>@author scream3r </li><li> </li></ul>public class Main { </p><blockquote>/<strong></strong> 
+<ul><li>@param args the command line arguments </li><li> </li></ul>public static void main(String<a href=""></a> args) throws UnsupportedEncodingException<a href="/p/java-simple-serial-connector/w/edit/UnsupportedEncodingException">?</a> { 
+<blockquote>SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a> serialPort = new SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>(&quot;COM3&quot;); 
+try { 
+<blockquote>System.out.println(&quot;Port opened: &quot; + serialPort.openPort()); 
+System.out.println(&quot;Params setted: &quot; + serialPort.setParams(9600, 8, 1, 0)); 
+//System.out.println(&quot;\&quot;Hello World!!!\&quot; successfully writen to port: &quot; + serialPort.writeBytes(&quot;AT+CGMI&quot;.getBytes())); 
+System.out.println(&quot;\&quot;Hello World!!!\&quot; successfully writen to port: &quot; + serialPort.writeBytes(&quot;AT+CGMI&quot;.getBytes())); 
+</blockquote></blockquote></blockquote><p>//boolean a = serialPort.writeString(&quot;AT+CGMI&quot;); <blockquote>//System.out.println(a); 
+//System.out.println(serialPort.readString()); 
+System.out.println(Arrays.toString(serialPort.readBytes((1)))); 
+System.out.println(serialPort.readBytes(1)); 
+//String a = serialPort.readBytes(1); 
+byte<a href=""></a> buffer = serialPort.readBytes(1); 
+//--Strin 
+System.out.println(buffer.toString()); 
+//serialPort.read 
+</blockquote>//System.out.println(&quot;\&quot;Hello World!!!\&quot; successfully writen to port: &quot; + serialPort.writeBytes(&quot;AT+CMGF=1&quot;.getBytes())); <blockquote>//System.out.println(&quot;\&quot;Hello World!!!\&quot; successfully writen to port: &quot; + serialPort.writeBytes(&quot;AT+CMGS=\&quot;03323112476\&quot;Test at 12&quot;.getBytes())); 
+//serialPort.writeString(&quot;AT+CMGF=1&quot;); 
+//System.out.println(serialPort.readString()); 
+<blockquote>//serialPort.writeByte((byte)0x0D); 
+//serialPort.writeInt((char)13); 
+//serialPort.writeInt((char)26); 
+</blockquote>//tem.out.println((char)26 + (char)13 + (char)90); 
+System.out.println(&quot;Port closed: &quot; + serialPort.closePort()); 
+</blockquote><blockquote>} 
+catch (SerialPortException<a href="/p/java-simple-serial-connector/w/edit/SerialPortException">?</a> ex){ 
+<blockquote>System.out.println(ex); 
+</blockquote>} 
+</blockquote><blockquote>} 
+</blockquote>} </p><p>Port opened: true Params setted: true &quot;Hello World!!!&quot; successfully writen to port: true 65<a href="/p/java-simple-serial-connector/w/edit/65">?</a> [B@16f6e28 [B@15fbaa4 Port closed: true BUILD SUCCESSFUL (total time: 0 seconds) </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/104666441371043594787/">sabbirbi...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Fri Oct 31 21:58:39 2014">Oct 31, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>Thanks Eugens, It solved my problem. I waited for 0.1 second before I read the data from COMPORT. </p>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+ 
+ <div class="artifactcomment"
+ 
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ <span class="author">Comment
+ 
+ by 
+ 
+ 
+
+ <a class="userlink"
+ href="/u/110319054370324325009/">swapd...@gmail.com</a
+>,
+ 
+ </span>
+ <span class="date" title="Mon Dec  1 09:12:27 2014">Dec 1, 2014</span>
+ <div>
+<div class="commentcontent">
+<p>hi all, i had write a program that execute command over serial port. But i am not getting the output correctly. sometimes it show all output , and sometime it shows nothing. </p><p>public class Connector implements SerialPortEventListener<a href="/p/java-simple-serial-connector/w/edit/SerialPortEventListener">?</a>? { </p><blockquote>static SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>? serialPort;  
+</blockquote><blockquote>public synchronized void write() throws Exception {  
+</blockquote><blockquote>serialPort = new SerialPort<a href="/p/java-simple-serial-connector/w/edit/SerialPort">?</a>?(&quot;/dev/ttyUSB0&quot;); try {  
+</blockquote><blockquote>System.out.println(&quot;Port opened: &quot; + serialPort.openPort()); System.out.println(&quot;Params setted: &quot; + serialPort.setParams(57600, 8, 1, 0)); serialPort.addEventListener(this);  
+</blockquote><blockquote>System.out.println(&quot;data is written ....&quot; + serialPort.writeBytes(&quot;ls -l \n&quot;.getBytes()));  
+</blockquote><blockquote>wait(); System.out.println(&quot;Done ... Exiting&quot;);  
+</blockquote><blockquote>} catch (Exception e) { 
+</blockquote><blockquote>e.printStackTrace();  
+</blockquote><blockquote>}  
+</blockquote><blockquote>}  
+</blockquote><blockquote>public synchronized void serialEvent(SerialPortEvent<a href="/p/java-simple-serial-connector/w/edit/SerialPortEvent">?</a>? serialPortEvent) {  
+</blockquote><blockquote>System.out.println(&quot;Event Raised........&quot;); if (serialPortEvent.isRXCHAR()) { 
+</blockquote><blockquote>try { 
+</blockquote><blockquote>System.out.println(new String(serialPort.readBytes(serialPort.getInputBufferBytesCount())));  
+</blockquote><blockquote>} catch (SerialPortException<a href="/p/java-simple-serial-connector/w/edit/SerialPortException">?</a>? e) { 
+</blockquote><blockquote>e.printStackTrace();  
+</blockquote><blockquote>}  
+</blockquote><blockquote>}  
+</blockquote>
+</div>
+ 
+ 
+ </div>
+ </div>
+ 
+
+</div>
+</div>
+
+ 
+
+
+ <script type="text/javascript">
+ function delComment(sequence_num, create_time, delete_mode) {
+ var f = document.forms["delcom"];
+ f.sequence_num.value = sequence_num;
+ f.create_time.value = create_time;
+ f.mode.value = delete_mode;
+ f.submit();
+ return false;
+ }
+ </script>
+
+
+ </div>
+ 
+ 
+ 
+ 
+ 
+ <div id="commentform">
+ <form action="../w/detail.do" method="post">
+ <table>
+ <tr><td class="vt">
+ <input type="hidden" name="pagename" value="jSSC_examples" >
+ <input type="hidden" name="token" value="ABZ6GAfgVl3E5F_gYwgcgiuGb6k5q0toTw:1418659926357" >
+ <div class="graytext" style="float: right;">
+ Hint: You can use <a href="http://code.google.com/p/support/wiki/WikiSyntax">Wiki Syntax.</a>
+ </div>
+ <div>Enter a comment:</div>
+ <textarea name="content" rows="6" cols="100"></textarea><br><br>
+ <input type="submit" name="submit" value="Submit" >
+ </td>
+ </table>
+ </form>
+ </div>
+ 
+ 
+ 
+ 
+ 
+ <form name="delcom" action="../w/delComment.do" method="POST">
+ <input type="hidden" name="sequence_num" value="" >
+ <input type="hidden" name="create_time" value="" >
+ <input type="hidden" name="mode" value="" >
+ <input type="hidden" name="pagename" value="jSSC_examples" >
+ <input type="hidden" name="token" value="ABZ6GAfgVl3E5F_gYwgcgiuGb6k5q0toTw:1418659926357" >
+ </form>
+
+
+ <script src="https://ssl.gstatic.com/codesite/ph/1729405847801014513/js/prettify/prettify.js"></script>
+ <script type="text/javascript">
+ prettyPrint();
+ </script>
+
+<script type="text/javascript" src="https://ssl.gstatic.com/codesite/ph/1729405847801014513/js/dit_scripts.js"></script>
+
+
+
+  
+ 
+ 
+ <script type="text/javascript" src="https://ssl.gstatic.com/codesite/ph/1729405847801014513/js/ph_core.js"></script>
+ 
+ <script type="text/javascript" src="https://ssl.gstatic.com/codesite/ph/1729405847801014513/js/ph_dwiki.js"></script>
+ 
+ 
+ 
+ 
+</div> 
+
+<div id="footer" dir="ltr">
+ <div class="text">
+ <a href="/projecthosting/terms.html">Terms</a> -
+ <a href="http://www.google.com/privacy.html">Privacy</a> -
+ <a href="/p/support/">Project Hosting Help</a>
+ </div>
+</div>
+ <div class="hostedBy" style="margin-top: -20px;">
+ <span style="vertical-align: top;">Powered by <a href="http://code.google.com/projecthosting/">Google Project Hosting</a></span>
+ </div>
+
+ 
+ 
+
+
+ 
+ </body>
+</html>
+
+

@@ -39,6 +39,25 @@ class openBCI2ft {
 	 int inByte = -1;    // Incoming serial data
 
 	 public static void main(String[] args) throws IOException,InterruptedException {
+
+
+
+		  // jssc.SerialPort serialPort = new jssc.SerialPort("/dev/ttyUSB0");
+        // try {
+        //     serialPort.openPort();//Open serial port
+        //     serialPort.setParams(jssc.SerialPort.BAUDRATE_115200, 
+        //                          jssc.SerialPort.DATABITS_8,
+        //                          jssc.SerialPort.STOPBITS_1,
+        //                          jssc.SerialPort.PARITY_NONE);
+        //     serialPort.writeString("b");//Write data to port
+		  // 		Thread.sleep(1000);
+		  // 		byte [] resp=serialPort.readBytes();
+		  // 		for ( int i=0; i<resp.length; i++ ) System.out.print((char)resp[i]);
+        //     serialPort.closePort();//Close serial port
+        // }
+        // catch (Exception ex) {
+        //     System.out.println(ex);
+        // }
 		  
 		  if ( args.length==0 ) {
 				System.out.println("openBCI2ft openBCIport bufferhost:bufferport nchannels openBCIsamplerate buffdownsampleratio buffpacketsize");
@@ -60,7 +79,7 @@ class openBCI2ft {
 					 buffhostname=buffhostname.substring(0,sep);
 				}
 		  }
-		  int nch = 4;
+		  int nch = OpenBCI_Nchannels;
 		  if (args.length>=3) { nch = Integer.parseInt(args[2]);	}
 		  int sampleRate = (int)fs_Hz;
 		  if (args.length>=4) { 
@@ -72,7 +91,8 @@ class openBCI2ft {
 				System.out.println("Warning, buff-down-sample currently isn't supported.  Argument ignored.");
 				//buffdownsample = Integer.parseInt(args[4]); 
 		  }		  
-		  int buffpacketsize=1;		  
+		  int buffpacketsize=sampleRate/50;
+		  if ( buffpacketsize<=0 ) buffpacketsize=1;
 		  if (args.length>=6) { buffpacketsize = Integer.parseInt(args[5]); }		  
 
 		  if ( openBCIport == null ) { // list available ports and exit
@@ -90,37 +110,7 @@ class openBCI2ft {
 		  System.out.println("Buffer server: " + buffhostname + " : " + buffport);
 		  System.out.println("nCh : " + nch + " fs : " + sampleRate);
 		  System.out.println("#samp/buf : " + buffdownsample + " buff_packet : " + buffpacketsize);
-		  
-		
-		  // open the openBCI port and start the data streaming
-		  int nDataValuesPerPacket = nchan;
-		  if (openBCIDataMode == OpenBCI_ADS1299.DATAMODE_BIN_WAUX) nDataValuesPerPacket += n_aux_ifEnabled;		  
-		  DataPacket_ADS1299 curPacket = new DataPacket_ADS1299(nDataValuesPerPacket); 
-		  OpenBCI_ADS1299 openBCI = null; ;
-		  while ( true ) {
-				try {
-					 openBCI = new OpenBCI_ADS1299(openBCIport,openBCIbaud,nDataValuesPerPacket); // open port
-					 break;
-				} catch (Exception e) {
-					 System.out.println("Trying to connect to serial port : " + openBCIport);
-					 Thread.sleep(1000); 
-				}
-		  }
-		  while ( openBCI.updateState()<=0 ){ // start data streaming					 break;
-				System.out.println("Waiting for startup of streaming to complete, on port : " + openBCIport);
-				Thread.sleep(1000); 
-		  }
-		  System.out.println("Connected to serial port.  Streaming begun!");
 
-		  
-		  byte[] buffer = new byte[BUFFERSIZE];
-		  int openBCIsamp=0;  // current sample number in buffer-packet recieved from openBCI
-		  int buffsamp=0; // current sample number in buffer-packet to send to buffer
-		  int buffch=0;   // current channel number in buffer-packet to send to buffer
-		  int numel=0;
-		  int[] buffpacksz = new int[] {nch,buffpacketsize};
-		  double[][] databuff = new double[buffpacketsize][nch];
-		
 		  // open the connection to the buffer server		  
 		  BufferClientClock C = new BufferClientClock();
 		  while ( !C.isConnected() ) {
@@ -140,21 +130,64 @@ class openBCI2ft {
 		  Header hdr = new Header(nch,sampleRate,DataType.FLOAT64);
 		  if ( VERB>0 ){ System.out.println("Sending header: " + hdr.toString()); }
 		  C.putHeader(hdr);
+		
+		  // open the openBCI port and start the data streaming
+		  int nDataValuesPerPacket = nchan;
+		  if (openBCIDataMode == OpenBCI_ADS1299.DATAMODE_BIN_WAUX) nDataValuesPerPacket += n_aux_ifEnabled;		  
+		  DataPacket_ADS1299 curPacket = new DataPacket_ADS1299(nDataValuesPerPacket); 
+		  OpenBCI_ADS1299 openBCI = null;
+		  while ( true ) {
+				try {
+					 openBCI = new OpenBCI_ADS1299(openBCIport,openBCIbaud,nDataValuesPerPacket); // open port
+					 break;
+				} catch (Exception e) {
+					 System.out.println("Trying to connect to serial port : " + openBCIport);
+					 Thread.sleep(1000); 
+				}
+		  }		  
+		  while ( openBCI.updateState()<=0 ){ // start data streaming					 break;
+				System.out.println("Waiting for startup to complete, on port : " + openBCIport);
+				Thread.sleep(1000); 
+		  }
+		  System.out.println("Connected to serial port.");
+		  // Setup the channel set to use:
+		  try {
+				openBCI.startDataTransfer();
+				//for ( int i=0; i<1000; i++) openBCI.read(true);
+		  } catch ( Exception e) {
+				System.err.println("Error changing sending state");
+				System.err.println((jssc.SerialPortException)e);
+				System.exit(-1);
+		  }
+
+		  byte[] buffer = new byte[BUFFERSIZE];
+		  int openBCIsamp=0;  // current sample number in buffer-packet recieved from openBCI
+		  int buffsamp=0; // current sample number in buffer-packet to send to buffer
+		  int buffch=0;   // current channel number in buffer-packet to send to buffer
+		  int numel=0;
+		  int[] buffpacksz = new int[] {nch,buffpacketsize};
+		  double[][] databuff = new double[buffpacketsize][nch];
+		
 	  		
+		  long startT=System.currentTimeMillis();
+		  long updateT=startT;
 		  // Now do the data forwarding
 		  while ( true ) {			 
 				// wait for an OPENBCI message
 				// read from serial port until a complete packet is available
 				// Question: does this block intelligently?
 				while ( !openBCI.isNewDataPacketAvailable ) {
-					 if ( VERB>0 ){ System.out.println("Waiting for data packet from openBCI."); }
+					 if ( VERB>1 ){ System.out.println("Waiting for data packet from openBCI."); }
 					 try { 
-						  openBCI.read();
-					 } catch (Exception e){ // Catch all exceptions.. including SerialPortException
+						  openBCI.read(false);
+						  Thread.sleep(1000/sampleRate);
+					 } catch (jssc.SerialPortException e){ // Catch all exceptions.. including SerialPortException
 						  System.out.println("Serial port exception!");
+						  System.err.println(e);
+						  System.exit(-1);
 					 }
 				}
-				if ( VERB>0 ){ System.out.println("Got a data packet from openBCI"); }
+				if ( VERB>1 ){ System.out.println("Got a data packet from openBCI"); }
 				// get (a copy of) the data just read
 				openBCI.copyDataPacketTo(curPacket); 
 				//next, gather the new data into the "little buffer"
@@ -163,12 +196,17 @@ class openBCI2ft {
 					 databuff[buffsamp][Ichan] += curPacket.values[Ichan] * scale_fac_uVolts_per_count;
 				} 				
 				// increment the cursor position
-				if ( VERB>0 ){ System.out.print('.');}
+				if ( VERB>0 ){
+					 if ( System.currentTimeMillis()-updateT > 10*1000 ) {
+						  updateT=System.currentTimeMillis();
+						  System.out.print((float)(System.currentTimeMillis()-startT)/1000.0 + "," + buffsamp + "\r");
+					 }
+				}
 
 				// move to next buffer sample
 				buffsamp++; // move to next buffer sample
 				if ( buffsamp >= databuff.length ) { // got a full buffer packet's worth
-					 if ( VERB>0 ){ System.out.println("Got buffer packets worth of data. Sending");}
+					 if ( VERB>1 ){ System.out.println("Got buffer packets worth of data. Sending");}
 					 // so forward to the buffer
 					 // N.B. for efficiency this should probably be double-buffered (sic)
 					 C.putData(databuff);
