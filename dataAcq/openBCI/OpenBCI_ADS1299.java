@@ -35,20 +35,12 @@ class OpenBCI_ADS1299 {
 	 public final static int DEBUG=0;
  
 	 public final static String command_stop = "s";
-	 public final static String command_startText = "x";
+	 public final static String command_start_channel_settings = "x";
 	 public final static String command_startBinary = "b";
-	 public final static String command_startBinary_wAux = "n";
-	 public final static String command_startBinary_4chan = "v";
-	 public final static String command_activateFilters = "F";
-	 public final static String command_deactivateFilters = "g";
+	 public final static String command_softreset = "v";
+	 public final static String command_default_settings = "d";
 	 public final static String[] command_deactivate_channel = {"1", "2", "3", "4", "5", "6", "7", "8"};
-	 public final static String[] command_activate_channel = {"q", "w", "e", "r", "t", "y", "u", "i"};
-	 public final static String[] command_activate_leadoffP_channel = {"!", "@", "#", "$", "%", "^", "&", "*"};  //shift + 1-8
-	 public final static String[] command_deactivate_leadoffP_channel = {"Q", "W", "E", "R", "T", "Y", "U", "I"};   //letters (plus shift) right below 1-8
-	 public final static String[] command_activate_leadoffN_channel = {"A", "S", "D", "F", "G", "H", "J", "K"}; //letters (plus shift) below the letters below 1-8
-	 public final static String[] command_deactivate_leadoffN_channel = {"Z", "X", "C", "V", "B", "N", "M", "<"};   //letters (plus shift) below the letters below the letters below 1-8
-	 public final static String command_biasAuto = "`";
-	 public final static String command_biasFixed = "~";
+	 public final static String[] command_activate_channel = {"!", "@", "#", "$", "%", "^", "&", "*"};  //shift + 1-8
 
 	 //final static int DATAMODE_TXT = 0;
 	 public final static int DATAMODE_BIN = 1;
@@ -190,10 +182,6 @@ class OpenBCI_ADS1299 {
 		  case DATAMODE_BIN:
 				serial_openBCI.writeString(command_startBinary);
 				System.out.println("OpenBCI_ADS1299: startDataTransfer: starting binary transfer");
-				break;
-		  case DATAMODE_BIN_WAUX:
-				serial_openBCI.writeString(command_startBinary_wAux);
-				System.out.println("OpenBCI_ADS1299: startDataTransfer: starting binary transfer (with Aux)");
 				break;
 		  }
 		  dataMode=mode;
@@ -338,33 +326,30 @@ Footer
 					 PACKET_readstate++;
 				} 
 				break;
-		  case 3: // get channel values 
+		  case 3: // get channel values, these are 24bit = 3 byte
 				localByteBuffer[localByteCounter] = actbyte;
 				localByteCounter++;
 				if (localByteCounter==3) {
 					 dataPacket.values[localChannelCounter] = interpret24BitMSBAsInt32(localByteBuffer);
 					 localChannelCounter++;
 					 if( DEBUG>0 ) System.out.println("OpenBCI_ADS1299: interpretBinaryStream: localChannelCounter = " + localChannelCounter);
-					 if (localChannelCounter==dataPacket.values.length) {  
-						  // all channels arrived !
+					 if (localChannelCounter==dataPacket.values.length) {  // all EEG channels arrived !
 						  PACKET_readstate++;
-						  //isNewDataPacketAvailable = true;  //tell the rest of the code that the data packet is complete
 					 }
 					 //prepare for next data channel
 					 localByteCounter=0; //prepare for next usage of localByteCounter
 				}
 				break;
-		  case 4: // get aux values 
+		  case 4: // get aux values, these are 16bit = 2byte
 				localByteBuffer[localByteCounter] = actbyte;
 				localByteCounter++;
 				if (localByteCounter==2) {
-					 //dataPacket.values[localChannelCounter] = interpret16BitMSBAsInt32(localByteBuffer);
 					 localChannelCounter++;
+					 if ( dataPacket.values.length < localChannelCounter ) // add to packet if wanted
+						  dataPacket.values[localChannelCounter] = interpret16bitMSBAsInt32(localByteBuffer);
 					 if( DEBUG>0 ) System.out.println("OpenBCI_ADS1299: interpretBinaryStream: localChannelCounter = " + localChannelCounter);
-					 if (localChannelCounter==dataPacket.values.length+3) {  
-						  // all channels arrived !
-						  PACKET_readstate++;
-						  //isNewDataPacketAvailable = true;  //tell the rest of the code that the data packet is complete
+					 if (localChannelCounter==dataPacket.values.length+3) {  // all AUX channels arrived !
+						  PACKET_readstate++;  // Move to next packet phase
 					 }
 					 //prepare for next data channel
 					 localByteCounter=0; //prepare for next usage of localByteCounter
@@ -435,45 +420,7 @@ Footer
 				return false;
 		  }
 	 }
-  
-	 public void changeImpedanceState(int Ichan,boolean activate,int code_P_N_Both) throws SerialPortException {
-		  //System.out.println("OpenBCI_ADS1299: changeImpedanceState: Ichan " + Ichan + ", activate " + activate + ", code_P_N_Both " + code_P_N_Both);
-		  if (serial_openBCI != null) {
-				if ((Ichan >= 0) && (Ichan < command_activate_leadoffP_channel.length)) {
-					 if (activate) {
-						  if ((code_P_N_Both == 0) || (code_P_N_Both == 2)) {
-								//activate the P channel
-								serial_openBCI.writeString(command_activate_leadoffP_channel[Ichan]);
-						  } else if ((code_P_N_Both == 1) || (code_P_N_Both == 2)) {
-								//activate the N channel
-								serial_openBCI.writeString(command_activate_leadoffN_channel[Ichan]);
-						  }
-					 } else {
-						  if ((code_P_N_Both == 0) || (code_P_N_Both == 2)) {
-								//deactivate the P channel
-								serial_openBCI.writeString(command_deactivate_leadoffP_channel[Ichan]);
-						  } else if ((code_P_N_Both == 1) || (code_P_N_Both == 2)) {
-								//deactivate the N channel
-								serial_openBCI.writeString(command_deactivate_leadoffN_channel[Ichan]);
-						  }          
-					 }
-				}
-		  }
-	 }
-  
-	 public void setBiasAutoState(boolean isAuto) throws SerialPortException {
-		  if (serial_openBCI != null) {
-				if (isAuto) {
-					 System.out.println("OpenBCI_ADS1299: setBiasAutoState: setting bias to AUTO");
-					 serial_openBCI.writeString(command_biasAuto);
-				} else {
-					 System.out.println("OpenBCI_ADS1299: setBiasAutoState: setting bias to REF ONLY");
-					 serial_openBCI.writeString(command_biasFixed);
-				}
-		  }
-	 }
-  
-
+    
 	 int interpret24BitMSBAsInt32(byte[] byteArray) {     
 		  int newInt = (  
 							 ((0xFF & byteArray[0]) << 16) |  
@@ -498,7 +445,7 @@ Footer
 		  return i;
 	 }
   
-	 int interpret16MSBbitAsInt32(byte[] byteArray) {
+	 int interpret16bitMSBAsInt32(byte[] byteArray) {
 		  int newInt = (
 							 ((0xFF & byteArray[0]) << 8) |
 							 (0xFF & byteArray[1])
