@@ -1,8 +1,11 @@
 function [W,opts,winFn]=welchpsd(X,dim,varargin);
-% compute the spectrogram of the input X using the STFW method
+% compute the power-spectral-density of the input X using welch's method
 %
 % [W,opts]=welchpsd(X,dim,varargin)
 %
+% Inputs:
+%  X          -- [n-d] the data vector to compute the PSD
+%  dim        -- [int] the dimension of X to compute the PSD along (i.e. time dimension) (1st non-singelton dim)
 % Options: (N.B. just as passed to windowData)
 %  windowType -- type of time windowing to use ('hanning')
 %  nwindows   -- number of windows to use      
@@ -16,7 +19,7 @@ function [W,opts,winFn]=welchpsd(X,dim,varargin);
 %  center     -- [bool] center the data before fft'ing? (1)
 %  detrend    -- [bool] remove linear trends before fft'ing (0)
 %  aveType    -- 'str' one of:                              ('amp')
-%                'amp' - ave amp, 'power' - ave power, 'db' - ave db
+%                'amp' - ave amplitude, 'power' - ave power, 'db' - ave db
 %  outType    -- 'str' type of output to produce.  one of:
 %                'amp' - ave amp, 'power' - ave power, 'db' - ave db
 %  MAXEL      -- max number of elements to run at a time in chunking code
@@ -41,10 +44,13 @@ if ( isempty(opts.aveType) )
    end;
 end;
 
+if ( nargin<2 || isempty(dim) ) % use 1st non-singlenton dimension
+  dim = find(size(X)>1);
+end
 dim(dim<0)=dim(dim<0)+ndims(X)+1; % convert neg dim specs
 
 % extract window size from given window function
-if( ~isstr(opts.windowType) ) opts.width_samp=numel(opts.windowType); end; 
+if( ~isstr(opts.windowType) && isempty(opts.width_samp) ) opts.width_samp=numel(opts.windowType); end; 
 
 % convert win-specs from time to samples if necessary
 ms2samp=[]; if (~isempty(opts.fs)) ms2samp=opts.fs./1000; end;
