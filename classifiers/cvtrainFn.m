@@ -306,7 +306,7 @@ elseif( opts.outerSoln<0 ) % re-train with the optimal parameters found
     [seed,f,J]=feval(objFn,X,Ytrn,res.opt.C,'verb',opts.verb-1,...
                      'dim',opts.dim,varargin{:});
     if ( isstruct(seed) && isfield(seed,'soln') ) sol=seed.soln; else sol=seed; end;
-    if ( opts.binsp ) res.opt.soln{spi}=sol; else res.opt.soln=sol; end;
+    if ( opts.binsp ) res.opt.soln{spi}=sol; else res.opt.soln{1}=sol; end;
     res.opt.f(:,spi)=f;      
     % override tstf information for non-training data examples with those trained on all the data
     % now tstf contains val fold predictions in training set, and opt predictions for the rest
