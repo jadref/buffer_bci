@@ -14,6 +14,10 @@ function [f,fraw,p,X]=apply_ersp_clsfr(X,clsfr,verb)
 %  X    - [n-d] the pre-processed data
 if( nargin<3 || isempty(verb) ) verb=0; end;
 
+if( isfield(clsfr,'type') && ~strcmpi(clsfr.type,'ersp') )
+  warning(sprintf('Wrong type of classifier given, expected ERSP got : %s',clsfr.type));
+end
+
 %0) convert to singles (for speed)
 X=single(X);
 

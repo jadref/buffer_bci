@@ -101,6 +101,10 @@ if ( opts.badchrm || ~isempty(opts.badCh) )
   if ( ~isempty(ch_pos) ) isbadch(numel(ch_pos)+1:end)=true; end;
   if ( ~isempty(opts.badCh) )
     isbadch(opts.badCh)=true;
+    if ( ~isempty(ch_names) ) % update the channel info
+       if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names))); end;
+       ch_names=ch_names(~isbadch(1:numel(ch_names)));
+    end
   end
 end    
 
@@ -167,9 +171,9 @@ for ci=1:numel(nfParams)
   parmsci=nfParams(ci);
   % get the weighting over channels
   chWght = zeros(numel(ch_names),1);
-  if ( isempty(parmsci.electrodes) ) % empty means average over all electrodes
+  if ( isempty(parmsci.electrodes) ) 
     chWght(:)=1; 
-    
+  
   elseif ( numel(parmsci.electrodes)==numel(ch_names) && isnumeric(parmsci.electrodes))
     % explicit weighting over electrodes
     chWght=parmsci.electrodes;

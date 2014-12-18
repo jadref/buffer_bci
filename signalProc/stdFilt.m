@@ -7,6 +7,8 @@ function [x,s,mu,std]=stdFilt(x,s,alpha)
 %   x - [nd x 1] the data to filter
 %   s - [struct] internal state of the filter
 %   alpha - [float] exponiential decay factor for the moving average
+%           fx(t) = (\sum_0^inf x(t-i)*alpha^i)/(\sum_0^inf alpha^i)
+%           fx(t) = (1-alpha) x(t) + alpha fx(t)
 %           [2x1] 2 decay factors.  
 %                    alpha(1) = decay for mu/std estimation
 %                    alpha(2) = decay for averaging raw inputs (high-pass)

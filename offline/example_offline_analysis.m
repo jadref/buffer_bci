@@ -24,20 +24,31 @@ run ../utilities/initPaths.m
 %  1.3) read the data for the selected events
 % If you have a more complex criteria for which events to slice and return
 % then you should modify step 1.2 in the sliceraw.m file
-[data,devents,hdr,allevents]=sliceraw('example_data/raw_buffer/0001','startSet',{'stimulus.target'},'trlen_ms',3000);
+[data,devents,hdr,allevents]=sliceraw('example_data/raw_buffer/0001','startSet',{'stimulus.tgtFlash'},'trlen_ms',1500);
 
-% 2) train a ERsP classifier on this data, and visualise the results
-[clsfr,res,X]=buffer_train_ersp_clsfr(data,devents,hdr,'freqband',[8 10 24 28],'capFile',capFile);
+% N.B. to slice on *both* 'stimulus.rowFlash' and 'stimulus.colFlash' events, use:
+%   ... 'startSet',{{'stimulus.rowFlash' 'stimulus.colFlash'}}
+
+% 2) train a ERsP classifier on this data.
+capFile='1010'; % you should change this to represent whatever cap layout was used in your experiment
+[clsfr,res,X,Y]=buffer_train_erp_clsfr(data,devents,hdr,'freqband',[.1 .5 10 12],'capFile',capFile,'overridechnms',1);
+
 % N.B. X now contains the pre-processed data which can be used for other purposes, e.g. making better plots.
 
 % 3) apply this classifier to the same data (or new data)
-[f]      =buffer_apply_ersp_clsfr(data,clsfr);  % f contains the classifier decision values
+[f]      =buffer_apply_clsfr(data,clsfr);  % f contains the classifier decision values
+% visualise the classifier output
+%figure(3);clf;plot([Y*10 f]);legend('true *10','prediction');
 
+return;
+
+%----------------------------------------------------------------------------------
+% Below this line are alternative methods for running the data analysis
 %%---------------------------------------------------------------------------------
 % Alt1 : just run the pre-processing on this data
 %        assuming that [events.value] contains a class indicator for each epoch
-[X_pp,pipeline]=preproc_erp(data,'Y',events,'fs',hdr.Fs,'freqband',[8 10 24 28],'capFile',capFile,'overridechnms',1);
-[X_pp,pipeline]=preproc_ersp(data,'Y',events,'fs',hdr.Fs,'freqband',[8 10 24 28],'capFile',capFile,'overridechnms',1);
+[X_pp,pipeline]=preproc_erp(data,'Y',devents,'fs',hdr.Fs,'freqband',[8 10 24 28],'capFile',capFile,'overridechnms',1);
+[X_pp,pipeline]=preproc_ersp(data,'Y',devents,'fs',hdr.Fs,'freqband',[8 10 24 28],'capFile',capFile,'overridechnms',1);
 
 %%---------------------------------------------------------------------------------
 % Alt2: Manually pre-process the data
