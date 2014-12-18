@@ -26,7 +26,7 @@ if %pyfolder%==dummy (
     echo Python location
 	set folder=%pyfolder%
 )
-if exist %folder%\raw_buffer ( 
+if exist "%folder%\raw_buffer" ( 
 	set folder=%folder%_1
 	mkdir %folder%_1	
 )
