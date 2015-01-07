@@ -101,7 +101,11 @@ if ( opts.badchrm || ~isempty(opts.badCh) )
   if ( ~isempty(ch_pos) ) isbadch(numel(ch_pos)+1:end)=true; end;
   if ( ~isempty(opts.badCh) )
     isbadch(opts.badCh)=true;
-  end
+    if ( ~isempty(ch_names) ) % update the channel info
+      if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names))); end;
+      ch_names=ch_names(~isbadch(1:numel(ch_names)));
+    end
+ end 
 end    
 
 %2.2) time range selection
@@ -167,11 +171,10 @@ for ci=1:numel(nfParams)
   parmsci=nfParams(ci);
   % get the weighting over channels
   chWght = zeros(numel(ch_names),1);
-  if ( isempty(parmsci.electrodes) ) % empty means average over all electrodes
+  if ( isempty(parmsci.electrodes) ) 
     chWght(:)=1; 
-    
+  
   elseif ( numel(parmsci.electrodes)==numel(ch_names) && isnumeric(parmsci.electrodes))
-    % explicit weighting over electrodes
     chWght=parmsci.electrodes;
   
   elseif ( isnumeric(parmsci.electrodes) ) % indices of the electrodes to average
@@ -179,7 +182,6 @@ for ci=1:numel(nfParams)
     chWght(-parmsci.electrodes(parmsci.electrodes<0)) = -1;
   
   elseif ( iscell(parmsci.electrodes) || isstr(parmsci.electrodes) )
-    % List of electrode names to average together
     if ( isstr(parmsci.electrodes) ) parmsci.electrodes={parmsci.electrodes}; end;
     for ei=1:numel(parmsci.electrodes);
       chei = parmsci.electrodes{ei};
