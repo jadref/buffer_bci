@@ -31,7 +31,7 @@ run ../utilities/initPaths.m
 
 % 2) train a ERsP classifier on this data.
 capFile='1010'; % you should change this to represent whatever cap layout was used in your experiment
-[clsfr,res,X]=buffer_train_erp_clsfr(data,devents,hdr,'freqband',[.1 .5 10 12],'capFile',capFile,'overridechnms',1);
+[clsfr,res,X,Y]=buffer_train_erp_clsfr(data,devents,hdr,'freqband',[.1 .5 10 12],'capFile',capFile,'overridechnms',1);
 
 % This analysis should generate two summary figures:
 %
@@ -63,7 +63,7 @@ capFile='1010'; % you should change this to represent whatever cap layout was us
 % 3) apply this classifier to the same data (or new data)
 [f]      =buffer_apply_clsfr(data,clsfr);  % f contains the classifier decision values
 % visualise the classifier output
-clf;plot([[devents.value]'*10 f]);legend('true *10','prediction');
+%figure(3);clf;plot([Y*10 f]);legend('true *10','prediction');
 
 return;
 
