@@ -105,7 +105,7 @@ if ( opts.badchrm || ~isempty(opts.badCh) )
       if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names))); end;
       ch_names=ch_names(~isbadch(1:numel(ch_names)));
     end
- end
+ end 
 end    
 
 %2.2) time range selection
