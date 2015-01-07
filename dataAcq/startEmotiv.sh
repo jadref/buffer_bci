@@ -22,8 +22,10 @@ if [ `uname -s` == 'Linux' ]; then
    if [ -r $buffdir/buffer/glnx86/emotiv2ft ]; then
 	 buffexe=$buffdir'/buffer/glnx86';
    fi
-	if [ -r $buffdir/emokit/emokit2ft/emokit2ft ] ; then
-	 buffexe=$buffdir'/emokit/emokit2ft';
+	if [ ! -r $buffexe ] ; then
+		 echo Can not find emotive2ft.  Falling back on 'startEmokit.sh'
+		 startEmokit.sh $@
+		 exit
 	fi
 else # Mac
    if [ -r $buffdir/buffer/bin/maci/emotiv2ft ]; then
