@@ -20,4 +20,4 @@ else # Mac
 	 buffexe=$buffdir'/buffer/maci/eventViewer'
    fi
 fi
-$buffexe 
+$buffexe $@

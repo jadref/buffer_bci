@@ -33,7 +33,7 @@ fi
 echo Starting: $buffexe
 # turn return into carriage return to stop endless scrolling of the window
 if [ -z `which tr` ]; then
-  $buffexe
+  $buffexe $@
 else
-  $buffexe | tr '\n' '\r'
+  $buffexe $@ | tr '\n' '\r'
 fi

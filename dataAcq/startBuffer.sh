@@ -53,7 +53,7 @@ echo $buffexe ${outdir}/raw_buffer
 
 # turn return into carriage return to stop endless scrolling of the window
 if [ -z `which tr` ]; then
-  $buffexe "${outdir}"/raw_buffer
+  $buffexe "${outdir}"/raw_buffer $@
 else
-  $buffexe "${outdir}"/raw_buffer | tr '\n' '\r'
+  $buffexe "${outdir}"/raw_buffer $@ | tr '\n' '\r'
 fi

@@ -166,10 +166,11 @@ int main(int argc, char *argv[]) {
   request.def->bufsize = append(&request.buf, request.def->bufsize, header.buf, header.def->bufsize);
 
   fprintf(stderr,"csignalproxy: Attempting to open connection to buffer....");
-  while ( (serverfd = open_connection(buffhost.name,buffhost.port)) < 0 ){
+  while ( ((serverfd = open_connection(buffhost.name,buffhost.port)) < 0) & (exitExpt==0) ){
 	 fprintf(stderr, "csignalproxy; failed to create socket. waiting\n");
 	 usleep(1000000);/* sleep for 1second and retry */
   }
+  if ( exitExpt ){ fprintf(stderr,"<ctrl-c> exiting\n"); exit(1); } 
   fprintf(stderr,"done.\nSending header...");
   status = tcprequest(serverfd, &request, &response);
   fprintf(stderr,"done.\n");

@@ -20,4 +20,4 @@ else # Mac
 	 buffexe=$buffdir'/buffer/maci/csignalproxy'
    fi
 fi
-$buffexe 
+$buffexe $@
