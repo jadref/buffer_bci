@@ -22,7 +22,7 @@ public class EventRingBuffer {
 	 * 
 	 * @param item
 	 */
-	public void add(Event item) {
+	public synchronized void add(Event item) {
 		eventCount++;
 		ring[newPos++] = item;
 
@@ -35,7 +35,7 @@ public class EventRingBuffer {
 	/**
 	 * Resets the buffer.
 	 */
-	public void clear() {
+	public synchronized void clear() {
 		eventCount = 0;
 		newPos = 0;
 	}
@@ -48,7 +48,7 @@ public class EventRingBuffer {
 	 *            -1.
 	 * @return the value at index
 	 */
-	public Event get(int index) throws IndexOutOfBoundsException {
+	public synchronized Event get(int index) throws IndexOutOfBoundsException {
 		if (index < 0) {
 			throw new IndexOutOfBoundsException("Index < 0.");
 		}
@@ -88,7 +88,7 @@ public class EventRingBuffer {
 	 * 
 	 * @return
 	 */
-	public int indexOfOldest() {
+	public synchronized int indexOfOldest() {
 		if (eventCount <= capacity) {
 			return 0;
 		} else {
@@ -101,7 +101,7 @@ public class EventRingBuffer {
 	 * 
 	 * @return
 	 */
-	public int eventCount() {
+	public synchronized int eventCount() {
 		return eventCount;
 	}
 

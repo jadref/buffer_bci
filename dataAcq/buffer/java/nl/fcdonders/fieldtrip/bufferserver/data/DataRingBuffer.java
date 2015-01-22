@@ -22,7 +22,7 @@ public class DataRingBuffer {
 	 * 
 	 * @param item
 	 */
-	public void add(byte[][] item) {
+	public synchronized void add(byte[][] item) {
 		sampleCount++;
 		ring[newPos++] = item;
 
@@ -35,7 +35,7 @@ public class DataRingBuffer {
 	/**
 	 * Resets the buffer.
 	 */
-	public void clear() {
+	public synchronized void clear() {
 		sampleCount = 0;
 		newPos = 0;
 	}
@@ -48,7 +48,7 @@ public class DataRingBuffer {
 	 *            -1.
 	 * @return the value at index
 	 */
-	public byte[][] get(int index) throws IndexOutOfBoundsException {
+	public synchronized byte[][] get(int index) throws IndexOutOfBoundsException {
 		if (index < 0) {
 			throw new IndexOutOfBoundsException("Index < 0.");
 		}
@@ -88,7 +88,7 @@ public class DataRingBuffer {
 	 * 
 	 * @return
 	 */
-	public int indexOfOldest() {
+	public synchronized int indexOfOldest() {
 		if (sampleCount <= capacity) {
 			return 0;
 		} else {
@@ -101,7 +101,7 @@ public class DataRingBuffer {
 	 * 
 	 * @return
 	 */
-	public int sampleCount() {
+	public synchronized int sampleCount() {
 		return sampleCount;
 	}
 
