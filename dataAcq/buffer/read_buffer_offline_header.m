@@ -1,5 +1,5 @@
-function [hdr, nameFlag] = read_buffer_v1_header(headerfile)
-% function [hdr, nameFlag] = read_buffer_v1_header(headerfile)
+function [hdr, nameFlag] = read_buffer_offline_header(headerfile)
+% function [hdr, nameFlag] = read_buffer_offline_header(headerfile)
 %
 % This function reads a FCDC buffer header from a binary file or text file
 %
@@ -47,89 +47,96 @@ hdr.orig =[];
 
 nameFlag = 0;
 
-FA = fopen([headerfile '.txt'], 'r');
-while ~feof(FA);
-  s = fgetl(FA);
-  indEq = find(s=='=');
-  if numel(indEq)==1
-    key = s(1:(indEq-1));
-    val = s((indEq+1):end);
-    switch key
-      case 'fSample'
-        hdr.Fs = str2num(val);
-      case 'nSamples'
-        hdr.nSamples = str2num(val);
-      case 'nEvents'
-%        hdr.nEvents = str2num(val);
-      case 'nChans'
-        hdr.nChans = str2num(val);
-        hdr.label = cell(hdr.nChans,1);
-      case 'dataType'
+txt=[];
+if ( exist([headerfile '.txt'],'file') )
+  FA = fopen([headerfile '.txt'], 'r');
+  while ~feof(FA);
+    s = fgetl(FA);
+    indEq = find(s=='=');
+    if numel(indEq)==1
+      key = s(1:(indEq-1));
+      val = s((indEq+1):end);
+      switch key
+       case 'fSample'
+        txt.Fs = str2num(val);
+       case 'nSamples'
+        txt.nSamples = str2num(val);
+       case 'nEvents'
+        %        txt.nEvents = str2num(val);
+       case 'nChans'
+        txt.nChans = str2num(val);
+        txt.label = cell(txt.nChans,1);
+       case 'dataType'
         if strcmp(val,'float32')
-           hdr.orig.data_type = 'single';
+          txt.orig.data_type = 'single';
         elseif strcmp(val,'float64')
-           hdr.orig.data_type = 'double';
+          txt.orig.data_type = 'double';
         else
-          hdr.orig.data_type = val;
+          txt.orig.data_type = val;
         end
-        hdr.orig.wordsize = wordsize{strmatch(hdr.orig.data_type,type)};
-      case 'version'
-        hdr.orig.version = str2num(val);
-      case 'endian'
+        txt.orig.wordsize = wordsize{strmatch(txt.orig.data_type,type)};
+       case 'version'
+        txt.orig.version = str2num(val);
+       case 'endian'
         if strcmp(val,'big')
-          hdr.orig.endianness='ieee-be';
+          txt.orig.endianness='ieee-be';
         elseif strcmp(val,'little')
-          hdr.orig.endianness='ieee-le';
+          txt.orig.endianness='ieee-le';
         else
           error('Invalid value for key ''endian''.');
         end
+      end
+      continue;
     end
-    continue;
-  end
-  indCol = find(s==':');
-  if numel(indCol)>=1
-    ind = str2num(s(1:(indCol-1)));
-    name = s((indCol+1):end);
-    if ~isempty(ind) && ind>=1 && ind<=hdr.nChans
-      hdr.label{ind} = name;
-      nameFlag = 2;
-    else
-      error('Invalid channel name definition - broken header file?');
+    indCol = find(s==':');
+    if numel(indCol)>=1
+      ind = str2num(s(1:(indCol-1)));
+      name = s((indCol+1):end);
+      if ~isempty(ind) && ind>=1 && ind<=txt.nChans
+        txt.label{ind} = name;
+        nameFlag = 2;
+      else
+        error('Invalid channel name definition - broken header file?');
+      end
     end
   end
-end
 
-fclose(FA);
+  fclose(FA);
+end
 
 bin=[];
 if ( ~exist(headerfile,'file') )
   warning(sprintf('Couldnt find binary header file : %s',headerfile));
 else  
+  if ( ~isfield(hdr.orig,'endianness') )
+    hdr.orig.endianness='native';
+  end
   F = fopen(headerfile,'rb',hdr.orig.endianness);
-  bin.nChans    = double(fread(F,1,'uint32'));
-  bin.nSamples  = double(fread(F,1,'uint32'));
-  bin.nEvents   = double(fread(F,1,'uint32'));
-  bin.Fs        = double(fread(F,1,'single'));
-  bin.data_type = fread(F,1,'uint32');
-  bin.bufsize   = fread(F,1,'uint32');
+  hdr.nChans    = double(fread(F,1,'uint32'));
+  hdr.nSamples  = double(fread(F,1,'uint32'));
+  hdr.nEvents   = double(fread(F,1,'uint32'));
+  hdr.Fs        = double(fread(F,1,'single'));
+  hdr.data_type = fread(F,1,'uint32');
+  hdr.bufsize   = fread(F,1,'uint32');
 
-  if hdr.nChans ~= bin.nChans
+  if isfield(txt,'nChans') && hdr.nChans ~= txt.nChans
     error('Number of channels in binary header does not match ASCII definition');
   end
-  if hdr.nSamples ~= bin.nSamples
+  if isfield(txt,'nChans') && hdr.nSamples ~= txt.nSamples
     warning('Number of samples in binary header does not match ASCII definition');
   end
-  if isfield(hdr,'nEvents') && hdr.nEvents ~= bin.nEvents
+  if isfield(txt,'nEvents') && hdr.nEvents ~= txt.nEvents
     error('Number of events in binary header does not match ASCII definition');
   end
-  if isempty(bin.data_type)
-    bin.data_type = strmatch(hdr.orig.data_type,type)-1;
+  if isempty(hdr.data_type)
+    hdr.data_type = strmatch(txt.orig.data_type,type)-1;
   end
-  if strcmp(hdr.orig.data_type, type{bin.data_type+1})
-    hdr.orig.wordsize = wordsize{bin.data_type+1};
-  else
-    error('Data type in binary header does not match ASCII definition');
-  end
+  %if strcmp(hdr.data_type, type{hdr.data_type+1})
+  hdr.orig.data_type = type{hdr.data_type+1};
+  hdr.orig.wordsize = wordsize{hdr.data_type+1};
+  %else
+  %  error('Data type in binary header does not match ASCII definition');
+  %end
 
   % TODO: add chunk handling
   while ~feof(F)

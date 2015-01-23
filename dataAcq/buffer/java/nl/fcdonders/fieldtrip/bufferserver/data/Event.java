@@ -1,6 +1,10 @@
 package nl.fcdonders.fieldtrip.bufferserver.data;
 
+import nl.fcdonders.fieldtrip.bufferclient.DataType;
 import java.nio.ByteOrder;
+import java.nio.ByteBuffer;
+
+
 
 /**
  * Wrapper for passing events between DataStore and NetworkProtocol.
@@ -83,4 +87,18 @@ public class Event {
 		this.value = value;
 		this.order = order;
 	}
+
+	public void serialize(ByteBuffer buf) {
+		buf.putInt(typeType);
+		buf.putInt(typeSize);
+		buf.putInt(valueType);
+		buf.putInt(valueSize);
+		buf.putInt(sample);
+		buf.putInt(offset);
+		buf.putInt(duration);
+		buf.putInt(typeSize*DataType.wordSize[typeType]+valueSize*DataType.wordSize[valueType]);
+		for ( int i=0; i<type.length; i++) buf.put(type[i]);
+		for ( int i=0; i<value.length; i++) buf.put(value[i]);
+	}	 
+
 }

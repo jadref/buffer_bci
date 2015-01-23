@@ -1,6 +1,7 @@
 package nl.fcdonders.fieldtrip.bufferserver.data;
 
 import java.nio.ByteOrder;
+import java.nio.ByteBuffer;
 
 /**
  * Wrapper for passing data between the NetworkProtocol and dataStore.

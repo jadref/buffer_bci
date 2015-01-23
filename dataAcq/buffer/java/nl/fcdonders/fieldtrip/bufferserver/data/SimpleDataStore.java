@@ -404,4 +404,6 @@ public class SimpleDataStore extends DataModel {
 
 		this.header = header;
 	}
+
+	 public void cleanup(){}; // null class
 }

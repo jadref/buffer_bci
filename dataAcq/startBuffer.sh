@@ -17,11 +17,11 @@ if [ -z $outdir ] ; then
 	 block=`date +%H%M`
 	 if [ $# -gt 2 ]; then block=$2; fi
 	 outdir=$bciroot/$subject/$session/$block
+	 if [ -r $outdir ] ; then # already exists?  add postfix
+		  outdir=${outdir}_1
+	 fi
 fi
 
-if [ -r $outdir ] ; then # already exists?  add postfix
-  outdir=${outdir}_1
-fi
 logfile=${outdir}.log
 echo outdir: $outdir
 mkdir -p "$outdir"
