@@ -232,7 +232,10 @@ public class BufferServer extends Thread {
 	 */
 	@Override
 	public void run() {
-		try {
+		 //final Thread mainThread = Thread.currentThread();
+		 // Add shutdown hook to force close and flush to disk of open files if interrupted/aborted
+		 Runtime.getRuntime().addShutdownHook(new Thread() { public void run() { cleanup(); } });		
+		 try {
 			serverSocket = new ServerSocket(portNumber);
 			while (true) {
 				final ConnectionThread connection = new ConnectionThread(
@@ -272,6 +275,7 @@ public class BufferServer extends Thread {
 	}
 
 	 public void cleanup(){
+		  System.err.println("Running cleanup code");
 		  dataStore.cleanup();
 	 }
 	 

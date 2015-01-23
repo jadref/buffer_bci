@@ -1,6 +1,6 @@
 package nl.fcdonders.fieldtrip.bufferserver.data;
 
-import nl.fcdonders.fieldtrip.bufferclient.DataType;
+import nl.fcdonders.fieldtrip.bufferserver.network.NetworkProtocol;
 import java.nio.ByteOrder;
 import java.nio.ByteBuffer;
 
@@ -96,7 +96,7 @@ public class Event {
 		buf.putInt(sample);
 		buf.putInt(offset);
 		buf.putInt(duration);
-		buf.putInt(typeSize*DataType.wordSize[typeType]+valueSize*DataType.wordSize[valueType]);
+		buf.putInt(typeSize*NetworkProtocol.dataTypeSize(typeType)+valueSize*NetworkProtocol.dataTypeSize(valueType));
 		for ( int i=0; i<type.length; i++) buf.put(type[i]);
 		for ( int i=0; i<value.length; i++) buf.put(value[i]);
 	}	 
