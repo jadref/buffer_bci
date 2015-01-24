@@ -61,6 +61,7 @@ public class BufferClient {
 		activeConnection = sockChan.isConnected();
 		if ( activeConnection ) { // cache the connection info
 			 sockChan.socket().setSoTimeout(timeout);
+			 sockChan.socket().setTcpNoDelay(true); //disable Nagle's algorithm...i.e. allow small packets
 			 this.host = hostname;
 			 this.port = port;
 		}

@@ -60,7 +60,7 @@ end;
 if ( isempty(bufferClient) )
   buffer_bcidir=fileparts(fileparts(fileparts(mfilename('fullpath')))); % buffer_bci directory
   bufferjavaclassdir = fileparts(mfilename('fullpath'));
-  bufferjar = fullfile(bufferjavaclassdir,'Buffer.jar');
+  bufferjar = fullfile(bufferjavaclassdir,'BufferClient.jar');
   if ( exist(bufferjar,'file') )
     if ( ~any(strcmp(javaclasspath,bufferjar)) )
       warning('Modifying javaclass path -- this clears all variables!');
@@ -105,10 +105,10 @@ switch cmd;
     elseif( isfield(detail,'orig') )      dataType=detail.orig.data_type;
     end
     if ( isstr(dataType) ) dataType=getTypeID(dataType); end
-    hdr=javaObject('nl.fcdonders.fieldtrip.Header',detail.nChans,fs,dataType);
+    hdr=javaObject('nl.fcdonders.fieldtrip.bufferclient.Header',detail.nChans,fs,dataType);
   else
     if ( isfield(detail,'fs') ) fs=detail.fs; else fs=detail.fsample; end;
-    hdr=javaObject('nl.fcdonders.fieldtrip.Header',detail.nchans,fs,detail.data_type);    
+    hdr=javaObject('nl.fcdonders.fieldtrip.bufferclient.Header',detail.nchans,fs,detail.data_type);    
   end
   if ( isfield(detail,'labels') )
     hdr.labels=detail.labels; % N.B. inconsistent names btw java and mex versions    
@@ -170,11 +170,11 @@ switch cmd;
  
  case 'put_evt';
   if ( numel(detail)==1 ) 
-    e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.BufferEvent',detail.type,detail.value,detail.sample));
+    e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.bufferclient.BufferEvent',detail.type,detail.value,detail.sample));
   else
     for ei=1:numel(detail);
       evt=detail(ei);
-      e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.BufferEvent',evt.type,evt.value,evt.sample));
+      e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.bufferclient.BufferEvent',evt.type,evt.value,evt.sample));
     end
   end
   if ( nargout>0 ) % convert to matlab (quickly, getArray is v.slow)
@@ -229,7 +229,7 @@ if ( isempty(clientIdx) ) % make a new connection
   clientIdx=numel(bufferClient)+1;
   try
     fprintf('Initialize connection to : %s %d\n',host,port);
-    bufferClient{clientIdx}=javaObject('nl.fcdonders.fieldtrip.BufferClientClock');
+    bufferClient{clientIdx}=javaObject('nl.fcdonders.fieldtrip.bufferclient.BufferClientClock');
     bufferClient{clientIdx}.setAutoReconnect(true);
   catch
     le=lasterr;
