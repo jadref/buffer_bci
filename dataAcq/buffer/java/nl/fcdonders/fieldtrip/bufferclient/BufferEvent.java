@@ -226,6 +226,12 @@ public class BufferEvent {
 		System.out.println(wType);
 		System.out.println(wValue);
 	}
+
+	public String toString() {
+		 String str= "s: " + sample + " t(" + wType.type + "):" + wType + " v(" + wValue.type + "):" + wValue + " o: " + offset + " d: " + duration;
+		 return str;
+	}
+
 	
 	public int sample;
 	public int offset;

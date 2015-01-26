@@ -214,6 +214,7 @@ public class BufferServer extends Thread {
 			}
 			return true;
 		} catch (final DataException e) {
+			 System.err.println("Error : " + e);
 			return false;
 		}
 	}

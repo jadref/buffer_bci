@@ -63,6 +63,7 @@ class eventViewer {
 						
 		// Now do the event viewer
 		int nEvents=hdr.nEvents;
+		int nevt=0;
 		boolean endExpt=false;
 		while ( !endExpt ) {
 			 SamplesEventsCount sec = C.waitForEvents(nEvents,timeout); // Block until there are new events
@@ -73,8 +74,8 @@ class eventViewer {
 				  // filter for ones we want
 				  for ( int ei=0; ei<evs.length; ei++){
 						BufferEvent evt=evs[ei];
-						// Print the even to the console
-						System.out.println(ei + ") t:" + evt.getType().toString() + " v:" + evt.getValue().toString() + " s:" + evt.sample);
+						System.out.println(nevt + ") " + evt); // Print the event to the console
+						nevt++;
 				  }
 			 } else { // timed out without new events
 				  System.out.println("Timeout waiting for events");

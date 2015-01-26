@@ -96,6 +96,7 @@ public class ConnectionThread extends Thread {
 
 		} catch (final DataException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodeFlushError(message.order);
 
 		}
@@ -121,6 +122,7 @@ public class ConnectionThread extends Thread {
 
 		} catch (final DataException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodeFlushError(message.order);
 
 		}
@@ -146,6 +148,7 @@ public class ConnectionThread extends Thread {
 
 		} catch (final DataException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodeFlushError(message.order);
 
 		}
@@ -186,6 +189,7 @@ public class ConnectionThread extends Thread {
 
 		} catch (final DataException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodeGetError(message.order);
 		}
 	}
@@ -223,6 +227,7 @@ public class ConnectionThread extends Thread {
 
 		} catch (final DataException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodeGetError(message.order);
 		}
 	}
@@ -247,6 +252,7 @@ public class ConnectionThread extends Thread {
 
 		} catch (final DataException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodeGetError(message.order);
 
 		}
@@ -277,10 +283,12 @@ public class ConnectionThread extends Thread {
 
 		} catch (final ClientException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodeGetError(message.order);
 
 		} catch (final DataException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodeGetError(message.order);
 
 		}
@@ -311,10 +319,12 @@ public class ConnectionThread extends Thread {
 
 		} catch (final ClientException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodePutError(message.order);
 
 		} catch (final DataException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodePutError(message.order);
 		}
 	}
@@ -344,10 +354,12 @@ public class ConnectionThread extends Thread {
 
 		} catch (final ClientException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodePutError(message.order);
 
 		} catch (final DataException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodePutError(message.order);
 		}
 	}

@@ -110,6 +110,23 @@ public class Header {
 			}
 		} 
 	}
+
+
+	public String toString(){
+		 String NEW_LINE = System.getProperty("line.separator");
+		 String str="";
+		 str += "#channels....: "+nChans+NEW_LINE;
+		 str += "#samples.....: "+nSamples+NEW_LINE;
+		 str += "#events......: "+nEvents+NEW_LINE;
+		 str += "Sampling Freq: "+fSample+NEW_LINE;
+		 str += "data type....: "+dataType+NEW_LINE;
+		 for (int n=0;n<nChans;n++) {
+			  if (labels[n] != null) {
+					str += "Ch. " + n + ": " + labels[n] + NEW_LINE;
+			  }
+		 }
+		 return str;
+	}	
 	
 	protected int channelNameSize;
 
