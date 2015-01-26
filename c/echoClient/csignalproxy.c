@@ -1,6 +1,6 @@
 /*
- * This code sends data from a TMSi mobita device to a buffer-device
- * using the put_dat methods.
+ * This code sends simulated noise data to a running buffer using the
+ * putDat methods
  *
  */
 
