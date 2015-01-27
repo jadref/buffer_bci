@@ -1,4 +1,5 @@
 package nl.fcdonders.fieldtrip.bufferserver.data;
+import java.nio.ByteBuffer;
 
 /**
  * Wrapper for the extended header chunks.
@@ -26,4 +27,10 @@ public class Chunk {
 		this.size = size;
 		this.data = data;
 	}
+
+	 public void serialize(ByteBuffer buf){
+		  buf.putInt(type);
+		  buf.putInt(size);
+		  buf.put(data);
+	 }
 }

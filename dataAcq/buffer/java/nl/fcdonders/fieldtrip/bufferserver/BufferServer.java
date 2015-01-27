@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import nl.fcdonders.fieldtrip.bufferserver.data.DataModel;
 import nl.fcdonders.fieldtrip.bufferserver.data.Header;
 import nl.fcdonders.fieldtrip.bufferserver.data.RingDataStore;
+import nl.fcdonders.fieldtrip.bufferserver.data.SavingRingDataStore;
 import nl.fcdonders.fieldtrip.bufferserver.data.SimpleDataStore;
 import nl.fcdonders.fieldtrip.bufferserver.exceptions.DataException;
 import nl.fcdonders.fieldtrip.bufferserver.network.ConnectionThread;
@@ -21,6 +22,10 @@ import nl.fcdonders.fieldtrip.bufferserver.network.ConnectionThread;
  */
 public class BufferServer extends Thread {
 
+	 static final int serverPort =1972;    // default server port
+	 static final int dataBufSize=1024*60; // default save samples = 60s @ 1024Hz
+	 static final int eventBufSize=10*60;  // default save events  = 60s @ 10Hz
+
 	/**
 	 * Main method, starts running a server thread in the current thread.
 	 * Handles arguments.
@@ -30,21 +35,44 @@ public class BufferServer extends Thread {
 	 *            <nEvents>
 	 */
 	public static void main(final String[] args) {
-		BufferServer buffer;
-		if (args.length == 1) {
-			buffer = new BufferServer(Integer.parseInt(args[0]));
+		 int logging=0;
+		BufferServer buffer=null;
+		if (args.length == 0 ){
+			 usage();
+			 System.exit(1);
+		} else if (args.length == 1) {
+			 try { 
+				  buffer = new BufferServer(Integer.parseInt(args[0]));
+			 } catch ( NumberFormatException e ){ // not a number, assume it's the save location
+				  buffer = new BufferServer(serverPort, dataBufSize, eventBufSize, args[0]);
+			 }
 		} else if (args.length == 2) {
 			buffer = new BufferServer(Integer.parseInt(args[0]),
 					Integer.parseInt(args[1]));
 		} else if (args.length == 3) {
 			buffer = new BufferServer(Integer.parseInt(args[0]),
 					Integer.parseInt(args[1]), Integer.parseInt(args[2]));
+		} else if (args.length == 4 ) { // 4rd arg is save location
+			 buffer = new BufferServer(Integer.parseInt(args[0]),
+												Integer.parseInt(args[1]), Integer.parseInt(args[2]),
+												args[3]);
+		} else if (args.length == 5 ) { // 5th arg is save location
+			 buffer = new BufferServer(Integer.parseInt(args[0]),
+												Integer.parseInt(args[1]), Integer.parseInt(args[2]),
+												args[3]);
+			 logging = Integer.parseInt(args[4]);
 		} else {
-			buffer = new BufferServer(1972, 10000, 1000);
+			 buffer = new BufferServer(serverPort, dataBufSize, eventBufSize);
 		}
-		buffer.addMonitor(new SystemOutMonitor());
+		buffer.addMonitor(new SystemOutMonitor(logging));
 		buffer.run();
+		buffer.cleanup();
 	}
+
+	 public static void usage(){
+		  System.err.println("java -jar BufferServer.jar PORT sampLen eventLen SaveLocation verbosityLevel");
+	 }
+
 
 	private final DataModel dataStore;
 
@@ -62,7 +90,13 @@ public class BufferServer extends Thread {
 	 */
 	public BufferServer(final int portNumber) {
 		this.portNumber = portNumber;
-		dataStore = new SimpleDataStore();
+		dataStore = new RingDataStore(dataBufSize,eventBufSize);
+		setName("Fieldtrip Buffer Server");
+	}
+
+	 public BufferServer(final String path, final int portNumber) {
+		this.portNumber = portNumber;
+		dataStore = new SavingRingDataStore(dataBufSize,eventBufSize,path);
 		setName("Fieldtrip Buffer Server");
 	}
 
@@ -90,6 +124,12 @@ public class BufferServer extends Thread {
 	public BufferServer(final int portNumber, final int nSamples, final int nEvents) {
 		this.portNumber = portNumber;
 		dataStore = new RingDataStore(nSamples, nEvents);
+		setName("Fieldtrip Buffer Server");
+	}
+
+	 public BufferServer(final int portNumber, final int nSamples, final int nEvents, final String path) {
+		this.portNumber = portNumber;
+		dataStore = new SavingRingDataStore(nSamples, nEvents, path);
 		setName("Fieldtrip Buffer Server");
 	}
 
@@ -174,6 +214,7 @@ public class BufferServer extends Thread {
 			}
 			return true;
 		} catch (final DataException e) {
+			 System.err.println("Error : " + e);
 			return false;
 		}
 	}
@@ -192,7 +233,10 @@ public class BufferServer extends Thread {
 	 */
 	@Override
 	public void run() {
-		try {
+		 //final Thread mainThread = Thread.currentThread();
+		 // Add shutdown hook to force close and flush to disk of open files if interrupted/aborted
+		 Runtime.getRuntime().addShutdownHook(new Thread() { public void run() { cleanup(); } });		
+		 try {
 			serverSocket = new ServerSocket(portNumber);
 			while (true) {
 				final ConnectionThread connection = new ConnectionThread(
@@ -228,6 +272,12 @@ public class BufferServer extends Thread {
 			serverSocket.close();
 			disconnectedOnPurpose = true;
 		} catch (final IOException e) {
-		}
+		}		
 	}
+
+	 public void cleanup(){
+		  System.err.println("Running cleanup code");
+		  dataStore.cleanup();
+	 }
+	 
 }

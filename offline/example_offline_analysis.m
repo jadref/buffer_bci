@@ -33,6 +33,31 @@ run ../utilities/initPaths.m
 capFile='1010'; % you should change this to represent whatever cap layout was used in your experiment
 [clsfr,res,X,Y]=buffer_train_erp_clsfr(data,devents,hdr,'freqband',[.1 .5 10 12],'capFile',capFile,'overridechnms',1);
 
+% This analysis should generate two summary figures:
+%
+% a) ERP / ERsP data.  
+% This should be a head plot showing the averaged response for each of the
+% different training conditions (as determined by the unique values of the
+% trial events).  For ERP training this will be the signal amplitude over
+% time after the trigger event.  For the ERsP training this will be the
+% signal amplitude at different frequencies.
+%
+% b) AUC data.
+% This plot shows where the signals for the different training conditions
+% are most different and some indication of the magnitude of this
+% difference.  Again is shows a head plot.  In this case the color of the
+% plot shows the significance of the difference between conditions, with
+% white=no-significant difference, and the strength of the color indicating
+% the difference strength.  The magnitude of this difference is a rough
+% indication of the classification performancy you could expect.
+%
+% c) Classifier performance.
+% The final window will be a summary of the classifier performance on this
+% data.  This is simply a number which is the fraction of trials the
+% classifier would get correct.
+% N.B. this is a so-called, balanced classification rate, so .5=chance and
+% 1. is perfect performance.
+
 % N.B. X now contains the pre-processed data which can be used for other purposes, e.g. making better plots.
 
 % 3) apply this classifier to the same data (or new data)

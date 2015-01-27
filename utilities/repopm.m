@@ -1,4 +1,4 @@
-function [Z]=repop(varargin)
+function [Z]=repopm(varargin)
 % Replicating arithemetical and logical operators -- MATLAB fallback code
 %
 % [Z]=repop(X,operator,Y [,options])

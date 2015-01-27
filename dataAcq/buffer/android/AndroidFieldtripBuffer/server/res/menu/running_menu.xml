@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:id="@+id/put_dummy_header"
+          android:icon="@drawable/ic_action_new"
+          android:title="@string/dummyheader" 
+          android:visible="true"/>
+        <item android:id="@+id/flush_header"
+          android:icon="@drawable/ic_action_new"
+          android:title="@string/flushheader" 
+          android:visible="true"/>
+            <item android:id="@+id/flush_events"
+          android:icon="@drawable/ic_action_new"
+          android:title="@string/flushevents" 
+          android:visible="true"/>
+                <item android:id="@+id/flush_samples"
+          android:icon="@drawable/ic_action_new"
+          android:title="@string/flushsamples" 
+          android:visible="true"/>
+</menu>

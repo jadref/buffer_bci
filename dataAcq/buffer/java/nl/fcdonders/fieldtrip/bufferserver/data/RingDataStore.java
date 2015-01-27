@@ -9,15 +9,15 @@ import nl.fcdonders.fieldtrip.bufferserver.network.Request;
 import nl.fcdonders.fieldtrip.bufferserver.network.WaitRequest;
 
 public class RingDataStore extends DataModel {
-	private final ArrayList<WaitRequest> requests = new ArrayList<WaitRequest>();
-	private DataRingBuffer dataBuffer;
-	private final EventRingBuffer eventBuffer;
-	private int nChans;
-	private int nBytes;
-	private int dataType;
-	private Header header = null;
-	private final static ByteOrder NATIVE_ORDER = ByteOrder.nativeOrder();
-	private final int dataBufferSize;
+	protected final ArrayList<WaitRequest> requests = new ArrayList<WaitRequest>();
+	protected DataRingBuffer dataBuffer;
+	protected final EventRingBuffer eventBuffer;
+	protected int nChans;
+	protected int nBytes;
+	protected int dataType;
+	protected Header header = null;
+	protected final static ByteOrder NATIVE_ORDER = ByteOrder.nativeOrder();
+	protected final int dataBufferSize;
 
 	/**
 	 * Constructor
@@ -62,7 +62,7 @@ public class RingDataStore extends DataModel {
 	 *
 	 * @throws DataException
 	 */
-	private synchronized void checkListeners() throws DataException {
+	protected synchronized void checkListeners() throws DataException {
 		for (int i = 0; i < requests.size(); i++) {
 
 			final int eventThreshold = requests.get(i).nEvents;
@@ -471,4 +471,8 @@ public class RingDataStore extends DataModel {
 		dataBuffer = new DataRingBuffer(dataBufferSize, nChans, nBytes);
 
 	}
+	
+	 public void cleanup(){}; // null class
+
+
 }

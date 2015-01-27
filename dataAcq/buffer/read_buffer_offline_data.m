@@ -5,6 +5,9 @@ function dat = read_buffer_offline_data(datafile, hdr, range)
 
 % (C) 2010 S. Klanke
 
+if ( nargin<3 || isempty(range)) 
+  range=[1 hdr.nSamples];
+end
 type2type = [hdr.orig.data_type '=>' hdr.orig.data_type];
 nStart = range(1)-1; % 0-based offset in samples
 bStart = nStart * hdr.orig.wordsize * hdr.nChans;

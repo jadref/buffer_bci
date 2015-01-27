@@ -20,7 +20,6 @@ if ( exist(fullfile(buffer_bcidir,'dataAcq'),'dir') )
     end
   end
 end;
-if ( exist(fullfile(buffer_bcidir,'bciLoop'),'dir') ) addpath(fullfile(buffer_bcidir,'bciLoop')); end;
 if ( exist(fullfile(buffer_bcidir,'utilities'),'dir') ) addpath(fullfile(buffer_bcidir,'utilities')); end;
 if ( exist(fullfile(buffer_bcidir,'stimulus'),'dir') ) addpath(fullfile(buffer_bcidir,'stimulus')); end;
 if ( exist(fullfile(buffer_bcidir,'classifiers'),'dir') ) addpath(fullfile(buffer_bcidir,'classifiers')); end;
@@ -38,7 +37,9 @@ if ( isempty(which('parseOpts')) )
       if ( exist(bcicodedir,'dir') ) break; end;
     end
     if ( exist(bcicodedir,'dir') ) break; end;
+    osdir=sdir;
     sdir=fileparts(sdir);
+    if ( isequal(osdir,sdir) ) break; end; % guard against infinite loop
   end
   addpath(fullfile(bcicodedir,'toolboxes','utilities','general'));
   addpath(exGenPath(fullfile(bcicodedir,'toolboxes','classification')));

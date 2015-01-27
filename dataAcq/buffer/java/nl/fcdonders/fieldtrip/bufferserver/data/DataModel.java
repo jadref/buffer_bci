@@ -131,4 +131,11 @@ public abstract class DataModel {
 	 */
 	public abstract void putHeader(Header header) throws DataException;
 
+
+	/**
+	 * Cleanup any allocated resources
+	 *
+	 */
+	public abstract void cleanup();
+
 }

@@ -18,27 +18,30 @@ touch $logfile
 buffexe=$buffdir'/buffer/bin/biosemi2ft';
 if [ `uname -s` == 'Linux' ]; then
    if [ -r $buffdir/buffer/bin/glnx86/biosemi2ft ]; then
-	 buffexe=$buffdir'/buffer/bin/glnx86/biosemi2ft';
-   fi
+	 cd $buffdir'/buffer/bin/glnx86';
+fi
    if [ -r $buffdir/buffer/glnx86/biosemi2ft ]; then
-	 buffexe=$buffdir'/buffer/glnx86/biosemi2ft';
+	 cd $buffdir'/buffer/glnx86';
    fi
-	if [ -r $buffdir/emokit/emokit2ft/emokit2ft ] ; then
-	 buffexe=$buffdir'/emokit/emokit2ft/emokit2ft';
-	fi
+   export LD_LIBRARY_LOADPATH=${LD_LIBRARY_LOADPATH}:`pwd`   
+   buffexe='./biosemi2ft'
 else # Mac
    if [ -r $buffdir/buffer/bin/maci/biosemi2ft ]; then
     # Argh, annoyingly the driver only works if run in it's own directory
     cd $buffdir/buffer/bin/maci
-   # add exec directory to library load path
-   export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$buffdir'/buffer/bin/maci'
    fi
    if [ -r $buffdir/buffer/maci/biosemi2ft ]; then
     # Argh, annoyingly the driver only works if run in it's own directory
     cd $buffdir/buffer/maci
-	 # add exec directory to library load path
-	 export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$buffdir'/buffer/maci'
    fi
+   # add exec directory to library load path
+   export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:`pwd`
    buffexe='./biosemi2ft';
 fi
 $buffexe ${buffdir}/biosemi.cfg $outfile > $logfile 
+
+if [ $? == 1 ] ; then
+	 echo Couldnt start the AMP driver.  Possible reasons
+	 echo 1) The amplifier isnt connected or turned on?
+	 echo 2) You cannot read the USB device.  On linux try: sudo ./startBiosemi.sh
+fi

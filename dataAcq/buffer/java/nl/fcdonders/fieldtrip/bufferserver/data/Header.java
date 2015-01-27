@@ -1,6 +1,7 @@
 package nl.fcdonders.fieldtrip.bufferserver.data;
 
 import java.nio.ByteOrder;
+import java.nio.ByteBuffer;
 
 /**
  * Wrapper class for header information.
@@ -165,5 +166,21 @@ public class Header {
 		this.chunks = chunks;
 		nChunks = chunks.length;
 		this.order = order;
+	}
+	 
+	protected void serialize(ByteBuffer buf) {
+		buf.putInt(nChans);
+		buf.putInt(nSamples);
+		buf.putInt(nEvents);
+		buf.putFloat(fSample);
+		buf.putInt(dataType);
+		if( chunks.length<=0 ) {
+			 buf.putInt(0);
+		} else {
+			 for ( int i=0; i < chunks.length; i++){
+				  buf.putInt(8+chunks[i].size);
+				  chunks[i].serialize(buf);
+			 }		
+		}
 	}
 }

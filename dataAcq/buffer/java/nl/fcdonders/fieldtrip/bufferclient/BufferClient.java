@@ -61,6 +61,7 @@ public class BufferClient {
 		activeConnection = sockChan.isConnected();
 		if ( activeConnection ) { // cache the connection info
 			 sockChan.socket().setSoTimeout(timeout);
+			 sockChan.socket().setTcpNoDelay(true); //disable Nagle's algorithm...i.e. allow small packets
 			 this.host = hostname;
 			 this.port = port;
 		}
@@ -612,6 +613,23 @@ public class BufferClient {
 		return e;
 	}
 
+	 public synchronized void putRawEvent(byte[] e) throws IOException {
+		  putRawEvent(e,0,e.length);
+	 }
+	 public synchronized void putRawEvent(byte[] e,int offset, int len) throws IOException {
+		ByteBuffer buf;
+
+		buf = ByteBuffer.allocate(8+len);
+		buf.order(myOrder); 
+	
+		buf.putShort(VERSION).putShort(PUT_EVT).putInt(len);
+		buf.put(e,offset,len);
+		buf.rewind();
+		writeAll(buf);
+		readResponse(PUT_OK);
+	}
+
+
 	public synchronized void putEvents(BufferEvent[] e) throws IOException {
 		ByteBuffer buf;
 		int bufsize = 0;
@@ -716,7 +734,9 @@ public class BufferClient {
 		short ver=def.getShort();
 		if ( ver != VERSION) throw new IOException("Invalid VERSION returned : " + ver);
 		short resp=def.getShort();
-		if (resp != expected) throw new IOException("Error returned from FieldTrip buffer server:" + resp);
+		if (resp != expected) 
+			 throw new IOException("Error returned from FieldTrip buffer server. Expected " 
+										  + Integer.toHexString(expected) + " got " + Integer.toHexString(resp));
 		int size = def.getInt();
 	
 		ByteBuffer buf = ByteBuffer.allocate(size);

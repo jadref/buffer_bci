@@ -45,6 +45,11 @@ public class ConnectionThread extends Thread {
 		this.clientID = clientID;
 		this.socket = socket;
 		this.dataStore = dataStore;
+		try {
+			 socket.setTcpNoDelay(true); // disable Nagle's algorithm... i.e. allow small packets
+		} catch ( SocketException e ) {
+			 System.err.println("Failed to set socket option TCP_NODELAY");
+		}
 		clientAdress = socket.getInetAddress().toString() + ":"
 				+ Integer.toString(socket.getPort());
 		this.buffer = buffer;
@@ -91,6 +96,7 @@ public class ConnectionThread extends Thread {
 
 		} catch (final DataException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodeFlushError(message.order);
 
 		}
@@ -116,6 +122,7 @@ public class ConnectionThread extends Thread {
 
 		} catch (final DataException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodeFlushError(message.order);
 
 		}
@@ -141,6 +148,7 @@ public class ConnectionThread extends Thread {
 
 		} catch (final DataException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodeFlushError(message.order);
 
 		}
@@ -181,6 +189,7 @@ public class ConnectionThread extends Thread {
 
 		} catch (final DataException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodeGetError(message.order);
 		}
 	}
@@ -218,6 +227,7 @@ public class ConnectionThread extends Thread {
 
 		} catch (final DataException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodeGetError(message.order);
 		}
 	}
@@ -242,6 +252,7 @@ public class ConnectionThread extends Thread {
 
 		} catch (final DataException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodeGetError(message.order);
 
 		}
@@ -272,10 +283,12 @@ public class ConnectionThread extends Thread {
 
 		} catch (final ClientException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodeGetError(message.order);
 
 		} catch (final DataException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodeGetError(message.order);
 
 		}
@@ -306,10 +319,12 @@ public class ConnectionThread extends Thread {
 
 		} catch (final ClientException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodePutError(message.order);
 
 		} catch (final DataException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodePutError(message.order);
 		}
 	}
@@ -339,10 +354,12 @@ public class ConnectionThread extends Thread {
 
 		} catch (final ClientException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodePutError(message.order);
 
 		} catch (final DataException e) {
 			// Return error
+			 System.err.println("Error : " + e);
 			return NetworkProtocol.encodePutError(message.order);
 		}
 	}
