@@ -2,6 +2,8 @@
 buffdir=`dirname $0`
 outdir=
 
+call ../utilties/findJava.bat
+
 # use GUI to update the save location
 if [ -x $buffdir/startBuffer.py ] && [ ! -z `which python` ]; then
    outdir=`python $buffdir/startBuffer.py`;
@@ -25,4 +27,4 @@ fi
 mkdir -p "$outdir"
 
 echo Starting: ${buffdir}/buffer/java/BufferServer.jar $outdir $@
-java -jar ${buffdir}/buffer/java/BufferServer.jar $outdir $@
+%javaexe% -jar ${buffdir}/buffer/java/BufferServer.jar $outdir $@
