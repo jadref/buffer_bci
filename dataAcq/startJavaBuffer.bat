@@ -1,30 +1,37 @@
-#!/bin/bash
-buffdir=`dirname $0`
-outdir=
+call ..\utilities\findJava.bat
+set batdir=%~dp0
 
-call ../utilties/findJava.bat
+set drive=%~d0
+set bciroot=output\raw_buffer
+set subject=test
+rem get date/session
+For /f "tokens=2-4 delims=/- " %%a in ('date /t') do (set session=%%c%%b%%a) 
+rem get time
+For /f "tokens=1-4 delims=: " %%a in ('time /t') do (set block=%%a%%b%%c)
+set pyfolder=dummy
+if exist %batdir%\startBuffer.py (
+	rem check if python is installed in path
+	for %%X in (python.exe) do (set FOUND=%%~$PATH:X)
+	if defined FOUND (
+	  rem This is a horrible hack to get the output of the sub-command into a variable
+  	  For /f "usebackq delims=" %%o in (`%batdir%\startBuffer.py`) do (set pyfolder=%%o)
+	)
+) 
+if %pyfolder%==dummy ( 
+    echo Default location
+	mkdir "%drive%\%bciroot%\%subject%"
+	mkdir "%drive%\%bciroot%\%subject%\%session%"
+	mkdir "%drive%\%bciroot%\%subject%\%session%\%block%"
+	set folder="%drive%\%bciroot%\%subject%\%session%\%block%"
+) ELSE (
+    echo Python location
+	set folder=%pyfolder%
+)
+if exist "%folder%\raw_buffer" ( 
+	set folder=%folder%_1
+	mkdir %folder%	
+)
 
-# use GUI to update the save location
-if [ -x $buffdir/startBuffer.py ] && [ ! -z `which python` ]; then
-   outdir=`python $buffdir/startBuffer.py`;
-fi
 
-# fall back code to compute save location
-if [ -z $outdir ] ; then
-	 bciroot=~/output
-	 subject='test';
-	 if [ $# -gt 0 ]; then subject=$1; fi 
-	 session=`date +%y%m%d`
-	 if [ $# -gt 1 ]; then session=$2; fi
-	 block=`date +%H%M`
-	 if [ $# -gt 2 ]; then block=$2; fi
-	 outdir=$bciroot/$subject/$session/$block
-	 if [ -r $outdir ] ; then # already exists?  add postfix
-		  outdir=${outdir}_1
-	 fi
-fi
-
-mkdir -p "$outdir"
-
-echo Starting: ${buffdir}/buffer/java/BufferServer.jar $outdir $@
-%javaexe% -jar ${buffdir}/buffer/java/BufferServer.jar $outdir $@
+echo Starting: /buffer/java/BufferServer.jar 1972 %folder%
+%javaexe% -jar %batdir%/buffer/java/BufferServer.jar 1972 %folder%
