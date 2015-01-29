@@ -55,7 +55,7 @@ if ( ~isempty(capFile) )
   ch_pos3d=cat(2,di.extra.pos3d);
   ch_names=di.vals; 
   iseeg=[di.extra.iseeg];
-  if ( ~any(iseeg) || strcmp(capFile,'showAll') ) % fall back on showing all data
+  if ( ~any(iseeg) || ~isempty(strfind(capFile,'showAll.txt')) ) % fall back on showing all data
     warning('Capfile didnt match any data channels -- no EEG?');
     ch_names=hdr.channel_names;
     ch_pos=[];
