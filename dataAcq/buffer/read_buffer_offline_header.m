@@ -122,7 +122,7 @@ else
   if isfield(txt,'nChans') && hdr.nChans ~= txt.nChans
     error('Number of channels in binary header does not match ASCII definition');
   end
-  if isfield(txt,'nChans') && hdr.nSamples ~= txt.nSamples
+  if isfield(txt,'nSamples') && hdr.nSamples ~= txt.nSamples
     warning('Number of samples in binary header does not match ASCII definition');
   end
   if isfield(txt,'nEvents') && hdr.nEvents ~= txt.nEvents

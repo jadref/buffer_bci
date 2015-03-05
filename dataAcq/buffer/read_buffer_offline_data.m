@@ -14,12 +14,17 @@ bStart = nStart * hdr.orig.wordsize * hdr.nChans;
 nRead = range(2)+1-range(1);
 bRead = nRead * hdr.orig.wordsize * hdr.nChans;
 
+endianness='native';  
+if ( ~isempty(hdr) && isfield(hdr,'orig') && isfield(hdr.orig,'endianness') )
+  endianess=hdr.orig.endianness;
+end
+
 k = 0;
 sizeSoFar = 0;
 % start with name_k = datafile (= '.../samples' )
 name_k = datafile;
 while true
-  F = fopen(name_k,'rb',hdr.orig.endianness);
+  F = fopen(name_k,'rb',endianness);
   if ( F<0 ) % couldn't read file
     warning('Couldnt open data file: %s',name_k);
     break;

@@ -4,6 +4,7 @@ function E = read_buffer_offline_events(eventfile, hdr)
 % This function reads FCDC buffer-type events from a binary file.
 
 % (C) 2010 S. Klanke
+if ( nargin<2 ) hdr=[]; end
 
 type = {
   'char'   'b'
@@ -47,8 +48,11 @@ format = { % format string for u8read/u8write
   'd'
 };
 
-
-F = fopen(eventfile,'rb',hdr.orig.endianness);
+endianness='native';  
+if ( ~isempty(hdr) && isfield(hdr,'orig') && isfield(hdr.orig,'endianness') )
+  endianess=hdr.orig.endianness;
+end
+F = fopen(eventfile,'rb',endianness);
 numEvt = 0;
 
 fseek(F, 0, 'eof');
