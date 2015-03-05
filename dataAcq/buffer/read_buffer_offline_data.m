@@ -18,9 +18,12 @@ k = 0;
 sizeSoFar = 0;
 % start with name_k = datafile (= '.../samples' )
 name_k = datafile;
-
 while true
-  F = fopen(datafile,'rb',hdr.orig.endianness);
+  F = fopen(name_k,'rb',hdr.orig.endianness);
+  if ( F<0 ) % couldn't read file
+    warning('Couldnt open data file: %s',name_k);
+    break;
+  end
   fseek(F, 0, 'eof');
   size_k = ftell(F);
    
