@@ -135,7 +135,7 @@ if ( opts.badchrm || ~isempty(opts.badCh) )
   end
   X=X(~isbadch,:,:);
   if ( ~isempty(ch_names) ) % update the channel info
-    ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names)));
+    if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names))); end;
     ch_names=ch_names(~isbadch(1:numel(ch_names)));
   end
   fprintf('%d ch removed\n',sum(isbadch));
@@ -253,15 +253,16 @@ if ( opts.visualize )
     uY=unique(Y,'rows'); Yidx=-ones([size(Y,1),numel(uY)],'int8');    
     for ci=1:size(uY,1); 
       if(iscell(uY)) 
-        tmp=strmatch(uY(ci),Y); Yidx(tmp,ci)=1; 
+        tmp=strcmp(uY{ci},Y); Yidx(tmp,ci)=1; 
       else 
         for i=1:size(Y,1); Yidx(i,ci)=isequal(Y(i,:),uY(ci,:))*2-1; end
       end;
       if ( isempty(labels) || numel(labels)<ci || isempty(labels{ci}) ) 
         if ( iscell(uY) ) labels{1,ci}=uY{ci}; else labels{1,ci}=sprintf('%d',uY(ci,:)); end
+        auclabels{1,ci}=labels{1,ci};
+        labels{1,ci} = sprintf('%s (%d)',labels{1,ci},sum(Yidx(:,ci)>0));
       end
     end
-    auclabels=labels;
   else
     if ( isempty(labels) ) 
       for spi=1:size(Yidx,2); 
@@ -278,7 +279,7 @@ if ( opts.visualize )
     else % pos and neg sub-problem average responses
       mu(:,:,1,spi)=mean(X(:,:,Yci>0),3); mu(:,:,2,spi)=mean(X(:,:,Yci<0),3);
     end
-    if(~(all(Yci(:)==Yci(1)))) 
+    if(~(all(Yci(:)==Yci(1))) && ~(spi>1 && all(Yidx(:,1)==-Yidx(:,spi)))) 
       [aucci,sidx]=dv2auc(Yci,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
       aucesp=auc_confidence(sum(Yci~=0),single(sum(Yci>0))./single(sum(Yci~=0)),.2);
       aucci(aucci<.5+aucesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
@@ -292,14 +293,13 @@ if ( opts.visualize )
    else   xy=[];
    end
    yvals=freqs; if( ~isempty(fIdx) ) yvals=freqs(fIdx); end
-   image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels,'disptype','plot','ticklabs','sw','clabel',opts.aveType);
-   zoomplots;
-   try; saveaspdf('ERSP'); catch; end;
+   image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels,'disptype','plot','ticklabs','sw','clabel',opts.aveType);   
+   try; zoomplots; saveaspdf('ERSP'); catch; end;
    if ( ~(all(Yci(:)==Yci(1))) ) % only if >1 class input
    aucfig=gcf+1;figure(aucfig);clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');
    image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
-   colormap ikelvin; zoomplots;
-   try; saveaspdf('AUC'); catch; end;
+   colormap ikelvin;
+   try; zoomplots; saveaspdf('AUC'); catch; end;
    end
    drawnow;
    figure(erpfig);

@@ -259,7 +259,7 @@ if ( opts.visualize )
     else % pos and neg sub-problem average responses
       mu(:,:,1,spi)=mean(X(:,:,Yci>0),3); mu(:,:,2,spi)=mean(X(:,:,Yci<0),3);
     end
-    if(~(all(Yci(:)==Yci(1)))) 
+    if(~(all(Yci(:)==Yci(1))) && ~(spi>1 && all(Yidx(:,1)==-Yidx(:,spi)))) 
       [aucci,sidx]=dv2auc(Yci,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
       aucesp=auc_confidence(sum(Yci~=0),single(sum(Yci>0))./single(sum(Yci~=0)),.2);
       aucci(aucci<.5+aucesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
@@ -274,13 +274,12 @@ if ( opts.visualize )
    erpfig=gcf;figure(erpfig);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');
    yvals=freqs;
    image3d(mu(:,:,:),1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels(:),'disptype','plot','ticklabs','sw','clabel',opts.aveType);
-   zoomplots;
-   try; saveaspdf('ERSP'); catch; end;
+   try; zoomplots; saveaspdf('ERSP'); catch; end;
    if ( ~(all(Yci(:)==Yci(1))) )
     aucfig=gcf+1;figure(aucfig);clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');
     image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
-    colormap ikelvin; zoomplots;
-    try; saveaspdf('AUC'); catch; end;
+    colormap ikelvin; 
+    try; zoomplots; saveaspdf('AUC'); catch; end;
    end
    drawnow;
    figure(erpfig);

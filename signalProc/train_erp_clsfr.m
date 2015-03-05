@@ -185,7 +185,7 @@ if ( opts.visualize )
     uY=unique(Y,'rows'); Yidx=-ones([size(Y,1),numel(uY)],'int8');    
     for ci=1:size(uY,1); 
       if(iscell(uY)) 
-        tmp=strmatch(uY(ci),Y); Yidx(tmp,ci)=1; 
+        tmp=strmatch(uY{ci},Y); Yidx(tmp,ci)=1; 
       else 
         for i=1:size(Y,1); Yidx(i,ci)=isequal(Y(i,:),uY(ci,:))*2-1; end
       end;
@@ -226,15 +226,13 @@ if ( opts.visualize )
    else   xy=[];
    end
    image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',labels,'disptype','plot','ticklabs','sw');
-   zoomplots;
-   try; saveaspdf('ERP'); catch; end;
+   try; zoomplots; saveaspdf('ERP'); catch; end;
    if ( ~(all(Yci(:)==Yci(1))) ) % only if >1 class input
    aucfig=figure('Name','Data Visualisation: ERP AUC');
    image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8]);
-   colormap ikelvin; zoomplots;
+   try;  zoomplots; saveaspdf('AUC'); catch; end;
    end
    drawnow;
-   try; saveaspdf('AUC'); catch; end;
 end
 
 %6) train classifier

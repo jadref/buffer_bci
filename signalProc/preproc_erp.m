@@ -135,7 +135,7 @@ if ( opts.badchrm || ~isempty(opts.badCh) )
   end
   X=X(~isbadch,:,:);
   if ( ~isempty(ch_names) ) % update the channel info
-    ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names)));
+    if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names))); end;
     ch_names=ch_names(~isbadch(1:numel(ch_names)));
   end
   fprintf('%d ch removed\n',sum(isbadch));
@@ -143,13 +143,13 @@ end
 
 
 %4) spectrally filter to the range of interest
-filt=[]; 
+bfilt=[]; 
 outsz=[size(X,2) size(X,2)];
 if(~isempty(opts.downsample)) outsz(2)=min(outsz(2),round(size(X,2)*opts.downsample/fs)); end;
 if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) ) 
   fprintf('4) filter\n');
   len=size(X,2);
-  filt=mkFilter(opts.freqband,floor(len/2),fs/len);
+  filt=mkFilter(floor(len/2),opts.freqband,fs/len);
   X   =fftfilter(X,filt,outsz,2,1);
 elseif( ~isempty(opts.downsample) ) % manual downsample without filtering
   X   =subsample(X,outsz(2));   
@@ -236,12 +236,14 @@ if ( opts.visualize )
     uY=unique(Y,'rows'); Yidx=-ones([size(Y,1),numel(uY)],'int8');    
     for ci=1:size(uY,1); 
       if(iscell(uY)) 
-        tmp=strmatch(uY(ci),Y); Yidx(tmp,ci)=1; 
+        tmp=strcmp(uY{ci},Y); Yidx(tmp,ci)=1; 
       else 
         for i=1:size(Y,1); Yidx(i,ci)=isequal(Y(i,:),uY(ci,:))*2-1; end
       end;
       if ( isempty(labels) || numel(labels)<ci || isempty(labels{ci}) ) 
         if ( iscell(uY) ) labels{1,ci}=uY{ci}; else labels{1,ci}=sprintf('%d',uY(ci,:)); end
+        auclabels{1,ci}=labels{1,ci};
+        labels{1,ci} = sprintf('%s (%d)',labels{1,ci},sum(Yidx(:,ci)>0));
       end
     end
     auclabels=labels;
@@ -261,7 +263,7 @@ if ( opts.visualize )
     else % pos and neg sub-problem average responses
       mu(:,:,1,spi)=mean(X(:,:,Yci>0),3); mu(:,:,2,spi)=mean(X(:,:,Yci<0),3);
     end
-    if(~(all(Yci(:)==Yci(1)))) 
+    if(~(all(Yci(:)==Yci(1))) && ~(spi>1 && all(Yidx(:,1)==-Yidx(:,spi)))) 
       [aucci,sidx]=dv2auc(Yci,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
       aucesp=auc_confidence(sum(Yci~=0),single(sum(Yci>0))./single(sum(Yci~=0)),.2);
       aucci(aucci<.5+aucesp & aucci>.5-aucesp)=.5;% set stat-insignificant values to .5
@@ -272,19 +274,17 @@ if ( opts.visualize )
    yvals=times;
    erpfig=figure('Name','Data Visualisation: ERP');
    if (size(ch_pos,1)==3) xy = xyz2xy(ch_pos);
-   elseif ( ~isempty(di) ) xy=cat(2,di.extra.pos2d); % use the pre-comp ones if there
    else   xy=[];
    end
    image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',yvals,'zlabel','class','Zvals',labels,'disptype','plot','ticklabs','sw');
-   zoomplots;
-   try; saveaspdf('ERP'); catch; end;
+   try; zoomplots; saveaspdf('ERP'); catch; end;
    if ( ~(all(Yci(:)==Yci(1))) ) % only if >1 class input
      aucfig=figure('Name','Data Visualisation: ERP AUC');
      image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8]);
-     colormap ikelvin; zoomplots;
+     colormap ikelvin;
+     try;  zoomplots; saveaspdf('AUC'); catch; end;
    end
    drawnow;
-   try; saveaspdf('AUC'); catch; end;
 end
 
 % save the pipeline parameters
