@@ -29,9 +29,14 @@ run ../utilities/initPaths.m
 % N.B. to slice on *both* 'stimulus.rowFlash' and 'stimulus.colFlash' events, use:
 %   ... 'startSet',{{'stimulus.rowFlash' 'stimulus.colFlash'}}
 
-% 2) train a ERsP classifier on this data.
+% 2) train a ERP (time-locked) classifier on this data.
+%        assuming that [events.value] contains a class indicator for each epoch
 capFile='1010'; % you should change this to represent whatever cap layout was used in your experiment
 [clsfr,res,X,Y]=buffer_train_erp_clsfr(data,devents,hdr,'freqband',[.1 .5 10 12],'capFile',capFile,'overridechnms',1);
+% N.B. res.opt.tstf contains the cross validated predictions for the training data.
+%  Thus, the training set performance can be computed as:
+tstf=res.opt.tstf;
+sum(sign(tstf)==Y)./numel(tstf) 
 
 % This analysis should generate two summary figures:
 %
