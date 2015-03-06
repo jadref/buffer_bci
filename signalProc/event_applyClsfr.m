@@ -4,7 +4,7 @@ function [testdata,testevents]=event_applyClsfr(clsfr,varargin)
 %  [testdata,testevents]=imContFeedbackSignals(clsfr,varargin)
 %
 % Inputs:
-%  clsfr  -- [struct] a classifier structure as returned by train_ersp_clsfr
+%  clsfr  -- [struct] a classifier(s) structure as returned by train_ersp_clsfr
 % Outputs:
 %  testdata   -- [struct 1xN] data classifier was applied to in each epoch
 %  testevents -- [struct 1xN] event which triggered the classifier to be applied

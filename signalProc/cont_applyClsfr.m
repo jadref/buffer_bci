@@ -122,7 +122,7 @@ while( ~endTest )
       [f(:,ci),fraw(:,ci),p(:,ci)]=buffer_apply_clsfr(data.buf,clsfr(ci));
       if ( opts.verb>1 ) fprintf('clsfr%d pred=[%s]\n',ci,sprintf('%g ',f(:,ci))); end;
     end
-    if ( numel(ci)>1 ) % combine individual classifier predictions, simple max-likelihood sum
+    if ( numel(clsfr)>1 ) % combine individual classifier predictions, simple max-likelihood sum
       f=sum(f,2); fraw=sum(fraw,2);
     end
     % smooth the classifier predictions if wanted
