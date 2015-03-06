@@ -82,7 +82,9 @@ if ( isstr(op) )
 end;
 
 % use the matlab based builtin equivalent if available
-if ( exist('bsxfun','builtin') ) % matlab R2008 or later
+if ( numel(A)==1 || numel(B)==1 ) % scalar case
+  Z=feval(op,A,B);
+elseif ( exist('bsxfun','builtin') && ~exist('OCTAVE_VERSION','builtin') ) % matlab R2008 or later
   Z=bsxfun(op,A,B);
 else % older matlabs
   szA=size(A);
