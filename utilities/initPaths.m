@@ -25,6 +25,7 @@ if ( exist(fullfile(buffer_bcidir,'stimulus'),'dir') ) addpath(fullfile(buffer_b
 if ( exist(fullfile(buffer_bcidir,'classifiers'),'dir') ) addpath(fullfile(buffer_bcidir,'classifiers')); end;
 if ( exist(fullfile(buffer_bcidir,'plotting'),'dir') ) addpath(fullfile(buffer_bcidir,'plotting')); end;
 if ( exist(fullfile(buffer_bcidir,'signalProc'),'dir') ) addpath(fullfile(buffer_bcidir,'signalProc')); end;
+if ( exist(fullfile(buffer_bcidir,'offline'),'dir') ) addpath(fullfile(buffer_bcidir,'offline')); end;
 
 
 % general functions -- if needed, i.e. not already available in the above paths
