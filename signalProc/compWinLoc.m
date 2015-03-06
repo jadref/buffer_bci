@@ -16,10 +16,10 @@ if ( nargin < 3 || isempty(overlap) ) overlap=0; end;
 if ( nargin < 4 ) start_samp=[]; end;
 if ( nargin < 5 ) width_samp=[]; end;
 % Convert input spects to window start/width pairs
-if ( ~isempty(width_samp) & ~isempty(start_samp) ) % use start + width
+if ( ~isempty(width_samp) && ~isempty(start_samp) ) % use start + width
    width = width_samp;
    start = start_samp; 
-elseif ( isempty(width_samp) & isempty(start_samp) ) % use #win + overlap
+elseif ( isempty(width_samp) && isempty(start_samp) ) % use #win + overlap
    width = floor(N/((nwindows-1)*(1-overlap)+1));
    start = round(0:width*(1-overlap):N-width)'+1;   
 elseif ( ~isempty(width_samp) ) % use width + overlap
