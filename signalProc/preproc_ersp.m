@@ -133,10 +133,12 @@ if ( opts.badchrm || ~isempty(opts.badCh) )
     [isbad2,chstds,chthresh]=idOutliers(X(goodCh,:,:),1,opts.badchthresh);
     isbadch(goodCh(isbad2))=true;
   end
+  if ( any(isbadch) )
   X=X(~isbadch,:,:);
   if ( ~isempty(ch_names) ) % update the channel info
     if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names))); end;
     ch_names=ch_names(~isbadch(1:numel(ch_names)));
+  end
   end
   fprintf('%d ch removed\n',sum(isbadch));
 end
