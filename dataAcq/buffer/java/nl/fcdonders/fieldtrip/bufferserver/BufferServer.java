@@ -127,9 +127,15 @@ public class BufferServer extends Thread {
 		setName("Fieldtrip Buffer Server");
 	}
 
-	 public BufferServer(final int portNumber, final int nSamples, final int nEvents, final String path) {
+	public BufferServer(final int portNumber, final int nSamples, final int nEvents, final String path) {
 		this.portNumber = portNumber;
 		dataStore = new SavingRingDataStore(nSamples, nEvents, path);
+		setName("Fieldtrip Buffer Server");
+	}
+
+	public BufferServer(final int portNumber, final int nSamples, final int nEvents, final File dir) {
+		this.portNumber = portNumber;
+		dataStore = new SavingRingDataStore(nSamples, nEvents, dir);
 		setName("Fieldtrip Buffer Server");
 	}
 
