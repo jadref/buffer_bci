@@ -92,8 +92,6 @@ namespace FieldTrip.Buffer
 				return Connect(hostname, port);
 			}
 			throw new IOException("Address format not recognized / supported yet.");
-			// other addresses not recognised yet
-			return false;
 		}
 
 		/// <summary>
@@ -135,7 +133,7 @@ namespace FieldTrip.Buffer
 							return false;
 						else
 							return true;
-					} catch (IOException ex) {
+					} catch (IOException) {
 					}
 				}
 
@@ -213,8 +211,7 @@ namespace FieldTrip.Buffer
 					}
 					break;
 				default:
-					throw new IOException("Not supported yet - returning zeros.");
-					break;	
+					throw new IOException("Not supported yet - returning zeros.");	
 			}
 		
 			return data;
@@ -255,7 +252,6 @@ namespace FieldTrip.Buffer
 					break;
 				default:
 					throw new IOException("Not supported yet - returning zeros.");
-					break;
 			}
 		
 			return data;
@@ -303,7 +299,6 @@ namespace FieldTrip.Buffer
 					break;
 				default:
 					throw new IOException("Not supported yet - returning zeros.");
-					break;
 			}
 		
 			return data;
@@ -357,7 +352,6 @@ namespace FieldTrip.Buffer
 					break;
 				default:
 					throw new IOException("Not supported yet - returning zeros.");
-					break;
 			}
 		
 			return data;
@@ -420,7 +414,6 @@ namespace FieldTrip.Buffer
 					break;
 				default:
 					throw new IOException("Not supported yet - returning zeros.");
-					break;
 			}
 		
 			return data;

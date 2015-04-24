@@ -52,8 +52,8 @@ namespace FieldTrip.Buffer
 				// allow infinite read time, Necessary for long wait_dat calls....
 				theStream.ReadTimeout = 1000000;//System.Threading.Infinite; 
 			} catch (Exception e) {
-				throw new IOException("Socket error: " + e);
 				socketReady = false;
+				throw new IOException("Socket error: " + e);
 			}
 			return socketReady;
 		}
