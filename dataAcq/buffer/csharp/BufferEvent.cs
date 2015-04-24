@@ -2,265 +2,297 @@ using System.Collections;
 using System.Text;
 
 namespace FieldTrip.Buffer
-{	
+{
 	public class 
-	BufferEvent {
-		public BufferEvent() {
-			wType  = new WrappedObject();
+	BufferEvent
+	{
+		public BufferEvent()
+		{
+			wType = new WrappedObject();
 			wValue = new WrappedObject();
-			sample     = -1;
-			offset     = 0;
-			duration   = 0;
+			sample = -1;
+			offset = 0;
+			duration = 0;
 		}
-		
-		public BufferEvent(string type, string value, int sample) {
-			wType  = new WrappedObject(type);
+
+		public BufferEvent(string type, string value, int sample)
+		{
+			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
 		}
-		
-		public BufferEvent(string type, long value, int sample) {
-			wType  = new WrappedObject(type);
+
+		public BufferEvent(string type, long value, int sample)
+		{
+			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}		
-		
-		public BufferEvent(string type, int value, int sample) {
-			wType  = new WrappedObject(type);
+		}
+
+		public BufferEvent(string type, int value, int sample)
+		{
+			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}	
-		
-		public BufferEvent(string type, short value, int sample) {
-			wType  = new WrappedObject(type);
+		}
+
+		public BufferEvent(string type, short value, int sample)
+		{
+			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}	
-		
-		public BufferEvent(string type, byte value, int sample) {
-			wType  = new WrappedObject(type);
+		}
+
+		public BufferEvent(string type, byte value, int sample)
+		{
+			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}	
-		
-		public BufferEvent(string type, double value, int sample) {
-			wType  = new WrappedObject(type);
+		}
+
+		public BufferEvent(string type, double value, int sample)
+		{
+			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}	
-	
-		public BufferEvent(string type, float value, int sample) {
-			wType  = new WrappedObject(type);
+		}
+
+		public BufferEvent(string type, float value, int sample)
+		{
+			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}		
+		}
 		
 		//--- Arrays ----------
-		public BufferEvent(string type, string[] value, int sample) {
-			wType  = new WrappedObject(type);
+		public BufferEvent(string type, string[] value, int sample)
+		{
+			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
 		}
-		
-		public BufferEvent(string type, long[] value, int sample) {
-			wType  = new WrappedObject(type);
+
+		public BufferEvent(string type, long[] value, int sample)
+		{
+			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}		
-		
-		public BufferEvent(string type, int[] value, int sample) {
-			wType  = new WrappedObject(type);
+		}
+
+		public BufferEvent(string type, int[] value, int sample)
+		{
+			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}	
-		
-		public BufferEvent(string type, short[] value, int sample) {
-			wType  = new WrappedObject(type);
+		}
+
+		public BufferEvent(string type, short[] value, int sample)
+		{
+			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}	
-		
-		public BufferEvent(string type, byte[] value, int sample) {
-			wType  = new WrappedObject(type);
+		}
+
+		public BufferEvent(string type, byte[] value, int sample)
+		{
+			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}	
-		
-		public BufferEvent(string type, double[] value, int sample) {
-			wType  = new WrappedObject(type);
+		}
+
+		public BufferEvent(string type, double[] value, int sample)
+		{
+			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}	
-	
-		public BufferEvent(string type, float[] value, int sample) {
-			wType  = new WrappedObject(type);
+		}
+
+		public BufferEvent(string type, float[] value, int sample)
+		{
+			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}		
+		}
+
 		
 		
-		
-		public BufferEvent(ByteBuffer buf) {
-			wType  = new WrappedObject();
+		public BufferEvent(ByteBuffer buf)
+		{
+			wType = new WrappedObject();
 			wValue = new WrappedObject();	
 			
-			wType.type   = buf.getInt();
-			wType.numel  = buf.getInt();
-			wValue.type  = buf.getInt();
-			wValue.numel = buf.getInt();
-			sample       = buf.getInt();
-			offset       = buf.getInt();
-			duration     = buf.getInt();
-			int size = buf.getInt();
+			wType.type = buf.GetInt();
+			wType.numel = buf.GetInt();
+			wValue.type = buf.GetInt();
+			wValue.numel = buf.GetInt();
+			sample = buf.GetInt();
+			offset = buf.GetInt();
+			duration = buf.GetInt();
+			int size = buf.GetInt();
 		
-			wType.array  = DataType.getObject(wType.type, wType.numel, buf);
+			wType.array = DataType.GetObject(wType.type, wType.numel, buf);
 			if (wType.array != null) {
 				wType.size = wType.numel * DataType.wordSize[wType.type];
 			}
 			
-			wValue.array = DataType.getObject(wValue.type, wValue.numel, buf);
+			wValue.array = DataType.GetObject(wValue.type, wValue.numel, buf);
 			if (wValue.array != null) {
 				wValue.size = wValue.numel * DataType.wordSize[wValue.type];
 			}
 			
 			size -= wType.size + wValue.size;
 			if (size != 0) {
-				buf.position(buf.position() + size);
+				buf.Position(buf.Position() + size);
 			}
 		}
-		
-		public WrappedObject getType() {
+
+		public WrappedObject GetType()
+		{
 			return wType;
 		}
-		
-		public WrappedObject getValue() {
+
+		public WrappedObject GetValue()
+		{
 			return wValue;
-		}	
-		
-		public bool setType(object typeObj) {
+		}
+
+		public bool SetType(object typeObj)
+		{
 			wType = new WrappedObject(typeObj);
 			return wType.type != DataType.UNKNOWN;
 		}
-		
-		public bool setValue(object valueObj) {
+
+		public bool SetValue(object valueObj)
+		{
 			wValue = new WrappedObject(valueObj);
 			return wValue.type != DataType.UNKNOWN;
 		}
-		
-		public bool setValueUnsigned(byte[] array) {
+
+		public bool SetValueUnsigned(byte[] array)
+		{
 			wValue = new WrappedObject();
 			wValue.array = array.Clone();
 			wValue.numel = array.Length;
-			wValue.size  = array.Length;
-			wValue.type  = DataType.UINT8;
+			wValue.size = array.Length;
+			wValue.type = DataType.UINT8;
 			return true;
 		}
-	
-		public int size() {
+
+		public int Size()
+		{
 			return 32 + wType.size + wValue.size;
 		}
-		
-		public static int count(ByteBuffer buf) {
+
+		public static int Count(ByteBuffer buf)
+		{
 			int num = 0;
-			long pos = buf.position();
+			long pos = buf.Position();
 		
-			while (buf.remaining() >= 32) {
-				int typeType   = buf.getInt();
-				int typeNumEl  = buf.getInt();
-				int valueType  = buf.getInt();
-				int valueNumEl = buf.getInt();
-				buf.getInt(); // sample
-				buf.getInt(); // offset
-				buf.getInt(); // duration
-				int size = buf.getInt();
-				int sizeType  = typeNumEl  * DataType.wordSize[typeType];
+			while (buf.Remaining() >= 32) {
+				int typeType = buf.GetInt();
+				int typeNumEl = buf.GetInt();
+				int valueType = buf.GetInt();
+				int valueNumEl = buf.GetInt();
+				buf.GetInt(); // sample
+				buf.GetInt(); // offset
+				buf.GetInt(); // duration
+				int size = buf.GetInt();
+				int sizeType = typeNumEl * DataType.wordSize[typeType];
 				int sizeValue = valueNumEl * DataType.wordSize[valueType];
 			
 				if (sizeType < 0 || sizeValue < 0 || sizeType + sizeValue > size) {
-					return -(1+num);
+					return -(1 + num);
 				}
 			
-				buf.position(buf.position() + size);
+				buf.Position(buf.Position() + size);
 				num++;
 			}
-			buf.position(pos);
+			buf.Position(pos);
 			return num;
 		}
-		
-		public void serialize(ByteBuffer buf) {
-			buf.putInt(wType.type);
-			buf.putInt(wType.numel);
-			buf.putInt(wValue.type);
-			buf.putInt(wValue.numel);
-			buf.putInt(sample);
-			buf.putInt(offset);
-			buf.putInt(duration);
-			buf.putInt(wType.size+wValue.size);
-			wType.serialize(buf);
-			wValue.serialize(buf);
+
+		public void Serialize(ByteBuffer buf)
+		{
+			buf.PutInt(wType.type);
+			buf.PutInt(wType.numel);
+			buf.PutInt(wValue.type);
+			buf.PutInt(wValue.numel);
+			buf.PutInt(sample);
+			buf.PutInt(offset);
+			buf.PutInt(duration);
+			buf.PutInt(wType.size + wValue.size);
+			wType.Serialize(buf);
+			wValue.Serialize(buf);
 		}
 		
         
 		//For a general C# application change the UnityEngine.Debug.Log() with Console.WriteLine()
-		public string toString() {
+		public override string ToString()
+		{
 			//UnityEngine.Debug.Log("-------Begin Event Printout-------");
 			//UnityEngine.Debug.Log("Sample registered = "+sample.ToString());
 			//UnityEngine.Debug.Log("Type = "+wType.array.ToString());
 	
-			string result="";
-            result = "Sample:" + sample.ToString() + " Type:" + wType.array.ToString() + " Value:";
-			if ( wValue.array is string){
+			string result = "";
+			result = "Sample:" + sample.ToString() + " Type:" + wType.array.ToString() + " Value:";
+			if (wValue.array is string) {
 				result += wValue.array as string;
 			}
-			if ( wValue.array is byte[]){
+			if (wValue.array is byte[]) {
 				byte[] val;
 				val = wValue.array as byte[];
-				foreach(var i in val) result+=i.ToString()+", ";
+				foreach (var i in val)
+					result += i.ToString() + ", ";
 			}
-			if ( wValue.array is short[]){
+			if (wValue.array is short[]) {
 				short[] val;
 				val = wValue.array as short[];
-				foreach(var i in val) result+=i.ToString()+", ";
+				foreach (var i in val)
+					result += i.ToString() + ", ";
 			}
-			if ( wValue.array is int[]){
+			if (wValue.array is int[]) {
 				int[] val;
 				val = wValue.array as int[];
-				foreach(var i in val) result+=i.ToString()+", ";
+				foreach (var i in val)
+					result += i.ToString() + ", ";
 			}
-			if ( wValue.array is long[]){
+			if (wValue.array is long[]) {
 				long[] val;
 				val = wValue.array as long[];
-				foreach(var i in val) result+=i.ToString()+", ";
+				foreach (var i in val)
+					result += i.ToString() + ", ";
 			}
-			if ( wValue.array is float[]){
+			if (wValue.array is float[]) {
 				float[] val;
 				val = wValue.array as float[];
-				foreach(var i in val) result+=i.ToString()+", ";
+				foreach (var i in val)
+					result += i.ToString() + ", ";
 			}
-			if ( wValue.array is double[]){
+			if (wValue.array is double[]) {
 				double[] val;
 				val = wValue.array as double[];
-				foreach(var i in val) result+=i.ToString()+", ";
+				foreach (var i in val)
+					result += i.ToString() + ", ";
 			}
 			//UnityEngine.Debug.Log("Value = "+result);
 			//UnityEngine.Debug.Log("-------End Event Printout-------");
-            return result;
+			return result;
 		}
-		
+
 		public int sample;
 		public int offset;
 		public int duration;
