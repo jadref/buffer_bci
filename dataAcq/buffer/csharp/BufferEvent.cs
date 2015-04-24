@@ -241,7 +241,7 @@ namespace FieldTrip.Buffer
 		}
 		
         
-		//For a general C# application change the UnityEngine.Debug.Log() with Console.WriteLine()
+		//For a general C# application replace the UnityEngine.Debug.Log() with Console.WriteLine()
 		public override string ToString()
 		{
 			//UnityEngine.Debug.Log("-------Begin Event Printout-------");

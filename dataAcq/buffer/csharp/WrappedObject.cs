@@ -5,12 +5,24 @@ namespace FieldTrip.Buffer
 {
 	public class WrappedObject
 	{
+        /// <summary>
+        /// The type of data contained in the WrappedObject.
+        /// </summary>
 		public int Type{ get; set; }
 
+        /// <summary>
+        /// The number of elements.
+        /// </summary>
 		public int Numel{ get; set; }
 
+        /// <summary>
+        /// Size in bytes.
+        /// </summary>
 		public int Size{ get; set; }
 
+        /// <summary>
+        /// The data as an array.
+        /// </summary>
 		public object Array{ get; set; }
 
 		public WrappedObject()
@@ -77,6 +89,10 @@ namespace FieldTrip.Buffer
 			Array = new byte[] { x };
 		}
 
+        /// <summary>
+        /// Create a wrapped object from a given object.
+        /// </summary>
+        /// <param name="obj"></param>
 		public WrappedObject(object obj)
 		{
 	
@@ -148,6 +164,10 @@ namespace FieldTrip.Buffer
 			Size = DataType.wordSize[Type];
 		}
 
+        /// <summary>
+        /// Serialize the WrappedObject to the specified <see cref="FieldTrip.Buffer.ByteBuffer"/>.
+        /// </summary>
+        /// <param name="buf">The buffer to serialize to.</param>
 		public void Serialize(ByteBuffer buf)
 		{
 			switch (Type) {
@@ -179,6 +199,10 @@ namespace FieldTrip.Buffer
 			}
 		}
 
+        /// <summary>
+        /// Creates a string representation of the data.
+        /// </summary>
+        /// <returns>The string representation of the data.</returns>
 		public override string ToString()
 		{
 			if (Type == DataType.CHAR)

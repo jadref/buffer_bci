@@ -2,6 +2,9 @@ using System.Text;
 
 namespace FieldTrip.Buffer
 {
+    /// <summary>
+    /// A datastructure containing information about the number of channels, samples, events, etc. in the FieldTrip buffer.
+    /// </summary>
 	public class Header
 	{
 		public const int CHUNK_UNKNOWN = 0;
@@ -13,7 +16,11 @@ namespace FieldTrip.Buffer
 		public const int CHUNK_SIEMENS_AP = 6;
 		public const int CHUNK_CTF_RES4 = 7;
 
-	
+
+        /// <summary>
+        /// Initializes a Header from the specified <see cref="FieldTrip.Buffer.ByteBuffer"/>.
+        /// </summary>
+        /// <param name="buf">The buffer to read the header from.</param>
 		public Header(ByteBuffer buf)
 		{
 			NumChans = buf.GetInt();
@@ -52,6 +59,12 @@ namespace FieldTrip.Buffer
 			}
 		}
 
+        /// <summary>
+        /// Initializes a header from the specified parameters.
+        /// </summary>
+        /// <param name="nChans">The number of channels.</param>
+        /// <param name="fSample"></param>
+        /// <param name="dataType">The datatype.</param>
 		public Header(int nChans, float fSample, int dataType)
 		{
 			this.NumChans = nChans;
@@ -62,6 +75,10 @@ namespace FieldTrip.Buffer
 			this.Labels = new string[nChans]; // allocate, but do not fill
 		}
 
+        /// <summary>
+        /// Determine the size of the serialized representation of this instance.
+        /// </summary>
+        /// <returns>A size in bytes.</returns>
 		public int GetSerialSize()
 		{
 			int size = 24;

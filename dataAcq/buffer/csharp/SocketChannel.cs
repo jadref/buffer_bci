@@ -13,28 +13,37 @@ namespace FieldTrip.Buffer
 	 
 		private TcpClient mySocket;
 		private NetworkStream theStream;
-		public string Host;
-		public int Port;
-		public int timeout = 10000;
-	    
-		public string readerResponse = "";
 
-		
-		public SocketChannel()
+        /// <summary>
+        /// The host to which this instance is connected.
+        /// </summary>
+        public string Host { get; private set; }
+
+        /// <summary>
+        /// The port on which this instance is connected.
+        /// </summary>
+        public int Port { get; private set; }
+
+        public int Timeout { get; private set; } = 10000;
+
+        /// <summary>
+        /// Intializes this instance.
+        /// </summary>
+        public SocketChannel()
 		{
 		}
 
-		~SocketChannel() // destructor, correctly close the socket first
+        /// <summary>
+        /// Finalizer to correctly close the socket.
+        /// </summary>
+		~SocketChannel()
 		{
-			try { // don't throw within destructor
+            try
+            { // don't throw within destructor
 				mySocket.Close();
 			} catch {
 			}
 		}
-	
-		// void OnApplicationQuit(){
-		//     this.close();
-		// }
 
 		/// <summary>
 		/// Connect to the specified hostname and port.

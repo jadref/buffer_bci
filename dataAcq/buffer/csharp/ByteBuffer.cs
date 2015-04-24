@@ -1,8 +1,7 @@
-using System.Collections;
 using System.IO;
+using System.Text;
 using MiscUtil.IO;
 using MiscUtil.Conversion;
-using System.Text;
 
 namespace FieldTrip.Buffer
 {
