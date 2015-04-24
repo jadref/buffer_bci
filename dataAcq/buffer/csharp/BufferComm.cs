@@ -155,7 +155,7 @@ namespace FieldTrip.Buffer
 					//Convert.ToSingle(evt.getValue().array);
 					//return Convert.ToSingle(evt.getValue().array);
 					//return double.Parse(evt.getValue().toString());
-					return (float[])evt.Value.array;
+					return (float[])evt.Value.Array;
 					//if (evt.getValue().toString().Equals(valueType)) { // check if the event value matches
 					//    processEvent(evt);
 					//}

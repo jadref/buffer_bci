@@ -65,10 +65,10 @@ public class UnityBuffer
 		//Debug.Log("Connecting to "+hostname+":"+port);
 		if (bufferClient.Connect(hostname, port)) {
 			hdr = bufferClient.GetHeader();
-			latestBufferSample = hdr.nSamples;
-			nSamples = hdr.nSamples;
-			nChans = hdr.nChans;
-			fSample = hdr.fSample;
+			latestBufferSample = hdr.NumSamples;
+			nSamples = hdr.NumSamples;
+			nChans = hdr.NumChans;
+			fSample = hdr.FSample;
 			initializeData();
 			//  System.Windows.Forms.MessageBox.Show("hello");
 			//Debug.Log("#channels....: "+hdr.nChans);
@@ -78,7 +78,7 @@ public class UnityBuffer
 			//Debug.Log("data type....: "+hdr.dataType);
 			
 			for (int n = 0; n < nChans; n++) {
-				if (hdr.labels[n] != null) {
+				if (hdr.Labels[n] != null) {
 					//Debug.Log("Channel number " + n + ": " + hdr.labels[n]);
 				}
 			}
@@ -95,7 +95,7 @@ public class UnityBuffer
 	
 	private void initializeData()
 	{
-		int dataType = hdr.dataType;
+		int dataType = hdr.DataType;
 		switch (dataType) {
 			case DataType.CHAR:
 				data = new char[nSamples, nChans];

@@ -9,65 +9,65 @@ namespace FieldTrip.Buffer
 		{
 			wType = new WrappedObject();
 			wValue = new WrappedObject();
-			sample = -1;
-			offset = 0;
-			duration = 0;
+			Sample = -1;
+			Offset = 0;
+			Duration = 0;
 		}
 
 		public BufferEvent(string type, string value, int sample)
 		{
 			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
-			this.sample = sample;
-			offset = duration = 0;
+			this.Sample = sample;
+			Offset = Duration = 0;
 		}
 
 		public BufferEvent(string type, long value, int sample)
 		{
 			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
-			this.sample = sample;
-			offset = duration = 0;
+			this.Sample = sample;
+			Offset = Duration = 0;
 		}
 
 		public BufferEvent(string type, int value, int sample)
 		{
 			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
-			this.sample = sample;
-			offset = duration = 0;
+			this.Sample = sample;
+			Offset = Duration = 0;
 		}
 
 		public BufferEvent(string type, short value, int sample)
 		{
 			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
-			this.sample = sample;
-			offset = duration = 0;
+			this.Sample = sample;
+			Offset = Duration = 0;
 		}
 
 		public BufferEvent(string type, byte value, int sample)
 		{
 			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
-			this.sample = sample;
-			offset = duration = 0;
+			this.Sample = sample;
+			Offset = Duration = 0;
 		}
 
 		public BufferEvent(string type, double value, int sample)
 		{
 			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
-			this.sample = sample;
-			offset = duration = 0;
+			this.Sample = sample;
+			Offset = Duration = 0;
 		}
 
 		public BufferEvent(string type, float value, int sample)
 		{
 			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
-			this.sample = sample;
-			offset = duration = 0;
+			this.Sample = sample;
+			Offset = Duration = 0;
 		}
 		
 		//--- Arrays ----------
@@ -75,56 +75,56 @@ namespace FieldTrip.Buffer
 		{
 			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
-			this.sample = sample;
-			offset = duration = 0;
+			this.Sample = sample;
+			Offset = Duration = 0;
 		}
 
 		public BufferEvent(string type, long[] value, int sample)
 		{
 			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
-			this.sample = sample;
-			offset = duration = 0;
+			this.Sample = sample;
+			Offset = Duration = 0;
 		}
 
 		public BufferEvent(string type, int[] value, int sample)
 		{
 			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
-			this.sample = sample;
-			offset = duration = 0;
+			this.Sample = sample;
+			Offset = Duration = 0;
 		}
 
 		public BufferEvent(string type, short[] value, int sample)
 		{
 			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
-			this.sample = sample;
-			offset = duration = 0;
+			this.Sample = sample;
+			Offset = Duration = 0;
 		}
 
 		public BufferEvent(string type, byte[] value, int sample)
 		{
 			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
-			this.sample = sample;
-			offset = duration = 0;
+			this.Sample = sample;
+			Offset = Duration = 0;
 		}
 
 		public BufferEvent(string type, double[] value, int sample)
 		{
 			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
-			this.sample = sample;
-			offset = duration = 0;
+			this.Sample = sample;
+			Offset = Duration = 0;
 		}
 
 		public BufferEvent(string type, float[] value, int sample)
 		{
 			wType = new WrappedObject(type);
 			wValue = new WrappedObject(value);
-			this.sample = sample;
-			offset = duration = 0;
+			this.Sample = sample;
+			Offset = Duration = 0;
 		}
 
 		
@@ -134,26 +134,26 @@ namespace FieldTrip.Buffer
 			wType = new WrappedObject();
 			wValue = new WrappedObject();	
 			
-			wType.type = buf.GetInt();
-			wType.numel = buf.GetInt();
-			wValue.type = buf.GetInt();
-			wValue.numel = buf.GetInt();
-			sample = buf.GetInt();
-			offset = buf.GetInt();
-			duration = buf.GetInt();
+			wType.Type = buf.GetInt();
+			wType.Numel = buf.GetInt();
+			wValue.Type = buf.GetInt();
+			wValue.Numel = buf.GetInt();
+			Sample = buf.GetInt();
+			Offset = buf.GetInt();
+			Duration = buf.GetInt();
 			int size = buf.GetInt();
 		
-			wType.array = DataType.GetObject(wType.type, wType.numel, buf);
-			if (wType.array != null) {
-				wType.size = wType.numel * DataType.wordSize[wType.type];
+			wType.Array = DataType.GetObject(wType.Type, wType.Numel, buf);
+			if (wType.Array != null) {
+				wType.Size = wType.Numel * DataType.wordSize[wType.Type];
 			}
 			
-			wValue.array = DataType.GetObject(wValue.type, wValue.numel, buf);
-			if (wValue.array != null) {
-				wValue.size = wValue.numel * DataType.wordSize[wValue.type];
+			wValue.Array = DataType.GetObject(wValue.Type, wValue.Numel, buf);
+			if (wValue.Array != null) {
+				wValue.Size = wValue.Numel * DataType.wordSize[wValue.Type];
 			}
 			
-			size -= wType.size + wValue.size;
+			size -= wType.Size + wValue.Size;
 			if (size != 0) {
 				buf.Position = buf.Position + size;
 			}
@@ -174,28 +174,28 @@ namespace FieldTrip.Buffer
 		public bool SetType(object typeObj)
 		{
 			wType = new WrappedObject(typeObj);
-			return wType.type != DataType.UNKNOWN;
+			return wType.Type != DataType.UNKNOWN;
 		}
 
 		public bool SetValue(object valueObj)
 		{
 			wValue = new WrappedObject(valueObj);
-			return wValue.type != DataType.UNKNOWN;
+			return wValue.Type != DataType.UNKNOWN;
 		}
 
 		public bool SetValueUnsigned(byte[] array)
 		{
 			wValue = new WrappedObject();
-			wValue.array = array.Clone();
-			wValue.numel = array.Length;
-			wValue.size = array.Length;
-			wValue.type = DataType.UINT8;
+			wValue.Array = array.Clone();
+			wValue.Numel = array.Length;
+			wValue.Size = array.Length;
+			wValue.Type = DataType.UINT8;
 			return true;
 		}
 
 		public int Size()
 		{
-			return 32 + wType.size + wValue.size;
+			return 32 + wType.Size + wValue.Size;
 		}
 
 		public static int Count(ByteBuffer buf)
@@ -228,14 +228,14 @@ namespace FieldTrip.Buffer
 
 		public void Serialize(ByteBuffer buf)
 		{
-			buf.PutInt(wType.type);
-			buf.PutInt(wType.numel);
-			buf.PutInt(wValue.type);
-			buf.PutInt(wValue.numel);
-			buf.PutInt(sample);
-			buf.PutInt(offset);
-			buf.PutInt(duration);
-			buf.PutInt(wType.size + wValue.size);
+			buf.PutInt(wType.Type);
+			buf.PutInt(wType.Numel);
+			buf.PutInt(wValue.Type);
+			buf.PutInt(wValue.Numel);
+			buf.PutInt(Sample);
+			buf.PutInt(Offset);
+			buf.PutInt(Duration);
+			buf.PutInt(wType.Size + wValue.Size);
 			wType.Serialize(buf);
 			wValue.Serialize(buf);
 		}
@@ -249,43 +249,43 @@ namespace FieldTrip.Buffer
 			//UnityEngine.Debug.Log("Type = "+wType.array.ToString());
 	
 			string result = "";
-			result = "Sample:" + sample.ToString() + " Type:" + wType.array.ToString() + " Value:";
-			if (wValue.array is string) {
-				result += wValue.array as string;
+			result = "Sample:" + Sample.ToString() + " Type:" + wType.Array.ToString() + " Value:";
+			if (wValue.Array is string) {
+				result += wValue.Array as string;
 			}
-			if (wValue.array is byte[]) {
+			if (wValue.Array is byte[]) {
 				byte[] val;
-				val = wValue.array as byte[];
+				val = wValue.Array as byte[];
 				foreach (var i in val)
 					result += i.ToString() + ", ";
 			}
-			if (wValue.array is short[]) {
+			if (wValue.Array is short[]) {
 				short[] val;
-				val = wValue.array as short[];
+				val = wValue.Array as short[];
 				foreach (var i in val)
 					result += i.ToString() + ", ";
 			}
-			if (wValue.array is int[]) {
+			if (wValue.Array is int[]) {
 				int[] val;
-				val = wValue.array as int[];
+				val = wValue.Array as int[];
 				foreach (var i in val)
 					result += i.ToString() + ", ";
 			}
-			if (wValue.array is long[]) {
+			if (wValue.Array is long[]) {
 				long[] val;
-				val = wValue.array as long[];
+				val = wValue.Array as long[];
 				foreach (var i in val)
 					result += i.ToString() + ", ";
 			}
-			if (wValue.array is float[]) {
+			if (wValue.Array is float[]) {
 				float[] val;
-				val = wValue.array as float[];
+				val = wValue.Array as float[];
 				foreach (var i in val)
 					result += i.ToString() + ", ";
 			}
-			if (wValue.array is double[]) {
+			if (wValue.Array is double[]) {
 				double[] val;
-				val = wValue.array as double[];
+				val = wValue.Array as double[];
 				foreach (var i in val)
 					result += i.ToString() + ", ";
 			}
@@ -294,9 +294,12 @@ namespace FieldTrip.Buffer
 			return result;
 		}
 
-		public int sample;
-		public int offset;
-		public int duration;
+		public int Sample{ get; set; }
+
+		public int Offset{ get; set; }
+
+		public int Duration{ get; set; }
+
 		protected WrappedObject wType;
 		protected WrappedObject wValue;
 	}

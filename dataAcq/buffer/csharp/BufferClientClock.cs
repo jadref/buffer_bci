@@ -49,12 +49,12 @@ namespace FieldTrip.Buffer
 		// methods offering additional useful functionality
 		public String getHost()
 		{
-			return sockChan.Host;
+			return SockChan.Host;
 		}
 
 		public int getPort()
 		{
-			return sockChan.Port;
+			return SockChan.Port;
 		}
 
 		//--------------------------------------------------------------------
@@ -62,8 +62,8 @@ namespace FieldTrip.Buffer
 		// Fill in the estimated sample info
 		override public BufferEvent PutEvent(BufferEvent e)
 		{
-			if (e.sample < 0) {
-				e.sample = (int)GetSampOrPoll();
+			if (e.Sample < 0) {
+				e.Sample = (int)GetSampOrPoll();
 			}
 			return base.PutEvent(e);
 		}
@@ -72,10 +72,10 @@ namespace FieldTrip.Buffer
 		{
 			int samp = -1;
 			for (int i = 0; i < e.Length; i++) {			 
-				if (e[i].sample < 0) {
+				if (e[i].Sample < 0) {
 					if (samp < 0)
 						samp = (int)GetSampOrPoll();
-					e[i].sample = samp;
+					e[i].Sample = samp;
 				}
 			}
 			base.PutEvents(e);
@@ -104,7 +104,7 @@ namespace FieldTrip.Buffer
 		override public Header GetHeader()
 		{
 			Header hdr = base.GetHeader();
-			clockSync.UpdateClock(hdr.nSamples); // update the rt->sample mapping
+			clockSync.UpdateClock(hdr.NumSamples); // update the rt->sample mapping
 			return hdr;
 		}
 

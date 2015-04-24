@@ -34,9 +34,11 @@ namespace FieldTrip.Buffer
 		public const short BUFFER_NOT_MATCH_DESCRIPTION_ERROR = 0x508;
 		public const short INVALID_EVENT_DEF_ERROR = 0x509;
 		public const short INVALID_SIZE_DATA_DEF_ERROR = 0x510;
-				
-		public SocketChannel sockChan;
-		public bool activeConnection;
+
+		public SocketChannel SockChan{ get; set; }
+
+		public bool activeConnection{ get; protected set; }
+
 		protected bool autoReconnect;
 		protected string host;
 		protected int port;
@@ -57,13 +59,13 @@ namespace FieldTrip.Buffer
 		{
 			// if ( sockChan == null )
 			// 	{
-			sockChan = new SocketChannel();  
+			SockChan = new SocketChannel();  
 			// }
 			// else if ( sockChan != null && sockChan.isConnected()) {
 			//	disconnect(); // disconnect old connection
 			//}
-			sockChan.Connect(hostname, port);
-			activeConnection = sockChan.IsConnected;
+			SockChan.Connect(hostname, port);
+			activeConnection = SockChan.IsConnected;
 			if (activeConnection) { // cache the connection info
 				this.host = hostname;
 				this.port = port;
@@ -93,21 +95,21 @@ namespace FieldTrip.Buffer
 
 		public void Disconnect()
 		{
-			if (sockChan != null)
-				sockChan.Close();		 
-			sockChan = null;
+			if (SockChan != null)
+				SockChan.Close();		 
+			SockChan = null;
 			activeConnection = false;
 		}
 
 		public bool IsConnected {
 			get {
-				if (activeConnection && sockChan != null && sockChan.IsConnected) {
+				if (activeConnection && SockChan != null && SockChan.IsConnected) {
 					try {
 						// part1 indicates whether error or connected.
-						bool part1 = sockChan.Socket.Client.Poll(1000, System.Net.Sockets.SelectMode.SelectRead);
+						bool part1 = SockChan.Socket.Client.Poll(1000, System.Net.Sockets.SelectMode.SelectRead);
 
 						// part2 indicates whether data is still available.
-						bool part2 = sockChan.Socket.Client.Available == 0;
+						bool part2 = SockChan.Socket.Client.Available == 0;
 
 						// if both parts are true, socket is dead.
 						if (part1 && part2)
@@ -154,7 +156,7 @@ namespace FieldTrip.Buffer
 			buf.Rewind();
 			WriteAll(buf);
 			ReadResponse(PUT_OK);
-			return hdr.channelNameSize > hdr.nChans;
+			return hdr.ChannelNameSize > hdr.NumChans;
 		}
 
 		public short[,] GetShortData(int first, int last)
@@ -162,12 +164,12 @@ namespace FieldTrip.Buffer
 			DataDescription dd = new DataDescription();
 			ByteBuffer buf = GetRawData(first, last, dd);
 		
-			int nSamples = dd.nSamples;
-			int nChans = dd.nChans;
+			int nSamples = dd.NumSamples;
+			int nChans = dd.NumChans;
 			
 			short[,] data = new short[nSamples, nChans];
 			
-			switch (dd.dataType) {
+			switch (dd.DataType) {
 				case DataType.INT8:
 					for (int i = 0; i < nSamples; i++) {
 						for (int j = 0; j < nChans; j++) {
@@ -196,12 +198,12 @@ namespace FieldTrip.Buffer
 			DataDescription dd = new DataDescription();
 			ByteBuffer buf = GetRawData(first, last, dd);
 		
-			int nSamples = dd.nSamples;
-			int nChans = dd.nChans;
+			int nSamples = dd.NumSamples;
+			int nChans = dd.NumChans;
 			
 			int[,] data = new int[nSamples, nChans];
 			
-			switch (dd.dataType) {
+			switch (dd.DataType) {
 				case DataType.INT8:
 					for (int i = 0; i < nSamples; i++) {
 						for (int j = 0; j < nChans; j++) {
@@ -237,12 +239,12 @@ namespace FieldTrip.Buffer
 			DataDescription dd = new DataDescription();
 			ByteBuffer buf = GetRawData(first, last, dd);
 		
-			int nSamples = dd.nSamples;
-			int nChans = dd.nChans;
+			int nSamples = dd.NumSamples;
+			int nChans = dd.NumChans;
 			
 			long[,] data = new long[nSamples, nChans];
 			
-			switch (dd.dataType) {
+			switch (dd.DataType) {
 				case DataType.INT8:
 					for (int i = 0; i < nSamples; i++) {
 						for (int j = 0; j < nChans; j++) {
@@ -285,12 +287,12 @@ namespace FieldTrip.Buffer
 			DataDescription dd = new DataDescription();
 			ByteBuffer buf = GetRawData(first, last, dd);
 
-			int nSamples = dd.nSamples;
-			int nChans = dd.nChans;
+			int nSamples = dd.NumSamples;
+			int nChans = dd.NumChans;
 			
 			float[,] data = new float[nSamples, nChans];
 			
-			switch (dd.dataType) {
+			switch (dd.DataType) {
 				case DataType.INT8:
 					for (int i = 0; i < nSamples; i++) {
 						for (int j = 0; j < nChans; j++) {
@@ -339,12 +341,12 @@ namespace FieldTrip.Buffer
 			DataDescription dd = new DataDescription();
 			ByteBuffer buf = GetRawData(first, last, dd);
 		
-			int nSamples = dd.nSamples;
-			int nChans = dd.nChans;
+			int nSamples = dd.NumSamples;
+			int nChans = dd.NumChans;
 			
 			double[,] data = new double[nSamples, nChans];
 			
-			switch (dd.dataType) {
+			switch (dd.DataType) {
 				case DataType.INT8:
 					for (int i = 0; i < nSamples; i++) {
 						//data[i] = new double[nChans];
@@ -410,13 +412,13 @@ namespace FieldTrip.Buffer
 			WriteAll(buf);
 			buf = ReadResponse(GET_OK);
 			
-			descr.nChans = buf.GetInt();
-			descr.nSamples = buf.GetInt();
-			descr.dataType = buf.GetInt();
-			descr.sizeBytes = buf.GetInt();
+			descr.NumChans = buf.GetInt();
+			descr.NumSamples = buf.GetInt();
+			descr.DataType = buf.GetInt();
+			descr.SizeBytes = buf.GetInt();
 			
-			int dataSize = descr.nChans * descr.nSamples * DataType.wordSize[descr.dataType];
-			if (dataSize > descr.sizeBytes || descr.sizeBytes > buf.Remaining) {
+			int dataSize = descr.NumChans * descr.NumSamples * DataType.wordSize[descr.DataType];
+			if (dataSize > descr.SizeBytes || descr.SizeBytes > buf.Remaining) {
 				errorReturned = INVALID_SIZE_DATA_DEF_ERROR;
 				throw new IOException("Invalid size definitions in response from GET DATA request");
 			}
@@ -729,7 +731,7 @@ namespace FieldTrip.Buffer
 			int cap = dst.Capacity;
 			int now = 0;
 			while (cap > 0) {
-				now = sockChan.Read(dst);
+				now = SockChan.Read(dst);
 				if (now < 0) {
 					//System.Console.WriteLine("Read here ");
 					throw new IOException("Remote side closed connection!");						
@@ -776,7 +778,7 @@ namespace FieldTrip.Buffer
 			int rem = (int)dst.Remaining;
 			int now = 0;
 			while (rem > 0) {
-				now = sockChan.Write(dst);
+				now = SockChan.Write(dst);
 				if (now < 0) {
 					//System.Console.Writeline("Write here ");
 					throw new IOException("Remote side closed connection!");
