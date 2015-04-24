@@ -1,4 +1,4 @@
-function [f,fraw,p,X]=buffer_apply_clsfr(X,clsfr,verb)
+function [f,fraw,p,Xpp]=buffer_apply_clsfr(X,clsfr,verb)
 % apply a previously trained classifier to the input data
 % 
 %  f=buffer_apply_clsfr(X,clsfr,varargin)
@@ -32,14 +32,14 @@ end
 for ci=1:numel(clsfr);
   if ( (isfield(clsfr(ci),'type') && any(strcmp(lower(clsfr(ci).type),{'erp','evoked'}))) || ...
        ~isempty(clsfr(ci).filt) && isempty(clsfr(ci).windowFn) ) % ERP
-    [f{ci}, fraw{ci}, p{ci}, X{ci}]=apply_erp_clsfr(X,clsfr(ci),verb);
+    [f{ci}, fraw{ci}, p{ci}, Xpp{ci}]=apply_erp_clsfr(X,clsfr(ci),verb);
   elseif ( (isfield(clsfr(ci),'type') && any(strcmp(lower(clsfr(ci).type),{'ersp','induced'}))) || ...
            isempty(clsfr(ci).filt) && ~isempty(clsfr(ci).welchAveType) ) % ERsP
-    [f{ci}, fraw{ci}, p{ci}, X{ci}]=apply_ersp_clsfr(X,clsfr(ci),verb);
+    [f{ci}, fraw{ci}, p{ci}, Xpp{ci}]=apply_ersp_clsfr(X,clsfr(ci),verb);
   end  
 end
 if ( numel(clsfr)==1 ) %BODGE: for single classifier return non-cell for legacy reasons
-  f=f{1}; fraw=fraw{1}; p=p{1}; X=X{1};
+  f=f{1}; fraw=fraw{1}; p=p{1}; Xpp=Xpp{1};
 end
 if ( verb>0 ) fprintf('Classifier prediction:  %g %g\n', f,p); end;
 return;
