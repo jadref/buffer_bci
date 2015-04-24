@@ -9,15 +9,15 @@ namespace FieldTrip.Buffer
     /// </summary>
 	public class SocketChannel
 	{
-		internal Boolean socketReady = false;
+		internal bool socketReady = false;
 	 
 		private TcpClient mySocket;
 		private NetworkStream theStream;
-		public String Host;
+		public string Host;
 		public int Port;
 		public int timeout = 10000;
 	    
-		public String readerResponse = "";
+		public string readerResponse = "";
 
 		
 		public SocketChannel()
