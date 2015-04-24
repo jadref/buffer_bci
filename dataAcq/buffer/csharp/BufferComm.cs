@@ -53,20 +53,20 @@ namespace FieldTrip.Buffer
 
 			// Remember the Num samples in buffer so far
 			if (nSamples == 0)
-				nSamples = sampevents.nSamples;
-			if (sampevents.nSamples == nSamples) {
+				nSamples = sampevents.NumSamples;
+			if (sampevents.NumSamples == nSamples) {
 				return null;
 			}
-			if (sampevents.nSamples < nSamples) {
-				nSamples = sampevents.nSamples - 1;
+			if (sampevents.NumSamples < nSamples) {
+				nSamples = sampevents.NumSamples - 1;
 				return null;
 			}
 
 			// Get just the newest data
-			float[,] data = C.GetFloatData(nSamples, sampevents.nSamples - 1);
+			float[,] data = C.GetFloatData(nSamples, sampevents.NumSamples - 1);
 
 			// Update the Num samples in buffer so far
-			nSamples = sampevents.nSamples - 1;
+			nSamples = sampevents.NumSamples - 1;
 
 			return data;
 		}
@@ -83,20 +83,20 @@ namespace FieldTrip.Buffer
 
 			// Remember the num events in buffer so far
 			if (nEvents == 0)
-				nEvents = sampevents.nEvents - 2;
-			if (sampevents.nEvents - 1 == nEvents) {
+				nEvents = sampevents.NumEvents - 2;
+			if (sampevents.NumEvents - 1 == nEvents) {
 				return -1;
 			}
-			if (sampevents.nEvents < nEvents) {
-				nEvents = sampevents.nEvents;
+			if (sampevents.NumEvents < nEvents) {
+				nEvents = sampevents.NumEvents;
 				return -1;
 			}
 
 			// Get just the newest events
-			BufferEvent[] events = C.GetEvents(nEvents, sampevents.nEvents - 1);
+			BufferEvent[] events = C.GetEvents(nEvents, sampevents.NumEvents - 1);
 
 			// Update the Num events in buffer so far
-			nEvents = sampevents.nEvents - 1;
+			nEvents = sampevents.NumEvents - 1;
 
 			// Parse the event array and find the specified commandType event type
 			// Return the value link to that event
@@ -129,20 +129,20 @@ namespace FieldTrip.Buffer
 
 			// Remember the num events in buffer so far
 			if (nEvents == 0)
-				nEvents = sampevents.nEvents - 2;
-			if (sampevents.nEvents - 1 == nEvents) {
+				nEvents = sampevents.NumEvents - 2;
+			if (sampevents.NumEvents - 1 == nEvents) {
 				return null;
 			}
-			if (sampevents.nEvents < nEvents) {
-				nEvents = sampevents.nEvents;
+			if (sampevents.NumEvents < nEvents) {
+				nEvents = sampevents.NumEvents;
 				return null;
 			}
 
 			// Get just the newest events
-			BufferEvent[] events = C.GetEvents(nEvents, sampevents.nEvents - 1);
+			BufferEvent[] events = C.GetEvents(nEvents, sampevents.NumEvents - 1);
 
 			// Update the Num events in buffer so far
-			nEvents = sampevents.nEvents - 1;
+			nEvents = sampevents.NumEvents - 1;
 
 			// Parse the event array and find the specified commandType event type
 			// Return the array of values link to that event

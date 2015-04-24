@@ -1,14 +1,12 @@
-using System.Collections;
-
 namespace FieldTrip.Buffer
 {
 	public class SamplesEventsCount {
 		public SamplesEventsCount(int nSamples, int nEvents) {
-			this.nSamples = nSamples;
-			this.nEvents  = nEvents;
+			this.NumSamples = nSamples;
+			this.NumEvents  = nEvents;
 		}
 		
-		public int nSamples;
-		public int nEvents;
+		public int NumSamples { get; set; }
+		public int NumEvents { get; set; }
 	}
 }

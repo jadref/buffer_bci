@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2013, Jason Farquhar
  *
- * Extension of bufferclien to add ability to fill in event sample number if it is negative
+ * Extension of bufferclient to add ability to fill in event sample number if it is negative
  * based on the output of the system clock and tracking the mapping between clock-time and sample-time
  */
 using System;
@@ -47,11 +47,20 @@ namespace FieldTrip.Buffer
 
 		//--------------------------------------------------------------------
 		// methods offering additional useful functionality
-		public String GetHost()
+
+        /// <summary>
+        /// Get the host associated with the FieldTrip buffer.
+        /// </summary>
+        /// <returns>The host associated with the FieldTrip buffer.</returns>
+		public string GetHost()
 		{
 			return SockChan.Host;
 		}
 
+        /// <summary>
+        /// Get the port associated with the FieldTrip buffer.
+        /// </summary>
+        /// <returns>The port associated with the FieldTrip buffer.</returns>
 		public int GetPort()
 		{
 			return SockChan.Port;
@@ -60,6 +69,12 @@ namespace FieldTrip.Buffer
 		//--------------------------------------------------------------------
 		// overridden methods to
 		// Fill in the estimated sample info
+
+        /// <summary>
+        /// Puts an event to the connected FieldTrip buffer.
+        /// </summary>
+        /// <param name="e">The event to send.</param>
+        /// <returns>The sent buffer event.</returns>
 		override public BufferEvent PutEvent(BufferEvent e)
 		{
 			if (e.Sample < 0) {
@@ -68,6 +83,10 @@ namespace FieldTrip.Buffer
 			return base.PutEvent(e);
 		}
 
+        /// <summary>
+        /// Sends an array of events to the connected FieldTrip buffer.
+        /// </summary>
+        /// <param name="e">The events to send.</param>
 		override public void PutEvents(BufferEvent[] e)
 		{
 			int samp = -1;
@@ -85,7 +104,7 @@ namespace FieldTrip.Buffer
 		{
 			//Console.WriteLine("clock update");
 			SamplesEventsCount secount = base.Wait(nSamples, nEvents, timeout);
-			double deltaSamples = clockSync.GetSamp() - secount.nSamples; // delta between true and estimated
+			double deltaSamples = clockSync.GetSamp() - secount.NumSamples; // delta between true and estimated
 			//Console.WriteLine("sampErr="+getSampErr() + " d(samp) " + deltaSamples + " sampThresh= " + clockSync.m*1000.0*.5);
 			if (GetSampErr() < maxSampError) {
 				if (deltaSamples > clockSync.m * 1000.0 * .5) { // lost samples					 
@@ -97,10 +116,14 @@ namespace FieldTrip.Buffer
 					clockSync.Reset();
 				}
 			}
-			clockSync.UpdateClock(secount.nSamples); // update the rt->sample mapping
+			clockSync.UpdateClock(secount.NumSamples); // update the rt->sample mapping
 			return secount;
 		}
 
+        /// <summary>
+        /// Get the header from the FieldTrip buffer.
+        /// </summary>
+        /// <returns>The header.</returns>
 		override public Header GetHeader()
 		{
 			Header hdr = base.GetHeader();
@@ -108,6 +131,12 @@ namespace FieldTrip.Buffer
 			return hdr;
 		}
 
+        /// <summary>
+        /// Connect to the FieldTrip buffer at the given address and port.
+        /// </summary>
+        /// <param name="address">The host where the FieldTrip buffer is running.</param>
+        /// <param name="port">The port at which the FieldTrip buffer is running.</param>
+        /// <returns></returns>
 		override public bool Connect(string address, int port)
 		{
 			clockSync.Reset(); // reset old clock info (if any)
@@ -142,7 +171,7 @@ namespace FieldTrip.Buffer
 				long sampest = GetSamp();
 				//Console.Write("Updating clock sync: SampErr " + getSampErr() + 
 				//					  " getSamp " + sampest + " Slast " + clockSync.Slast);
-				sample = Poll(0).nSamples; // force update if error is too big
+				sample = Poll(0).NumSamples; // force update if error is too big
 				//Console.WriteLine(" poll " + sample + " delta " + (sample-sampest));
 			} else { // use the estimated time
 				sample = (int)GetSamp();

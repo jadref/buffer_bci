@@ -1,4 +1,4 @@
-using System.Collections;
+using System.Text;
 
 namespace FieldTrip.Buffer
 {
@@ -35,7 +35,7 @@ namespace FieldTrip.Buffer
 					for (int pos = 0; pos < chunkSize; pos++) {
 						if (bs[pos] == 0) {
 							if (len > 0) {
-								Labels[n] = System.Text.Encoding.Default.GetString(bs, index, len);
+								Labels[n] = Encoding.Default.GetString(bs, index, len);
 								index = pos + 1;
 							}
 							len = 0;
@@ -81,6 +81,10 @@ namespace FieldTrip.Buffer
 			return size;
 		}
 
+        /// <summary>
+        /// Serializes the Header to the specified buffer.
+        /// </summary>
+        /// <param name="buf">The buffer to write the serialized header to.</param>
 		public void Serialize(ByteBuffer buf)
 		{
 			buf.PutInt(NumChans);

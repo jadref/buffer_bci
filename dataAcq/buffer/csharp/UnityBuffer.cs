@@ -145,8 +145,8 @@ public class UnityBuffer
 	{
 		if (bufferClient.errorReturned != BufferClient.BUFFER_READ_ERROR) {
 			SamplesEventsCount count = bufferClient.Wait(latestCapturedSample + 1, lastNumberOfEvents + 1, timeout); 
-			latestNumebrOfEventsInBuffer = count.nEvents;
-			latestBufferSample = count.nSamples;
+			latestNumebrOfEventsInBuffer = count.NumEvents;
+			latestBufferSample = count.NumSamples;
 			
 			while (lastNumberOfEvents < latestNumebrOfEventsInBuffer) {
 				bufferEvents.Add(bufferClient.GetEvents(lastNumberOfEvents, lastNumberOfEvents)[0]);

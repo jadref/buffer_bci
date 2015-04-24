@@ -4,9 +4,11 @@ using System.Net.Sockets;
 
 namespace FieldTrip.Buffer
 {
+    /// <summary>
+    /// An implementation of the Java SocketChannel class.
+    /// </summary>
 	public class SocketChannel
 	{
-	
 		internal Boolean socketReady = false;
 	 
 		private TcpClient mySocket;
