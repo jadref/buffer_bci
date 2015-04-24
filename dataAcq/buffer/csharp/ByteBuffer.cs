@@ -220,30 +220,31 @@ namespace FieldTrip.Buffer
 			return this;
 		}
 
-		public long Position()
-		{
-			return stream.Position;	
+		public long Position {
+			get {
+				return stream.Position;	
+			}
+			set {
+				stream.Position = value;
+			}
 		}
 
-		public void Position(long newposition)
-		{
-			stream.Position = newposition;
+		public long Remaining {
+			get {
+				return stream.Length - stream.Position;
+			}
 		}
 
-		
-		public long Remaining()
-		{
-			return stream.Length - stream.Position;
+		public int Capacity {
+			get {
+				return stream.Capacity;
+			}
 		}
 
-		public int Capacity()
-		{
-			return stream.Capacity;
-		}
-
-		public int Length()
-		{
-			return (int)stream.Length;
+		public int Length {
+			get {
+				return (int)stream.Length;
+			}
 		}
 
 		public ByteBuffer Rewind()
@@ -252,11 +253,12 @@ namespace FieldTrip.Buffer
 			return this;
 		}
 
-		public Encoding Encoding()
-		{
-			if (reader.Encoding != writer.Encoding)
-				throw new IOException("EndianBinaryWriter's and EndianBinaryReader's encoding are not the same.");
-			return writer.Encoding;	
+		public Encoding Encoding {
+			get {
+				if (reader.Encoding != writer.Encoding)
+					throw new IOException("EndianBinaryWriter's and EndianBinaryReader's encoding are not the same.");
+				return writer.Encoding;	
+			}
 		}
 
 		public ByteBuffer Slice()
@@ -292,7 +294,7 @@ namespace FieldTrip.Buffer
 
 		public ShortBuffer Get(short[] dst)
 		{
-			for (int i = 0; i < bytebuffer.Remaining(); ++i)
+			for (int i = 0; i < bytebuffer.Remaining; ++i)
 				dst[i] = bytebuffer.GetShort();
 			return this;
 		}
@@ -316,7 +318,7 @@ namespace FieldTrip.Buffer
 
 		public IntBuffer Get(int[] dst)
 		{
-			for (int i = 0; i < bytebuffer.Remaining(); ++i)
+			for (int i = 0; i < bytebuffer.Remaining; ++i)
 				dst[i] = bytebuffer.GetInt();
 			return this;
 		}
@@ -341,7 +343,7 @@ namespace FieldTrip.Buffer
 
 		public LongBuffer Get(long[] dst)
 		{
-			for (int i = 0; i < bytebuffer.Remaining(); ++i)
+			for (int i = 0; i < bytebuffer.Remaining; ++i)
 				dst[i] = bytebuffer.GetLong();
 			return this;
 		}
@@ -366,7 +368,7 @@ namespace FieldTrip.Buffer
 
 		public DoubleBuffer Get(double[] dst)
 		{
-			for (int i = 0; i < bytebuffer.Remaining(); ++i)
+			for (int i = 0; i < bytebuffer.Remaining; ++i)
 				dst[i] = bytebuffer.GetDouble();
 			return this;
 		}
@@ -391,7 +393,7 @@ namespace FieldTrip.Buffer
 
 		public FloatBuffer Get(float[] dst)
 		{
-			for (int i = 0; i < bytebuffer.Remaining(); ++i)
+			for (int i = 0; i < bytebuffer.Remaining; ++i)
 				dst[i] = bytebuffer.GetFloat();
 			return this;
 		}

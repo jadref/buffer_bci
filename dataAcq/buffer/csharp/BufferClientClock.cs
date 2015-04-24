@@ -121,7 +121,7 @@ namespace FieldTrip.Buffer
 			long sample = -1;
 			bool dopoll = false;
 			if (GetSampErr() > maxSampError || // error too big
-			    GetTime() > (long)(clockSync.Tlast) + updateInterval || // simply too long since we updated
+			    Time > (long)(clockSync.Tlast) + updateInterval || // simply too long since we updated
 			    clockSync.N < 8) { // Simply not enough points to believe we've got a good estimate
 				dopoll = true;
 			}
@@ -131,7 +131,7 @@ namespace FieldTrip.Buffer
 			} else {
 				numWrong = 0;
 			}
-			if (GetTime() < (long)(clockSync.Tlast) + minUpdateInterval) { // don't update too rapidly
+			if (Time < (long)(clockSync.Tlast) + minUpdateInterval) { // don't update too rapidly
 				dopoll = false;
 			}
 			if (dopoll) { // poll buffer for current samples
@@ -165,9 +165,10 @@ namespace FieldTrip.Buffer
 			return Math.Abs(clockSync.GetSampErr());
 		}
 
-		public double GetTime()
-		{
-			return clockSync.GetTime();
+		public double Time {
+			get {
+				return clockSync.GetTime();
+			}
 		}
 		// time in milliseconds
 		public SamplesEventsCount SyncClocks()
@@ -195,9 +196,10 @@ namespace FieldTrip.Buffer
 			return ssc;
 		}
 
-		public ClockSync GetclockSync()
-		{
-			return clockSync;
+		public ClockSync ClockSync {
+			get {
+				return clockSync;
+			}
 		}
 	}
 }

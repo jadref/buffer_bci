@@ -54,15 +54,16 @@ namespace FieldTrip.Buffer
 			return socketReady;
 		}
 
-		public TcpClient socket()
-		{
-			return mySocket;
+		public TcpClient Socket {
+			get {
+				return mySocket;
+			}
 		}
 
 		
-		public int write(ByteBuffer src)
+		public int Write(ByteBuffer src)
 		{
-			int toWrite = (int)src.Remaining();
+			int toWrite = (int)src.Remaining;
 			byte[] message = new byte[toWrite];
 	        
 			src.Get(ref message);
@@ -75,7 +76,7 @@ namespace FieldTrip.Buffer
 	     
 		public int Read(ByteBuffer dst)
 		{
-			int toRead = dst.Capacity();
+			int toRead = dst.Capacity;
 			byte[] message = new byte[toRead];
 	 		
 			int readBytes = 0;
@@ -96,12 +97,13 @@ namespace FieldTrip.Buffer
 		}
 
 	    
-		public bool IsConnected()
-		{
-			if (mySocket != null)
-				return mySocket.Connected;
-			else
-				return false;
+		public bool IsConnected {
+			get {
+				if (mySocket != null)
+					return mySocket.Connected;
+				else
+					return false;
+			}
 		}
 	}
 }

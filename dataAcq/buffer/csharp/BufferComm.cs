@@ -45,7 +45,7 @@ namespace FieldTrip.Buffer
 		public float[,] GetData()
 		{
 
-			if (!C.IsConnected())
+			if (!C.IsConnected)
 				return null;
 
 			// Poll for the new data
@@ -75,7 +75,7 @@ namespace FieldTrip.Buffer
 		public double GetEvent(string commandType)
 		{
 
-			if (!C.IsConnected())
+			if (!C.IsConnected)
 				return 0;
 
 			// Poll for the new events
@@ -108,7 +108,7 @@ namespace FieldTrip.Buffer
 
 					//Convert.ToSingle(evt.getValue().array);
 					//return Convert.ToSingle(evt.getValue().array);
-					return double.Parse(evt.GetValue().ToString());
+					return double.Parse(evt.Value.ToString());
 					//if (evt.getValue().toString().Equals(valueType)) { // check if the event value matches
 					//    processEvent(evt);
 					//}
@@ -121,7 +121,7 @@ namespace FieldTrip.Buffer
 		public float[] GetEventArray(string commandType)
 		{
 
-			if (!C.IsConnected())
+			if (!C.IsConnected)
 				return null;
 
 			// Poll for the new events
@@ -155,7 +155,7 @@ namespace FieldTrip.Buffer
 					//Convert.ToSingle(evt.getValue().array);
 					//return Convert.ToSingle(evt.getValue().array);
 					//return double.Parse(evt.getValue().toString());
-					return (float[])evt.GetValue().array;
+					return (float[])evt.Value.array;
 					//if (evt.getValue().toString().Equals(valueType)) { // check if the event value matches
 					//    processEvent(evt);
 					//}

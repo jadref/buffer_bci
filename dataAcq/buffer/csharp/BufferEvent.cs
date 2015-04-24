@@ -3,8 +3,7 @@ using System.Text;
 
 namespace FieldTrip.Buffer
 {
-	public class 
-	BufferEvent
+	public class BufferEvent
 	{
 		public BufferEvent()
 		{
@@ -156,18 +155,20 @@ namespace FieldTrip.Buffer
 			
 			size -= wType.size + wValue.size;
 			if (size != 0) {
-				buf.Position(buf.Position() + size);
+				buf.Position = buf.Position + size;
 			}
 		}
 
-		public WrappedObject GetType()
-		{
-			return wType;
+		public WrappedObject Type {
+			get {
+				return wType;
+			}
 		}
 
-		public WrappedObject GetValue()
-		{
-			return wValue;
+		public WrappedObject Value {
+			get {
+				return wValue;
+			}
 		}
 
 		public bool SetType(object typeObj)
@@ -200,9 +201,9 @@ namespace FieldTrip.Buffer
 		public static int Count(ByteBuffer buf)
 		{
 			int num = 0;
-			long pos = buf.Position();
+			long pos = buf.Position;
 		
-			while (buf.Remaining() >= 32) {
+			while (buf.Remaining >= 32) {
 				int typeType = buf.GetInt();
 				int typeNumEl = buf.GetInt();
 				int valueType = buf.GetInt();
@@ -218,10 +219,10 @@ namespace FieldTrip.Buffer
 					return -(1 + num);
 				}
 			
-				buf.Position(buf.Position() + size);
+				buf.Position = buf.Position + size;
 				num++;
 			}
-			buf.Position(pos);
+			buf.Position = pos;
 			return num;
 		}
 

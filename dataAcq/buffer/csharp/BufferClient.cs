@@ -63,7 +63,7 @@ namespace FieldTrip.Buffer
 			//	disconnect(); // disconnect old connection
 			//}
 			sockChan.Connect(hostname, port);
-			activeConnection = sockChan.IsConnected();
+			activeConnection = sockChan.IsConnected;
 			if (activeConnection) { // cache the connection info
 				this.host = hostname;
 				this.port = port;
@@ -99,26 +99,27 @@ namespace FieldTrip.Buffer
 			activeConnection = false;
 		}
 
-		public bool IsConnected()
-		{
-			if (activeConnection && sockChan != null && sockChan.IsConnected()) {
-				try {
-					// part1 indicates whether error or connected.
-					bool part1 = sockChan.socket().Client.Poll(1000, System.Net.Sockets.SelectMode.SelectRead);
+		public bool IsConnected {
+			get {
+				if (activeConnection && sockChan != null && sockChan.IsConnected) {
+					try {
+						// part1 indicates whether error or connected.
+						bool part1 = sockChan.Socket.Client.Poll(1000, System.Net.Sockets.SelectMode.SelectRead);
 
-					// part2 indicates whether data is still available.
-					bool part2 = sockChan.socket().Client.Available == 0;
+						// part2 indicates whether data is still available.
+						bool part2 = sockChan.Socket.Client.Available == 0;
 
-					// if both parts are true, socket is dead.
-					if (part1 && part2)
-						return false;
-					else
-						return true;
-				} catch (IOException ex) {
+						// if both parts are true, socket is dead.
+						if (part1 && part2)
+							return false;
+						else
+							return true;
+					} catch (IOException ex) {
+					}
 				}
-			}
 
-			return false;
+				return false;
+			}
 		}
 
 		virtual public Header GetHeader()
@@ -415,7 +416,7 @@ namespace FieldTrip.Buffer
 			descr.sizeBytes = buf.GetInt();
 			
 			int dataSize = descr.nChans * descr.nSamples * DataType.wordSize[descr.dataType];
-			if (dataSize > descr.sizeBytes || descr.sizeBytes > buf.Remaining()) {
+			if (dataSize > descr.sizeBytes || descr.sizeBytes > buf.Remaining) {
 				errorReturned = INVALID_SIZE_DATA_DEF_ERROR;
 				throw new IOException("Invalid size definitions in response from GET DATA request");
 			}
@@ -725,7 +726,7 @@ namespace FieldTrip.Buffer
 		
 		protected ByteBuffer ReadAll(ByteBuffer dst)
 		{
-			int cap = dst.Capacity();
+			int cap = dst.Capacity;
 			int now = 0;
 			while (cap > 0) {
 				now = sockChan.Read(dst);
@@ -772,10 +773,10 @@ namespace FieldTrip.Buffer
 		
 		protected ByteBuffer WriteAll(ByteBuffer dst)
 		{
-			int rem = (int)dst.Remaining();
+			int rem = (int)dst.Remaining;
 			int now = 0;
 			while (rem > 0) {
-				now = sockChan.write(dst);
+				now = sockChan.Write(dst);
 				if (now < 0) {
 					//System.Console.Writeline("Write here ");
 					throw new IOException("Remote side closed connection!");

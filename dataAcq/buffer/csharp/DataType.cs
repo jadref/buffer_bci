@@ -26,7 +26,7 @@ namespace FieldTrip.Buffer
 				case CHAR:
 					byte[] strBytes = new byte[numel];
 					buf.Get(ref strBytes);
-					System.Text.Encoding encoding = buf.Encoding();
+					System.Text.Encoding encoding = buf.Encoding;
 					string val = encoding.GetString(strBytes, 0, strBytes.Length);
 					return val;
 					
