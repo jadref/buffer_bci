@@ -22,9 +22,9 @@ namespace FieldTrip.Buffer
 		{
 		}
 
-		~SocketChannel() // distructor, correctly close the socket first
+		~SocketChannel() // destructor, correctly close the socket first
 		{
-			try { // don't throw within distructor
+			try { // don't throw within destructor
 				mySocket.Close();
 			} catch {
 			}
@@ -33,7 +33,12 @@ namespace FieldTrip.Buffer
 		// void OnApplicationQuit(){
 		//     this.close();
 		// }
-		
+
+		/// <summary>
+		/// Connect to the specified hostname and port.
+		/// </summary>
+		/// <param name="hostname">Hostname.</param>
+		/// <param name="port">Port.</param>
 		public bool Connect(string hostname, int port)
 		{
 			try {
@@ -53,13 +58,20 @@ namespace FieldTrip.Buffer
 			return socketReady;
 		}
 
+		/// <summary>
+		/// Gets the socket.
+		/// </summary>
+		/// <value>The underlying socket that is connected to the FieldTrip buffer.</value>
 		public TcpClient Socket {
 			get {
 				return mySocket;
 			}
 		}
 
-		
+		/// <summary>
+		/// Write the specified <see cref="FieldTrip.Buffer.ByteBuffer"/> to the FieldTrip buffer. 
+		/// </summary>
+		/// <param name="src">The buffer to write.</param>
 		public int Write(ByteBuffer src)
 		{
 			int toWrite = (int)src.Remaining;
@@ -72,7 +84,10 @@ namespace FieldTrip.Buffer
 			return toWrite;
 		}
 
-	     
+		/// <summary>
+		/// Read data to the given <see cref="FieldTrip.Buffer.ByteBuffer"/>
+		/// </summary>
+		/// <param name="dst">The buffer to read to.</param>
 		public int Read(ByteBuffer dst)
 		{
 			int toRead = dst.Capacity;
@@ -86,7 +101,9 @@ namespace FieldTrip.Buffer
 			return readBytes;
 		}
 
-	 
+		/// <summary>
+		/// Close this instance.
+		/// </summary>
 		public void Close()
 		{
 			if (!socketReady)
@@ -95,7 +112,10 @@ namespace FieldTrip.Buffer
 			socketReady = false;
 		}
 
-	    
+		/// <summary>
+		/// Gets a value indicating whether this instance is connected.
+		/// </summary>
+		/// <value><c>true</c> if this instance is connected; otherwise, <c>false</c>.</value>
 		public bool IsConnected {
 			get {
 				if (mySocket != null)

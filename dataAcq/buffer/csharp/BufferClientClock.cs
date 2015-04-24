@@ -8,7 +8,7 @@ using System;
 
 namespace FieldTrip.Buffer
 {
-	public class BufferClientClock : FieldTrip.Buffer.BufferClient
+	public class BufferClientClock : BufferClient
 	{
 
 		protected ClockSync clockSync = null;
@@ -47,12 +47,12 @@ namespace FieldTrip.Buffer
 
 		//--------------------------------------------------------------------
 		// methods offering additional useful functionality
-		public String getHost()
+		public String GetHost()
 		{
 			return SockChan.Host;
 		}
 
-		public int getPort()
+		public int GetPort()
 		{
 			return SockChan.Port;
 		}

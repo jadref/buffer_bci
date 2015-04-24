@@ -55,6 +55,11 @@ namespace FieldTrip.Buffer
 			myOrder = order;
 		}
 
+		/// <summary>
+		/// Connect to the FieldTrip buffer at the specified hostname and port.
+		/// </summary>
+		/// <param name="hostname">Hostname.</param>
+		/// <param name="port">Port.</param>
 		virtual public bool Connect(string hostname, int port)
 		{
 			// if ( sockChan == null )
@@ -73,6 +78,10 @@ namespace FieldTrip.Buffer
 			return activeConnection;
 		}
 
+		/// <summary>
+		/// Connect to the FieldTrip buffer at the given address.
+		/// </summary>
+		/// <param name="address">Address of format: 'hostname:port'</param>
 		public bool Connect(string address)
 		{
 			int colonPos = address.LastIndexOf(':');
@@ -87,12 +96,18 @@ namespace FieldTrip.Buffer
 			return false;
 		}
 
+		/// <summary>
+		/// Reconnect this instance to the FieldTrip buffer.
+		/// </summary>
 		public bool Reconnect()
 		{
 			System.Console.WriteLine("Remote side disconnected detected. Trying to reconnect to : " + host + ":" + port);
 			return Connect(host, port);
 		}
 
+		/// <summary>
+		/// Disconnect this instance from the FieldTrip buffer.
+		/// </summary>
 		public void Disconnect()
 		{
 			if (SockChan != null)
@@ -101,6 +116,10 @@ namespace FieldTrip.Buffer
 			activeConnection = false;
 		}
 
+		/// <summary>
+		/// Gets a value indicating whether this instance is connected.
+		/// </summary>
+		/// <value><c>true</c> if this instance is connected; otherwise, <c>false</c>.</value>
 		public bool IsConnected {
 			get {
 				if (activeConnection && SockChan != null && SockChan.IsConnected) {
@@ -124,6 +143,10 @@ namespace FieldTrip.Buffer
 			}
 		}
 
+		/// <summary>
+		/// Retrieves the header.
+		/// </summary>
+		/// <returns>The header or null if the header couldn't be retrieved.</returns>
 		virtual public Header GetHeader()
 		{
 			ByteBuffer buf;
@@ -142,7 +165,11 @@ namespace FieldTrip.Buffer
 			return hdr;
 		}
 
-		/** Returns true if channel names were written */
+		/// <summary>
+		/// Puts the header.
+		/// </summary>
+		/// <returns><c>true</c>, if channel names were written, <c>false</c> otherwise.</returns>
+		/// <param name="hdr">Hdr.</param>
 		public bool PutHeader(Header hdr)
 		{
 			ByteBuffer buf;
@@ -426,7 +453,10 @@ namespace FieldTrip.Buffer
 			return buf.Slice();
 		}
 
-		
+		/// <summary>
+		/// Gets all events from the FieldTrip buffer.
+		/// </summary>
+		/// <returns>The events.</returns>
 		public BufferEvent[] GetEvents()
 		{
 			ByteBuffer buf;
@@ -452,7 +482,13 @@ namespace FieldTrip.Buffer
 			return evs;
 		}
 
-		
+
+		/// <summary>
+		/// Gets the events between first and last.
+		/// </summary>
+		/// <returns>The events.</returns>
+		/// <param name="first">The first event number.</param>
+		/// <param name="last">The last event number.</param>
 		public BufferEvent[] GetEvents(int first, int last)
 		{
 			ByteBuffer buf;
@@ -618,6 +654,11 @@ namespace FieldTrip.Buffer
 			ReadResponse(PUT_OK);
 		}
 
+		/// <summary>
+		/// Sends the given event to the FieldTrip buffer.
+		/// </summary>
+		/// <returns>The event.</returns>
+		/// <param name="e">The event to send.</param>
 		virtual public BufferEvent PutEvent(BufferEvent e)
 		{
 			ByteBuffer buf;
@@ -633,6 +674,10 @@ namespace FieldTrip.Buffer
 			return e;
 		}
 
+		/// <summary>
+		/// Puts the given array of events to the FieldTrip buffer.
+		/// </summary>
+		/// <param name="e">The events to send.</param>
 		virtual public void PutEvents(BufferEvent[] e)
 		{
 			ByteBuffer buf;

@@ -109,12 +109,28 @@ namespace FieldTrip.Buffer
 
 		public float FSample{ get; set; }
 
+		/// <summary>
+		/// Gets or sets the number channels.
+		/// </summary>
+		/// <value>The number of channels.</value>
 		public int NumChans{ get; set; }
 
+		/// <summary>
+		/// Gets or sets the number samples.
+		/// </summary>
+		/// <value>The number samples.</value>
 		public int NumSamples{ get; set; }
 
+		/// <summary>
+		/// Gets or sets the number events.
+		/// </summary>
+		/// <value>The number events.</value>
 		public int NumEvents{ get; set; }
 
+		/// <summary>
+		/// Gets or sets the labels.
+		/// </summary>
+		/// <value>The labels.</value>
 		public string[] Labels{ get; set; }
 	}
 }
