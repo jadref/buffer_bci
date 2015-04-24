@@ -32,10 +32,10 @@ end
 for ci=1:numel(clsfr);
   if ( (isfield(clsfr(ci),'type') && any(strcmp(lower(clsfr(ci).type),{'erp','evoked'}))) || ...
        ~isempty(clsfr(ci).filt) && isempty(clsfr(ci).windowFn) ) % ERP
-    [f{ci}, fraw{ci}, p{ci}, X{ci}]=apply_erp_clsfr(ci)(X,clsfr(ci),verb);
+    [f{ci}, fraw{ci}, p{ci}, X{ci}]=apply_erp_clsfr(X,clsfr(ci),verb);
   elseif ( (isfield(clsfr(ci),'type') && any(strcmp(lower(clsfr(ci).type),{'ersp','induced'}))) || ...
            isempty(clsfr(ci).filt) && ~isempty(clsfr(ci).welchAveType) ) % ERsP
-    [f{ci}, fraw{ci}, p{ci}, X{ci}]=apply_ersp_clsfr(ci)(X,clsfr(ci),verb);
+    [f{ci}, fraw{ci}, p{ci}, X{ci}]=apply_ersp_clsfr(X,clsfr(ci),verb);
   end  
 end
 if ( numel(clsfr)==1 ) %BODGE: for single classifier return non-cell for legacy reasons

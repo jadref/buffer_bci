@@ -34,9 +34,11 @@ run ../utilities/initPaths.m
 capFile='1010'; % you should change this to represent whatever cap layout was used in your experiment
 [clsfr,res,X,Y]=buffer_train_erp_clsfr(data,devents,hdr,'freqband',[.1 .5 10 12],'capFile',capFile,'overridechnms',1);
 % N.B. res.opt.tstf contains the cross validated predictions for the training data.
-%  Thus, the training set performance can be computed as:
-tstf=res.opt.tstf;
-sum(sign(tstf)==Y)./numel(tstf) 
+%  Thus, the training set performance could be computed as
+if ( isnumeric(Y) ) % only if Y is numeric
+  tstf=res.opt.tstf;
+  fprintf('Clsfr perf = %g\n',sum(sign(tstf)==Y)./numel(tstf))
+end
 
 % This analysis should generate two summary figures:
 %

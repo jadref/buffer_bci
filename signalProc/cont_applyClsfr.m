@@ -115,7 +115,7 @@ while( ~endTest )
       
     if ( opts.verb>1 ) fprintf('Got data @ %d->%d samp\n',start(si),start(si)+trlen_samp-1); end;
     % save the data used by the classifier if wanted
-    if ( nargout>0 ) testdata{nepochs}=data;testevents{nepochs}=mkEvent('data',0,start(si)); end;
+    if ( nargout>0 ) testdata{nEpochs}=data;testevents{nEpochs}=mkEvent('data',0,start(si)); end;
       
     % apply classification pipeline to this events data
     for ci=1:numel(clsfr);
