@@ -11,9 +11,9 @@ namespace csharpclient
     {
         private static bool endExpt = false;
 
-        public static int Main(String[] args)
+        public static int Main(string[] args)
         {
-            String hostname = "localhost";
+            string hostname = "localhost";
             int port = 1972;
             int timeout = 5000;
 	
@@ -106,12 +106,12 @@ namespace csharpclient
                     for (int ei = 0; ei < evs.Length; ei++)
                     {
                         BufferEvent evt = evs[ei];
-                        String evttype = evt.Type.ToString(); // N.B. to*S*tring, not upper case!
+                        string evttype = evt.Type.ToString();
                         // only process if it's an event of a type we care about
                         // In our case, don't echo our own echo events....
                         if (!evttype.Equals("echo"))
-                        {  // N.B. use equals, not == to compare string contents!
-                            if (evttype.Equals("exit"))
+                        {
+                            if (evttype =="exit")
                             { // check for a finish event
                                 endExpt = true;
                             } 
