@@ -43,7 +43,7 @@ namespace FieldTrip.Buffer
 	 protected string host;
 	 protected int port;
 	 protected ByteOrder myOrder;
-	 protected int errorReturned;
+	 internal int errorReturned;
 	
 	 public BufferClient() {
 		myOrder = ByteOrder.nativeOrder();
@@ -95,24 +95,26 @@ namespace FieldTrip.Buffer
 	 }
 		
 	 public bool isConnected() {
-		bool conn=false;
-		if (activeConnection && sockChan!=null && sockChan.isConnected() ) {
-		  // try to read 1 byte, if this fails then the socket was reset
-		  int nread=-1;
-		  try {
-			 ByteBuffer tmp= ByteBuffer.allocate(1);
-			 sockChan.socket().Client.Blocking=false;
-			 nread=sockChan.read(tmp); // fast non-blocking read
-			 sockChan.socket().Client.Blocking=true;
-		  } catch (IOException e) { }
-		  //System.Console.WriteLine("read " + nread + "bytes"); System.out.flush();
-		  if ( nread<0 ) {
-			 activeConnection=false;
-		  } else {
-			 conn = true;
-		  }
+		if (activeConnection && sockChan != null && sockChan.isConnected()) {
+		    try {
+			// part1 indicates whether error or connected.
+			bool part1 = sockChan.socket().Client.Poll(1000, System.Net.Sockets.SelectMode.SelectRead);
+
+			// part2 indicates whether data is still available.
+			bool part2 = sockChan.socket().Client.Available == 0;
+
+			// if both parts are true, socket is dead.
+			if (part1 && part2)
+				return false;
+			else
+				return true;
+		    }
+		    catch (IOException ex)
+		    {
+		    }
 		}
-		return conn;
+
+		return false;
 	 }
 		
 	 virtual public Header getHeader() {
