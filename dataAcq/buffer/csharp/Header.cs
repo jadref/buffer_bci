@@ -1,8 +1,12 @@
-using System.Collections;
+using System.Text;
 
 namespace FieldTrip.Buffer
 {
-	public class Header {
+    /// <summary>
+    /// A datastructure containing information about the number of channels, samples, events, etc. in the FieldTrip buffer.
+    /// </summary>
+	public class Header
+	{
 		public const int CHUNK_UNKNOWN = 0;
 		public const int CHUNK_CHANNEL_NAMES = 1;
 		public const int CHUNK_CHANNEL_FLAGS = 2;
@@ -11,33 +15,39 @@ namespace FieldTrip.Buffer
 		public const int CHUNK_NIFTI1 = 5;
 		public const int CHUNK_SIEMENS_AP = 6;
 		public const int CHUNK_CTF_RES4 = 7;
-		
-	
-		public Header(ByteBuffer buf) {
-			nChans   = buf.getInt();
-			nSamples = buf.getInt();
-			nEvents  = buf.getInt();
-			fSample  = buf.getFloat();
-			dataType = buf.getInt();
-			int size = buf.getInt();
-			labels   = new string[nChans];
+
+
+        /// <summary>
+        /// Initializes a Header from the specified <see cref="FieldTrip.Buffer.ByteBuffer"/>.
+        /// </summary>
+        /// <param name="buf">The buffer to read the header from.</param>
+		public Header(ByteBuffer buf)
+		{
+			NumChans = buf.GetInt();
+			NumSamples = buf.GetInt();
+			NumEvents = buf.GetInt();
+			FSample = buf.GetFloat();
+			DataType = buf.GetInt();
+			int size = buf.GetInt();
+			Labels = new string[NumChans];
 		
 			while (size > 0) {
-				int chunkType = buf.getInt();
-				int chunkSize = buf.getInt();
+				int chunkType = buf.GetInt();
+				int chunkSize = buf.GetInt();
 				byte[] bs = new byte[chunkSize];
-				buf.get(ref bs);
+				buf.Get(ref bs);
 				
 				if (chunkType == CHUNK_CHANNEL_NAMES) {
-					int n = 0, len = 0, index =0;
-					for (int pos = 0;pos<chunkSize;pos++) {
-						if (bs[pos]==0) {
-							if (len>0) {
-								labels[n] =System.Text.Encoding.Default.GetString(bs, index, len);
-								index = pos +1;
+					int n = 0, len = 0, index = 0;
+					for (int pos = 0; pos < chunkSize; pos++) {
+						if (bs[pos] == 0) {
+							if (len > 0) {
+								Labels[n] = Encoding.Default.GetString(bs, index, len);
+								index = pos + 1;
 							}
 							len = 0;
-							if (++n == nChans) break;
+							if (++n == NumChans)
+								break;
 						} else {
 							len++;
 						}
@@ -48,62 +58,100 @@ namespace FieldTrip.Buffer
 				size -= 8 + chunkSize;
 			}
 		}
-		
-		public Header(int nChans, float fSample, int dataType) {
-			this.nChans   = nChans;
-			this.fSample  = fSample;
-			this.nSamples = 0;
-			this.nEvents  = 0;
-			this.dataType = dataType;
-			this.labels   = new string[nChans]; // allocate, but do not fill
+
+        /// <summary>
+        /// Initializes a header from the specified parameters.
+        /// </summary>
+        /// <param name="nChans">The number of channels.</param>
+        /// <param name="fSample"></param>
+        /// <param name="dataType">The datatype.</param>
+		public Header(int nChans, float fSample, int dataType)
+		{
+			this.NumChans = nChans;
+			this.FSample = fSample;
+			this.NumSamples = 0;
+			this.NumEvents = 0;
+			this.DataType = dataType;
+			this.Labels = new string[nChans]; // allocate, but do not fill
 		}
-		
-		public int getSerialSize() {
+
+        /// <summary>
+        /// Determine the size of the serialized representation of this instance.
+        /// </summary>
+        /// <returns>A size in bytes.</returns>
+		public int GetSerialSize()
+		{
 			int size = 24;
 		
-			if (labels.Length == nChans) {
-				channelNameSize = 0;
-				for (int i=0;i<nChans;i++) {
-					channelNameSize++;
-					if (labels[i] != null) 
-						channelNameSize += labels[i].ToString().ToCharArray().Length;
+			if (Labels.Length == NumChans) {
+				ChannelNameSize = 0;
+				for (int i = 0; i < NumChans; i++) {
+					ChannelNameSize++;
+					if (Labels[i] != null)
+						ChannelNameSize += Labels[i].ToString().ToCharArray().Length;
 				}
-				if (channelNameSize > nChans) {
+				if (ChannelNameSize > NumChans) {
 					// we've got more than just empty string
-					size += 8 + channelNameSize;
+					size += 8 + ChannelNameSize;
 				}
 			}
 			return size;
 		}
-		
-		public void serialize(ByteBuffer buf) {
-			buf.putInt(nChans);
-			buf.putInt(nSamples);
-			buf.putInt(nEvents);
-			buf.putFloat(fSample);
-			buf.putInt(dataType);
-			if (channelNameSize <= nChans) {
+
+        /// <summary>
+        /// Serializes the Header to the specified buffer.
+        /// </summary>
+        /// <param name="buf">The buffer to write the serialized header to.</param>
+		public void Serialize(ByteBuffer buf)
+		{
+			buf.PutInt(NumChans);
+			buf.PutInt(NumSamples);
+			buf.PutInt(NumEvents);
+			buf.PutFloat(FSample);
+			buf.PutInt(DataType);
+			if (ChannelNameSize <= NumChans) {
 				// channel names are all empty or array length does not match
-				buf.putInt(0);
+				buf.PutInt(0);
 			} else {
-				buf.putInt(8 + channelNameSize);	// 8 bytes for chunk def
-				buf.putInt(CHUNK_CHANNEL_NAMES);
-				buf.putInt(channelNameSize);
-				for (int i=0;i<nChans;i++) {
-					if (labels[i] != null) 
-						buf.putString( labels[i]);
-					buf.putByte((byte) 0);
+				buf.PutInt(8 + ChannelNameSize);	// 8 bytes for chunk def
+				buf.PutInt(CHUNK_CHANNEL_NAMES);
+				buf.PutInt(ChannelNameSize);
+				for (int i = 0; i < NumChans; i++) {
+					if (Labels[i] != null)
+						buf.PutString(Labels[i]);
+					buf.PutByte((byte)0);
 				}
 			} 
 		}
-		
-		public int channelNameSize;
-	
-		public int dataType;
-		public float fSample;
-		public int nChans;
-		public int nSamples;
-		public int nEvents;
-		public string[] labels;
+
+		public int ChannelNameSize{ get; set; }
+
+		public int DataType{ get; set; }
+
+		public float FSample{ get; set; }
+
+		/// <summary>
+		/// Gets or sets the number channels.
+		/// </summary>
+		/// <value>The number of channels.</value>
+		public int NumChans{ get; set; }
+
+		/// <summary>
+		/// Gets or sets the number samples.
+		/// </summary>
+		/// <value>The number samples.</value>
+		public int NumSamples{ get; set; }
+
+		/// <summary>
+		/// Gets or sets the number events.
+		/// </summary>
+		/// <value>The number events.</value>
+		public int NumEvents{ get; set; }
+
+		/// <summary>
+		/// Gets or sets the labels.
+		/// </summary>
+		/// <value>The labels.</value>
+		public string[] Labels{ get; set; }
 	}
 }
