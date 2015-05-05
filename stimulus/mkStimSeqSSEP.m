@@ -29,26 +29,28 @@ if ( nargin<2 || isempty(duration) ) duration=3; end; % default to 3sec
 if ( nargin<3 || isempty(isi) ) isi=2/60; end; % default to 60Hz
 if ( nargin<4 || isempty(periods) ) periods=(1:nSymbs)*2; end;
 if ( nargin<5 || isempty(smooth) )   smooth=false; end;
-if ( size(periods,1)==1 && size(periods,2)>1 ) periods=periods'; end;
+if ( size(periods,2)==nSymbs && size(periods,1)<=2 ) periods=periods'; end;
 if ( size(periods,1)<nSymbs ) warning('Insufficient flicker periods given... set to off'); end;
 if ( size(periods,2)==1 ) periods=[periods(:) zeros(size(periods))]; end; % add 0-phase info
 % make a simple visual intermittent flash stimulus
-colors=[1 1 1;...   % color(1) = flash
-        0 1 0]';    % color(2) = target
-stimTime=0:isi:duration; % event every isi
-stimSeq =zeros(nSymbs,numel(stimTime)); % make stimSeq where everything is in background state
-stimSeq(2:end-1,:)=0; % turn-on only the central square
-for stimi=1:size(periods,1);
+nStim = duration/isi;
+stimTime=(0:nStim)*isi(1);
+eventSeq=[]; 
+stimSeq =zeros(nSymbs,nStim); % make stimSeq where everything is in background state
+for stimi=1:nSymbs;
   % N.B. include slight phase offset to prevent value being exactly==0
-  stimSeq(stimi,:) = cos(((0:numel(stimTime)-1)+.0001+periods(stimi,2))/periods(stimi,1)*2*pi); 
+  stimSeq(stimi,:) = cos(((0:size(stimSeq,2)-1)+.0001+periods(stimi,2))/periods(stimi,1)*2*pi); 
 end
 if ( smooth ) 
   stimSeq=(stimSeq+1)/2; % ensure all positive values in range 0-1
+  colors =[]; % no color table
 else
   stimSeq=single(stimSeq>0); 
+  colors=[1 1 1;...   % color(1) = flash
+			 0 1 0]';    % color(2) = target
 end;
 
-eventSeq=cell(numel(stimTime),1); % No events...
+
 return;
 %---------------------
 function testCase()
@@ -59,5 +61,5 @@ function testCase()
 % phase shifts
 [stimSeq,stimTime]=mkStimSeqSSEP(10,10,1/20,[6*ones(1,10);2*pi*(randperm(10))]',1);
 
-clf;mcplot(stimTime,stimSeq,'lineWidth',1)
+clf;mcplot(stimTime(1:size(stimSeq,2)),stimSeq,'lineWidth',1)
 clf;playStimSeq(stimSeq,stimTime,'cont',1)

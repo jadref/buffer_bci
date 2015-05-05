@@ -1,7 +1,7 @@
-function [stimSeq,stimTime,eventSeq,stimCode]=mkStimSeqScan(nSymbs,duration,isi)
+function [stimSeq,stimTime,eventSeq,colors]=mkStimSeqScan(nSymbs,duration,isi)
 % make a simple linear scan a stimulus sequence / stimTim pair for a set of nSymbs
 %
-% [stimSeq,stimTime,eventSeq,stimCode]=mkStimSeqScan(nSymbs,duration,isi,mintti)
+% [stimSeq,stimTime,eventSeq,colors]=mkStimSeqScan(nSymbs,duration,isi,mintti)
 %
 %  Each of the nSymbs are highlighted in order in a simple linear scan  
 %
@@ -18,17 +18,18 @@ function [stimSeq,stimTime,eventSeq,stimCode]=mkStimSeqScan(nSymbs,duration,isi)
 %                   {type value} a cell array with the event type and value to send
 %  stimCode -- [1 x nStim] number of the symbol to be flashed at each time
 if ( nargin<3 || isempty(isi) ) isi=1; end;
+colors=[1 1 1]';
 nStim = duration/isi;
-stimTime=(0:nStim-1)*isi(1);
+stimTime=(0:nStim)*isi(1);
+eventSeq=[]; 
 stimSeq=zeros(nSymbs,nStim); 
 stimSeq(mod(0:nStim-1,nSymbs)+(0:nStim-1)*nSymbs+1)=1;
-eventSeq=cell(numel(stimTime),1); % No events...
 return;
 
 %----------------------
 function testCase();
 [stimSeq,stimTime]=mkStimSeqScan(10,10,1/10); 
-clf;mcplot(stimTime,stimSeq,'lineWidth',1)
+clf;mcplot(stimTime(1:size(stimSeq,2)),stimSeq,'lineWidth',1)
 % compute mean tti statistics for each symb
 for si=1:size(ss,1); tti=diff(find(ss(si,:)));fprintf('%g\t%g\t%g\t%g\n',min(tti),mean(tti),max(tti),var(tti));end;
 % simple play sequence function

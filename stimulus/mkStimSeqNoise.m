@@ -24,11 +24,12 @@ if ( numel(nSymbs)>1 ) nSymbs=numel(nSymbs); end;
 if ( nargin<3 || isempty(isi) ) isi=1; end;
 if ( nargin<4 || isempty(type) ) type='gold'; end;
 if ( nargin<5 || isempty(smooth) ) smooth=false; end;
-colors=[];
+colors=[1 1 1]';
 nStim = duration/isi;
-stimSeq=zeros(nSymbs,nStim); 
-stimTime=(0:size(stimSeq,2)-1)*isi(1);
+stimTime=(0:nStim)*isi(1);
+eventSeq=[];
 
+stimSeq=zeros(nSymbs,nStim); 
 switch lower(type);
   case 'gold'; 
 	 nBits = max(8,ceil(log2(nStim)+1)); % state long enough to not repeat in nStim events
@@ -43,7 +44,6 @@ switch lower(type);
 	 if ( ~smooth ) stimSeq=single(stimSeq>0); end;
 otherwise ; error('Unrecognised noise type');
 end
-eventSeq=cell(numel(stimTime),1); % No events...
 return;
 
 %----------------------
@@ -82,5 +82,5 @@ function testCase();
 % binary
 [stimSeq,stimTime]=mkStimSeqNoise(10,10,1/20,'gold');
 % continuous
-clf;mcplot(stimTime,stimSeq,'lineWidth',1)
+clf;mcplot(stimTime(1:size(stimSeq,2)),stimSeq,'lineWidth',1)
 clf;playStimSeq(stimSeq,stimTime)

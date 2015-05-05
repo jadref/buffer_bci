@@ -1,7 +1,7 @@
-function [stimSeq,stimTime,eventSeq,stimCode]=mkStimSeqRand(nSymb,duration,isi,mintti)
+function [stimSeq,stimTime,eventSeq,colors]=mkStimSeqRand(nSymb,duration,isi,mintti)
 % make a stimulus sequence / stimTim pair for a set of nSymb
 %
-% [stimSeq,stimTime,eventSeq,stimCode]=mkStimSeqRand(nSymb,duration,isi,mintti)
+% [stimSeq,stimTime,eventSeq,colors]=mkStimSeqRand(nSymb,duration,isi,mintti)
 %
 %  The stimSeq generated has the property that each symbols are are not flashed 
 %  within mintti flashes of each other
@@ -21,6 +21,7 @@ function [stimSeq,stimTime,eventSeq,stimCode]=mkStimSeqRand(nSymb,duration,isi,m
 %  stimCode -- [1 x nStim] number of the symbol to be flashed at each time
 if ( nargin<3 || isempty(isi) ) isi=1; end;
 if ( nargin<4 || isempty(mintti) ) mintti=max(round(nSymb)/2,nSymb-2); end;
+colors=[1 1 1]'; % flash is white
 nStim = duration/isi;
 stimSeq=zeros(nSymb,nStim); 
 stimCode=zeros(1,nStim);
@@ -39,7 +40,7 @@ for si=nSymb+1:nSymb:nStim;
   end
 end
 for si=1:nStim; if ( stimCode(si)>0) stimSeq(stimCode(si),si)=1; end; end;
-stimTime=(0:size(stimSeq,2)-1)*isi(1);
+stimTime=(0:size(stimSeq,2))*isi(1);
 eventSeq=stimSeq;
 return;
 
