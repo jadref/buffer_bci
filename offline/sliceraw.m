@@ -83,6 +83,7 @@ events=read_buffer_offline_events(eventfname,hdr);
 % extract sample-rate from the header and convert from ms->samples if needed
 if ( isfield(hdr,'SampleRate') ) fs=hdr.SampleRate; 
 elseif ( isfield(hdr,'Fs') ) fs=hdr.Fs; 
+elseif ( isfield(hdr,'fSample') ) fs=hdr.fSample; 
 else warning('Cant find sample rate, using fs=1'); fs=1;
 end
 % convert data ranges from ms-> samples
@@ -99,10 +100,12 @@ if ( ~isempty(opts.subsample) && fs>opts.subsample )
 end
 
 % select the events we want to slice on from the stream
-% Note: you can replace this with something more sophsicated, e.g. to only return matching events between 
-%  a given phase start and phase end event, if that is useful
+% Note: you can replace this with something more sophsicated, e.g. to only return 
+% matching events between a given phase start and phase end event, if that is useful
 if ( iscell(opts.startSet) )
   mi=matchEvents(events,opts.startSet{:});
+elseif ( isstruct(opts.startSet) ) % already the set of events to slice on
+  devents=opts.startSet; mi=true(numel(devents),1);
 elseif ( isa(opts.startSet,'function_handle') || exist(opts.startSet)==2 )
   mi=feval(opts.startSet,events);
 elseif ( isempty(opts.startSet) ) % return all events
@@ -127,6 +130,7 @@ for ei=1:numel(devents);
   end
   if ( opts.verb>=0 ) fprintf('.');end
 end
+if ( opts.verb>=0 ) fprintf('done.\n');end
 if ( ~all(keep) )
   fprintf('Discarding %d events with no data\n',sum(~keep));
   data=data(keep);
@@ -135,5 +139,4 @@ end
 if ( subSampRatio>1 ) % update the sample rate stored in the header
   hdr.fSample=outfs;
 end
-if ( opts.verb>=0 ) fprintf('done.\n');end
 return;

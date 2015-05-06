@@ -56,72 +56,9 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\BigEndianBitConverter.cs">
-      <Link>BigEndianBitConverter.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\BufferClient.cs">
-      <Link>BufferClient.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\BufferClientClock.cs">
-      <Link>BufferClientClock.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\BufferComm.cs">
-      <Link>BufferComm.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\BufferEvent.cs">
-      <Link>BufferEvent.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\ByteBuffer.cs">
-      <Link>ByteBuffer.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\ClockSync.cs">
-      <Link>ClockSync.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\DataDescription.cs">
-      <Link>DataDescription.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\DataType.cs">
-      <Link>DataType.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\DoubleConverter.cs">
-      <Link>DoubleConverter.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\EndianBinaryReader.cs">
-      <Link>EndianBinaryReader.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\EndianBinaryWriter.cs">
-      <Link>EndianBinaryWriter.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\EndianBitConverter.cs">
-      <Link>EndianBitConverter.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\Endianness.cs">
-      <Link>Endianness.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\Header.cs">
-      <Link>Header.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\LittleEndianBitConverter.cs">
-      <Link>LittleEndianBitConverter.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\SamplesEventsCount.cs">
-      <Link>SamplesEventsCount.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\SocketChannel.cs">
-      <Link>SocketChannel.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\SwitchMessages.cs">
-      <Link>SwitchMessages.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\dataAcq\buffer\csharp\WrappedObject.cs">
-      <Link>WrappedObject.cs</Link>
-    </Compile>
-    <Compile Include="..\..\csharpclient.cs">
-      <Link>csharpclient.cs</Link>
-    </Compile>
-    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Reference Include="FieldTrip.Buffer">
+      <HintPath>..\FieldTrip.Buffer.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0,Profile=Client">
@@ -153,4 +90,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <ItemGroup>
+    <Compile Include="csharpclient.cs" />
+  </ItemGroup>
 </Project>

@@ -37,10 +37,11 @@ function [clsfr,res,X,Y]=buffer_train_erp_clsfr(X,Y,hdr,varargin);
 %           |.windowFn -- [float] window used in frequency domain transformation (ERsP only)
 %           |.welchAveType -- [str] type of averaging used in frequency domain transformation (ERsP only)
 %           |.freqIdx     -- [2x1] range of frequency to keep  (ERsP only)
-%  res     -- [struct] a results structure
+%  res     -- [struct] a results structure as from cvtrainFn
+%                Note: res.opt.tstf contains cross-validated classifier predictions on the training data
 %  X       -- [ppch x pptime x ppepoch] pre-processed data (N.B. may/will have different size to input X)
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
-% See Also: train_erp_clsfr
+% See Also: train_erp_clsfr  cvtrainFn  cvtrainLinearClsfr
 opts=struct('capFile','1010','overridechnms',0);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( nargin<3 ) error('Insufficient arguments'); end;

@@ -115,14 +115,14 @@ while( ~endTest )
       
     if ( opts.verb>1 ) fprintf('Got data @ %d->%d samp\n',start(si),start(si)+trlen_samp-1); end;
     % save the data used by the classifier if wanted
-    if ( nargout>0 ) testdata{nepochs}=data;testevents{nepochs}=mkEvent('data',0,start(si)); end;
+    if ( nargout>0 ) testdata{nEpochs}=data;testevents{nEpochs}=mkEvent('data',0,start(si)); end;
       
     % apply classification pipeline to this events data
     for ci=1:numel(clsfr);
       [f(:,ci),fraw(:,ci),p(:,ci)]=buffer_apply_clsfr(data.buf,clsfr(ci));
       if ( opts.verb>1 ) fprintf('clsfr%d pred=[%s]\n',ci,sprintf('%g ',f(:,ci))); end;
     end
-    if ( numel(ci)>1 ) % combine individual classifier predictions, simple max-likelihood sum
+    if ( numel(clsfr)>1 ) % combine individual classifier predictions, simple max-likelihood sum
       f=sum(f,2); fraw=sum(fraw,2);
     end
     % smooth the classifier predictions if wanted

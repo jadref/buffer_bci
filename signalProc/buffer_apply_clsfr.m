@@ -1,4 +1,4 @@
-function [f,fraw,p,X]=buffer_apply_clsfr(X,clsfr,verb)
+function [f,fraw,p,Xpp]=buffer_apply_clsfr(X,clsfr,verb)
 % apply a previously trained classifier to the input data
 % 
 %  f=buffer_apply_clsfr(X,clsfr,varargin)
@@ -11,7 +11,7 @@ function [f,fraw,p,X]=buffer_apply_clsfr(X,clsfr,verb)
 %        [struct epoch x 1] where the struct contains a buf field of buffer data
 %        OR
 %        {[float ch x time] epoch x 1} cell array of data
-%  clsfr - [struct] classifier structure
+%  clsfr - [struct] classifier(s) structure
 %  verb  - [int] verbosity level (0)
 % Output:
 %  f    - [size(X,epoch) x nCls] the classifier's raw decision value
@@ -28,13 +28,18 @@ if ( iscell(X) )
   end
 elseif ( isstruct(X) )
   X=cat(3,X.buf);
-end 
-if ( (isfield(clsfr,'type') && any(strcmp(lower(clsfr.type),{'erp','evoked'}))) || ...
-     ~isempty(clsfr.filt) && isempty(clsfr.windowFn) ) % ERP
-  [f, fraw, p, X]=apply_erp_clsfr(X,clsfr,verb);
-elseif ( (isfield(clsfr,'type') && any(strcmp(lower(clsfr.type),{'ersp','induced'}))) || ...
-         isempty(clsfr.filt) && ~isempty(clsfr.welchAveType) ) % ERsP
-  [f, fraw, p, X]=apply_ersp_clsfr(X,clsfr,verb);
+end
+for ci=1:numel(clsfr);
+  if ( (isfield(clsfr(ci),'type') && any(strcmp(lower(clsfr(ci).type),{'erp','evoked'}))) || ...
+       ~isempty(clsfr(ci).filt) && isempty(clsfr(ci).windowFn) ) % ERP
+    [f{ci}, fraw{ci}, p{ci}, Xpp{ci}]=apply_erp_clsfr(X,clsfr(ci),verb);
+  elseif ( (isfield(clsfr(ci),'type') && any(strcmp(lower(clsfr(ci).type),{'ersp','induced'}))) || ...
+           isempty(clsfr(ci).filt) && ~isempty(clsfr(ci).welchAveType) ) % ERsP
+    [f{ci}, fraw{ci}, p{ci}, Xpp{ci}]=apply_ersp_clsfr(X,clsfr(ci),verb);
+  end  
+end
+if ( numel(clsfr)==1 ) %BODGE: for single classifier return non-cell for legacy reasons
+  f=f{1}; fraw=fraw{1}; p=p{1}; Xpp=Xpp{1};
 end
 if ( verb>0 ) fprintf('Classifier prediction:  %g %g\n', f,p); end;
 return;

@@ -9,23 +9,33 @@ if ( nargin<3 || isempty(range))
   range=[1 hdr.nSamples];
 end
 type2type = [hdr.orig.data_type '=>' hdr.orig.data_type];
-nStart = range(1)-1; % 0-based offset in samples
-bStart = nStart * hdr.orig.wordsize * hdr.nChans;
-nRead = range(2)+1-range(1);
-bRead = nRead * hdr.orig.wordsize * hdr.nChans;
+nStart = int32(range(1)-1); % 0-based offset in samples
+bStart = int32(nStart * hdr.orig.wordsize * hdr.nChans);
+nRead = int32(range(2)+1-range(1));
+bRead = int32(nRead * hdr.orig.wordsize * hdr.nChans);
+
+endianness='native';  
+if ( ~isempty(hdr) && isfield(hdr,'orig') && isfield(hdr.orig,'endianness') )
+  endianess=hdr.orig.endianness;
+end
 
 k = 0;
 sizeSoFar = 0;
 % start with name_k = datafile (= '.../samples' )
 name_k = datafile;
-
 while true
-  F = fopen(datafile,'rb',hdr.orig.endianness);
-  fseek(F, 0, 'eof');
+  F = fopen(name_k,'rb',endianness);
+  if ( F<0 ) % couldn't read file
+    warning('Couldnt open data file: %s',name_k);
+    break;
+  end
+  status = fseek(F, 0, 'eof');
+  if status < 0 ; error('Cant read the file: %s',name_k); end;
   size_k = ftell(F);
    
   if nStart >= sizeSoFar && nStart < sizeSoFar + size_k
-    fseek(F, bStart - sizeSoFar, 'bof');
+    status = fseek(F, bStart - sizeSoFar, 'bof');
+    if status < 0 ; error('Cant read the file: %s',name_k); end;
     if bStart + bRead <= sizeSoFar + size_k
       % desired region is completely contained in this file
 	  dat = fread(F,[hdr.nChans nRead], type2type);
