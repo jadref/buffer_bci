@@ -48,7 +48,11 @@ hdr.orig =[];
 nameFlag = 0;
 
 txt=[];
-if ( exist([headerfile '.txt'],'file') )
+finfo=dir([headerfile '.txt']);
+if ( isempty(finfo) || finfo.bytes==0 )
+  warning(sprintf('Couldnt open text header file : %s',headerfile));
+else  
+  txt.nSamples=0;
   FA = fopen([headerfile '.txt'], 'r');
   while ~feof(FA);
     s = fgetl(FA);
@@ -75,6 +79,8 @@ if ( exist([headerfile '.txt'],'file') )
           txt.orig.data_type = val;
         end
         txt.orig.wordsize = wordsize{strmatch(txt.orig.data_type,type)};
+        txt.data_type = strmatch(txt.orig.data_type,type)-1;
+        txt.wordsize  = txt.orig.wordsize;
        case 'version'
         txt.orig.version = str2num(val);
        case 'endian'
@@ -105,8 +111,10 @@ if ( exist([headerfile '.txt'],'file') )
 end
 
 bin=[];
-if ( ~exist(headerfile,'file') )
-  warning(sprintf('Couldnt find binary header file : %s',headerfile));
+finfo=dir(headerfile);
+if ( isempty(finfo) || finfo.bytes==0 )
+  warning(sprintf('Couldnt open binary header file : %s',headerfile));
+  hdr=txt;
 else  
   if ( ~isfield(hdr.orig,'endianness') )
     hdr.orig.endianness='native';
@@ -119,13 +127,13 @@ else
   hdr.data_type = fread(F,1,'uint32');
   hdr.bufsize   = fread(F,1,'uint32');
 
-  if isfield(txt,'nChans') && hdr.nChans ~= txt.nChans
+  if isfield(txt,'nChans') && ~isequal(hdr.nChans,txt.nChans)
     error('Number of channels in binary header does not match ASCII definition');
   end
-  if isfield(txt,'nChans') && hdr.nSamples ~= txt.nSamples
+  if isfield(txt,'nChans') && ~isequal(hdr.nSamples,txt.nSamples)
     warning('Number of samples in binary header does not match ASCII definition');
   end
-  if isfield(txt,'nEvents') && hdr.nEvents ~= txt.nEvents
+  if isfield(txt,'nEvents') && ~isequal(hdr.nEvents,txt.nEvents)
     error('Number of events in binary header does not match ASCII definition');
   end
   if isempty(hdr.data_type)
@@ -192,7 +200,7 @@ else
 end
 
 % binary has invalid samples info (or isn't there), get from samples file instead..
-if hdr.nSamples == 0
+if ~isfield(hdr,'nSamples') || hdr.nSamples == 0
   datafile = [headerfile(1:end-6) 'samples'];
   FD = fopen(datafile, 'rb');
   fseek(FD,0,'eof');
