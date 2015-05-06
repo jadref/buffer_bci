@@ -49,8 +49,9 @@ if ( isequal(TESTING,true) )
   switch lower( cmd ) 
    case 'get_hdr'; % simulate a header
       res=struct('nChans',0,'nSamples',0,'nEvents',0,'fSample',0,'labels',{{}},'dataType',10);
-   case 'put_evt'; % simulate put
-    res=detail;
+   case 'put_evt';  res=detail; % simulate put
+	case 'get_samp'; res=-1; % simulate sample get
+	case 'get_time'; res=-1; % simulate sample get
    otherwise; res=struct();
   end
   varargout{1}=res;
