@@ -130,11 +130,7 @@ else
   if isfield(txt,'nChans') && ~isequal(hdr.nChans,txt.nChans)
     error('Number of channels in binary header does not match ASCII definition');
   end
-<<<<<<< HEAD
   if isfield(txt,'nChans') && ~isequal(hdr.nSamples,txt.nSamples)
-=======
-  if isfield(txt,'nSamples') && hdr.nSamples ~= txt.nSamples
->>>>>>> 9b8b2035b06da50e4f10ed5aebb3a0dcc051035b
     warning('Number of samples in binary header does not match ASCII definition');
   end
   if isfield(txt,'nEvents') && ~isequal(hdr.nEvents,txt.nEvents)
