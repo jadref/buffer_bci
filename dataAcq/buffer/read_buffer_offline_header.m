@@ -199,6 +199,14 @@ else
   fclose(F);
 end
 
+% copy any fields only in txt into the hdr
+if ( ~isempty(txt) && ~isempty(hdr) ) 
+	fns=fieldnames(txt);
+	for fi=1:numel(fns);
+		 if ( ~isfield(hdr,fns{fi}) ) hdr.(fns{fi})=txt.(fns{fi}); end;
+	end
+end
+
 % binary has invalid samples info (or isn't there), get from samples file instead..
 if ~isfield(hdr,'nSamples') || hdr.nSamples == 0
   datafile = [headerfile(1:end-6) 'samples'];
