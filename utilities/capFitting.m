@@ -16,16 +16,16 @@ function [dat,key,state]=capFitting(varargin);
 %  offsetThresholds - [2x1] lower and upper noise power thresholds for the [green and red] colors ([5 15])
 %  timeOut_ms    - [int] timeOut to wait for data from the buffer (5000)
 %  host,port     - [str] host and port where the buffer lives ('localhost',1972)
-wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../utilities/initPaths.m'); end;
+wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ); run('../utilities/initPaths.m'); end;
 opts=struct('updateInterval',.5,'capFile',[],'overridechnms',0,'verb',1,'mafactor',.1,...
     'noiseband',[45 55],'noiseThresholds',[.5 5],'offsetThresholds',[5 15],'badChThreshold',1e-8,'fig',[],...
     'host',[],'buffhost','localhost','port',[],'buffport',1972,'timeOut_ms',5000,'showOffset',true);
 opts=parseOpts(opts,varargin);
-host=opts.buffhost; if ( isempty(host) ) host=opts.host; end
-port=opts.buffport; if ( isempty(port) ) port=opts.port; end;
+host=opts.buffhost; if ( isempty(host) ); host=opts.host; end
+port=opts.buffport; if ( isempty(port) ); port=opts.port; end;
 
 % create the plot
-fig=opts.fig; if ( isempty(fig) ) fig=gcf; end;
+fig=opts.fig; if ( isempty(fig) ); fig=gcf; end;
 set(fig,'units','normalized','position',[0 0 1 1],'MenuBar','none','Name','capFitting', 'Color',[1 1 1],'NumberTitle','off','Visible','on');
 % use complete available figure area
 set(get(fig,'Children'),'Position',[0 0 .9 1]);
@@ -48,9 +48,9 @@ end;
 capFile=opts.capFile; overridechnms=opts.overridechnms; 
 if(isempty(capFile)) 
   [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); capFile=fullfile(pth,fn);
-  if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
+  if ( isequal(fn,0) || isequal(pth,0) ); capFile='1010.txt'; end; % 1010 default if not selected
 end
-if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
+if ( ~isempty(strfind(capFile,'1010.txt')) ); overridechnms=0; else overridechnms=1; end; % force default override
 di = addPosInfo(hdr.channel_names,capFile,overridechnms); % get 3d-coords
 ch_pos=cat(2,di.extra.pos2d); ch_names=di.vals; % extract pos and channels names
 iseeg=find([di.extra.iseeg]);  
@@ -59,13 +59,13 @@ iseeg=find([di.extra.iseeg]);
 for ci=1:numel(ch_names); ch_names{ci} = sprintf('%d %s',ci,ch_names{ci}); end;
 
 % amplifier specific thresholds
-if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4; overridechnms=1;
-else                                     thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
+if ( ~isempty(strfind(capFile,'tmsi')) ); thresh=[.0 .1 .2 5]; badchThresh=1e-4; overridechnms=1;
+else;                                     thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
 end
 
 % use complete available figure area
 if (isempty(iseeg)) % cope with unrecog electrode positions
-    iseeg=true(1,size(ch_pos,2)); for ei=1:numel(ch_names); if (isempty(ch_names{ei}))iseeg(ei)=false;end;end
+    iseeg=true(1,size(ch_pos,2)); for ei=1:numel(ch_names); if (isempty(ch_names{ei}));iseeg(ei)=false;end;end
     iseeg=find(iseeg);
     % put the electrodes on a rectangular grid
     set(gca,'xlim',[-1 1],'ylim',[-1 1]);
@@ -116,8 +116,8 @@ while ( ishandle(fig) ) % close figure to stop
    % wait for some new data
    endsamp = round(nsamples+opts.updateInterval*hdr.fsample);
    status=buffer('wait_dat',[endsamp -1 opts.timeOut_ms],host,port);
-   if ( isempty(status) ) error('No data recieved'); return; 
-   elseif ( status.nsamples < endsamp ) drawnow; continue; % not enough data yet
+   if ( isempty(status) ); error('No data recieved'); return; 
+   elseif ( status.nsamples < endsamp ); drawnow; continue; % not enough data yet
    end;
    dat   =buffer('get_dat',[nsamples endsamp],host,port);
    dat   =single(dat.buf);
@@ -136,7 +136,7 @@ while ( ishandle(fig) ) % close figure to stop
    noisepow = mean(avepow(:,noisebands),2);
    if ( opts.verb>=0 ) 
      fprintf('%6.1f %s',median(mu(iseeg)),sprintf('%6.1f(%6.4f)\t',[mu(iseeg)-median(mu(iseeg)),noisepow(iseeg)]'));
-     if ( ispc() ) fprintf('\n'); else fprintf('\r'); end;
+     if ( ispc() ); fprintf('\n'); else fprintf('\r'); end;
    end;
    
    % update the plot
@@ -196,5 +196,3 @@ if n-2*m == 1
 else
    rgb = ([sup stop sbot;stop sdown sbot]);
 end
-%-----------------------
-function testCase();
