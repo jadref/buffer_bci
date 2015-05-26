@@ -49,7 +49,7 @@ if ( isempty(wb) || isempty(strfind('dataAcq',wb)) )
 end;
 opts=struct('epochEventType',[],'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],...
             'capFile',[],'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1);
-opts=parseOpts(opts,varargin);
+[opts,varargin]=parseOpts(opts,varargin);
 
 thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
 capFile=opts.capFile;
@@ -167,10 +167,10 @@ while ( true )
       switch lower(opts.clsfr_type);
        
        case {'erp','evoked'};
-         [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','freqband',opts.freqband,'badchrm',1,'badtrrm',1,'capFile',capFile,'overridechnms',overridechnms);
+         [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','freqband',opts.freqband,'badchrm',1,'badtrrm',1,'capFile',capFile,'overridechnms',overridechnms,varargin{:});
        
        case {'ersp','induced'};
-         [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','freqband',opts.freqband,'badchrm',1,'badtrrm',1,'capFile',capFile,'overridechnms',overridechnms);
+         [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','freqband',opts.freqband,'badchrm',1,'badtrrm',1,'capFile',capFile,'overridechnms',overridechnms,varargin{:});
        
        otherwise;
         error('Unrecognised classifer type');
