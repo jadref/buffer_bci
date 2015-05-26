@@ -2,7 +2,7 @@
 
 Buffer BCI is a platform independent and language agnostic framework
 for building Brain Computer Interface experiements.  It is based on a
-client-server architecture with multiple clients getting and putting
+*client-server architecture* with multiple clients getting and putting
 data to a centeral data and events server.  The server is based on the
 [fieldtrip buffer](http://fieldtrip.fcdonders.nl/development/realtime)
 specificitation for data access and storage. 
@@ -15,6 +15,69 @@ provided.  A summary of the language feature support is:
 * C#, java, Python, c : support for accessing data and events
 * Octave : with Octave_java, support for accessing data and events. Support of processing of data.  Graphics supportd depends on the graphics toolkit available, viz. Qthandles=full support, fltk=data visualization, gnuplot=no graphics.
 * Matlab : R>7.4, full support for accessing data and events, signal analysis, data visualization and GUI control.
+
+## Important Note:
+
+This is a *client-server architecture*.  Thus to use any of the demos or run time you need at least:
+1) a server running (the 'buffer') and two clients: 
+2) a data-acquisation client which interfaces with the hardware to send data to the server, 
+3) an application client which does something with the received data, like showing it on the screen.
+
+Further different clients may be written in different programming languages and hence have different dependences.  As a minimum many of the clients interfacing with signal measurement hardware are written in java (specificially: the MUSE and openBCI clients) hence you will need a working java run-time to use these devices.  Further, most of the demonstration systems are written in Matlab/Octave, so you will need to install these systems to run these demos – though check the java, python and csharp directories for demonstrations written in those languages.
+
+## Installation
+
+Copy these directories somewhere on your local drive.
+
+Note: If using MATLAB/Octave and the .bat/.sh files do not work because the MATLAB/Octave executable is not found automatically then modify the path in the file `utilities/findMatlab.bat` (windows) or `utilities/findMatlab.sh` (Linux/MacOSX) to point to the executable location.
+
+Note2: For Linux there is a [Docker image]( https://github.com/dokterbob/docker-bci) which can be used to simply install buffer_bci and all it's dependencies directly 
+
+Note3: *MacOS* to run the *.sh files from the finder you need to set them to open with the *Terminal* application (which is in the utilities sub-directory of applications).  Set this by Control-clicking any .sh file and choosing 'Open With' then browse to the *Terminal* application and choose open all .sh files this way.
+
+## QuickStart
+
+Read the readme.txt file in either of the games, imaginedMovement, or
+matrixSpeller directories for instructions on how to startup and run
+those demos.  (Note: all demos require Matlab/Octave_java+QtHandles to
+run correctly!)
+
+To run the games demo:
+
+1. Start the data Acquisation system.
+
+ If you have *no* EEG hardware, but just want to test:
+
+  1.2) start a buffer by running: `dataAcq/startBuffer.bat` or `dataAcq/startBuffer.sh`  
+  1.2) start a *simulated* data source by running: `dataAcq/startSignalProxy.bat` or .sh
+
+ If you have EEG hardware connected then depending on the hardware:
+
+  1.1) start a buffer by running: `dataAcq/startBuffer.bat` or `buffer/startBuffer.sh`  
+  1.2) start appropriate acquisition driver for your device:  
+  		 TMSi Mobita([mobita]):       `dataAcq/startMobita.bat`  or  `dataAcq/startMobita.sh`  
+       Emotiv Epoc:        `dataAcq/startEmotiv.bat`  or  `dataAcq/startEmotiv.sh`  
+       Biosemi Active 2:   `dataAcq/startBiosemi.bat` or  `dataAcq/startBiosemi.sh`  
+		 Interaxon Muse:     `dataAcq/startMuse.bat`    or  `dataAcq/startMuse.sh`  
+
+Note: By default raw data is saved to:  
+*  *MacOS/Linux*: `~/output/test/_YYMMDD_/_HHMM_/raw_buffer/0001`  
+*  *Windows*: `C:\output\test\_YYMMDD_\_HHMM_\raw_buffer\0001`  
+   where `_YYMMDD_` is the date in year/month/day format, `_HHMM_` is start time hour and minutes
+
+2. Start the Matlab/Octave based signal processing process by running: `games/startSigProcBuffer.bat` or .sh
+
+3. Start the Matlab/Octave based experiment control & stimulus presentation system by running : `games/runGame.bat` or runGame.sh
+
+4. Type in the subject name to the experiment control window, and then run through each of the experiment phases: 
+
+  * Practice -- practice the task to be used in the BCI.  Green arrows indicate target locations you should attend to by counting the white and red arrow 'flashes'
+
+  * Calibration -- get calibration data by attending as instructed for ~90seconds
+
+  * Classifier Training -- train a classifier using the calibration data.  3 windows will pop-up showing: Per-class ERPs, per-class AUCs, and cross-validated classification performance.
+
+5. Select the game you would like to play!
 
 ## Folder Structure
 
@@ -66,68 +129,6 @@ An overview of the included directories is:
                             attention related (p300 type) changes.
 
 *  `inducedDemo` -- Example system for visualizing induced responses.
-
-
-## Installation
-
-Copy these directories somewhere on your local drive.
-
-Note: If using MATLAB/Octave and the .bat/.sh files do not work because the MATLAB/Octave executable is not found
-automatically then modify the path in the file
-`utilities/findMatlab.bat` (windows) or `utilities/findMatlab.sh`
-(Linux/MacOSX) to point to the executable location.
-
-Note2: For Linux there is a [Docker image]( https://github.com/dokterbob/docker-bci) which can be used to simply install buffer_bci and all it's dependencies directly 
-
-Note3: *MacOS* to run the *.sh files from the finder you need to set them to open with the *Terminal* application (which is in the utilities sub-directory of applications).  Set this by Control-clicking any .sh file and choosing 'Open With' then browse to the *Terminal* application and choose open all .sh files this way.
-
-
-## QuickStart
-
-
-Read the readme.txt file in either of the games, imaginedMovement, or
-matrixSpeller directories for instructions on how to startup and run
-those demos.  (Note: all demos require Matlab/Octave_java+QtHandles to
-run correctly!)
-
-To run the games demo:
-
-1. Start the data Acquisation system.
-
- If you have *no* EEG hardware, but just want to test:
-
-  1.2) start a buffer by running: `dataAcq/startBuffer.bat` or `dataAcq/startBuffer.sh`  
-  1.2) start a *simulated* data source by running: `dataAcq/startSignalProxy.bat` or .sh
-
- If you have EEG hardware connected then depending on the hardware:
-
-  1.1) start a buffer by running: `dataAcq/startBuffer.bat` or `buffer/startBuffer.sh`  
-  1.2) start appropriate acquisition driver for your device:  
-  		 TMSi Mobita([mobita]):       `dataAcq/startMobita.bat`  or  `dataAcq/startMobita.sh`  
-       Emotiv Epoc:        `dataAcq/startEmotiv.bat`  or  `dataAcq/startEmotiv.sh`  
-       Biosemi Active 2:   `dataAcq/startBiosemi.bat` or  `dataAcq/startBiosemi.sh`  
-		 Interaxon Muse:     `dataAcq/startMuse.bat`    or  `dataAcq/startMuse.sh`  
-
-Note: By default raw data is saved to:  
-*  *MacOS/Linux*: `~/output/test/_YYMMDD_/_HHMM_/raw_buffer/0001`  
-*  *Windows*: `C:\output\test\_YYMMDD_\_HHMM_\raw_buffer\0001`  
-   where `_YYMMDD_` is the date in year/month/day format, `_HHMM_` is start time hour and minutes
-
-2. Start the Matlab/Octave based signal processing process by running: `games/startSigProcBuffer.bat` or .sh
-
-3. Start the Matlab/Octave based experiment control & stimulus presentation system by running : `games/runGame.bat` or runGame.sh
-
-4. Type in the subject name to the experiment control window, and then run through each of the experiment phases: 
-
-  * Practice -- practice the task to be used in the BCI.  Green arrows indicate target locations you should attend to by counting the white and red arrow 'flashes'
-
-  * Calibration -- get calibration data by attending as instructed for ~90seconds
-
-  * Classifier Training -- train a classifier using the calibration data.  3 windows will pop-up showing: Per-class ERPs, per-class AUCs, and cross-validated classification performance.
-
-5. Select the game you would like to play!
-
-
 
 ###Notes: TMSi mobita {mobita}
 This device uses wifi to connect between the computer and the amplifier.  When recording data this connection *cannot* be disconnected.  Unfortunately, most OSs currently have a wifi auto-scan system which will periodically scan for 'better' wifi networks.  This scanning will interrupt data sending and cause the connection to be temporally lost for 1-3seconds.   To prevent this you need to prevent wifi auto-scanning, how this is done differs depending on OS.
