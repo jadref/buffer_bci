@@ -26,7 +26,11 @@ function [fg,g]=fftfilter(f,g,len,dim,detrendp,win,hilbertp,MAXEL,verb);
 if ( nargin < 3 || isempty(len) ) len=size(f,dim); end;
 if ( nargin < 4 || isempty(dim) ) dim=find(size(f)>1,1); end;
 if ( nargin < 5 || isempty(detrendp) ) detrendp=1; end;
-if ( nargin < 6 ) win=[]; else if ( ~isempty(win) && numel(win)~=size(f,dim) ) error('incompatiable window size'); end; end;
+if ( nargin < 6 ); win=[]; 
+else 
+  if ( ~isempty(win) && numel(win)~=size(f,dim) ); error('incompatiable window size'); end;
+  if ( all(win==1) ) win=[]; end; % fast-path when no window applied
+end;
 if ( nargin < 7 || isempty(hilbertp) ) hilbertp=0; end;
 if ( nargin < 8 || isempty(MAXEL) ) MAXEL=2e6; end;
 if ( nargin < 9 || isempty(verb) ) verb=-1; end;
@@ -72,13 +76,12 @@ fg=zeros(szf,class(f)); if ( hilbertp==2 ) fg=complex(fg); end; % only if want p
 ci=0; if ( verb >= 0 && nchnks>1 ) fprintf('%s:',mfilename); end;
 while ( ~isempty(idx) )
    tmp = f(idx{:});
-   if ( detrendp==1 ) 
-     tmp=detrend(tmp,dim,1,dtwght,MAXEL);  % detrend
-     %tmp=repop(tmp,'-',mean(tmp,dim)); % center
-   elseif ( detrendp==2 ) tmp=repop(tmp,'-',mean(tmp,dim)); % center
+   if ( detrendp==1 );        tmp=detrend(tmp,dim,1,dtwght,MAXEL);  % detrend
+   elseif ( detrendp==2 );    tmp=repop(tmp,'-',mean(tmp,dim)); % center
    end
-   if ( ~isempty(win) ) tmp=repop(tmp,'*',shiftdim(win(:),-dim+1)); end; % apply temporal window
-   if ( len(1)>size(f,dim) ) tmp=fft(tmp,len(1),dim); else tmp=fft(tmp,[],dim); end;
+   if ( ~isempty(win) );      tmp=repop(tmp,'*',shiftdim(win(:),-dim+1)); end; % apply temporal window
+	% fourier transform
+   if ( len(1)>size(f,dim) ); tmp=fft(tmp,len(1),dim); else tmp=fft(tmp,[],dim); end;
    tmp=repop(tmp,'.*',g);    % apply the filter
    if ( len(2) < len(1) ) % down-sample
       tmpIdx={};for di=1:ndims(tmp); tmpIdx{di}=1:size(tmp,di); end; tmpIdx{dim}=sIdx;
