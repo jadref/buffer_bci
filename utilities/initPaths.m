@@ -1,3 +1,7 @@
+if ( exist('OCTAVE_VERSION','builtin') ) % octave specific
+  page_screen_output(0); %prevent paging of output..
+  page_output_immediately(1); % prevent buffering output
+end
 %Add necessary paths
 buffer_bcidir=fileparts(fileparts(mfilename('fullpath'))); % parent directory
 if ( exist(fullfile(buffer_bcidir,'dataAcq'),'dir') ) 
