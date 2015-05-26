@@ -110,6 +110,12 @@ if ( ~isempty(opts.plotPos) && size(opts.plotPos,2)==2 ) % ensure right shape
    opts.plotPos=opts.plotPos';
 end
 if ( ~iscell(opts.plotopts) ) opts.plotopts={opts.plotopts}; end;
+if ( exist('OCTAVE_VERSION','builtin') ) % octave doesn't handle parent option well
+	if ( any(strcmp(opts.disptype,{'plot','plott','mcplot','mcplott'})) )
+		opts.plotopts={'linewidth' 1 opts.plotopts{:}};
+	end
+end
+
 % BODGE: keep the legacy names working
 if( ~isempty(opts.X) && isempty(opts.Xvals) ) opts.Xvals=opts.X; end
 if( ~isempty(opts.Y) && isempty(opts.Yvals) ) opts.Yvals=opts.Y; end
@@ -260,14 +266,18 @@ if ( ~isempty(opts.handles) )
 elseif ( ~isempty(opts.plotPos) ) % pre-build all the figure handles
     hdls=posplot(opts.plotPos(1,:),opts.plotPos(2,:),[],opts.plotPosOpts);
 else
-    for pi=1:N; hdls(pi)=subplot(w,h,pi); end;
+  % Manually place on a rectangular grid.  N.B. we don't use subplot as it fails in some situations
+  for pi=1:N;
+	 j=floor((pi-1)/w); i=(pi-1)-j*w;
+	 hdls(pi)=axes('position',[i/w (h-j-1)/h .95/w .95/h]); 
+  end;
 end
 legendpos=[];if ( numel(hdls)>N ) legendpos=get(hdls(N+1),'position'); end;
 
 % pre-identify the axes which have tickmarks and/or axeslabels
 % turn on/off the tick marks / axes labels as requested
 pos = get(hdls(1:N),'position'); if ( iscell(pos) ) pos=cat(1,pos{:}); end;
-if ( isstr(opts.ticklabs) )
+if ( ischar(opts.ticklabs) )
    switch lower(opts.ticklabs);
     case 'sw'; [ans,tickIdxs] = min((pos(:,1)-0).^2+(pos(:,2)-0).^2);
     case 'se'; [ans,tickIdxs] = min((pos(:,1)-1).^2+(pos(:,2)-0).^2);
@@ -295,7 +305,7 @@ tickAxes=false(N,1); tickAxes(tickIdxs)=true;
 % Ensure all sub-plots use the same color/Yrange axes
 clim=[min(A(:)) max(A(:))];  cblim=clim;
 if ( ~isempty(opts.clim) )
-   if ( isstr(opts.clim) )    
+   if ( ischar(opts.clim) )    
       if ( strmatch('cent',opts.clim) ) 
          cpt=str2num(opts.clim(5:end)); 
          clim=max(abs(A(:)-cpt))*[-1 1]+cpt; 
@@ -330,8 +340,8 @@ for pi=1:N;
     
     
     case {'plot','plott'}; %------------------------------------------------
-     p=plot(hdls(pi),axscale{1},Ai,opts.plotopts{:});
      if ( ~isempty(varargin)) set(hdls(pi),varargin{:}); end;
+     p=plot(hdls(pi),axscale{1},Ai,opts.plotopts{:});
      xlim=[min(axscale{1}) max(axscale{1})]; if(xlim(1)==xlim(2)) xlim=xlim(1)+[-.5 .5]; end;
      % set to nearest 1/100'th - needed to BODGE matlab tick-mark positioning bug...
      rng = 10.^(round(log10(xlim(2)-xlim(1)))-2); xlim = [floor(xlim(1)./rng) ceil(xlim(2)./rng)]*rng;
@@ -349,13 +359,13 @@ for pi=1:N;
         axsettings={axsettings{:} 'XTickLabelMode' 'auto'};
      end
      if(~tickAxes(pi)) axsettings={axsettings{:} 'YTickLabel',[],'XTickLabel',[]};end;
-     axsettings={axsettings{:} 'Ylim',clim};
+     axsettings={axsettings{:} 'Ylim',single(clim)};
      set(hdls(pi),axsettings{:}); 
      axsettings={axsettings{:} 'YTickLabelMode','auto'};
      set(hdls(pi),'userdata',axsettings);
      if ( ~tickAxes(pi) ) labvis='off'; else labvis='on'; end;
-     if ( ~isempty(axlab{1}) ) xlabel(hdls(pi),axlab{1},'Visible',labvis); end;
-     if ( ~isempty(opts.clabel) ) ylabel(hdls(pi),opts.clabel,'Visible',labvis); end;
+     if ( ~isempty(axlab{1}) && tickAxes(pi) ) xlabel(hdls(pi),axlab{1},'Visible',labvis); end;
+     if ( ~isempty(opts.clabel) &&tickAxes(pi) ) ylabel(hdls(pi),opts.clabel,'Visible',labvis); end;
      for j=1:numel(p); % setup the label for each line
         if(iscell(axmark{2})) ll=axmark{2}{j}; 
         else ll=num2str(axmark{2}(j));
@@ -365,18 +375,27 @@ for pi=1:N;
      end;      
     
     case {'image','imaget','imagesc','imagesct'}; %-------------------------------------
-     image(axscale{2},axscale{1},Ai,'CDataMapping','scaled','Parent',hdls(pi),opts.plotopts{:});
+     if ( exist('OCTAVE_VERSION','builtin') ) % octave doesn't handle parent option well
+       image('xdata',axscale{2}([1 end]),'ydata',axscale{1}([1 end]),'Cdata',Ai,'CDataMapping','scaled','Parent',hdls(pi),opts.plotopts{:});     
+     else
+       image(axscale{2},axscale{1},Ai,'CDataMapping','scaled','Parent',hdls(pi),opts.plotopts{:});
+     end
      if ( ~isempty(varargin)) set(hdls(pi),varargin{:}); end;
      if ( ~isnumeric(axmark{1}) || any(sign(diff(axmark{1}))<0) ) 
-        tickIdx=unique(max(1,floor(get(hdls(pi),'YTick')))); 
+        tickIdx=unique(max(1,floor(get(hdls(pi),'YTick'))));
+        tickIdx(tickIdx<1)=[]; tickIdx(tickIdx>numel(axmark{1}))=[];
         axsettings={'YTick',tickIdx,'YTickLabel',axmark{1}(tickIdx),...
                     'YTickMode','manual','YTickLabelMode','manual'};
      else
         ylim=single([min(axscale{1}) max(axscale{1})]); if( ylim(1)==ylim(2) ) ylim=ylim+[-.5 .5]; end
+        if ( exist('OCTAVE_VERSION','builtin') ) % add a slight buffer to outside
+          ylim=ylim+diff(ylim)/size(Ai,1)*[-1 1];
+        end
         axsettings={'YLim' ylim 'YTickLabelMode' 'auto'};        
      end
      if ( ~isnumeric(axmark{2}) ) 
-        tickIdx=unique(max(1,floor(get(hdls(pi),'XTick')))); 
+        tickIdx=unique(max(1,floor(get(hdls(pi),'XTick'))));
+        tickIdx(tickIdx<1)=[]; tickIdx(tickIdx>numel(axmark{2}))=[];
         axsettings={axsettings{:} 'XTick',tickIdx,'XTickLabel',axmark{2}(tickIdx),...
                     'XTickMode','manual','XTickLabelMode','manual'};
      elseif( any(abs(diff(diff(axmark{2})))>1e-6) ) % non-uniform scaling
@@ -385,16 +404,20 @@ for pi=1:N;
                     'XTickMode','manual','XTickLabelMode','manual'};       
      else
         xlim=single([min(axscale{2}) max(axscale{2})]); if( xlim(1)==xlim(2) ) xlim=xlim+[-.5 .5]; end
+        if ( exist('OCTAVE_VERSION','builtin') ) % add a slight buffer to outside
+          xlim=xlim+diff(xlim)/size(Ai,2)*[-1 1];
+        end
         % set to nearest 1/100'th
-        rng = 10.^(round(log10(xlim(2)-xlim(1)))-2); xlim = [floor(xlim(1)./rng) ceil(xlim(2)./rng)]*rng;
+        rng = 10.^(round(log10(xlim(2)-xlim(1)))-2); xlim=[floor(xlim(1)./rng) ceil(xlim(2)./rng)]*rng;
         axsettings={axsettings{:} 'XLim' xlim 'XTickLabelMode' 'auto'};
      end
      if(~tickAxes(pi)) axsettings={axsettings{:} 'YTickLabel',[],'XTickLabel',[]};end;
-     axsettings={axsettings{:} 'clim' clim};
-     set(hdls(pi),axsettings{:}); set(hdls(pi),'userdata',axsettings);
+     axsettings={axsettings{:} 'clim' single(clim)};
+     set(hdls(pi),axsettings{:}); 
+     set(hdls(pi),'userdata',axsettings);
      if ( ~tickAxes(pi) ) labvis='off'; else labvis='on'; end;
-     if ( ~isempty(axlab{1}) ) ylabel(hdls(pi),axlab{1},'Visible',labvis); end
-     if ( ~isempty(axlab{2}) ) xlabel(hdls(pi),axlab{2},'Visible',labvis); end;
+     if ( ~isempty(axlab{1}) && tickAxes(pi) ) ylabel(hdls(pi),axlab{1},'Visible',labvis); end
+     if ( ~isempty(axlab{2}) && tickAxes(pi) ) xlabel(hdls(pi),axlab{2},'Visible',labvis); end;
 
      
     case {'mcplot','mcplott'}; %---------------------------------------------
@@ -475,7 +498,7 @@ for pi=1:N;
        end
      else
        keep = round(linspace(1,numel(tickIdx),pos(3)./(size(ticks,2)*fontsize*.5)));
-       set(hdls(pi),'xtick',tickIdx(keep),'xticklabel',ticks(keep,:));  set(hdls(pi),'xminortick','on');
+       set(hdls(pi),'xtick',tickIdx(keep),'xticklabel',ticks(keep));  set(hdls(pi),'xminortick','on');
      end
    end
    tickIdx=get(hdls(pi),'ytick'); ticks=get(hdls(pi),'yticklabel');
@@ -521,7 +544,7 @@ if ( ~isempty(opts.legend) && ~isequal(opts.legend,0) )
   else % try to compute a good location
      % default to se position
      if ( isnumeric(opts.legend) && numel(opts.legend)==1 ) opts.legend='se'; end; 
-      if ( isstr(opts.legend) ) 
+      if ( ischar(opts.legend) ) 
           pos = get(hdls(1:N),'outerposition'); if(iscell(pos)) pos=cat(1,pos{:}); end;
           %pos=pos(:,1:2)+pos(:,3:4)./2; % middle of the axes
           if( strfind(lower(opts.legend),'w') ) exPlot(1)=min(pos(:,1),[],1);
@@ -575,7 +598,7 @@ if ( ~isempty(opts.colorbar) && opts.colorbar && ~isempty(opts.clim) )  % true c
     pos=legendpos;
   end
   % add some room for the axes marks as we can't use outer-position any more...
-  pos(3)=max(.01,pos(3)-.03); pos(2)=max(pos(2),.05); pos(4)=min(1-pos(2)-.05,pos(4));
+  pos(3)=max(.1,pos(3)-.02); pos(2)=max(pos(2),.05); pos(3)=min(.07,1-pos(1)-.05); pos(4)=min(1-pos(2)-.05,pos(4));
   if ( exist('OCTAVE_VERSION','builtin') ) % in octave have to manually convert arrays..
     tmp=get(hdls(N),'position');
     hdls(N+1)=colorbar('peer',hdls(N),'position',pos); %BUG: octave resizes axes even if give colorbar size
