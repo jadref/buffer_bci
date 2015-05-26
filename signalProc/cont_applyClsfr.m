@@ -132,6 +132,9 @@ while( ~endTest )
       if ( isnumeric(opts.predFilt) )
         if ( opts.predFilt>=0 ) % exp weighted moving average
           dv=dv*opts.predFilt + (1-opts.predFilt)*f;
+		  else % store predictions in a ring buffer
+          fbuff(:,mod(nEpochs-1,abs(opts.predFilt))+1)=f; % store predictions in a ring buffer
+          dv=mean(fbuff,2);
         end
       elseif ( isstr(opts.predFilt) || isa(opts.predFilt,'function_handle') )
         [dv,filtstate]=feval(opts.predFilt,f,filtstate);
