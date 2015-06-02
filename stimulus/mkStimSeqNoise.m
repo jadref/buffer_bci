@@ -26,7 +26,7 @@ if ( nargin<4 || isempty(type) ) type='gold'; end;
 if ( nargin<5 || isempty(smooth) ) smooth=false; end;
 colors=[1 1 1]';
 nStim = duration/isi;
-stimTime=(0:nStim)*isi(1);
+stimTime=(1:nStim)*isi(1);
 eventSeq=[];
 
 stimSeq=zeros(nSymbs,nStim); 
@@ -69,7 +69,7 @@ state=zeros(n,1);
 state(1)=1;
 result=zeros(2^n-1,1);
 for i=1:2^n-1
-    result(i)= state(n);
+    result(i)= state(n); % high order bit is the output
     inputs   = state(bitpattern);
     output   = mod (sum(inputs),2); 
     state    = circshift(state,1);

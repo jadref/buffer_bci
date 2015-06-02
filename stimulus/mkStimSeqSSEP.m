@@ -34,7 +34,7 @@ if ( size(periods,1)<nSymbs ) warning('Insufficient flicker periods given... set
 if ( size(periods,2)==1 ) periods=[periods(:) zeros(size(periods))]; end; % add 0-phase info
 % make a simple visual intermittent flash stimulus
 nStim = duration/isi;
-stimTime=(0:nStim)*isi(1);
+stimTime=(1:nStim)*isi(1);
 eventSeq=[]; 
 stimSeq =zeros(nSymbs,nStim); % make stimSeq where everything is in background state
 for stimi=1:nSymbs;
