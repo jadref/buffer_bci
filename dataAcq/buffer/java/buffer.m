@@ -138,7 +138,11 @@ switch cmd;
   bufClient.putData(detail(:),[size(detail,2) size(detail,1)]); 
  
  case 'get_evt';
-  evtj=bufClient.getEvents(detail(1),detail(min(end,2)));
+  if ( numel(detail)<2 ) 
+	 evtj=bufClient.getEvents(detail(1),detail(1));
+  else
+	 evtj=bufClient.getEvents(detail(1),detail(2));
+  end
   evt =repmat(struct('type',[],'value',[],'sample',-1,'offset',0,'duration',0),size(evtj)); % pre-alloc array
   for ei=1:numel(evtj); % Note this conversion is *VERY VERY* slow...
     evtjei=evtj(ei);
@@ -155,10 +159,9 @@ switch cmd;
       if ( strcmp(typeinfo(evt(ei).value),'octave_java') )
         tmp = zeros(size(evt(ei).value));
         for i=1:numel(evt(ei).value) 
-          if isnumeric(evt(ei).value(i)) && numel(evt(ei).value)>1
+			 tmp(i)=evt(ei).value(i);
+          if ~isequal(typeinfo(tmp(i)),'scalar')
             tmp(i)=evt(ei).value(i).doubleValue(); 
-          else
-            tmp(i)=evt(ei).value(i);
           end; 
         end
         evt(ei).value=tmp;
@@ -170,6 +173,14 @@ switch cmd;
  
  case 'put_evt';
   if ( numel(detail)==1 ) 
+	 if ( isnumeric(detail.value) && numel(detail.value)>1 && exist('OCTAVE_VERSION','builtin') )
+		 if ( max(size(detail.value)) < numel(detail.value) ) 
+			warning('Matrix implicilty converted to vector'); 
+		 end;
+		 tmp = javaArray('java.lang.Double',numel(detail.value));
+		 for i=1:numel(tmp); tmp(i) = detail.value(i); end;
+		 detail.value=tmp;
+	 end
     e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.BufferEvent',detail.type,detail.value,detail.sample));
   else
     for ei=1:numel(detail);
