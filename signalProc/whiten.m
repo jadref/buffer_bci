@@ -119,7 +119,7 @@ end
 
 % give the covariance matrix unit norm to improve numerical accuracy
 if ( unitCov )  
-  unitCov=median(diag(mean(Sigma,3))); Sigma=Sigma./unitCov; 
+  unitCov=median(diag(sum(Sigma,3)./size(Sigma,3))); Sigma=Sigma./unitCov; 
 end;
 
 W=zeros(size(Sigma),class(X));
