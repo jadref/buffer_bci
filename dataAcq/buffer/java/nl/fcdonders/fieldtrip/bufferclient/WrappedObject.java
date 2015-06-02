@@ -81,20 +81,36 @@ public class WrappedObject {
 
 		if (cls.isArray()) {
 			Class elc = cls.getComponentType();
-			if (!elc.isPrimitive()) return;
 			
 			if        (name == "[D") {
 				type = DataType.FLOAT64;
 				array = ((double[]) obj).clone();
 				numel = ((double[]) obj).length;
+
+			} else if  (name == "[Ljava.lang.Double") {
+				type = DataType.FLOAT64;
+				double[] tmp = new double[obj.length];
+				for ( int i=0; i<array.length; i++ ) tmp[i] = (double) obj[i];
+				array = tmp;
+				numel = obj.length;
+
 			} else if (name == "[F") {
 				type = DataType.FLOAT32;
 				array = ((float[]) obj).clone();
 				numel = ((float[]) obj).length;
+
+			} else if  (name == "[Ljava.lang.Float") {
+				type = DataType.FLOAT32;
+				float[] tmp = new float[obj.length];
+				for ( int i=0; i<array.length; i++ ) tmp[i] = (float) obj[i];
+				array = tmp;
+				numel = obj.length;
+
 			} else if (name == "[J") {
 				type = DataType.INT64;
 				array = ((long[]) obj).clone();
 				numel = ((long[]) obj).length;
+
 			} else if (name == "[I") {
 				type = DataType.INT32;
 				array = ((int[]) obj).clone();
