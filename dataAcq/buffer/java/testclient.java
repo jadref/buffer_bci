@@ -6,7 +6,7 @@
  */
 import java.io.*;
 import java.nio.*;
-import nl.fcdonders.fieldtrip.*;
+import nl.fcdonders.fieldtrip.bufferclient.*;
 
 class testclient {
 	public static void main(String[] args) throws IOException {
