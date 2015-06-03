@@ -28,6 +28,15 @@ if ( nargin<1 || isempty(buffhost) ); buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ); buffport=1972; end;
 if ( isempty(opts.freqbands) && ~isempty(opts.fftfilter) ); opts.freqbands=opts.fftfilter; end;
 
+if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics facility
+  if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
+    graphics_toolkit('qthandles'); % use fast rendering library
+  elseif ( ~isempty(strmatch('fltk',available_graphics_toolkits())) )
+    graphics_toolkit('fltk'); % use fast rendering library
+  end
+  opts.sigProcOptsGui=0;
+end
+
 % get channel info for plotting
 hdr=[];
 while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
@@ -107,13 +116,6 @@ else
 end
 
 % make the figure window
-if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics facility
-  if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
-    graphics_toolkit('qthandles'); % use fast rendering library
-  elseif ( ~isempty(strmatch('fltk',available_graphics_toolkits())) )
-    graphics_toolkit('fltk'); % use fast rendering library
-  end
-end
 clf;
 fig=gcf;
 set(fig,'Name','Sig-Viewer : t=time, f=freq, p=50Hz power, s=spectrogram, q,close window=quit.','menubar','none','toolbar','none','doublebuffer','on');

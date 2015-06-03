@@ -6,4 +6,11 @@ rem	 exit /b
 	 )
 )
 
+FOR /d %%f in ("C:\Program Files\Octave\*" "C:\Program Files (x86)\Octave\*" "C:\Octave\*") DO (
+	 if exist "%%f\bin\octave.exe" ( 
+	 set matexe="%%f\bin\octave.exe"
+rem	 exit /b 
+	 )
+)
+
 
