@@ -89,10 +89,10 @@ public class WrappedObject {
 
 			} else if  (name == "[Ljava.lang.Double") {
 				type = DataType.FLOAT64;
-				double[] tmp = new double[obj.length];
-				for ( int i=0; i<array.length; i++ ) tmp[i] = (double) obj[i];
+				double[] tmp = new double[((Double[])obj).length];
+				for ( int i=0; i<tmp.length; i++ ) tmp[i] = (double) ((Double[])obj)[i];
 				array = tmp;
-				numel = obj.length;
+				numel = tmp.length;
 
 			} else if (name == "[F") {
 				type = DataType.FLOAT32;
@@ -101,10 +101,10 @@ public class WrappedObject {
 
 			} else if  (name == "[Ljava.lang.Float") {
 				type = DataType.FLOAT32;
-				float[] tmp = new float[obj.length];
-				for ( int i=0; i<array.length; i++ ) tmp[i] = (float) obj[i];
+				float[] tmp = new float[((Float[])obj).length];
+				for ( int i=0; i<tmp.length; i++ ) tmp[i] = (float) ((Float[])obj)[i];
 				array = tmp;
-				numel = obj.length;
+				numel = tmp.length;
 
 			} else if (name == "[J") {
 				type = DataType.INT64;
