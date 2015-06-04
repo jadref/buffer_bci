@@ -9,19 +9,19 @@ function [Cname latlong xy xyz capFile]=readCapInf(cap,capRoots)
 if ( nargin<2 || isempty(capRoots) ) 
    capRoots = {'.',fileparts(mfilename('fullpath')),fullfile(fileparts(mfilename('fullpath')),'./positions'),''};
  end
- if ( isstr(capRoots) ) capRoots={capRoots}; end;
+ if ( isstr(capRoots) ); capRoots={capRoots}; end;
 [capDir capFn capExt]=fileparts(cap);
 % search given directories for the capfile
 for cr=1:numel(capRoots);
   capRoot=capRoots{cr};
   if ( ~isempty(capExt) )
     capFile=fullfile(capRoot,capDir,[capFn,'.txt']);
-    if(exist(capFile,'file') ) break; end;
+    if(exist(capFile,'file') ); break; end;
   else
     capFile=fullfile(capRoot,capDir,[capFn,'.txt']);
-    if(exist(capFile,'file') ) capExt='txt'; break; end;
+    if(exist(capFile,'file') ); capExt='txt'; break; end;
     capFile=fullfile(capRoot,capDir,[capFn,'.lay']);
-    if(exist(capFile,'file') ) capExt='lay'; break; end;
+    if(exist(capFile,'file') ); capExt='lay'; break; end;
   end
 end
 if ( ~exist(capFile,'file') ) 
@@ -51,7 +51,7 @@ elseif ( isequal(capExt,'.lay') ) % fieldtrip layout file
 else % contains lat/long co-ords
    [Cname lat long]=textread(capFile,'%s %f %f');
    latlong = [lat long]';
-   if( max(abs(latlong(:)))>2*pi ) latlong=latlong/180*pi; end;
+   if( max(abs(latlong(:)))>2*pi ); latlong=latlong/180*pi; end;
    xyz     = latlong2xyz(latlong);
    xy      = latlong2xy(latlong);
 end
@@ -64,7 +64,7 @@ function xy=xyz2xy(xyz)
 %else 
    cz= mean(xyz(3,:)); % center
 %end
-r = abs(max(abs(xyz(3,:)-cz))*1.1); if( r<eps ) r=1; end;  % radius
+r = abs(max(abs(xyz(3,:)-cz))*1.1); if( r<eps ); r=1; end;  % radius
 h = xyz(3,:)-cz;  % height
 rr=sqrt(2*(r.^2-r*h)./(r.^2-h.^2)); % arc-length to radial length ratio
 xy = [xyz(1,:).*rr; xyz(2,:).*rr];

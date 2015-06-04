@@ -12,23 +12,23 @@ function [di]=addPosInfo(di,capFile,overridenms,prefixMatch,verb,capDir)
 %  prefixMatch  -- [bool] match channel names if only the start matches?
 %  verb         -- [int] verbosity level  (0)
 %  capDir       -- 'str' directory to search for capFile
-if ( nargin < 2 || isempty(capFile) ) capFile='1010'; end;
-if ( nargin < 3 ) overridenms=0; end; % override di's vals info with info from capfile?
-if ( nargin < 4 || isempty(prefixMatch) ) prefixMatch=0; end;
-if ( nargin < 5 || isempty(verb) ) verb=0; end;
-if ( nargin < 6 ) capDir=[]; end;
+if ( nargin < 2 || isempty(capFile) ); capFile='1010'; end;
+if ( nargin < 3 ); overridenms=0; end; % override di's vals info with info from capfile?
+if ( nargin < 4 || isempty(prefixMatch) ); prefixMatch=0; end;
+if ( nargin < 5 || isempty(verb) ); verb=0; end;
+if ( nargin < 6 ); capDir=[]; end;
 [Cnames latlong xy xyz]        =readCapInf(capFile,capDir);
-if ( isstruct(di) ) vals=di.vals; 
+if ( isstruct(di) ); vals=di.vals; 
 else 
   vals=di; 
-  if( iscell(vals) ) tmp={vals}; else tmp=vals; end; % N.B. for matlab struct cons bug!
+  if( iscell(vals) ); tmp={vals}; else; tmp=vals; end; % N.B. for matlab struct cons bug!
   di=struct('name','ch','units',[],'vals',tmp,'extra',[]); 
 end;
 if ( (isnumeric(vals) || (~isempty(overridenms) && overridenms)) )%...
    %     && numel(Cnames)<=numel(vals)  )
    ovals=vals;
-   if ( isnumeric(vals) ) vals = num2cell(vals(:)); end;
-   if ( isempty(vals) ) vals(1:numel(Cnames))=Cnames; % Use ch-names from capFile
+   if ( isnumeric(vals) ); vals = num2cell(vals(:)); end;
+   if ( isempty(vals) ); vals(1:numel(Cnames))=Cnames; % Use ch-names from capFile
    else                 vals(1:min(end,numel(Cnames)))=Cnames(1:min(numel(vals),end)); % Use ch-names from capFile
    end
 end
@@ -36,7 +36,7 @@ end
 chnm={}; matchedCh=false(numel(Cnames),1);
 for i=1:numel(vals);
    ti=0;
-   if ( iscell(vals) ) chnm{i}=vals{i};  else chnm{i}=vals(i); end;
+   if ( iscell(vals) ); chnm{i}=vals{i};  else; chnm{i}=vals(i); end;
    if ( isstr(chnm{i}) )
       for j=1:numel(Cnames);  
         % case insenstive match
@@ -62,7 +62,7 @@ for i=1:numel(vals);
    end
    tii(i)=ti;
    if ( ~isempty(ti) && numel(ti)==1 && ti>0 && ti<=size(xy,2) ) 
-      if ( verb>0 ) fprintf('%3d) Matched : %s\t ->\t %s\n',i,chnm{i},Cnames{ti}); end;
+      if ( verb>0 ); fprintf('%3d) Matched : %s\t ->\t %s\n',i,chnm{i},Cnames{ti}); end;
       chnm{i}=Cnames{ti}; % replace with nomional version
       di.extra(i).pos2d=xy(:,ti); 
       di.extra(i).pos3d=xyz(:,ti);

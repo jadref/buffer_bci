@@ -1,2 +1,2 @@
 call ..\utilities\findMatlab.bat
-start "Matlab" %matexe% -nodesktop -nosplash -r "run ../utilities/initPaths.m;eegViewer();quit;"
+echo run ../utilities/initPaths.m;eegViewer();quit; | %matexe%

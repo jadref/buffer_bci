@@ -20,10 +20,10 @@ function [stimSeq,stimTime,eventSeq,colors]=mkStimSeqScan(nSymbs,duration,isi)
 if ( nargin<3 || isempty(isi) ) isi=1; end;
 colors=[1 1 1]';
 nStim = duration/isi;
-stimTime=(0:nStim)*isi(1);
+stimTime=(1:nStim)*isi(1);
 eventSeq=[]; 
 stimSeq=zeros(nSymbs,nStim); 
-stimSeq(mod(0:nStim-1,nSymbs)+(0:nStim-1)*nSymbs+1)=1;
+stimSeq(mod(0:nStim-1,nSymbs)+1+(0:nStim-1))=1;
 return;
 
 %----------------------

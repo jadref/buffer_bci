@@ -9,7 +9,10 @@ elseif( isequal(strfind(lower(computer()),'mac'),1)) % default MacOs location
     psychpath='/Applications/Psychtoolbox';
     if ( ~exist(psychpath,'dir') ) psychpath='/Users/Shared/Psychtoolbox'; end
 else
-    psychpath=fullfile(mdir,'..','Psychtoolbox'); % otherwise guess?
+  psychpath='/usr/share/octave/site/m/psychtoolbox-?';
+  if ( ~exist(psychpath,'dir') )
+	 psychpath=fullfile(mdir,'..','Psychtoolbox'); % otherwise guess?
+  end
 end
 if ( ~exist(psychpath,'dir') ) % search relative to here, 2 dir up
   psychpath=fullfile(mdir,'..','..','toolboxes','Psychtoolbox');

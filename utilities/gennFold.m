@@ -47,18 +47,18 @@ function [foldIdxs]=gennFold(Y,nFold,varargin)
 % made of any changes that have been made. This software and
 % documents are distributed without any warranty, express or
 % implied
-if ( nargin < 2 ) nFold=10; 
-elseif ( isstr(nFold) && ~strcmp(nFold,'loo') ) varargin={nFold varargin{:}}; nFold=[];
+if ( nargin < 2 ); nFold=10; 
+elseif ( isstr(nFold) && ~strcmp(nFold,'loo') ); varargin={nFold varargin{:}}; nFold=[];
 end;
 opts=struct('indepSP',0,'perm',0,'foldSize',[],'regress',0,'randseed',{[]},'repeats',1,'dim',[],'zeroLab',0,'nFold',[]);
 opts=parseOpts(opts,varargin);
-dim=opts.dim; if (isempty(dim) ) dim=ndims(Y); end;
-if ( isempty(nFold) ) nFold=opts.nFold; end;
-if ( isempty(nFold) && isempty(opts.foldSize) ) nFold=10; end;
+dim=opts.dim; if (isempty(dim) ); dim=ndims(Y); end;
+if ( isempty(nFold) ); nFold=opts.nFold; end;
+if ( isempty(nFold) && isempty(opts.foldSize) ); nFold=10; end;
 
 % deal with degenerate cases
-if ( nFold==1 )     foldIdxs = -ones(size(Y)); return;              % all training
-elseif ( nFold==0 ) foldIdxs =  ones(size(Y)); return;              % no folding, all testing
+if ( nFold==1 );     foldIdxs = -ones(size(Y)); return;              % all training
+elseif ( nFold==0 ); foldIdxs =  ones(size(Y)); return;              % no folding, all testing
 end
 
 % set rand state
@@ -67,7 +67,7 @@ if(~isempty(opts.randseed))
 end
 
 if ( size(Y,dim)==1 && isequal(dim,2) ) %&& ~all(Y(:)==-1 | Y(:)==0 | Y(:)==1) ) % label set... 
-   if ( opts.regress ) Y=true(size(Y)); else Y=lab2ind(Y,[],[],opts.zeroLab,0); end; 
+   if ( opts.regress ); Y=true(size(Y)); else; Y=lab2ind(Y,[],[],opts.zeroLab,0); end; 
 end 
 
   % deal with n-d inputs
@@ -79,7 +79,7 @@ Y  =reshape(Y,prod(szY(1:dim-1)),szY(dim)); % make n-d inputs 2-d
 oY = Y;
 Y  = -ones(size(Y,1),size(Yu,1));
 for ci=1:size(Y,2); Y(idx==ci,ci)=1; end;
-if ( ~opts.zeroLab ) Y(:,all(Yu==0,2))=[]; Yu(all(Yu==0,2),:)=[]; end; % remove zero labelled points
+if ( ~opts.zeroLab ); Y(:,all(Yu==0,2))=[]; Yu(all(Yu==0,2),:)=[]; end; % remove zero labelled points
 
 % deal with special types of call
 
@@ -99,7 +99,7 @@ else
 
   if ( ~isequal(opts.perm,0) ) %permutate the inputs if wanted 
     % generate a random permutation
-    if ( isequal(opts.perm,1) ) perm=randperm(size(Y,1)); 
+    if ( isequal(opts.perm,1) ); perm=randperm(size(Y,1)); 
     elseif( opts.repeats > 1 || numel(opts.perm)~=max(size(Y)) ) 
       error('Invalid permutation specfication');
     end;
@@ -119,7 +119,7 @@ else
     fSize = sum(Y>0,1)./nFold; % compute per-lab fold size
   end
 
-  if ( nFold > size(Y,1) ) error('More folds than datapoints!'); end;
+  if ( nFold > size(Y,1) ); error('More folds than datapoints!'); end;
   
   foldIdxs=genFold(Y(perm,:),nFold,fSize); % generate the first repeat
   foldIdxs(perm,:)=foldIdxs;         % undo perm to, store in orginal order
@@ -133,7 +133,7 @@ else
   end
 end
 
-if ( ~isempty(opts.randseed) ) rand('state',oseed); end; % restore rand state
+if ( ~isempty(opts.randseed) ); rand('state',oseed); end; % restore rand state
 
 if ( numel(szY)>2 ) % deal with n-d inputs, by converting back to n-d
    if ( opts.indepSP )
@@ -148,13 +148,13 @@ return;
 function [foldIdxs]=genFold(Y,nFold,fSize,fOffset)
 % Loop to actually generate the folds
 % convert binary as special case
-if( nargin<4 ) fOffset=[]; end;
-if( size(Y,2)==1 ) Y=[Y -Y]; end;
-if( numel(fSize)==1 ) fSize=fSize*[sum(Y>0,1)./sum(Y(:)>0)]; end;
+if( nargin<4 ); fOffset=[]; end;
+if( size(Y,2)==1 ); Y=[Y -Y]; end;
+if( numel(fSize)==1 ); fSize=fSize*[sum(Y>0,1)./sum(Y(:)>0)]; end;
 if( ~all(fSize==floor(fSize)) ) 
   % spread the non-integer part (roughly) equally over folds
   % N.B. doing this *right* to exactly equally spread examples is quite fiddly..
-  if ( isempty(fOffset) ) fOffset=randperm(size(Y,2))./size(Y,2); end;
+  if ( isempty(fOffset) ); fOffset=randperm(size(Y,2))./size(Y,2); end;
   fOffset(fSize==floor(fSize))=0; % no jitter if not needed
 else
   fOffset=zeros(size(Y,2),1);
@@ -162,7 +162,7 @@ end;
 foldIdxs=zeros([size(Y,1),nFold],'single');
 for l=1:size(Y,2);
   lPos=find(Y(:,l)>0); % get the pts in this class
-  if ( isempty(lPos) ) continue ; end;
+  if ( isempty(lPos) ); continue ; end;
   % assign points in this class to the corrospending folds.
   for fold=1:nFold;
      idx = floor((fold-1)*fSize(l)+(fold>1)*fOffset(l))+1:min(numel(lPos),floor(fold*fSize(l)+fOffset(l)));

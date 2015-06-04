@@ -20,13 +20,14 @@ for stimi=1:nSymbs;
   x=cos(theta(stimi))*.75/2+.5; y=sin(theta(stimi))*.75/2+.5;
   % N.B. PTB measures y from the top of the screen!
   destR(:,stimi)= round(rel2pixel(wPtr,[x-stimRadius/4 1-y+stimRadius/4 x+stimRadius/4 1-y-stimRadius/4]));
-  srcR(:,stimi) = [0 destR(3,1)-destR(1,1) destR(2,1)-destR(4,1) 0];
-  texels(stimi)  = Screen('MakeTexture',wPtr,ones(srcR([2 3],1)')*255);
+  srcR(:,stimi) = [0 destR(3,stimi)-destR(1,stimi) destR(2,stimi)-destR(4,stimi) 0];
+  texels(stimi)  = Screen('MakeTexture',wPtr,ones(srcR([2 3],stimi)')*255);
 end
 % fixation point
-destR(:,nSymbs+1)= round(rel2pixel(wPtr,[.5-stimRadius/8 .5+stimRadius/8 .5+stimRadius/8 .5-stimRadius/8]));
-srcR(:,nSymbs+1) = [0 destR(3,3)-destR(1,3) destR(2,3)-destR(4,3) 0];
-texels(nSymbs+1)  = Screen('MakeTexture',wPtr,ones(srcR([3 2],3)')*255);
+stimi=nSymbs+1;
+destR(:,stimi)= round(rel2pixel(wPtr,[.5-stimRadius/8 .5+stimRadius/8 .5+stimRadius/8 .5-stimRadius/8]));
+srcR(:,stimi) = [0 destR(3,stimi)-destR(1,stimi) destR(2,stimi)-destR(4,stimi) 0];
+texels(stimi)  = Screen('MakeTexture',wPtr,ones(srcR([3 2],stimi)')*255);
 
 endTraining=false;
 sendEvent('stimulus.training','start'); 

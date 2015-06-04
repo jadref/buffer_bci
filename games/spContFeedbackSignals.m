@@ -26,7 +26,9 @@ while ( ~endTest )
       [f,fraw,p]=buffer_apply_erp_clsfr(data(ei).buf,clsfr(1));
       if ( numel(clsfr)>1 ) % apply the 2nd classifier and include it's info in the output
         [f2,fraw2,p2]=buffer_apply_ersp_clsfr(data(ei).buf,clsfr(2));
-        if ( opts.verb>0 ) fprintf('clsfrs out: '); fprintf('%g',f,f2); fprintf('\n'); end; % debug info
+        if ( opts.verb>0 ) 
+			 fprintf('clsfrs out: '); fprintf('%g',f,f2); fprintf('\n'); % debug info
+		  end
         f=f+f2; fraw2=fraw+fraw2;
       end
       % send the prediction event, **with the same sample indicator as the trigger event**

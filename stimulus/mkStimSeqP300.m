@@ -30,7 +30,8 @@ tti=tti*isi; % convert to in terms of event times
 % make a simple visual intermittent flash stimulus
 colors=[1 1 1;...  % color(1) = flash
         0 1 0]';   % color(2) = target
-stimTime=0:isi:duration; % event every isi
+nStim = duration/isi;
+stimTime=(1:nStim)*isi(0); % event every isi
 stimSeq =-ones(nSymbs,numel(stimTime)); % make stimSeq where everything is turned off
 stimSeq(2:end-1,:)=0; % turn-on all symbols, to background color
 if ( oddp ) 

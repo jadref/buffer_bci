@@ -32,40 +32,41 @@ function [ind,key,spMx]=lab2ind(Y,key,spMx,zeroLab,compBinp)
 %                  dv([1 x nSubProb])*decMx -> [1 x nClass]
 %            set of decision values which indicate the confidence in each
 %            class.
-if ( nargin < 5 || isempty(compBinp) ) compBinp=true; end;
-if ( nargin < 4 || isempty(zeroLab) ) zeroLab=false; end;
-if ( nargin < 3 || isempty(spMx) ) spMx='1vR'; end;
+if ( nargin < 5 || isempty(compBinp) ); compBinp=true; end;
+if ( nargin < 4 || isempty(zeroLab) ); zeroLab=false; end;
+if ( nargin < 3 || isempty(spMx) ); spMx='1vR'; end;
 if ( nargin < 2 || isempty(key) ) % default key
    key=unique(Y(:)); key=key(:)'; 
-   if( iscell(key) ) key=sort(key); else key=sort(key,1,'ascend'); end % ascending label order
+   if( iscell(key) ); key=sort(key); else key=sort(key,1,'ascend'); end % ascending label order
    if( ~isempty(spMx) && ~isstr(spMx) && ((iscell(spMx) && numel(spMx)~=numel(key)) || (size(spMx,2)~=numel(key))) )
       warning(sprintf('subProb matrix and unique in Y dont agree -- using key=1:%d',size(spMx,2)));
       key=1:size(spMx,2);
    end
-   if ( numel(key) > 50 ) warning('More than 50 labels!'); end
+   if ( numel(key) > 50 ); warning('More than 50 labels!'); end
    % treat [1,-1], [1,0] as special case so Y is unchanged
    if ( isequal(key,[-1 1]) || ...
         (~zeroLab && isequal(key,[-1 0 1])) ||...
-        ((zeroLab && isequal(key,[0 1])) || islogical(Y)) ) key=key(end:-1:1); 
+        ((zeroLab && isequal(key,[0 1])) || islogical(Y)) );
+	  key=key(end:-1:1); 
    end; 
-   if( ~zeroLab && isnumeric(key) ) key(key==0) = []; end % treat 0 label ignored
+   if( ~zeroLab && isnumeric(key) ); key(key==0) = []; end % treat 0 label ignored
 else
   zeroLab=true;
 end
-if ( isstr(Y) )    Y =single(Y); end;
-if ( islogical(Y)) Y =single(Y); key=single(key); zeroLab=1; end;
-if ( isstr(key) ) key=single(key); end;
+if ( isstr(Y) );    Y =single(Y); end;
+if ( islogical(Y)); Y =single(Y); key=single(key); zeroLab=1; end;
+if ( isstr(key) ); key=single(key); end;
 key=key(:); % ensure key is col vector
 
 % BODGE: deal with class limits of repop, i.e. it's unhappy with int32 etc...
-if ( isnumeric(Y) && strncmp('int',class(Y),3) ) Y=single(Y); key=single(key); end
-if ( isnumeric(key) && strncmp('int',class(key),3) ) key=single(Y); end; 
+if ( isnumeric(Y) && strncmp('int',class(Y),3) ); Y=single(Y); key=single(key); end
+if ( isnumeric(key) && strncmp('int',class(key),3) ); key=single(Y); end; 
 
 % decode the subProb spec 
 nClass=numel(key); nSp=nClass; 
 %deal with bin special case
-if ( compBinp && nClass==2 ) nSp=1; end;
-if ( isstr(spMx) ) spMx=mkspMx(1:nClass,spMx,compBinp); nSp=size(spMx,1);
+if ( compBinp && nClass==2 ); nSp=1; end;
+if ( isstr(spMx) ); spMx=mkspMx(1:nClass,spMx,compBinp); nSp=size(spMx,1);
 else
    if( isnumeric(spMx) )
       if ( ndims(spMx)==2 && size(spMx,2)==1 && all(ismember(spMx,key)) && numel(key)>2 ) % vector of +ve class labels input
@@ -77,7 +78,7 @@ else
          nSp=size(spMx,1); % use the spMx to define the number of sub-problems
       end
    elseif ( iscell(spMx) ) % cell array of +ve/-ve class labels
-      if( numel(spMx)==2 && isnumeric(spMx{1}) && isnumeric(spMx{2}) ) spMx={spMx}; end;
+      if( numel(spMx)==2 && isnumeric(spMx{1}) && isnumeric(spMx{2}) ); spMx={spMx}; end;
       tmp=spMx; nSp=numel(tmp);
       spMx=zeros(nSp,nClass); % convert to spMx format
       for spi=1:size(spMx,1);
@@ -89,7 +90,7 @@ else
 end
 
 % special case for the no class distinction case
-if ( nClass<2 && nSp==1 && (isnumeric(Y) && all(Y==Y(1))) ) ind=ones(size(Y)); return; end;
+if ( nClass<2 && nSp==1 && (isnumeric(Y) && all(Y==Y(1))) ); ind=ones(size(Y)); return; end;
 
 % build the actual sub-problem indicator matrix
 ind=single(zeros(numel(Y),nSp));
@@ -106,14 +107,14 @@ for spi=1:size(spMx,1);
       for i=1:numel(Y);
          tind=zeros([1,spi],'single'); % match ind for this row
          for ikey=1:numel(key);
-            if ( isequal(Y{i},key{ikey}) ) tind(spi)=spMx(spi,ikey); end;
+            if ( isequal(Y{i},key{ikey}) ); tind(spi)=spMx(spi,ikey); end;
          end;
-         if ( any(tind>0,2) ) ind(i,spi)=1; elseif( any(tind<0,2) ) ind(i,spi)=-1; end;
+         if ( any(tind>0,2) ); ind(i,spi)=1; elseif( any(tind<0,2) ); ind(i,spi)=-1; end;
       end
    end
 end
-if( ~zeroLab && isnumeric(Y) ) ind(Y(:)==0,:) = 0; end % treat 0 label as special case
-szY=size(Y); if( ndims(Y)==2 && size(Y,2)==1) szY=szY(1); end;
+if( ~zeroLab && isnumeric(Y) ); ind(Y(:)==0,:) = 0; end % treat 0 label as special case
+szY=size(Y); if( ndims(Y)==2 && size(Y,2)==1); szY=szY(1); end;
 ind=reshape(ind,[szY nSp]);
 return;
 %-----------------------------------------------------------------------------

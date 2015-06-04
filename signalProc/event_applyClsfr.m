@@ -18,10 +18,20 @@ function [testdata,testevents]=event_applyClsfr(clsfr,varargin)
 %  predEventType -- [str] the type to use when sending prediction events       ('classifier.prediction')
 %  trlen_ms/samp -- [int] length of trial to apply classifier to               ([])
 %                     if empty, then = windowFn size used in the classifier training
-%  alpha         -- [float] decay constant for exp-weighted moving average,     ([])
-%                     for continuous Neurofeedback style feedback. N.B. alpha = exp(log(.5)/halflife)
-%                     if alpha isempty, then simply sum the decision values between prediction events
-%
+%  predFilt         -- [float] prediction filter  ([])
+%                     predFilt=[] - no filtering 
+%                     predFilt>=0 - coefficient for exp-decay moving average. f=predFilt(f) + (1-predFilt)f_new
+%                                N.B. predFilt = exp(log(.5)/halflife)
+%                     predFilt<0  - #components to average                    f=mean(f(:,end-predFilt:end),2)
+%                  OR
+%                   {str} {function_handle}  a function to 'filter' the predictions through
+%                             before sending prediction event. This function should have the signature:
+%                         [f,state]=func(f,state)
+%                             where state is the internal state of the filter, e.g. the history of past values
+%                      Examples: 
+%                        'predFilt',@(x,s) avefilt(x,s,10)   % moving average filter, length 10
+%                        'predFilt',@(x,s) biasFilt(x,s,50)  % bias adaptation filter, length 50
+%                        'predFilt',@(x,s) stdFilt(x,s,100)  % normalising filter (0-mean,1-std-dev), l%
 % Examples:
 %  % 1) Default: apply clsfr on 'stimulus.target' events and 
 %  %    immeadiately send predictions as 'classifier.predicition'
@@ -42,7 +52,7 @@ opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
             'sendPredEventType',[],...
             'predEventType','classifier.prediction',...
             'trlen_ms',[],'trlen_samp',[],...
-            'alpha',[],'timeout_ms',1000); 
+            'predFilt',[],'timeout_ms',1000); 
 [opts,varargin]=parseOpts(opts,varargin);
 
 % if not explicitly given work out from the classifier information the trial length needed
@@ -101,7 +111,7 @@ while ( ~endTest )
       if ( opts.verb>0 ) fprintf('Got end feedback event\n'); end;
       endTest=true;
     
-    elseif ( matchEvents(devents(ei),opts.sendPredEventType,opts.endValue) ) % send accumulated predictions
+    elseif ( matchEvents(devents(ei),opts.sendPredEventType,opts.endValue) ) % send prediction
       if ( opts.verb>0 ) fprintf('Got send predictions event\n'); end;
       sendPred=true;
     
@@ -109,7 +119,9 @@ while ( ~endTest )
       if ( opts.verb>0 ) fprintf('Processing event: %s',ev2str(devents(ei))); end;      
 
       % save the data used by the classifier if wanted
-      if ( nargout>0 ) nEpochs=nEpochs+1; testdata{nEpochs}=data(ei); testevents{nEpochs}=devents(ei); end;
+      if ( nargout>0 ) 
+		  nEpochs=nEpochs+1; testdata{nEpochs}=data(ei); testevents{nEpochs}=devents(ei); 
+		end;
 
       % apply classification pipeline(s) to this events data      
       for ci=1:numel(clsfr);
@@ -121,16 +133,20 @@ while ( ~endTest )
       end
       
       % smooth the classifier predictions if wanted
-      if ( isempty(dv) || isempty(opts.alpha) ) % moving average
+		if ( isempty(dv) || isempty(opts.predFilt) ) 
         dv=f;
-      elseif ( isnumeric(opts.alpha) )
-        if ( opts.alpha>=0 ) % exp weighted moving average
-          dv=dv*opts.alpha + (1-opts.alpha)*f;
-        else
-          fbuff(:,mod(nEpochs-1,abs(opts.alpha))+1)=f; % store predictions in a ring buffer
-          dv=mean(fbuff,2);
+		else
+        if ( isnumeric(opts.predFilt) )
+			 if ( opts.predFilt>=0 ) % exp weighted moving average
+				dv=dv*opts.predFilt + (1-opts.predFilt)*f;
+			 else % store predictions in a ring buffer
+				fbuff(:,mod(nEpochs-1,abs(opts.predFilt))+1)=f; % store predictions in a ring buffer
+				dv=mean(fbuff,2);
+			 end
+        elseif ( isstr(opts.predFilt) || isa(opts.predFilt,'function_handle') )
+			 [dv,filtstate]=feval(opts.predFilt,f,filtstate);
         end
-      end          
+		end
       
       % Send prediction event
       if ( isempty(opts.sendPredEventType) ) % send predictions immeadiately
@@ -150,7 +166,7 @@ while ( ~endTest )
   % if got a send-predictionns event, then send the accumulated prediction information
   if ( sendPred )
     sendEvent(opts.predEventType,fs(:,1:nPred));
-    if (opts.verb>=0) fprintf('%d) Saved Clsfr Pred: [%s]\n',devents(ei).sample,sprintf('%g ',fs)); end;
+    if(opts.verb>=0) fprintf('%d) Saved Clsfr Pred: [%s]\n',devents(ei).sample,sprintf('%g ',fs)); end;
     sendPred=false; nPred=0; fs(:)=0; % reset the accumulated info
   end
 end % feedback phase

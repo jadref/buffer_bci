@@ -130,7 +130,11 @@ else
   if isfield(txt,'nChans') && ~isequal(hdr.nChans,txt.nChans)
     error('Number of channels in binary header does not match ASCII definition');
   end
+<<<<<<< HEAD
   if isfield(txt,'nChans') && ~isequal(hdr.nSamples,txt.nSamples)
+=======
+  if isfield(txt,'nSamples') && hdr.nSamples ~= txt.nSamples
+>>>>>>> 9b8b2035b06da50e4f10ed5aebb3a0dcc051035b
     warning('Number of samples in binary header does not match ASCII definition');
   end
   if isfield(txt,'nEvents') && ~isequal(hdr.nEvents,txt.nEvents)
@@ -197,14 +201,6 @@ else
   end
 
   fclose(F);
-end
-
-% copy any fields only in txt into the hdr
-if ( ~isempty(txt) && ~isempty(hdr) ) 
-	fns=fieldnames(txt);
-	for fi=1:numel(fns);
-		 if ( ~isfield(hdr,fns{fi}) ) hdr.(fns{fi})=txt.(fns{fi}); end;
-	end
 end
 
 % binary has invalid samples info (or isn't there), get from samples file instead..
