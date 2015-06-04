@@ -3,5 +3,9 @@ rem Search for the buffer executable
 if exist "%batdir%buffer\bin\win32\mobita2ft.exe" ( set buffexe="%batdir%buffer\bin\win32\mobita2ft.exe" )
 if exist "%batdir%buffer\win32\mobita2ft.exe" ( set buffexe="%batdir%buffer\win32\mobita2ft.exe" )
 if exist "%batdir%mobita2ft.exe" ( set buffexe="%batdir%mobita2ft.exe" )
-rem start /b "buffer" %buffexe% %1 %2 %3
-start /b "buffer" /HIGH %buffexe% 10.11.12.13:4242 localhost:1972 50 4
+rem First setup windows to allow connection to ad-hoc network
+set mobitaNetwork=Mobita_0710120016
+netsh wlan set hostednetwork mode=allow ssid="%mobitaNetwork" key="MOBITA0120016"
+netsh wlan start %mobitaNetwork%
+start /b "mobita2ft" %buffexe% 10.11.12.13:4242 localhost:1972 50 4
+netsh wlan stop %mobitaNetwork%
