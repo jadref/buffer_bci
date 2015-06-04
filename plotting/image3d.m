@@ -260,7 +260,11 @@ if ( ~isempty(opts.handles) )
 elseif ( ~isempty(opts.plotPos) ) % pre-build all the figure handles
     hdls=posplot(opts.plotPos(1,:),opts.plotPos(2,:),[],opts.plotPosOpts);
 else
-    for pi=1:N; hdls(pi)=subplot(w,h,pi); end;
+  % Manually place on a rectangular grid.  N.B. we don't use subplot as it fails in some situations
+  for pi=1:N;
+	 j=floor((pi-1)/w); i=(pi-1)-j*w;
+	 hdls(pi)=axes('position',[i/w (h-j-1)/h .95/w .95/h]); 
+  end;
 end
 legendpos=[];if ( numel(hdls)>N ) legendpos=get(hdls(N+1),'position'); end;
 
