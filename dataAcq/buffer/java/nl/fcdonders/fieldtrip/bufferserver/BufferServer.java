@@ -194,7 +194,13 @@ public class BufferServer extends Thread {
 	public void run() {
 		try {
 			serverSocket = new ServerSocket(portNumber);
-			while (true) {
+		} catch (final IOException e) {
+			 System.err.println("Could not listen on port " + portNumber);
+			 System.err.println(e);
+			 e.printStackTrace();
+		}
+		try {
+			 while (true) {
 				final ConnectionThread connection = new ConnectionThread(
 						nextClientID++, serverSocket.accept(), dataStore, this);
 				connection.setName("Fieldtrip Client Thread "
@@ -208,7 +214,8 @@ public class BufferServer extends Thread {
 			}
 		} catch (final IOException e) {
 			if (!disconnectedOnPurpose) {
-				System.err.println("Could not listen on port " + portNumber);
+				System.err.println("Server socket disconnected " + portNumber);
+				System.err.println(e);
 			} else {
 				for (final ConnectionThread thread : threads) {
 					thread.disconnect();
