@@ -27,7 +27,7 @@ opts = struct('sizes','none','scaling','none','plotsposition',[0 0 1 1],'postype
 % Argument processing
 if( nargin < 3 ) if ( nargout > 0 ) Idx=[]; else Idx=1; end; end;
 if( nargin < 2 ) Ys =1; end;
-if( (isscalar(Ys) | isempty(Ys)) & any(size(Xs)==2) ) % convert XYs form to Xs Ys form
+if( (isscalar(Ys) || isempty(Ys)) && any(size(Xs)==2) ) % convert XYs form to Xs Ys form
    varargin={Idx,varargin{:}};
    Idx=Ys; 
    if(size(Xs,2)~=2) Xs=Xs'; end; Ys=Xs(:,2);Xs=Xs(:,1); % split into X,Y
@@ -73,7 +73,7 @@ rY(:,1) = rY(:,1) - opts.interplotgap(3); % bottom
 rY(:,2) = rY(:,2) - opts.interplotgap(4); % top
 
 % Check if this is a reasonable layout
-if( opts.emptySize>0 && (any(rX(:)<=0) | any(rY(:)<=0) | any(isnan(rY(:))) | any(isnan(rX(:)))) ) 
+if( opts.emptySize>0 && (any(rX(:)<=0) || any(rY(:)<=0) || any(isnan(rY(:))) || any(isnan(rX(:)))) ) 
    warning('Not enough room between points to make plot');
    rX(rX<=0 | isnan(rX))=opts.emptySize(1); 
    rY(rY<=0 | isnan(rY))=opts.emptySize(min(end,2));

@@ -7,16 +7,6 @@ if [ `uname -s` == 'Linux' ]; then
     else
 		  arch='glnx86';
    fi
-   buffexe=$buffdir'/buffer/bin/demo_buffer';
-   if [ -r $buffdir/demo_buffer ]; then
-    buffexe=$buffdir'/demo_buffer';
-   fi
-   if [ -r $buffdir/buffer/bin/${arch}/demo_buffer ]; then
-	 buffexe=$buffdir'/buffer/bin/${arch}/demo_buffer';
-   fi
-   if [ -r $buffdir/buffer/${arch}/demo_buffer ]; then
-	 buffexe=$buffdir'/buffer/${arch}/demo_buffer';
-   fi
 elif [[ `uname -s` = 'MINGW'* ]]; then
 	 arch='win32'
 	 buffexe=$bufdir'/buffer/win32/demo_buffer_unix'
@@ -30,6 +20,7 @@ fi
 if [ -r $buffdir/buffer/${arch}/buffer ]; then
 	 buffexe=$buffdir"/buffer/${arch}/buffer";
 fi
+
 echo Starting: $buffexe
 # turn return into carriage return to stop endless scrolling of the window
 if [ -z `which tr` ]; then

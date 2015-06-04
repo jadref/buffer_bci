@@ -1,20 +1,24 @@
 #! /usr/bin/env bash
 cd `dirname ${BASH_SOURCE[0]}`
 buffdir=`dirname $0`
+execname='thinkgear2ft'
 if [ `uname -s` == 'Linux' ]; then
-   if [ -r $buffdir/buffer/bin/glnx86/thinkgear2ft ]; then
-	 buffexe=$buffdir'/buffer/bin/glnx86/thinkgear2ft';
+	 if  [ "`uname -a`" == 'armv6l' ]; then
+		  arch='raspberrypi'
+    else
+		  arch='glnx86';
    fi
-   if [ -r $buffdir/buffer/glnx86/thinkgear2ft ]; then
-	 buffexe=$buffdir'/buffer/glnx86/thinkgear2ft';
-   fi
-	# find the BT device!
 else # Mac
-   if [ -r $buffdir/buffer/bin/maci/thinkgear2ft ]; then
-	 buffexe=$buffdir'/buffer/bin/maci/thinkgear2ft';
-   fi
-   if [ -r $buffdir/buffer/maci/thinkgear2ft ]; then
-	 buffexe=$buffdir'/buffer/maci/thinkgear2ft';
-   fi
+	 arch='maci'
+fi
+buffexe="$buffdir/buffer/bin/${execname}";
+if [ -r $buffdir/${execname} ]; then
+    buffexe="$buffdir/${execname}";
+fi
+if [ -r $buffdir/buffer/bin/${arch}/${execname} ]; then
+	 buffexe="$buffdir/buffer/bin/${arch}/${execname}";
+fi
+if [ -r $buffdir/buffer/${arch}/${execname} ]; then
+	 buffexe="$buffdir/buffer/${arch}/${execname}";
 fi
 $buffexe /dev/ttyUSB0 mindwave.cfg localhost 1972

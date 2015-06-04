@@ -1,7 +1,7 @@
 setlocal enabledelayedexpansion
 set batdir=%~dp0
 set drive=%~d0
-set bciroot=output\raw_buffer
+set bciroot=output
 set subject=test
 rem get date/session
 For /f "tokens=2-4 delims=/- " %%a in ('date /t') do (set session=%%c%%b%%a) 

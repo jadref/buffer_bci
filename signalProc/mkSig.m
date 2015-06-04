@@ -12,6 +12,7 @@ function X=mkSig(T,sigType,varargin)
 %           'coloredNoise' (noiseSpectrum) 
 %           'saw'          (period)
 %           'square'       (period)
+%           'triangle'     (period)
 %           'sin'          (period phase periodJitter phaseJitter) % phase in radians
 %           'repeated'     (1_cycle_signal cycleLen interpType)
 %           'amsig'        (amplitudeModulator sigType param1,param2,...)
@@ -48,14 +49,15 @@ switch sigType;
  case 'rand';        X = rand(T,1);
  case 'randn';       X = randn(T,1);
  case 'coloredNoise';X = coloredNoise(T,varargin{:});
- case 'saw';         X = repeated(T,oversample([-1 0 1],varargin{1},'linear'));
- case 'square';      X = repeated(T,oversample([-1 1],varargin{1},'nn'));
+ case 'saw';         X = repeated(T,oversample([-1 0 1]',varargin{1},[],'linear'));
+ case 'triangle';    X = repeated(T,oversample([-1 1 -1]',varargin{1},[],'linear'));
+ case 'square';      X = repeated(T,oversample([-1 1]',varargin{1},[],'nn'));
  case 'repeated';    X = repeated(T,oversample(varargin{:}));
  case 'sin';         X = noisySin(T,varargin{:}); % N.B. pow=(Amp.^2)/2
  case 'cos';         X = noisyCos(T,varargin{:}); % N.B. pow=(Amp.^2)/2
  case {'gaussian','gaus'};    X = noisyGaus(T,varargin{:});
  case 'exp';         X = exp(-(0:T-1)*varargin{1})';
- case 'amsig';       X = oversample(varargin{1},T,'linear').*mkSig(T,varargin{2:end});
+ case 'amsig';       X = oversample(varargin{1},T,[],'linear').*mkSig(T,varargin{2:end});
  case 'sum';         X = mkSig(T,varargin{1}{:}) + mkSig(T,varargin{2}{:});
  case 'prod';        X = mkSig(T,varargin{1}{:}) .* mkSig(T,varargin{2}{:});
  case 'stretch';     X = oversample(varargin{1},T,[],'lin'); X=X(:); % ensure out is colvec

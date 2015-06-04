@@ -1,9 +1,25 @@
 #!/bin/bash
+buffdir=`dirname $0`
 cd `dirname ${BASH_SOURCE[0]}`
-source ../utilities/findMatlab.sh
-if [[ $matexe == *matlab ]]; then  args=-nodesktop; fi
-cat <<EOF | $matexe $args
-run ../utilities/initPaths.m; 
-buffer_signalproxy('localhost',1972,'stimEventRate',0,'queueEventRate',0);
-quit;
-EOF
+execname='csignalproxy'
+if [ `uname -s` == 'Linux' ]; then
+	 if  [ "`uname -a`" == 'armv6l' ]; then
+		  arch='raspberrypi'
+    else
+		  arch='glnx86';
+   fi
+else # Mac
+	 arch='maci'
+fi
+buffexe="$buffdir/buffer/bin/${execname}";
+if [ -r "$buffdir/${execname}" ]; then
+    buffexe="$buffdir/${execname}";
+fi
+if [ -r "$buffdir/buffer/bin/${arch}/${execname}" ]; then
+	 buffexe="$buffdir/buffer/bin/${arch}/${execname}";
+fi
+if [ -r "$buffdir/buffer/${arch}/${execname}" ]; then
+	 buffexe="$buffdir/buffer/${arch}/${execname}";
+fi
+
+$buffexe 
