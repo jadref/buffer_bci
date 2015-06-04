@@ -22,7 +22,7 @@ public class ClockSync {
 	 // discarding the memory
 	 //N.B. half-life = log(.5)/log(alpha) 
 	 //     alpha     = exp(log(.5)/half-life) .8=3, .9=7, .95=13, .97=22, .98=34, .99=69 updates
- 	 // Summed updates = 1/(1-alpha)
+	 // Summed updates = 1/(1-alpha)
 	 public ClockSync() {this(.97);}  
 	 public ClockSync(double alpha){ 
 		  this.alpha=alpha; 

@@ -228,9 +228,11 @@ if ( opts.visualize )
    image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',labels,'disptype','plot','ticklabs','sw');
    zoomplots;
    try; saveaspdf('ERP'); catch; end;
+   if ( ~(all(Yci(:)==Yci(1))) ) % only if >1 class input
    aucfig=figure('Name','Data Visualisation: ERP AUC');
    image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8]);
    colormap ikelvin; zoomplots;
+   end
    drawnow;
    try; saveaspdf('AUC'); catch; end;
 end

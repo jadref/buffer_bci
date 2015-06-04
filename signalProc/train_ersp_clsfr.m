@@ -210,7 +210,7 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
       end
     end
     [ans,fIdx(1)]=min(abs(freqs-max(freqs(1),  opts.freqband(1)))); % lower frequency bin
-    [ans,fIdx(2)]=min(abs(freqs-MIN(freqs(end),opts.freqband(2)))); % upper frequency bin
+    [ans,fIdx(2)]=min(abs(freqs-min(freqs(end),opts.freqband(2)))); % upper frequency bin
     fIdx = int32(fIdx(1):fIdx(2));
   elseif ( iscell(opts.freqband) ) %set of discrete-frequencies to pick
     freqband=[opts.freqband{:}]; % convert to vector
@@ -276,10 +276,12 @@ if ( opts.visualize )
    image3d(mu(:,:,:),1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels(:),'disptype','plot','ticklabs','sw','clabel',opts.aveType);
    zoomplots;
    try; saveaspdf('ERSP'); catch; end;
-   aucfig=gcf+1;figure(aucfig);clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');
-   image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
-   colormap ikelvin; zoomplots;
-   try; saveaspdf('AUC'); catch; end;
+   if ( ~(all(Yci(:)==Yci(1))) )
+    aucfig=gcf+1;figure(aucfig);clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');
+    image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
+    colormap ikelvin; zoomplots;
+    try; saveaspdf('AUC'); catch; end;
+   end
    drawnow;
    figure(erpfig);
 end

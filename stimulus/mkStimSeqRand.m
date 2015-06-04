@@ -49,6 +49,6 @@ function testCase();
 [stimSeq,stimTime]=mkStimSeqRand(10,10,1/10,2,1); 
 clf;mcplot(stimTime,stimSeq,'lineWidth',1)
 % compute mean tti statistics for each symb
-for si=1:size(ss,1); tti=diff(find(ss(si,:)));fprintf('%g\t%g\t%g\t%g\n',min(tti),mean(tti),max(tti),var(tti));end;
+for si=1:size(ss,1); tti=diff(find(stimSeq(si,:)));fprintf('%g\t%g\t%g\t%g\n',min(tti),mean(tti),max(tti),var(tti));end;
 % simple play sequence function
 clf;playStimSeq(stimSeq,stimTime)

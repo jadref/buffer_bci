@@ -102,10 +102,17 @@ if ( opts.badchrm || ~isempty(opts.badCh) )
   if ( ~isempty(opts.badCh) )
     isbadch(opts.badCh)=true;
     if ( ~isempty(ch_names) ) % update the channel info
+<<<<<<< HEAD
+       if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names))); end;
+       ch_names=ch_names(~isbadch(1:numel(ch_names)));
+    end
+  end
+=======
       if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names))); end;
       ch_names=ch_names(~isbadch(1:numel(ch_names)));
     end
  end 
+>>>>>>> 587a82bbe42f2f86191a58645052a6b9c8ae6916
 end    
 
 %2.2) time range selection
