@@ -1,6 +1,6 @@
 <project name="openBCI2ft" basedir="." default="main">
 
-    <property name="src.dir"     value="."/>
+    <property name="src.dir"     value="src"/>
     <property name="build.dir"   value="build"/>
     <property name="classes.dir" value="${build.dir}/classes"/>
     <property name="jar.dir"     value="${build.dir}/jar"/>
@@ -36,7 +36,8 @@
     </target>
 
     <target name="run" depends="jar">
-      <java fork="true" classname="${main-class}">
+      <java fork="true" classname="${main-class}"
+				args="/dev/ttyUSB0">
         <classpath>
 			 <path refid="classpath"/>
 			 <path location="${jar.dir}/${ant.project.name}.jar"/>
@@ -45,7 +46,7 @@
     </target>
 
 	 <target name="dist" depends="jar">
-		<copy file="${jar.dir}/${ant.project.name}.jar" todir="${src.dir}"/>
+		<copy file="${jar.dir}/${ant.project.name}.jar" todir="."/>
 	 </target>
 
     <target name="clean">   <delete dir="${build.dir}"/>  </target>

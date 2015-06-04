@@ -345,7 +345,7 @@ Footer
 				localByteCounter++;
 				if (localByteCounter==2) {
 					 localChannelCounter++;
-					 if ( dataPacket.values.length < localChannelCounter ) // add to packet if wanted
+					 if ( dataPacket.values.length > localChannelCounter ) // add to packet if wanted
 						  dataPacket.values[localChannelCounter] = interpret16bitMSBAsInt32(localByteBuffer);
 					 if( DEBUG>0 ) System.out.println("OpenBCI_ADS1299: interpretBinaryStream: localChannelCounter = " + localChannelCounter);
 					 if (localChannelCounter==dataPacket.values.length+3) {  // all AUX channels arrived !
