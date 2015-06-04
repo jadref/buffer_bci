@@ -57,8 +57,8 @@ if(isempty(opts.capFile))
   if ( ~isequal(fn,0) ); capFile=fullfile(pth,fn); end;
   %if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
 end
-if ( ~isempty(strfind(capFile,'1010.txt')) ); overridechnms=0; else overridechnms=1; end; % force default override
 if ( ~isempty(capFile) ) 
+  if ( ~isempty(strfind(capFile,'1010.txt')) ); overridechnms=0; else overridechnms=1; end; % force default override
   di = addPosInfo(ch_names,capFile,overridechnms); % get 3d-coords
   ch_pos=cat(2,di.extra.pos2d); % extract pos and channels names
   ch_pos3d=cat(2,di.extra.pos3d);
