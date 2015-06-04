@@ -35,22 +35,22 @@ function [varargout]=parseOpts(opts,varargin)
 % made of any changes that have been made. This software and
 % documents are distributed without any warranty, express or
 % implied
-if ( ~iscell(opts) ) opts={opts}; end;
+if ( ~iscell(opts) ); opts={opts}; end;
 subStruct=false; % in sub-structs we can create fields without penalty
-if(iscell(varargin) && numel(varargin)>1 && islogical(varargin{1})) subStruct=varargin{1};varargin(1)=[];end;
-if ( iscell(varargin) && numel(varargin)==1 && iscell(varargin{1})) varargin=varargin{1}; end; % expand single inputs
+if(iscell(varargin) && numel(varargin)>1 && islogical(varargin{1})); subStruct=varargin{1};varargin(1)=[];end;
+if ( iscell(varargin) && numel(varargin)==1 && iscell(varargin{1})); varargin=varargin{1}; end; % expand single inputs
 i=1; unrec=[];
 %for i=1:numel(varargin);
 while i<=numel(varargin);  % while still options to consume
    if ( iscell(varargin{i}) ) % flatten cells
       %varargin={varargin{1:i-1} varargin{i}{:} varargin{i+1:end}};
       [opts{:},varargin{i}]=parseOpts(opts,varargin{i}{:});
-      if ( ~isempty(varargin{i}) )  unrec(end+1)=i; end
+      if ( ~isempty(varargin{i}) );  unrec(end+1)=i; end
    elseif ( isstruct(varargin{i}) )% flatten structures
       cellver=[fieldnames(varargin{i}) struct2cell(varargin{i})]';
       %varargin={varargin{1:i-1} cellver{:} varargin{i+1:end} };
       [opts{:},tmp]=parseOpts(opts,cellver{:}); 
-      varargin{i}=struct(tmp{:}); if ( ~isempty(tmp) )  unrec(end+1)=i; end
+      varargin{i}=struct(tmp{:}); if ( ~isempty(tmp) );  unrec(end+1)=i; end
    elseif ( isstr(varargin{i}) )
       fn=varargin{i}(1:min([find(varargin{i}=='.',1)-1,end]));
       sfn=varargin{i}(numel(fn)+2:end); % deal with name.subname
@@ -66,7 +66,7 @@ while i<=numel(varargin);  % while still options to consume
                end
             elseif( ~isempty(sfn) ) % make a sub-struct
                tmp=varargin{i+1}; 
-               if( iscell(tmp) ) tmp={tmp}; end;
+               if( iscell(tmp) ); tmp={tmp}; end;
                tmp=struct(sfn,tmp);
             else
                tmp=varargin{i+1};
@@ -74,7 +74,7 @@ while i<=numel(varargin);  % while still options to consume
             opts{j}.(fn)=tmp; i=i+1; j=0; break;
          elseif ( subStruct && numel(opts)==1 ) % make new field in sub-structs
            if ( ~isempty(sfn) ) % make sub-struct
-             tmp=varargin{i+1}; if( iscell(tmp) ) tmp={tmp}; end;             
+             tmp=varargin{i+1}; if( iscell(tmp) ); tmp={tmp}; end;             
              tmp=struct(sfn,tmp);
            else
              tmp=varargin{i+1};
@@ -83,7 +83,7 @@ while i<=numel(varargin);  % while still options to consume
          end
       end      
       % record the unrec options
-      if ( j>0 ) unrec(end+1)=i; if(i<numel(varargin)) i=i+1; unrec(end+1)=i;end; end 
+      if ( j>0 ); unrec(end+1)=i; if(i<numel(varargin)); i=i+1; unrec(end+1)=i;end; end 
    else
       unrec(end+1)=i;  % skip this unrecognised argument
    end
@@ -92,7 +92,7 @@ end
 if ( nargout<=numel(opts) && ~isempty(unrec) )
    str='';
    for i=1:numel(unrec); % make a useful warning string
-      if ( isstr(varargin{unrec(i)}) ) str=[str sprintf('#%d=''%s'',',unrec(i),varargin{unrec(i)})]; 
+      if ( isstr(varargin{unrec(i)}) ); str=[str sprintf('#%d=''%s'',',unrec(i),varargin{unrec(i)})]; 
       else str=[str sprintf('#%d=<%s>,',unrec(i),class(varargin{unrec(i)}))];
       end
    end

@@ -1,2 +1,2 @@
 call ..\utilities\findMatlab.bat
-start "Matlab" %matexe% -nodesktop -nosplash -r "capFitting();quit;"
+start "Matlab" %matexe% capFitting

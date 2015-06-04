@@ -23,6 +23,8 @@ if ( nargin<3 || isempty(isi) ) isi=1; end;
 if ( nargin<4 || isempty(mintti) ) mintti=max(round(nSymb)/2,nSymb-2); end;
 colors=[1 1 1]'; % flash is white
 nStim = duration/isi;
+stimTime=(1:nStim)*isi(1);
+eventSeq=[];
 stimSeq=zeros(nSymb,nStim); 
 stimCode=zeros(1,nStim);
 lastUsed=randperm(nSymb); % index i'th symbol was last usedx
@@ -40,8 +42,6 @@ for si=nSymb+1:nSymb:nStim;
   end
 end
 for si=1:nStim; if ( stimCode(si)>0) stimSeq(stimCode(si),si)=1; end; end;
-stimTime=(0:size(stimSeq,2))*isi(1);
-eventSeq=stimSeq;
 return;
 
 %----------------------

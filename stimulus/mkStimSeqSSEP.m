@@ -9,7 +9,7 @@ function [stimSeq,stimTime,eventSeq,colors]=mkStimSeqSSEP(nSymbs,duration,isi,pe
 %             [nSymbs x 1] handles to the objects to flicker
 %  duration - [float] duration of stimulus in seconds           (3)
 %  isi      - [single] inter stimulus duration in seconds       (2/60)
-%  periods  - [nSymbs x 1] period for each targets cycle         ([2 4 ..])
+%  periods  - [nSymbs x 1] period in *seconds* for targets cycle  ([2 4 ..])
 %             OR
 %             [nSymbs x 2]  period+phase for each targets cycle
 %  smooth   - [bool] continuous outputs? or binary?             (false)
@@ -34,12 +34,12 @@ if ( size(periods,1)<nSymbs ) warning('Insufficient flicker periods given... set
 if ( size(periods,2)==1 ) periods=[periods(:) zeros(size(periods))]; end; % add 0-phase info
 % make a simple visual intermittent flash stimulus
 nStim = duration/isi;
-stimTime=(0:nStim)*isi(1);
+stimTime=(1:nStim)*isi(1);
 eventSeq=[]; 
 stimSeq =zeros(nSymbs,nStim); % make stimSeq where everything is in background state
 for stimi=1:nSymbs;
   % N.B. include slight phase offset to prevent value being exactly==0
-  stimSeq(stimi,:) = cos(((0:size(stimSeq,2)-1)+.0001+periods(stimi,2))/periods(stimi,1)*2*pi); 
+  stimSeq(stimi,:) = cos((stimTime+.0001+periods(stimi,2))/periods(stimi,1)*2*pi); 
 end
 if ( smooth ) 
   stimSeq=(stimSeq+1)/2; % ensure all positive values in range 0-1

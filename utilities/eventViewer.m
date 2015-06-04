@@ -15,10 +15,10 @@ wb=which('buffer');
 if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) 
   mdir=fileparts(mfilename('fullfile')); run(fullfile(mdir,'../utilities/initPaths.m')); 
 end;
-if ( nargin<1 || isempty(host) ) host='localhost'; end;
-if ( nargin<2 || isempty(port) ) port=1972; end;
-if ( nargin<3 ) mtype={};  end;
-if ( nargin<4 ) mval={}; end;
+if ( nargin<1 || isempty(host) ); host='localhost'; end;
+if ( nargin<2 || isempty(port) ); port=1972; end;
+if ( nargin<3 ); mtype={};  end;
+if ( nargin<4 ); mval={}; end;
 % wait for valid header
 hdr=[];
 while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
@@ -32,8 +32,8 @@ while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffe
 end;
 
 fs=100;
-if ( isfield(hdr,'SampleRate') ) fs=hdr.SampleRate;
-elseif ( isfield(hdr,'Fs') )     fs=hdr.Fs;
+if ( isfield(hdr,'SampleRate') ); fs=hdr.SampleRate;
+elseif ( isfield(hdr,'Fs') );     fs=hdr.Fs;
 end
 
 state=[]; nSamples=0; tic;
