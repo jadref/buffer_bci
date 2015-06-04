@@ -12,3 +12,7 @@ if exist "%batdir%%execname%.exe" ( set buffexe="%batdir%%execname%.exe" )
 rem start /b "buffer" %buffexe% %1 %2 %3
 %buffexe% --preset 10 --50hz --osc osc.udp://localhost:%oscport%
 rem %buffexe% --device %oscdevice% --preset ab --osc osc.udp://localhost:%oscport%
+rem Give more helpful error message for partially installed system
+if errorlevel 1 (
+	start cmd /c "echo Muse-io couldn't start, have you run vcredist?\n dataAcq/buffer/win32/vcredist_x86.exe? && pause"
+)
