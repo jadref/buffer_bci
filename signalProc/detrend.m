@@ -19,6 +19,7 @@ if ( nargin < 4 || isempty(wght) ) wght=1; end; wght=wght(:);
 if ( nargin < 5 || isempty(MAXEL) ) MAXEL=2e6; end;
 
 if ( order > 2 || order < 1) error('Only 1/2nd order currently'); end;
+if ( size(X,dim)==1 ) dtm=[]; return; end;
 
 % Compute a linear detrending matrix
 xb  = [(1:size(X,dim))'-size(X,dim) ones(size(X,dim),1)]; % orthogonal target's to regress with

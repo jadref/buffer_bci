@@ -32,8 +32,8 @@ endif
 ifneq (,$(findstring apple-darwin,$(PLATFORM))) # MacOS
 #	BINDIR = $(FTPATH)/realtime/bin/maci
 	BINDIR = ../../dataAcq/buffer/maci
-	CFLAGS += -m32
-	CXXFLAGS += -m32 -DDISABLE_NAGLE
+	CFLAGS += -m32 -mmacosx-version-min=10.5 -DDISABLE_NAGLE
+	CXXFLAGS += -m32 -mmacosx-version-min=10.5 -DDISABLE_NAGLE
 	LDLIBS += -lpthread -m32
 	fixpath = $1
 	LIBEXT=la

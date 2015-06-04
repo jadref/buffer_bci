@@ -71,10 +71,11 @@ int main(int argc, char *argv[]) {
 
 
   /* open the TCP socket */
-  while ( (serverfd = open_connection(buffhost.name,buffhost.port)) < 0 ){
-	 fprintf(stderr, "cclient; failed to create socket. waiting\n");
+  while ( (serverfd = open_connection(buffhost.name,buffhost.port)) < 0 && exitExpt==0 ){
+	 fprintf(stderr, "csignalproxy; failed to create socket. waiting\n");
 	 usleep(1000000);/* sleep for 1second and retry */
   }
+  if ( exitExpt ) exit(exitExpt); 
     
   //-------------------------------------------------------------------------------
   /* get the header information */

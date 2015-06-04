@@ -6,7 +6,7 @@ for i=1:numel(events);
   if ( ~isfield(event,'value') ) continue; end;
   val = event.value; 
   if ( isempty(val) ) val='[]';
-  elseif( isnumeric(val) ) 
+  elseif( isnumeric(val) || islogical(val) ) 
     vstr=sprintf('%g',val(1));
     if ( numel(val)>1) vstr=['[' vstr sprintf(' %g',val(2:end)) ']']; end;
     val=vstr;

@@ -1,6 +1,7 @@
-#!/bin/bash
+#! /usr/bin/env bash
+cd `dirname ${BASH_SOURCE[0]}`
 buffdir=`dirname $0`
-execname=eventViewer
+execname='rda2ft'
 if [ `uname -s` == 'Linux' ]; then
 	 if  [ "`uname -a`" == 'armv6l' ]; then
 		  arch='raspberrypi'
@@ -10,6 +11,7 @@ if [ `uname -s` == 'Linux' ]; then
 else # Mac
 	 arch='maci'
 fi
+buffexe="$buffdir/buffer/bin/${execname}";
 if [ -r $buffdir/${execname} ]; then
     buffexe="$buffdir/${execname}";
 fi
@@ -19,4 +21,4 @@ fi
 if [ -r $buffdir/buffer/${arch}/${execname} ]; then
 	 buffexe="$buffdir/buffer/${arch}/${execname}";
 fi
-$buffexe $@
+$buffexe localhost 51244 - 1972

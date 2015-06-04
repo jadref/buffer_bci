@@ -10,25 +10,27 @@ quit;
 EOF
 # Note: to call with arguments you must *double-quote* the arguments....
 exit;
+
+#----------------------------------------------------------------
+# Note nothing below this line is actually used!!!!
 buffdir=`dirname $0`
 if [ `uname -s` == 'Linux' ]; then
-   buffexe=$buffdir'/buffer/bin/playback';
-   if [ -r $buffdir/playback ]; then
-    buffexe=$buffdir'/playback';
-   fi
-   if [ -r $buffdir/buffer/bin/glnx86/playback ]; then
-	 buffexe=$buffdir'/buffer/bin/glnx86/playback';
-   fi
-   if [ -r $buffdir/buffer/glnx86/playback ]; then
-	 buffexe=$buffdir'/buffer/glnx86/playback';
+	 if  [ "`uname -a`" == 'armv6l' ]; then
+		  arch='raspberrypi'
+    else
+		  arch='glnx86';
    fi
 else # Mac
-   buffexe=$buffdir'/buffer/bin/playback';
-   if [ -r $buffdir/buffer/bin/maci/playback ]; then
-	 buffexe=$buffdir'/buffer/bin/maci/playback'
-   fi
-   if [ -r $buffdir/buffer/maci/playback ]; then
-	 buffexe=$buffdir'/buffer/maci/playback'
-   fi
+	 arch='maci'
+fi
+buffexe=$buffdir'/buffer/bin/playback';
+if [ -r $buffdir/playback ]; then
+    buffexe=$buffdir'/playback';
+fi
+if [ -r $buffdir/buffer/bin/${arch}/playback ]; then
+	 buffexe=$buffdir'/buffer/bin/${arch}/playback';
+fi
+if [ -r $buffdir/buffer/${arch}/playback ]; then
+	 buffexe=$buffdir'/buffer/${arch}/playback';
 fi
 $buffexe $@ > $logfile 

@@ -286,10 +286,15 @@ res.opt.Ci  =optCi;
 res.opt.C   =Cs(optCi);
 res.opt.tstbin=res.tstbin(:,:,optCi); 
 res.opt.trnbin=res.trnbin(:,:,optCi); 
+res.opt.tstf  =res.tstf(:,:,optCi);
 if ( opts.outerSoln>0 ) % use classifier trained on all the data
    res.opt.soln=res.soln(:,optCi);
-   res.opt.f   =res.f(:,:,optCi);   
-   res.opt.tstf=res.tstf(:,:,optCi);
+   % override tstf information for non-training data examples with those trained on all the data
+   % now tstf contains val fold predictions in training set, and opt predictions for the rest
+   for spi=1:nSubProbs; % loop over sub-problems
+     exInd = all(fIdxs(:,min(end,spi),:)==0,3); Ytrn(exInd,:)=0; % excluded points         
+     res.opt.tstf(exInd,spi)=res.opt.f(exInd);
+   end
 elseif( opts.outerSoln<0 ) % re-train with the optimal parameters found
   for spi=1:nSubProbs; % loop over sub-problems
     if ( ~opts.binsp ) spi=1:size(Y,2); end; % set spi to set sub-probs if not binary
@@ -297,12 +302,15 @@ elseif( opts.outerSoln<0 ) % re-train with the optimal parameters found
       if ( nSubProbs>1 ) fprintf('(opt/%2d)\t',spi); else; fprintf('(opt)\t'); end;
     end
     Ytrn = Y(:,spi);
-    exInd = all(fIdxs(:,min(end,spi),:)==0,3); Ytrn(exInd,:)=0; % excluded points    
+    exInd = all(fIdxs(:,min(end,spi),:)==0,3) | Ytrn==0; Ytrn(exInd,:)=0; % excluded points    
     [seed,f,J]=feval(objFn,X,Ytrn,res.opt.C,'verb',opts.verb-1,...
                      'dim',opts.dim,varargin{:});
     if ( isstruct(seed) && isfield(seed,'soln') ) sol=seed.soln; else sol=seed; end;
     if ( opts.binsp ) res.opt.soln{spi}=sol; else res.opt.soln{1}=sol; end;
     res.opt.f(:,spi)=f;      
+    % override tstf information for non-training data examples with those trained on all the data
+    % now tstf contains val fold predictions in training set, and opt predictions for the rest
+    res.opt.tstf(exInd,spi)=f(exInd);
     if( opts.verb > -1 ) 
       if( numel(spi)>1 ) fprintf('['); end;
       for spii=1:numel(spi); % N.B. we need to loop as dv2conf etc. only work on 1 sub-prob at a time
@@ -339,12 +347,10 @@ elseif( opts.outerSoln==0 ) % estimate from per fold solutions
         end
     end
     res.opt.f    = mean(res.fold.f(:,:,optCi,:),4);
-    res.opt.tstf=res.tstf(:,:,optCi);
   else % use classifier trained on 1 single fold of the data
     optFold=1;
     res.opt.soln=soln(:,optCi,optFold);
     res.opt.f   =res.fold.f(:,:,optCi,optFold);
-    res.opt.tstf=res.tstf(:,:,optCi);
   end
 end
 exInd = all(fIdxs<=0,3); % tst points
@@ -414,7 +420,6 @@ res=cvtrainFn('klr_cg',K,Y,10.^[-3:3],10)
 labScatPlot(X,Y)
 
 % 1vR
-[sp,spDesc]=mc2binSubProb(unique(Y),'1vR');
 Yind=lab2ind(Y);
 Ysp=lab2ind(Y,sp);
 res=cvtrainFn(X,Ysp,10.^[-3:3],10);

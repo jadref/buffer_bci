@@ -1,20 +1,25 @@
 function [W,opts,winFn]=welchpsd(X,dim,varargin);
-% compute the spectrogram of the input X using the STFW method
+% compute the power-spectral-density of the input X using welch's method
 %
 % [W,opts]=welchpsd(X,dim,varargin)
 %
+% Inputs:
+%  X          -- [n-d] the data vector to compute the PSD
+%  dim        -- [int] the dimension of X to compute the PSD along (i.e. time dimension) (1st non-singelton dim)
 % Options: (N.B. just as passed to windowData)
 %  windowType -- type of time windowing to use ('hanning')
 %  nwindows   -- number of windows to use      
 %  overlap    -- fractional overlap of windows (.5)
 %  width_{ms,samp} -- window width in millisec or samples
+%  width_hz        -- specify desired frequency resolution and compute required window width ([])
 %  start_{ms,samp} -- window start locations in millisec or samples
+%  end_{ms,samp}   -- windows end location in millisec or samples
 %  fs         -- sampling rate of the data (only needed is spec with _ms) ([])
 %  verb       -- verbosity level (0)
 %  center     -- [bool] center the data before fft'ing? (1)
 %  detrend    -- [bool] remove linear trends before fft'ing (0)
 %  aveType    -- 'str' one of:                              ('amp')
-%                'amp' - ave amp, 'power' - ave power, 'db' - ave db
+%                'amp' - ave amplitude, 'power' - ave power, 'db' - ave db
 %  outType    -- 'str' type of output to produce.  one of:
 %                'amp' - ave amp, 'power' - ave power, 'db' - ave db
 %  MAXEL      -- max number of elements to run at a time in chunking code
@@ -29,6 +34,7 @@ opts=struct('fs',[],'aveType',[],'outType',[],...
             'width_ms',500,'width_samp',[],... % spec as start+width
             'width_hz',[],...
             'start_ms',[],'start_samp',[],...
+            'end_ms',[],'end_samp',[],...            
             'verb',0,'MAXEL',2e6);
 opts=parseOpts(opts,varargin);
 MAXEL=opts.MAXEL;
@@ -38,10 +44,13 @@ if ( isempty(opts.aveType) )
    end;
 end;
 
+if ( nargin<2 || isempty(dim) ) % use 1st non-singlenton dimension
+  dim = find(size(X)>1);
+end
 dim(dim<0)=dim(dim<0)+ndims(X)+1; % convert neg dim specs
 
 % extract window size from given window function
-if( ~isstr(opts.windowType) ) opts.width_samp=numel(opts.windowType); end; 
+if( ~isstr(opts.windowType) && isempty(opts.width_samp) ) opts.width_samp=numel(opts.windowType); end; 
 
 % convert win-specs from time to samples if necessary
 ms2samp=[]; if (~isempty(opts.fs)) ms2samp=opts.fs./1000; end;
@@ -52,6 +61,10 @@ if ( isempty(opts.width_samp) )
   end;
 end
 if ( isempty(opts.start_samp) )    opts.start_samp = floor(opts.start_ms*ms2samp); end;
+if ( ~isempty(opts.end_samp) || ~isempty(opts.end_ms) )     
+  end_samp=opts.end_samp; if ( isempty(end_samp) ) end_samp = floor(opts.end_ms*ms2samp); end;
+  if ( isempty(opts.nwindows) ) opts.nwindows= ceil((end_samp-opts.start_samp(1))/opts.width_samp); end;
+end;
 [start width]=compWinLoc(size(X,dim),opts.nwindows,opts.overlap,opts.start_samp,opts.width_samp);
 opts.nwindows=numel(start);opts.start_samp=start;opts.width_samp=width;
 
@@ -94,8 +107,8 @@ for wi=1:numel(start);
    wX       = 2*(real(wX).^2 + imag(wX).^2); % map to power
    switch(lower(outType));
     case 'db';     wX(wX==0)=eps; W = W + 10*log10(wX); % map to db
-    case 'power';  W = W + wX;         % map to power
-    case 'amp';    W = W + sqrt(wX);     % map to amplitudes
+    case 'power';  W = W + wX;                          % map to power
+    case 'amp';    W = W + sqrt(wX);                    % map to amplitudes
     otherwise;     warning('Unrecognised welch output type: %s',outType);
    end
  end
