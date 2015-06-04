@@ -175,9 +175,11 @@ if ( isequal(opts.sigProcOptsGui,1) )
   end;
   set(optsFighandles.badchrm,'value',ppopts.badchrm);
   ppopts=getSigProcOpts(optsFighandles);
+else
+  damage=false(4,1);	 
 end
 
-endTraining=false; state=[];
+endTraining=false; state=[]; 
 cursamp=hdr.nSamples;
 while ( ~endTraining )  
 
