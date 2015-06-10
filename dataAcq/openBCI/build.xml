@@ -36,11 +36,22 @@
     </target>
 
     <target name="run" depends="jar">
-      <java fork="true" classname="${main-class}"
-				args="/dev/ttyUSB0">
+      <java fork="true" classname="${main-class}">
+		  <arg value="/dev/ttyUSB0"/>
+		  <arg value="localhost:1972"/>
+		  <arg value="6"/>
         <classpath>
 			 <path refid="classpath"/>
 			 <path location="${jar.dir}/${ant.project.name}.jar"/>
+        </classpath>
+      </java>
+    </target>
+
+    <target name="jssc_test" depends="compile">
+      <java fork="true" classname="jssc_test">
+        <classpath>
+			 <path refid="classpath"/>
+			 <path location="${classes.dir}"/>
         </classpath>
       </java>
     </target>

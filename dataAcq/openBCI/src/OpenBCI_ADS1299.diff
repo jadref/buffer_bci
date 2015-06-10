@@ -1,0 +1,578 @@
+25c25,27
+< final String command_stop = "s";
+---
+> class OpenBCI_ADS1299 {
+> 
+> public static final String command_stop = "s";
+27,31c29,33
+< final String command_startBinary = "b";
+< final String command_startBinary_wAux = "n";  // already doing this with 'b' now
+< final String command_startBinary_4chan = "v";  // not necessary now
+< final String command_activateFilters = "f";  // swithed from 'F' to 'f'  ... but not necessary because taken out of hardware code
+< final String command_deactivateFilters = "g";  // not necessary anymore 
+---
+> public static final String command_startBinary = "b";
+> public static final String command_startBinary_wAux = "n";  // already doing this with 'b' now
+> public static final String command_startBinary_4chan = "v";  // not necessary now
+> public static final String command_activateFilters = "f";  // swithed from 'F' to 'f'  ... but not necessary because taken out of hardware code
+> public static final String command_deactivateFilters = "g";  // not necessary anymore 
+33,34c35,36
+< final String[] command_deactivate_channel = {"1", "2", "3", "4", "5", "6", "7", "8", "q", "w", "e", "r", "t", "y", "u", "i"};
+< final String[] command_activate_channel = {"!", "@", "#", "$", "%", "^", "&", "*","Q", "W", "E", "R", "T", "Y", "U", "I"};
+---
+> public static final String[] command_deactivate_channel = {"1", "2", "3", "4", "5", "6", "7", "8", "q", "w", "e", "r", "t", "y", "u", "i"};
+> public static final String[] command_activate_channel = {"!", "@", "#", "$", "%", "^", "&", "*","Q", "W", "E", "R", "T", "Y", "U", "I"};
+36c38
+< int channelDeactivateCounter = 0; //used for re-deactivating channels after switching settings...
+---
+> public static int channelDeactivateCounter = 0; //used for re-deactivating channels after switching settings...
+47,48d48
+< 
+< class OpenBCI_ADS1299 {
+77c77
+<   int prevState_millis = 0;
+---
+>   long prevState_millis = 0;
+93,94c93,94
+<   private float ADS1299_gain = 24.0;  //assumed gain setting for ADS1299.  set by its Arduino code
+<   private float scale_fac_uVolts_per_count = ADS1299_Vref / ((float)(pow(2,23)-1)) / ADS1299_gain  * 1000000.f; //ADS1299 datasheet Table 7, confirmed through experiment
+---
+>   private float ADS1299_gain = 24.0f;  //assumed gain setting for ADS1299.  set by its Arduino code
+>   private float scale_fac_uVolts_per_count = ADS1299_Vref / ((float)(Math.pow(2,23)-1)) / ADS1299_gain  * 1000000.f; //ADS1299 datasheet Table 7, confirmed through experiment
+96c96
+<   private final float scale_fac_accel_G_per_count = 0.002 / ((float)pow(2,4));  //assume set to +/4G, so 2 mG per digit (datasheet). Account for 4 bits unused
+---
+>   private final float scale_fac_accel_G_per_count = 0.002f / ((float)Math.pow(2,4));  //assume set to +/4G, so 2 mG per digit (datasheet). Account for 4 bits unused
+98c98
+<   private final float leadOffDrive_amps = 6.0e-9;  //6 nA, set by its Arduino code
+---
+>   private final float leadOffDrive_amps = 6.0e-9f;  //6 nA, set by its Arduino code
+116c116
+<     scale_fac_uVolts_per_count = ADS1299_Vref / ((float)(pow(2,23)-1)) / ADS1299_gain  * 1000000.0; //ADS1299 datasheet Table 7, confirmed through experiment
+---
+>     scale_fac_uVolts_per_count = ADS1299_Vref / ((float)(Math.pow(2,23)-1)) / ADS1299_gain  * 1000000.0f; //ADS1299 datasheet Table 7, confirmed through experiment
+125c125,147
+<   
+---
+> 
+> 	 static public int nchan=8;
+> 	 public int getnChan() { return nchan; }
+> 	 public int setnChan(int nch) { 
+> 		  if ( nch != nchan ) {
+> 				System.err.println("Error currently doesn't support other than 8 channels.... ");
+> 				return nchan;
+> 		  }
+> 		  // nchan=nch;
+> 		  return nchan;
+> 	 }
+> 	 static public String sdSettingString = "Do not write to SD";
+> 	 public String getSDSettingString(){ return sdSettingString; }
+> 	 public String setSDSettingString(String nstr){
+> 		  System.err.println("Error currently doesn't support other sd modes.... ");
+> 		  // sdSettingString=nstr;
+> 		  return sdSettingString;		  
+> 	 }
+> 	 static protected int systemMode=0;
+> 	 static protected boolean currentlySyncing=false;
+> 	 static protected boolean isRunning=false;
+> 	 static protected long timeSinceStopRunning=0;
+> 
+127,128c149,151
+<   OpenBCI_ADS1299() {};  //only use this if you simply want access to some of the constants
+<   OpenBCI_ADS1299(PApplet applet, String comPort, int baud, int nEEGValuesPerOpenBCI, boolean useAux, int nAuxValuesPerPacket) {
+---
+>   //OpenBCI_ADS1299() {};  //only use this if you simply want access to some of the constants
+>   OpenBCI_ADS1299(String comPort, int baud, int nEEGValuesPerOpenBCI, boolean useAux, int nAuxValuesPerPacket) {
+> 		
+132c155
+<     println("OpenBCI_ADS1299: prefered_datamode = " + prefered_datamode + ", nValuesPerPacket = " + nEEGValuesPerPacket);
+---
+>     System.out.println("OpenBCI_ADS1299: prefered_datamode = " + prefered_datamode + ", nValuesPerPacket = " + nEEGValuesPerPacket);
+138c161
+<         //println("OpenBCI_ADS1299: nAuxValuesPerPacket = " + nAuxValuesPerPacket + " so setting prefered_datamode to " + prefered_datamode);
+---
+>         //System.out.println("OpenBCI_ADS1299: nAuxValuesPerPacket = " + nAuxValuesPerPacket + " so setting prefered_datamode to " + prefered_datamode);
+142c165
+<     println("OpenBCI_ADS1299: a");
+---
+>     System.out.println("OpenBCI_ADS1299: a");
+162c185
+<     println("OpenBCI_ADS1299: b");
+---
+>     System.out.println("OpenBCI_ADS1299: b");
+165c188
+<     //println("OpenBCI_ADS1299: port is open? ... " + portIsOpen);
+---
+>     //System.out.println("OpenBCI_ADS1299: port is open? ... " + portIsOpen);
+171,173c194,196
+<     println("OpenBCI_ADS1299: i");
+<     openSerialPort(applet, comPort, baud);
+<     println("OpenBCI_ADS1299: j");
+---
+>     System.out.println("OpenBCI_ADS1299: i");
+>     openSerialPort(comPort, baud);
+>     System.out.println("OpenBCI_ADS1299: j");
+180c203
+<   private int openSerialPort(PApplet applet, String comPort, int baud) {
+---
+>   private int openSerialPort(String comPort, int baud) {
+183,184c206,207
+<       println("OpenBCI_ADS1299: openSerialPort: attempting to open serial port " + openBCI_portName);
+<       serial_openBCI = new Serial(applet,comPort,baud); //open the com port
+---
+>       System.out.println("OpenBCI_ADS1299: openSerialPort: attempting to open serial port " + comPort);
+>       serial_openBCI = new Serial(comPort,baud); //open the com port
+187c210
+<       println("OpenBCI_ADS1299: openSerialPort: port is open (t)? ... " + portIsOpen);
+---
+>       System.out.println("OpenBCI_ADS1299: openSerialPort: port is open (t)? ... " + portIsOpen);
+203c226
+<     prevState_millis = millis();
+---
+>     prevState_millis = System.currentTimeMillis();
+210c233
+<     //   // println("OpenBCI_ADS1299: finalizeCOMINIT: Initializing Serial: millis() = " + millis());
+---
+>     //   // System.out.println("OpenBCI_ADS1299: finalizeCOMINIT: Initializing Serial: millis() = " + millis());
+212,213c235,236
+<     //     //serial_openBCI.write(command_activates + "\n"); println("Processing: OpenBCI_ADS1299: activating filters");
+<     //     println("OpenBCI_ADS1299: finalizeCOMINIT: State = NORMAL");
+---
+>     //     //serial_openBCI.write(command_activates + "\n"); System.out.println("Processing: OpenBCI_ADS1299: activating filters");
+>     //     System.out.println("OpenBCI_ADS1299: finalizeCOMINIT: State = NORMAL");
+235c258
+<     println("Closing any open SD file. Writing 'j' to OpenBCI.");
+---
+>     System.out.println("Closing any open SD file. Writing 'j' to OpenBCI.");
+237c260
+<     delay(100); //make sure 'j' gets sent to the board
+---
+>     try{Thread.sleep(100);}catch (InterruptedException e){} //make sure 'j' gets sent to the board
+243c266
+<     println("OpenBCI_ADS1299: closeSerialPort: d");
+---
+>     System.out.println("OpenBCI_ADS1299: closeSerialPort: d");
+245c268
+<     println("OpenBCI_ADS1299: closeSerialPort: e");
+---
+>     System.out.println("OpenBCI_ADS1299: closeSerialPort: e");
+247c270
+<     println("OpenBCI_ADS1299: closeSerialPort: e2");
+---
+>     System.out.println("OpenBCI_ADS1299: closeSerialPort: e2");
+249c272
+<     println("OpenBCI_ADS1299: closeSerialPort: f");
+---
+>     System.out.println("OpenBCI_ADS1299: closeSerialPort: f");
+251c274
+<     println("OpenBCI_ADS1299: closeSerialPort: g");
+---
+>     System.out.println("OpenBCI_ADS1299: closeSerialPort: g");
+253c276
+<     println("OpenBCI_ADS1299: closeSerialPort: h");
+---
+>     System.out.println("OpenBCI_ADS1299: closeSerialPort: h");
+261c284
+<       //   println("openBCI_GUI: syncWithHardware: [0] Sending 'v' to OpenBCI to reset hardware in case of 32bit board...");
+---
+>       //   System.out.println("openBCI_GUI: syncWithHardware: [0] Sending 'v' to OpenBCI to reset hardware in case of 32bit board...");
+265c288
+<         println("OpenBCI_ADS1299: syncWithHardware: [1] Sending channel count (" + nchan + ") to OpenBCI...");
+---
+>         System.out.println("OpenBCI_ADS1299: syncWithHardware: [1] Sending channel count (" + nchan + ") to OpenBCI...");
+275c298
+<         println("OpenBCI_ADS1299: syncWithHardware: [2] Reseting OpenBCI registers to default... writing \'d\'...");
+---
+>         System.out.println("OpenBCI_ADS1299: syncWithHardware: [2] Reseting OpenBCI registers to default... writing \'d\'...");
+279c302
+<         println("OpenBCI_ADS1299: syncWithHardware: [3] Retrieving OpenBCI's channel settings to sync with GUI... writing \'D\'... waiting for $$$...");
+---
+>         System.out.println("OpenBCI_ADS1299: syncWithHardware: [3] Retrieving OpenBCI's channel settings to sync with GUI... writing \'D\'... waiting for $$$...");
+284c307
+<         println("OpenBCI_ADS1299: syncWithHardware: [4] Retrieving OpenBCI's full register map for verification... writing \'?\'... waiting for $$$...");
+---
+>         System.out.println("OpenBCI_ADS1299: syncWithHardware: [4] Retrieving OpenBCI's full register map for verification... writing \'?\'... waiting for $$$...");
+319c342
+<         println("OpenBCI_ADS1299: syncWithHardware: [5] Writing selected SD setting (" + sdSettingString + ") to OpenBCI...");
+---
+>         System.out.println("OpenBCI_ADS1299: syncWithHardware: [5] Writing selected SD setting (" + sdSettingString + ") to OpenBCI...");
+325c348
+<         output("OpenBCI_ADS1299: syncWithHardware: The GUI is done intializing. Click outside of the control panel to interact with the GUI.");
+---
+>         System.out.println("OpenBCI_ADS1299: syncWithHardware: The GUI is done intializing. Click outside of the control panel to interact with the GUI.");
+335c358
+<     if ( (millis() - prevState_millis > COM_INIT_MSEC) && (prevState_millis != 0) && (state == openBCI.STATE_COMINIT) ) {
+---
+>     if ( (System.currentTimeMillis() - prevState_millis > COM_INIT_MSEC) && (prevState_millis != 0) && (state == STATE_COMINIT) ) {
+337c360
+<       timeOfLastCommand = millis();
+---
+>       timeOfLastCommand = System.currentTimeMillis();
+341c364
+<       println("OpenBCI_ADS1299: systemUpdate: [0] Sending 'v' to OpenBCI to reset hardware in case of 32bit board...");
+---
+>       System.out.println("OpenBCI_ADS1299: systemUpdate: [0] Sending 'v' to OpenBCI to reset hardware in case of 32bit board...");
+347,348c370,371
+<       if(millis() - timeOfLastCommand > 200 && readyToSend == true){
+<         timeOfLastCommand = millis();
+---
+>       if(System.currentTimeMillis() - timeOfLastCommand > 200 && readyToSend == true){
+>         timeOfLastCommand = System.currentTimeMillis();
+357c380
+<       serial_openBCI.write(key);//send the value as ascii (with a newline character?)
+---
+>       serial_openBCI.write(val);//send the value as ascii (with a newline character?)
+366c389
+<       println("OpenBCI_ADS1299: startDataTransfer(): writing \'" + command_startBinary + "\' to the serial port...");
+---
+>       System.out.println("OpenBCI_ADS1299: startDataTransfer(): writing \'" + command_startBinary + "\' to the serial port...");
+374,375c397,398
+<       openBCI.changeState(STATE_STOPPED);  // make sure it's now interpretting as binary
+<       println("OpenBCI_ADS1299: startDataTransfer(): writing \'" + command_stop + "\' to the serial port...");
+---
+>       changeState(STATE_STOPPED);  // make sure it's now interpretting as binary
+>       System.out.println("OpenBCI_ADS1299: startDataTransfer(): writing \'" + command_stop + "\' to the serial port...");
+397,398c420,421
+<       println("OpenBCI_ADS1299: printRegisters(): Writing ? to OpenBCI...");
+<       openBCI.serial_openBCI.write('?');
+---
+>       System.out.println("OpenBCI_ADS1299: printRegisters(): Writing ? to OpenBCI...");
+>       serial_openBCI.write('?');
+405c428
+<     //println("OpenBCI_ADS1299: read(): State: " + state);
+---
+>     //System.out.println("OpenBCI_ADS1299: read(): State: " + state);
+407c430
+<     byte inByte = byte(serial_openBCI.read());
+---
+> 		byte inByte = (byte)(serial_openBCI.read());
+412,414c435,437
+<       char inASCII = char(inByte); 
+<       if(isRunning == false && (millis() - timeSinceStopRunning) > 500){
+<         print(char(inByte));
+---
+> 		  char inASCII = (char)(inByte); 
+>       if(isRunning == false && (System.currentTimeMillis() - timeSinceStopRunning) > 500){
+> 			 System.out.print((char)(inByte));
+427c450
+<           verbosePrint(" received from OpenBCI... Switching to nchan = 8 bc daisy is not present...");
+---
+>           System.out.print(" received from OpenBCI... Switching to nchan = 8 bc daisy is not present...");
+438c461
+<         verbosePrint(" > EOT detected...");
+---
+>         System.out.println(" > EOT detected...");
+442,446c465,469
+<           println("OpenBCI_ADS1299: read(): x");
+<           println(defaultChannelSettings);
+<           println("OpenBCI_ADS1299: read(): y");
+<           gui.cc.loadDefaultChannelSettings();
+<           println("OpenBCI_ADS1299: read(): z");
+---
+>           System.out.println("OpenBCI_ADS1299: read(): x");
+>           System.out.println(defaultChannelSettings);
+>           System.out.println("OpenBCI_ADS1299: read(): y");
+>           //gui.cc.loadDefaultChannelSettings();
+>           System.out.println("OpenBCI_ADS1299: read(): z");
+449c472
+<         // println(hardwareSyncStep);
+---
+>         // System.out.println(hardwareSyncStep);
+458c481
+<       } catch (IOException e) {
+---
+>       } catch ( java.io.IOException e) {
+465c488
+<     return int(inByte);
+---
+>     return (int)(inByte);
+494c517
+<     //println("OpenBCI_ADS1299: interpretBinaryStream: PACKET_readstate " + PACKET_readstate);
+---
+>     //System.out.println("OpenBCI_ADS1299: interpretBinaryStream: PACKET_readstate " + PACKET_readstate);
+498,499c521,522
+<          if (actbyte == byte(0xA0)) {          // look for start indicator
+<           // println("OpenBCI_ADS1299: interpretBinaryStream: found 0xA0");
+---
+>          if (actbyte == (byte)(0xA0)) {          // look for start indicator
+>           // System.out.println("OpenBCI_ADS1299: interpretBinaryStream: found 0xA0");
+505c528
+<         // println("case 1");
+---
+>         // System.out.println("case 1");
+507c530
+<         rawReceivedDataPacket.sampleIndex = int(inByte); //changed by JAM
+---
+>         rawReceivedDataPacket.sampleIndex = (int)(inByte); //changed by JAM
+511c534
+<             println("OpenBCI_ADS1299: apparent sampleIndex jump from Serial data: " + prevSampleIndex + " to  " + rawReceivedDataPacket.sampleIndex + ".  Keeping packet. (" + serialErrorCounter + ")");
+---
+>             System.out.println("OpenBCI_ADS1299: apparent sampleIndex jump from Serial data: " + prevSampleIndex + " to  " + rawReceivedDataPacket.sampleIndex + ".  Keeping packet. (" + serialErrorCounter + ")");
+521c544
+<         // println("case 2");
+---
+>         // System.out.println("case 2");
+529c552
+<             //println("OpenBCI_ADS1299: interpretBinaryStream: localChannelCounter = " + localChannelCounter);
+---
+>             //System.out.println("OpenBCI_ADS1299: interpretBinaryStream: localChannelCounter = " + localChannelCounter);
+543c566
+<         // println("case 3");
+---
+>         // System.out.println("case 3");
+551c574
+<             //println("OpenBCI_ADS1299: interpretBinaryStream: Accel Data: " + rawReceivedDataPacket.auxValues[0] + ", " + rawReceivedDataPacket.auxValues[1] + ", " + rawReceivedDataPacket.auxValues[2]);
+---
+>             //System.out.println("OpenBCI_ADS1299: interpretBinaryStream: Accel Data: " + rawReceivedDataPacket.auxValues[0] + ", " + rawReceivedDataPacket.auxValues[1] + ", " + rawReceivedDataPacket.auxValues[2]);
+563,566c586,589
+<         // println("case 4");
+<         if (actbyte == byte(0xC0)) {    // if correct end delimiter found:
+<           // println("... 0xC0 found");
+<           //println("OpenBCI_ADS1299: interpretBinaryStream: found end byte. Setting isNewDataPacketAvailable to TRUE");
+---
+>         // System.out.println("case 4");
+>         if (actbyte == (byte)(0xC0)) {    // if correct end delimiter found:
+>           // System.out.println("... 0xC0 found");
+>           //System.out.println("OpenBCI_ADS1299: interpretBinaryStream: found end byte. Setting isNewDataPacketAvailable to TRUE");
+571,572c594,595
+<           println("OpenBCI_ADS1299: interpretBinaryStream: Actbyte = " + actbyte);
+<           println("OpenBCI_ADS1299: interpretBinaryStream: expecteding end-of-packet byte is missing.  Discarding packet. (" + serialErrorCounter + ")");
+---
+>           System.out.println("OpenBCI_ADS1299: interpretBinaryStream: Actbyte = " + actbyte);
+>           System.out.println("OpenBCI_ADS1299: interpretBinaryStream: expecteding end-of-packet byte is missing.  Discarding packet. (" + serialErrorCounter + ")");
+577c600
+<           println("OpenBCI_ADS1299: interpretBinaryStream: Unknown byte: " + actbyte + " .  Continuing...");
+---
+>           System.out.println("OpenBCI_ADS1299: interpretBinaryStream: Unknown byte: " + actbyte + " .  Continuing...");
+594c617
+<           gui.cc.powerUpChannel(Ichan);
+---
+>           //gui.cc.powerUpChannel(Ichan);
+597c620
+<           gui.cc.powerDownChannel(Ichan);
+---
+>           //gui.cc.powerDownChannel(Ichan);
+632c655
+<   //   //println("OpenBCI_ADS1299: changeImpedanceState: Ichan " + Ichan + ", activate " + activate + ", code_P_N_Both " + code_P_N_Both);
+---
+>   //   //System.out.println("OpenBCI_ADS1299: changeImpedanceState: Ichan " + Ichan + ", activate " + activate + ", code_P_N_Both " + code_P_N_Both);
+659c682
+<   //       println("OpenBCI_ADS1299: setBiasAutoState: setting bias to AUTO");
+---
+>   //       System.out.println("OpenBCI_ADS1299: setBiasAutoState: setting bias to AUTO");
+662c685
+<   //       println("OpenBCI_ADS1299: setBiasAutoState: setting bias to REF ONLY");
+---
+>   //       System.out.println("OpenBCI_ADS1299: setBiasAutoState: setting bias to REF ONLY");
+732c755
+<       timeOfLastChannelWrite = millis();
+---
+>       timeOfLastChannelWrite = System.currentTimeMillis();
+738,739c761,762
+<     if (millis() - timeOfLastChannelWrite >= 50) { //wait 50 milliseconds before sending next character
+<       verbosePrint("---");
+---
+>     if (System.currentTimeMillis() - timeOfLastChannelWrite >= 50) { //wait 50 milliseconds before sending next character
+>       System.out.println("---");
+742c765
+<           verbosePrint("x" + " :: " + millis());
+---
+>           System.out.println("x" + " :: " + System.currentTimeMillis());
+744c767
+<           timeOfLastChannelWrite = millis();
+---
+>           timeOfLastChannelWrite = System.currentTimeMillis();
+748c771
+<           verbosePrint(str(_numChannel+1) + " :: " + millis());
+---
+>           System.out.println((_numChannel+1) + " :: " + System.currentTimeMillis());
+753c776
+<             //openBCI.serial_openBCI.write((command_activate_channel_daisy[_numChannel-8]));
+---
+>             //serial_openBCI.write((command_activate_channel_daisy[_numChannel-8]));
+756c779
+<           timeOfLastChannelWrite = millis();
+---
+>           timeOfLastChannelWrite = System.currentTimeMillis();
+760c783
+<           verbosePrint(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + millis());
+---
+>           System.out.println(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + System.currentTimeMillis());
+763c786
+<           timeOfLastChannelWrite = millis();
+---
+>           timeOfLastChannelWrite = System.currentTimeMillis();
+767c790
+<           verbosePrint(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + millis());
+---
+>           System.out.println(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + System.currentTimeMillis());
+770c793
+<           timeOfLastChannelWrite = millis();
+---
+>           timeOfLastChannelWrite = System.currentTimeMillis();
+774c797
+<           verbosePrint(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + millis());
+---
+>           System.out.println(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + System.currentTimeMillis());
+777c800
+<           timeOfLastChannelWrite = millis();
+---
+>           timeOfLastChannelWrite = System.currentTimeMillis();
+781c804
+<           verbosePrint(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + millis());
+---
+>           System.out.println(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + System.currentTimeMillis());
+784c807
+<           timeOfLastChannelWrite = millis();
+---
+>           timeOfLastChannelWrite = System.currentTimeMillis();
+788c811
+<           verbosePrint(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + millis());
+---
+>           System.out.println(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + System.currentTimeMillis());
+791c814
+<           timeOfLastChannelWrite = millis();
+---
+>           timeOfLastChannelWrite = System.currentTimeMillis();
+795c818
+<           verbosePrint(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + millis());
+---
+>           System.out.println(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + System.currentTimeMillis());
+798c821
+<           timeOfLastChannelWrite = millis();
+---
+>           timeOfLastChannelWrite = System.currentTimeMillis();
+802c825
+<           verbosePrint("X" + " :: " + millis());
+---
+>           System.out.println("X" + " :: " + System.currentTimeMillis());
+804c827
+<           timeOfLastChannelWrite = millis();
+---
+>           timeOfLastChannelWrite = System.currentTimeMillis();
+812c835
+<                 verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
+---
+>                 System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+819c842
+<                 verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
+---
+>                 System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+826c849
+<                 verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
+---
+>                 System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+833c856
+<                 verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
+---
+>                 System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+840c863
+<                 verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
+---
+>                 System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+847c870
+<                 verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
+---
+>                 System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+854c877
+<                 verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
+---
+>                 System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+861c884
+<                 verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
+---
+>                 System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+867c890
+<                 verbosePrint("done writing channel.");
+---
+>                 System.out.println("done writing channel.");
+877c900
+<                 verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
+---
+>                 System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+884c907
+<                 verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
+---
+>                 System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+891c914
+<                 verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
+---
+>                 System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+898c921
+<                 verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
+---
+>                 System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+905c928
+<                 verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
+---
+>                 System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+912c935
+<                 verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
+---
+>                 System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+919c942
+<                 verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
+---
+>                 System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+926c949
+<                 verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
+---
+>                 System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+929c952
+<               verbosePrint("done writing channel.");
+---
+>               System.out.println("done writing channel.");
+936c959
+<           // verbosePrint("done writing channel.");
+---
+>           // System.out.println("done writing channel.");
+939c962
+<           timeOfLastChannelWrite = millis();
+---
+>           timeOfLastChannelWrite = System.currentTimeMillis();
+942c965
+<       // timeOfLastChannelWrite = millis();
+---
+>       // timeOfLastChannelWrite = System.currentTimeMillis();
+952c975
+<         timeOfLastImpWrite = millis();
+---
+>         timeOfLastImpWrite = System.currentTimeMillis();
+958c981
+<     // verbosePrint("Writing impedance settings for channel " + _numChannel + " to OpenBCI!");
+---
+>     // System.out.println("Writing impedance settings for channel " + _numChannel + " to OpenBCI!");
+960,961c983,984
+<     if (millis() - timeOfLastImpWrite >= 50) { //wait 50 milliseconds before sending next character
+<       verbosePrint("---");
+---
+>     if (System.currentTimeMillis() - timeOfLastImpWrite >= 50) { //wait 50 milliseconds before sending next character
+>       System.out.println("---");
+964c987
+<           verbosePrint("z" + " :: " + millis());
+---
+>           System.out.println("z" + " :: " + System.currentTimeMillis());
+968c991
+<           verbosePrint(str(_numChannel+1) + " :: " + millis());
+---
+>           System.out.println((_numChannel+1) + " :: " + System.currentTimeMillis());
+973c996
+<             //openBCI.serial_openBCI.write((command_activate_channel_daisy[_numChannel-8]));
+---
+>             //serial_openBCI.write((command_activate_channel_daisy[_numChannel-8]));
+979c1002
+<           verbosePrint(impedanceCheckValues[_numChannel][impWriteCounter-2] + " :: " + millis());
+---
+>           System.out.println(impedanceCheckValues[_numChannel][impWriteCounter-2] + " :: " + System.currentTimeMillis());
+984c1007
+<           verbosePrint("Z" + " :: " + millis());
+---
+>           System.out.println("Z" + " :: " + System.currentTimeMillis());
+988c1011
+<           verbosePrint("done writing imp settings.");
+---
+>           System.out.println("done writing imp settings.");
+993c1016
+<       timeOfLastImpWrite = millis();
+---
+>       timeOfLastImpWrite = System.currentTimeMillis();

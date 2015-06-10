@@ -22,21 +22,18 @@
 //import processing.serial.*;
 import java.io.OutputStream; //for logging raw bytes to an output file
 
-class OpenBCI_ADS1299 {
-
-public static final String command_stop = "s";
+final String command_stop = "s";
 // final String command_startText = "x";
-public static final String command_startBinary = "b";
-public static final String command_startBinary_wAux = "n";  // already doing this with 'b' now
-public static final String command_startBinary_4chan = "v";  // not necessary now
-public static final String command_activateFilters = "f";  // swithed from 'F' to 'f'  ... but not necessary because taken out of hardware code
-public static final String command_deactivateFilters = "g";  // not necessary anymore 
+final String command_startBinary = "b";
+final String command_startBinary_wAux = "n";  // already doing this with 'b' now
+final String command_startBinary_4chan = "v";  // not necessary now
+final String command_activateFilters = "f";  // swithed from 'F' to 'f'  ... but not necessary because taken out of hardware code
+final String command_deactivateFilters = "g";  // not necessary anymore 
 
-public static final String[] command_deactivate_channel = {"1", "2", "3", "4", "5", "6", "7", "8", "q", "w", "e", "r", "t", "y", "u", "i"};
-public static final String[] command_activate_channel = {"!", "@", "#", "$", "%", "^", "&", "*","Q", "W", "E", "R", "T", "Y", "U", "I"};
-	 public static final String[] command_startTest = {"0", "-", "=", "p", "[", "]"};
+final String[] command_deactivate_channel = {"1", "2", "3", "4", "5", "6", "7", "8", "q", "w", "e", "r", "t", "y", "u", "i"};
+final String[] command_activate_channel = {"!", "@", "#", "$", "%", "^", "&", "*","Q", "W", "E", "R", "T", "Y", "U", "I"};
 
-public static int channelDeactivateCounter = 0; //used for re-deactivating channels after switching settings...
+int channelDeactivateCounter = 0; //used for re-deactivating channels after switching settings...
 
 //everything below is now deprecated...
 // final String[] command_activate_leadoffP_channel = {"!", "@", "#", "$", "%", "^", "&", "*"};  //shift + 1-8
@@ -47,6 +44,8 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
 // final String command_biasFixed = "~";
 
 // ArrayList defaultChannelSettings;
+
+class OpenBCI_ADS1299 {
   
   //final static int DATAMODE_TXT = 0;
   final static int DATAMODE_BIN = 2;
@@ -75,7 +74,7 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
   
   private int state = STATE_NOCOM;
   int dataMode = -1;
-  long prevState_millis = 0;
+  int prevState_millis = 0;
   
   private int nEEGValuesPerPacket = 8; //defined by the data format sent by openBCI boards
   //int nAuxValuesPerPacket = 3; //defined by the data format sent by openBCI boards
@@ -91,12 +90,12 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
   
   private final float fs_Hz = 250.0f;  //sample rate used by OpenBCI board...set by its Arduino code
   private final float ADS1299_Vref = 4.5f;  //reference voltage for ADC in ADS1299.  set by its hardware
-  private float ADS1299_gain = 24.0f;  //assumed gain setting for ADS1299.  set by its Arduino code
-  private float scale_fac_uVolts_per_count = ADS1299_Vref / ((float)(Math.pow(2,23)-1)) / ADS1299_gain  * 1000000.f; //ADS1299 datasheet Table 7, confirmed through experiment
+  private float ADS1299_gain = 24.0;  //assumed gain setting for ADS1299.  set by its Arduino code
+  private float scale_fac_uVolts_per_count = ADS1299_Vref / ((float)(pow(2,23)-1)) / ADS1299_gain  * 1000000.f; //ADS1299 datasheet Table 7, confirmed through experiment
   //float LIS3DH_full_scale_G = 4;  // +/- 4G, assumed full scale setting for the accelerometer
-  private final float scale_fac_accel_G_per_count = 0.002f / ((float)Math.pow(2,4));  //assume set to +/4G, so 2 mG per digit (datasheet). Account for 4 bits unused
+  private final float scale_fac_accel_G_per_count = 0.002 / ((float)pow(2,4));  //assume set to +/4G, so 2 mG per digit (datasheet). Account for 4 bits unused
   //final float scale_fac_accel_G_per_count = 1.0;
-  private final float leadOffDrive_amps = 6.0e-9f;  //6 nA, set by its Arduino code
+  private final float leadOffDrive_amps = 6.0e-9;  //6 nA, set by its Arduino code
   
   boolean isBiasAuto = true; //not being used?
 
@@ -114,7 +113,7 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
   public float get_Vref() { return ADS1299_Vref; }
   public void set_ADS1299_gain(float _gain) { 
     ADS1299_gain = _gain;  
-    scale_fac_uVolts_per_count = ADS1299_Vref / ((float)(Math.pow(2,23)-1)) / ADS1299_gain  * 1000000.0f; //ADS1299 datasheet Table 7, confirmed through experiment
+    scale_fac_uVolts_per_count = ADS1299_Vref / ((float)(pow(2,23)-1)) / ADS1299_gain  * 1000000.0; //ADS1299 datasheet Table 7, confirmed through experiment
   }
   public float get_ADS1299_gain() { return ADS1299_gain; }
   public float get_scale_fac_uVolts_per_count() { return scale_fac_uVolts_per_count; }
@@ -123,49 +122,24 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
   public String get_defaultChannelSettings() { return defaultChannelSettings; }
   public int get_state() { return state;};
   public boolean get_isNewDataPacketAvailable() { return isNewDataPacketAvailable; }
-	 public boolean get_readyToSend(){ return readyToSend; }
-
-	 static public int nchan=8;
-	 public int get_nChan() { return nchan; }
-	 public int set_nChan(int nch) { 
-		  if ( nch != nchan ) {
-				System.err.println("Error currently doesn't support other than 8 channels.... ");
-				return nchan;
-		  }
-		  // nchan=nch;
-		  return nchan;
-	 }
-	 public int get_nAux(){ return nAuxValues; }
-	 static public String sdSettingString = "Do not write to SD";
-	 public String getSDSettingString(){ return sdSettingString; }
-	 public String setSDSettingString(String nstr){
-		  System.err.println("Error currently doesn't support other sd modes.... ");
-		  // sdSettingString=nstr;
-		  return sdSettingString;		  
-	 }
-	 static protected int systemMode=0;
-	 static protected boolean currentlySyncing=false;
-	 static protected boolean isRunning=false;
-	 static protected long timeSinceStopRunning=0;
-
+  
   //constructors
-  //OpenBCI_ADS1299() {};  //only use this if you simply want access to some of the constants
-  OpenBCI_ADS1299(String comPort, int baud, int nEEGValuesPerOpenBCI, boolean useAux, int nAuxValuesPerPacket) {
-		
+  OpenBCI_ADS1299() {};  //only use this if you simply want access to some of the constants
+  OpenBCI_ADS1299(PApplet applet, String comPort, int baud, int nEEGValuesPerOpenBCI, boolean useAux, int nAuxValuesPerPacket) {
     nAuxValues=nAuxValuesPerPacket;
     
     //choose data mode
-    System.out.println("OpenBCI_ADS1299: prefered_datamode = " + prefered_datamode + ", nValuesPerPacket = " + nEEGValuesPerPacket);
+    println("OpenBCI_ADS1299: prefered_datamode = " + prefered_datamode + ", nValuesPerPacket = " + nEEGValuesPerPacket);
     if (prefered_datamode == DATAMODE_BIN_WAUX) {
       if (!useAux) {
         //must be requesting the aux data, so change the referred data mode
         prefered_datamode = DATAMODE_BIN;
         nAuxValues = 0;
-        //System.out.println("OpenBCI_ADS1299: nAuxValuesPerPacket = " + nAuxValuesPerPacket + " so setting prefered_datamode to " + prefered_datamode);
+        //println("OpenBCI_ADS1299: nAuxValuesPerPacket = " + nAuxValuesPerPacket + " so setting prefered_datamode to " + prefered_datamode);
       }
     }
 
-    System.out.println("OpenBCI_ADS1299: a");
+    println("OpenBCI_ADS1299: a");
 
     dataMode = prefered_datamode;
 
@@ -185,32 +159,32 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
       //prevDataPacket.auxValues[i] = 0;
     }
 
-    System.out.println("OpenBCI_ADS1299: b");
+    println("OpenBCI_ADS1299: b");
 
     //prepare the serial port  ... close if open
-    //System.out.println("OpenBCI_ADS1299: port is open? ... " + portIsOpen);
+    //println("OpenBCI_ADS1299: port is open? ... " + portIsOpen);
     //if(portIsOpen == true) {
     if (isSerialPortOpen()) {
       closeSerialPort();
     }
 
-    System.out.println("OpenBCI_ADS1299: i");
-    openSerialPort(comPort, baud);
-    System.out.println("OpenBCI_ADS1299: j");
+    println("OpenBCI_ADS1299: i");
+    openSerialPort(applet, comPort, baud);
+    println("OpenBCI_ADS1299: j");
     
     //open file for raw bytes
     //output = createOutput("rawByteDumpFromProcessing.bin");  //for debugging  WEA 2014-01-26
   }
   
   // //manage the serial port  
-  private int openSerialPort(String comPort, int baud) {
+  private int openSerialPort(PApplet applet, String comPort, int baud) {
     
     try {
-      System.out.println("OpenBCI_ADS1299: openSerialPort: attempting to open serial port " + comPort);
-      serial_openBCI = new Serial(comPort,baud); //open the com port
+      println("OpenBCI_ADS1299: openSerialPort: attempting to open serial port " + openBCI_portName);
+      serial_openBCI = new Serial(applet,comPort,baud); //open the com port
       serial_openBCI.clear(); // clear anything in the com port's buffer    
       portIsOpen = true;
-      System.out.println("OpenBCI_ADS1299: openSerialPort: port is open (t)? ... " + portIsOpen);
+      println("OpenBCI_ADS1299: openSerialPort: port is open (t)? ... " + portIsOpen);
       changeState(STATE_COMINIT);
       return 0;
     } 
@@ -226,17 +200,17 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
 
   public int changeState(int newState) {
     state = newState;
-    prevState_millis = System.currentTimeMillis();
+    prevState_millis = millis();
     return 0;
   }
 
   int finalizeCOMINIT() {
     // //wait specified time for COM/serial port to initialize
     // if (state == STATE_COMINIT) {
-    //   // System.out.println("OpenBCI_ADS1299: finalizeCOMINIT: Initializing Serial: millis() = " + millis());
+    //   // println("OpenBCI_ADS1299: finalizeCOMINIT: Initializing Serial: millis() = " + millis());
     //   if ((millis() - prevState_millis) > COM_INIT_MSEC) {
-    //     //serial_openBCI.write(command_activates + "\n"); System.out.println("Processing: OpenBCI_ADS1299: activating filters");
-    //     System.out.println("OpenBCI_ADS1299: finalizeCOMINIT: State = NORMAL");
+    //     //serial_openBCI.write(command_activates + "\n"); println("Processing: OpenBCI_ADS1299: activating filters");
+    //     println("OpenBCI_ADS1299: finalizeCOMINIT: State = NORMAL");
         changeState(STATE_NORMAL);
     //     // startRunning();
     //   }
@@ -258,25 +232,25 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
   }
   
   public int closeSDFile() {
-    System.out.println("Closing any open SD file. Writing 'j' to OpenBCI.");
+    println("Closing any open SD file. Writing 'j' to OpenBCI.");
     if (serial_openBCI != null) serial_openBCI.write("j"); // tell the SD file to close if one is open...
-    try{Thread.sleep(100);}catch (InterruptedException e){} //make sure 'j' gets sent to the board
+    delay(100); //make sure 'j' gets sent to the board
     return 0;
   }
 
   public int closeSerialPort() {
     // if (serial_openBCI != null) {
-    System.out.println("OpenBCI_ADS1299: closeSerialPort: d");
+    println("OpenBCI_ADS1299: closeSerialPort: d");
     portIsOpen = false;
-    System.out.println("OpenBCI_ADS1299: closeSerialPort: e");
+    println("OpenBCI_ADS1299: closeSerialPort: e");
     serial_openBCI.clear();
-    System.out.println("OpenBCI_ADS1299: closeSerialPort: e2");
+    println("OpenBCI_ADS1299: closeSerialPort: e2");
     serial_openBCI.stop();
-    System.out.println("OpenBCI_ADS1299: closeSerialPort: f");
+    println("OpenBCI_ADS1299: closeSerialPort: f");
     serial_openBCI = null;
-    System.out.println("OpenBCI_ADS1299: closeSerialPort: g");
+    println("OpenBCI_ADS1299: closeSerialPort: g");
     state = STATE_NOCOM;
-    System.out.println("OpenBCI_ADS1299: closeSerialPort: h");
+    println("OpenBCI_ADS1299: closeSerialPort: h");
     return 0;
   }
   
@@ -284,11 +258,11 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
   public void syncWithHardware(int sdSetting){
     switch (hardwareSyncStep) {
       // case 1:
-      //   System.out.println("openBCI_GUI: syncWithHardware: [0] Sending 'v' to OpenBCI to reset hardware in case of 32bit board...");
+      //   println("openBCI_GUI: syncWithHardware: [0] Sending 'v' to OpenBCI to reset hardware in case of 32bit board...");
       //   serial_openBCI.write('v');
       //   readyToSend = false; //wait for $$$ to iterate... applies to commands expecting a response
       case 1: //send # of channels (8 or 16) ... (regular or daisy setup)
-        System.out.println("OpenBCI_ADS1299: syncWithHardware: [1] Sending channel count (" + nchan + ") to OpenBCI...");
+        println("OpenBCI_ADS1299: syncWithHardware: [1] Sending channel count (" + nchan + ") to OpenBCI...");
         if(nchan == 8){
           serial_openBCI.write('c');
         }
@@ -298,16 +272,16 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
         }
         break;
       case 2: //reset hardware to default registers 
-        System.out.println("OpenBCI_ADS1299: syncWithHardware: [2] Reseting OpenBCI registers to default... writing \'d\'...");
+        println("OpenBCI_ADS1299: syncWithHardware: [2] Reseting OpenBCI registers to default... writing \'d\'...");
         serial_openBCI.write("d"); 
         break;
       case 3: //ask for series of channel setting ASCII values to sync with channel setting interface in GUI
-        System.out.println("OpenBCI_ADS1299: syncWithHardware: [3] Retrieving OpenBCI's channel settings to sync with GUI... writing \'D\'... waiting for $$$...");
+        println("OpenBCI_ADS1299: syncWithHardware: [3] Retrieving OpenBCI's channel settings to sync with GUI... writing \'D\'... waiting for $$$...");
         readyToSend = false; //wait for $$$ to iterate... applies to commands expecting a response
         serial_openBCI.write("D"); 
         break;
       case 4: //check existing registers
-        System.out.println("OpenBCI_ADS1299: syncWithHardware: [4] Retrieving OpenBCI's full register map for verification... writing \'?\'... waiting for $$$...");
+        println("OpenBCI_ADS1299: syncWithHardware: [4] Retrieving OpenBCI's full register map for verification... writing \'?\'... waiting for $$$...");
         readyToSend = false; //wait for $$$ to iterate... applies to commands expecting a response
         serial_openBCI.write("?"); 
         break;
@@ -342,13 +316,13 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
             serial_openBCI.write("L");
             break;
         }
-        System.out.println("OpenBCI_ADS1299: syncWithHardware: [5] Writing selected SD setting (" + sdSettingString + ") to OpenBCI...");
+        println("OpenBCI_ADS1299: syncWithHardware: [5] Writing selected SD setting (" + sdSettingString + ") to OpenBCI...");
         if(sdSetting != 0){
           readyToSend = false; //wait for $$$ to iterate... applies to commands expecting a response
         }
         break;
       case 6:
-        System.out.println("OpenBCI_ADS1299: syncWithHardware: The GUI is done intializing. Click outside of the control panel to interact with the GUI.");
+        output("OpenBCI_ADS1299: syncWithHardware: The GUI is done intializing. Click outside of the control panel to interact with the GUI.");
         changeState(STATE_STOPPED);
         systemMode = 10;
         //renitialize GUI if nchan has been updated... needs to be built
@@ -358,20 +332,20 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
   
   public void updateSyncState(int sdSetting) {
     //has it been 3000 milliseconds since we initiated the serial port? We want to make sure we wait for the OpenBCI board to finish its setup()
-    if ( (System.currentTimeMillis() - prevState_millis > COM_INIT_MSEC) && (prevState_millis != 0) && (state == STATE_COMINIT) ) {
+    if ( (millis() - prevState_millis > COM_INIT_MSEC) && (prevState_millis != 0) && (state == openBCI.STATE_COMINIT) ) {
       state = STATE_SYNCWITHHARDWARE;
-      timeOfLastCommand = System.currentTimeMillis();
+      timeOfLastCommand = millis();
       serial_openBCI.clear();
       defaultChannelSettings = ""; //clear channel setting string to be reset upon a new Init System
       daisyOrNot = ""; //clear daisyOrNot string to be reset upon a new Init System
-      System.out.println("OpenBCI_ADS1299: systemUpdate: [0] Sending 'v' to OpenBCI to reset hardware in case of 32bit board...");
+      println("OpenBCI_ADS1299: systemUpdate: [0] Sending 'v' to OpenBCI to reset hardware in case of 32bit board...");
       serial_openBCI.write('v');
     }
   
     //if we are in SYNC WITH HARDWARE state ... trigger a command
     if ( (state == STATE_SYNCWITHHARDWARE) && (currentlySyncing == false) ) {
-      if(System.currentTimeMillis() - timeOfLastCommand > 200 && readyToSend == true){
-        timeOfLastCommand = System.currentTimeMillis();
+      if(millis() - timeOfLastCommand > 200 && readyToSend == true){
+        timeOfLastCommand = millis();
         hardwareSyncStep++;
         syncWithHardware(sdSetting);
       }
@@ -380,7 +354,7 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
 
   public void sendChar(char val) {
     if (serial_openBCI != null) {
-      serial_openBCI.write(val);//send the value as ascii (with a newline character?)
+      serial_openBCI.write(key);//send the value as ascii (with a newline character?)
     }
   }
   
@@ -389,27 +363,16 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
       serial_openBCI.clear(); // clear anything in the com port's buffer
       // stopDataTransfer();
       changeState(STATE_NORMAL);  // make sure it's now interpretting as binary
-      System.out.println("OpenBCI_ADS1299: startDataTransfer(): writing \'" + command_startBinary + "\' to the serial port...");
+      println("OpenBCI_ADS1299: startDataTransfer(): writing \'" + command_startBinary + "\' to the serial port...");
       serial_openBCI.write(command_startBinary);
     }
   }
-
-  void startTestTransfer(int id){
-    if (serial_openBCI != null) {
-      serial_openBCI.clear(); // clear anything in the com port's buffer
-      // stopDataTransfer();
-      changeState(STATE_NORMAL);  // make sure it's now interpretting as binary
-      System.out.println("OpenBCI_ADS1299: startDataTransfer(): writing \'" + command_startTest[id] + "\' to the serial port...");
-      serial_openBCI.write(command_startTest[id]);
-    }
-  }
-
   
   public void stopDataTransfer() {
     if (serial_openBCI != null) {
       serial_openBCI.clear(); // clear anything in the com port's buffer
-      changeState(STATE_STOPPED);  // make sure it's now interpretting as binary
-      System.out.println("OpenBCI_ADS1299: startDataTransfer(): writing \'" + command_stop + "\' to the serial port...");
+      openBCI.changeState(STATE_STOPPED);  // make sure it's now interpretting as binary
+      println("OpenBCI_ADS1299: startDataTransfer(): writing \'" + command_stop + "\' to the serial port...");
       serial_openBCI.write(command_stop);// + "\n");
     }
   }
@@ -431,31 +394,25 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
   
   public void printRegisters() {
     if (serial_openBCI != null) {
-      System.out.println("OpenBCI_ADS1299: printRegisters(): Writing ? to OpenBCI...");
-      serial_openBCI.write('?');
+      println("OpenBCI_ADS1299: printRegisters(): Writing ? to OpenBCI...");
+      openBCI.serial_openBCI.write('?');
     }
   }
   
-  //read from the serial port	 
-	 public int read() {  return read(false,0); }
-	 public int read(boolean echoChar) { return read(echoChar,0); }
-	 public int read(boolean echoChar, int timeout) {
-    //System.out.println("OpenBCI_ADS1299: read(): State: " + state);
-    //get the byte		
-		  int in = serial_openBCI.read(timeout);
-		  if ( in<0 && timeout<0 ) 
-				System.out.println("read().Huh?");
-		  if ( in<0 ) return in; // abort if no data to read
-		  byte inByte= (byte)in;
+  //read from the serial port
+  public int read() {  return read(false); }
+  public int read(boolean echoChar) {
+    //println("OpenBCI_ADS1299: read(): State: " + state);
+    //get the byte
+    byte inByte = byte(serial_openBCI.read());
     
     //write the most recent char to the console
     if (echoChar){  //if not in interpret binary (NORMAL) mode
       // print(".");
-		  char inASCII = (char)(inByte); 
-      if(isRunning == false && (System.currentTimeMillis() - timeSinceStopRunning) > 500){
-
+      char inASCII = char(inByte); 
+      if(isRunning == false && (millis() - timeSinceStopRunning) > 500){
+        print(char(inByte));
       }
-		System.out.print(inASCII);
 
       //keep track of previous three chars coming from OpenBCI
       prev3chars[0] = prev3chars[1];
@@ -467,7 +424,7 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
         //if hardware returns 8 because daisy is not attached, switch the GUI mode back to 8 channels
         // if(nchan == 16 && char(daisyOrNot.substring(daisyOrNot.length() - 1)) == '8'){
         if(nchan == 16 && daisyOrNot.charAt(daisyOrNot.length() - 1) == '8'){
-          System.out.print(" received from OpenBCI... Switching to nchan = 8 bc daisy is not present...");
+          verbosePrint(" received from OpenBCI... Switching to nchan = 8 bc daisy is not present...");
           nchan = 8;
         }
       }
@@ -478,36 +435,34 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
 
       //if the last three chars are $$$, it means we are moving on to the next stage of initialization
       if(prev3chars[0] == EOT[0] && prev3chars[1] == EOT[1] && prev3chars[2] == EOT[2]){
-        System.out.println(" > EOT detected...");
+        verbosePrint(" > EOT detected...");
         // hardwareSyncStep++;
         prev3chars[2] = '#';
         if(hardwareSyncStep == 3){
-          System.out.println("OpenBCI_ADS1299: read(): x");
-          System.out.println(defaultChannelSettings);
-          System.out.println("OpenBCI_ADS1299: read(): y");
-          //gui.cc.loadDefaultChannelSettings();
-          System.out.println("OpenBCI_ADS1299: read(): z");
+          println("OpenBCI_ADS1299: read(): x");
+          println(defaultChannelSettings);
+          println("OpenBCI_ADS1299: read(): y");
+          gui.cc.loadDefaultChannelSettings();
+          println("OpenBCI_ADS1299: read(): z");
         }
         readyToSend = true; 
-        // System.out.println(hardwareSyncStep);
+        // println(hardwareSyncStep);
         // syncWithHardware(); //haha, I'm getting very verbose with my naming... it's late...
       }  
-		// Don't try to interpertate when in ascii mode
-		return (int)inByte;
     }
     
     //write raw unprocessed bytes to a binary data dump file
     if (output != null) {
       try {
        output.write(inByte);   //for debugging  WEA 2014-01-26
-      } catch ( java.io.IOException e) {
+      } catch (IOException e) {
         System.err.println("OpenBCI_ADS1299: read(): Caught IOException: " + e.getMessage());
         //do nothing
       }
     }
     
     interpretBinaryStream(inByte);  //new 2014-02-02 WEA
-    return (int)(inByte);
+    return int(inByte);
   }
 
   /* **** Borrowed from Chris Viegl from his OpenBCI parser for BrainBay
@@ -536,24 +491,24 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
   void interpretBinaryStream(byte actbyte)  {
     boolean flag_copyRawDataToFullData = false;
     
-    //System.out.println("OpenBCI_ADS1299: interpretBinaryStream: PACKET_readstate " + PACKET_readstate);
+    //println("OpenBCI_ADS1299: interpretBinaryStream: PACKET_readstate " + PACKET_readstate);
     switch (PACKET_readstate) {
       case 0:  
          //look for header byte  
-         if (actbyte == (byte)(0xA0)) {          // look for start indicator
-				 //System.out.println("OpenBCI_ADS1299: interpretBinaryStream: found 0xA0");
+         if (actbyte == byte(0xA0)) {          // look for start indicator
+          // println("OpenBCI_ADS1299: interpretBinaryStream: found 0xA0");
           PACKET_readstate++;
          } 
          break;
       case 1: 
         //check the packet counter
+        // println("case 1");
         byte inByte = actbyte;
-        rawReceivedDataPacket.sampleIndex = (int)(inByte & 0xff); //changed by JAM
-		  //System.out.println("case 1 : " + rawReceivedDataPacket.sampleIndex);
+        rawReceivedDataPacket.sampleIndex = int(inByte); //changed by JAM
         if ((rawReceivedDataPacket.sampleIndex-prevSampleIndex) != 1) {
           if(rawReceivedDataPacket.sampleIndex != 0){  // if we rolled over, don't count as error
             serialErrorCounter++;
-            System.out.println("OpenBCI_ADS1299: apparent sampleIndex jump from Serial data: " + prevSampleIndex + " to  " + rawReceivedDataPacket.sampleIndex + ".  Keeping packet. (" + serialErrorCounter + ")");
+            println("OpenBCI_ADS1299: apparent sampleIndex jump from Serial data: " + prevSampleIndex + " to  " + rawReceivedDataPacket.sampleIndex + ".  Keeping packet. (" + serialErrorCounter + ")");
           }
         }
         prevSampleIndex = rawReceivedDataPacket.sampleIndex;
@@ -563,7 +518,7 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
         break;
       case 2: 
         // get ADS channel values 
-			 //System.out.println("case 2 : " + localByteCounter + " " + localChannelCounter );
+        // println("case 2");
         localAdsByteBuffer[localByteCounter] = actbyte;
         localByteCounter++;
         if (localByteCounter==3) {
@@ -571,7 +526,7 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
           localChannelCounter++;
           if (localChannelCounter==8) { //nDataValuesInPacket) {  
             // all ADS channels arrived !
-            //System.out.println("OpenBCI_ADS1299: interpretBinaryStream: localChannelCounter = " + localChannelCounter);
+            //println("OpenBCI_ADS1299: interpretBinaryStream: localChannelCounter = " + localChannelCounter);
             PACKET_readstate++;
             if (prefered_datamode != DATAMODE_BIN_WAUX) PACKET_readstate++;  //if not using AUX, skip over the next readstate
             localByteCounter = 0;
@@ -585,7 +540,7 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
         break;
       case 3:
         // get LIS3DH channel values 2 bytes times 3 axes
-			 //System.out.println("case 3 :" + localByteCounter + " " + localChannelCounter);
+        // println("case 3");
         localAccelByteBuffer[localByteCounter] = actbyte;
         localByteCounter++;
         if (localByteCounter==2) {
@@ -593,7 +548,7 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
           localChannelCounter++;
           if (localChannelCounter==nAuxValues) { //number of accelerometer axis) {  
             // all Accelerometer channels arrived !
-            //System.out.println("OpenBCI_ADS1299: interpretBinaryStream: Accel Data: " + rawReceivedDataPacket.auxValues[0] + ", " + rawReceivedDataPacket.auxValues[1] + ", " + rawReceivedDataPacket.auxValues[2]);
+            //println("OpenBCI_ADS1299: interpretBinaryStream: Accel Data: " + rawReceivedDataPacket.auxValues[0] + ", " + rawReceivedDataPacket.auxValues[1] + ", " + rawReceivedDataPacket.auxValues[2]);
             PACKET_readstate++;
             localByteCounter = 0;
             //isNewDataPacketAvailable = true;  //tell the rest of the code that the data packet is complete
@@ -605,21 +560,21 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
         break;
       case 4:
         //look for end byte
-			 //System.out.println("case 4 : " + localByteCounter + " " + localChannelCounter );
-        if (actbyte == (byte)(0xC0)) {    // if correct end delimiter found:
-          // System.out.println("... 0xC0 found");
-          //System.out.println("OpenBCI_ADS1299: interpretBinaryStream: found end byte. Setting isNewDataPacketAvailable to TRUE");
+        // println("case 4");
+        if (actbyte == byte(0xC0)) {    // if correct end delimiter found:
+          // println("... 0xC0 found");
+          //println("OpenBCI_ADS1299: interpretBinaryStream: found end byte. Setting isNewDataPacketAvailable to TRUE");
           isNewDataPacketAvailable = true; //original place for this.  but why not put it in the previous case block
           flag_copyRawDataToFullData = true;  //time to copy the raw data packet into the full data packet (mainly relevant for 16-chan OpenBCI) 
         } else {
           serialErrorCounter++;
-          System.out.println("OpenBCI_ADS1299: interpretBinaryStream: Actbyte = " + actbyte);
-          System.out.println("OpenBCI_ADS1299: interpretBinaryStream: expecteding end-of-packet byte is missing.  Discarding packet. (" + serialErrorCounter + ")");
+          println("OpenBCI_ADS1299: interpretBinaryStream: Actbyte = " + actbyte);
+          println("OpenBCI_ADS1299: interpretBinaryStream: expecteding end-of-packet byte is missing.  Discarding packet. (" + serialErrorCounter + ")");
         }
         PACKET_readstate=0;  // either way, look for next packet
         break;
       default: 
-          System.out.println("OpenBCI_ADS1299: interpretBinaryStream: Unknown byte: " + actbyte + " .  Continuing...");
+          println("OpenBCI_ADS1299: interpretBinaryStream: Unknown byte: " + actbyte + " .  Continuing...");
           PACKET_readstate=0;  // look for next packet
     }
     
@@ -636,10 +591,10 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
       if ((Ichan >= 0)) {
         if (activate) {
           // serial_openBCI.write(command_activate_channel[Ichan]);
-          //gui.cc.powerUpChannel(Ichan);
+          gui.cc.powerUpChannel(Ichan);
         } else {
           // serial_openBCI.write(command_deactivate_channel[Ichan]);
-          //gui.cc.powerDownChannel(Ichan);
+          gui.cc.powerDownChannel(Ichan);
         }
       }
     }
@@ -674,7 +629,7 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
   
   // ---- DEPRECATED ---- 
   // public void changeImpedanceState(int Ichan,boolean activate,int code_P_N_Both) {
-  //   //System.out.println("OpenBCI_ADS1299: changeImpedanceState: Ichan " + Ichan + ", activate " + activate + ", code_P_N_Both " + code_P_N_Both);
+  //   //println("OpenBCI_ADS1299: changeImpedanceState: Ichan " + Ichan + ", activate " + activate + ", code_P_N_Both " + code_P_N_Both);
   //   if (serial_openBCI != null) {
   //     if ((Ichan >= 0) && (Ichan < command_activate_leadoffP_channel.length)) {
   //       if (activate) {
@@ -701,10 +656,10 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
   // public void setBiasAutoState(boolean isAuto) {
   //   if (serial_openBCI != null) {
   //     if (isAuto) {
-  //       System.out.println("OpenBCI_ADS1299: setBiasAutoState: setting bias to AUTO");
+  //       println("OpenBCI_ADS1299: setBiasAutoState: setting bias to AUTO");
   //       serial_openBCI.write(command_biasAuto);
   //     } else {
-  //       System.out.println("OpenBCI_ADS1299: setBiasAutoState: setting bias to REF ONLY");
+  //       println("OpenBCI_ADS1299: setBiasAutoState: setting bias to REF ONLY");
   //       serial_openBCI.write(command_biasFixed);
   //     }
   //   }
@@ -774,79 +729,79 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
   public boolean get_isWritingChannel() { return isWritingChannel; }
   public void configureAllChannelsToDefault() { serial_openBCI.write('d'); };
   public void initChannelWrite(int _numChannel) {  //numChannel counts from zero
-      timeOfLastChannelWrite = System.currentTimeMillis();
+      timeOfLastChannelWrite = millis();
       isWritingChannel = true;
   }
 
   // FULL DISCLAIMER: this method is messy....... very messy... we had to brute force a firmware miscue
   public void writeChannelSettings(int _numChannel,char[][] channelSettingValues) {   //numChannel counts from zero
-    if (System.currentTimeMillis() - timeOfLastChannelWrite >= 50) { //wait 50 milliseconds before sending next character
-      System.out.println("---");
+    if (millis() - timeOfLastChannelWrite >= 50) { //wait 50 milliseconds before sending next character
+      verbosePrint("---");
       switch (channelWriteCounter) {
         case 0: //start sequence by send 'x'
-          System.out.println("x" + " :: " + System.currentTimeMillis());
+          verbosePrint("x" + " :: " + millis());
           serial_openBCI.write('x');
-          timeOfLastChannelWrite = System.currentTimeMillis();
+          timeOfLastChannelWrite = millis();
           channelWriteCounter++;
           break;
         case 1: //send channel number
-          System.out.println((_numChannel+1) + " :: " + System.currentTimeMillis());
+          verbosePrint(str(_numChannel+1) + " :: " + millis());
           if (_numChannel < 8) {
             serial_openBCI.write((char)('0'+(_numChannel+1)));
           }
           if (_numChannel >= 8) {
-            //serial_openBCI.write((command_activate_channel_daisy[_numChannel-8]));
+            //openBCI.serial_openBCI.write((command_activate_channel_daisy[_numChannel-8]));
             serial_openBCI.write((command_activate_channel[_numChannel])); //command_activate_channel holds non-daisy and daisy
           }
-          timeOfLastChannelWrite = System.currentTimeMillis();
+          timeOfLastChannelWrite = millis();
           channelWriteCounter++;
           break;
         case 2:  
-          System.out.println(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + System.currentTimeMillis());
+          verbosePrint(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + millis());
           serial_openBCI.write(channelSettingValues[_numChannel][channelWriteCounter-2]);
           //value for ON/OF
-          timeOfLastChannelWrite = System.currentTimeMillis();
+          timeOfLastChannelWrite = millis();
           channelWriteCounter++;
           break;
         case 3: 
-          System.out.println(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + System.currentTimeMillis());
+          verbosePrint(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + millis());
           serial_openBCI.write(channelSettingValues[_numChannel][channelWriteCounter-2]);
           //value for ON/OF
-          timeOfLastChannelWrite = System.currentTimeMillis();
+          timeOfLastChannelWrite = millis();
           channelWriteCounter++;
           break;
         case 4: 
-          System.out.println(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + System.currentTimeMillis());
+          verbosePrint(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + millis());
           serial_openBCI.write(channelSettingValues[_numChannel][channelWriteCounter-2]);
           //value for ON/OF
-          timeOfLastChannelWrite = System.currentTimeMillis();
+          timeOfLastChannelWrite = millis();
           channelWriteCounter++;
           break;
         case 5: 
-          System.out.println(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + System.currentTimeMillis());
+          verbosePrint(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + millis());
           serial_openBCI.write(channelSettingValues[_numChannel][channelWriteCounter-2]);
           //value for ON/OF
-          timeOfLastChannelWrite = System.currentTimeMillis();
+          timeOfLastChannelWrite = millis();
           channelWriteCounter++;
           break;
         case 6: 
-          System.out.println(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + System.currentTimeMillis());
+          verbosePrint(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + millis());
           serial_openBCI.write(channelSettingValues[_numChannel][channelWriteCounter-2]);
           //value for ON/OF
-          timeOfLastChannelWrite = System.currentTimeMillis();
+          timeOfLastChannelWrite = millis();
           channelWriteCounter++;
           break;
         case 7:
-          System.out.println(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + System.currentTimeMillis());
+          verbosePrint(channelSettingValues[_numChannel][channelWriteCounter-2] + " :: " + millis());
           serial_openBCI.write(channelSettingValues[_numChannel][channelWriteCounter-2]);
           //value for ON/OF
-          timeOfLastChannelWrite = System.currentTimeMillis();
+          timeOfLastChannelWrite = millis();
           channelWriteCounter++;
           break;
         case 8:
-          System.out.println("X" + " :: " + System.currentTimeMillis());
+          verbosePrint("X" + " :: " + millis());
           serial_openBCI.write('X'); // send 'X' to end message sequence
-          timeOfLastChannelWrite = System.currentTimeMillis();
+          timeOfLastChannelWrite = millis();
           channelWriteCounter++;
           break;
         case 9:
@@ -854,62 +809,62 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
           switch(channelDeactivateCounter){
             case 0:
               if(channelSettingValues[channelDeactivateCounter][0] == '1'){
-                System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+                verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
                 serial_openBCI.write(command_deactivate_channel[channelDeactivateCounter]);
               }
               channelDeactivateCounter++;
               break;
             case 1:
               if(channelSettingValues[channelDeactivateCounter][0] == '1'){
-                System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+                verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
                 serial_openBCI.write(command_deactivate_channel[channelDeactivateCounter]);
               }
               channelDeactivateCounter++;
               break;
             case 2:
               if(channelSettingValues[channelDeactivateCounter][0] == '1'){
-                System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+                verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
                 serial_openBCI.write(command_deactivate_channel[channelDeactivateCounter]);
               }
               channelDeactivateCounter++;
               break;
             case 3:
               if(channelSettingValues[channelDeactivateCounter][0] == '1'){
-                System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+                verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
                 serial_openBCI.write(command_deactivate_channel[channelDeactivateCounter]);
               }
               channelDeactivateCounter++;
               break;
             case 4:
               if(channelSettingValues[channelDeactivateCounter][0] == '1'){
-                System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+                verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
                 serial_openBCI.write(command_deactivate_channel[channelDeactivateCounter]);
               }
               channelDeactivateCounter++;
               break;
             case 5:
               if(channelSettingValues[channelDeactivateCounter][0] == '1'){
-                System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+                verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
                 serial_openBCI.write(command_deactivate_channel[channelDeactivateCounter]);
               }
               channelDeactivateCounter++;
               break;
             case 6: 
               if(channelSettingValues[channelDeactivateCounter][0] == '1'){
-                System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+                verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
                 serial_openBCI.write(command_deactivate_channel[channelDeactivateCounter]);
               }
               channelDeactivateCounter++;
               break;
             case 7:
               if(channelSettingValues[channelDeactivateCounter][0] == '1'){
-                System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+                verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
                 serial_openBCI.write(command_deactivate_channel[channelDeactivateCounter]);
               }
               channelDeactivateCounter++;
               //check to see if it's 8chan or 16chan ... stop the switch case here if it's 8 chan, otherwise keep going
               if(nchan == 8){
-                System.out.println("done writing channel.");
+                verbosePrint("done writing channel.");
                 isWritingChannel = false;
                 channelWriteCounter = 0;
                 channelDeactivateCounter = 0;
@@ -919,72 +874,72 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
               break;
             case 8:
               if(channelSettingValues[channelDeactivateCounter][0] == '1'){
-                System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+                verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
                 serial_openBCI.write(command_deactivate_channel[channelDeactivateCounter]);
               }
               channelDeactivateCounter++;
               break;
             case 9:
               if(channelSettingValues[channelDeactivateCounter][0] == '1'){
-                System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+                verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
                 serial_openBCI.write(command_deactivate_channel[channelDeactivateCounter]);
               }
               channelDeactivateCounter++;
               break;
             case 10:
               if(channelSettingValues[channelDeactivateCounter][0] == '1'){
-                System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+                verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
                 serial_openBCI.write(command_deactivate_channel[channelDeactivateCounter]);
               }
               channelDeactivateCounter++;
               break;
             case 11:
               if(channelSettingValues[channelDeactivateCounter][0] == '1'){
-                System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+                verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
                 serial_openBCI.write(command_deactivate_channel[channelDeactivateCounter]);
               }
               channelDeactivateCounter++;
               break;
             case 12:
               if(channelSettingValues[channelDeactivateCounter][0] == '1'){
-                System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+                verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
                 serial_openBCI.write(command_deactivate_channel[channelDeactivateCounter]);
               }
               channelDeactivateCounter++;
               break;
             case 13: 
               if(channelSettingValues[channelDeactivateCounter][0] == '1'){
-                System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+                verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
                 serial_openBCI.write(command_deactivate_channel[channelDeactivateCounter]);
               }
               channelDeactivateCounter++;
               break;
             case 14:
               if(channelSettingValues[channelDeactivateCounter][0] == '1'){
-                System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+                verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
                 serial_openBCI.write(command_deactivate_channel[channelDeactivateCounter]);
               }
               channelDeactivateCounter++;
               break;
             case 15: 
               if(channelSettingValues[channelDeactivateCounter][0] == '1'){
-                System.out.println("deactivating channel: " + (channelDeactivateCounter + 1));
+                verbosePrint("deactivating channel: " + str(channelDeactivateCounter + 1));
                 serial_openBCI.write(command_deactivate_channel[channelDeactivateCounter]);
               }
-              System.out.println("done writing channel.");
+              verbosePrint("done writing channel.");
               isWritingChannel = false;
               channelWriteCounter = 0;
               channelDeactivateCounter = 0;
               break;
           }
 
-          // System.out.println("done writing channel.");
+          // verbosePrint("done writing channel.");
           // isWritingChannel = false;
           // channelWriteCounter = -1;
-          timeOfLastChannelWrite = System.currentTimeMillis();
+          timeOfLastChannelWrite = millis();
           break;
       }
-      // timeOfLastChannelWrite = System.currentTimeMillis();
+      // timeOfLastChannelWrite = millis();
       // channelWriteCounter++;
     }
   }
@@ -994,48 +949,48 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
   private boolean isWritingImp = false;
   public boolean get_isWritingImp() { return isWritingImp; }
   public void initImpWrite(int _numChannel) {  //numChannel counts from zero
-        timeOfLastImpWrite = System.currentTimeMillis();
+        timeOfLastImpWrite = millis();
         isWritingImp = true;
   }
   public void writeImpedanceSettings(int _numChannel,char[][] impedanceCheckValues) {  //numChannel counts from zero
     //after clicking an impedance button, write the new impedance settings for that channel to OpenBCI
     //after clicking any button, write the new settings for that channel to OpenBCI
-    // System.out.println("Writing impedance settings for channel " + _numChannel + " to OpenBCI!");
+    // verbosePrint("Writing impedance settings for channel " + _numChannel + " to OpenBCI!");
     //write setting 1, delay 5ms.. write setting 2, delay 5ms, etc.
-    if (System.currentTimeMillis() - timeOfLastImpWrite >= 50) { //wait 50 milliseconds before sending next character
-      System.out.println("---");
+    if (millis() - timeOfLastImpWrite >= 50) { //wait 50 milliseconds before sending next character
+      verbosePrint("---");
       switch (impWriteCounter) {
         case 0: //start sequence by sending 'z'
-          System.out.println("z" + " :: " + System.currentTimeMillis());
+          verbosePrint("z" + " :: " + millis());
           serial_openBCI.write('z');
           break;
         case 1: //send channel number
-          System.out.println((_numChannel+1) + " :: " + System.currentTimeMillis());
+          verbosePrint(str(_numChannel+1) + " :: " + millis());
           if (_numChannel < 8) {
             serial_openBCI.write((char)('0'+(_numChannel+1)));
           }
           if (_numChannel >= 8) {
-            //serial_openBCI.write((command_activate_channel_daisy[_numChannel-8]));
+            //openBCI.serial_openBCI.write((command_activate_channel_daisy[_numChannel-8]));
             serial_openBCI.write((command_activate_channel[_numChannel])); //command_activate_channel holds non-daisy and daisy values
           }
           break;
         case 2: 
         case 3: 
-          System.out.println(impedanceCheckValues[_numChannel][impWriteCounter-2] + " :: " + System.currentTimeMillis());
+          verbosePrint(impedanceCheckValues[_numChannel][impWriteCounter-2] + " :: " + millis());
           serial_openBCI.write(impedanceCheckValues[_numChannel][impWriteCounter-2]);
           //value for ON/OF
           break;
         case 4:
-          System.out.println("Z" + " :: " + System.currentTimeMillis());
+          verbosePrint("Z" + " :: " + millis());
           serial_openBCI.write('Z'); // send 'X' to end message sequence
           break;
         case 5:
-          System.out.println("done writing imp settings.");
+          verbosePrint("done writing imp settings.");
           isWritingImp = false;
           impWriteCounter = -1;
           break;
       }
-      timeOfLastImpWrite = System.currentTimeMillis();
+      timeOfLastImpWrite = millis();
       impWriteCounter++;
     }
   }

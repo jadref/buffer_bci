@@ -1,0 +1,219 @@
+26c26
+< package processing.serial;
+---
+> //package processing.serial;
+28c28
+< import processing.core.*;
+---
+> //import processing.core.*;
+30c30
+< import java.lang.reflect.*;
+---
+> //import java.lang.reflect.*;
+37c37
+<   PApplet parent;
+---
+>   //PApplet parent;
+39,40c39,40
+<   Method serialAvailableMethod;
+<   Method serialEventMethod;
+---
+>   //Method serialAvailableMethod;
+>   //Method serialEventMethod;
+57,58c57,58
+<   public Serial(PApplet parent) {
+<     this(parent, "COM1", 9600, 'N', 8, 1);
+---
+>   public Serial() {
+>     this("COM1", 9600, 'N', 8, 1);
+62,63c62,63
+<   public Serial(PApplet parent, int baudRate) {
+<     this(parent, "COM1", baudRate, 'N', 8, 1);
+---
+>   public Serial(int baudRate) {
+>     this("COM1", baudRate, 'N', 8, 1);
+67,68c67,68
+<   public Serial(PApplet parent, String portName) {
+<     this(parent, portName, 9600, 'N', 8, 1);
+---
+>   public Serial(String portName) {
+>     this(portName, 9600, 'N', 8, 1);
+72,73c72,73
+<   public Serial(PApplet parent, String portName, int baudRate) {
+<     this(parent, portName, baudRate, 'N', 8, 1);
+---
+>   public Serial(String portName, int baudRate) {
+>     this(portName, baudRate, 'N', 8, 1);
+77,80c77,80
+<   public Serial(PApplet parent, String portName, int baudRate, char parity, int dataBits, float stopBits) {
+<     this.parent = parent;
+<     parent.registerMethod("dispose", this);
+<     parent.registerMethod("pre", this);
+---
+>   public Serial(String portName, int baudRate, char parity, int dataBits, float stopBits) {
+>     //this.parent = parent;
+>     // parent.registerMethod("dispose", this);
+>     // parent.registerMethod("pre", this);
+115,116c115,116
+<     serialEventMethod = findCallback("serialEvent");
+<     serialAvailableMethod = findCallback("serialAvailable");
+---
+>     //serialEventMethod = findCallback("serialEvent");
+>     //serialAvailableMethod = findCallback("serialAvailable");
+119,130c119,130
+<   private Method findCallback(final String name) {
+<     try {
+<       return parent.getClass().getMethod(name, this.getClass());
+<     } catch (Exception e) {
+<     }
+<     // Permit callback(Object) as alternative to callback(Serial).
+<     try {
+<       return parent.getClass().getMethod(name, Object.class);
+<     } catch (Exception e) {
+<     }
+<     return null;
+<   }
+---
+>   // private Method findCallback(final String name) {
+>   //   try {
+>   //     return parent.getClass().getMethod(name, this.getClass());
+>   //   } catch (Exception e) {
+>   //   }
+>   //   // Permit callback(Object) as alternative to callback(Serial).
+>   //   try {
+>   //     return parent.getClass().getMethod(name, Object.class);
+>   //   } catch (Exception e) {
+>   //   }
+>   //   return null;
+>   // }
+138,149c138,149
+<   public void pre() {
+<     if (serialAvailableMethod != null && invokeSerialAvailable) {
+<       invokeSerialAvailable = false;
+<       try {
+<         serialAvailableMethod.invoke(parent, this);
+<       } catch (Exception e) {
+<         System.err.println("Error, disabling serialAvailable() for "+port.getPortName());
+<         System.err.println(e.getLocalizedMessage());
+<         serialAvailableMethod = null;
+<       }
+<     }
+<   }
+---
+>   // public void pre() {
+>   //   if (serialAvailableMethod != null && invokeSerialAvailable) {
+>   //     invokeSerialAvailable = false;
+>   //     try {
+>   //       serialAvailableMethod.invoke(parent, this);
+>   //     } catch (Exception e) {
+>   //       System.err.println("Error, disabling serialAvailable() for "+port.getPortName());
+>   //       System.err.println(e.getLocalizedMessage());
+>   //       serialAvailableMethod = null;
+>   //     }
+>   //   }
+>   // }
+194,196c194,196
+<   public static Map<String, String> getProperties(String portName) {
+<     return SerialPortList.getPortProperties(portName);
+<   }
+---
+>   //public static Map<String, String> getProperties(String portName) {
+>   //  return SerialPortList.getPortProperties(portName);
+>   //}
+369,414c369
+<     if (event.getEventType() == SerialPortEvent.RXCHAR) {
+<       int toRead;
+<       try {
+<         while (0 < (toRead = port.getInputBufferBytesCount())) {
+<           // this method can be called from the context of another thread
+<           synchronized (buffer) {
+<             // read one byte at a time if the sketch is using serialEvent
+<             if (serialEventMethod != null) {
+<               toRead = 1;
+<             }
+<             // enlarge buffer if necessary
+<             if (buffer.length < inBuffer+toRead) {
+<               byte temp[] = new byte[buffer.length<<1];
+<               System.arraycopy(buffer, 0, temp, 0, inBuffer);
+<               buffer = temp;
+<             }
+<             // read an array of bytes and copy it into our buffer
+<             byte[] read = port.readBytes(toRead);
+<             System.arraycopy(read, 0, buffer, inBuffer, read.length);
+<             inBuffer += read.length;
+<           }
+<           if (serialEventMethod != null) {
+<             if ((0 < bufferUntilSize && bufferUntilSize <= inBuffer-readOffset) ||
+<               (0 == bufferUntilSize && bufferUntilByte == buffer[inBuffer-1])) {
+<               try {
+<                 // serialEvent() is invoked in the context of the current (serial) thread
+<                 // which means that serialization and atomic variables need to be used to
+<                 // guarantee reliable operation (and better not draw() etc..)
+<                 // serialAvailable() does not provide any real benefits over using
+<                 // available() and read() inside draw - but this function has no
+<                 // thread-safety issues since it's being invoked during pre in the context
+<                 // of the Processing applet
+<                 serialEventMethod.invoke(parent, this);
+<               } catch (Exception e) {
+<                 System.err.println("Error, disabling serialEvent() for "+port.getPortName());
+<                 System.err.println(e.getLocalizedMessage());
+<                 serialEventMethod = null;
+<               }
+<             }
+<           }
+<           invokeSerialAvailable = true;
+<         }
+<       } catch (SerialPortException e) {
+<         throw new RuntimeException("Error reading from serial port " + e.getPortName() + ": " + e.getExceptionType());
+<       }
+<     }
+---
+>     System.out.println("Error...... not currently supported!");
+415a371,417
+>   //   if (event.getEventType() == SerialPortEvent.RXCHAR) {
+>   //     int toRead;
+>   //     try {
+>   //       while (0 < (toRead = port.getInputBufferBytesCount())) {
+>   //         // this method can be called from the context of another thread
+>   //         synchronized (buffer) {
+>   //           // read one byte at a time if the sketch is using serialEvent
+>   //           if (serialEventMethod != null) {
+>   //             toRead = 1;
+>   //           }
+>   //           // enlarge buffer if necessary
+>   //           if (buffer.length < inBuffer+toRead) {
+>   //             byte temp[] = new byte[buffer.length<<1];
+>   //             System.arraycopy(buffer, 0, temp, 0, inBuffer);
+>   //             buffer = temp;
+>   //           }
+>   //           // read an array of bytes and copy it into our buffer
+>   //           byte[] read = port.readBytes(toRead);
+>   //           System.arraycopy(read, 0, buffer, inBuffer, read.length);
+>   //           inBuffer += read.length;
+>   //         }
+>   //         if (serialEventMethod != null) {
+>   //           if ((0 < bufferUntilSize && bufferUntilSize <= inBuffer-readOffset) ||
+>   //             (0 == bufferUntilSize && bufferUntilByte == buffer[inBuffer-1])) {
+>   //             try {
+>   //               // serialEvent() is invoked in the context of the current (serial) thread
+>   //               // which means that serialization and atomic variables need to be used to
+>   //               // guarantee reliable operation (and better not draw() etc..)
+>   //               // serialAvailable() does not provide any real benefits over using
+>   //               // available() and read() inside draw - but this function has no
+>   //               // thread-safety issues since it's being invoked during pre in the context
+>   //               // of the Processing applet
+>   //               //serialEventMethod.invoke(parent, this);
+>   //             } catch (Exception e) {
+>   //               System.err.println("Error, disabling serialEvent() for "+port.getPortName());
+>   //               System.err.println(e.getLocalizedMessage());
+>   //               serialEventMethod = null;
+>   //             }
+>   //           }
+>   //         }
+>   //         invokeSerialAvailable = true;
+>   //       }
+>   //     } catch (SerialPortException e) {
+>   //       throw new RuntimeException("Error reading from serial port " + e.getPortName() + ": " + e.getExceptionType());
+>   //     }
+>   //   }
+>   // }
