@@ -10,4 +10,4 @@ if [ `uname -s` == 'Linux' ]; then
 else
    arch='maci'
 fi
-./buffer/${arch}/bufferViewer
+./buffer/${arch}/bufferViewer $@
