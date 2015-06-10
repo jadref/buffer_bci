@@ -69,7 +69,7 @@ long timeOfLastCommand = 0;
 		  }		  
 		  int buffpacketsize=-1;
 		  if (args.length>=6) { buffpacketsize = Integer.parseInt(args[5]); }		  
-		  boolean useAux=true;
+		  boolean useAux=false;
 
 		  if ( openBCIport == null ) { // list available ports and exit
 				System.out.println("No serial port defined.  Current serial ports connected are:");
@@ -103,16 +103,14 @@ long timeOfLastCommand = 0;
 		  System.out.println("Connected to buffer!");
 				
 		  // open the openBCI port and start the data streaming
-		  int nAuxDataValuesPerPacket = 0;
+		  int nAuxDataValuesPerPacket = n_aux_ifEnabled;
 		  int nEEGDataValuesPerPacket = 8;//OpenBCI_ADS1299.get_nChan();
-		  if (useAux) {
-				nAuxDataValuesPerPacket = n_aux_ifEnabled;
-		  }
 		  OpenBCI_ADS1299 openBCI = null;
 		  while ( true ) {
 				try {
 					 //this also starts the data transfer after XX seconds
-					 openBCI = new OpenBCI_ADS1299(openBCIport,openBCIbaud,nEEGDataValuesPerPacket,useAux,n_aux_ifEnabled);
+					 // BODGE: aux is always sent!!! by board even if we don't want it!
+					 openBCI = new OpenBCI_ADS1299(openBCIport,openBCIbaud,nEEGDataValuesPerPacket,true,n_aux_ifEnabled);
 					 break;
 				} catch (Exception e) {
 					 System.out.println("Trying to connect to serial port : " + openBCIport);
@@ -121,8 +119,7 @@ long timeOfLastCommand = 0;
 		  }
 		  System.out.println("Opened the port!");
 		  // disable unused channels if wanted
-		  nActiveCh=6;
-		  if ( nActiveCh>0 ) {
+		  if ( nActiveCh>0 && nActiveCh < openBCI.get_nChan() ) {
 				// Channel settings format: is
 				// [CHANNEL, POWER_DOWN, GAIN_SET, INPUT_TYPE_SET, BIAS_SET, SRB2_SET, SRB1_SET]
 				// **POWER_DOWN**  0 = ON (default),  1 = OFF    
@@ -143,12 +140,12 @@ long timeOfLastCommand = 0;
 				// disable channels after nActiveCh
 				for ( int chi=nActiveCh-1; chi<openBCI.get_nChan(); chi++){
 					 System.out.println("Setting inactive channel : " + chi);
-					 //chSettingsValues[chi][0]='1'; // power-down
+					 chSettingsValues[chi][0]='1'; // power-down
 					 chSettingsValues[chi][2]='5'; // Test-signal
 					 openBCI.initChannelWrite(chi);
 					 while ( openBCI.get_isWritingChannel() ){ // run the settings loop
 						  openBCI.writeChannelSettings(chi,chSettingsValues);
-						  openBCI.read(true,0); // consume board output
+						  openBCI.read(true,0); // non-blocking consume board output
 					 }
 				}
 		  } else {
@@ -184,8 +181,9 @@ long timeOfLastCommand = 0;
 		  
 		  // send the header information
 		  float sampleRate=openBCI.get_fs_Hz();
-		  int   neeg=openBCI.get_nChan();
+		  int   neeg=nActiveCh;
 		  int   naux=openBCI.get_nAux();
+		  if ( !useAux ) naux=0;
 		  int   nch =neeg + naux;
 		  Header hdr = new Header(nch,sampleRate,DataType.FLOAT32);
 		  if ( VERB>0 ){ System.out.println("Sending header: " + hdr.toString()); }
@@ -221,12 +219,12 @@ long timeOfLastCommand = 0;
 				openBCI.copyDataPacketTo(curPacket); 
 				//next, gather the new data into the "little buffer"
 				int Ichan=0;
-				for (Ichan=0; Ichan < curPacket.values.length; Ichan++) {   //loop over each cahnnel
+				for (Ichan=0; Ichan < nActiveCh; Ichan++) {   //loop over each cahnnel
 					 //scale the data into engineering units ("microvolts") and save to the "little buffer"
 					 databuff[buffsamp][Ichan] += curPacket.values[Ichan] * openBCI.get_scale_fac_uVolts_per_count();
 				}
 				// include the aux data
-				for (int auxi=0 ; auxi<curPacket.auxValues.length; auxi++, Ichan++ ){
+				for (int auxi=0 ; auxi<naux; auxi++, Ichan++ ){
 					 databuff[buffsamp][Ichan] += curPacket.auxValues[auxi];		 
 				}
 				// increment the cursor position
