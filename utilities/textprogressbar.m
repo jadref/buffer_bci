@@ -13,7 +13,7 @@ si=round(i/(toti/nbits)); % nearest step indicator
 %fprintf('\n%d %d %d',i,si,round(si*toti/nbits));
 if ( toti>1 && i==round(si*toti/nbits) ) 
    str=chr;
-   if( toti<nbits ); str=repmat(str,max(1,si-round((i-1)/(toti/nbits))),1);  end
+   if( toti<nbits ); str=repmat(str,1,max(1,si-round((i-1)/(toti/nbits))));  end
    if ( nargout==0 ); fprintf(str); end
 else
    str='';
