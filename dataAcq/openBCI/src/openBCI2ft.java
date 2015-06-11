@@ -142,7 +142,7 @@ long timeOfLastCommand = 0;
 				for ( int chi=nActiveCh-1; chi<openBCI.get_nChan(); chi++){
 					 System.out.println("Setting inactive channel : " + chi);
 					 chSettingsValues[chi][0]='1'; // power-down
-					 chSettingsValues[chi][2]='5'; // Test-signal
+					 //chSettingsValues[chi][2]='5'; // Test-signal
 					 openBCI.initChannelWrite(chi);
 					 while ( openBCI.get_isWritingChannel() ){ // run the settings loop
 						  openBCI.writeChannelSettings(chi,chSettingsValues);
