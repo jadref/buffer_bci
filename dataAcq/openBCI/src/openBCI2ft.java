@@ -58,8 +58,10 @@ long timeOfLastCommand = 0;
 		  }
 		  int nActiveCh=-1;
 		  if (args.length>=3) { nActiveCh = Integer.parseInt(args[2]); }		  
+		  boolean useAux=true;
 		  if (args.length>=4) { 
-				System.out.println("Warning, samplerate fixed for this hardware. Argument ignored.");
+				useAux = Integer.parseInt(args[3])>0;
+				//System.out.println("Warning, samplerate fixed for this hardware. Argument ignored.");
 				//sampleRate = Integer.parseInt(args[3]); 
 		  }		  
 		  int buffdownsample=1;
@@ -69,7 +71,6 @@ long timeOfLastCommand = 0;
 		  }		  
 		  int buffpacketsize=-1;
 		  if (args.length>=6) { buffpacketsize = Integer.parseInt(args[5]); }		  
-		  boolean useAux=true;
 
 		  if ( openBCIport == null ) { // list available ports and exit
 				System.out.println("No serial port defined.  Current serial ports connected are:");
@@ -118,6 +119,10 @@ long timeOfLastCommand = 0;
 				}
 		  }
 		  System.out.println("Opened the port!");
+		  System.out.println("sync with hardware");
+		  syncWithHardware(openBCI);
+		  System.out.println("Connected to serial port.");
+
 		  // disable unused channels if wanted
 		  if ( nActiveCh<0 ) nActiveCh=openBCI.get_nChan();
 		  if ( nActiveCh>0 && nActiveCh < openBCI.get_nChan() ) {
@@ -139,44 +144,28 @@ long timeOfLastCommand = 0;
 						  chSettingsValues[chi][ci]=defaultSettings[ci];
 				}
 				// disable channels after nActiveCh
-				for ( int chi=nActiveCh-1; chi<openBCI.get_nChan(); chi++){
+				for ( int chi=nActiveCh; chi<openBCI.get_nChan(); chi++){
 					 System.out.println("Setting inactive channel : " + chi);
 					 chSettingsValues[chi][0]='1'; // power-down
 					 //chSettingsValues[chi][2]='5'; // Test-signal
 					 openBCI.initChannelWrite(chi);
 					 while ( openBCI.get_isWritingChannel() ){ // run the settings loop
 						  openBCI.writeChannelSettings(chi,chSettingsValues);
-						  openBCI.read(true,0); // non-blocking consume board output
+						  while ( openBCI.read(true,0)>0 ); // non-blocking consume board output
 					 }
 				}
+				Thread.sleep(100);
+				while ( openBCI.read(true,0)>0 ); // non-blocking consume board output
 		  } else {
-				openBCI.configureAllChannelsToDefault();
+				System.out.println("Setting channels to default.");
+				openBCI.configureAllChannelsToDefault();				
+				Thread.sleep(200);
+				while ( openBCI.read(true,0)>0 ); // non-blocking consume all board output
 		  }
-		  
-		  while ( openBCI.get_state() == openBCI.STATE_COMINIT ||
-					 openBCI.get_state() == openBCI.STATE_SYNCWITHHARDWARE ){ // start data streaming
-				//Argument is SD Card setting: 0= do not write; 1= 5 min; 2= 15 min; 3= 30 min; etc...
-				openBCI.updateSyncState(0);
-				if ( openBCI.get_state() == openBCI.STATE_COMINIT ) {
-					 // Wait for the board to become ready
-					 System.out.println("Waiting for device to become ready");
-					 Thread.sleep(1000);
-				} else if ( !openBCI.get_readyToSend() ) { // read the state update response
-					 //System.out.println("**");
-					 while ( !openBCI.get_readyToSend() ) {
-						  int res= openBCI.read(true,-1);
-						  if ( res<0 ) {
-								// blocking read the hardware init responses and print them
-								System.out.println("Huh?");
-						  } else { 
-								//System.out.print("[" + res + "]");
-						  }
-					 }
-				} else { // inter-command pause
-					 Thread.sleep(100); 
-				}
-		  }
+		  System.out.println("sync with hardware");
+		  //syncWithHardware(openBCI);
 		  System.out.println("Connected to serial port.");
+
 		  // start the data streaming
 		  openBCI.startDataTransfer();
 		  
@@ -200,8 +189,10 @@ long timeOfLastCommand = 0;
 		  int[] buffpacksz = new int[] {nch,buffpacketsize};
 		  float[][] databuff = new float[buffpacketsize][nch];		
 	  		
-		  long startT=System.currentTimeMillis();
-		  long updateT=startT;
+		  long startT=System.currentTimeMillis(); 
+		  long updateT=startT; // time we last printed update
+		  long packetT=startT; // time last packet was recieved
+		  float packetDur=0; // time between packets in millis
 		  // Now do the data forwarding
 		  DataPacket_ADS1299 curPacket = 
 				new DataPacket_ADS1299(nEEGDataValuesPerPacket,nAuxDataValuesPerPacket); 
@@ -210,11 +201,21 @@ long timeOfLastCommand = 0;
 				// read from serial port until a complete packet is available
 				// Question: does this block intelligently?
 				while ( !openBCI.get_isNewDataPacketAvailable() ) {
-					 if ( VERB>1 ){ System.out.println("Waiting for data packet from openBCI."); }
+					 if ( VERB>1 ){ 
+						  System.out.println((System.currentTimeMillis()-startT)/1000.0 + 
+													"Waiting for data packet from openBCI."); 
+					 }
 					 //openBCI.read(false,0); // non-blocking read for new data
 					 openBCI.read(false,-1); // blocking read for new data
 				} // got a complete packet
-				if ( VERB>1 ){ System.out.println("Got a data packet from openBCI"); }
+				// Moving average est interpacket duration
+				long curT = System.currentTimeMillis();
+				packetDur = (System.currentTimeMillis()-packetT)*.01f + packetDur*.99f; 
+				packetT   = curT;
+				if ( VERB>1 ){ 
+					 System.out.println((System.currentTimeMillis()-startT)/1000.0 + 
+											  " : Got a data packet from openBCI"); 
+				}
 				// get (a copy of) the data just read
 				//resets isNewDataPacketAvailable to false
 				openBCI.copyDataPacketTo(curPacket); 
@@ -228,17 +229,18 @@ long timeOfLastCommand = 0;
 				for (int auxi=0 ; auxi<naux; auxi++, Ichan++ ){
 					 databuff[buffsamp][Ichan] += curPacket.auxValues[auxi];		 
 				}
+				buffsamp++; // move to next buffer sample
 				// increment the cursor position
 				if ( VERB>0 ){
-					 if ( System.currentTimeMillis()-updateT > 10*1000 ) {
+					 if ( System.currentTimeMillis()-updateT > 2*1000 ) {
 						  updateT=System.currentTimeMillis();
 						  System.out.println((float)(System.currentTimeMillis()-startT)/1000.0 
-												 + "," + nSamp + "," + nBlk);
+													+ "  " + nSamp + "  " + nBlk + "  " + (1000f/packetDur) 
+													+ "   (t,samp,blk,Hz)");
 					 }
 				}
 
 				// move to next buffer sample
-				buffsamp++; // move to next buffer sample
 				if ( buffsamp >= databuff.length ) { // got a full buffer packet's worth
 					 if ( VERB>1 ){ System.out.println("Got buffer packets worth of data. Sending");}
 					 // so forward to the buffer
@@ -258,4 +260,32 @@ long timeOfLastCommand = 0;
 		  // should cleanup correctly... but java doesn't allow unreachable code..
 		  // C.disconnect();
 	 }
+	 
+	 static void syncWithHardware(OpenBCI_ADS1299 openBCI) throws InterruptedException{
+		  while ( openBCI.get_state() == openBCI.STATE_COMINIT ||
+					 openBCI.get_state() == openBCI.STATE_SYNCWITHHARDWARE ){ // start data streaming
+				//Argument is SD Card setting: 0= do not write; 1= 5 min; 2= 15 min; 3= 30 min; etc...
+				openBCI.updateSyncState(0);
+				if ( openBCI.get_state() == openBCI.STATE_COMINIT ) {
+					 // Wait for the board to become ready
+					 System.out.println("Waiting for device to become ready");
+					 Thread.sleep(1000);
+				} else if ( !openBCI.get_readyToSend() ) { // read the state update response
+					 //System.out.println("**");
+					 while ( !openBCI.get_readyToSend() ) {
+						  int res= openBCI.read(true,-1);
+						  if ( res<0 ) {
+								// blocking read the hardware init responses and print them
+								System.out.println("Huh?");
+						  } else { 
+								//System.out.print("[" + res + "]");
+						  }
+					 }
+				} else { // inter-command pause
+					 Thread.sleep(100); 
+				}
+		  }
+	 }
+
+
 } // class
