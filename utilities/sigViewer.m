@@ -267,7 +267,10 @@ while ( ~endTraining )
     % spatial filter
     switch(lower(ppopts.spatfilttype))
      case 'none';
-     case 'car';    ppdat(~isbadch,:,:)=repop(ppdat(~isbadch,:,:),'-',mean(ppdat(~isbadch,:,:),1));
+     case 'car';    
+		 if ( sum(~isbadch)>1 ) 
+			ppdat(~isbadch,:,:)=repop(ppdat(~isbadch,:,:),'-',mean(ppdat(~isbadch,:,:),1));
+		 end
      case 'slap';   
       if ( ~isempty(slapfilt) ) % only use and update from the good channels
         ppdat(~isbadch,:,:)=tprod(ppdat(~isbadch,:,:),[-1 2 3],slapfilt(~isbadch,~isbadch),[-1 1]); 
