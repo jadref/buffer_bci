@@ -69,7 +69,7 @@ long timeOfLastCommand = 0;
 		  }		  
 		  int buffpacketsize=-1;
 		  if (args.length>=6) { buffpacketsize = Integer.parseInt(args[5]); }		  
-		  boolean useAux=false;
+		  boolean useAux=true;
 
 		  if ( openBCIport == null ) { // list available ports and exit
 				System.out.println("No serial port defined.  Current serial ports connected are:");
@@ -119,6 +119,7 @@ long timeOfLastCommand = 0;
 		  }
 		  System.out.println("Opened the port!");
 		  // disable unused channels if wanted
+		  if ( nActiveCh<0 ) nActiveCh=openBCI.get_nChan();
 		  if ( nActiveCh>0 && nActiveCh < openBCI.get_nChan() ) {
 				// Channel settings format: is
 				// [CHANNEL, POWER_DOWN, GAIN_SET, INPUT_TYPE_SET, BIAS_SET, SRB2_SET, SRB1_SET]
