@@ -37,7 +37,7 @@ long timeOfLastCommand = 0;
 
 		  
 		  if ( args.length==0 ) {
-				System.out.println("openBCI2ft openBCIport bufferhost:bufferport nActiveCh openBCIsamplerate buffdownsampleratio buffpacketsize");
+				System.out.println("openBCI2ft openBCIport bufferhost:bufferport nActiveCh useAux serialEvent buffpacketsize");
 		  }
 		  
 		  // openBCI port
@@ -65,12 +65,19 @@ long timeOfLastCommand = 0;
 				//sampleRate = Integer.parseInt(args[3]); 
 		  }		  
 		  int buffdownsample=1;
+		  boolean readAll=true; // do we read all data from serial port when some is available
+		  boolean serialEvent=false; // do we use event-driven serial comms
 		  if (args.length>=5) { 
-				System.out.println("Warning, buff-down-sample currently isn't supported.  Argument ignored.");
-				//buffdownsample = Integer.parseInt(args[4]); 
-		  }		  
+				serialEvent = Integer.parseInt(args[4])>0;;
+		  }
+		  // if (args.length>=5) { 
+		  // 		//System.out.println("Warning, buff-down-sample currently isn't supported.  Argument ignored.");		 
+		  // 		buffdownsample = Integer.parseInt(args[4]); 
+				
+		  // }		  
 		  int buffpacketsize=-1;
 		  if (args.length>=6) { buffpacketsize = Integer.parseInt(args[5]); }		  
+		  
 
 		  if ( openBCIport == null ) { // list available ports and exit
 				System.out.println("No serial port defined.  Current serial ports connected are:");
@@ -85,8 +92,6 @@ long timeOfLastCommand = 0;
 		  // print the current settings
 		  System.out.println("OPENBCI port: " + openBCIport);
 		  System.out.println("Buffer server: " + buffhostname + " : " + buffport);
-		  System.out.println("nCh : " + nActiveCh);
-		  System.out.println("#samp/buf : " + buffdownsample + " buff_packet : " + buffpacketsize);
 
 		  // open the connection to the buffer server		  
 		  BufferClientClock C = new BufferClientClock();
@@ -151,11 +156,10 @@ long timeOfLastCommand = 0;
 					 openBCI.initChannelWrite(chi);
 					 while ( openBCI.get_isWritingChannel() ){ // run the settings loop
 						  openBCI.writeChannelSettings(chi,chSettingsValues);
-						  while ( openBCI.read(true,0)>0 ); // non-blocking consume board output
+						  Thread.sleep(100); while ( openBCI.read(true,0)>0 );//non-blocking consume output
 					 }
 				}
-				Thread.sleep(100);
-				while ( openBCI.read(true,0)>0 ); // non-blocking consume board output
+				Thread.sleep(100); while ( openBCI.read(true,0)>0 ); // non-blocking consume board output
 		  } else {
 				System.out.println("Setting channels to default.");
 				openBCI.configureAllChannelsToDefault();				
@@ -166,8 +170,14 @@ long timeOfLastCommand = 0;
 		  //syncWithHardware(openBCI);
 		  System.out.println("Connected to serial port.");
 
+		  // Just in case to ensure we've cleaned the input buffer
+		  for ( int i=0; i<10; i++){
+				Thread.sleep(100); 
+				while ( openBCI.read(true,0)>0 ); // non-blocking consume all board output
+		  }
 		  // start the data streaming
 		  openBCI.startDataTransfer();
+		  System.out.println("Data is now running\n-------");
 		  
 		  // send the header information
 		  float sampleRate=openBCI.get_fs_Hz();
@@ -179,6 +189,15 @@ long timeOfLastCommand = 0;
 		  if ( VERB>0 ){ System.out.println("Sending header: " + hdr.toString()); }
 		  C.putHeader(hdr);
 
+		  if ( !readAll ){
+				System.out.println("Disabling readAll");
+				openBCI.setReadAllBytes(false);
+		  }
+		  if ( serialEvent ) {
+				System.out.println("Enabling the event listener");
+				openBCI.setSerialEventListener(true);
+		  }
+
 		  if ( buffpacketsize<=0 ) buffpacketsize=(int)Math.ceil(sampleRate/50f);
 		  byte[] buffer = new byte[BUFFERSIZE];
 		  int openBCIsamp=0;  // current sample number in buffer-packet recieved from openBCI
@@ -188,6 +207,8 @@ long timeOfLastCommand = 0;
 		  int nSamp=0;
 		  int[] buffpacksz = new int[] {nch,buffpacketsize};
 		  float[][] databuff = new float[buffpacketsize][nch];		
+		  System.out.println("nCh : " + nActiveCh);
+		  System.out.println("#samp/buf : " + buffdownsample + " buff_packet : " + buffpacketsize);
 	  		
 		  long startT=System.currentTimeMillis(); 
 		  long updateT=startT; // time we last printed update
@@ -198,16 +219,24 @@ long timeOfLastCommand = 0;
 				new DataPacket_ADS1299(nEEGDataValuesPerPacket,nAuxDataValuesPerPacket); 
 		  while ( true ) {			 
 				// wait for an OPENBCI message
-				// read from serial port until a complete packet is available
-				// Question: does this block intelligently?
+				// event driven means we don't block... so sleep a sensible amount between
+				// samples to not overload the CPU
+				if ( serialEvent ) Thread.sleep((int)(900f/sampleRate)); 
 				while ( !openBCI.get_isNewDataPacketAvailable() ) {
 					 if ( VERB>1 ){ 
 						  System.out.println((System.currentTimeMillis()-startT)/1000.0 + 
 													"Waiting for data packet from openBCI."); 
 					 }
-					 //openBCI.read(false,0); // non-blocking read for new data
-					 openBCI.read(false,-1); // blocking read for new data
-				} // got a complete packet
+					 if ( serialEvent ) { 
+						  // BODGE: serial-events and blocking reads don't seem to mix...
+						  // so use a non-blocking read to check for new data
+						  openBCI.read(false,0); // non-blocking read for new data
+					 } else {
+						  // Use a blocking read to wait for new bytes on the serial port
+						  openBCI.read(false,-1);
+					 }
+				} // got a complete packet				
+				nSamp++;
 				// Moving average est interpacket duration
 				long curT = System.currentTimeMillis();
 				packetDur = (System.currentTimeMillis()-packetT)*.01f + packetDur*.99f; 
@@ -215,6 +244,15 @@ long timeOfLastCommand = 0;
 				if ( VERB>1 ){ 
 					 System.out.println((System.currentTimeMillis()-startT)/1000.0 + 
 											  " : Got a data packet from openBCI"); 
+				}
+				// increment the cursor position
+				if ( VERB>0 ){
+					 if ( System.currentTimeMillis()-updateT > 2*1000 ) {
+						  updateT=System.currentTimeMillis();
+						  System.out.println((float)(System.currentTimeMillis()-startT)/1000.0 
+													+ "  " + nSamp + "  " + nBlk + "  " + (1000f/packetDur) 
+													+ "   (t,samp,blk,Hz)");
+					 }
 				}
 				// get (a copy of) the data just read
 				//resets isNewDataPacketAvailable to false
@@ -230,15 +268,6 @@ long timeOfLastCommand = 0;
 					 databuff[buffsamp][Ichan] += curPacket.auxValues[auxi];		 
 				}
 				buffsamp++; // move to next buffer sample
-				// increment the cursor position
-				if ( VERB>0 ){
-					 if ( System.currentTimeMillis()-updateT > 2*1000 ) {
-						  updateT=System.currentTimeMillis();
-						  System.out.println((float)(System.currentTimeMillis()-startT)/1000.0 
-													+ "  " + nSamp + "  " + nBlk + "  " + (1000f/packetDur) 
-													+ "   (t,samp,blk,Hz)");
-					 }
-				}
 
 				// move to next buffer sample
 				if ( buffsamp >= databuff.length ) { // got a full buffer packet's worth
@@ -255,7 +284,6 @@ long timeOfLastCommand = 0;
 					 buffsamp=0;
 					 nBlk++;
 				}
-				nSamp++;
 		  }
 		  // should cleanup correctly... but java doesn't allow unreachable code..
 		  // C.disconnect();

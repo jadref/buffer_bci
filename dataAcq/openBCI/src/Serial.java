@@ -47,6 +47,7 @@ public class Serial implements SerialPortEventListener {
   byte bufferUntilByte = 0;
 
   volatile boolean invokeSerialAvailable = false;
+  boolean readAllBytes = true;
 
   // Things we are currently not exposing:
   // * hardware flow control
@@ -116,6 +117,17 @@ public class Serial implements SerialPortEventListener {
     try {
       // N.B. need to explicitly call this to enable the event-listener interface!
       port.addEventListener(this, SerialPort.MASK_RXCHAR);
+      //serialEventMethod = findCallback("serialEvent");
+      //serialAvailableMethod = findCallback("serialAvailable");    
+    } catch (SerialPortException e) {
+      // this used to be a RuntimeException before, so stick with it
+      throw new RuntimeException("Error opening serial port " + e.getPortName() + ": " + e.getExceptionType());
+    }
+  }
+  public void removeEventListener() throws RuntimeException {
+    try {
+      // N.B. need to explicitly call this to enable the event-listener interface!
+      port.removeEventListener();
       //serialEventMethod = findCallback("serialEvent");
       //serialAvailableMethod = findCallback("serialAvailable");    
     } catch (SerialPortException e) {
@@ -229,15 +241,15 @@ public class Serial implements SerialPortEventListener {
     return SerialPortList.getPortNames();
   }
 
+  public void setReadAllBytes(boolean val){ synchronized(buffer){readAllBytes=val;} }
 
 	 public int readAll() throws jssc.SerialPortException { 
       // read all available bytes in the serial ports buffer into our local buffer
 		  byte[] in=null;
 		  synchronized ( port ){ // be sure we don't interleave reads from the port
+        synchronized ( buffer ) { // or from the byte-buffer
 				// read all bytes in the recieve buffer into our internal buffer
 				in = port.readBytes();
-		  }
-		  synchronized ( buffer ) {
 				if ( in!=null ) {
 					 //System.out.println("Got " + in.length + " chars to read.");
 					 if ( inBuffer+in.length>buffer.length ) { // increase buffer size
@@ -252,6 +264,7 @@ public class Serial implements SerialPortEventListener {
 					 return in.length;
 				}
 		  }
+		  }
 		  return -1;
 	 }
   
@@ -259,7 +272,7 @@ public class Serial implements SerialPortEventListener {
 	 public int read(int timeout) {
       // read with a (perhaps infinite) time-out
 		  int ret=-1;
-		  if (inBuffer > readOffset) { // Fast-Path: return data we have
+		  if (inBuffer > readOffset) { // Fast-Path: return data we have in buffer
 				synchronized (buffer) {
 					 ret = buffer[readOffset++] & 0xFF;
 					 if (inBuffer == readOffset) { // reset to start of buffer
@@ -277,7 +290,7 @@ public class Serial implements SerialPortEventListener {
             synchronized ( port ) {
               byte[] tmp = port.readBytes(1,timeout);						  
               if ( tmp!=null ) ret = tmp[0] & 0xFF;
-              readAll(); // read the rest if there are any
+              if ( readAllBytes ) readAll(); // read the rest if there are any
             }
           } catch ( jssc.SerialPortTimeoutException  ex ) {
             System.err.println("Serial.java: read(timeout) timeout exception");
@@ -291,7 +304,7 @@ public class Serial implements SerialPortEventListener {
                 synchronized ( port ) {
                   byte [] tmp = port.readBytes(1);
                   ret = tmp[0] & 0xFF;
-                  readAll(); // get the rest if there is any
+                  if ( readAllBytes ) readAll(); // get the rest if there is any
                 }
             } catch ( jssc.SerialPortException ex ) {
 					 System.err.println("Serial.java: read(timeout) serial port exception");

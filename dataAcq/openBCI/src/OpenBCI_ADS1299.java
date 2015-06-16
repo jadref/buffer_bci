@@ -147,6 +147,24 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
 	 static protected boolean currentlySyncing=false;
 	 static protected boolean isRunning=false;
 	 static protected long timeSinceStopRunning=0;
+	 public boolean setReadAllBytes(boolean val){
+		  if ( serial_openBCI != null ) {
+				serial_openBCI.setReadAllBytes(val);
+				return true;
+		  }
+		  return false;
+	 }
+	 public boolean setSerialEventListener(boolean val){
+		  if ( serial_openBCI != null ) {
+				if ( val==true ){
+					 serial_openBCI.addEventListener();
+				} else {
+					 serial_openBCI.removeEventListener();
+				}
+				return true;
+		  }
+		  return false;
+	 }
 
   //constructors
   //OpenBCI_ADS1299() {};  //only use this if you simply want access to some of the constants
