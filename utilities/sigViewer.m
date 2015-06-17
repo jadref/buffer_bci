@@ -287,8 +287,10 @@ while ( ~endTraining )
   switch (curvistype) 
     
    case 'time'; % time-domain, spectral filter
-    if ( ~isempty(filt) );      ppdat=fftfilter(ppdat,filt,outsz,2);  % N.B. downsample at same time
-    elseif ( ~isempty(outsz) ); ppdat=subsample(ppdat,outsz(2),2); % manual downsample
+    if ( ~isempty(filt) && ~all(abs(1-filt(1:end-1))<1e-6)); 
+            ppdat=fftfilter(ppdat,filt,outsz,2);  % N.B. downsample at same time
+    elseif ( ~isempty(outsz) ); 
+            ppdat=subsample(ppdat,outsz(2),2); % manual downsample
     end
     
    case 'freq'; % freq-domain
