@@ -221,7 +221,6 @@ long timeOfLastCommand = 0;
 				// wait for an OPENBCI message
 				// event driven means we don't block... so sleep a sensible amount between
 				// samples to not overload the CPU
-				if ( serialEvent ) Thread.sleep((int)(900f/sampleRate)); 
 				while ( !openBCI.get_isNewDataPacketAvailable() ) {
 					 if ( VERB>1 ){ 
 						  System.out.println((System.currentTimeMillis()-startT)/1000.0 + 
@@ -230,7 +229,10 @@ long timeOfLastCommand = 0;
 					 if ( serialEvent ) { 
 						  // BODGE: serial-events and blocking reads don't seem to mix...
 						  // so use a non-blocking read to check for new data
-						  openBCI.read(false,0); // non-blocking read for new data
+						  if ( openBCI.read(false,0) < 0 ){ // non-blocking read new data
+								// no data on serial port, so wait for some to come available
+								Thread.sleep((int)(.5f*1000f/sampleRate)); // sleep for 50% sample rate
+						  }
 					 } else {
 						  // Use a blocking read to wait for new bytes on the serial port
 						  openBCI.read(false,-1);

@@ -511,7 +511,7 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
         // syncWithHardware(); //haha, I'm getting very verbose with my naming... it's late...
       }  
 		// Don't try to interpertate when in ascii mode
-		return (int)inByte;
+		return in;
     }
     
     //write raw unprocessed bytes to a binary data dump file
@@ -525,7 +525,7 @@ public static int channelDeactivateCounter = 0; //used for re-deactivating chann
     }
     
     interpretBinaryStream(inByte);  //new 2014-02-02 WEA
-    return (int)(inByte);
+    return in;
   }
 
   /* **** Borrowed from Chris Viegl from his OpenBCI parser for BrainBay
