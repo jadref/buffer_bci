@@ -37,7 +37,7 @@ long timeOfLastCommand = 0;
 
 		  
 		  if ( args.length==0 ) {
-				System.out.println("openBCI2ft openBCIport bufferhost:bufferport nActiveCh useAux serialEvent buffpacketsize");
+				System.out.println("openBCI2ft openBCIport bufferhost:bufferport nActiveCh useAux eventDriven buffpacketsize");
 		  }
 		  
 		  // openBCI port
@@ -196,6 +196,11 @@ long timeOfLastCommand = 0;
 		  if ( serialEvent ) {
 				System.out.println("Enabling the event listener");
 				openBCI.setSerialEventListener(true);
+		  } else {
+				if ( System.getProperty("os.name").startsWith("Windows") ) {
+					 System.out.println("Warning: Blocking mode is unreliable on some Windows versions.");
+					 System.out.println("If you are missing samples then switch to event-driven mode.");
+				}
 		  }
 
 		  if ( buffpacketsize<=0 ) buffpacketsize=(int)Math.ceil(sampleRate/50f);
