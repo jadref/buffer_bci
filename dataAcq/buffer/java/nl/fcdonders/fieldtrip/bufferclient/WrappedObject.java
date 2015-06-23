@@ -83,29 +83,29 @@ public class WrappedObject {
 			Class elc = cls.getComponentType();
 			if (!elc.isPrimitive()) return;
 			
-			if        (name == "[D") {
+			if        (name.equals("[D")) {
 				type = DataType.FLOAT64;
 				array = ((double[]) obj).clone();
 				numel = ((double[]) obj).length;
-			} else if (name == "[F") {
+			} else if (name.equals("[F")) {
 				type = DataType.FLOAT32;
 				array = ((float[]) obj).clone();
 				numel = ((float[]) obj).length;
-			} else if (name == "[J") {
+			} else if (name.equals("[J")) {
 				type = DataType.INT64;
 				array = ((long[]) obj).clone();
 				numel = ((long[]) obj).length;
-			} else if (name == "[I") {
+			} else if (name.equals("[I")) {
 				type = DataType.INT32;
 				array = ((int[]) obj).clone();
 				numel = ((int[]) obj).length;
 			
-			} else if (name == "[S") {
+			} else if (name.equals("[S")) {
 				type = DataType.INT16;
 				array = ((short[]) obj).clone();
 				numel = ((short[]) obj).length;
 			
-			} else if (name == "[B") {
+			} else if (name.equals("[B")) {
 				type = DataType.INT8;
 				array = ((byte[]) obj).clone();
 				numel = ((byte[]) obj).length;
@@ -115,28 +115,28 @@ public class WrappedObject {
 			}
 			size  = numel * DataType.wordSize[type];
 			return;
-		} else if (name == "java.lang.String") {
+		} else if (name.equals("java.lang.String")) {
 			type = DataType.CHAR;
 			array = obj;
 			numel = ((String) obj).getBytes().length;
 			size  = numel;
 			return;
-		} else if (name == "java.lang.Double") {
+		} else if (name.equals("java.lang.Double")) {
 			type = DataType.FLOAT64;
 			array = new double[] {((Double) obj).doubleValue()};
-		} else if (name == "java.lang.Float") {
+		} else if (name.equals("java.lang.Float")) {
 			type = DataType.FLOAT32;
 			array = new float[] {((Float) obj).floatValue()};
-		} else if (name == "java.lang.Long") {
+		} else if (name.equals("java.lang.Long")) {
 			type = DataType.INT64;
 			array = new long[] {((Long) obj).longValue()};
-		} else if (name == "java.lang.Integer") {
+		} else if (name.equals("java.lang.Integer")) {
 			type = DataType.INT32;
 			array = new int[] {((Integer) obj).intValue()};
-		} else if (name == "java.lang.Short") {
+		} else if (name.equals("java.lang.Short")) {
 			type = DataType.INT16;
 			array = new short[] {((Short) obj).shortValue()};
-		} else if (name == "java.lang.Byte") {
+		} else if (name.equals("java.lang.Byte")) {
 			type = DataType.INT8;
 			array = new byte[] {((Byte) obj).byteValue()};		
 		} else {
@@ -182,43 +182,43 @@ public class WrappedObject {
 
 	public String toString() {
 		 String str=new String();
-		if (type == DataType.CHAR) return (String) array;
-		if (type == DataType.FLOAT64) {
+		if (type.equals(DataType.CHAR)) return (String) array;
+		if (type.equals(DataType.FLOAT64)) {
 			 str = String.valueOf(((double[]) array)[0]);
 			 for ( int i=1; i<numel; i++ ){
 				  str = str + "," + String.valueOf(((double[]) array)[i]);
 			 }
 			 return str;
 		}
-		if (type == DataType.FLOAT32) {
+		if (type.equals(DataType.FLOAT32)) {
 			 str = String.valueOf(((float[]) array)[0]);
 			 for ( int i=1; i<numel; i++ ){
 				  str = str + "," + String.valueOf(((float[]) array)[i]);
 			 }
 			 return str;
 		}
-		if (type == DataType.INT64) {
+		if (type.equals(DataType.INT64)) {
 			 str = String.valueOf(((long[]) array)[0]);
 			 for ( int i=1; i<numel; i++ ){
 				  str = str + "," + String.valueOf(((long[]) array)[i]);
 			 }
 			 return str;
 		}
-		if (type == DataType.INT32) {
+		if (type.equals(DataType.INT32)) {
 			 str = String.valueOf(((int[]) array)[0]);
 			 for ( int i=1; i<numel; i++ ){
 				  str = str + "," + String.valueOf(((int[]) array)[i]);
 			 }
 			 return str;
 		}
-		if (type == DataType.INT16) {
+		if (type.equals(DataType.INT16)) {
 			 str = String.valueOf(((short[]) array)[0]);
 			 for ( int i=1; i<numel; i++ ){
 				  str = str + "," + String.valueOf(((short[]) array)[i]);
 			 }
 			 return str;
 		}
-		if (type == DataType.INT8) {
+		if (type.equals(DataType.INT8)) {
 			 str = String.valueOf(((byte[]) array)[0]);
 			 for ( int i=1; i<numel; i++ ){
 				  str = str + "," + String.valueOf(((byte[]) array)[i]);
