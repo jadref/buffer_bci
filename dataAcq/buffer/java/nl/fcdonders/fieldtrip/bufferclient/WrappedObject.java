@@ -182,43 +182,43 @@ public class WrappedObject {
 
 	public String toString() {
 		 String str=new String();
-		if (type.equals(DataType.CHAR)) return (String) array;
-		if (type.equals(DataType.FLOAT64)) {
+		if (type == DataType.CHAR) return (String) array;
+		if (type == DataType.FLOAT64) {
 			 str = String.valueOf(((double[]) array)[0]);
 			 for ( int i=1; i<numel; i++ ){
 				  str = str + "," + String.valueOf(((double[]) array)[i]);
 			 }
 			 return str;
 		}
-		if (type.equals(DataType.FLOAT32)) {
+		if (type == DataType.FLOAT32) {
 			 str = String.valueOf(((float[]) array)[0]);
 			 for ( int i=1; i<numel; i++ ){
 				  str = str + "," + String.valueOf(((float[]) array)[i]);
 			 }
 			 return str;
 		}
-		if (type.equals(DataType.INT64)) {
+		if (type == DataType.INT64) {
 			 str = String.valueOf(((long[]) array)[0]);
 			 for ( int i=1; i<numel; i++ ){
 				  str = str + "," + String.valueOf(((long[]) array)[i]);
 			 }
 			 return str;
 		}
-		if (type.equals(DataType.INT32)) {
+		if (type == DataType.INT32) {
 			 str = String.valueOf(((int[]) array)[0]);
 			 for ( int i=1; i<numel; i++ ){
 				  str = str + "," + String.valueOf(((int[]) array)[i]);
 			 }
 			 return str;
 		}
-		if (type.equals(DataType.INT16)) {
+		if (type == DataType.INT16) {
 			 str = String.valueOf(((short[]) array)[0]);
 			 for ( int i=1; i<numel; i++ ){
 				  str = str + "," + String.valueOf(((short[]) array)[i]);
 			 }
 			 return str;
 		}
-		if (type.equals(DataType.INT8)) {
+		if (type == DataType.INT8) {
 			 str = String.valueOf(((byte[]) array)[0]);
 			 for ( int i=1; i<numel; i++ ){
 				  str = str + "," + String.valueOf(((byte[]) array)[i]);
