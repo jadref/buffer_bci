@@ -133,12 +133,6 @@ public class BufferServer extends Thread {
 		setName("Fieldtrip Buffer Server");
 	}
 
-	public BufferServer(final int portNumber, final int nSamples, final int nEvents, final File dir) {
-		this.portNumber = portNumber;
-		dataStore = new SavingRingDataStore(nSamples, nEvents, dir);
-		setName("Fieldtrip Buffer Server");
-	}
-
 	public void addMonitor(final FieldtripBufferMonitor monitor) {
 		this.monitor = monitor;
 		for (final ConnectionThread thread : threads) {
