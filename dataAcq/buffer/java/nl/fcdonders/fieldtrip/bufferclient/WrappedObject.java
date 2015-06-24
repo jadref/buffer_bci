@@ -82,7 +82,7 @@ public class WrappedObject {
 		if (cls.isArray()) {
 			Class elc = cls.getComponentType();
 			
-			if        (name == "[D") {
+			if        (name.equals("[D")) {
 				type = DataType.FLOAT64;
 				array = ((double[]) obj).clone();
 				numel = ((double[]) obj).length;
@@ -94,34 +94,34 @@ public class WrappedObject {
 				array = tmp;
 				numel = tmp.length;
 
-			} else if (name == "[F") {
+			} else if (name.equals("[F")) {
 				type = DataType.FLOAT32;
 				array = ((float[]) obj).clone();
 				numel = ((float[]) obj).length;
 
-			} else if  (name == "[Ljava.lang.Float") {
+			} else if  (name.equals("[Ljava.lang.Float")) {
 				type = DataType.FLOAT32;
 				float[] tmp = new float[((Float[])obj).length];
 				for ( int i=0; i<tmp.length; i++ ) tmp[i] = (float) ((Float[])obj)[i];
 				array = tmp;
 				numel = tmp.length;
 
-			} else if (name == "[J") {
+			} else if (name.equals("[J")) {
 				type = DataType.INT64;
 				array = ((long[]) obj).clone();
 				numel = ((long[]) obj).length;
 
-			} else if (name == "[I") {
+			} else if (name.equals("[I")) {
 				type = DataType.INT32;
 				array = ((int[]) obj).clone();
 				numel = ((int[]) obj).length;
 			
-			} else if (name == "[S") {
+			} else if (name.equals("[S")) {
 				type = DataType.INT16;
 				array = ((short[]) obj).clone();
 				numel = ((short[]) obj).length;
 			
-			} else if (name == "[B") {
+			} else if (name.equals("[B")) {
 				type = DataType.INT8;
 				array = ((byte[]) obj).clone();
 				numel = ((byte[]) obj).length;
@@ -131,28 +131,28 @@ public class WrappedObject {
 			}
 			size  = numel * DataType.wordSize[type];
 			return;
-		} else if (name == "java.lang.String") {
+		} else if (name.equals("java.lang.String")) {
 			type = DataType.CHAR;
 			array = obj;
 			numel = ((String) obj).getBytes().length;
 			size  = numel;
 			return;
-		} else if (name == "java.lang.Double") {
+		} else if (name.equals("java.lang.Double")) {
 			type = DataType.FLOAT64;
 			array = new double[] {((Double) obj).doubleValue()};
-		} else if (name == "java.lang.Float") {
+		} else if (name.equals("java.lang.Float")) {
 			type = DataType.FLOAT32;
 			array = new float[] {((Float) obj).floatValue()};
-		} else if (name == "java.lang.Long") {
+		} else if (name.equals("java.lang.Long")) {
 			type = DataType.INT64;
 			array = new long[] {((Long) obj).longValue()};
-		} else if (name == "java.lang.Integer") {
+		} else if (name.equals("java.lang.Integer")) {
 			type = DataType.INT32;
 			array = new int[] {((Integer) obj).intValue()};
-		} else if (name == "java.lang.Short") {
+		} else if (name.equals("java.lang.Short")) {
 			type = DataType.INT16;
 			array = new short[] {((Short) obj).shortValue()};
-		} else if (name == "java.lang.Byte") {
+		} else if (name.equals("java.lang.Byte")) {
 			type = DataType.INT8;
 			array = new byte[] {((Byte) obj).byteValue()};		
 		} else {
