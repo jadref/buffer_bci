@@ -22,10 +22,10 @@ set(fig,'userdata',[]); % clear any old key info
 instructh=text(min(get(ax,'xlim'))+.25*diff(get(ax,'xlim')),mean(get(ax,'ylim')),instructstr,'HorizontalAlignment','left','VerticalAlignment','middle','color',[0 1 0],'fontunits','normalized','FontSize',.05,'visible','off');
 
 % load the audio fragments
-tmp = wavread('auditoryStimuli/550.wav'); %oddball
-beepStd = audioplayer(tmp, 44100);
-tmp  = wavread('auditoryStimuli/500.wav'); %standard
-beepOdd = audioplayer(tmp, 44100);
+[tmp,fsi]= wavread('auditoryStimuli/550.wav'); tmp=tmp';%oddball
+beepStd  = audioplayer(tmp(fsi*.2,:)', fsi); % limit to .2s long
+[tmp,fsi]= wavread('auditoryStimuli/500.wav'); tmp=tmp';%standard
+beepOdd = audioplayer(tmp(fsi*.2,:)', fsi); % limit to .2s long
 audio = {beepStd beepOdd};
 
 % play the stimulus
@@ -62,12 +62,18 @@ while ( ~endTraining )
     %key=get(fig,'currentkey');
     set(fig,'userData',[]);
     switch lower(key(1))
-     case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration);          seqStart=true;
-     case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration,1/5,2,1);seqStart=true;
-     case {'a'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(h,trialDuration,1/3,2);        seqStart=true;
-     case {'s','3'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,trialDuration,1/ssvepFreq(1)/2,sprintf('SSVEP %g',ssvepFreq(1)));   seqStart=true;
-     case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(h,trialDuration,1/5,2,1); seqStart=true;
-     case {'f','5'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(h,trialDuration,isi,1./(flickerFreq*isi)); seqStart=true;
+     case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration);          
+			 seqStart=true;
+     case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(h,trialDuration,1/5,2,1);  
+			 seqStart=true;
+     case {'a'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(h,trialDuration,1/2,2,1);    
+			 seqStart=true;
+     case {'s','3'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,trialDuration,1/ssvepFreq(1)/2,sprintf('SSVEP %g',ssvepFreq(1)));   
+			 seqStart=true;
+     case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(h,trialDuration,1/5,2,1); 
+			 seqStart=true;
+     case {'f','5'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(h,trialDuration,isi,1./(flickerFreq*isi)); 
+			 seqStart=true;
      case {'l','6'}; % left box only
       stimTime=0:1:trialDuration; % times something happens, i.e. every second send event
       stimSeq =-ones(numel(h),numel(stimTime)); stimSeq(2,:)=1; stimSeq(4,:)=2; % what happens when
@@ -86,7 +92,6 @@ while ( ~endTraining )
       colors=[tgtColor;bgColor]'; % key for color to use for each stimulus
       eventSeq=cell(1,numel(stimTime)); [eventSeq{1:end-1}]=deal({'stimulus' 'right'}); % markers to send
       seqStart=true;
-     case {'a'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(texels,trialDuration,1/4,1.5);seqStart=true;
      case {'q','escape'};         endTraining=true; break; % end the phase
      %case {'7'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,trialDuration,1/ssvepFreq(2)/2,sprintf('SSVEP %g',ssvepFreq(2)));  seqStart=true;
      %case {'8'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(h,trialDuration,1/ssvepFreq(3)/2,sprintf('SSVEP %g',ssvepFreq(3)));  seqStart=true;

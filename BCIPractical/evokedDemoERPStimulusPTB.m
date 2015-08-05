@@ -32,8 +32,10 @@ fs              = 44100;       % Must set this. 96khz, 48khz, 44.1khz.
 paPtr = PsychPortAudio('Open', [], [], reqlatencyclass, fs,[],2)
 % load the audio fragments
 audio={};
-[audio{1},fs1] = wavread('auditoryStimuli/550.wav'); audio{1}=audio{1}'; %oddball
-[audio{2},fs2] = wavread('auditoryStimuli/500.wav'); audio{2}=audio{2}';%standard
+[audio{1},fs1] = wavread('auditoryStimuli/550.wav'); %oddball
+audio{1}=audio{1}(:,1:fs1*.2)'; % limit to .2s long
+[audio{2},fs2] = wavread('auditoryStimuli/500.wav'); %standard
+audio{2}=audio{2}(:,1:fs2*.2)'; % limit to .2s long
 if ( fs1~=fs2 || fs1~=fs ) 
   warning('Audio files and audio-device use different sampling rates');
 end
@@ -90,12 +92,18 @@ while ( ~endTraining )
       Screen('flip',wPtr,1,1);% re-draw the display
     end
     switch lower(key(1))
-     case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(texels,trialDuration);          seqStart=true;
-     case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(texels,trialDuration,1/5,2,1);seqStart=true;
-     case {'a'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(texels,trialDuration,1/2,2);    seqStart=true;
-     case {'s','3'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,trialDuration,1/ssvepFreq(1)/2,sprintf('SSVEP %g',ssvepFreq(1)));   seqStart=true;
-     case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(texels,trialDuration,1/5,2,1); seqStart=true;
-     case {'f','5'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(texels,trialDuration,isi,1./(flickerFreq*isi)); seqStart=true;
+     case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(texels,trialDuration);          
+			 seqStart=true;
+     case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(texels,trialDuration,1/5,2,1);  
+			 seqStart=true;
+     case {'a'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(texels,trialDuration,1/2,2);    
+			 seqStart=true;
+     case {'s','3'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,trialDuration,1/ssvepFreq(1)/2,sprintf('SSVEP %g',ssvepFreq(1)));   
+			 seqStart=true;
+     case {'p','4'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_P3(texels,trialDuration,1/5,2,1); 
+			 seqStart=true;
+     case {'f','5'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(texels,trialDuration,isi,1./(flickerFreq*isi)); 
+			 seqStart=true;
      case {'l','6'}; % left box only
       stimTime=0:1:trialDuration; % times something happens, i.e. every second send event
       stimSeq =-ones(numel(texels),numel(stimTime)); stimSeq(2,:)=1; stimSeq(4,:)=2; % what happens when
