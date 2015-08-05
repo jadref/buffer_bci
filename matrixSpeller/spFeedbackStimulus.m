@@ -18,7 +18,7 @@ stimSeqCol(size(symbols,2)+1:end,:)=[];  % remove the extra symbol
 
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
-set(h(:),'color',[.5 .5 .5]);
+set(h(:),'color',bgColor);
 sendEvent('stimulus.feedback','start');
 for si=1:nSeq;
 

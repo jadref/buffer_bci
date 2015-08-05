@@ -19,7 +19,7 @@ stimSeqRow(size(symbols,1)+1:end,:)=[];  % remove the extra symbol
 stimSeqCol(size(symbols,2)+1:end,:)=[];  % remove the extra symbol
 
 % play the stimulus
-set(h(:),'color',[.5 .5 .5]);
+set(h(:),'color',bgColor);
 sendEvent('stimulus.training','start');
 drawnow; pause(5); % N.B. use pause so the figure still re-draws
 for si=1:nSeq;
