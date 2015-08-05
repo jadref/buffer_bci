@@ -124,7 +124,7 @@ plotPos=ch_pos; if ( ~isempty(plotPos) ); plotPos=plotPos(:,iseeg); end;
 hdls=image3d(ppspect,1,'plotPos',plotPos,'Xvals',ch_names,'yvals',freqs(freqIdx(1):freqIdx(2)),'ylabel','freq (hz)','zvals',start_s,'zlabel','time (s)','disptype','imaget','colorbar',1,'ticklabs','sw','legend',0,'plotPosOpts.plotsposition',[.05 .08 .91 .85]);
 cbarhdl=[]; 
 if ( strcmpi(get(hdls(end),'Tag'),'colorbar') ) 
-  cbarhdl=hdls(end); hdls(end)=[]; cbarpos=get(cbarhdl,'outerposition');
+  cbarhdl=hdls(end); hdls(end)=[]; cbarpos=get(cbarhdl,'position');
   set(findobj(cbarhdl),'visible','off'); % store and make invisible
 end;
 if ( ~exist('OCTAVE_VERSION','builtin') ) % in octave have to manually convert arrays..
@@ -366,7 +366,7 @@ while ( ~endTraining )
         ylabel(hdls(hi),'');
       end
       if ( ~isempty(cbarhdl) ) 
-        set(cbarhdl,'outerposition',cbarpos); % ARGH! octave moves the cbar if axes are changed!
+        set(cbarhdl,'position',cbarpos); % ARGH! octave moves the cbar if axes are changed!
         set(findobj(cbarhdl),'visible','on');
         set(get(cbarhdl,'children'),'ydata',datlim);set(cbarhdl,'ylim',datlim); 
       end;
@@ -380,7 +380,7 @@ while ( ~endTraining )
       if ( ~isempty(cbarhdl) ) 
         set(findobj(cbarhdl),'visible','on'); 
         set(get(cbarhdl,'children'),'ydata',datlim);set(cbarhdl,'ylim',datlim); 
-        set(cbarhdl,'outerposition',cbarpos); 
+        set(cbarhdl,'position',cbarpos); 
       end;
     
     end
