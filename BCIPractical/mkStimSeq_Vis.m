@@ -18,7 +18,7 @@ while (t<max(stimTime))
   if( oddp ) si=2*fix(si/2); end % round to nearest even stimulus position
   stimSeq(1,si)=1;
   t=stimTime(si);
-  dt=(.3+rand(1)*.7)*tti;
+  dt=(.5+rand(1)*.7)*tti;
   t=t+dt;
 end
 sval='vis'; if (oddp) sval='odd'; end;
