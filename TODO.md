@@ -13,6 +13,10 @@ Platform/Language support
   [X] - Java based signal analysis routines
   [X] - Unity examples
   [X] - Raw-android examples
+[] - Open Sound Control
+  [X] - OSC2ft, osc messages to data
+  [] - osc2evt, osc messages into buffer events
+  [] - evt2osc, buffer events into osc messages (for sound/video integeration)
 
 Demo BCIs
 =========
