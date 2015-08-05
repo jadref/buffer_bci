@@ -33,7 +33,7 @@ zoomedLim=[-4 4];
 % BCI Stim Props
 flashColor=[1 1 1]; % the 'flash' color (white)
 tgtColor = [.8 .8 .8];
-bgColor  = [.1 .1 .1];
+bgColor  = [.5 .5 .5];
 tgt2Color= [1 0 0];
 predColor= [0 1 0];
 arrowScale=[.4 1.0];
