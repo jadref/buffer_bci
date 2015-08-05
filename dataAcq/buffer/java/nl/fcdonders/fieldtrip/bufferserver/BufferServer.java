@@ -97,6 +97,7 @@ public class BufferServer extends Thread {
 	 public BufferServer(final String path, final int portNumber) {
 		this.portNumber = portNumber;
 		dataStore = new SavingRingDataStore(dataBufSize,eventBufSize,path);
+		System.err.println("Saving to : " + path);
 		setName("Fieldtrip Buffer Server");
 	}
 
@@ -129,6 +130,7 @@ public class BufferServer extends Thread {
 
 	public BufferServer(final int portNumber, final int nSamples, final int nEvents, final String path) {
 		this.portNumber = portNumber;
+		System.err.println("Saving to : " + path);
 		dataStore = new SavingRingDataStore(nSamples, nEvents, path);
 		setName("Fieldtrip Buffer Server");
 	}

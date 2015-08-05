@@ -16,7 +16,7 @@ public class SavingRingDataStore extends RingDataStore {
     private BufferedOutputStream eventWriter;
     private BufferedOutputStream dataWriter;
     private BufferedOutputStream headerWriter;
-    private String savePath;
+    private String savePathRoot;
     private int numReset = 0;
     private ByteBuffer writeBuf;
 
@@ -27,17 +27,21 @@ public class SavingRingDataStore extends RingDataStore {
      */
     public SavingRingDataStore(final int nBuffer) {
         super(nBuffer);
-        initFiles();
+		  savePathRoot = "."; // record the root of the save path
+        initFiles(savePathRoot); 
     }
 
 
     public SavingRingDataStore(final int nBuffer, final String path) {
         super(nBuffer);
-        initFiles(path);
+		  savePathRoot = path; // record the root of the save path
+        initFiles(savePathRoot); 
     }
 
     public SavingRingDataStore(final int nBuffer, final File theDir) {
         super(nBuffer);
+		  // record the root of the save path
+		  savePathRoot = theDir.getPath();
         initFiles(theDir);
     }
 
@@ -50,31 +54,34 @@ public class SavingRingDataStore extends RingDataStore {
      */
     public SavingRingDataStore(final int nSamples, final int nEvents) {
         super(nSamples, nEvents);
-        initFiles();
+		  savePathRoot = "."; // record the root of the save path
+        initFiles(savePathRoot); 
     }
 
     public SavingRingDataStore(final int nSamples, final int nEvents, String path) {
         super(nSamples, nEvents);
-        initFiles(path);
+		  savePathRoot = path; // record the root of the save path
+        initFiles(savePathRoot);
     }
 
     public SavingRingDataStore(final int nSamples, final int nEvents, File theDir) {
         super(nSamples, nEvents);
+		  // record the root of the save path
+		  savePathRoot = theDir.getPath();
         initFiles(theDir);
     }
 
-    void initFiles() {
-        initFiles(".");
-    }
-
     void initFiles(String path) {
+		  // When using a string we automatically use sub-directories numbered from 000
         if (path == null) path = ".";
         // add the reset number prefix to the path
         String fullpath = path + File.separator + String.format("%03d", numReset);
         File theDir = new File(fullpath);
+		  initFiles(theDir); // call the version which actually makes directory and opens the save files
     }
 
     void initFiles(File file) {
+		  // this function actually does the creation and opening of the save files
         try {
             // if the directory does not exist, create it
             if (!file.exists()) {
@@ -85,7 +92,7 @@ public class SavingRingDataStore extends RingDataStore {
                 }
             }
             // record the save path used
-            savePath = file.getPath();
+            String savePath = file.getPath();
             dataWriter = new BufferedOutputStream(new FileOutputStream(savePath + File.separator + "samples"),
                     dataBufSize);
             eventWriter = new BufferedOutputStream(new FileOutputStream(savePath + File.separator + "events"),
@@ -94,14 +101,18 @@ public class SavingRingDataStore extends RingDataStore {
             // Write everything in BIG_ENDIAN
             writeBuf = ByteBuffer.allocate(eventBufSize);
             writeBuf.order(ByteOrder.nativeOrder());
+				// Some debug info about what we're doing
+				System.err.println("Saving to : " + savePath);
         } catch (IOException x) {
+				System.err.println("Error making save file");
             System.err.println(x);
         }
     }
 
     void resetFiles() {
         cleanup();
-        initFiles(savePath);
+		  numReset++;
+        initFiles(savePathRoot);
     }
 
     /**
@@ -235,7 +246,7 @@ public class SavingRingDataStore extends RingDataStore {
     @Override
     public synchronized void putHeader(Header header) throws DataException {
 
-        final boolean newHeader = header == null;
+        final boolean newHeader = this.header == null;
 
         // Check if header is in BIG_ENDIAN ByteOrder.
         if (header.order != NATIVE_ORDER) {
@@ -262,19 +273,20 @@ public class SavingRingDataStore extends RingDataStore {
             header = new Header(header, chunks, NATIVE_ORDER);
         }
 
-        if (newHeader) {
+        if (!newHeader) {
             if (nChans != header.nChans) {
                 throw new DataException("Replacing header has different number of channels");
             }
             if (dataType != header.dataType) {
                 throw new DataException("Replacing header has different data type");
-            }
+            }				
+				resetFiles(); // reset the save directory
         } else {
             nChans = header.nChans;
             dataType = header.dataType;
             nBytes = NetworkProtocol.dataTypeSize(dataType);
         }
-
+		  
         this.header = header;
         dataBuffer = new DataRingBuffer(dataBufferSize, nChans, nBytes);
         try {

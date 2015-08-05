@@ -425,7 +425,7 @@ public class RingDataStore extends DataModel {
 	@Override
 	public synchronized void putHeader(Header header) throws DataException {
 
-		final boolean newHeader = header == null;
+		final boolean newHeader = this.header == null;
 
 		// Check if header is in BIG_ENDIAN ByteOrder.
 		if (header.order != NATIVE_ORDER) {
@@ -452,7 +452,7 @@ public class RingDataStore extends DataModel {
 			header = new Header(header, chunks, NATIVE_ORDER);
 		}
 
-		if (newHeader) {
+		if (!newHeader) {
 			if (nChans != header.nChans) {
 				throw new DataException(
 						"Replacing header has different number of channels");

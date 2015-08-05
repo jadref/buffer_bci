@@ -24,5 +24,5 @@ fi
 
 mkdir -p "$outdir"
 
-echo Starting: ${buffdir}/buffer/java/BufferServer.jar ${outdir}\raw_buffer $@
-java -jar ${buffdir}/buffer/java/BufferServer.jar ${outdir}\raw_buffer $@
+echo Starting: ${buffdir}/buffer/java/BufferServer.jar ${outdir}/raw_buffer $@
+java -jar ${buffdir}/buffer/java/BufferServer.jar ${outdir}/raw_buffer $@
