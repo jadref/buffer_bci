@@ -157,7 +157,7 @@ switch cmd;
       if ( strcmp(typeinfo(evt(ei).value),'octave_java') )
         tmp = zeros(size(evt(ei).value));
         for i=1:numel(evt(ei).value) 
-          if isnumeric(evt(ei).value(i)) && numel(evt(ei).value)>1
+          if isnumeric(evt(ei).value(i)) && numel(evt(ei).value(i))>1
             tmp(i)=evt(ei).value(i).doubleValue(); 
           else
             tmp(i)=evt(ei).value(i);
