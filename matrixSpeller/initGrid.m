@@ -10,7 +10,7 @@ function [hdls,symbols,opts]=initGrid(symbols,varargin)
 %  fig - [1 x 1] handle to the figure to draw in
 % Outputs:
 %  hdls -- [nRow x nCols] set of handles to the text elements
-opts=struct('fontSize',.1,'fig',[],'interBoxGap',.01);
+opts=struct('fontSize',[],'relfontSize',.1,'fig',[],'interBoxGap',.01);
 opts=parseOpts(opts,varargin);
 % prepare figure
 if ( ~isempty(opts.fig) ) figure(opts.fig); else opts.fig=gcf; end;
@@ -21,9 +21,11 @@ set(gca,'YDir','reverse');
 set(gca,'xlim',[0 1],'ylim',[0 1]);
 
 % compute the fontsize in pixels
-set(opts.fig,'Units','pixel');
-wSize=get(opts.fig,'position');
-fontSize = opts.fontSize*wSize(4);
+if ( isempty(opts.fontSize) ) 
+  set(opts.fig,'Units','pixel');
+  wSize=get(opts.fig,'position');
+  opts.fontSize = opts.relfontSize*wSize(4);
+end
 
 % init the symbols
 hdls   =zeros([size(symbols),1]);
@@ -34,7 +36,7 @@ for i = 1:size(symbols,1)
     rect = [x-.5*w+opts.interBoxGap,y-.5*h+opts.interBoxGap,w-2*opts.interBoxGap,h-2*opts.interBoxGap];
     hdls(i,j,1) = ...
         text(x,y-h*.1,symbols{i,j},...
-             'fontunits','pixel','fontsize',fontSize,'HorizontalAlignment','center','FontWeight','bold','Color',[.1 .1 .1]);
+             'fontunits','pixel','fontsize',opts.fontSize,'HorizontalAlignment','center','FontWeight','bold','Color',[.1 .1 .1]);
   end
 end
 drawnow;

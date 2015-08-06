@@ -4,7 +4,8 @@ configureGame;
 clf;
 fig=gcf;
 set(fig,'Name','Matrix Speller','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
-[h,symbs]=initGrid(symbols,'fontSize',symbSize);
+[h,symbs,opts]=initGrid(symbols,'relfontSize',symbSize);
+symbSize=opts.fontSize;
 
 % make the row/col flash sequence for each sequence
 [stimSeqRow,stimTimeRow]=mkStimSeqRand(vnRows,nRepetitions*vnRows,stimDuration);
