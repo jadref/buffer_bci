@@ -9,12 +9,12 @@ For /f "tokens=2-4 delims=/- " %%a in ('date /t') do (set session=%%c%%b%%a)
 rem get time
 For /f "tokens=1-4 delims=: " %%a in ('time /t') do (set block=%%a%%b%%c)
 set pyfolder=dummy
-if exist %batdir%\startBuffer.py (
+if exist %batdir%\getBufferSaveDir.py (
 	rem check if python is installed in path
 	for %%X in (python.exe) do (set FOUND=%%~$PATH:X)
 	if defined FOUND (
 	  rem This is a horrible hack to get the output of the sub-command into a variable
-  	  For /f "usebackq delims=" %%o in (`%batdir%\startBuffer.py`) do (set pyfolder=%%o)
+  	  For /f "usebackq delims=" %%o in (`%batdir%\getBufferSaveDir.py`) do (set pyfolder=%%o)
 	)
 ) 
 if %pyfolder%==dummy ( 
