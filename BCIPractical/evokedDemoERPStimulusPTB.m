@@ -33,9 +33,9 @@ paPtr = PsychPortAudio('Open', [], [], reqlatencyclass, fs,[],2)
 % load the audio fragments
 audio={};
 [audio{1},fs1] = wavread('auditoryStimuli/550.wav'); %oddball
-audio{1}=audio{1}(:,1:fs1*.2)'; % limit to .2s long
+audio{1}=audio{1}(:,1:min(size(audio{1},2),fs1*.2))'; % limit to .2s long
 [audio{2},fs2] = wavread('auditoryStimuli/500.wav'); %standard
-audio{2}=audio{2}(:,1:fs2*.2)'; % limit to .2s long
+audio{2}=audio{2}(:,1:min(size(audio{2},2),fs2*.2))'; % limit to .2s long
 if ( fs1~=fs2 || fs1~=fs ) 
   warning('Audio files and audio-device use different sampling rates');
 end
@@ -91,12 +91,13 @@ while ( ~endTraining )
       Screen('Drawtextures',wPtr,instructTexel,instructSrcR,instructDestR,[],[],[],[1 1 1]*255); 
       Screen('flip',wPtr,1,1);% re-draw the display
     end
+    if ( iscell(key) ) key=key{1}; end;
     switch lower(key(1))
      case {'v','1'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(texels,trialDuration);          
 			 seqStart=true;
      case {'o','2'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Vis(texels,trialDuration,1/5,2,1);  
 			 seqStart=true;
-     case {'a'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(texels,trialDuration,1/2,2);    
+     case {'a'};     [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_Aud(texels,trialDuration,1/2,2,1);    
 			 seqStart=true;
      case {'s','3'}; [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_SSVEP(texels,trialDuration,1/ssvepFreq(1)/2,sprintf('SSVEP %g',ssvepFreq(1)));   
 			 seqStart=true;
@@ -164,11 +165,11 @@ while ( ~endTraining )
       Screen('Drawtextures',wPtr,texels(ss==3),srcR(:,ss==3),destR(:,ss==3),[],[],[],colors(:,3)*255); 
     end;
     if(any(ss==-4))
-      PsychPortAudio('Stop', paPtr,1,0); % soft stop of currently playing sound
+      %PsychPortAudio('Stop', paPtr,1,0); % soft stop of currently playing sound
       PsychPortAudio('FillBuffer', paPtr, audio{1});
     end;
     if(any(ss==-5))
-      PsychPortAudio('Stop', paPtr,1,0); % soft stop of currently playing sound
+      %PsychPortAudio('Stop', paPtr,1,0); % soft stop of currently playing sound
       PsychPortAudio('FillBuffer', paPtr, audio{2});
     end; 
 

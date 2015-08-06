@@ -23,7 +23,7 @@ if ( ~isempty(opts.interplotgap) && numel(opts.interplotgap)<4 )
    opts.interplotgap(end+1:4)=opts.interplotgap(end); 
 end;
 
-fighdl = fighdl(ishandle(abs(fighdl)));
+%fighdl = fighdl(ishandle(abs(fighdl)));
 if isempty(fighdl), return, end
 
 

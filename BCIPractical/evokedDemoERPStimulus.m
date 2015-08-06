@@ -22,10 +22,10 @@ set(fig,'userdata',[]); % clear any old key info
 instructh=text(min(get(ax,'xlim'))+.25*diff(get(ax,'xlim')),mean(get(ax,'ylim')),instructstr,'HorizontalAlignment','left','VerticalAlignment','middle','color',[0 1 0],'fontunits','normalized','FontSize',.05,'visible','off');
 
 % load the audio fragments
-[tmp,fsi]= wavread('auditoryStimuli/550.wav'); tmp=tmp';%oddball
-beepStd  = audioplayer(tmp(fsi*.2,:)', fsi); % limit to .2s long
-[tmp,fsi]= wavread('auditoryStimuli/500.wav'); tmp=tmp';%standard
-beepOdd = audioplayer(tmp(fsi*.2,:)', fsi); % limit to .2s long
+[tmp,fsi]= wavread('auditoryStimuli/550.wav');%oddball
+beepStd  = audioplayer(tmp(1:min(size(tmp,1),fsi*.2),:)', fsi); % limit to .2s long
+[tmp,fsi]= wavread('auditoryStimuli/500.wav');%standard
+beepOdd = audioplayer(tmp(1:min(size(tmp,1),fsi*.2),:)', fsi); % limit to .2s long
 audio = {beepStd beepOdd};
 
 % play the stimulus

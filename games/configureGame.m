@@ -41,9 +41,9 @@ sizeStim = 1.5;
 
 % epoch timing info
 stimType ='pseudorand';% 'ssvep'; %
-isi      = 1/5;
+isi      = 1/20;
 nSymbs=4;
-tti=.6; % target to target interval
+tti=.4; % target to target interval
 vnSymbs=max(nSymbs,round(tti/isi)); % number virtual symbs used to generate the stim seq... adds occasional gaps
 targetTime= ceil(.5/isi)*isi;
 startDelay=0;

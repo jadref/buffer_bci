@@ -44,9 +44,9 @@ else
   idx= -(1:ndims(X)); idx(dim)=dim; sidx=idx; sidx(dim)=0;
   varx= tprod(X,idx,[],idx) - 2*tprod(X,idx,sX,sidx) + tprod(sX,sidx,[],sidx);
   si=varx(:)>0;
-  stdvarx = sqrt(sum((varx(si)-mean(varx(si))).^2)./sum(si));
+  stdvarx = sqrt(sum((varx(si)-mean(varx(si))).^2)./max(1,sum(si)));
   si=(varx(si)<=median(varx(si))+varThresh*stdvarx+eps); % outlier detection
-  var = mean(varx(si)); % var is ave var
+  var = sum(varx(si))./max(1,sum(si)); % var is ave var, guard for no valid dims
 end
 return;
 %--------

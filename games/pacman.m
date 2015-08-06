@@ -138,6 +138,7 @@ while( lives>0 && nMoves<max_moves && ~goalReached )
       frametime(nframe,3)=drawTime;
       drawnow;
     end
+    if ( verb>-1) fprintf('.'); end;
     frametime(nframe,4)=getwTime();
     if ( ~isempty(ev) && ~isempty(ev.value) ) 
       ev=sendEvent(ev); 
