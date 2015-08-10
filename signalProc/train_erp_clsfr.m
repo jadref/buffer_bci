@@ -228,9 +228,10 @@ if ( opts.visualize )
    image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',labels,'disptype','plot','ticklabs','sw');
    try; zoomplots; saveaspdf('ERP'); catch; end;
    if ( ~(all(Yci(:)==Yci(1))) ) % only if >1 class input
-   aucfig=figure('Name','Data Visualisation: ERP AUC');
-   image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8]);
-   try;  zoomplots; saveaspdf('AUC'); catch; end;
+     aucfig=figure('Name','Data Visualisation: ERP AUC');
+     image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel',auc);
+	  colorbar ikelvin;
+     try;  zoomplots; saveaspdf('AUC'); catch; end;
    end
    drawnow;
 end
@@ -270,7 +271,7 @@ if ( opts.visualize > 1 )
   summary = sprintf('%4.1f ',res.tstbin(:,:,res.opt.Ci)*100);
   if(size(res.tstbin,2)>1)summary=[summary sprintf(' = %4.1f <ave>',mean(res.tstbin(:,:,res.opt.Ci),2)*100)];end
    b=msgbox({sprintf('Classifier performance : %s',summary) 'OK to continue!'},'Results');
-   tic, while ( ishandle(b) && toc<15 ) drawnow; pause(.2); end; % wait to close auc figure
+   while ( ishandle(b) ) drawnow; pause(.2); end; % wait to close auc figure
    if ( ishandle(aucfig) ) close(aucfig); end;
    if ( ishandle(erpfig) ) close(erpfig); end;
    if ( ishandle(b) ) close(b); end;
