@@ -60,11 +60,11 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'start');
     onSeq=spnSeq; nSeq=4; % override sequence number
     onRepetitions=nRepetitions; nRepetitions=3;
-    %try
+    try
       spCalibrateStimulus;
-    %catch
-      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-    %end
+    catch
+       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    end
     sendEvent(phaseToRun,'end');
     nSeq=onSeq;
     nRepetitions=onRepetitions;
@@ -75,12 +75,12 @@ while (ishandle(contFig))
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     sendEvent(phaseToRun,'start');
-    %try
+    try
       spCalibrateStimulus;
-    %catch
-      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    catch
+       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.training','end');    
-    %end
+    end
     sendEvent(phaseToRun,'end');
 
    case {'sptrain','spclassifier'};
@@ -91,6 +91,7 @@ while (ishandle(contFig))
     %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);  
        
    case {'sptesting','sptest','freespell'};
+    nSeq=spnSeq;
     trlen_ms=sptrlen_ms;
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);

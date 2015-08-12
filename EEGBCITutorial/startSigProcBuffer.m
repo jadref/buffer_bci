@@ -120,7 +120,7 @@ while ( true )
     %---------------------------------------------------------------------------------
     % Movement BCI
    case {'imcalibrate','imcalibration'};
-    [traindata,traindevents,state]=buffer_waitData(buffhost,buffport,state,'startSet',{'stimulus.target'},'exitSet',{'stimulus.training' 'end'},'verb',verb,'trlen_ms',imtrlen_ms);
+    [traindata,traindevents,state]=buffer_waitData(buffhost,buffport,state,'startSet',{'stimulus.target'},'exitSet',{'stimulus.training' 'end'},'verb',verb+1,'trlen_ms',imtrlen_ms);
     mi=matchEvents(traindevents,'stimulus.training','end'); traindevents(mi)=[];traindata(mi)=[];%remove exit event
     fname=['im_' dname '_' subject '_' datestr];
     fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save(fname,'traindata','traindevents','hdr');

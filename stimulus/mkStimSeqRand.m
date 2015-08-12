@@ -1,4 +1,4 @@
-function [stimSeq,stimTime,eventSeq,colors]=mkStimSeqRand(nSymb,duration,isi,mintti)
+function [stimSeq,stimTime,eventSeq,colors,stimCode]=mkStimSeqRand(nSymb,duration,isi,mintti)
 % make a stimulus sequence / stimTim pair for a set of nSymb
 %
 % [stimSeq,stimTime,eventSeq,colors]=mkStimSeqRand(nSymb,duration,isi,mintti)

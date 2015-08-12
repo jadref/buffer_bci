@@ -8,7 +8,7 @@ ax=axes('position',[0.025 0.025 .975 .975],'units','normalized','visible','off',
 [h]=initGrid(symbols);
 
 % make the target stimulus sequence
-[ans,ans,ans,tgtSeq]=mkStimSeqRand(numel(symbols),nSeq);
+[ans,ans,ans,ans,tgtSeq]=mkStimSeqRand(numel(symbols),nSeq);
 % make the row/col flash sequence for each sequence
 [stimSeqRow]=mkStimSeqRand(size(symbols,1),nRepetitions*size(symbols,1),2);
 [stimSeqCol]=mkStimSeqRand(size(symbols,2),nRepetitions*size(symbols,2),2);

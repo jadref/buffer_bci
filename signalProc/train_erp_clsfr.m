@@ -230,7 +230,7 @@ if ( opts.visualize )
    if ( ~(all(Yci(:)==Yci(1))) ) % only if >1 class input
      aucfig=figure('Name','Data Visualisation: ERP AUC');
      image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel',auc);
-	  colorbar ikelvin;
+	  colormap ikelvin;
      try;  zoomplots; saveaspdf('AUC'); catch; end;
    end
    drawnow;
