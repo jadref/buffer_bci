@@ -22,7 +22,7 @@ nSeq=5;
 nEpoch=10;
 stimSeq=zeros(nEpoch,nSeq);
 for si=1:nSeq;
-  [ans,ans,ans,stimCode]=mkStimSeqRand(2,nEpoch,[],0);
+  [ans,ans,ans,ans,stimCode]=mkStimSeqRand(2,nEpoch,[],0);
   stimSeq(:,si)=stimCode;
 end
 interSeqDuration=3;

@@ -1,7 +1,7 @@
 function [stimSeq,stimTime,eventSeq]=mkStimSeqRand2Color(nSymbols,nStim,isi,mintti)
 % make a random stimulus sequence of a set of symbols with 2 stimulus types (colors)
 %
-% [stimSeq,stimTime,eventSeq,stimCode]=mkStimSeqRand2Color(nSymbols,nStim,isi,mintti)
+% [stimSeq,stimTime,eventSeq]=mkStimSeqRand2Color(nSymbols,nStim,isi,mintti)
 %
 % N.B. The 2nd color flash happens only *once* per "repetition", that is once every nSymbols
 %
@@ -19,7 +19,7 @@ function [stimSeq,stimTime,eventSeq]=mkStimSeqRand2Color(nSymbols,nStim,isi,mint
 %                   {type value} a cell array with the event type and value to send
 if ( nargin<4 || isempty(mintti) ) mintti=max(round(nSymbols)/2,nSymbols-2); end;
 % make normal 1 color stim seq
-[stimSeq,stimTime,eventSeq,stimCode]=mkStimSeqRand(nSymbols,nStim,isi,mintti);
+[stimSeq,stimTime,eventSeq,colors,stimCode]=mkStimSeqRand(nSymbols,nStim,isi,mintti);
 % now add 2nd color, 1 every repetition
 for seqi=1:floor(nStim/nSymbols);
   seqStart=seqi*nSymbols;

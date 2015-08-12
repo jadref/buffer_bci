@@ -1,7 +1,7 @@
 function [stimSeq,stimTime,eventSeq,colors,stimCode]=mkStimSeqRand(nSymb,duration,isi,mintti)
 % make a stimulus sequence / stimTim pair for a set of nSymb
 %
-% [stimSeq,stimTime,eventSeq,colors]=mkStimSeqRand(nSymb,duration,isi,mintti)
+% [stimSeq,stimTime,eventSeq,colors,stimCode]=mkStimSeqRand(nSymb,duration,isi,mintti)
 %
 %  The stimSeq generated has the property that each symbols are are not flashed 
 %  within mintti flashes of each other

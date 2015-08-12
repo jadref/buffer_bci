@@ -40,7 +40,7 @@ symbols={'1' '2' '3';...
 [h,symbs]=initGrid(symbols);
 
 % make the target stimulus sequence
-[ans,ans,ans,tgtSeq]=mkStimSeqRand(numel(symbols),nSeq);
+[ans,ans,ans,ans,tgtSeq]=mkStimSeqRand(numel(symbols),nSeq);
 % make the row/col flash sequence for each sequence
 [stimSeqRow]=mkStimSeqRand(size(symbols,1),nRepetitions*size(symbols,1));
 [stimSeqCol]=mkStimSeqRand(size(symbols,2),nRepetitions*size(symbols,2));

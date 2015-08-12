@@ -14,7 +14,7 @@ end
 flash=false(size(symbols)); %logical indicator of current flash state
 
 % make the target stimulus sequence
-[ans,ans,ans,tgtSeq]=mkStimSeqRand(numel(symbols),nSeq);
+[ans,ans,ans,ans,tgtSeq]=mkStimSeqRand(numel(symbols),nSeq);
 % make the row/col flash sequence for each sequence
 [stimSeqRow,stimTimeRow]=mkStimSeqRand(vnRows,nRepetitions*vnRows,stimDuration);
 stimSeqRow(size(symbols,1)+1:end,:)=[];  % remove the extra symbol(s)

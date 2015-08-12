@@ -1,7 +1,7 @@
-function [stimSeq,stimTime,eventSeq]=mkStimSeqRand(nSymb,duration,isi,mintti)
+function [stimSeq,stimTime,eventSeq]=mkStimSeqRand2Symb(nSymb,duration,isi,mintti)
 % make a random stimulus sequence of a set of symbols with a min-time between stimulus events
 %
-% [stimSeq,stimTime,eventSeq,stimCode]=mkStimSeqRand2Symb(nSymb,duration,isi,mintti)
+% [stimSeq,stimTime,eventSeq]=mkStimSeqRand2Symb(nSymb,duration,isi,mintti)
 % 
 % N.B. the mintti means that for much of the time *nothing is flashed* (otherwise it would happen too soon)
 %

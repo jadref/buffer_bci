@@ -35,7 +35,7 @@ h=rectangle('curvature',[1 1],'position',[.25 .25 .5 .5],'facecolor',[.5 .5 .5])
 set(h,'visible','off');
 
 % make the target sequence
-[ans,ans,ans,stimCode]=mkStimSeqRand(2,nEpoch,[],0);
+[ans,ans,ans,ans,stimCode]=mkStimSeqRand(2,nEpoch,[],0);
 
       
 % reset the cue and fixation point to indicate trial has finished  

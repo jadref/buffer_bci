@@ -11,7 +11,7 @@ ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','b
 [h]=initGrid(symbols);
 
 % make the target stimulus sequence
-[ans,ans,ans,tgtSeq]=mkStimSeqRand(numel(symbols),nSeq);
+[ans,ans,ans,ans,tgtSeq]=mkStimSeqRand(numel(symbols),nSeq);
 % make the row/col flash sequence for each sequence
 [stimSeqRow,stimTimeRow]=mkStimSeqRand(vnRows,nRepetitions*vnRows,stimDuration);
 stimSeqRow(size(symbols,1)+1:end,:)=[];  % remove the extra symbol
