@@ -29,7 +29,7 @@ Further different clients may be written in different programming languages and 
 
 Copy these directories somewhere on your local drive.
 
-Note: If using MATLAB/Octave and the .bat/.sh files do not work because the MATLAB/Octave executable is not found automatically then modify the path in the file `utilities/findMatlab.bat` (windows) or `utilities/findMatlab.sh` (Linux/MacOSX) to point to the executable location.
+Note: If using MATLAB/Octave and the .bat/.sh files do not work because the MATLAB/Octave executable is not found automatically then modify the path in the file `utilities\findMatlab.bat` (windows) or `utilities/findMatlab.sh` (Linux/MacOSX) to point to the executable location.
 
 Note2: For Linux there is a [Docker image]( https://github.com/dokterbob/docker-bci) which can be used to simply install buffer_bci and all it's dependencies directly 
 
@@ -37,8 +37,7 @@ Note3: *MacOS* to run the *.sh files from the finder you need to set them to ope
 
 ## QuickStart
 
-Read the readme.txt file in either of the games, imaginedMovement, or
-matrixSpeller directories for instructions on how to startup and run
+Read the readme.txt file in either of the games, EEGBCITutorial, imaginedMovement, matrixSpeller directories for instructions on how to startup and run
 those demos.  (Note: all demos require Matlab/Octave_java+QtHandles to
 run correctly!)
 
