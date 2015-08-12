@@ -18,7 +18,8 @@ ax=axes('position',[0.025 0.025 .975 .975],'units','normalized','visible','off',
 set(h(:),'color',bgColor*.5);
 sendEvent('stimulus.training','start');
 % Waik for key-press to being stimuli
-t=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'Concentrate on the Green Letter','Press key when ready to begin'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.07);
+t=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),spInstruct,...
+		 'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.07);
 % wait for key to begin
 set(fig,'keypressfcn',@(x,y) uiresume);drawnow; uiwait(fig);set(fig,'keypressfcn',[]);delete(t);drawnow;
 sleepSec(1);

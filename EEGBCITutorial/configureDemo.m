@@ -85,6 +85,7 @@ feedbackDuration=5;
 symbols={'1' '2' '3';...
          '4' '5' '6';...
          '7' '8' '9'}';
+spInstruct={'Concentrate on the Green Number.','Press key when ready to begin'}
 symbSize=.1;
 sptrlen_ms=dataDuration*1000;
 
@@ -97,4 +98,4 @@ intertrialDuration=2;
 %feedbackDuration=1;
 moveScale = .1;
 imtrlen_ms = imtrialDuration*1000;
-
+imInstruct={'Perform the task as indicated','by the Green symbol.','Press key when ready to begin.'};
