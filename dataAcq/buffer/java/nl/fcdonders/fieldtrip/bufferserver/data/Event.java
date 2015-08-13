@@ -19,7 +19,7 @@ public class Event {
 	public final int valueType;
 	public final int valueSize;
 	public final byte[][] value;
-	public final int sample;
+	public int sample;
 	public final int offset;
 	public final int duration;
 	public final ByteOrder order;

@@ -305,7 +305,12 @@ public class ConnectionThread extends Thread {
 	private byte[] handlePutEvent(final Message message) {
 		try {
 			// Get the header from the message
-			final Event[] events = NetworkProtocol.decodeEvents(message.buffer);
+			Event[] events = NetworkProtocol.decodeEvents(message.buffer);
+
+			// Add sample number of auto-filled-in events
+			for( Event evt : events ) {
+				 if ( evt.sample <= 0 ) evt.sample = dataStore.getSampleCount();
+			}
 
 			// Store the header
 			final int nEvents = dataStore.putEvents(events);

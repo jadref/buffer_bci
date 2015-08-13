@@ -44,6 +44,11 @@
         </jar>
     </target>
 
+	 <target name="dist" depends="server,client">
+		<copy file="${jar.dir}/BufferServer.jar" todir="."/>
+		<copy file="${jar.dir}/BufferClient.jar" todir="."/>
+	 </target>
+
     <target name="run" depends="server">
       <java fork="true" classname="${main-class}">
         <classpath>
@@ -56,5 +61,5 @@
     <target name="clean">   <delete dir="${build.dir}"/>  </target>
     <target name="build" depends="client,server"/>
     <target name="clean-build" depends="clean,build"/>
-    <target name="main" depends="build"/>
+    <target name="main" depends="build,dist"/>
 </project>
