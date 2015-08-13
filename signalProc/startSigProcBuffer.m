@@ -17,8 +17,9 @@ function []=startSigProcBuffer(varargin)
 %
 % Prediction Events
 %  During the testing phase the classifier will send predictions with the type
-%  (classifier.prediction)     -- classifier prediction events.  
-%                                 Value is decision value where <0 = negative class, >0 = positive class
+%  (classifier.prediction,val)  -- classifier prediction events.  
+%                                 val is the classifier decision value where 
+%                                      <0 = negative class, >0 = positive class
 %
 %  []=startSigProcBuffer(varargin)
 %
@@ -38,7 +39,7 @@ function []=startSigProcBuffer(varargin)
 %   buffport       -- int, port number on which ft-buffer is running                   (1972)
 % 
 % Examples:
-%   startSigProcBuffer(); % run with standard paramters
+%   startSigProcBuffer(); % run with standard parameters using the GUI to get more info.
 %
 %  % Run where epoch is any of row/col or target flash and saving 600ms after these events for classifier training
 %   startSigProcBuffer('epochEventType',{'stimulus.target','stimulus.rowFlash','stimulus.colFlash'},'trlen_ms',600); 
