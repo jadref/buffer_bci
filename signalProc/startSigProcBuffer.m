@@ -5,9 +5,13 @@ function []=startSigProcBuffer(varargin)
 %  (startPhase.cmd,capfitting) -- show capfitting
 %  (startPhase.cmd,calibrate)  -- start calibration phase processing (i.e. cat data)
 %  (calibrate,end)             -- end calibration phase
+%  (startPhase.cmd,train)      -- train a classifier based on the saved calibration data
 %  (startPhase.cmd,testing)    -- start test phase, i.e. on-line prediction generation
-%  (startPhase.cmd,contfeedback) -- start continuous feedback phase, i.e. prediciton event generated every
-%                                     trlen_ms/2 milliseconds
+%                                 This type of testing will generate 1 prediction event for each epoch
+%                                  (FYI: this uses the function event_applyClsfr)
+%  (startPhase.cmd,contfeedback) -- start continuous feedback phase,
+%                                     i.e. prediciton event generated every trlen_ms/2 milliseconds
+%                                  (FYI: this uses the function cont_applyClsfr)
 %  (testing,end)               -- end testing phase
 %  (startPhase.cmd,exit)       -- stop everything
 %
@@ -19,7 +23,7 @@ function []=startSigProcBuffer(varargin)
 %  []=startSigProcBuffer(varargin)
 %
 % Options:
-%   epochEventType -- 'str' event type which indicates start of calibration epoch.   ('stimulus.target') 
+%   epochEventType -- 'str' event type which indicates start of calibration epoch.  ('stimulus.target')
 %                     This event's value is used as the class label
 %   clsfr_type     -- 'str' the type of classifier to train.  One of: 
 %                        'erp'  - train a time-locked response (evoked response) classifier
@@ -66,7 +70,7 @@ if ( isempty(opts.epochEventType) && opts.useGUI )
   info=guidata(optsFig);
   if ( info.ok )
     % use the input for the options names
-    fn=fieldnames(info.opts); for fi=1:numel(fn); opts.(fn)=info.opts.(fn); end;
+    fn=fieldnames(info.opts); for fi=1:numel(fn); opts.(fn{fi})=info.opts.(fn{fi}); end;
     % add additional information to the freqbands arguments
     if ( opts.freqband(1)<0 ) opts.freqband(1)=max(0,opts.freqband(2)-1); end;
     if ( opts.freqband(2)<0 ) opts.freqband(2)=max(8,opts.freqband(1)+1); end;
