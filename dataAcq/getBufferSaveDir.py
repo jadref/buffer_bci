@@ -3,9 +3,11 @@
 try:
     # for Python2
     from Tkinter import *   ## notice capitalized T in Tkinter 
+    import tkFileDialog
 except ImportError:
     # for Python3
     from tkinter import *   ## notice here too
+    from tkinter import filedialog
 import time
 import os
 
@@ -27,7 +29,11 @@ def updateSaveLoc(ignored=None):
     saveloc.set(os.path.join(os.path.expanduser(os.path.normpath(dataroot.get())),experiment.get(),subject.get(),session.get()))
 
 def pickDir():
-    dnm=tkFileDialog.askdirectory(initialdir=dataroot.get(),title="Choose saving directory root")
+    try: # for Python2
+        dnm=tkFileDialog.askdirectory(initialdir=dataroot.get(),title="Choose saving directory root")
+    except NameError: # for Python3
+        dnm=filedialog.askdirectory(initialdir=dataroot.get(),title="Choose saving directory root")
+
     if not dnm==None: 
         dataroot.set(dnm)
         updateSaveLoc()
