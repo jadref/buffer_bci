@@ -48,6 +48,6 @@ tgtColor=[0 1 0];
 fbColor=[0 0 1];
 
 % Neurofeedback smoothing
-trlen_ms=3000; % how often to run the classifier
+trlen_ms=trialDuration*1000; % how often to run the classifier
 trlen_ms_ol=trlen_ms;
 expSmoothFactor = log(2)/log(10); % smooth the last 10...
