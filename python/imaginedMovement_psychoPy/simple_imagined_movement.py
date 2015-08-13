@@ -18,8 +18,9 @@ def sendEvent(event_type, event_value, offset=0):
     e = FieldTrip.Event()
     e.type = event_type
     e.value = event_value
-    sample, bla = ftc.poll()
-    e.sample = sample + offset + 1
+    if offset>0 : 
+        sample, bla = ftc.poll()
+        e.sample = sample + offset + 1
     ftc.putEvents(e)
 
 # Function that blocks until a certain type of event is recieved. evttype defines what
@@ -29,7 +30,7 @@ def waitnewevents(evtype, timeout_ms=1000,verbose = True):
     global ftc, nEvents, nSamples
     global procnEvents
     start = time.time()
-    nEvents,nSamples=ftc.poll()
+    nSamples,nEvents=ftc.poll()
     elapsed_ms = 0
     
     if verbose:
