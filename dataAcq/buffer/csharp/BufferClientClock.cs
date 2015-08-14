@@ -52,7 +52,7 @@ namespace FieldTrip.Buffer
         /// Get the host associated with the FieldTrip buffer.
         /// </summary>
         /// <returns>The host associated with the FieldTrip buffer.</returns>
-		public string GetHost()
+		public string getHost()
 		{
 			return SockChan.Host;
 		}
@@ -61,7 +61,7 @@ namespace FieldTrip.Buffer
         /// Get the port associated with the FieldTrip buffer.
         /// </summary>
         /// <returns>The port associated with the FieldTrip buffer.</returns>
-		public int GetPort()
+		public int getPort()
 		{
 			return SockChan.Port;
 		}
@@ -75,48 +75,48 @@ namespace FieldTrip.Buffer
         /// </summary>
         /// <param name="e">The event to send.</param>
         /// <returns>The sent buffer event.</returns>
-		override public BufferEvent PutEvent(BufferEvent e)
+		override public BufferEvent putEvent(BufferEvent e)
 		{
 			if (e.Sample < 0) {
-				e.Sample = (int)GetSampOrPoll();
+				e.Sample = (int)getSampOrPoll();
 			}
-			return base.PutEvent(e);
+			return base.putEvent(e);
 		}
 
         /// <summary>
         /// Sends an array of events to the connected FieldTrip buffer.
         /// </summary>
         /// <param name="e">The events to send.</param>
-		override public void PutEvents(BufferEvent[] e)
+		override public void putEvents(BufferEvent[] e)
 		{
 			int samp = -1;
 			for (int i = 0; i < e.Length; i++) {			 
-				if (e[i].Sample < 0) {
+				if (e[i].sample < 0) {
 					if (samp < 0)
-						samp = (int)GetSampOrPoll();
+						samp = (int)getSampOrPoll();
 					e[i].Sample = samp;
 				}
 			}
-			base.PutEvents(e);
+			base.putEvents(e);
 		}
 		// use the returned sample info to update the clock sync
-		override public SamplesEventsCount Wait(int nSamples, int nEvents, int timeout)
+		override public SamplesEventsCount wait(int nSamples, int nEvents, int timeout)
 		{
 			//Console.WriteLine("clock update");
-			SamplesEventsCount secount = base.Wait(nSamples, nEvents, timeout);
-			double deltaSamples = clockSync.GetSamp() - secount.NumSamples; // delta between true and estimated
+			SamplesEventsCount secount = base.wait(nSamples, nEvents, timeout);
+			double deltaSamples = clockSync.getSamp() - secount.NumSamples; // delta between true and estimated
 			//Console.WriteLine("sampErr="+getSampErr() + " d(samp) " + deltaSamples + " sampThresh= " + clockSync.m*1000.0*.5);
 			if (GetSampErr() < maxSampError) {
 				if (deltaSamples > clockSync.m * 1000.0 * .5) { // lost samples					 
 					Console.WriteLine(deltaSamples + " Lost samples detected");
-					clockSync.Reset();
+					clockSync.reset();
 					//clockSync.b = clockSync.b - deltaSamples;
 				} else if (deltaSamples < -clockSync.m * 1000.0 * .5) { // extra samples
 					Console.WriteLine(-deltaSamples + " Extra samples detected");
-					clockSync.Reset();
+					clockSync.reset();
 				}
 			}
-			clockSync.UpdateClock(secount.NumSamples); // update the rt->sample mapping
+			clockSync.updateClock(secount.NumSamples); // update the rt->sample mapping
 			return secount;
 		}
 
@@ -124,10 +124,10 @@ namespace FieldTrip.Buffer
         /// Get the header from the FieldTrip buffer.
         /// </summary>
         /// <returns>The header.</returns>
-		override public Header GetHeader()
+		override public Header getHeader()
 		{
-			Header hdr = base.GetHeader();
-			clockSync.UpdateClock(hdr.NumSamples); // update the rt->sample mapping
+			Header hdr = base.getHeader();
+			clockSync.updateClock(hdr.NumSamples); // update the rt->sample mapping
 			return hdr;
 		}
 
@@ -137,15 +137,15 @@ namespace FieldTrip.Buffer
         /// <param name="address">The host where the FieldTrip buffer is running.</param>
         /// <param name="port">The port at which the FieldTrip buffer is running.</param>
         /// <returns></returns>
-		override public bool Connect(string address, int port)
+		override public bool connect(string address, int port)
 		{
-			clockSync.Reset(); // reset old clock info (if any)
-			return base.Connect(address, port);
+			clockSync.reset(); // reset old clock info (if any)
+			return base.connect(address, port);
 		}
 
 		//--------------------------------------------------------------------
 		// New methods to do the clock syncronization
-		public long GetSampOrPoll()
+		public long getSampOrPoll()
 		{
 			long sample = -1;
 			bool dopoll = false;
@@ -174,45 +174,45 @@ namespace FieldTrip.Buffer
 				sample = Poll(0).NumSamples; // force update if error is too big
 				//Console.WriteLine(" poll " + sample + " delta " + (sample-sampest));
 			} else { // use the estimated time
-				sample = (int)GetSamp();
+				sample = (int)getSamp();
 			}
 			return sample;
 		}
 
-		public long GetSamp()
+		public long getSamp()
 		{
-			return clockSync.GetSamp();
+			return clockSync.getSamp();
 		}
 
-		public long GetSamp(double time)
+		public long getSamp(double time)
 		{
-			return clockSync.GetSamp(time);
+			return clockSync.getSamp(time);
 		}
 
-		public long GetSampErr()
+		public long getSampErr()
 		{
-			return Math.Abs(clockSync.GetSampErr());
+			return Math.Abs(clockSync.getSampErr());
 		}
 
 		public double Time {
 			get {
-				return clockSync.GetTime();
+				return clockSync.getTime();
 			}
 		}
 		// time in milliseconds
-		public SamplesEventsCount SyncClocks()
+		public SamplesEventsCount syncClocks()
 		{
-			return	 SyncClocks(new int[] { 100, 100, 100, 100, 100, 100, 100, 100, 100 });
+			return	 syncClocks(new int[] { 100, 100, 100, 100, 100, 100, 100, 100, 100 });
 		}
 
-		public SamplesEventsCount SyncClocks(int wait)
+		public SamplesEventsCount syncClocks(int wait)
 		{
-			return	 SyncClocks(new int[] { wait });
+			return	 syncClocks(new int[] { wait });
 		}
 
-		public SamplesEventsCount SyncClocks(int[] wait)
+		public SamplesEventsCount syncClocks(int[] wait)
 		{
-			clockSync.Reset();
+			clockSync.reset();
 			SamplesEventsCount ssc;
 			ssc = Poll(0);
 			for (int i = 0; i < wait.Length; i++) {			
@@ -220,12 +220,12 @@ namespace FieldTrip.Buffer
 					System.Threading.Thread.Sleep(wait[i]);
 				} catch { // (InterruptedException e) 
 				}
-				ssc = Poll(0);				
+				ssc = poll(0);				
 			}
 			return ssc;
 		}
 
-		public ClockSync ClockSync {
+		public ClockSync clockSync {
 			get {
 				return clockSync;
 			}

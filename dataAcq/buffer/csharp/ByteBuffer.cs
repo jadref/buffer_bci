@@ -1,5 +1,5 @@
+using System.Collections;
 using System.IO;
-using System.Text;
 using MiscUtil.IO;
 using MiscUtil.Conversion;
 
@@ -9,8 +9,7 @@ namespace FieldTrip.Buffer
 	//using C# MemoryStream and an EndianBinaryWriter and EndianBinaryReader
 	//(which are the equivalent of the BinaryWriter and BinaryReader but also allowing
 	//a choice of Endianess)
-	public class ByteBuffer
-	{
+	public class ByteBuffer {
 		
 		protected MemoryStream stream;
 		protected EndianBinaryWriter writer;
@@ -20,25 +19,22 @@ namespace FieldTrip.Buffer
 		private ByteOrder byteorder;
 		
 		//Constructors
-		public ByteBuffer()
-		{
+		public ByteBuffer(){
 			stream = new MemoryStream();
 			bitConverter = new LittleEndianBitConverter();
 			writer = new EndianBinaryWriter(bitConverter, stream);
 			reader = new EndianBinaryReader(bitConverter, stream);
 		}
-
-		public ByteBuffer(int capacity)
-		{
+		
+		public ByteBuffer(int capacity){
 			stream = new MemoryStream();
 			bitConverter = new LittleEndianBitConverter();
 			writer = new EndianBinaryWriter(bitConverter, stream);
 			reader = new EndianBinaryReader(bitConverter, stream);
 			stream.Capacity = capacity;
 		}
-
-		public ByteBuffer(int capacity, int position, MemoryStream _stream)
-		{
+		
+		public ByteBuffer(int capacity, int position, MemoryStream _stream){
 			stream = new MemoryStream();
 			bitConverter = new LittleEndianBitConverter();
 			writer = new EndianBinaryWriter(bitConverter, stream);
@@ -47,22 +43,20 @@ namespace FieldTrip.Buffer
 			stream.Position = position;
 			stream = _stream;
 		}
-
-		public ByteBuffer(Endianness _endianess, System.Text.Encoding _encoding)
-		{
+		
+		public ByteBuffer(Endianness _endianess, System.Text.Encoding _encoding){
 			stream = new MemoryStream();
-			if (_endianess == Endianness.BigEndian)
+			if(_endianess==Endianness.BigEndian)
 				bitConverter = new BigEndianBitConverter();
 			else
 				bitConverter = new LittleEndianBitConverter();
 			writer = new EndianBinaryWriter(bitConverter, stream, _encoding);
 			reader = new EndianBinaryReader(bitConverter, stream, _encoding);
 		}
-
-		public ByteBuffer(Endianness _endianess, System.Text.Encoding _encoding, int capacity, int position, MemoryStream _stream)
-		{
+		
+		public ByteBuffer(Endianness _endianess, System.Text.Encoding _encoding, int capacity, int position, MemoryStream _stream){
 			stream = new MemoryStream();
-			if (_endianess == Endianness.BigEndian)
+			if(_endianess==Endianness.BigEndian)
 				bitConverter = new BigEndianBitConverter();
 			else
 				bitConverter = new LittleEndianBitConverter();
@@ -74,194 +68,160 @@ namespace FieldTrip.Buffer
 		}
 		
 		//put functions
-		public ByteBuffer Put(byte[] src, int offset, int length)
-		{
+		public ByteBuffer put(byte[] src, int offset, int length){
 			this.writer.Write(src, offset, length);
 			return this;
 		}
-
-		public ByteBuffer Put(byte[] src)
-		{
+		
+		public ByteBuffer put(byte[] src){
 			this.writer.Write(src, 0, src.Length);
 			return this;
 		}
-
-		public ByteBuffer PutByte(byte src)
-		{
+		
+		public ByteBuffer putByte(byte src){
 			this.writer.Write(src);
 			return this;
 		}
-
-		public ByteBuffer PutString(string src)
-		{
+		
+		public ByteBuffer putString(string src){
 			this.writer.Write(src);
 			return this;
 		}
-
-		public ByteBuffer PutShort(short src)
-		{
+		
+		public ByteBuffer putShort(short src){
 			this.writer.Write(src);
 			return this;
 		}
-
-		public ByteBuffer PutInt(int src)
-		{
+		
+		public ByteBuffer putInt(int src){
 			this.writer.Write(src);
 			return this;
 		}
-
-		public ByteBuffer PutLong(long src)
-		{
+		
+		public ByteBuffer putLong(long src){
 			this.writer.Write(src);
 			return this;
 		}
-
-		public ByteBuffer PutDouble(double src)
-		{
+		
+		public ByteBuffer putDouble(double src){
 			this.writer.Write(src);
 			return this;
 		}
-
-		public ByteBuffer PutFloat(float src)
-		{
+		
+		public ByteBuffer putFloat(float src){
 			this.writer.Write(src);
 			return this;
 		}
 	
 		//get functions
-		public ByteBuffer Get(ref byte[] bytes)
-		{
+		public ByteBuffer get(ref byte[] bytes){
 			bytes = reader.ReadBytes((int)bytes.Length);
 			return this;
 		}
-
-		public byte Get()
-		{
+		
+		public byte get(){
 			return reader.ReadByte();
 		}
-
-		public short GetShort()
-		{
+		
+		public short getShort(){
 			return reader.ReadInt16();
 		}
-
-		public int GetInt()
-		{
+		
+		public int getInt(){
 			return reader.ReadInt32();
 		}
-
-		public long GetLong()
-		{
+		
+		public long getLong(){
 			return reader.ReadInt64();
 		}
-
-		public double GetDouble()
-		{
+		
+		public double getDouble(){
 			return reader.ReadDouble();
 		}
-
-		public float GetFloat()
-		{
+		
+		public float getFloat(){
 			return reader.ReadSingle();
 		}
 		
 		//as functions
-		public ShortBuffer AsShortBuffer()
-		{
+		public ShortBuffer asShortBuffer(){
 			ShortBuffer shortbuffer = new ShortBuffer(this);
 			return shortbuffer;
-		}
-
-		public IntBuffer AsIntBuffer()
-		{
+		} 
+		
+		public IntBuffer asIntBuffer(){
 			IntBuffer intbuffer = new IntBuffer(this);
 			return intbuffer;
-		}
-
-		public LongBuffer AsLongBuffer()
-		{
+		} 
+		
+		public LongBuffer asLongBuffer(){
 			LongBuffer longbuffer = new LongBuffer(this);
 			return longbuffer;
-		}
-
-		public DoubleBuffer AsDoubleBuffer()
-		{
+		} 
+		
+		public DoubleBuffer asDoubleBuffer(){
 			DoubleBuffer doublebuffer = new DoubleBuffer(this);
 			return doublebuffer;
-		}
-
-		public FloatBuffer AsFloatBuffer()
-		{
+		} 
+		
+		public FloatBuffer asFloatBuffer(){
 			FloatBuffer floatbuffer = new FloatBuffer(this);
 			return floatbuffer;
-		}
+		} 
 		
 		
 		//other functions
-		public static ByteBuffer Allocate(int capacity)
-		{
+		public static ByteBuffer allocate(int capacity){
 			ByteBuffer newBuffer = new ByteBuffer(capacity);
 			return newBuffer;
 		}
-
-		public ByteOrder Order()
-		{
+		
+		public ByteOrder order(){
 			return byteorder;
 		}
-
-		public ByteBuffer Order(ByteOrder _byteorder)
-		{
-			byteorder = _byteorder;
-			if (byteorder == ByteOrder.BIG_ENDIAN)
-				bitConverter = new BigEndianBitConverter();
-			else
-				bitConverter = new LittleEndianBitConverter();
+		
+		public ByteBuffer order(ByteOrder _byteorder){
+				byteorder = _byteorder;
+				if(byteorder == ByteOrder.BIG_ENDIAN)
+					bitConverter = new BigEndianBitConverter();
+				else
+					bitConverter = new LittleEndianBitConverter();
 			return this;
 		}
-
-		public long Position {
-			get {
-				return stream.Position;	
-			}
-			set {
-				stream.Position = value;
-			}
+		
+		public long position(){
+			return stream.Position;	
 		}
-
-		public long Remaining {
-			get {
-				return stream.Length - stream.Position;
-			}
+		
+		public void position(long newposition){
+			stream.Position = newposition;
 		}
-
-		public int Capacity {
-			get {
-				return stream.Capacity;
-			}
+		
+		
+		public long remaining(){
+			return stream.Length - stream.Position;
 		}
-
-		public int Length {
-			get {
-				return (int)stream.Length;
-			}
+		
+		public int capacity(){
+			return stream.Capacity;
 		}
-
-		public ByteBuffer Rewind()
-		{
+		
+		public int length(){
+			return (int)stream.Length;
+		}
+		
+		public ByteBuffer rewind(){
 			stream.Position = 0;
 			return this;
+		}	
+		
+		public System.Text.Encoding encoding(){
+			if(reader.Encoding!=writer.Encoding)
+				throw new IOException("EndianBinaryWriter's and EndianBinaryReader's encoding are not the same.");
+			return writer.Encoding;	
 		}
-
-		public Encoding Encoding {
-			get {
-				if (reader.Encoding != writer.Encoding)
-					throw new IOException("EndianBinaryWriter's and EndianBinaryReader's encoding are not the same.");
-				return writer.Encoding;	
-			}
-		}
-
-		public ByteBuffer Slice()
-		{
+		
+		public ByteBuffer slice(){
 			ByteBuffer newBuffer = new ByteBuffer((int)(stream.Capacity - stream.Position), 0, this.stream);
 			newBuffer.bitConverter = this.bitConverter;
 			newBuffer.byteorder = this.byteorder;
@@ -269,9 +229,8 @@ namespace FieldTrip.Buffer
 			newBuffer.writer = this.writer;
 			return newBuffer;
 		}
-
-		public ByteBuffer Clear()
-		{
+		
+		public ByteBuffer clear(){
 			stream.SetLength(0);
 			return this;
 		}
@@ -282,125 +241,105 @@ namespace FieldTrip.Buffer
 	
 	//Specific Type Byffers ====================
 	
-	public class ShortBuffer
-	{
+	public class ShortBuffer {
 		private ByteBuffer bytebuffer;
-
-		public ShortBuffer(ByteBuffer _bytebuffer)
-		{
+		
+		public ShortBuffer(ByteBuffer _bytebuffer){
 			bytebuffer = _bytebuffer;
 		}
-
-		public ShortBuffer Get(short[] dst)
-		{
-			for (int i = 0; i < bytebuffer.Remaining; ++i)
-				dst[i] = bytebuffer.GetShort();
+		
+		public ShortBuffer get(short[] dst){
+			for(int i=0; i<bytebuffer.remaining(); ++i)
+				dst[i] = bytebuffer.getShort();
 			return this;
 		}
-
-		public ShortBuffer Put(short[] src)
-		{
-			for (int i = 0; i < src.Length; ++i)
-				bytebuffer.PutShort(src[i]);
+		
+		public ShortBuffer put(short[] src){
+			for(int i=0; i<src.Length; ++i)
+				bytebuffer.putShort(src[i]);
 			return this;
 		}
 	}
-
-	public class IntBuffer
-	{
-		private ByteBuffer bytebuffer;
-
-		public IntBuffer(ByteBuffer _bytebuffer)
-		{
-			bytebuffer = _bytebuffer;
-		}
-
-		public IntBuffer Get(int[] dst)
-		{
-			for (int i = 0; i < bytebuffer.Remaining; ++i)
-				dst[i] = bytebuffer.GetInt();
-			return this;
-		}
-
-		public IntBuffer Put(int[] src)
-		{
-			for (int i = 0; i < src.Length; ++i)
-				bytebuffer.PutInt(src[i]);
-			return this;
-		}
-	}
-
 	
-	public class LongBuffer
-	{
+	public class IntBuffer {
 		private ByteBuffer bytebuffer;
-
-		public LongBuffer(ByteBuffer _bytebuffer)
-		{
+		
+		public IntBuffer(ByteBuffer _bytebuffer){
 			bytebuffer = _bytebuffer;
 		}
-
-		public LongBuffer Get(long[] dst)
-		{
-			for (int i = 0; i < bytebuffer.Remaining; ++i)
-				dst[i] = bytebuffer.GetLong();
+		
+		public IntBuffer get(int[] dst){
+			for(int i=0; i<bytebuffer.remaining(); ++i)
+				dst[i] = bytebuffer.getInt();
 			return this;
 		}
-
-		public LongBuffer Put(long[] src)
-		{
-			for (int i = 0; i < src.Length; ++i)
-				bytebuffer.PutLong(src[i]);
+		
+		public IntBuffer put(int[] src){
+			for(int i=0; i<src.Length; ++i)
+				bytebuffer.putInt(src[i]);
 			return this;
 		}
 	}
-
 	
-	public class DoubleBuffer
-	{
+	
+	public class LongBuffer {
 		private ByteBuffer bytebuffer;
-
-		public DoubleBuffer(ByteBuffer _bytebuffer)
-		{
+		
+		public LongBuffer(ByteBuffer _bytebuffer){
 			bytebuffer = _bytebuffer;
 		}
-
-		public DoubleBuffer Get(double[] dst)
-		{
-			for (int i = 0; i < bytebuffer.Remaining; ++i)
-				dst[i] = bytebuffer.GetDouble();
+		
+		public LongBuffer get(long[] dst){
+			for(int i=0; i<bytebuffer.remaining(); ++i)
+				dst[i] = bytebuffer.getLong();
 			return this;
 		}
-
-		public DoubleBuffer Put(double[] src)
-		{
-			for (int i = 0; i < src.Length; ++i)
-				bytebuffer.PutDouble(src[i]);
+		
+		public LongBuffer put(long[] src){
+			for(int i=0; i<src.Length; ++i)
+				bytebuffer.putLong(src[i]);
 			return this;
 		}
 	}
-
 	
-	public class FloatBuffer
-	{
+	
+	public class DoubleBuffer {
 		private ByteBuffer bytebuffer;
-
-		public FloatBuffer(ByteBuffer _bytebuffer)
-		{
+		
+		public DoubleBuffer(ByteBuffer _bytebuffer){
 			bytebuffer = _bytebuffer;
 		}
-
-		public FloatBuffer Get(float[] dst)
-		{
-			for (int i = 0; i < bytebuffer.Remaining; ++i)
-				dst[i] = bytebuffer.GetFloat();
+		
+		public DoubleBuffer get(double[] dst){
+			for(int i=0; i<bytebuffer.remaining(); ++i)
+				dst[i] = bytebuffer.getDouble();
 			return this;
 		}
-
-		public FloatBuffer Put(float[] src)
-		{
-			for (int i = 0; i < src.Length; ++i)
-				bytebuffer.PutFloat(src[i]);
+		
+		public DoubleBuffer put(double[] src){
+			for(int i=0; i<src.Length; ++i)
+				bytebuffer.putDouble(src[i]);
+			return this;
+		}
+	}
+	
+	
+	public class FloatBuffer {
+		private ByteBuffer bytebuffer;
+		
+		public FloatBuffer(ByteBuffer _bytebuffer){
+			bytebuffer = _bytebuffer;
+		}
+		
+		public FloatBuffer get(float[] dst){
+			for(int i=0; i<bytebuffer.remaining(); ++i)
+				dst[i] = bytebuffer.getFloat();
+			return this;
+		}
+		
+		public FloatBuffer put(float[] src){
+			for(int i=0; i<src.Length; ++i)
+				bytebuffer.putFloat(src[i]);
 			return this;
 		}
 	}
@@ -409,36 +348,32 @@ namespace FieldTrip.Buffer
 	
 	
 	
-	public sealed class ByteOrder
-	{
+	public sealed class ByteOrder{
 	
 		private EndianBitConverter bitConverter;
 		
-		public static readonly ByteOrder BIG_ENDIAN = new ByteOrder("BIG_ENDIAN");
-		public static readonly ByteOrder LITTLE_ENDIAN = new ByteOrder("LITTLE_ENDIAN");
-
-		public static string ByteOrder_Endianess { get; private set; }
-
-		private ByteOrder(string endianess)
-		{
-			ByteOrder_Endianess = endianess;
-			if (ByteOrder_Endianess == "BIG_ENDIAN")
-				bitConverter = new BigEndianBitConverter();
-			else
-				bitConverter = new LittleEndianBitConverter();
+		public static readonly ByteOrder BIG_ENDIAN= new ByteOrder("BIG_ENDIAN");
+		public static readonly ByteOrder LITTLE_ENDIAN= new ByteOrder("LITTLE_ENDIAN");
+		
+		public static string ByteOrder_Endianess {get; private set;}
+		
+		private ByteOrder(string endianess){
+				ByteOrder_Endianess = endianess;
+				if(ByteOrder_Endianess == "BIG_ENDIAN")
+					bitConverter = new BigEndianBitConverter();
+				else
+					bitConverter = new LittleEndianBitConverter();
 		}
-
-		public static ByteOrder NativeOrder()
-		{
-			if (System.BitConverter.IsLittleEndian) {
+		
+		public static ByteOrder nativeOrder(){
+			if(System.BitConverter.IsLittleEndian){
 				return ByteOrder.LITTLE_ENDIAN;
-			} else {
+			}else{
 				return ByteOrder.BIG_ENDIAN;
 			}
 		}
-
-		public override string ToString()
-		{
+		
+		public string toString(){
 			return ByteOrder_Endianess;
 		}
 	}

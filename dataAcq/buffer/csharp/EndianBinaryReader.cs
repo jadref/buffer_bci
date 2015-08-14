@@ -550,7 +550,7 @@ namespace MiscUtil.IO
 				if (read==0)
 				{
 					throw new EndOfStreamException
-						(string.Format("End of stream reached with {0} byte{1} left to read.", size-index,
+						(String.Format("End of stream reached with {0} byte{1} left to read.", size-index,
 						size-index==1 ? "s" : ""));
 				}
 				index += read;

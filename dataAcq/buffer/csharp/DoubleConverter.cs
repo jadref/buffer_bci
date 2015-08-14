@@ -175,7 +175,7 @@ namespace MiscUtil.Conversion
 			/// <summary>
 			/// Converts the value to a proper decimal string representation.
 			/// </summary>
-			public override string ToString()
+			public override String ToString()
 			{
 				char[] digitString = new char[digits.Length];            
 				for (int i=0; i < digits.Length; i++)
