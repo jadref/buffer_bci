@@ -37,7 +37,9 @@ function []=startSigProcBuffer(varargin)
 %   verb           -- [int] verbosity level                                            (1)
 %   buffhost       -- str, host name on which ft-buffer is running                     ('localhost')
 %   buffport       -- int, port number on which ft-buffer is running                   (1972)
-%   predFilt       -- [float/str/function_handle] prediction filter for smoothing the continuous
+%   epochPredFilt  -- [float/str/function_handle] prediction filter for smoothing the 
+%                      epoch output classifier.
+%   contpredFilt   -- [float/str/function_handle] prediction filter for smoothing the continuous
 %                      output classifier.  Defined as for the cont_applyClsfr argument ([])
 %                     predFilt=[] - no filtering 
 %                     predFilt>=0 - coefficient for exp-decay moving average. f=predFilt*f + (1-predFilt)f_new
@@ -59,7 +61,7 @@ if ( isempty(wb) || isempty(strfind('dataAcq',wb)) )
   initsleepSec;
 end;
 opts=struct('epochEventType',[],'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],...
-            'predFilt',[],'capFile',[],...
+            'epochPredFilt',[],'contPredFilt',[],'capFile',[],...
 				'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1);
 [opts,varargin]=parseOpts(opts,varargin);
 
@@ -204,7 +206,9 @@ while ( true )
       clsSubj = subject;
     end;
 
-    event_applyClsfr(clsfr,'startSet',opts.epochEventType,'endType',{'testing','test','epochfeedback','eventfeedback'},'verb',opts.verb);
+    event_applyClsfr(clsfr,'startSet',opts.epochEventType,...
+							'predFilt',opts.epochPredFilt,...
+							'endType',{'testing','test','epochfeedback','eventfeedback'},'verb',opts.verb);
 
         %---------------------------------------------------------------------------------
    case {'contfeedback'};
@@ -219,8 +223,10 @@ while ( true )
     if ( ~any(strcmp(lower(opts.clsfr_type),{'ersp','induced'})) )
       warning('Cant use an ERP classifier in continuous application mode. Ignored');
     else
-      cont_applyClsfr(clsfr,'overlap',.5,'endType',{'testing','test','contfeedback'},...
-							 'predFilt',opts.predFilt,'verb',opts.verb);
+		% generate prediction every trlen_ms/2 seconds using trlen_ms data
+      cont_applyClsfr(clsfr,'trlen_ms',opts.trlen_ms,'overlap',.5,...
+							 'endType',{'testing','test','contfeedback'},...
+							 'predFilt',contPredFilt,'verb',opts.verb);
     end
       
    case 'exit';
