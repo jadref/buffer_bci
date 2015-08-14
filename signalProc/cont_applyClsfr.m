@@ -51,7 +51,7 @@ if ( isempty(trlen_samp) )
   trlen_samp=0;
   if ( ~isempty(opts.trlen_ms) ) 
     if(~isempty(opts.hdr)) fs=opts.hdr.fsample; 
-    else opts.hdr=buffer('get_hdr',opts.buffhost,opts.buffport); fs=opts.hdr.fsample; 
+    else opts.hdr=buffer('get_hdr',[],opts.buffhost,opts.buffport); fs=opts.hdr.fsample; 
     end;
     trlen_samp = opts.trlen_ms /1000 * fs; 
   end

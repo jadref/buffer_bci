@@ -226,7 +226,7 @@ while ( true )
 		% generate prediction every trlen_ms/2 seconds using trlen_ms data
       cont_applyClsfr(clsfr,'trlen_ms',opts.trlen_ms,'overlap',.5,...
 							 'endType',{'testing','test','contfeedback'},...
-							 'predFilt',contPredFilt,'verb',opts.verb);
+							 'predFilt',opts.contPredFilt,'verb',opts.verb);
     end
       
    case 'exit';
