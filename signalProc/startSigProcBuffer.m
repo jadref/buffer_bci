@@ -37,6 +37,12 @@ function []=startSigProcBuffer(varargin)
 %   verb           -- [int] verbosity level                                            (1)
 %   buffhost       -- str, host name on which ft-buffer is running                     ('localhost')
 %   buffport       -- int, port number on which ft-buffer is running                   (1972)
+%   predFilt       -- [float/str/function_handle] prediction filter for smoothing the continuous
+%                      output classifier.  Defined as for the cont_applyClsfr argument ([])
+%                     predFilt=[] - no filtering 
+%                     predFilt>=0 - coefficient for exp-decay moving average. f=predFilt*f + (1-predFilt)f_new
+%                                N.B. predFilt = exp(log(.5)/halflife)
+%                     predFilt<0  - #components to average                    f=mean(f(:,end-predFilt:end),2)
 % 
 % Examples:
 %   startSigProcBuffer(); % run with standard parameters using the GUI to get more info.
@@ -53,7 +59,8 @@ if ( isempty(wb) || isempty(strfind('dataAcq',wb)) )
   initsleepSec;
 end;
 opts=struct('epochEventType',[],'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],...
-            'capFile',[],'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1);
+            'predFilt',[],'capFile',[],...
+				'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1);
 [opts,varargin]=parseOpts(opts,varargin);
 
 thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
@@ -212,7 +219,8 @@ while ( true )
     if ( ~any(strcmp(lower(opts.clsfr_type),{'ersp','induced'})) )
       warning('Cant use an ERP classifier in continuous application mode. Ignored');
     else
-      cont_applyClsfr(clsfr,'overlap',.5,'endType',{'testing','test','contfeedback'},'verb',opts.verb);
+      cont_applyClsfr(clsfr,'overlap',.5,'endType',{'testing','test','contfeedback'},...
+							 'predFilt',opts.predFilt,'verb',opts.verb);
     end
       
    case 'exit';

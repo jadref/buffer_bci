@@ -13,7 +13,7 @@ function [testdata,testevents]=cont_applyClsfr(clsfr,varargin)
 %  step_ms       -- [float] time between classifier predictions                 ([])
 %  predFilt         -- [float] prediction filter  ([])
 %                     predFilt=[] - no filtering 
-%                     predFilt>=0 - coefficient for exp-decay moving average. f=predFilt(f) + (1-predFilt)f_new
+%                     predFilt>=0 - coefficient for exp-decay moving average. f=predFilt*f + (1-predFilt)f_new
 %                                N.B. predFilt = exp(log(.5)/halflife)
 %                     predFilt<0  - #components to average                    f=mean(f(:,end-predFilt:end),2)
 %                  OR
@@ -32,7 +32,11 @@ function [testdata,testevents]=cont_applyClsfr(clsfr,varargin)
 %  % 2) apply clsfr every 500ms and send weighted average of the last 10 predictions as 
 %  %    an 'alphaPower' event type
 %  %    stop processing when get a 'neurofeedback','end' event.
-%  cont_applyClsfr(clsfr,'step_ms',500,'alpha',exp(log(.5)/10),'predEventType','alphaPower','endType','neurofeedback')
+%  cont_applyClsfr(clsfr,'step_ms',500,'predFilt',exp(log(.5)/10),'predEventType','alphaPower','endType','neurofeedback')
+%  % 3) smooth output with standardising filter, such that mean=0 and variance=1 
+%  %    over last 100 predictions
+%  cont_applyClsfr(clsfr,'predFilt',@(x,s) stdFilt(x,s,exp(log(.5)/100)));
+
 opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
             'endType','stimulus.test','endValue','end','verb',0,...
             'predEventType','classifier.prediction',...
