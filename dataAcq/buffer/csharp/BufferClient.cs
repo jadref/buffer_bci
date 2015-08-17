@@ -51,7 +51,7 @@ namespace FieldTrip.Buffer
 			myOrder = order;
 		}
 		
-		public bool connect(string hostname, int port) {
+		public virtual bool connect(string hostname, int port) {
 			if(sockChan == null){
 				sockChan = new SocketChannel();
 			}else if(sockChan.isConnected()){
@@ -85,7 +85,7 @@ namespace FieldTrip.Buffer
 			return sockChan.isConnected();
 		}
 		
-		public Header getHeader() {
+		public virtual Header getHeader() {
 			ByteBuffer buf;
 	
 			buf = ByteBuffer.allocate(8);
@@ -557,7 +557,7 @@ namespace FieldTrip.Buffer
 			readResponse(PUT_OK);
 		}	
 	
-		public void putEvent(BufferEvent e)  {
+		public virtual void putEvent(BufferEvent e)  {
 			ByteBuffer buf;
 			int eventSize = e.size();
 			buf = ByteBuffer.allocate(8+eventSize);
@@ -570,7 +570,7 @@ namespace FieldTrip.Buffer
 			readResponse(PUT_OK);
 		}
 	
-		public void putEvents(BufferEvent[] e){
+		public virtual void putEvents(BufferEvent[] e){
 			ByteBuffer buf;
 			int bufsize = 0;
 		
@@ -617,7 +617,7 @@ namespace FieldTrip.Buffer
 			buf = readResponse(FLUSH_OK);
 		}	
 		
-		public SamplesEventsCount wait(int nSamples, int nEvents, int timeout)  {
+		public virtual SamplesEventsCount wait(int nSamples, int nEvents, int timeout)  {
 			ByteBuffer buf;
 	
 			buf = ByteBuffer.allocate(20);
@@ -640,11 +640,14 @@ namespace FieldTrip.Buffer
 			return wait(-1, nEvents, timeout);
 		}		
 		
+		public SamplesEventsCount poll(int timeout) {
+			return wait(-1, -1, timeout);
+		}		
+
 		public SamplesEventsCount poll() {
 			return wait(0,0,0);
 		}
-		
-		
+				
 		
 		//*********************************************************************
 		//		protected methods and variables from here on

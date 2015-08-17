@@ -215,11 +215,11 @@ namespace FieldTrip.Buffer
 			wValue.serialize(buf);
 		}
 		
-		//For a general C# application change the UnityEngine.Debug.Log() with Console.WriteLine()
+		//For a general C# application change the UnityEngine.Debug.Log() with System.Console.WriteLine()
 		public void print() {
-			UnityEngine.Debug.Log("-------Begin Event Printout-------");
-			UnityEngine.Debug.Log("Sample registered = "+sample.ToString());
-			UnityEngine.Debug.Log("Type = "+wType.array.ToString());
+			System.Console.WriteLine("-------Begin Event Printout-------");
+			System.Console.WriteLine("Sample registered = "+sample.ToString());
+			System.Console.WriteLine("Type = "+wType.array.ToString());
 	
 			string result="";
 			if ( wValue.array is string){
@@ -255,8 +255,8 @@ namespace FieldTrip.Buffer
 				val = wValue.array as double[];
 				foreach(var i in val) result+=i.ToString()+", ";
 			}
-			UnityEngine.Debug.Log("Value = "+result);
-			UnityEngine.Debug.Log("-------End Event Printout-------");
+			System.Console.WriteLine("Value = "+result);
+			System.Console.WriteLine("-------End Event Printout-------");
 		}
 		
 		public int sample;

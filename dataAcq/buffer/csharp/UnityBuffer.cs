@@ -1,4 +1,4 @@
-using UnityEngine;
+//using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System;
@@ -10,7 +10,7 @@ public  delegate void BufferChangeEventHandler(UnityBuffer buffer, EventArgs e);
 //By design this class holds only the latest data package from the buffer and registers the number of lost packages (i.e. packages that haven't been gotten) since the last time a package was gotten.
 //Since it notifies for any data update it is the responsibility of the object who gets notified and uses the data to create some kind of local buffer if memory is required and store old data.
 //TO DO: Add Writing data (of all types) into the buffer
-public class UnityBuffer : MonoBehaviour {
+public class UnityBuffer {//: MonoBehaviour {
 
 	public string hostname = "localhost";
 	public int port = 1972;
@@ -23,7 +23,7 @@ public class UnityBuffer : MonoBehaviour {
 	public bool bufferIsConnected;
 	
 	private Header hdr;
-	private BufferClient bufferClient;
+	private BufferClientClock bufferClient;
 	private int latestBufferSample;
 	private int latestCapturedSample;
 	private int timeout = 1; //In msecs. This blocks the Update of the UnityBuffer so this gives the maximum fps the app will run so keep it a low number unless blocking is required
@@ -31,7 +31,6 @@ public class UnityBuffer : MonoBehaviour {
 	private int lastNumberOfEvents;
 	private int latestNumebrOfEventsInBuffer;
 	private List<BufferEvent> bufferEvents; //Holds the last bufferEventsMaxCapacity events as they are added to the fieldtrip buffer
-	private BufferTimer bufferTimer;
 	
 	
 	//An event that notifies when new data have been captured in the buffer
@@ -53,11 +52,13 @@ public class UnityBuffer : MonoBehaviour {
 	}
 	
 	
-	
+	UnityBuffer	() {
+					Awake();
+	}
 	
 	void Awake () {
 	
-		bufferClient = new BufferClient();
+		bufferClient = new BufferClientClock();
 		bufferEvents = new List<BufferEvent>();
 		
 		latestCapturedSample = 0;
@@ -69,11 +70,11 @@ public class UnityBuffer : MonoBehaviour {
 	
 	
 	public void initializeBuffer(){
-		Debug.Log("Connecting to "+hostname+":"+port);
+		System.Console.Write("Connecting to "+hostname+":"+port);
 		if(bufferClient.connect(hostname, port)){
 			hdr = bufferClient.getHeader();
 			if(bufferClient.errorReturned == BufferClient.BUFFER_READ_ERROR){
-				Debug.Log("Connection to "+hostname+":"+port+" failed");
+				System.Console.Write("Connection to "+hostname+":"+port+" failed");
 				bufferIsConnected = false;
 				return;
 			}
@@ -83,10 +84,9 @@ public class UnityBuffer : MonoBehaviour {
 			fSample = hdr.fSample;
 			initializeData();
 			bufferIsConnected = true;
-			bufferTimer = new BufferTimer(fSample);
-			Debug.Log("Connection to "+hostname+":"+port+" succeeded");
+			System.Console.Write("Connection to "+hostname+":"+port+" succeeded");
 		}else{ 
-			Debug.Log("Connection to "+hostname+":"+port+" failed");
+			System.Console.Write("Connection to "+hostname+":"+port+" failed");
 			bufferIsConnected = false;
 			return;
 		}
@@ -132,7 +132,7 @@ public class UnityBuffer : MonoBehaviour {
 			break;
 					
 			default:
-				Debug.LogError("Uknown data format received from Buffer");
+				System.Console.Write("Uknown data format received from Buffer");
 			break;
 		}
 	}	
@@ -168,7 +168,6 @@ public class UnityBuffer : MonoBehaviour {
 			if(latestBufferSample>latestCapturedSample){
 				nSamples = latestBufferSample - latestCapturedSample;
 				data = bufferClient.getFloatData(latestCapturedSample,latestBufferSample-1); //TO DO: The getFloat needs to change according to the buffers type of data
-				bufferTimer.addSampleToRegression(latestBufferSample);//Updates the bufferTimer with the new samples.
 				latestCapturedSample = latestBufferSample;
 				OnNewDataCaptured(EventArgs.Empty); //That notifies anyone who's listening that data have been updated in the buffer
 				if(newDataIn)
@@ -194,16 +193,10 @@ public class UnityBuffer : MonoBehaviour {
 		return latestBufferSample;
 	}
 	
-	public int getSampleNumberNow(){
-		return bufferTimer.getSampleNow();	
+	public int getSamp(){
+		return (int)bufferClient.getSamp();
 	}
-	
-	public int getSampleNumberAtTime(DateTime time){
-		return bufferTimer.getSampleAtTime(time);	
-	}
-	
-	
-	
+		
 	public void putEvent<T>(string type, T val, int sample){
 		
 		Type cls = typeof(T);
@@ -288,15 +281,15 @@ public class UnityBuffer : MonoBehaviour {
 	
 	
 	public void printHeaderInfo(){
-		Debug.Log("#channels....: "+hdr.nChans);
-		Debug.Log("#samples.....: "+hdr.nSamples);
-		Debug.Log("#events......: "+hdr.nEvents);
-		Debug.Log("Sampling Freq: "+hdr.fSample);
-		Debug.Log("data type....: "+hdr.dataType);
+		System.Console.Write("#channels....: "+hdr.nChans);
+		System.Console.Write("#samples.....: "+hdr.nSamples);
+		System.Console.Write("#events......: "+hdr.nEvents);
+		System.Console.Write("Sampling Freq: "+hdr.fSample);
+		System.Console.Write("data type....: "+hdr.dataType);
 		
 		for (int n=0;n<nChans;n++) {
 			if (hdr.labels[n] != null) {
-				Debug.Log("Channel number " + n + ": " + hdr.labels[n]);
+				System.Console.Write("Channel number " + n + ": " + hdr.labels[n]);
 			}
 		}
 	}

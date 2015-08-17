@@ -54,7 +54,7 @@ namespace FieldTrip.Buffer
         /// <returns>The host associated with the FieldTrip buffer.</returns>
 		public string getHost()
 		{
-			return SockChan.Host;
+			return sockChan.Host;
 		}
 
         /// <summary>
@@ -63,7 +63,7 @@ namespace FieldTrip.Buffer
         /// <returns>The port associated with the FieldTrip buffer.</returns>
 		public int getPort()
 		{
-			return SockChan.Port;
+			return sockChan.Port;
 		}
 
 		//--------------------------------------------------------------------
@@ -74,13 +74,12 @@ namespace FieldTrip.Buffer
         /// Puts an event to the connected FieldTrip buffer.
         /// </summary>
         /// <param name="e">The event to send.</param>
-        /// <returns>The sent buffer event.</returns>
-		override public BufferEvent putEvent(BufferEvent e)
+		override public void putEvent(BufferEvent e)
 		{
-			if (e.Sample < 0) {
-				e.Sample = (int)getSampOrPoll();
+			if (e.sample < 0) {
+				e.sample = (int)getSampOrPoll();
 			}
-			return base.putEvent(e);
+			base.putEvent(e);
 		}
 
         /// <summary>
@@ -94,7 +93,7 @@ namespace FieldTrip.Buffer
 				if (e[i].sample < 0) {
 					if (samp < 0)
 						samp = (int)getSampOrPoll();
-					e[i].Sample = samp;
+					e[i].sample = samp;
 				}
 			}
 			base.putEvents(e);
@@ -104,9 +103,9 @@ namespace FieldTrip.Buffer
 		{
 			//Console.WriteLine("clock update");
 			SamplesEventsCount secount = base.wait(nSamples, nEvents, timeout);
-			double deltaSamples = clockSync.getSamp() - secount.NumSamples; // delta between true and estimated
+			double deltaSamples = clockSync.getSamp() - secount.nSamples; // delta between true and estimated
 			//Console.WriteLine("sampErr="+getSampErr() + " d(samp) " + deltaSamples + " sampThresh= " + clockSync.m*1000.0*.5);
-			if (GetSampErr() < maxSampError) {
+			if (getSampErr() < maxSampError) {
 				if (deltaSamples > clockSync.m * 1000.0 * .5) { // lost samples					 
 					Console.WriteLine(deltaSamples + " Lost samples detected");
 					clockSync.reset();
@@ -116,7 +115,7 @@ namespace FieldTrip.Buffer
 					clockSync.reset();
 				}
 			}
-			clockSync.updateClock(secount.NumSamples); // update the rt->sample mapping
+			clockSync.updateClock(secount.nSamples); // update the rt->sample mapping
 			return secount;
 		}
 
@@ -127,7 +126,7 @@ namespace FieldTrip.Buffer
 		override public Header getHeader()
 		{
 			Header hdr = base.getHeader();
-			clockSync.updateClock(hdr.NumSamples); // update the rt->sample mapping
+			clockSync.updateClock(hdr.nSamples); // update the rt->sample mapping
 			return hdr;
 		}
 
@@ -149,29 +148,30 @@ namespace FieldTrip.Buffer
 		{
 			long sample = -1;
 			bool dopoll = false;
-			if (GetSampErr() > maxSampError || // error too big
-			    Time > (long)(clockSync.Tlast) + updateInterval || // simply too long since we updated
+			double time = getTime();
+			if (getSampErr() > maxSampError || // error too big
+			    time > (long)(clockSync.Tlast) + updateInterval || // simply too long since we updated
 			    clockSync.N < 8) { // Simply not enough points to believe we've got a good estimate
 				dopoll = true;
 			}
-			if (GetSamp() < (long)(clockSync.Slast)) { // detected prediction before last known sample
+			if (getSamp() < (long)(clockSync.Slast)) { // detected prediction before last known sample
 				numWrong++; // increment count of number of times this has happened
 				dopoll = true;
 			} else {
 				numWrong = 0;
 			}
-			if (Time < (long)(clockSync.Tlast) + minUpdateInterval) { // don't update too rapidly
+			if (time < (long)(clockSync.Tlast) + minUpdateInterval) { // don't update too rapidly
 				dopoll = false;
 			}
 			if (dopoll) { // poll buffer for current samples
 				if (numWrong > 5) { 
-					clockSync.Reset(); // reset clock if detected sysmetic error
+					clockSync.reset(); // reset clock if detected sysmetic error
 					numWrong = 0;
 				}
-				long sampest = GetSamp();
+				long sampest = getSamp();
 				//Console.Write("Updating clock sync: SampErr " + getSampErr() + 
 				//					  " getSamp " + sampest + " Slast " + clockSync.Slast);
-				sample = Poll(0).NumSamples; // force update if error is too big
+				sample = poll(0).nSamples; // force update if error is too big
 				//Console.WriteLine(" poll " + sample + " delta " + (sample-sampest));
 			} else { // use the estimated time
 				sample = (int)getSamp();
@@ -194,10 +194,8 @@ namespace FieldTrip.Buffer
 			return Math.Abs(clockSync.getSampErr());
 		}
 
-		public double Time {
-			get {
-				return clockSync.getTime();
-			}
+		public double getTime() {
+		   return clockSync.getTime();
 		}
 		// time in milliseconds
 		public SamplesEventsCount syncClocks()
@@ -214,7 +212,7 @@ namespace FieldTrip.Buffer
 		{
 			clockSync.reset();
 			SamplesEventsCount ssc;
-			ssc = Poll(0);
+			ssc = poll(0);
 			for (int i = 0; i < wait.Length; i++) {			
 				try {
 					System.Threading.Thread.Sleep(wait[i]);
@@ -225,10 +223,6 @@ namespace FieldTrip.Buffer
 			return ssc;
 		}
 
-		public ClockSync clockSync {
-			get {
-				return clockSync;
-			}
-		}
+		public ClockSync getClockSync() { return clockSync; }
 	}
 }

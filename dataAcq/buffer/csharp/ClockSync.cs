@@ -35,16 +35,16 @@ namespace FieldTrip.Buffer
 		{ 
 			this.alpha = alpha; 
 			stopWatch = Stopwatch.StartNew();
-			Reset();
+			reset();
 		}
 
 		public ClockSync(double nSamples, double time, double alpha)
 			: this(alpha)
 		{
-			UpdateClock(nSamples, time);
+			updateClock(nSamples, time);
 		}
 
-		public void Reset()
+		public void reset()
 		{
 			N = -1;
 			S0 = 0;
@@ -59,21 +59,21 @@ namespace FieldTrip.Buffer
 			sampErr = 10000;
 		}
 
-		public double GetTime()
+		public double getTime()
 		{ // current time in milliseconds
 			return ((double)stopWatch.ElapsedTicks / (double)(Stopwatch.Frequency / 1000));
 		}
 
-		public void UpdateClock(double S)
+		public void updateClock(double S)
 		{
-			UpdateClock(S, GetTime());
+			updateClock(S, getTime());
 		}
 
-		public void UpdateClock(double S, double T)
+		public void updateClock(double S, double T)
 		{
 			//System.Console.WriteLine("Before: S,T=" + S + "," + T + "," + " m,b=" + m + "," + b);
 			if (S < Slast || T < Tlast) {
-				Reset();
+				reset();
 			} // Buffer restart detected, so reset
 			if (N <= 0) { // first call with actual data, record the start points
 				N = 0;
@@ -88,7 +88,7 @@ namespace FieldTrip.Buffer
 				return;
 			}
 			// Update the sample error statistics
-			double estErr = System.Math.Abs(GetSamp(T) - S); 
+			double estErr = System.Math.Abs(getSamp(T) - S); 
 			if (N > 1 && N < weightLim) { // reset in the initial phase
 				sampErr = estErr;
 			} else { // running average after predictions are reliable
@@ -124,18 +124,18 @@ namespace FieldTrip.Buffer
 			//System.Console.WriteLine("Update: S,T=" + S + "," + T + "," + " wght=" + wght + " m,b=" + m + "," + b);
 		}
 
-		public long GetSamp()
+		public long getSamp()
 		{
-			return GetSamp(GetTime());
+			return getSamp(getTime());
 		}
 
-		public long GetSamp(double time)
+		public long getSamp(double time)
 		{ 
 			return (long)(N > 0 ? (m * time + b) : Slast); //If not enough data yet, just return last seen #samp
 		}
 		// N.B. the max weight is: \sum alpha.^(i) = 1/(1-alpha)
 		//      and the weight of 1 half-lifes worth of data is : (1-alpha.^(hl))/(1-alpha);
-		public long GetSampErr()
+		public long getSampErr()
 		{
 			//System.Console.WriteLine(" N = " + N + " weightLim = " + weightLim + " sampErr = " + sampErr);
 			//BODGE:time since last update in samples

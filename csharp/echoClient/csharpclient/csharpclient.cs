@@ -57,12 +57,12 @@ namespace csharpclient
                 try
                 {
                     Console.Write("Connecting to " + hostname + ":" + port + "...");
-                    C.Connect(hostname, port);
+                    C.connect(hostname, port);
                     Console.WriteLine("done");
                     Console.Write("Getting Header...");
-                    if (C.IsConnected)
+                    if (C.isConnected())
                     {						
-                        hdr = C.GetHeader();
+                        hdr = C.getHeader();
                     }
                     Console.WriteLine("done");
                 }
@@ -76,29 +76,30 @@ namespace csharpclient
                     Thread.Sleep(1000);
                 }
             }
-            Console.WriteLine("#channels....: " + hdr.NumChans);
-            Console.WriteLine("#samples.....: " + hdr.NumSamples);
-            Console.WriteLine("#events......: " + hdr.NumEvents);
-            Console.WriteLine("Sampling Freq: " + hdr.FSample);
-            Console.WriteLine("data type....: " + hdr.DataType);
-            for (int n = 0; n < hdr.NumChans; n++)
+            Console.WriteLine("#channels....: " + hdr.nChans);
+            Console.WriteLine("#samples.....: " + hdr.nSamples);
+            Console.WriteLine("#events......: " + hdr.nEvents);
+            Console.WriteLine("Sampling Freq: " + hdr.fSample);
+            Console.WriteLine("data type....: " + hdr.dataType);
+            for (int n = 0; n < hdr.nChans; n++)
             {
-                if (hdr.Labels[n] != null)
+                if (hdr.labels[n] != null)
                 {
-                    Console.WriteLine("Ch. " + n + ": " + hdr.Labels[n]);
+                    Console.WriteLine("Ch. " + n + ": " + hdr.labels[n]);
                 }
             }
 						
             // Now do the echo-server
-            int nEvents = hdr.NumEvents;
+            int nEvents = hdr.nEvents;
             endExpt = false;
             while (!endExpt)
             {
-                SamplesEventsCount sec = C.WaitForEvents(nEvents, timeout); // Block until there are new events
+					 // Block until there are new events
+                SamplesEventsCount sec = C.waitForEvents(nEvents, timeout); 
                 if (sec.nEvents > nEvents)
                 {
                     // get the new events
-                    BufferEvent[] evs = C.GetEvents(nEvents, sec.nEvents - 1);
+                    BufferEvent[] evs = C.getEvents(nEvents, sec.nEvents - 1);
                     //float[][] data = C.getFloatData(0,sec.nSamples-1); // Example of how to get data also
                     nEvents = sec.nEvents;// update record of which events we've seen
                     // filter for ones we want
@@ -106,7 +107,7 @@ namespace csharpclient
                     for (int ei = 0; ei < evs.Length; ei++)
                     {
                         BufferEvent evt = evs[ei];
-                        string evttype = evt.Type.ToString();
+                        string evttype = evt.getType().ToString();
                         // only process if it's an event of a type we care about
                         // In our case, don't echo our own echo events....
                         if (!evttype.Equals("echo"))
@@ -116,10 +117,10 @@ namespace csharpclient
                                 endExpt = true;
                             } 
                             // Print the event to the console
-                            Console.WriteLine(ei + ") t:" + evt.Type + " v:" + evt.Value + " s:" + evt.Sample);
+                            Console.WriteLine(ei + ") t:" + evt.getType().toString() + " v:" + evt.getValue().toString() + " s:" + evt.sample);
                             // Now create the echo event, with auto-completed sample number
                             // N.B. -1 for sample means auto-compute based on the real-time-clock
-                            C.PutEvent(new BufferEvent("echo", evt.Value.ToString(), -1)); 
+                            C.putEvent(new BufferEvent("echo", evt.getValue().toString(), -1)); 
                         }
                     }
                 }
@@ -129,7 +130,7 @@ namespace csharpclient
                 }
             }
             Console.WriteLine("Normal Exit");
-            C.Disconnect();
+            C.disconnect();
             return 0;
         }
     }
