@@ -57,7 +57,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="FieldTrip.Buffer">
-      <HintPath>..\FieldTrip.Buffer.dll</HintPath>
+      <HintPath>..\..\..\dataAcq\buffer\csharp\FieldTrip.Buffer.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
