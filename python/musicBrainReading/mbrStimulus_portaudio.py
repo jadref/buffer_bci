@@ -30,6 +30,8 @@ import pygame, sys
 from random import shuffle, randint
 from time import sleep
 from pygame.locals import *
+from pyaudio import PyAudio
+import wave
 sys.path.append(bufferpath)
 import FieldTrip
 from math import ceil
@@ -72,17 +74,24 @@ def updateframe(string, big=False):
 def close():
     pygame.quit()
     sys.exit()
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+
+def playStimulus(i):
+    offset = stream.get_output_latency()*fSample
+    sendEvent("stimulus.play", str(i), offset)
+    stream.write(data[i])
     
 def playSingleStimulus(i):
-    sendEvent("stimulus.online.play", str(i))
-    stimulusChan.play(sounds[i])
-    # wait for the audio to finish
-    while stimulusChan.get_busy()>0 : 
-        sleep(0.1);
+    offset = stream.get_output_latency()*fSample
+    sendEvent("stimulus.online.play", str(i), offset)
+    stream.write(data[i])
+    sleep(0.5);
     sendEvent("stimulus.online", "end", 0)
 
 def runTrainingEpoch(nEpoch, nRep=3, maxLowered=3):
-    dobreak(3, ["Get Ready"]+["Training Epoch " + str(nEpoch)])
+    dobreak(2, ["Training Epoch " + str(nEpoch), "starts in"])
     updateframe("+", True)
 
     ## Set up training sequence
@@ -95,55 +104,32 @@ def runTrainingEpoch(nEpoch, nRep=3, maxLowered=3):
     shuffle(low_sequence)
     
     stimulus_sequence = list()
-    tgt_sequence      = list()
-    # add the repetitions for the stimuli, and the quiet ones if needed
+
     for i in range(0,len(set_sequence)):
-    	stimulus_sequence += [set_sequence[i]]*nRep # duplicate the stimulus nRep times
-        tmp = [False]*nRep # default to no-quiet
-    	if low_sequence[i]: # randomly choose the position to put the quiet one
-            if len(tmp)==1 :   tmp[0]=True
-            elif len(tmp)==2 : tmp[1]=True
-            else:              tmp[randint(1,len(tmp)-1)]=True # rand but not in 1st position
-        tgt_sequence      += tmp 
+        for j in range(0,nRep): newSet.append(set_sequence[i]) # duplicate the stimulus nRep times
+    	if low_sequence[i]:
+    		newSet[0] = newSet[0] + nrStimuli
+    		shuffle(newSet)
+    	stimulus_sequence += newSet
     
-    # play the stimulus sequence
-    sendEvent("stimulus.trial", "start")
-    sendEvent("stimulus.numTargets", nr_lowered)
-    for i in range(0,len(stimulus_sequence)):
-        audioID = stimulus_sequence[i]
-        tgt     = tgt_sequence[i]
-        print(str(i) + ") aud=" + str(audioID) + " tgt=" + str(tgt)) # logging info
-        sendEvent("stimulus.play", audioID) # which stimulus
-        sendEvent("stimulus.target", tgt)   # target/non-target
-        if tgt == False:
-            stimulusChan.play(sounds[audioID])
-        else:
-            stimulusChan.play(sounds[audioID+nrStimuli])
-        # wait audio to finish before starting the next one
-        while stimulusChan.get_busy()>0 : 
-            sleep(0.01);    
+    sendEvent("stimulus.feedback", "epoch" + str(nEpoch) + "nr" + str(nr_lowered) + "truth",0)
 
-    # get user count of targets
-    sleep(0.5)
-    getFeedback(number_of_stimuli,nr_lowered)
-    sendEvent("stimulus.trail","end")
+    for i in stimulus_sequence:
+        playStimulus(i)
 
-def getFeedback(maxLowered,trueLowered):
-	updateframe(["How many lowered volume fragments?", "0-" + str(maxLowered)], False)
+    sleep(0.2)
+    getFeedback(nEpoch)
+
+def getFeedback(nEpoch):
+	updateframe(["How many lowered volume fragments?", "0-" + str(number_of_stimuli)], False)
 	key = waitForKey()
 	while not key in numKeyDict:
-            key = waitForKey()
-        respLowered=int(str(numKeyDict[key]))
-	sendEvent("response.numTargets", respLowered)
-        fbStr = [];
-        if respLowered == trueLowered: fbStr += ["Correct!"]
-        else:                          fbStr += ["Wrong!"]
-        updateframe(fbStr + ["True lowered fragments = " + str(trueLowered)])
-        sleep(1)
+		key = waitForKey()
+	sendEvent("stimulus.feedback", "epoch" + str(nEpoch) + "nr" + str(numKeyDict[key]), 0)
     
 def dobreak(n, message):
     while n > 0:
-        updateframe(message + [" "] + [str(n)])
+        updateframe(message + [str(n)])
         sleep(0.1)
         n -= 0.1
 
@@ -187,7 +173,7 @@ def waitForKey():
   return event.key
 
 # Buffer interfacing functions 
-def sendEvent(event_type, event_value=1, offset=0):
+def sendEvent(event_type, event_value, offset=0):
     e = FieldTrip.Event()
     e.type = event_type
     e.value = event_value
@@ -212,7 +198,7 @@ def buffer_newevents(event_type, timeout):
     while not stop and timetogo>0:
         nSamples,curEvents=ftc.wait(-1,nEvents, timetogo)
         if curEvents>nEvents:
-            newevents = ftc.getEvents([nEvents,curEvents])
+            newevents = ftc.getEvents([nEvents curEvents])
             for evt in newevents:
                 if evt.type == event_type:
                     stop = True
@@ -245,11 +231,9 @@ while hdr is None :
 fSample = hdr.fSample
 
 # set  up pygame and PyAudio
-pygame.mixer.pre_init(44100, -16, 1, 128) # set audio minimual buffer = fast startup
+pygame.mixer.pre_init(44100, -16, 1, 128) # set audio to 1 channel and minimual buffer = fast startup
 pygame.init()
-#pygame.mixer.set_num_channels(1) # limit to one sound playing at a time
-stimulusChan = pygame.mixer.Channel(0) # get and reserve single channel for all stimulus to play on
-pygame.mixer.set_reserved(1)
+p = PyAudio()
 
 # set up the window
 if fullscreen:
@@ -261,12 +245,13 @@ pygame.display.set_caption('BCI Music Experiment')
 
 ## LOADING GLOBAL VARIABLES
 
-# Pre-Loading Music data
+# Loading Music data
 nrStimuli = 7;
-sounds = map(lambda x: pygame.mixer.Sound("stimuli/BR7_" + str(x) + ".wav"), 
-             range(1,nrStimuli+1))
-sounds += map(lambda x: pygame.mixer.Sound("stimuli/BR7_" + str(x) + "_lowered.wav"), 
-              range(1,nrStimuli+1))
+
+wf = map(lambda x: wave.open("stimuli/BR7_" + str(x) + ".wav" , 'rb'), range(1,nrStimuli+1))
+wf += map(lambda x: wave.open("stimuli/BR7_" + str(x) + "_lowered.wav" , 'rb'), range(1,nrStimuli+1))
+data = map(lambda x: x.readframes(x.getnframes()),wf)
+
 names = ["Nutcracker Suite: March (Tchaikovsky)",
          "Galvanize",
          "Daft Punk is Playing at my House",
@@ -274,6 +259,13 @@ names = ["Nutcracker Suite: March (Tchaikovsky)",
          "Release the Pressure",
          "How Insensitive",
          "Erkilet Guzeli"]
+
+# Opening Audio Stream
+
+stream = p.open(format=p.get_format_from_width(wf[0].getsampwidth()),
+            channels=wf[0].getnchannels(),
+            rate=wf[0].getframerate(),
+            output=True)
 
 # set up the colors
 BLACK = (0, 0, 0)
@@ -300,25 +292,25 @@ actions_key = dict()
 actions_key[K_i] = showInstructions
 actions_key[K_t] = doTraining
 actions_key[K_c] = close
-actions_key[K_s] = lambda: playSingleStimulus(0)
-actions_key[K_1] = lambda: playSingleStimulus(0)
-actions_key[K_2] = lambda: playSingleStimulus(1)
-actions_key[K_3] = lambda: playSingleStimulus(2)
-actions_key[K_4] = lambda: playSingleStimulus(3)
-actions_key[K_5] = lambda: playSingleStimulus(4)
-actions_key[K_6] = lambda: playSingleStimulus(5)
-actions_key[K_7] = lambda: playSingleStimulus(6)
+actions_key[K_s] = lambda: playStimulus(0)
+actions_key[K_1] = lambda: playStimulus(0)
+actions_key[K_2] = lambda: playStimulus(1)
+actions_key[K_3] = lambda: playStimulus(2)
+actions_key[K_4] = lambda: playStimulus(3)
+actions_key[K_5] = lambda: playStimulus(4)
+actions_key[K_6] = lambda: playStimulus(5)
+actions_key[K_7] = lambda: playStimulus(6)
 
 ## STARTING PROGRAM LOOP
 
 if not keyboard:
-    showInstructions()
-    waitForKey()
-    doTraining()
-    close()
+	showInstructions()
+	waitForKey()
+	doTraining()
+	close()
 else:
-    while True:
-        showKeyboardInstructions()
-        key = waitForKey()
-        if key in actions_key:
-            actions_key[key]()
+	while True:
+		showKeyboardInstructions()
+	   	key = waitForKey()
+	   	if key in actions_key:
+			actions_key[key]()
