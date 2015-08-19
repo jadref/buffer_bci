@@ -113,12 +113,14 @@ def runTrainingEpoch(nEpoch, nRep=3, maxLowered=3):
         audioID = stimulus_sequence[i]
         tgt     = tgt_sequence[i]
         print(str(i) + ") aud=" + str(audioID) + " tgt=" + str(tgt)) # logging info
-        sendEvent("stimulus.play", audioID) # which stimulus
+
+        if tgt == False:          stimulusChan.set_volume(1)  # full volume for non-targets
+        else:                     stimulusChan.set_volume(.5) # reduce volume for targets
+        
+        # send events as close in time as possible to when the actual stimulus starts
         sendEvent("stimulus.target", tgt)   # target/non-target
-        if tgt == False:
-            stimulusChan.play(sounds[audioID])
-        else:
-            stimulusChan.play(sounds[audioID+nrStimuli])
+        sendEvent("stimulus.play", audioID) # which stimulus
+        stimulusChan.play(sounds[audioID])
         # wait audio to finish before starting the next one
         while stimulusChan.get_busy()>0 : 
             sleep(0.01);    
@@ -265,8 +267,6 @@ pygame.display.set_caption('BCI Music Experiment')
 nrStimuli = 7;
 sounds = map(lambda x: pygame.mixer.Sound("stimuli/BR7_" + str(x) + ".wav"), 
              range(1,nrStimuli+1))
-sounds += map(lambda x: pygame.mixer.Sound("stimuli/BR7_" + str(x) + "_lowered.wav"), 
-              range(1,nrStimuli+1))
 names = ["Nutcracker Suite: March (Tchaikovsky)",
          "Galvanize",
          "Daft Punk is Playing at my House",
