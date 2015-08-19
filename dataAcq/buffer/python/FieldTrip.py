@@ -297,7 +297,7 @@ class Event:
         if value_type == DATATYPE_UNKNOWN:
             return None
         value_size = len(value_buf)
-        print str(value_size) + " = " + str(value_buf)
+        #print str(value_size) + " = " + str(value_buf)
         value_numel = value_size / wordSize[value_type]
         
         bufsize = type_size + value_size
