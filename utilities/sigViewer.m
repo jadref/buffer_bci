@@ -153,9 +153,9 @@ for hi=1:size(ppdat,1);
   line_hdls(hi)=line([1 1],[1 1],'parent',hdls(hi),'visible','on','linewidth',1);
   set(hdls(hi),'ydir','normal'); % undo the dir reset by image
   % set the drawing oder so the title is always on top
-  if ( exist('OCTAVE_VERSION','builtin') ) % in octave have to manually convert arrays..  
-    set(hdls(hi),'children',[get(hdls(hi),'title');get(hdls(hi),'children')]);
-  end
+  %if ( exist('OCTAVE_VERSION','builtin') ) % in octave have to manually convert arrays..  
+  %  set(hdls(hi),'children',[get(hdls(hi),'title');get(hdls(hi),'children')]);
+  %end
   datlimi=get(hdls(hi),'ylim');datlim(1)=min(datlim(1),datlimi(1)); datlim(2)=max(datlim(2),datlimi(2));
 end;
 
