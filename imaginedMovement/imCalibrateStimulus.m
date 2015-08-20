@@ -5,7 +5,7 @@ tgtSeq=mkStimSeqRand(nSymbs,nSeq);
 
 % make the stimulus
 %figure;
-fig=gcf;
+fig=figure(2);
 set(fig,'Name','Imagined Movement','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
 clf;
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...

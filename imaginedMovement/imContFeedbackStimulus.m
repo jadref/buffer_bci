@@ -3,7 +3,7 @@ configureIM;
 % make the target sequence
 tgtSeq=mkStimSeqRand(nSymbs,nSeq);
 
-fig=gcf;
+fig=figure(2);
 clf;
 set(fig,'Name','Imagined Movement','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
@@ -67,6 +67,7 @@ for si=1:nSeq;
       [ans,si]=sort([events.sample],'ascend'); % proc in *temporal* order
       for ei=1:numel(events);
         ev=events(si(ei));% event to process
+		  %fprintf('pred-evt=%s\n',ev2str(ev));
         pred=ev.value;
         % now do something with the prediction....
         if ( numel(pred)==1 )

@@ -3,8 +3,8 @@ configureIM;
 % make the target sequence
 tgtSeq=mkStimSeqRand(nSymbs,nSeq);
 
+fig=figure(2);
 clf;
-fig=gcf;
 set(fig,'Name','Imagined Movement -- close window to stop.','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
 stimPos=[]; h=[];
 stimRadius=.5;

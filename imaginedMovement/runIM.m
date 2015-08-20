@@ -1,8 +1,8 @@
 configureIM;
 % create the control window and execute the phase selection loop
 if ( exist('OCTAVE_VERSION','builtin') ) 
-  contFig=figure('name','BCI Controller : close to quit',...
-					  'color',[0 0 0]);
+  contFig=figure(1);
+  set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
   axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
   set(contFig,'Units','pixel');wSize=get(contFig,'position');
   fontSize = .05*wSize(4);
@@ -37,6 +37,7 @@ while (ishandle(contFig))
   else % give time to process the key presses
 	 % BODGE: move point to force key-processing
 	 fprintf('.');set(ph,'ydata',rand(1)*.01); drawnow; pause(.1);  
+	 if ( ~ishandle(contFig) ) break; end;
   end
 
   % process any key-presses
@@ -47,7 +48,7 @@ while (ishandle(contFig))
      case {'1','e'}; phaseToRun='eegviewer';
      case {'2','p'}; phaseToRun='practice';
      case {'3','c'}; phaseToRun='calibrate';
-     case {'4','t'}; phaseToRun='training';
+     case {'4','t'}; phaseToRun='train';
      case {'5','e'}; phaseToRun='epochfeedback';
 	  case {'6','n'}; phaseToRun='contfeedback';
      otherwise;    phaseToRun=[];
@@ -156,8 +157,7 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'end');
         
   end
-  info.phasesCompleted={info.phasesCompleted{:} info.phaseToRun};
-  if ( ~ishandle(contFig) ) 
+  if ( ~ishandle(contFig) && ~exist('OCTAVE_VERSION','builtin') ) 
     oinfo=info; % store old info
     contFig=controller(); % make new figure
     info=guidata(contFig); % get new info

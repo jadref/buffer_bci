@@ -4,7 +4,7 @@ configureIM;
 tgtSeq=mkStimSeqRand(nSymbs,nSeq);
 
 % make the stimulus display
-fig=gcf;
+fig=figure(2);
 clf;
 set(fig,'Name','Imagined Movement','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...

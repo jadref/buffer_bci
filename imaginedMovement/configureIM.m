@@ -50,6 +50,6 @@ fbColor=[0 0 1];
 % Neurofeedback smoothing
 trlen_ms=trialDuration*1000; % how often to run the classifier
 trlen_ms_ol=trlen_ms;
-contPredFilt = @(x,s) biasFilt(x,s,50); % bias adaption filter
-epochPredFilt= @(x,s) biasFilt(x,s,50); % bias adaption filter
+contPredFilt = @(x,s) biasFilt(x,s,exp(log(.5)/50)); % bias adaption filter
+epochPredFilt= @(x,s) biasFilt(x,s,exp(log(.5)/50)); % bias adaption filter
 stimSmoothFactor= exp(log(.5)/5); % additional smoothing on the stimulus, 5-pred half life
