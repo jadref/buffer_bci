@@ -95,7 +95,7 @@ testdata={}; testevents={}; %N.B. cell array to avoid expensive mem-realloc duri
 state=buffer('wait_dat',[-1 -1 -1],opts.buffhost,opts.buffport);
 
 dv=[];
-nEpochs=0;
+nEpochs=0;filtstate=[];
 nPred=0;
 sendPred=false;
 endTest=false;
