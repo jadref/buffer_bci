@@ -200,7 +200,9 @@ while ( true )
    case {'test','testing','epochfeedback','eventfeedback'};
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
       clsfrfile = [cname '_' subject '_' datestr];
-      if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=[cname '_' subject]; end;
+      if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
+		  clsfrfile=[cname '_' subject]; 
+		end;
       if(opts.verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
       clsfr=load(clsfrfile);
       clsSubj = subject;
@@ -214,7 +216,9 @@ while ( true )
    case {'contfeedback'};
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
       clsfrfile = [cname '_' subject '_' datestr];
-      if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=[cname '_' subject]; end;
+      if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
+		  clsfrfile=[cname '_' subject]; 
+		end;
       if(opts.verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
       clsfr=load(clsfrfile);
       clsSubj = subject;
