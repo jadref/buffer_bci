@@ -4,6 +4,9 @@ source ../utilities/findMatlab.sh
 if [[ $matexe == *matlab ]]; then  args=-nodesktop; fi
 cat <<EOF | $matexe $args
 configureIM;
-startSigProcBuffer('epochEventType','stimulus.target','freqband',[6 8 28 30],'clsfr_type','ersp','trlen_ms',trlen_ms);
+startSigProcBuffer('epochEventType','stimulus.target','freqband',[6 8 28 30],...
+                   'clsfr_type','ersp','trlen_ms',trlen_ms,...
+                   'contPredFilt',contPredFilt,... % slow bias adapt
+                   'epochPredFilt',epochPredFilt);  % slow bias adapt
 %quit;
 EOF

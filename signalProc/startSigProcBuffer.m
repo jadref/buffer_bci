@@ -39,7 +39,7 @@ function []=startSigProcBuffer(varargin)
 %   buffport       -- int, port number on which ft-buffer is running                   (1972)
 %   epochPredFilt  -- [float/str/function_handle] prediction filter for smoothing the 
 %                      epoch output classifier.
-%   contpredFilt   -- [float/str/function_handle] prediction filter for smoothing the continuous
+%   contPredFilt   -- [float/str/function_handle] prediction filter for smoothing the continuous
 %                      output classifier.  Defined as for the cont_applyClsfr argument ([])
 %                     predFilt=[] - no filtering 
 %                     predFilt>=0 - coefficient for exp-decay moving average. f=predFilt*f + (1-predFilt)f_new

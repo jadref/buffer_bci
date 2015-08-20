@@ -9,7 +9,7 @@ function [x,s]=expFilt(x,s,alpha)
 %   x - [nd x 1] the data to filter
 %   s - [struct] internal state of the filter
 %   alpha - [float] exp-moving average factor
-%            alpha = exp(log(.2)./(half-life)
+%            alpha = exp(log(.5)./(half-life))
 %            % N.B. 0=no-smoothing, 1=infinite-smoothing            
 % Outputs:
 %   x - [nd x 1] filtered data

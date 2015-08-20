@@ -43,6 +43,7 @@ trlStartTime=getwTime();
 state=[];
 trialDuration = 60*60; % 1hr...
 timetogo=trialDuration;
+nEpochs=0;
 dv = zeros(nSymbs,1);
 while (timetogo>0)
   if ( ~ishandle(fig) ) break; end;
@@ -54,6 +55,8 @@ while (timetogo>0)
   if ( ~isempty(events) ) 
     [ans,si]=sort([events.sample],'ascend'); % proc in *temporal* order
     for ei=1:numel(events);
+		nEpochs=nEpochs+1;
+
       ev=events(si(ei));% event to process
       pred=ev.value;
       % now do something with the prediction....
@@ -64,8 +67,17 @@ while (timetogo>0)
           pred=[pred -pred];
         end
       end
-      dv = expSmoothFactor*dv + pred(:);
-      prob = 1./(1+exp(-dv(:))); prob=prob./sum(prob); % convert from dv to normalised probability
+
+		% additional prediction smoothing for display
+      if ( stimSmoothFactor>=0 ) % exp weighted moving average
+        dv=dv*stimSmoothFactor + (1-stimSmoothFactor)*pred(:);
+		else % store predictions in a ring buffer
+        fbuff(:,mod(nEpochs-1,abs(stimSmoothFactor))+1)=pred(:); % store predictions in a ring buffer
+        dv=mean(fbuff,2);
+      end
+
+		% convert from dv to normalised probability
+      prob = 1./(1+exp(-dv(:))); prob=prob./sum(prob); 
       if ( verb>=0 ) 
         fprintf('%d) dv:',ev.sample);fprintf('%5.4f ',pred);fprintf('\t\tProb:');fprintf('%5.4f ',prob);fprintf('\n'); 
       end;

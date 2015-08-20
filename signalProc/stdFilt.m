@@ -10,6 +10,7 @@ function [x,s,mu,std]=stdFilt(x,s,alpha)
 %                   all [1x1] or each [ndx1] input feature
 %           fx(t) = (\sum_0^inf x(t-i)*alpha^i)/(\sum_0^inf alpha^i)
 %           fx(t) = (1-alpha) x(t) + alpha fx(t)
+%           N.B. alpha = exp(log(.5)./(half-life))
 %         OR
 %           [ndx2] 2 decay factors.  
 %                    alpha(1) = decay for mu/std estimation

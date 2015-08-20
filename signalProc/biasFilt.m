@@ -10,6 +10,7 @@ function [x,s]=biasFilt(x,s,alpha)
 %                   all [1x1] or each [ndx1] input feature
 %           fx(t) = (\sum_0^inf x(t-i)*alpha^i)/(\sum_0^inf alpha^i)
 %           fx(t) = (1-alpha) x(t) + alpha fx(t)
+%           N.B. alpha = exp(log(.5)./(half-life))
 % Outputs:
 %   x - [nd x 1] filtered data,  x(t) = x(t) - fx(t)
 %   s - [struct] updated filter state
