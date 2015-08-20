@@ -19,6 +19,7 @@ function [x,s,mu,std]=stdFilt(x,s,alpha)
 %   x - [nd x 1] filtered data
 %   s - [struct] updated filter state
 if ( isempty(s) ) s=struct('N',zeros(size(x)),'sx',zeros(size(x)),'sx2',zeros(size(x)),'x',zeros(size(x))); end;
+if(any(alpha>1)) alpha=exp(log(.5)./alpha); end; % convert to decay factor
 if ( size(alpha,2)>1 ) 
   s.x= alpha(:,2).*s.x + (1-alpha(:,2)).*x; x=s.x; 
 end;
