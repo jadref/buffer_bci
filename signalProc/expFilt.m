@@ -14,7 +14,7 @@ function [x,s]=expFilt(x,s,alpha)
 % Outputs:
 %   x - [nd x 1] filtered data
 %   s - [struct] updated filter state
-if ( isempty(s) ) s=zeros(size(x)); end;
+if ( isempty(s) ) s=x; end;
 if(any(alpha>1)) alpha=exp(log(.5)./alpha); end; % convert to decay factor
 s=(1-alpha)*x+s*alpha;
 x=s;

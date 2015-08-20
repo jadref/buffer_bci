@@ -14,7 +14,7 @@ function [x,s]=biasFilt(x,s,alpha)
 % Outputs:
 %   x - [nd x 1] filtered data,  x(t) = x(t) - fx(t)
 %   s - [struct] updated filter state
-if ( isempty(s) ) s=zeros(size(x)); end;
+if ( isempty(s) ) s=x; end;
 if(any(alpha>1)) alpha=exp(log(.5)./alpha); end; % convert to decay factor
 s=alpha(:).*s + (1-alpha(:)).*x; % exp-decay moving average
 fprintf('x=[%s]\ts=[%s]',sprintf('%g ',x),sprintf('%g ',s));
