@@ -10,10 +10,14 @@
 #include <ConsoleInput.h>
 #include <StringServer.h>
 
+#define CONFIGTXT "audio.cfg"
+
 PaStream *stream = NULL;
 int numInputs = 0;
 OnlineDataManager<float, float> *ODM = 0;
 long numTotal = 0;
+long printCount= 0;
+long fSample = 100;
 
 
 static int audioCallback(const void *input, void *output, unsigned long frameCount, 
@@ -35,7 +39,11 @@ static int audioCallback(const void *input, void *output, unsigned long frameCou
 		return paAbort;
 	}
 	numTotal += frameCount;
-	printf("%4lu / %8lu\r", frameCount, numTotal);
+	if ( numTotal > printCount ){	  
+	  printf("%4lu / %8lu\n", frameCount, numTotal);
+	  /* printf("fS=%4lu pC=%4lu\n",fSample,printCount); */
+	  printCount += fSample;
+	}
 	return paContinue;
 }
 
@@ -94,6 +102,7 @@ int openDevice(int nr) {
 	const PaStreamInfo *info = Pa_GetStreamInfo(stream);
 	
 	printf("Opened autio stream with %f Hz, %fs IO-latency\n", info->sampleRate, info->inputLatency);
+	fSample = info->sampleRate;
 	return numInputs;
 }
 
@@ -144,8 +153,8 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	
-	if (ODM->configureFromFile("config.txt") != 0) {
-		fprintf(stderr, "Configuration file config.txt not found or invalid\n");
+	if (ODM->configureFromFile(CONFIGTXT) != 0) {
+	  fprintf(stderr, "Configuration file %s not found or invalid\n",CONFIGTXT);
 		goto cleanup;
 	}	
 
@@ -163,7 +172,7 @@ int main(int argc, char *argv[]) {
 			int c = conIn.getKey();
 			if (c==27) break; // quit
 		}
-		conIn.milliSleep(100);
+		conIn.milliSleep(200);
 	}
 	
 cleanup:
