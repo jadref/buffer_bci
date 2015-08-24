@@ -40,6 +40,7 @@ function [data,devents,state,opts]=buffer_waitData(host,port,state,varargin);
 %                    a type:'cmd' value:'end' event is recieved,          OR 
 %                    a type:'stimulus' value:'end' event is recieved
 %  offset_ms/samp -- offset from start/end event from/to which we gather data in ms or samples
+%                    i.e. actual data is from [start+offset(1) : start+trlen+offset(2)]
 %  trlen_ms/samp  -- trial length from start event in ms or samples
 %  hdr      -- [struct] cached header structure for the attached buffer
 %  timeOut_ms -- [int] time to wait in buffer('wait_dat',...) call before returning  (5000)
