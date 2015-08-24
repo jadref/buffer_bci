@@ -12,7 +12,7 @@ if ( exist(fullfile(buffer_bcidir,'dataAcq'),'dir') )
   if ( exist(fullfile(buffer_bcidir,'dataAcq','buffer','java'),'dir') ) % use java buffer if it's there
     bufferjavaclassdir=fullfile(buffer_bcidir,'dataAcq','buffer','java');
     addpath(bufferjavaclassdir); 
-    bufferjar = fullfile(bufferjavaclassdir,'Buffer.jar');
+    bufferjar = fullfile(bufferjavaclassdir,'BufferClient.jar');
     if ( exist(bufferjar,'file') ) 
       if ( ~any(strcmp(javaclasspath,bufferjar)) )
         warning('Modifying javaclass path -- this clears all variables!');

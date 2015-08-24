@@ -38,6 +38,7 @@ from pygame.locals import *
 sys.path.append(bufferpath)
 import FieldTrip
 from math import ceil
+import os
 
 ## HELPER FUNCTIONS
 
@@ -254,7 +255,11 @@ while hdr is None :
 fSample = hdr.fSample
 
 # set  up pygame and PyAudio
-pygame.mixer.pre_init(44100, -16, 1, 128) # set audio minimual buffer = fast startup
+if os.name == 'posix':
+	pygame.mixer.pre_init(44100, -16, 1, 128) # set audio minimual buffer = fast startup
+else:
+	pygame.mixer.pre_init(44100, -16, 1, 1024) # set audio minimual buffer = fast startup
+
 pygame.init()
 #pygame.mixer.set_num_channels(1) # limit to one sound playing at a time
 stimulusChan = pygame.mixer.Channel(0) # get and reserve single channel for all stimulus to play on

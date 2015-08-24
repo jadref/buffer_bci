@@ -235,7 +235,11 @@ if ( isempty(clientIdx) ) % make a new connection
     bufferClient{clientIdx}.setAutoReconnect(true);
   catch
     le=lasterr;
-    fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    if ( isfield(le,'message') )
+        fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    else
+        fprintf('ERROR Caught:\n%s\n',le);
+    end
     error('Couldnt connect to the buffer: %s %d',host,port);    
   end  
 end
