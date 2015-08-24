@@ -10,7 +10,7 @@ port=1972
 fullscreen = False #True
 
 #The default number of epochs.
-number_of_epochs = 27
+number_of_epochs = 7
 
 #The number of stimuli to play.
 number_of_stimuli = 6
@@ -20,9 +20,14 @@ number_of_repeats = 3
 
 #The maximum number of lowered stimuli in a training sequence
 max_lowered = 3
+full_vol    = 1
+lowered_vol = .5
 
 # set to true for keyboard control of the experimental progression
 keyboard = True
+
+inter_stimulus_interval = .2
+baseline_duration       = 3
 
 ## END OF CONFIGURABLE VARIABLES
 
@@ -82,7 +87,7 @@ def playSingleStimulus(i):
     sendEvent("stimulus.online", "end", 0)
 
 def runTrainingEpoch(nEpoch, nRep=3, maxLowered=3):
-    dobreak(3, ["Get Ready"]+["Training Epoch " + str(nEpoch)])
+    dobreak(baseline_duration, ["Get Ready"]+["Training Epoch " + str(nEpoch)])
     updateframe("+", True)
 
     ## Set up training sequence
@@ -114,8 +119,8 @@ def runTrainingEpoch(nEpoch, nRep=3, maxLowered=3):
         tgt     = tgt_sequence[i]
         print(str(i) + ") aud=" + str(audioID) + " tgt=" + str(tgt)) # logging info
 
-        if tgt == False:          stimulusChan.set_volume(1)  # full volume for non-targets
-        else:                     stimulusChan.set_volume(.5) # reduce volume for targets
+        if tgt == False:          stimulusChan.set_volume(full_vol)  # full volume for non-targets
+        else:                     stimulusChan.set_volume(lowered_vol) # reduce volume for targets
         
         # send events as close in time as possible to when the actual stimulus starts
         sendEvent("stimulus.target", tgt)   # target/non-target
@@ -124,6 +129,8 @@ def runTrainingEpoch(nEpoch, nRep=3, maxLowered=3):
         # wait audio to finish before starting the next one
         while stimulusChan.get_busy()>0 : 
             sleep(0.01);    
+        # wait requested inter-stimulus interval
+        if inter_stimulus_interval > 0 : sleep(inter_stimulus_interval)
 
     # get user count of targets
     sleep(0.5)
