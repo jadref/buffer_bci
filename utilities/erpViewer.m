@@ -3,12 +3,42 @@ function [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin);
 %
 % [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin)
 %
-opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,'nSymbols',0,'trlen_ms',1000,'trlen_samp',[],'detrend',1,'fftfilter',[],'freqbands',[],'downsample',128,'spatfilt','car','badchrm',0,'badchthresh',3,'badtrthresh',3,'capFile',[],'overridechnms',0,'welch_width_ms',500,'redraw_ms',500,'sigProcOptsGui',1);
+% Options
+%  cuePrefix - 'str' event type to match for an ERP to be stored    ('stimulus')
+%  endType   - 'str' event type to match to say stop recording ERPs ('end.training')
+%  trlen_ms/samp  - [int] length of data after to cue to record     (1000)
+%  offset_ms/samp - [2x1] offset from [cue cue+trlen] to record data([]) 
+%                    i.e. actual data is from [cue+offset(1) : cue+trlen+offset(2)]
+%  detrend   - [bool] flag if we detrend the data                   (true)
+%  freqbands - [4x1] range to filter the data in before visualizing the ERP ([])
+%  downsample- [float] frequence to downsample to before plotting   (128)
+%  spatfilt  - 'str' spatial filter to use                          ('car')
+%               one-of: 'none','car','slap','whiten'
+%  badchrm   - [bool] do we do bad channel removal?                 (false)
+%  badchthresh-[float] number for std-deviations to be marked as bad (3)
+%  capFile   - [str] cap file to use to position the electrodes     ([])
+%  welch_width_ms - [float] width of window to use for spectral analysis  (500)
+%  sigProcOptsGui -- [bool] show the GUI to set signal processing options (true) 
+opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,'nSymbols',0,...
+				'trlen_ms',1000,'trlen_samp',[],'offset_ms',[],'offset_samp',[],...
+				'detrend',1,'fftfilter',[],'freqbands',[],'downsample',128,'spatfilt','car',...
+				'badchrm',0,'badchthresh',3,'badtrthresh',3,...
+				'capFile',[],'overridechnms',0,'welch_width_ms',500,...
+				'redraw_ms',500,'lineWidth',2,'sigProcOptsGui',1);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
 if ( isempty(opts.freqbands) && ~isempty(opts.fftfilter) ) opts.freqbands=opts.fftfilter; end;
 if ( isstr(opts.endType) ) opts.endType={opts.endType}; end;
+
+if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics facility
+  if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
+    graphics_toolkit('qthandles'); % use fast rendering library
+  elseif ( ~isempty(strmatch('fltk',available_graphics_toolkits())) )
+    graphics_toolkit('fltk'); % use fast rendering library
+  end
+  opts.sigProcOptsGui=0;
+end
 
 % get channel info for plotting
 hdr=[];
@@ -49,7 +79,10 @@ end
 if ( isfield(hdr,'fSample') ) fs=hdr.fSample; else fs=hdr.fsample; end;
 trlen_samp=opts.trlen_samp;
 if ( isempty(trlen_samp) && ~isempty(opts.trlen_ms) ) trlen_samp=round(opts.trlen_ms*fs/1000); end;
-times=(1:trlen_samp)./fs;
+offset_samp=opts.offset_samp;
+if ( isempty(offset_samp) && ~isempty(opts.offset_ms) ) offset_samp=round(opts.offset_ms*fs/1000); end;
+if ( isempty(offset_samp) ) offset_samp=[0 0]; end;
+times=((1+offset_samp(1)):(trlen_samp+offset_samp(2)))./fs; % include the offset
 freqs=0:1000/opts.welch_width_ms:fs/2;
 if ( ~isempty(opts.freqbands) )
   freqIdx=getfreqIdx(freqs,opts.freqbands);
@@ -59,18 +92,18 @@ else
 end
 
 % make the spectral filter
-filt=[]; if ( ~isempty(opts.freqbands)) filt=mkFilter(trlen_samp/2,opts.freqbands,fs/trlen_samp);end
-outsz=[trlen_samp trlen_samp];
-if(~isempty(opts.downsample)) 
-  outsz(2)=min(outsz(2),round(trlen_samp*opts.downsample/fs)); 
-  times   =(1:outsz(2))./opts.downsample;
+outsz=trlen_samp-offset_samp(1)+offset_samp(2); outsz(2)=outsz(1);
+filt=[]; if ( ~isempty(opts.freqbands)) filt=mkFilter(outsz(1)/2,opts.freqbands,fs/outsz(1));end
+if(~isempty(opts.downsample)) % update the plotting info
+  outsz(2)=min(outsz(2),floor(outsz(1)*opts.downsample/fs)); 
+  times   =(1:outsz(2))./opts.downsample + offset_samp(1)/fs;
 end;
 
 % recording the ERP data
 key      = {};
 label    = {};
 nCls     = opts.nSymbols;
-rawEpochs= zeros(sum(iseeg),trlen_samp); % stores the raw data
+rawEpochs= zeros(sum(iseeg),outsz(1)); % stores the raw data
 rawIds   = 0;
 nTarget  = 0;
 erp      = zeros(sum(iseeg),outsz(2),max(1,nCls)); % stores the pre-proc data used in the figures
@@ -89,7 +122,7 @@ clf;
 fig=gcf;
 set(fig,'Name','ER(s)P Viewer : t=time, f=freq, r=rest, q,close window=quit','menubar','none','toolbar','none','doublebuffer','on');
 plotPos=ch_pos; if ( ~isempty(plotPos) ) plotPos=plotPos(:,iseeg); end;
-hdls=image3d(erp,1,'plotPos',plotPos,'Xvals',ch_names(iseeg),'Yvals',times,'ylabel','time (s)','zlabel','class','disptype','plot','ticklabs','sw','legend','se','plotPosOpts.plotsposition',[.05 .08 .91 .85]);
+hdls=image3d(erp,1,'plotPos',plotPos,'Xvals',ch_names(iseeg),'Yvals',times,'ylabel','time (s)','zlabel','class','disptype','plot','ticklabs','sw','legend','se','plotPosOpts.plotsposition',[.05 .08 .91 .85],'lineWidth',opts.lineWidth);
 
 % make popup menu for selection of TD/FD
 modehdl=uicontrol(fig,'Style','popup','units','normalized','position',[.8 .9 .2 .1],'String','Time|Frequency');
@@ -125,7 +158,7 @@ if ( isequal(opts.sigProcOptsGui,1) )
 end
 
 % pre-call buffer_waitData to cache its options
-[datai,deventsi,state,waitDatopts]=buffer_waitData(buffhost,buffport,[],'startSet',{opts.cuePrefix},'trlen_samp',trlen_samp,'exitSet',{opts.redraw_ms 'data' opts.endType{:}},'verb',opts.verb,varargin{:},'getOpts',1);
+[datai,deventsi,state,waitDatopts]=buffer_waitData(buffhost,buffport,[],'startSet',{opts.cuePrefix},'trlen_samp',trlen_samp,'offset_samp',offset_samp,'exitSet',{opts.redraw_ms 'data' opts.endType{:}},'verb',opts.verb,varargin{:},'getOpts',1);
 
 endTraining=false;
 while ( ~endTraining )
@@ -179,7 +212,7 @@ while ( ~endTraining )
   keep=true(numel(deventsi),1);
   for ei=1:numel(deventsi);
       event=deventsi(ei);
-      if( strmatch(opts.endType,event.type) )
+      if( ~isempty(strmatch(event.type,opts.endType)) )
         % end-training event
         keep(ei:end)=false;
         endTraining=true; % mark to finish
@@ -279,7 +312,7 @@ while ( ~endTraining )
          otherwise; error('Unrecognised visualisation type: ');
         end
 
-        erp(:,:,mi) = mean(ppdatmi,3);
+        erp(:,:,mi) = sum(ppdatmi,3)./size(ppdatmi,3);
         if ( isnumeric(key{mi}) ) % line label -- including number of times seen
           label{mi}=sprintf('%g (%d)',key{mi},sum(rawIds(1:nTarget)==mi));
         else
@@ -290,7 +323,7 @@ while ( ~endTraining )
     
       %---------------------------------------------------------------------------------
       % Update the plot
-      hdls=image3d(erp,1,'handles',hdls,'Xvals',ch_names(iseeg),'Yvals',yvals,'ylabel',ylabel,'zlabel','class','disptype','plot','ticklabs','sw','Zvals',label(1:numel(key)));
+      hdls=image3d(erp,1,'handles',hdls,'Xvals',ch_names(iseeg),'Yvals',yvals,'ylabel',ylabel,'zlabel','class','disptype','plot','ticklabs','sw','Zvals',label(1:numel(key)),'lineWidth',opts.lineWidth);
     end
     drawnow;      
   end
