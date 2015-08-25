@@ -1,15 +1,72 @@
 configureDemo;
+
 % create the control window and execute the phase selection loop
-contFig=controller(); info=guidata(contFig); 
+if ( ~exist('OCTAVE_VERSION','builtin') ) 
+  contFig=controller(); info=guidata(contFig); 
+else
+  contFig=figure(1);
+  set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
+  axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
+  set(contFig,'Units','pixel');wSize=get(contFig,'position');
+  fontSize = .05*wSize(4);
+  %             Instruct String                  Phase-name
+  instructStr={'0) EEG'                          'eegviewer';
+					'1) ERP Visualization'            'erpviz';
+               '2) ERP Viz PTB'                  'erpvizptb';
+               '3) Speller: Practice'            'sppractice';
+					'4) Speller: Calibrate'           'spcalibrate'; 
+					'5) Speller: Train Classifier'    'sptrain';
+					'6) Speller: Testing'             'sptesting';
+					'7) Movement: Practice'           'impractice';
+					'8) Movement: Calibrate'          'imcalibrate';
+					'9) Movement: Train Classifier'   'imtrain';
+					':) Movement: Testing'            'imtesting';
+              };
+  txth=text(.25,.7,instructStr{:,1},'fontunits','pixel','fontsize',.05*wSize(4),...
+				'HorizontalAlignment','left','color',[1 1 1]);
+  ph=plot(1,0,'b'); % BODGE: point to move around to update the plot to force key processing
+  % install listener for key-press mode change
+  set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
+  set(contFig,'userdata',[]);
+  drawnow; % make sure the figure is visible
+end
+subject='test';
+
+% run the control handeling loop
 while (ishandle(contFig))
   set(contFig,'visible','on');
-  uiwait(contFig); % CPU hog on ver 7.4
   if ( ~ishandle(contFig) ) break; end;
+
+  phaseToRun=[];
+  if ( ~exist('OCTAVE_VERSION','builtin') ) 
+	 uiwait(contFig); % CPU hog on ver 7.4
+	 info=guidata(contFig); 
+	 subject=info.subject;
+	 phaseToRun=lower(info.phaseToRun);
+  else % give time to process the key presses
+	 % BODGE: move point to force key-processing
+	 fprintf('.');set(ph,'ydata',rand(1)*.01); drawnow; pause(.1);  
+	 if ( ~ishandle(contFig) ) break; end;
+  end
+
+  % process any key-presses
+  modekey=get(contFig,'userdata'); 
+  if ( ~isempty(modekey) ) 	 
+	 fprintf('key=%s\n',modekey);
+	 phaseToRun=[];
+	 if ( isstr(modekey(1)) )
+		ri = int32(modekey(1)-'0')+1; % get the row in the instructions
+		if ( ri>0 & ri<size(instructstr,1))
+		  phaseToRun = instructstr{ri,2};
+		end
+	 end
+    set(contFig,'userdata',[]);
+  end
+
+  if ( isempty(phaseToRun) ) continue; end;
+
+  fprintf('Start phase : %s\n',phaseToRun);  
   set(contFig,'visible','off');
-  info=guidata(contFig); 
-  subject=info.subject;
-  phaseToRun=lower(info.phaseToRun);
-  fprintf('Start phase : %s\n',phaseToRun);
   
   switch phaseToRun;
     
