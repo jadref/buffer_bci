@@ -1,5 +1,5 @@
 % make the stimulus
-fig=gcf;
+fig=figure(2);
 set(fig,'Name','Evoked/Induced Response Stimulus.  Press key to start trial','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
 clf;
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
@@ -17,16 +17,24 @@ h(3) =rectangle('curvature',[0 0],'position',[[.75;0]-stimRadius/2;stimRadius*[1
 h(4) =rectangle('curvature',[1 1],'position',[[0;0]-.5/4;.5/2*[1;1]],'facecolor',bgColor');
 % add symbol for the center of the screen
 set(gca,'visible','off');
-set(fig,'keypressfcn',@keyListener);
+set(fig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:))));
 set(fig,'userdata',[]); % clear any old key info
-instructh=text(min(get(ax,'xlim'))+.25*diff(get(ax,'xlim')),mean(get(ax,'ylim')),instructstr,'HorizontalAlignment','left','VerticalAlignment','middle','color',[0 1 0],'fontunits','normalized','FontSize',.05,'visible','off');
+
+set(contFig,'Units','pixel');wSize=get(contFig,'position');fontSize = .05*wSize(4);
+instructh=text(min(get(ax,'xlim'))+.25*diff(get(ax,'xlim')),mean(get(ax,'ylim')),instructstr,'HorizontalAlignment','left','VerticalAlignment','middle','color',[0 1 0],'fontunits','pixel','FontSize',fontSize,'visible','off');
+
+%BODGE: to force screen redraw
+if ( exist('OCTAVE_VERSION','builtin') ) hold('on'); ph=plot(-1.5,-1.5,'k'); end; 
 
 % load the audio fragments
-[tmp,fsi]= wavread('auditoryStimuli/550.wav');%oddball
-beepStd  = audioplayer(tmp(1:min(size(tmp,1),fsi*.2),:)', fsi); % limit to .2s long
-[tmp,fsi]= wavread('auditoryStimuli/500.wav');%standard
-beepOdd = audioplayer(tmp(1:min(size(tmp,1),fsi*.2),:)', fsi); % limit to .2s long
-audio = {beepStd beepOdd};
+audio={};
+if ( ~exist('OCTAVE_VERSION','builtin') ) % audioplayer not supported in octave
+  [tmp,fsi]= wavread('auditoryStimuli/550.wav');%oddball
+  beepStd  = audioplayer(tmp(1:min(size(tmp,1),fsi*.2),:)', fsi); % limit to .2s long
+  [tmp,fsi]= wavread('auditoryStimuli/500.wav');%standard
+  beepOdd = audioplayer(tmp(1:min(size(tmp,1),fsi*.2),:)', fsi); % limit to .2s long
+  audio = {beepStd beepOdd};
+end
 
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
@@ -49,6 +57,7 @@ while ( ~endTraining )
     key=get(fig,'userData');
     while ( ishandle(fig) && isempty(key) )
       key=get(fig,'userData');
+		if ( exist('OCTAVE_VERSION','builtin') ) set(ph,'ydata',rand(1)*.01); drawnow; pause(.1); end;
       if ( inswait>6 ) set(instructh,'visible','on');drawnow; end;
       pause(.25);
       inswait=inswait+1;
@@ -134,8 +143,8 @@ while ( ~endTraining )
     sleepSec(max(0,stimTime(ei)-(getwTime()-seqStartTime))); % wait until time to call the draw-now
     if ( verb>0 ) frametime(ei,2)=getwTime()-seqStartTime; end;
     drawnow;
-    if(any(ss==-4))play(audio{1});end;
-    if(any(ss==-5))play(audio{2});end; 
+    if(any(ss==-4))if(~isempty(audio{1}))play(audio{1});end;end;
+    if(any(ss==-5))if(~isempty(audio{2}))play(audio{2});end;end; 
     if ( verb>0 ) 
       frametime(ei,3)=getwTime()-seqStartTime;
       fprintf('%d) dStart=%8.6f dEnd=%8.6f stim=[%s] lag=%g\n',ei,...

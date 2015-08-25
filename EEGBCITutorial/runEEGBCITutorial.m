@@ -10,9 +10,9 @@ else
   set(contFig,'Units','pixel');wSize=get(contFig,'position');
   fontSize = .05*wSize(4);
   %             Instruct String                  Phase-name
-  instructStr={'0) EEG'                          'eegviewer';
-					'1) ERP Visualization'            'erpviz';
-               '2) ERP Viz PTB'                  'erpvizptb';
+  menustr={'0) EEG'                          'eegviewer';
+					'1) ERP Visualization'            'erpvis';
+               '2) ERP Viz PTB'                  'erpvisptb';
                '3) Speller: Practice'            'sppractice';
 					'4) Speller: Calibrate'           'spcalibrate'; 
 					'5) Speller: Train Classifier'    'sptrain';
@@ -22,9 +22,9 @@ else
 					'9) Movement: Train Classifier'   'imtrain';
 					':) Movement: Testing'            'imtesting';
               };
-  txth=text(.25,.7,instructStr{:,1},'fontunits','pixel','fontsize',.05*wSize(4),...
+  txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
 				'HorizontalAlignment','left','color',[1 1 1]);
-  ph=plot(1,0,'b'); % BODGE: point to move around to update the plot to force key processing
+  ph=plot(1,0,'k'); % BODGE: point to move around to update the plot to force key processing
   % install listener for key-press mode change
   set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
   set(contFig,'userdata',[]);
@@ -56,8 +56,8 @@ while (ishandle(contFig))
 	 phaseToRun=[];
 	 if ( isstr(modekey(1)) )
 		ri = int32(modekey(1)-'0')+1; % get the row in the instructions
-		if ( ri>0 & ri<size(instructstr,1))
-		  phaseToRun = instructstr{ri,2};
+		if ( ri>0 & ri<size(menustr,1))
+		  phaseToRun = menustr{ri,2};
 		end
 	 end
     set(contFig,'userdata',[]);
@@ -71,14 +71,14 @@ while (ishandle(contFig))
   switch phaseToRun;
     
    case 'capfitting';
-    sendEvent('subject',info.subject);
+    sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until capFitting is done
     buffer_newevents(buffhost,buffport,[],phaseToRun,'end');    
     %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);       
 
    case 'eegviewer';
-    sendEvent('subject',info.subject);
+    sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until capFitting is done
     buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
@@ -89,7 +89,7 @@ while (ishandle(contFig))
    
    case {'erspvis','erpvis','erpviewer'};
     trialDuration=ersptrialDuration;
-    sendEvent('subject',info.subject);
+    sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun);
     %try
       evokedDemoERPStimulus;
@@ -101,7 +101,7 @@ while (ishandle(contFig))
 
    case {'erpvisptb'};
     trialDuration=ersptrialDuration;
-    sendEvent('subject',info.subject);
+    sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun);
     %try
       evokedDemoERPStimulusPTB;
@@ -113,7 +113,7 @@ while (ishandle(contFig))
     %--------------------------------------------------------------
     % speller    
    case 'sppractice';
-    sendEvent('subject',info.subject);
+    sendEvent('subject',subject);
     sendEvent(phaseToRun,'start');
     onSeq=spnSeq; nSeq=4; % override sequence number
     onRepetitions=nRepetitions; nRepetitions=3;
@@ -129,7 +129,7 @@ while (ishandle(contFig))
    case {'spcalibrate','spcalibration'};
     nSeq=spnSeq;
     trlen_ms=sptrlen_ms;
-    sendEvent('subject',info.subject);
+    sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun);
     sendEvent(phaseToRun,'start');
     try
@@ -141,7 +141,7 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'end');
 
    case {'sptrain','spclassifier'};
-    sendEvent('subject',info.subject);
+    sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until training is done
     buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
@@ -150,7 +150,7 @@ while (ishandle(contFig))
    case {'sptesting','sptest','freespell'};
     nSeq=spnSeq;
     trlen_ms=sptrlen_ms;
-    sendEvent('subject',info.subject);
+    sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun);
     try
       spFeedbackStimulus;
@@ -163,7 +163,7 @@ while (ishandle(contFig))
    %---------------------------------------------------------------------------
    % Movement BCI
    case 'impractice';
-    sendEvent('subject',info.subject);
+    sendEvent('subject',subject);
     sendEvent(phaseToRun,'start');
     onSeq=imnSeq; nSeq=4; % override sequence number
     trialDuration=imtrialDuration;
@@ -178,7 +178,7 @@ while (ishandle(contFig))
    case {'imcalibrate','imcalibration'};
     nSeq=imnSeq;
     trialDuration=imtrialDuration;
-    sendEvent('subject',info.subject);
+    sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun)
     sendEvent(phaseToRun,'start');
     try
@@ -193,7 +193,7 @@ while (ishandle(contFig))
    case {'imtrain','imclassifier'};
     nSeq=imnSeq;
     trialDuration=imtrialDuration;
-    sendEvent('subject',info.subject);
+    sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until training is done
     buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
@@ -203,7 +203,7 @@ while (ishandle(contFig))
     trialDuration=imtrialDuration;
     trlen_ms=imtrlen_ms;
     nSeq=imnSeq;
-    sendEvent('subject',info.subject);
+    sendEvent('subject',subject);
     %sleepSec(.1);
     try
       sendEvent('startPhase.cmd',phaseToRun);
@@ -215,8 +215,8 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'end');
   
   end
-  info.phasesCompleted={info.phasesCompleted{:} info.phaseToRun};
-  if ( ~ishandle(contFig) ) 
+  
+  if ( ~ishandle(contFig) &&  ~exist('OCTAVE_VERSION','builtin') ) 
     oinfo=info; % store old info
     contFig=controller(); % make new figure
     info=guidata(contFig); % get new info
