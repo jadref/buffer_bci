@@ -4,7 +4,6 @@ if ( ~exist('configured','var') || ~isequal(configured,true) )
   run ../utilities/initPTBPaths.m;
 
   buffhost='localhost';buffport=1972;
-  global ft_buff; ft_buff=struct('host',buffhost,'port',buffport);
   % wait for the buffer to return valid header information
   hdr=[];
   while ( isempty(hdr) || ~isstruct(hdr) ) % wait for the buffer to contain valid data

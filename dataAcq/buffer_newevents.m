@@ -27,14 +27,8 @@ function [events,state,nevents,nsamples]=buffer_newevents(host,port,state,mtype,
 % Outputs:
 %  devents -- [struct Nx1] structure containing the matched events
 %  state -- [struct] current newevents state in the same format as the input state
-if ( nargin<1 || isempty(host) ) 
-  global ft_buff;
-  if ( ~isempty(ft_buff) ) host=ft_buff.host ; else host='localhost'; end; 
-end
-if ( nargin<2 || isempty(port) ) 
-  global ft_buff;
-  if ( ~isempty(ft_buff) ) port=ft_buff.port ; else port=1972; end;
-end;
+if ( nargin<1 ) host=[]; end
+if ( nargin<2 ) port=[]; end
 if ( nargin<3 || isempty(state) ) state=-1; end;
 if ( nargin<4 || isempty(mtype) ) mtype='*'; end;
 if ( nargin<5 || isempty(mval)  ) mval ='*'; end;

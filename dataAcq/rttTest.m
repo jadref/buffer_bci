@@ -1,7 +1,6 @@
 run ../utilities/initPaths.m
 global getwTime; getwTime=[];initgetwTime;
 buffhost='localhost';buffport=1972;
-global ft_buff; ft_buff=struct('host',buffhost,'port',buffport);
 if ( 1 )
 % put a fake header so we don't need a signal proxy to proceed
 hdr=struct('fsample',100,'channel_names',{{'Cz'}},'nchans',1,'nsamples',0,'nsamplespre',0,'ntrials',1,'nevents',0,'data_type',10);

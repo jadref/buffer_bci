@@ -5,7 +5,6 @@ spConfig=true;
 run ../utilities/initPaths.m;
 
 buffhost='localhost';buffport=1972;
-global ft_buff; ft_buff=struct('host',buffhost,'port',buffport);
 % wait for the buffer to return valid header information
 hdr=[];
 while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
