@@ -5,20 +5,14 @@
   <property name="ant.build.javac.target" value="1.5"/>
 
     <property name="src.dir"     value="."/>
-    <property name="build.dir"   value="build"/>
-    <property name="classes.dir" value="${build.dir}/classes"/>
-    <property name="jar.dir"     value="${build.dir}/jar"/>
+    <property name="build.dir"   value="."/>
+    <property name="classes.dir" value="."/>
+    <property name="jar.dir"     value="."/>
     <property name="main-class"  value="${ant.project.name}.bufferserver.BufferServer"/>
 
-	 <!-- Any library jar's we depend on? -->
-	 <property name="lib.dir"     value="lib"/>
-    <path id="classpath">
-        <fileset dir="${lib.dir}" includes="**/*.jar"/>
-    </path>
+    <path id="classpath"> </path>
 
     <target name="compile">
-        <mkdir dir="${classes.dir}"/>
-        <mkdir dir="${lib.dir}"/>
         <javac srcdir="${src.dir}" 
 					destdir="${classes.dir}" 
 					classpathref="classpath" 
@@ -26,28 +20,19 @@
 					debuglevel="lines,vars,source"/>
 	 </target>
 
-    <target name="client" depends="compile">
-        <mkdir dir="${jar.dir}"/>
-        <jar destfile="${jar.dir}/BufferClient.jar">
-			 <fileset dir="${classes.dir}" includes="**/bufferclient/*.class"/>
-			 <fileset dir="${src.dir}" includes="**/bufferclient/*.java"/>
-        </jar>
-    </target>
-
     <target name="server" depends="compile">
         <mkdir dir="${jar.dir}"/>
         <jar destfile="${jar.dir}/BufferServer.jar">
-			 <fileset dir="${classes.dir}" includes="**/bufferserver/**/*.class"/>
-			 <fileset dir="${src.dir}" includes="**/bufferserver/**/*.java"/>
+			 <fileset dir="${classes.dir}" includes="**/*.class"/>
+			 <fileset dir="${src.dir}" includes="**/*.java"/>
           <manifest>
             <attribute name="Main-Class" value="${main-class}"/>
           </manifest>
         </jar>
     </target>
 
-	 <target name="dist" depends="server,client">
-		<copy file="${jar.dir}/BufferServer.jar" todir="."/>
-		<copy file="${jar.dir}/BufferClient.jar" todir="."/>
+	 <target name="dist" depends="server">
+		<copy file="${jar.dir}/BufferServer.jar" todir="../"/>
 	 </target>
 
     <target name="run" depends="server">
@@ -59,8 +44,8 @@
       </java>
     </target>
 
-    <target name="clean">   <delete dir="${build.dir}"/>  </target>
-    <target name="build" depends="client,server"/>
+    <target name="clean">   <delete> <fileset dir="." includes="**/*.class"/> </delete> </target>
+    <target name="build" depends="server"/>
     <target name="clean-build" depends="clean,build"/>
     <target name="main" depends="build,dist"/>
 </project>
