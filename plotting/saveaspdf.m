@@ -20,7 +20,7 @@ if isempty(fig), fig=gcf; end
 
 % get the stuff we need.
 if ( fname(1)=='~' )
-  if ( exist('glob',2) ) fname=glob(fname);
+  if ( exist('glob','file') ) fname=glob(fname); if ( iscell(fname) ) fname=fname{:}; end;
   elseif ( ~ispc() )   fname=[getenv('HOME') fname(2:end)]; 
   end;
 end
