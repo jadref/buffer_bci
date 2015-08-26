@@ -1,5 +1,9 @@
 <project name="openBCI2ft" basedir="." default="main">
 
+  <!-- Set the default java version to 1.5 to maximise compatability over OS/versions -->
+  <property name="ant.build.javac.source" value="1.5"/>
+  <property name="ant.build.javac.target" value="1.5"/>
+
     <property name="src.dir"     value="src"/>
     <property name="build.dir"   value="build"/>
     <property name="classes.dir" value="${build.dir}/classes"/>
