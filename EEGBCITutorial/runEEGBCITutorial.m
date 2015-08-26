@@ -9,19 +9,19 @@ else
   axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
   set(contFig,'Units','pixel');wSize=get(contFig,'position');
   fontSize = .05*wSize(4);
-  %             Instruct String                  Phase-name
+  %        Instruct String                  Phase-name
   menustr={'0) EEG'                          'eegviewer';
-					'1) ERP Visualization'            'erpvis';
-               '2) ERP Viz PTB'                  'erpvisptb';
-               '3) Speller: Practice'            'sppractice';
-					'4) Speller: Calibrate'           'spcalibrate'; 
-					'5) Speller: Train Classifier'    'sptrain';
-					'6) Speller: Testing'             'sptesting';
-					'7) Movement: Practice'           'impractice';
-					'8) Movement: Calibrate'          'imcalibrate';
-					'9) Movement: Train Classifier'   'imtrain';
-					':) Movement: Testing'            'imtesting';
-              };
+			  '1) ERP Visualization'            'erpvis';
+           '2) ERP Viz PTB'                  'erpvisptb';
+           '3) Speller: Practice'            'sppractice';
+			  '4) Speller: Calibrate'           'spcalibrate'; 
+			  '5) Speller: Train Classifier'    'sptrain';
+			  '6) Speller: Testing'             'sptesting';
+			  '7) Movement: Practice'           'impractice';
+			  '8) Movement: Calibrate'          'imcalibrate';
+			  '9) Movement: Train Classifier'   'imtrain';
+			  ':) Movement: Testing'            'imtesting';
+          };
   txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
 				'HorizontalAlignment','left','color',[1 1 1]);
   ph=plot(1,0,'k'); % BODGE: point to move around to update the plot to force key processing

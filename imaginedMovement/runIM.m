@@ -6,15 +6,17 @@ if ( exist('OCTAVE_VERSION','builtin') )
   axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
   set(contFig,'Units','pixel');wSize=get(contFig,'position');
   fontSize = .05*wSize(4);
-  instructStr={'1) EEG'; 
-					'2) Practice';
-               '3) Calibrate';
-               '4) Train Classifier';
-					'5) Epoch Feedback';
-					'6) Cont/Neuro feedback'};
-  txth=text(.25,.7,instructStr,'fontunits','pixel','fontsize',.05*wSize(4),...
+  %        Instruct String          Phase-name
+  menustr={'0) EEG'                 'eegviewer';
+           '1) Practice'            'practice';
+			  '2) Calibrate'           'calibrate'; 
+			  '3) Train Classifier'    'train';
+			  '4) Epoch Feedback'      'epochfeedback';
+			  '5) Cont/Neuro Feedback' 'contfeedback'
+          };
+  txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
 				'HorizontalAlignment','left','color',[1 1 1]);
-  ph=plot(1,0,'b'); % BODGE: point to move around to update the plot to force key processing
+  ph=plot(1,0,'k'); % BODGE: point to move around to update the plot to force key processing
   % install listener for key-press mode change
   set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
   set(contFig,'userdata',[]);
@@ -42,17 +44,16 @@ while (ishandle(contFig))
 
   % process any key-presses
   modekey=get(contFig,'userdata'); 
+  modekey=get(contFig,'userdata'); 
   if ( ~isempty(modekey) ) 	 
 	 fprintf('key=%s\n',modekey);
-    switch ( modekey(1) );
-     case {'1','e'}; phaseToRun='eegviewer';
-     case {'2','p'}; phaseToRun='practice';
-     case {'3','c'}; phaseToRun='calibrate';
-     case {'4','t'}; phaseToRun='train';
-     case {'5','e'}; phaseToRun='epochfeedback';
-	  case {'6','n'}; phaseToRun='contfeedback';
-     otherwise;    phaseToRun=[];
-    end;
+	 phaseToRun=[];
+	 if ( isstr(modekey(1)) )
+		ri = int32(modekey(1)-'0')+1; % get the row in the instructions
+		if ( ri>0 & ri<size(menustr,1))
+		  phaseToRun = menustr{ri,2};
+		end
+	 end
     set(contFig,'userdata',[]);
   end
 
