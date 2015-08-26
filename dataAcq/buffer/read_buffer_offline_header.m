@@ -156,12 +156,15 @@ else
     switch typeAndSize(1)
      case 1 % channel names
             % already dealt with, TODO: maybe check consistency with ASCII stuff
-       chnm = char(fread(F, typeAndSize(2), 'uint8=>uint8'));
-		 if ( chnm(end)==0 ) chnm(end)=[]; end;
-		 chLabIdx=chLabIdx+1;
-		 hdr.label{chLabIdx}=chnm(:)';
-       nameFlag = 2; % mark that we got channel names
-		
+       s = char(fread(F, typeAndSize(2), 'uint8=>uint8'));
+		 if numel(s==0)>=1
+			ind = [0;find(s==0)];
+			for ci=1:numel(ind)-1;
+			  hdr.label{ci}=s((ind(ci)+1):(ind(ci+1)-1))';
+			end
+			nameFlag = 2; % mark that we got channel names
+		end
+
      case 2 % FT_CHUNK_CHANNEL_FLAGS 
             % FIXME: ignored for now
       dummy = fread(F, typeAndSize(2), 'uint8=>uint8');
