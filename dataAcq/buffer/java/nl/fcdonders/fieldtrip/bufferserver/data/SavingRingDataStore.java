@@ -17,7 +17,7 @@ public class SavingRingDataStore extends RingDataStore {
     private BufferedOutputStream dataWriter;
     private BufferedOutputStream headerWriter;
     private String savePathRoot;
-    private int numReset = 0;
+    private int numReset = 1;
     private ByteBuffer writeBuf;
 
     /**
@@ -75,7 +75,7 @@ public class SavingRingDataStore extends RingDataStore {
 		  // When using a string we automatically use sub-directories numbered from 000
         if (path == null) path = ".";
         // add the reset number prefix to the path
-        String fullpath = path + File.separator + String.format("%03d", numReset);
+        String fullpath = path + File.separator + String.format("%04d", numReset);
         File theDir = new File(fullpath);
 		  initFiles(theDir); // call the version which actually makes directory and opens the save files
     }
