@@ -147,6 +147,7 @@ else
   %end
 
   % TODO: add chunk handling
+  chLabIdx=0;
   while ~feof(F)
     typeAndSize = fread(F, 2, 'uint32');
     if numel(typeAndSize) < 2
@@ -155,7 +156,12 @@ else
     switch typeAndSize(1)
      case 1 % channel names
             % already dealt with, TODO: maybe check consistency with ASCII stuff
-      dummy = fread(F, typeAndSize(2), 'uint8=>uint8');
+       chnm = char(fread(F, typeAndSize(2), 'uint8=>uint8'));
+		 if ( chnm(end)==0 ) chnm(end)=[]; end;
+		 chLabIdx=chLabIdx+1;
+		 hdr.label{chLabIdx}=chnm(:)';
+       nameFlag = 2; % mark that we got channel names
+		
      case 2 % FT_CHUNK_CHANNEL_FLAGS 
             % FIXME: ignored for now
       dummy = fread(F, typeAndSize(2), 'uint8=>uint8');
@@ -197,6 +203,14 @@ else
   end
 
   fclose(F);
+end
+
+% copy any fields only in txt into the hdr
+if ( ~isempty(txt) && ~isempty(hdr) ) 
+	fns=fieldnames(txt);
+	for fi=1:numel(fns);
+		 if ( ~isfield(hdr,fns{fi}) ) hdr.(fns{fi})=txt.(fns{fi}); end;
+	end
 end
 
 % binary has invalid samples info (or isn't there), get from samples file instead..
