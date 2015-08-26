@@ -99,9 +99,9 @@ struct GDF_Header {
 	uint16_t reserved3;
 		
 	// compiling this function will always yield an error, which is what we want!
-	template<typename T> static GDF_Type getType(T dummy) { 
-		return 0; 
-	}
+	//template<typename T> static GDF_Type getType(T dummy) { 
+//		return 0; 
+//	}
 
 	// "specialised versions" of the above template function, returning the
 	// right GDF_Type for the given input argument

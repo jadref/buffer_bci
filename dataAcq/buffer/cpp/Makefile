@@ -10,9 +10,9 @@ UNAME = $(shell uname)
 MACHINE = $(shell uname -m)
 
 # defaults, might be overwritten further down
-LDFLAGS += -L../src
+LDFLAGS += -L../c
 LDFLAGS += -lpthread -lbuffer
-INCPATH = -I../src -I. 
+INCPATH = -I../c -I. 
 SUFFIX =
 
 ifeq "$(PLATFORM)" "mingw32"
