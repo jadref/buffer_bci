@@ -26,7 +26,7 @@ lowered_vol = .5
 # set to true for keyboard control of the experimental progression
 keyboard = True
 
-inter_stimulus_interval = .2
+inter_stimulus_interval = 0
 baseline_duration       = 3
 
 ## END OF CONFIGURABLE VARIABLES
@@ -132,8 +132,6 @@ def runTrainingEpoch(nEpoch, nRep=3, maxLowered=3):
         sendEvent("stimulus.play", audioID, offset) # which stimulus
         stream.write(data[audioID]) # this should block until the audio is finished....
 
-        # wait audio to finish before starting the next one
-        sleep(0.5);    
         # wait requested inter-stimulus interval
         if inter_stimulus_interval > 0 : sleep(inter_stimulus_interval)
 
