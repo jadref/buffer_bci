@@ -1,2 +1,2 @@
 call ..\utilities\findMatlab.bat
-echo sigViewer([],1973);quit; | %matexe%
+echo sigViewer([],1973);quit; | %matexe% %matopts%
