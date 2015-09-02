@@ -1,3 +1,3 @@
 set batdir=%~dp0
-
-python.exe mbrStimulus_portaudio.py
+call ..\..\utilities\findPython.bat
+%pythonexe% mbrStimulus_portaudio.py
