@@ -26,6 +26,15 @@ Demo BCIs
 [] - Finish cursor example
   [] - build 1-d & 2-d neurofeedback training system
   [] - brain-test cursor example
+[] - Neurofeedback
+  [] - add NF parameter setting GUI, i.e. freq range, and spatial filter
+[] - sigViwer
+	[] -- add sonification
+[] - ERP Viewer
+  [] - add a moving average mode to the ERP viewer
+  [] - add a spatial filter and new layout
+  [] - add spatial filter selection GUI
+
 
 Signal Analysis
 ===============
