@@ -219,4 +219,5 @@ return;
 function testCase()
 [allDat,soundLine]=sonification('endType',10000);%run for 10s
 allDat=cat(2,allDat{:});
-soundLine.write(allDat*255)
+
+[allDat,soundLine]=sonification([],'endType',30000,'step_ms',200,'trlen_ms',1000,'verb',1);
