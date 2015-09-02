@@ -80,19 +80,19 @@ testdata={}; testevents={}; %N.B. cell array to avoid expensive mem-realloc duri
 
 % get the current number of samples, so we can start from now
 status=buffer('wait_dat',[-1 -1 -1],opts.buffhost,opts.buffport);
-nEvents=status.nevents; nSamples=status.nsamples;
+nEvents=status.nevents; nSamples=status.nsamples+step_samp;
 
 dv=[];
 nEpochs=0; filtstate=[];
 endTest=false;
-tic;t1=0;
+tic;t0=0;t1=t0;
 while( ~endTest )
 
   % block until new data to process
-  status=buffer('wait_dat',[nSamples+trlen_samp -1 opts.timeout_ms],opts.buffhost,opts.buffport);
-  if ( status.nsamples < nSamples ) 
+  status=buffer('wait_dat',[nSamples -1 opts.timeout_ms],opts.buffhost,opts.buffport);
+  if ( status.nSamples < nSamples ) 
     fprintf('Buffer restart detected!'); 
-    nSamples=status.nsamples;
+    nSamples=status.nSamples;
     dv(:)=0;
     continue;
   end
@@ -109,17 +109,17 @@ while( ~endTest )
     
   % process any new data
   onSamples=nSamples;
-  start = onSamples:step_samp:status.nsamples-trlen_samp-1; % window start positions
-  if( ~isempty(start) ) nSamples=start(end)+step_samp; end % start of next trial for which not enough data yet
-  for si = 1:numel(start);    
+  fin = onSamples:step_samp:status.nSamples; % window start positions
+  if( ~isempty(fin) ) nSamples=fin(end)+step_samp; end % fin of next trial for which not enough data yet
+  for si = 1:numel(fin);    
     nEpochs=nEpochs+1;
     
     % get the data
-    data = buffer('get_dat',[start(si) start(si)+trlen_samp-1],opts.buffhost,opts.buffport);
+    data = buffer('get_dat',[fin(si)-trlen_samp fin(si)-1],opts.buffhost,opts.buffport);
       
-    if ( opts.verb>1 ) fprintf('Got data @ %d->%d samp\n',start(si),start(si)+trlen_samp-1); end;
+    if ( opts.verb>1 ) fprintf('Got data @ %d->%d samp\n',fin(si)-trlen_samp,fin(si)-1); end;
     % save the data used by the classifier if wanted
-    if ( nargout>0 ) testdata{nEpochs}=data;testevents{nEpochs}=mkEvent('data',0,start(si)); end;
+    if ( nargout>0 ) testdata{nEpochs}=data;testevents{nEpochs}=mkEvent('data',0,fin(si)); end;
       
     % apply classification pipeline to this events data
     for ci=1:numel(clsfr);
@@ -146,16 +146,19 @@ while( ~endTest )
     end
       
     % Send prediction event
-    sendEvent(opts.predEventType,dv,start(si));
-    if ( opts.verb>0 ) fprintf('%d) Clsfr Pred: [%s]\n',start(si),sprintf('%g ',dv)); end;
+    sendEvent(opts.predEventType,dv,fin(si));
+    if ( opts.verb>0 ) fprintf('%d) Clsfr Pred: [%s]\n',fin(si),sprintf('%g ',dv)); end;
   end
     
   % deal with any events which have happened
-  if ( status.nevents > nEvents )
+  if ( ischar(opts.endType) && status.nevents > nEvents  )
     devents=buffer('get_evt',[nEvents status.nevents-1],opts.buffhost,opts.buffport);
     mi=matchEvents(devents,opts.endType,opts.endValue);
     if ( any(mi) ) fprintf('Got exit event. Stopping'); endTest=true; end;
     nEvents=status.nevents;
+  elseif ( isnumeric(opts.endType) ) % time-based termination
+	 t=toc;
+	 if ( t-t0 > opts.endType ) fprintf('Got to end time. Stopping'); endTest=true; end;
   end
 end % while not endTest
 return;
