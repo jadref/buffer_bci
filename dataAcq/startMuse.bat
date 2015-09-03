@@ -3,7 +3,7 @@ set batdir=%~dp0
 rem Start the osc2ft shim to transfer osc messages to the buffer
 set oscport=1234
 set oscdevice=6B38
-start "osc2ft" %javaexe% -cp "buffer/java/BufferClient.jar;osc/JavaOSC.jar;osc" osc2ft /muse/eeg/raw:%oscport% localhost:1972 4 220 1 10
+start "osc2ft" %javaexe% -cp "buffer/java/BufferClient.jar;osc/JavaOSC.jar;osc" osc2ft /muse/eeg:%oscport% localhost:1972 4 220 1 10
 rem Search for the buffer executable
 set execname=muse-io
 if exist "%batdir%buffer\bin\win32\%execname%" ( set buffexe="%batdir%buffer\bin\win32\%execname%.exe" )
