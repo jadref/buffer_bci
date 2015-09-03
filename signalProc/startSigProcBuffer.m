@@ -65,13 +65,15 @@ function []=startSigProcBuffer(varargin)
 
 % setup the paths if needed
 wb=which('buffer'); 
+mdir=fileparts(mfilename('fullpath'));
 if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) 
-  mdir=fileparts(mfilename('fullfile')); run(fullfile(mdir,'../utilities/initPaths.m')); 
+  run(fullfile(mdir,'../utilities/initPaths.m')); 
   % set the real-time-clock to use
   initgetwTime;
   initsleepSec;
 end;
-opts=struct('epochEventType',[],'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],...
+opts=struct('epochEventType',[],'testepochEventType',[],...
+				'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],...
             'epochPredFilt',[],'contPredFilt',[],'capFile',[],...
 				'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1);
 [opts,varargin]=parseOpts(opts,varargin);
@@ -79,7 +81,7 @@ opts=struct('epochEventType',[],'clsfr_type','erp','trlen_ms',1000,'freqband',[.
 thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
 capFile=opts.capFile;
 if( isempty(capFile) ) 
-  [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); capFile=fullfile(pth,fn);
+  [fn,pth]=uigetfile(fullfile(mdir,'../utilities/*.txt'),'Pick cap-file'); capFile=fullfile(pth,fn);
   if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
 end
 if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
