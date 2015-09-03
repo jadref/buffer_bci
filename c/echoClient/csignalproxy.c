@@ -69,6 +69,7 @@ int main(int argc, char *argv[]) {
   /* these represent the acquisition system properties */
   int nchans         = 3;
   float fsample      = 100;
+  float freq         = 10; /* frequency of ossilation in hz */
   int blocksize      = 1;
   int channamesize   = 0;
   char *labelsbuf    = NULL;
@@ -147,12 +148,14 @@ int main(int argc, char *argv[]) {
   //-------------------------------------------------------------------------------
   /* define the stuff for the channel names */
   /* compute the size of the channel names set */
-  channamesize=3; /* 3 characters per channel, %2d + \0 */
+  channamesize=4; /* 4 characters per channel, %3d + \0 */
   /* allocate the memory for the channel names, and copy them into it */
   labelsbuf = malloc(WORDSIZE_CHAR*channamesize*nchans);
-  for( i=0; i<nchans; i++){
-	 snprintf(&(labelsbuf[i*channamesize]),channamesize,"%02d",i);
+  for( i=0; i<nchans-1; i++){
+	 snprintf(&(labelsbuf[i*channamesize]),channamesize,"%03d",i);
   }
+  /* last channel is the sin channel */
+  snprintf(&(labelsbuf[(nchans-1)*channamesize]),channamesize,"sin");
   chunkdef.type = FT_CHUNK_CHANNEL_NAMES;
   chunkdef.size = channamesize*nchans*WORDSIZE_CHAR;
   // add this info to the header buffer
@@ -245,9 +248,11 @@ int main(int argc, char *argv[]) {
 		  sleepcount ++;
 		}
 		/* get the new data */
-		for ( chi=0; chi<nchans; chi++) { 
+		for ( chi=0; chi<nchans-1; chi++) { 
 		  ampsamples[chi]=ampsamples[chi]+ (float)(rand()-RAND_MAX/2)/((float)RAND_MAX); 
 		}
+		/* add the sin channel data */
+		ampsamples[chi]= (float)(sinf(nsamp*2.0*(M_PI)/freq)); 
 
 		// copy the samples into the data buffer, 1 amp sample per buffer sample */
 		for (chi=0; chi<nchans; chi++){ samples[(si*nchans)+chi]=ampsamples[chi]; }
