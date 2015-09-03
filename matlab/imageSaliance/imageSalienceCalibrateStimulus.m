@@ -1,70 +1,15 @@
-%==========================================================================
-% 1. STANDARD STUFF (CONNECTING TO BUFFER & SETTING TIME)
-%==========================================================================
-
-mfiledir = fileparts(mfilename('fullpath'));
-cd(mfiledir)
-run ../../utilities/initPaths.m;
-cd(mfiledir)
-
-buffhost='localhost'; buffport=1972;
-% Wait for the buffer to return valid header information
-hdr=[];
-while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
-    try 
-        hdr=buffer('get_hdr',[],buffhost,buffport); 
-    catch
-        hdr=[];
-        fprintf('Invalid header info... waiting.\n');
-    end;
-    pause(1);
-end;
-% Set the real-time-clock to use
-initgetwTime;
-initsleepSec;
 
 %==========================================================================
-% 2. SET 'GLOBAL' EXPERIMENT VARIABLES
+% Initialize the display
 %==========================================================================
-
-verb=1; % verbosity level for debug info
-
-tgtDir ='pictures/targets';
-distDir='pictures/distractors';
-
-nSeq = 7;
-seqLen = 30;  % number of flashes per sequence
-nTgtFlashes= 6; % number of target flashes in each sequence
-ntgtPieces = 9; % number of bits each target is cut into
-
-textDuration=5;
-countdownDuration=3;
-targetDuration=5;
-postTargetDuration=1;
-stimDuration=0.2;
-whiteSquareDuration=0.3;
-interSeqDuration=1;
-
-framebgColor     = [0 0 0];
-whiteSquareColor = [1 1 1];
-axlim            = [0 1; 0 1]'; % axes limits for the main drawing axes [xmin xmax; ymin ymax]
-pieceLocation    = [0 0 1 1]; % rectangle saying where the image should be
-
-
-
-%==========================================================================
-% 3. CREATE STIMULUS FRAME AND SET UP TEXT OBJECT + WHITE SQUARE
-%==========================================================================
-
-
 %Set the frame size for the stimulus frame, make axes invisible, 
 %remove menubar and toolbar. Also set the background color for the frame.
-fig = figure(1);
+stimfig = figure(2);
 clf;
-set(fig,'Name','Experiment - Training',...
+set(stimfig,'Name','Experiment - Training',...
     'color',framebgColor,'menubar','none','toolbar','none',...
     'renderer','painters','doublebuffer','on','Interruptible','off');
-set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
+set(stimfig,'Units','pixel');wSize=get(stimfig,'position');set(stimfig,'units','normalized');% win size in pixels
 
 ax=axes('position',[.1 .1 .8 .8],'visible','off','box','off','xtick',[], ...
         'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
@@ -88,7 +33,7 @@ whiteSquare = ones(1,1,3); %RGB 1 white pixel
 imghdl= image(axlim(:,1),axlim(:,2),whiteSquare, 'visible', 'off');
 
 %==========================================================================
-% 4. LOAD & SET-UP TARGET PICTURES + TARGET PIECES + DISTRACTOR PIECES 
+% LOAD & SET-UP TARGET PICTURES + TARGET PIECES + DISTRACTOR PIECES 
 %==========================================================================
 %Load the full target pictures
 targets=loadnSliceImages(tgtDir);
