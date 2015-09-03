@@ -31,12 +31,17 @@ public class soundline {
 																		  );	 
 		  soundLine = AudioSystem.getSourceDataLine(audioFormat);
 		  soundLine.open(audioFormat, bufferSize); // set audio buffer size
-		  soundLine.start();
+		  start();
 		  audBuf=new byte[bufferSize*nbytes]; // N.B. increase size by number bytes/sample
 	 }
-	 public void stop(){
-		  // shut-down the audio
+	 public void stop(){ // shut-down the audio
 		  soundLine.stop();
+	 }
+	 public void start(){ // start the audio
+		  soundLine.start();
+	 }
+	 public void drain(){ // empty the buffer
+		  soundLine.drain();
 	 }
 	 public int available(){
 		  return soundLine.available();

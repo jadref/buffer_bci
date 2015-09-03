@@ -1,4 +1,4 @@
-function [allDat,soundLine]=sonification(clsfr,varargin)
+function [soundLine,allDat]=sonification(clsfr,varargin)
 % continuously apply this classifier to the new data
 %
 %  [allDat]=sonification(clsfr,varargin)
@@ -13,7 +13,7 @@ function [allDat,soundLine]=sonification(clsfr,varargin)
 %  overlap       -- [float] fraction of trlen_samp between successive classifier predictions, i.e.
 %                    prediction at, t, t+trlen_samp*overlap, t+2*(trlen_samp*overlap), ...
 %  step_ms       -- [float] time between classifier predictions                 (100)
-%  freqShift     -- [float 2x1] amount in hz to up-shift and spread the frequency for audio ([300 10])
+%  freqShift     -- [float 2x1] amount in hz to up-shift and spread the frequency for audio ([50 10])
 %                          i.e. nf = of*freqShift(2) + freqShift(1)
 %  volAlpha      -- [float] decay const for the auto-volume est                 (.99)
 %                            alpha = exp(log(.5)/half-life)
@@ -23,9 +23,9 @@ function [allDat,soundLine]=sonification(clsfr,varargin)
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ); run('../../utilities/initPaths.m'); end;
 
 opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
-            'endType','stimulus.test','endValue','end','verb',0,...
-            'trlen_ms',1000,'trlen_samp',[],'overlap',[],'step_ms',200,...
-				'audiofs',2000,'freqShift',[50 10],'volAlpha',.9999,...
+            'soundLine',[],'audiofs',2000,'freqShift',[50 10],'volAlpha',.99,...
+				'endType','stimulus.test','endValue','end','verb',0,...
+            'trlen_ms',1000,'trlen_samp',[],'overlap',[],'step_ms',200,...				
             'timeout_ms',1000,'visualize',0); 
 [opts,varargin]=parseOpts(opts,varargin);
 
@@ -60,13 +60,13 @@ if ( isempty(fs) )
   else opts.hdr=buffer('get_hdr',[],opts.buffhost,opts.buffport); fs=opts.hdr.fsample; 
   end;
 end
-win        = mkFilter(trlen_samp,'hanning'); % hanning window for the raw EEG
 eegfftbins = fftBins(trlen_samp,[],fs);
 audioLen   = opts.audiofs * trlen_samp/fs; % the buffer of audio-data to store
 audioStep  = opts.audiofs * step_samp/fs;  % the step-size for the audio data
-audioBuf   = zeros(1,audioLen); % mono-buffer for the audio data
+audioBuf   = zeros(audioLen,1); % mono-buffer for the audio data
 audiofftBuf= complex(audioBuf,audioBuf); % mono-buffer for fft of the audio
 audiofftbins=fftBins(audioLen,[],opts.audiofs);
+win        = mkFilter(audioLen,'hanning'); % hanning window for the raw transformed audio
 
 % strip 0Hz & nyquist bins as they cause problems
 eegfftIdx  = true(size(eegfftbins)); 
@@ -86,10 +86,17 @@ end
 
 % init the java audio output
 % buffer big enough to allow non-blocking fill
-javaaddpath(fileparts(mfilename('fullpath'))); % add this directory to java path
 nbytes=1;
-soundLine = javaObject('soundline',opts.audiofs,audioStep*4,nbytes); % creat the playback object
-maxVol   = ((2^(8*nbytes-1))-1)/2; % max vol depends on bit-depth of the audio stream
+persistent soundLine;
+if ( isempty(soundLine) || ~isempty(opts.soundLine) ) % make a new one if wanted
+  soundLine = opts.soundLine; % use old soundline if available
+  if ( isempty(soundLine) ) 
+	 javaaddpath(fileparts(mfilename('fullpath'))); % add this directory to java path
+	 soundLine = javaObject('soundline',opts.audiofs,audioStep*4,nbytes); % creat the playback object
+  end
+end
+soundLine.start();
+maxVol   = (2^(8*nbytes))-1; % max vol depends on bit-depth of the audio stream
 
 % plotting
 if ( opts.visualize ) clf; h=plot(audioBuf,'lineWidth',2); end;
@@ -108,11 +115,12 @@ while( ~endTest )
 
   t1=javaMethod('currentTimeMillis','java.lang.System');
   ts=javaMethod('currentTimeMillis','java.lang.System');
+  tEpoch = (t1-t0)/1000;
   % block until new data to process
   endSamp=nSamples;
   status=buffer('wait_dat',[endSamp -1 opts.timeout_ms],opts.buffhost,opts.buffport);
   tf=javaMethod('currentTimeMillis','java.lang.System');
-  if ( opts.verb>0 ) fprintf('%3d) wd=[%3d->%3d]=%3d\t',nEpochs,ts-t1,tf-t1,tf-ts); end;
+  if ( opts.verb>0 ) fprintf('%4.1f) wd=[%3d->%3d]=%3d\t',tEpoch,ts-t1,tf-t1,tf-ts); end;
   if ( status.nsamples < nSamples ) 
     fprintf('Buffer restart detected!'); 
     nSamples=status.nsamples;
@@ -150,31 +158,45 @@ while( ~endTest )
 	 end
 
 
-    if ( opts.verb>1 ) fprintf('Got data @ %d->%d samp\n',fin(si)-trlen_samp,fin(si)-1); end;
+    if ( opts.verb>-1 ) 
+		fprintf('%4.1f) Got data @ %d->%d samp   (max %d)\n',...
+				  tEpoch,fin(si)-trlen_samp,fin(si)-1,status.nSamples); 
+	 end;
       
 	 % play the bit that is finished
 	 ts=javaMethod('currentTimeMillis','java.lang.System');
 	 soundLineToFill = soundLine.available();
 	 soundLineToPlay = soundLine.getBufferSize() - soundLineToFill;
-	 %fprintf('%d) soundToGo=%d\n',nEpochs,soundLineToGo);
+	 %fprintf('%4.1f) soundToGo=%d\n',tEpoch,soundLineToGo);
 	 % EEG is running ahead of the audio, so only actually play the last one
 	 if ( si~=numel(fin) ) 
-		 fprintf('%d) skipping some eeg\n',nEpochs);
+		 fprintf('%4.1f) skipping some eeg\n',tEpoch);
 	 else
-		if ( soundLineToPlay > audioStep ) % only if enough in buffer to not run out before we add more
-		  soundLine.write(audioBuf.*maxVol/sigAmp,0,audioStep); % send to the audio-device
-		else	 % over fill audio buffer to give a bit of space for later lags...
-		  fprintf('%d) running out of audio.....\n',nEpochs);
-		  soundLine.write(audioBuf.*maxVol/sigAmp,0,min(numel(audioBuf),ceil(audioStep*2)));
+		% update the limits on the audio for auto-volume adjustment
+		audioLim    = max(abs(audioBuf));%std(audioBuf);
+		if ( audioLim>0 ) 
+		  if ( sigAmp<0 ) sigAmp=audioLim*4;
+		  else            sigAmp=max(audioLim,opts.volAlpha*sigAmp); %slow decay if needed
+		  end
 		end
+		% get enough data to keep the audio going
+		if ( soundLineToPlay > audioStep*1.2 )% add enough to not run out before we add more
+			audio = audioBuf(1:audioStep)/sigAmp/2 + .5; % extract and rectify
+		else	 % over fill audio buffer to give a bit of space for later lags...
+		  fprintf('%4.1f) running out of audio.....\n',tEpoch);
+		  audio=audioBuf(1:min(end,audioStep*2))/sigAmp/2 + .5;
+		end
+		%if ( tEpoch > 10 ) keyboard; end;
+		fprintf('%4.1f) audio range [%g,%g,%g](%g) sigAmp=%g\n',tEpoch,max(audio),mean(audio),min(audio),std(audio),sigAmp);
+		audio = max(min(audio*maxVol,maxVol),0); % auto-volume and clip to audio range
+		% finally send to the audio device
+		soundLine.write(audio); 
 	 end
-	 %saudio=audioBuf.*maxVol/sigAmp;
-	 %fprintf('%d) audio range [%g,%g,%g](%g) sigAmp=%g\n',nEpochs,max(saudio),mean(saudio),min(saudio),std(saudio),sigAmp);
 	 tf=javaMethod('currentTimeMillis','java.lang.System');
     if ( opts.verb>0 ) fprintf('aud [%3d->%3d]=%3d\t',ts-t1,tf-t1,tf-ts); end;
 
 	 % shift away and add in the new data
-	 allDat{nEpochs}=audioBuf(1:audioStep); % save the data for later comparsion
+	 if ( nargout>1 ) allDat{nEpochs}=audio; end % save the data for later comparsion
 	 tmp = audioBuf(audioStep+1:end);
 
 	 ts=javaMethod('currentTimeMillis','java.lang.System');
@@ -182,17 +204,12 @@ while( ~endTest )
 	 % BODGE: frequency shift
 	 eeg          = sum(data.buf(:,1:trlen_samp),1)';
 	 eeg          = detrend(eeg,1);
-	 eeg          = eeg(:).*win(:);
+	 %eeg          = eeg(:).*win(:);
 	 eegfft       = fft(eeg,trlen_samp,1); % fft the 1st channel of the EEG
 	 audiofftBuf(shiftfftIdx) = eegfft(eegfftIdx); % shift in frequency and insert in to audiofftbuffer
-	 audioBuf    = real(ifft(audiofftBuf));  % convert back to time-domain
-	 audioLim    = max(abs(audioBuf));%std(audioBuf);
-	 if ( audioLim>0 ) 
-		if ( sigAmp<0 ) sigAmp=audioLim*4;
-		else            sigAmp=max(audioLim,opts.volAlpha*sigAmp); %slow decay if needed
-		end
-	 end
-	 % clf;plot(linspace(0,1,numel(eeg)),eeg-mean(eeg)); hold on; plot(linspace(0,1,numel(audioBuf)),audioBuf,'g');
+	 % convert back to time-domain, zero-padding if needed to up-sample
+	 audioBuf    = real(ifft(audiofftBuf,audioLen,1));  % convert back to time-domain
+	 audioBuf    = audioBuf.*win; % apply the smoothing window
 	 % inlude the old data for smoothing
 	 audioBuf(1:numel(tmp))=audioBuf(1:numel(tmp))+tmp;
 	 tf=javaMethod('currentTimeMillis','java.lang.System');
@@ -213,11 +230,13 @@ while( ~endTest )
 	 if ( t-t0 > opts.endType ) fprintf('Got to end time. Stopping'); endTest=true; end;
   end
 end % while not endTest
+soundLine.drain();
 soundLine.stop();
 return;
 %--------------------------------------
 function testCase()
-[allDat,soundLine]=sonification('endType',10000);%run for 10s
-allDat=cat(2,allDat{:});
+[soundLine,allDat]=sonification('endType',10000);%run for 10s
+allDat=cat(1,allDat{:});
 
-[allDat,soundLine]=sonification([],'endType',30000,'step_ms',200,'trlen_ms',1000,'verb',1);
+[soundLine,allDat]=sonification([],'endType',30000,'step_ms',200,'trlen_ms',1000,'verb',0);
+
