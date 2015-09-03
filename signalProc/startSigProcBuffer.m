@@ -30,6 +30,7 @@ function []=startSigProcBuffer(varargin)
 %  []=startSigProcBuffer(varargin)
 %
 % Options:
+%   phaseEventType -- 'str' event type which says start a new phase                 ('startPhase.cmd')
 %   epochEventType -- 'str' event type which indicates start of calibration epoch.  ('stimulus.target')
 %                     This event's value is used as the class label
 %   testepochEventType -- 'str' event type which start of data to generate a prediction for.  ([])
@@ -72,7 +73,7 @@ if ( isempty(wb) || isempty(strfind('dataAcq',wb)) )
   initgetwTime;
   initsleepSec;
 end;
-opts=struct('epochEventType',[],'testepochEventType',[],...
+opts=struct('phaseEventType','startPhase.cmd','epochEventType',[],'testepochEventType',[],...
 				'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],...
             'epochPredFilt',[],'contPredFilt',[],'capFile',[],...
 				'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1);
@@ -135,7 +136,8 @@ while ( true )
   
   % wait for a phase control event
   if ( opts.verb>0 ) fprintf('%d) Waiting for phase command\n',nsamples); end;
-  [devents,state,nevents,nsamples]=buffer_newevents(opts.buffhost,opts.buffport,state,{'startPhase.cmd' 'subject'},[],5000);
+  [devents,state,nevents,nsamples]=buffer_newevents(opts.buffhost,opts.buffport,state,...
+																	 {opts.phaseEventType 'subject'},[],5000);
   if ( numel(devents)==0 ) 
     continue;
   elseif ( numel(devents)>1 ) 
