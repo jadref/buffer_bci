@@ -1,6 +1,5 @@
-package nl.dcc.buffer_bci.fieldtripclientsservice.threads.analysis;
+package nl.dcc.buffer_bci.signalprocessing;
 
-import android.util.Log;
 import nl.dcc.buffer_bci.matrixalgebra.linalg.Matrix;
 import nl.dcc.buffer_bci.matrixalgebra.linalg.WelchOutputType;
 import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.ArrayFunctions;
@@ -17,9 +16,9 @@ import java.util.List;
  * Created by Pieter Marsman on 23-2-2015.
  * Classifies a piece of the data using a linear classifier on the welch spectrum.
  */
-public class Classifier {
+public class ERSPClassifier {
 
-    public static final String TAG = Classifier.class.toString();
+    public static final String TAG = ERSPClassifier.class.toString();
 
     private final double[] windowFn;
     private final Double[] spatialFilter;
@@ -41,7 +40,7 @@ public class Classifier {
     private final Windows.WindowType windowType;
     private int[] welchStartMs;
 
-    public Classifier(List<Matrix> classifierSlope, RealVector classifierIntercept, Boolean detrend, Double
+    public ERSPClassifier(List<Matrix> classifierSlope, RealVector classifierIntercept, Boolean detrend, Double
             badChannelThreshold, Windows.WindowType windowType, WelchOutputType welchAveType, Integer[]
             windowTimeIdx, Integer[] windowFrequencyIdx, Integer dimension, Double[] spatialFilter, Matrix
             spectrumMx, Integer windowLength, Double samplingFrequency, Integer[] welchStartMs, String[]
@@ -50,7 +49,7 @@ public class Classifier {
 
         // todo immediately check if the right combination of parameters is given
 
-        this.type = "ERsP";
+        this.type = "ERSP";
         this.detrend = detrend;
         this.dimension = dimension;
         this.spectrumMx = spectrumMx;
@@ -71,15 +70,14 @@ public class Classifier {
         this.windowFn = Windows.getWindow(windowLength, windowType, true);
         this.outSize = null;
 
-
-        Log.d(TAG, "Just created Classifier with these settings: \n" + this.toString());
+        System.out.println( "Just created ERSPClassifier with these settings: \n" + this.toString());
     }
 
     public ClassifierResult apply(Matrix data) {
 
         // Bad channel removal
         if (thresholdIsBad != null) {
-            Log.d(TAG, "Do bad channel removal");
+            System.out.println( "Do bad channel removal");
             int[] columns = Matrix.range(0, data.getColumnDimension(), 1);
             int[] rows = new int[thresholdIsBad.length];
             int index = 0;
@@ -90,25 +88,25 @@ public class Classifier {
                 }
             rows = Arrays.copyOf(rows, index);
             data = new Matrix(data.getSubMatrix(rows, columns));
-            Log.d(TAG, "Data shape after bad channel removal: " + data.shapeString());
+            System.out.println( "Data shape after bad channel removal: " + data.shapeString());
         }
 
         // Detrend the data
         if (detrend != null && detrend) {
-            Log.d(TAG, "Linearly detrending the data");
+            System.out.println( "Linearly detrending the data");
             data = data.detrend(1, "linear");
         }
 
         // Again, bad channel removal
         List<Integer> badChannels = null;
         if (badChannelThreshold != null) {
-            Log.d(TAG, "Second bad channel removal");
+            System.out.println( "Second bad channel removal");
             Matrix norm = new Matrix(data.multiply(data.transpose()).scalarMultiply(1. / data.getColumnDimension()));
             badChannels = new LinkedList<Integer>();
             // Detecting bad channels
             for (int r = 0; r < data.getRowDimension(); r++)
                 if (norm.getEntry(r, 0) > badChannelThreshold) {
-                    Log.v(TAG, "Removing channel " + r);
+                    System.out.println( "Removing channel " + r);
                     badChannels.add(r);
                 }
 
@@ -121,37 +119,37 @@ public class Classifier {
 
         // Select the time range
         if (windowTimeIdx != null) {
-            Log.d(TAG, "Selecting a time range");
+            System.out.println( "Selecting a time range");
             int[] rows = Matrix.range(0, data.getRowDimension(), 1);
             data = new Matrix(data.getSubMatrix(rows, ArrayFunctions.toPrimitiveArray(windowTimeIdx)));
-            Log.v(TAG, "New data shape after time range selection: " + data.shapeString());
+            System.out.println( "New data shape after time range selection: " + data.shapeString());
         }
 
         // Spatial filtering
         if (spatialFilter != null) {
-            Log.d(TAG, "Spatial filtering the data");
+            System.out.println( "Spatial filtering the data");
             for (int r = 0; r < data.getRowDimension(); r++)
                 data.setRowVector(r, data.getRowVector(r).mapMultiply(spatialFilter[r]));
         }
 
         // Welch frequency estimation
         if (data.getColumnDimension() >= windowFn.length) {
-            Log.v(TAG, "Spectral filtering with welch method");
+            System.out.println( "Spectral filtering with welch method");
             data = data.welch(1, windowFn, welchStartMs, windowLength, true, true);
-            Log.v(TAG, "Data shape after welch frequency estimation: " + data.shapeString());
+            System.out.println( "Data shape after welch frequency estimation: " + data.shapeString());
         }
 
         // Selecting frequencies
         if (windowFrequencyIdx != null) {
             int[] allRows = Matrix.range(0, data.getRowDimension(), 1);
             data = new Matrix(data.getSubMatrix(allRows, ArrayFunctions.toPrimitiveArray(windowFrequencyIdx)));
-            Log.d(TAG, "Data shape after frequency selection: " + data.shapeString());
+            System.out.println( "Data shape after frequency selection: " + data.shapeString());
         }
 
         // Linearly classifying the data
-        Log.d(TAG, "Classifying with linear classifier");
+        System.out.println( "Classifying with linear classifier");
         Matrix fraw = linearClassifier(data, 0);
-        Log.v(TAG, "Results from the classifier (fraw): " + fraw.toString());
+        System.out.println( "Results from the classifier (fraw): " + fraw.toString());
         Matrix f = new Matrix(fraw.copy());
         // Removing bad channels from the classification
         if (badChannels != null) {
@@ -164,7 +162,7 @@ public class Classifier {
                 return 1. / (1. + Math.exp(-value));
             }
         });
-        Log.v(TAG, "Results from the classifier (p): " + p.toString());
+        System.out.println( "Results from the classifier (p): " + p.toString());
         return new ClassifierResult(f, fraw, p, data);
     }
 
@@ -199,7 +197,7 @@ public class Classifier {
     }
 
     public String toString() {
-        return "Classifier with parameters:" + "\nWindow Fn length:  \t" + windowFn.length + "\nwelchStartMs         " +
+        return "ERSPClassifier with parameters:" + "\nWindow Fn length:  \t" + windowFn.length + "\nwelchStartMs         " +
                 "   " +
                 "\t" + Arrays.toString(welchStartMs) + "\nSpatial filter     \t" + Arrays.toString(spatialFilter) +
                 "\nclassifierSlope " +

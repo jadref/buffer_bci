@@ -1,8 +1,9 @@
+package nl.dcc.buffer_bci;
 import java.io.*;
 import java.nio.*;
 import nl.fcdonders.fieldtrip.bufferclient.*;
 
-class filePlayback {
+class FilePlayback {
 	 public static void main(String[] args) throws IOException,InterruptedException {
 		String hostname = "localhost";
 		int port = 1972;

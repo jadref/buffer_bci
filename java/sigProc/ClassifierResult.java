@@ -1,6 +1,4 @@
-package nl.dcc.buffer_bci.fieldtripclientsservice.threads.analysis;
-
-
+package nl.dcc.buffer_bci.signalprocessing;
 import nl.dcc.buffer_bci.matrixalgebra.linalg.Matrix;
 
 /**

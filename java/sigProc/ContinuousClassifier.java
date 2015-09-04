@@ -1,11 +1,5 @@
-package nl.dcc.buffer_bci.fieldtripclientsservice.threads;
+package nl.dcc.buffer_bci.signalprocessing;
 
-import android.util.Log;
-import nl.dcc.buffer_bci.fieldtripclientsservice.base.AndroidHandle;
-import nl.dcc.buffer_bci.fieldtripclientsservice.base.Argument;
-import nl.dcc.buffer_bci.fieldtripclientsservice.base.ThreadBase;
-import nl.dcc.buffer_bci.fieldtripclientsservice.threads.analysis.Classifier;
-import nl.dcc.buffer_bci.fieldtripclientsservice.threads.analysis.ClassifierResult;
 import nl.dcc.buffer_bci.matrixalgebra.linalg.Matrix;
 import nl.dcc.buffer_bci.matrixalgebra.linalg.WelchOutputType;
 import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.ArrayFunctions;
@@ -26,67 +20,112 @@ import java.util.List;
  * Created by Pieter on 23-2-2015.
  * Continuous classifying of data from the buffer and sending events back
  */
-public class ContinuousClassifier extends ThreadBase {
+public class ContinuousClassifier {
 
     private static final String TAG = ContinuousClassifier.class.getSimpleName();
 
-    private String bufferHost;
-    private String endValue;
-    private String predictionEventType;
-    private String baselineEventType;
-    private String endType;
-    private String baselineEnd;
-    private String baselineStart;
-    private Integer nBaselineStep;
-    private int bufferPort;
-    private Double overlap;
-    private Double predictionFilter;
-    private Integer sampleTrialMs;
-    private Integer sampleStepMs;
-    private Integer timeoutMs;
-    private boolean normalizeLatitude;
-    private List<Classifier> classifiers;
-    private BufferClientClock C;
-    private Integer sampleTrialLength;
-    private Integer sampleStep;
-    private Float fs;
-    private Header header;
+    private String hostname ="localhost";
+    private int port = 1972;
+    private String endType = "stimulus.test";
+    private String endValue = "end";
+    private String predictionEventType = "classifier.prediction";
+    private String baselineEventType = "stimulus.startbaseline";
+    private String baselineEnd = null;
+    private String baselineStart = "start";
+    private Integer nBaselineStep = 5000;
+
+    private Double overlap = .5;
+    private Double predictionFilter = 1.0;
+    private Integer sampleTrialMs = null;
+    private Integer sampleStepMs = 500;
+    private Integer timeoutMs = 1000;
+    private boolean normalizeLatitude = true;
+    private List<ERSPClassifier> classifiers;
+    private BufferClientClock C = null;
+    private Integer sampleTrialLength=-1;
+    private Integer sampleStep=-1;
+    private Float fs=-1.0f;
+    private Header header=null;
+
+	 public static void main(String[] args) throws IOException,InterruptedException {	
+		  String hostname=null;
+		  int port=-1;
+		  int timeout=-1;
+		  InputStream clsfrStream=null;
+		if (args.length>=1) {
+			hostname = args[0];
+		}
+		if (args.length>=2) {
+			try {
+				port = Integer.parseInt(args[1]);
+			}
+			catch (NumberFormatException e) {
+				port = 0;
+			}
+			if (port <= 0) {
+				System.out.println("Second parameter ("+args[1]+") is not a valid port number.");
+				System.exit(1);
+			}
+		}
+		if (args.length>=3) {
+			try {
+				port = Integer.parseInt(args[2]);
+			}
+			catch (NumberFormatException e) {
+				timeout = 5000;
+			}
+		}
+		// Open the file from which to read the classifier parameters
+		if (args.length>=4) {
+			 String clsfrFile = args[3];
+			 try { 
+				  clsfrStream = new FileInputStream(new File(clsfrFile));
+			 } catch ( IOException e ) {
+				  e.printStackTrace();
+			 }
+		}
+		
+		// make the cont classifier object
+		ContinuousClassifier cc=new ContinuousClassifier(hostname,port,timeout);
+		// load classifiers, make connection to buffer
+		cc.initialize(clsfrStream);
+		// run the classifier
+		cc.mainloop();
+	 }
+
+	 ContinuousClassifier(String host, int port, int timeout){
+		  if ( host !=null )     this.hostname=host;
+		  if ( port >0 )     this.port=port;
+		  if ( timeout >=0 ) this.timeoutMs=timeout;
+	 }
 
     /**
-     * Creates a ContinuousClassifier using a file stored in the project
+     * Creates a set of classifiers using a file stored in the project
      *
-     * @param android used for getting a file
+     * @param is, input stream to read the weight matrix from 
      * @return List of classifiers (only one)
      */
-    private static List<Classifier> createClassifiers(AndroidHandle android) {
-        List<Matrix> Ws = loadWFromFile(3, 56, android);
+    private static List<ERSPClassifier> createClassifiers(InputStream is) {
+        List<Matrix> Ws = loadWFromFile(3, 56, is);
         RealVector b = Matrix.zeros(5, 1).getColumnVector(0);
         Integer[] freqIdx = ArrayFunctions.toObjectArray(Matrix.range(0, 56, 1));
         String[] spectrumDescription = new String[]{"alphaL", "alphaR", "badness", "badChL", "badChR"};
         Integer[] isBad = new Integer[]{0, 0, 0};
-        Classifier classifier = new Classifier(Ws, b, true, null, Windows.WindowType.HANNING, WelchOutputType
+        ERSPClassifier classifier = new ERSPClassifier(Ws, b, true, null, Windows.WindowType.HANNING, WelchOutputType
                 .AMPLITUDE, null, freqIdx, 1, null, null, 128, 100., new Integer[]{0}, spectrumDescription, isBad);
-        List<Classifier> classifiers = new LinkedList<Classifier>();
+        List<ERSPClassifier> classifiers = new LinkedList<ERSPClassifier>();
         classifiers.add(classifier);
         return classifiers;
     }
 
     /**
-     * Load the linear classifier data from a file on the android device
+     * Load the linear classifier data from a file
      *
      * @param rows    The number of rows it should have
      * @param columns The number of columns is should have
      * @return List of matrices that are used for a linear classifier.
      */
-    private static List<Matrix> loadWFromFile(int rows, int columns, AndroidHandle android) {
-
-        InputStream is = null;
-        try {
-            is = android.openAsset("w.csv");
-        } catch (IOException e) {
-            Log.e(TAG, Log.getStackTraceString(e));
-        }
-
+    private static List<Matrix> loadWFromFile(int rows, int columns, InputStream is) {
         List<Matrix> matrices = new LinkedList<Matrix>();
         BufferedReader br = null;
         String line;
@@ -101,15 +140,15 @@ public class ContinuousClassifier extends ThreadBase {
                 matrices.add(m);
             }
         } catch (FileNotFoundException e) {
-            Log.e(TAG, Log.getStackTraceString(e));
+            e.printStackTrace();
         } catch (IOException e) {
-            Log.e(TAG, Log.getStackTraceString(e));
+            e.printStackTrace();
         } finally {
             if (br != null) {
                 try {
                     br.close();
                 } catch (IOException e) {
-                    Log.e(TAG, Log.getStackTraceString(e));
+                    e.printStackTrace();
                 }
             }
         }
@@ -138,7 +177,7 @@ public class ContinuousClassifier extends ThreadBase {
         }
 
         // Set windows
-        for (Classifier c : classifiers) {
+        for (ERSPClassifier c : classifiers) {
             sampleTrialLength = c.getSampleTrialLength(sampleTrialLength);
         }
 
@@ -156,8 +195,8 @@ public class ContinuousClassifier extends ThreadBase {
     private void connect() {
         while (header == null) {
             try {
-                Log.i(TAG, "Connecting to " + bufferHost + ":" + bufferPort);
-                C.connect(bufferHost, bufferPort);
+                System.out.println( "Connecting to " + hostname + ":" + port);
+                C.connect(hostname, port);
                 //C.setAutoReconnect(true);
                 if (C.isConnected()) {
                     header = C.getHeader();
@@ -166,78 +205,29 @@ public class ContinuousClassifier extends ThreadBase {
                 header = null;
             }
             if (header == null) {
-                Log.w(TAG, "Invalid Header... waiting");
+                System.out.println( "Invalid Header... waiting");
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    Log.e(TAG, Log.getStackTraceString(e));
+                    e.printStackTrace();
                 }
             }
         }
     }
 
-    @Override
-    public Argument[] getArguments() {
-        final Argument[] arguments = new Argument[17];
-        arguments[0] = new Argument("Buffer address", "localhost");
-        arguments[1] = new Argument("Buffer port", 1972, true);
-        arguments[2] = new Argument("Header", null);
-        arguments[3] = new Argument("End type", "stimulus.test");
-        arguments[4] = new Argument("End value", "end");
-        arguments[5] = new Argument("Prediction event type", "alphaLat");
-        arguments[6] = new Argument("Baseline event type", "stimulus.startbaseline");
-        arguments[7] = new Argument("Baseline end", null);
-        arguments[8] = new Argument("Baseline start", "start");
-        arguments[9] = new Argument("N Baseline step", 5000, true);
-        arguments[10] = new Argument("Overlap", .5, true);
-        arguments[11] = new Argument("Timeout ms", 1000, true);
-        arguments[12] = new Argument("Sample step ms", 500, true);
-        arguments[13] = new Argument("Prediction filter", 1.0, true);
-        arguments[14] = new Argument("Sample trial length", 25, true);
-        arguments[15] = new Argument("Sample trial ms", null);
-        arguments[16] = new Argument("Normalize latitude", true);
-        return arguments;
-    }
-
     /**
      * Initializes the attributes of this class
      */
-    private void initialize() {
-        this.bufferHost = arguments[0].getString();
-        this.bufferPort = arguments[1].getInteger();
-        this.header = null; //arguments[2];
-        this.endType = arguments[3].getString();
-        this.endValue = arguments[4].getString();
-        this.predictionEventType = arguments[5].getString();
-        this.baselineEventType = arguments[6].getString();
-        this.baselineEnd = arguments[7].getString();
-        this.baselineStart = arguments[8].getString();
-        this.nBaselineStep = arguments[9].getInteger();
-        this.overlap = arguments[10].getDouble();
-        this.timeoutMs = arguments[11].getInteger();
-        this.sampleStepMs = arguments[12].getInteger();
-        this.predictionFilter = arguments[13].getDouble();
-        this.sampleTrialLength = arguments[14].getInteger();
-        this.sampleTrialMs = arguments[15].getInteger();
-        this.normalizeLatitude = arguments[16].getBoolean();
-
-        this.classifiers = createClassifiers(android);
-        this.C = new BufferClientClock();
-    }
-
-    @Override
-    public String getName() {
-        return "ContinuousClassifier";
-    }
-
-    @Override
-    public void mainloop() {
+    private void initialize(InputStream is) {
+        classifiers = createClassifiers(is);
+        C = new BufferClientClock();
         // Initialize the classifier and connect to the buffer
-        initialize();
-        this.connect();
-        this.setNullFields();
-        Log.v(TAG, this.toString());
+        connect();
+        setNullFields();
+        System.out.println( this.toString());
+    }
 
+    public void mainloop() {
         // Get information of the buffer
         int nEvents = header.nEvents;
         int nSamples = header.nSamples;
@@ -254,19 +244,19 @@ public class ContinuousClassifier extends ThreadBase {
         long t0 = 0;
 
         // Run the code
-        run = true;
+        boolean run = true;
         while (!endExpected && run) {
             // Getting data from buffer
             SamplesEventsCount status = null;
             // Block until there are new events
             try {
-                Log.d(TAG, "Waiting for " + (nSamples + sampleTrialLength + 1) + " samples");
+                System.out.println( "Waiting for " + (nSamples + sampleTrialLength + 1) + " samples");
                 status = C.waitForSamples(nSamples + sampleTrialLength + 1, this.timeoutMs);
             } catch (IOException e) {
-                Log.e(TAG, Log.getStackTraceString(e));
+                e.printStackTrace();
             }
             if (status.nSamples < header.nSamples) {
-                Log.i(TAG, "Buffer restart detected");
+                System.out.println( "Buffer restart detected");
                 nSamples = status.nSamples;
                 dv = null;
                 continue;
@@ -274,7 +264,7 @@ public class ContinuousClassifier extends ThreadBase {
 
             // Logging stuff when nothing is happening
             if (System.currentTimeMillis() - t0 > 5000) {
-                Log.i(TAG, String.format("%5.3f seconds, %d samples, %d events", System.currentTimeMillis() / 1000.,
+                System.out.println( String.format("%5.3f seconds, %d samples, %d events", System.currentTimeMillis() / 1000.,
                         status.nSamples, status.nEvents));
                 t0 = System.currentTimeMillis();
             }
@@ -291,15 +281,15 @@ public class ContinuousClassifier extends ThreadBase {
                 try {
                     data = new Matrix(new Matrix(C.getDoubleData(fromId, toId)).transpose());
                 } catch (IOException e) {
-                    Log.e(TAG, Log.getStackTraceString(e));
+                    e.printStackTrace();
                 }
-                Log.d(TAG, String.format("Got data @ %d->%d samples", fromId, toId));
+                System.out.println( String.format("Got data @ %d->%d samples", fromId, toId));
 
                 // Apply all classifiers and add results
                 Matrix f = new Matrix(classifiers.get(0).getOutputSize(), 1);
                 Matrix fraw = new Matrix(classifiers.get(0).getOutputSize(), 1);
                 ClassifierResult result = null;
-                for (Classifier c : classifiers) {
+                for (ERSPClassifier c : classifiers) {
                     result = c.apply(data);
                     f = new Matrix(f.add(result.f));
                     fraw = new Matrix(fraw.add(result.fraw));
@@ -327,7 +317,7 @@ public class ContinuousClassifier extends ThreadBase {
                     dvBaseline = new Matrix(dvBaseline.add(dv));
                     dv2Baseline = new Matrix(dv2Baseline.add(dv.multiplyElements(dv)));
                     if (nBaselineStep != null && nBaseline > nBaselineStep) {
-                        Log.i(TAG, "Baseline timeout\n");
+                        System.out.println( "Baseline timeout\n");
                         baselinePhase = false;
                         Tuple<Matrix, Matrix> ret = baselineValues(dvBaseline, dv2Baseline, nBaseline);
                         baseLineVal = ret.x;
@@ -343,7 +333,7 @@ public class ContinuousClassifier extends ThreadBase {
                     BufferEvent event = new BufferEvent(predictionEventType, dv.getColumn(0), fromId);
                     C.putEvent(event);
                 } catch (IOException e) {
-                    Log.e(TAG, Log.getStackTraceString(e));
+                    e.printStackTrace();
                 }
             }
 
@@ -353,24 +343,24 @@ public class ContinuousClassifier extends ThreadBase {
                 try {
                     events = C.getEvents(nEvents, status.nEvents - 1);
                 } catch (IOException e) {
-                    Log.e(TAG, Log.getStackTraceString(e));
+                    e.printStackTrace();
                 }
 
                 for (BufferEvent event : events) {
                     String type = event.getType().toString();
                     String value = event.getValue().toString();
-                    Log.i(TAG, "GET EVENT (" + event.sample + "): " + type + ", value: " + value);
+                    System.out.println( "GET EVENT (" + event.sample + "): " + type + ", value: " + value);
                     if (type.equals(endType) && value.equals(endValue)) {
-                        Log.i(TAG, "End expected");
+                        System.out.println( "End expected");
                         endExpected = true;
                     } else if (type.equals(baselineEventType) && value.equals(baselineEnd)) {
-                        Log.i(TAG, "Baseline end event received");
+                        System.out.println( "Baseline end event received");
                         baselinePhase = false;
                         Tuple<Matrix, Matrix> ret = baselineValues(dvBaseline, dv2Baseline, nBaseline);
                         baseLineVal = ret.x;
                         baseLineVar = ret.y;
                     } else if (type.equals(baselineEventType) && value.equals(baselineStart)) {
-                        Log.i(TAG, "Baseline start event received");
+                        System.out.println( "Baseline start event received");
                         baselinePhase = true;
                         nBaseline = 0;
                         dvBaseline = Matrix.zeros(classifiers.get(0).getOutputSize() - 1, 1);
@@ -401,19 +391,14 @@ public class ContinuousClassifier extends ThreadBase {
         Matrix baseLineVal = new Matrix(dvBaseline.scalarMultiply(scale));
         Matrix baseLineVar = new Matrix(new Matrix(dv2Baseline.subtract(dvBaseline.multiplyElements(dvBaseline)
                 .scalarMultiply(scale))).abs().scalarMultiply(scale)).sqrt();
-        Log.i(TAG, "New baseline value: " + Arrays.toString(baseLineVal.getColumn(0)));
-        Log.i(TAG, "New baseline variance: " + Arrays.toString(baseLineVar.getColumn(0)));
+        System.out.println("New baseline value: " + Arrays.toString(baseLineVal.getColumn(0)));
+        System.out.println("New baseline variance: " + Arrays.toString(baseLineVar.getColumn(0)));
         return new Tuple<Matrix, Matrix>(baseLineVal, baseLineVar);
     }
 
-    @Override
-    public void validateArguments(Argument[] arguments) {
-
-    }
-
     public String toString() {
-        return "\nContinuousClassifier with parameters:" + "\nBuffer host:  \t" + bufferHost + "\nBuffer port:  \t" +
-                bufferPort + "\nHeader:\n     \t" + header + "\nEnd type:     \t" + endType + "\nEnd value:    \t" +
+        return "\nContinuousClassifier with parameters:" + "\nBuffer host:  \t" + hostname + "\nBuffer port:  \t" +
+                port + "\nHeader:\n     \t" + header + "\nEnd type:     \t" + endType + "\nEnd value:    \t" +
                 endValue + "\npredictionEventType:\t" + predictionEventType +
                 "\nSample trial ms:\t" + sampleTrialMs + "\nsampleTrialLength:\t" + sampleTrialLength + "\nOverlap:\t" +
                 overlap + "\nsampleStepMs:      \t" + sampleStepMs + "\npredictionFilter:\t" + predictionFilter +
