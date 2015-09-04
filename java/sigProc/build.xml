@@ -42,9 +42,9 @@
           </manifest>
         </jar>
         <jar destfile="${jar.dir}/FilePlayback.jar">
-			 <fileset dir="${classes.dir}" includes="**/*.class"/>
-			 <fileset dir="${src.dir}" includes="**/*.java"/>
-			 <fileset dir="${lib.dir}" includes="**/*.jar"/>
+			 <fileset dir="${classes.dir}" includes="**/FilePlayback.class"/>
+			 <fileset dir="${src.dir}" includes="FilePlayback.java"/>
+			 <fileset dir="${lib.dir}" includes="**/BufferClient.jar"/>
           <manifest>
             <attribute name="Main-Class" value="${ant.project.name}.FilePlayback"/>
           </manifest>
@@ -57,7 +57,7 @@
 	 </target>
 
     <target name="run" depends="jar">
-      <java fork="true" classname="${main-class}">
+      <java fork="true" classname="${ant.project.name}.signalprocessing.ContinuousClassifier">
         <classpath>
 			 <path refid="classpath"/>
 			 <path location="${jar.dir}/ContinuousClassifier.jar"/>
