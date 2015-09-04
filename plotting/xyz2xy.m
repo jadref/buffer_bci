@@ -1,7 +1,7 @@
 function xy=xyz2xy(xyz)
 % search for center of the circle defining the head
 cent=mean(xyz,2); cent(3)=min(xyz(3,:)); 
-f=inf; fstar=inf; tstar=0; 
+f=inf; fstar=inf; centstar=0; 
 for t=-.5:.05:1; % simple loop to find the right height..
    cent(3)=t*(max(xyz(3,:))-min(xyz(3,:)))+min(xyz(3,:));
    r2=sum(repop(xyz,'-',cent).^2); 
