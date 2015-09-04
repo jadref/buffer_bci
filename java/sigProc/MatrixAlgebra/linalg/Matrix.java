@@ -18,6 +18,11 @@ import org.apache.commons.math3.transform.TransformType;
 import org.apache.commons.math3.util.MathArrays;
 
 import java.util.ArrayList;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.IOException;
 
 import static org.apache.commons.math3.stat.StatUtils.max;
 
@@ -150,6 +155,7 @@ public class Matrix extends Array2DRowRealMatrix {
     public static int[] range(int start, int end, int step) {
         ParameterChecker.checkNonZero(step);
         int size = (int) Math.ceil(((double) (end - start)) / step);
+		  if ( size<1 ) return new int[0];
         int[] arr = new int[size];
         int index = 0;
         for (int i = start; i < end; i += step) {
@@ -180,7 +186,7 @@ public class Matrix extends Array2DRowRealMatrix {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(this.getClass().getSimpleName()).append("\n");
+        sb.append("#").append(this.getClass().getSimpleName()).append(getRowDimension()).append("x").append(getColumnDimension()).append(" \n");
         for (int i = 0; i < getRowDimension(); i++) {
             for (int j = 0; j < getColumnDimension(); j++)
                 sb.append(getData()[i][j]).append(" ");
@@ -910,5 +916,61 @@ public class Matrix extends Array2DRowRealMatrix {
         }
         W = new Matrix(W.scalarMultiply(1. / (start.length * new Matrix(taper).sum().getEntry(0, 0))));
         return W;
+    }
+
+	 public static Matrix fromString(BufferedReader bufferedReader) throws IOException {
+		  if ( bufferedReader == null ) {
+				System.out.println("could not allocate reader");
+				throw new IOException("Couldnt allocate a reader");
+		  }
+		  int width=-1;
+		  // tempory store for all the values loaded from file
+		  ArrayList<double[]> rows=new ArrayList<double[]>(10);
+		  String line;
+		  int nEmptyLines=0;
+		  System.out.println("Starting new matrix");
+		  if ( bufferedReader.ready() ) System.out.println("reader is ready");	else System.out.println("reader is *not* ready");
+		  while ( (line = bufferedReader.readLine()) != null ) {
+				// skip comment lines
+				if ( line == null || line.startsWith("#") ){
+					 continue;
+				} if ( line.length()==0 ) { // double empty line means end of this array
+					 nEmptyLines++;
+					 if ( nEmptyLines >1 && width>0 ) { // end of matrix by 2 empty lines
+						  System.out.println("Got 2 empty lines");
+						  break;
+					 } else { // skip them
+						  continue;
+					 }
+				}
+				System.out.println("Reading line " + rows.size());
+				
+				// split the line into entries on the split character
+				String[] values = line.split("[ ,	]"); // split on , or white-space
+				if ( width>0 && values.length != width ) {
+					 throw new IOException("Row widths are not consistent!");
+				} else if ( width<0 ) {
+					 width = values.length;
+				}					 
+				// read the row
+				double[] cols = new double[width]; // tempory store for the cols data
+				for ( int i=0; i<values.length; i++ ) {
+					 try { 
+						  cols[i] = Double.valueOf(values[i]);
+					 } catch ( NumberFormatException e ) {
+						  throw new IOException("Not a double number " + values[i]);
+					 }
+				}
+				// add to the tempory store
+				rows.add(cols);
+		  }
+		  if ( line==null ) System.out.println("line == null");
+		  
+		  if ( width<0 ) return null; // didn't load anything
+
+		  // Now put the data into a Matrix
+		  Matrix ret = new Matrix(rows.size(),width);
+		  for ( int i=0; i<rows.size(); i++) ret.setRow(i,rows.get(i));
+		  return ret;		  
     }
 }

@@ -37,7 +37,7 @@ public class ContinuousClassifier {
     private Double overlap = .5;
     private Double predictionFilter = 1.0;
     private Integer sampleTrialMs = null;
-    private Integer sampleStepMs = 500;
+    private Integer sampleStepMs = 100; // BUG: changing this shouldn't matter for anything else...
     private Integer timeoutMs = 1000;
     private boolean normalizeLatitude = true;
     private List<ERSPClassifier> classifiers;
@@ -47,11 +47,15 @@ public class ContinuousClassifier {
     private Float fs=-1.0f;
     private Header header=null;
 
+	 static final String usage="java ContinuousClassifer buffhost buffport timeoutms weightfile";
+
 	 public static void main(String[] args) throws IOException,InterruptedException {	
 		  String hostname=null;
 		  int port=-1;
 		  int timeout=-1;
 		  InputStream clsfrStream=null;
+		  if ( args.length<1 ) {System.out.print(usage); System.exit(1);}
+
 		if (args.length>=1) {
 			hostname = args[0];
 		}
@@ -69,20 +73,29 @@ public class ContinuousClassifier {
 		}
 		if (args.length>=3) {
 			try {
-				port = Integer.parseInt(args[2]);
+				timeout = Integer.parseInt(args[2]);
 			}
 			catch (NumberFormatException e) {
+				 System.out.println("Couldnt understand your timeout spec....");
 				timeout = 5000;
 			}
 		}
 		// Open the file from which to read the classifier parameters
 		if (args.length>=4) {
 			 String clsfrFile = args[3];
+			 System.out.println("Clsfr file = " + clsfrFile);
 			 try { 
 				  clsfrStream = new FileInputStream(new File(clsfrFile));
+			 }  catch ( FileNotFoundException e ) {
+				  e.printStackTrace();
 			 } catch ( IOException e ) {
 				  e.printStackTrace();
 			 }
+			 if ( clsfrStream==null ) System.out.println("Huh, couldnt open file stream.");
+		} else {
+			 System.out.println("Error need at least 4 arguments!");
+			 System.out.println(usage);
+			 System.exit(-1);
 		}
 		
 		// make the cont classifier object
@@ -106,13 +119,17 @@ public class ContinuousClassifier {
      * @return List of classifiers (only one)
      */
     private static List<ERSPClassifier> createClassifiers(InputStream is) {
-        List<Matrix> Ws = loadWFromFile(3, 56, is);
-        RealVector b = Matrix.zeros(5, 1).getColumnVector(0);
-        Integer[] freqIdx = ArrayFunctions.toObjectArray(Matrix.range(0, 56, 1));
-        String[] spectrumDescription = new String[]{"alphaL", "alphaR", "badness", "badChL", "badChR"};
+        List<Matrix> Ws = loadWFromFile(is);
+        RealVector b = Matrix.zeros(Ws.size(), 1).getColumnVector(0);
+		  // BUG: These numbers should *not* be hard coded here.....
+        Integer[] freqIdx = ArrayFunctions.toObjectArray(Matrix.range(0, 26, 1));
+        String[] subProbDescription = new String[]{"alphaL", "alphaR", "badness", "badChL", "badChR"};
         Integer[] isBad = new Integer[]{0, 0, 0};
-        ERSPClassifier classifier = new ERSPClassifier(Ws, b, true, null, Windows.WindowType.HANNING, WelchOutputType
-                .AMPLITUDE, null, freqIdx, 1, null, null, 128, 100., new Integer[]{0}, spectrumDescription, isBad);
+        ERSPClassifier classifier = 
+				new ERSPClassifier(Ws, b, true, null, 
+										 Windows.WindowType.HANNING, WelchOutputType.AMPLITUDE, 
+										 null, freqIdx, 1, null, null, 128, 100., 
+										 new Integer[]{0}, subProbDescription, isBad);
         List<ERSPClassifier> classifiers = new LinkedList<ERSPClassifier>();
         classifiers.add(classifier);
         return classifiers;
@@ -121,36 +138,28 @@ public class ContinuousClassifier {
     /**
      * Load the linear classifier data from a file
      *
-     * @param rows    The number of rows it should have
-     * @param columns The number of columns is should have
      * @return List of matrices that are used for a linear classifier.
      */
-    private static List<Matrix> loadWFromFile(int rows, int columns, InputStream is) {
-        List<Matrix> matrices = new LinkedList<Matrix>();
-        BufferedReader br = null;
-        String line;
-        String cvsSplitBy = ",";
+    private static List<Matrix> loadWFromFile(InputStream is) {
+		  BufferedReader br = new BufferedReader(new InputStreamReader(is));
+		  if ( is == null ) System.out.println("input stream is null?");
 
+        List<Matrix> matrices = new LinkedList<Matrix>();
         try {
-            br = new BufferedReader(new InputStreamReader(is));
-            while ((line = br.readLine()) != null) {
-                // use comma as separator
-                String[] items = line.split(cvsSplitBy);
-                Matrix m = new Matrix(ArrayFunctions.fromString(items)).reshape(rows, columns);
-                matrices.add(m);
-            }
+				Matrix m = Matrix.fromString(br);
+				int h=m.getRowDimension();
+				int w=m.getColumnDimension();
+				while ( m != null ){
+					 if ( m.getRowDimension() != h || m.getColumnDimension() != w ){
+						  throw new IOException("matrix sizes are incompatiable");
+					 }
+					 matrices.add(m);
+					 m = Matrix.fromString(br); // get another
+				}
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
         }
         return matrices;
     }
@@ -224,7 +233,7 @@ public class ContinuousClassifier {
         // Initialize the classifier and connect to the buffer
         connect();
         setNullFields();
-        System.out.println( this.toString());
+        System.out.println( this.toString() );
     }
 
     public void mainloop() {
@@ -233,8 +242,9 @@ public class ContinuousClassifier {
         int nSamples = header.nSamples;
 
         // Initialize initial variables. These are used later on to store the data.
-        Matrix baseLineVal = Matrix.zeros(classifiers.get(0).getOutputSize() - 1, 1);
-        Matrix baseLineVar = Matrix.ones(classifiers.get(0).getOutputSize() - 1, 1);
+		  int nOut=classifiers.get(0).getOutputSize()-1; nOut=nOut>0?nOut:1;
+        Matrix baseLineVal = Matrix.zeros(nOut, 1);
+        Matrix baseLineVar = Matrix.ones(nOut, 1);
         boolean baselinePhase = false;
         int nBaseline = 0;
         Matrix dvBaseline = null;
@@ -397,16 +407,28 @@ public class ContinuousClassifier {
     }
 
     public String toString() {
-        return "\nContinuousClassifier with parameters:" + "\nBuffer host:  \t" + hostname + "\nBuffer port:  \t" +
-                port + "\nHeader:\n     \t" + header + "\nEnd type:     \t" + endType + "\nEnd value:    \t" +
-                endValue + "\npredictionEventType:\t" + predictionEventType +
-                "\nSample trial ms:\t" + sampleTrialMs + "\nsampleTrialLength:\t" + sampleTrialLength + "\nOverlap:\t" +
-                overlap + "\nsampleStepMs:      \t" + sampleStepMs + "\npredictionFilter:\t" + predictionFilter +
-                "\nTimeoutMs:\t" + timeoutMs +
-                "\nBaselineEnd \t" + baselineEnd +
-                "\nBaselineStart\t" + baselineStart +
-                "\nBaselineStep\t" + nBaselineStep +
-                "\nNormalizeLat\t" + normalizeLatitude +
-                "\nFs           \t" + fs;
+        String str = "\nContinuousClassifier with parameters:\n" + 
+				"Buffer host:     \t" + hostname + "\n" +
+				"Buffer port:     \t" + port + "\n" + 
+				"Header:\n        \t" + header + "\n" + 
+				"End type:        \t" + endType + "\n" + 
+				"End value:       \t" + endValue + "\n" + 
+				"predictionEventType:\t" + predictionEventType + "\n" +
+				"Samp Trial ms:   \t" + sampleTrialMs + "\n"+
+				"sampleTrialLength:\t" + sampleTrialLength + "\n" + 
+				"Overlap:         \t" +	overlap + "\n" +
+				"sampleStepMs:    \t" + sampleStepMs + "\n" + 
+				"predictionFilter:\t" + predictionFilter + "\n" + 
+				"TimeoutMs:       \t" + timeoutMs + "\n" + 
+				"BaselineEnd:     \t" + baselineEnd + "\n" + 
+				"BaselineStart:   \t" + baselineStart + "\n" + 
+				"BaselineStep:    \t" + nBaselineStep + "\n" + 
+				"NormalizeLat:    \t" + normalizeLatitude + "\n" + 
+				"Fs:              \t" + fs + "\n";
+		  str += "#Classifiers:   \t" + classifiers.size();
+		  for ( int i=0; i < classifiers.size(); i++ ) {
+				str += "W{" + i + "}=\n" + classifiers.get(i).toString() + "\n\n";
+		  }
+		  return str;
     }
 }

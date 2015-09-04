@@ -22,10 +22,10 @@ public class ERSPClassifier {
 
     private final double[] windowFn;
     private final Double[] spatialFilter;
-    private final List<Matrix> classifierSlope;
-    private final Matrix spectrumMx;
-    private final RealVector classifierIntercept;
-    private final String[] spectrumDescription;
+    private final List<Matrix> clsfrW;
+    private final Matrix spectralFilter;
+    private final RealVector clsfrb;
+    private final String[] subProbDescription;
     private final String type;
     private final WelchOutputType welchAveType;
     private final Boolean detrend;
@@ -40,11 +40,18 @@ public class ERSPClassifier {
     private final Windows.WindowType windowType;
     private int[] welchStartMs;
 
-    public ERSPClassifier(List<Matrix> classifierSlope, RealVector classifierIntercept, Boolean detrend, Double
-            badChannelThreshold, Windows.WindowType windowType, WelchOutputType welchAveType, Integer[]
-            windowTimeIdx, Integer[] windowFrequencyIdx, Integer dimension, Double[] spatialFilter, Matrix
-            spectrumMx, Integer windowLength, Double samplingFrequency, Integer[] welchStartMs, String[]
-            spectrumDescription, Integer[] thresholdIsBad) {
+    public ERSPClassifier(List<Matrix> clsfrW, RealVector clsfrb, 
+								  Boolean detrend, Double badChannelThreshold, 
+								  Windows.WindowType windowType, WelchOutputType welchAveType, 
+								  Integer[] windowTimeIdx, 
+								  Integer[] windowFrequencyIdx, Integer dimension, 
+								  Double[] spatialFilter, 
+								  Matrix spectralFilter, 
+								  Integer windowLength, 
+								  Double samplingFrequency, 
+								  Integer[] welchStartMs, 
+								  String[] subProbDescription, 
+								  Integer[] thresholdIsBad) {
         ParameterChecker.checkString(welchAveType.toString(), new String[]{"AMPLITUDE", "power", "db"});
 
         // todo immediately check if the right combination of parameters is given
@@ -52,11 +59,11 @@ public class ERSPClassifier {
         this.type = "ERSP";
         this.detrend = detrend;
         this.dimension = dimension;
-        this.spectrumMx = spectrumMx;
-        this.spectrumDescription = spectrumDescription;
+        this.spectralFilter = spectralFilter;
+        this.subProbDescription = subProbDescription;
         this.thresholdIsBad = thresholdIsBad;
-        this.classifierSlope = classifierSlope;
-        this.classifierIntercept = classifierIntercept;
+        this.clsfrW = clsfrW;
+        this.clsfrb = clsfrb;
         this.badChannelThreshold = badChannelThreshold;
         this.samplingFrequency = samplingFrequency;
         this.spatialFilter = spatialFilter;
@@ -167,10 +174,10 @@ public class ERSPClassifier {
     }
 
     private Matrix linearClassifier(Matrix data, int dim) {
-        double[] results = new double[classifierSlope.size()];
-        for (int i = 0; i < classifierSlope.size(); i++)
-            results[i] = this.classifierSlope.get(i).multiplyElements(data).sum().getEntry(0, 0) +
-                    classifierIntercept.getEntry(i);
+        double[] results = new double[clsfrW.size()];
+        for (int i = 0; i < clsfrW.size(); i++)
+            results[i] = this.clsfrW.get(i).multiplyElements(data).sum().getEntry(0, 0) +
+                    clsfrb.getEntry(i);
         return new Matrix(results);
     }
 
@@ -193,26 +200,31 @@ public class ERSPClassifier {
     }
 
     public int getOutputSize() {
-        return classifierSlope.size();
+        return clsfrW.size();
     }
 
     public String toString() {
-        return "ERSPClassifier with parameters:" + "\nWindow Fn length:  \t" + windowFn.length + "\nwelchStartMs         " +
-                "   " +
-                "\t" + Arrays.toString(welchStartMs) + "\nSpatial filter     \t" + Arrays.toString(spatialFilter) +
-                "\nclassifierSlope " +
-                "shape            " +
-                "\t" + (classifierSlope != null ? classifierSlope.get(0).shapeString() : "null") + "\nSpectrum mx " +
-                "shape  \t" + (spectrumMx != null ? spectrumMx.shapeString() : "null") + "\nclassifierIntercept      " +
-                "            \t" + classifierIntercept + "\nSpectrum desc      \t" + Arrays.toString
-                (spectrumDescription) + "\nType               \t" + type + "\nWelch ave type     \t" + welchAveType +
-                "\nDetrend            \t" + detrend + "\nBad channel thres  \t" +
-                badChannelThreshold + "\nTime idx           \t" + Arrays.toString(windowTimeIdx) + "\nFrequency idx  " +
-                "    " +
-                "\t" + Arrays.toString(windowFrequencyIdx) + "\nIs bad channel    \t" + Arrays.toString
-                (thresholdIsBad) + "\nDimension   " +
-                "       \t" +
-                dimension + "\nWindow length      \t" + windowLength + "\nSampling frequency \t" + samplingFrequency
-                + "\nWindow type        \t" + windowType;
+        String str = 
+				"ERSPClassifier with parameters:" + 
+				"\nWindow Fn length:  \t" + windowFn.length + 
+				"\nwelchStartMs       \t" + Arrays.toString(welchStartMs) + 
+				"\nSpatial filter     \t" + Arrays.toString(spatialFilter) +
+				"\nclsfr Weights      \t" + (clsfrW != null ? clsfrW.get(0).toString() : "null") + 
+				"\nclsfr bias         \t" + clsfrb + 
+				"\nspectralFilter     \t" + (spectralFilter != null ? spectralFilter.shapeString() : "null") + 
+				"\nSpectrum desc      \t" + Arrays.toString((subProbDescription)) + 
+				"\nType               \t" + type + 
+				"\nWelch ave type     \t" + welchAveType +
+				"\nDetrend            \t" + detrend + 
+				"\nBad channel thres  \t" + badChannelThreshold + 
+				"\nTime idx           \t" + Arrays.toString(windowTimeIdx) + 
+				"\nFrequency idx      \t" + Arrays.toString(windowFrequencyIdx) + 
+				"\nIs bad channel     \t" + Arrays.toString(thresholdIsBad) + 
+				"\nDimension          \t" + dimension + 
+				"\nWindow length      \t" + windowLength + 
+				"\nSampling frequency \t" + samplingFrequency + 
+				"\nWindow type        \t" + windowType;
+		  
+		  return str;
     }
 }

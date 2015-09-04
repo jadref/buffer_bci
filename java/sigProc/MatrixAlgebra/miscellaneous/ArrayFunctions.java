@@ -41,8 +41,9 @@ public class ArrayFunctions {
 
     public static double[] fromString(String[] array) {
         double[] doubleArray = new double[array.length];
-        for (int i = 0; i < array.length; i++)
+        for (int i = 0; i < array.length; i++) {
             doubleArray[i] = Double.valueOf(array[i]);
+		  }
         return doubleArray;
     }
 

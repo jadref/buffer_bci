@@ -57,11 +57,12 @@
 	 </target>
 
     <target name="run" depends="jar">
-      <java fork="true" classname="${ant.project.name}.signalprocessing.ContinuousClassifier">
+      <java fork="false" classname="${ant.project.name}.signalprocessing.ContinuousClassifier">
         <classpath>
 			 <path refid="classpath"/>
 			 <path location="${jar.dir}/ContinuousClassifier.jar"/>
         </classpath>
+		  <arg line="localhost 1972 1000 res/sigproxy_alphaW.csv"/>
       </java>
     </target>
 
