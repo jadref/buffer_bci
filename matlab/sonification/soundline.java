@@ -7,34 +7,63 @@ import javax.sound.sampled.SourceDataLine;
 public class soundline {
 	 AudioFormat audioFormat=null;
 	 SourceDataLine soundLine=null;
-	 int sr=-1;
+	 int nbytes=2;
+	 long sampleRate=2000;
 	 byte[] audBuf=null;
 	 
-	 public soundline(int sr,int bufferSize) throws Exception {		  
-		  init(sr,bufferSize);
+	 public soundline(int sr,int bufferSize, int nbytes) throws Exception {		  
+		  init(sr,bufferSize,nbytes);
 	 }
-	 public soundline(double sr,double bufferSize) throws Exception {		  
-		  init((int)sr,(int)bufferSize);
+	 public soundline(double sr,double bufferSize, double nbytes) throws Exception {		  
+		  init((int)sr,(int)bufferSize,(int)nbytes);
 	 }
 
-	 void init(int sr, int bufferSize) throws javax.sound.sampled.LineUnavailableException {
-		  final AudioFormat audioFormat = new AudioFormat(sr, // sample rate
-																		  8,  // sample size in bits
-																		  1,  // channels
+	 void init(int sr, int bufferSize, int inbyte) throws javax.sound.sampled.LineUnavailableException {
+		  nbytes=inbyte;
+		  if ( nbytes >2 | nbytes<1 ) { // check for a supported bit depth
+				throw new javax.sound.sampled.LineUnavailableException();
+		  }
+		  final AudioFormat audioFormat = new AudioFormat(sr,    // sample rate
+																		  nbytes*8, // sample size in bits
+																		  1,     // channels
 																		  true,  // signed
 																		  false  // bigendian
 																		  );	 
 		  soundLine = AudioSystem.getSourceDataLine(audioFormat);
 		  soundLine.open(audioFormat, bufferSize); // set audio buffer size
-		  soundLine.start();
-		  audBuf=new byte[bufferSize];
+		  start();
+		  audBuf=new byte[bufferSize*nbytes]; // N.B. increase size by number bytes/sample
 	 }
-	 public void stop(){
-		  // shut-down the audio
+	 public void stop(){ // shut-down the audio
 		  soundLine.stop();
 	 }
+	 public void start(){ // start the audio
+		  soundLine.start();
+	 }
+	 public void drain(){ // empty the buffer
+		  soundLine.drain();
+	 }
+	 public int available(){
+		  return soundLine.available();
+	 }
+	 public double available_s(){
+		  return ((double)soundLine.available())/((double)nbytes)/((double)getSampleRate());
+	 }
+	 public int getBufferSize(){
+		  return soundLine.getBufferSize();
+	 }
+	 public float getSampleRate(){
+		  return soundLine.getFormat().getSampleRate();
+	 }
+	 public AudioFormat getFormat(){
+		  return soundLine.getFormat();
+	 }
+
 	 public int write(byte[] buf, int off, int len){
 		  return soundLine.write(buf,off,len);
+	 }
+	 public int write(double[] buf){
+		  return write(buf,0,buf.length);
 	 }
 	 public int write(double[] buf, double doff, double dlen){
 		  int len=(int)dlen;
@@ -46,26 +75,30 @@ public class soundline {
 					 n+=soundLine.write(audBuf,0,audBuf.length);
 					 j=0;
 				}
-				audBuf[j]=(byte)buf[i];
+				switch(nbytes){
+				case 1: audBuf[j]=(byte)buf[i]; break;
+					 // convert to 2 bytes in big-edenian format
+				case 2: audBuf[j]=(byte)(buf[i]%256); audBuf[j+1]=(byte)(buf[i]/256); j++; break;
+				}
 		  }
 		  if ( j > 0 ) {
 				n+=soundLine.write(audBuf,0,j);
 		  }
 		  return n;
 	 }
-	 public int write(double[] buf){
-		  return write(buf,0,buf.length);
-	 }
 
 	 public void playChirp(){
 		  long t0=java.lang.System.currentTimeMillis();
 		  long t=t0;
+		  long te=t0;
 		  int nSamp=0;
 		  int period_samp = 2; // start at high frequency
 		  int counter=0;
-		  byte[] buf = new byte[soundLine.getBufferSize()];
+		  int avail=0;
+		  int sampleRate=(int)getSampleRate();
+		  byte[] buf = new byte[sampleRate/10];
 		  byte sign=1;
-		  while ( nSamp < 100*44100 ) { // play for 100s
+		  while ( nSamp < 100*sampleRate ) { // play for 100s
 				for (int i = 0; i < buf.length; i++) {
 					 if (counter > period_samp) { // generate square-wave with period period_samp
 						  sign = (byte) -sign;
@@ -78,8 +111,10 @@ public class soundline {
 				// the next call is blocking until the entire buffer is 
 				// sent to the SourceDataLine
 				t=java.lang.System.currentTimeMillis();
+				avail=soundLine.available();
 				nSamp += soundLine.write(buf,0,buf.length);
-				System.out.println(t + ") Dur= " + ((buf.length*1000)/sr) + "ms Write = " + (java.lang.System.currentTimeMillis()-t) + " ms  bytes-to-go="+ soundLine.available() );
+				te=java.lang.System.currentTimeMillis();
+				System.out.println((t-t0) + ")\tDur=" + ((buf.length*1000)/sampleRate) + "ms\tWrite=" + (buf.length*1000/sampleRate) + "ms =>" + (te-t) + "ms\tbytes-to-fill="+avail + " bytes-to-play\t" + (soundLine.getBufferSize() - avail) );
 				// the next call is blocking until all the sound in the buffer is gone
 				//soundLine.drain();
 				

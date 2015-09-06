@@ -16,13 +16,21 @@ function []=sigViewer(buffhost,buffport,varargin);
 %  spatfilt   -- 'str' name of type of spatial filtering to do to the data   ('car')
 %  capFile    -- [str] capFile name to get the electrode positions from      ('1010')
 %  overridechnms -- [bool] flag if we use the channel names from the capFile rather than the buffer (0)
-%  welch_width_ms -- [single] size in time of the welch window               (500ms) 
+%  welch_width_ms -- [single] size in time of the welch window                      (1000ms) 
+%                      -> defines the frequency resolution for the frequency view of the data.   
+%  spect_width_ms -- [single] size in time of the welch window for the spectrogram  (500ms) 
 %                      -> defines the frequency resolution for the frequency view of the data.   
 %  freqbands  -- [2x1] frequency bands to display in the freq-domain plot    (opts.fftfilter)
 %  noisebands -- [2x1] frequency bands to display for the 50 Hz noise plot   ([45 47 53 55])
 %  sigProcOptsGui -- [bool] show the on-line option changing gui             (1)
-wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ); run('../utilities/initPaths.m'); end;
-opts=struct('endType','end.training','verb',1,'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',128,'spatfilt','car','badchrm',0,'badchthresh',3,'capFile',[],'overridechnms',0,'welch_width_ms',500,'noisebands',[45 47 53 55],'noiseBins',[0 1.75],'timeOut_ms',1000,'spectBaseline',1,'sigProcOptsGui',1,'dataStd',2.5,'covhalflife',20);
+wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ); run(fullfile(fileparts(mfilename('fullpath')),'../utilities/initPaths.m')); end;
+opts=struct('endType','end.training','verb',1,'timeOut_ms',1000,...
+				'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,...
+				'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',128,'spatfilt','car',...
+				'badchrm',0,'badchthresh',3,'capFile',[],'overridechnms',0,...
+				'welch_width_ms',1000,'spect_width_ms',500,'spectBaseline',1,...
+				'noisebands',[45 47 53 55],'noiseBins',[0 1.75],
+				'sigProcOptsGui',1,'dataStd',2.5,'covhalflife',20);
 opts=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ); buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ); buffport=1972; end;
@@ -53,7 +61,7 @@ ch_names=hdr.channel_names; ch_pos=[]; iseeg=true(numel(ch_names),1);
 % get capFile info for positions
 capFile=opts.capFile; overridechnms=opts.overridechnms; 
 if(isempty(opts.capFile)) 
-  [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); drawnow;
+  [fn,pth]=uigetfile(fullfile(fileparts(mfilename('fullpath')),'../utilities/*.txt'),'Pick cap-file'); drawnow;
   if ( ~isequal(fn,0) ); capFile=fullfile(pth,fn); end;
   %if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
 end
@@ -99,8 +107,9 @@ outsz=[trlen_samp trlen_samp];if(~isempty(opts.downsample)); outsz(2)=min(outsz(
 rawdat    = zeros(sum(iseeg),outsz(1));
 ppdat     = zeros(sum(iseeg),outsz(2));
 % and the spectrogram version
-[ppspect,start_samp,freqs]=spectrogram(rawdat,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample);
-ppspect=ppspect(:,freqIdx(1):freqIdx(2),:); % subset to freq range of interest
+[ppspect,start_samp,spectFreqs]=spectrogram(rawdat,2,'width_ms',opts.spect_width_ms,'fs',hdr.fsample);
+spectFreqIdx =getfreqIdx(spectFreqs,opts.freqbands);
+ppspect=ppspect(:,spectFreqIdx(1):spectFreqIdx(2),:); % subset to freq range of interest
 start_s=-start_samp(end:-1:1)/hdr.fsample;
 % and the data summary statistics
 chCov     = zeros(sum(iseeg),sum(iseeg));
@@ -121,7 +130,7 @@ fig=gcf;
 set(fig,'Name','Sig-Viewer : t=time, f=freq, p=50Hz power, s=spectrogram, q,close window=quit.','menubar','none','toolbar','none','doublebuffer','on');
 axes('position',[0 0 1 1]); topohead();set(gca,'visible','off','nextplot','add');
 plotPos=ch_pos; if ( ~isempty(plotPos) ); plotPos=plotPos(:,iseeg); end;
-hdls=image3d(ppspect,1,'plotPos',plotPos,'Xvals',ch_names,'yvals',freqs(freqIdx(1):freqIdx(2)),'ylabel','freq (hz)','zvals',start_s,'zlabel','time (s)','disptype','imaget','colorbar',1,'ticklabs','sw','legend',0,'plotPosOpts.plotsposition',[.05 .08 .91 .85]);
+hdls=image3d(ppspect,1,'plotPos',plotPos,'Xvals',ch_names,'yvals',spectFreqs(spectFreqIdx(1):spectFreqIdx(2)),'ylabel','freq (hz)','zvals',start_s,'zlabel','time (s)','disptype','imaget','colorbar',1,'ticklabs','sw','legend',0,'plotPosOpts.plotsposition',[.05 .08 .91 .85]);
 cbarhdl=[]; 
 if ( strcmpi(get(hdls(end),'Tag'),'colorbar') ) 
   cbarhdl=hdls(end); hdls(end)=[]; cbarpos=get(cbarhdl,'position');
@@ -234,6 +243,7 @@ while ( ~endTraining )
         filt=mkFilter(trlen_samp/2,ppopts.freqbands,fs/trlen_samp); 
       end
       freqIdx =getfreqIdx(freqs,ppopts.freqbands);
+		spectFreqIdx=getfreqIdx(spectFreqs,ppopts.freqbands);
     end
   end
 
@@ -303,8 +313,8 @@ while ( ~endTraining )
     ppdat = sqrt(ppdat); % BODGE: extra transformation to squeeze the large power values...
     
    case 'spect'; % spectrogram
-    ppdat = spectrogram(ppdat,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample);
-    ppdat = ppdat(:,freqIdx(1):freqIdx(2),:);    
+    ppdat = spectrogram(ppdat,2,'width_ms',opts.spect_width_ms,'fs',hdr.fsample);
+    ppdat = ppdat(:,spectFreqIdx(1):spectFreqIdx(2),:);    
     % subtract the 'common-average' spectrum
     if ( opts.spectBaseline ); ppdat=repop(ppdat,'-',mean(mean(ppdat,3),1)); end
   end
@@ -372,10 +382,10 @@ while ( ~endTraining )
       end;
       
      case 'spect'; % spectrogram
-      set(hdls,'xlim',start_s([1 end]),'ylim',freqs([freqIdx(1) freqIdx(2)]),'clim',datlim); % all the same axes
+      set(hdls,'xlim',start_s([1 end]),'ylim',spectFreqs([spectFreqIdx(1) spectFreqIdx(2)]),'clim',datlim); % all the same axes
       set(line_hdls,'visible','off');
       % make the color images visible, in the right place with the right axes positions
-      set(img_hdls,'xdata',start_s([1 end]),'ydata',freqs([freqIdx(1) freqIdx(2)]),'visible','on');      
+      set(img_hdls,'xdata',start_s([1 end]),'ydata',spectFreqs([spectFreqIdx(1) spectFreqIdx(2)]),'visible','on');      
       for hi=1:numel(hdls); xlabel(hdls(hi),'time (s)'); ylabel(hdls(hi),'freq (hz)');end;
       if ( ~isempty(cbarhdl) ) 
         set(findobj(cbarhdl),'visible','on'); 

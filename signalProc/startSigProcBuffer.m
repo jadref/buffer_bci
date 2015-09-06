@@ -4,10 +4,16 @@ function []=startSigProcBuffer(varargin)
 % Trigger events: (type,value)
 %  (startPhase.cmd,capfitting) -- show capfitting
 %  (startPhase.cmd,calibrate)  -- start calibration phase processing (i.e. cat data)
+%                                 Specificially for each epoch the specificed block of data will be
+%                                 saved and labelled with the value of this event.
+%                                 N.B. the event type used to define an epoch is given in the option:
+%                                        epochEventType
 %  (calibrate,end)             -- end calibration phase
 %  (startPhase.cmd,train)      -- train a classifier based on the saved calibration data
 %  (startPhase.cmd,testing)    -- start test phase, i.e. on-line prediction generation
-%                                 This type of testing will generate 1 prediction event for each epoch
+%                                 This type of testing will generate 1 prediction event for each 
+%                                 epoch event.  
+%                                 NB. The event to predict for is given in option: testepochEventType
 %                                  (FYI: this uses the function event_applyClsfr)
 %  (startPhase.cmd,contfeedback) -- start continuous feedback phase,
 %                                     i.e. prediciton event generated every trlen_ms/2 milliseconds
@@ -24,8 +30,11 @@ function []=startSigProcBuffer(varargin)
 %  []=startSigProcBuffer(varargin)
 %
 % Options:
+%   phaseEventType -- 'str' event type which says start a new phase                 ('startPhase.cmd')
 %   epochEventType -- 'str' event type which indicates start of calibration epoch.  ('stimulus.target')
 %                     This event's value is used as the class label
+%   testepochEventType -- 'str' event type which start of data to generate a prediction for.  ([])
+%                      If empty the same as epochEventType.                    
 %   clsfr_type     -- 'str' the type of classifier to train.  One of: 
 %                        'erp'  - train a time-locked response (evoked response) classifier
 %                        'ersp' - train a power change (induced response) classifier
@@ -51,16 +60,21 @@ function []=startSigProcBuffer(varargin)
 %
 %  % Run where epoch is any of row/col or target flash and saving 600ms after these events for classifier training
 %   startSigProcBuffer('epochEventType',{'stimulus.target','stimulus.rowFlash','stimulus.colFlash'},'trlen_ms',600); 
+%  % Run where epoch is target flash and saving 600ms after these events for classifier training
+%  %   in testing phase, we generate a prediction for every row/col flash
+%   startSigProcBuffer('epochEventType',{'stimulus.target'},'testepochEventType',{'stimulus.rowFlash','stimulus.colFlash'},'trlen_ms',600); 
 
 % setup the paths if needed
 wb=which('buffer'); 
+mdir=fileparts(mfilename('fullpath'));
 if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) 
-  mdir=fileparts(mfilename('fullfile')); run(fullfile(mdir,'../utilities/initPaths.m')); 
+  run(fullfile(mdir,'../utilities/initPaths.m')); 
   % set the real-time-clock to use
   initgetwTime;
   initsleepSec;
 end;
-opts=struct('epochEventType',[],'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],...
+opts=struct('phaseEventType','startPhase.cmd','epochEventType',[],'testepochEventType',[],...
+				'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],...
             'epochPredFilt',[],'contPredFilt',[],'capFile',[],...
 				'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1);
 [opts,varargin]=parseOpts(opts,varargin);
@@ -68,7 +82,7 @@ opts=struct('epochEventType',[],'clsfr_type','erp','trlen_ms',1000,'freqband',[.
 thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
 capFile=opts.capFile;
 if( isempty(capFile) ) 
-  [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); capFile=fullfile(pth,fn);
+  [fn,pth]=uigetfile(fullfile(mdir,'../utilities/*.txt'),'Pick cap-file'); capFile=fullfile(pth,fn);
   if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
 end
 if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
@@ -90,6 +104,7 @@ if ( isempty(opts.epochEventType) && opts.useGUI )
     error('User cancelled the run');
   end
 end
+if ( isempty(opts.testepochEventType) ) opts.testepochEventType=opts.epochEventType; end;
 
 datestr = datevec(now); datestr = sprintf('%02d%02d%02d',datestr(1)-2000,datestr(2:3));
 dname='training_data';
@@ -121,7 +136,8 @@ while ( true )
   
   % wait for a phase control event
   if ( opts.verb>0 ) fprintf('%d) Waiting for phase command\n',nsamples); end;
-  [devents,state,nevents,nsamples]=buffer_newevents(opts.buffhost,opts.buffport,state,{'startPhase.cmd' 'subject'},[],5000);
+  [devents,state,nevents,nsamples]=buffer_newevents(opts.buffhost,opts.buffport,state,...
+																	 {opts.phaseEventType 'subject'},[],5000);
   if ( numel(devents)==0 ) 
     continue;
   elseif ( numel(devents)>1 ) 
@@ -208,7 +224,7 @@ while ( true )
       clsSubj = subject;
     end;
 
-    event_applyClsfr(clsfr,'startSet',opts.epochEventType,...
+    event_applyClsfr(clsfr,'startSet',opts.testepochEventType,...
 							'predFilt',opts.epochPredFilt,...
 							'endType',{'testing','test','epochfeedback','eventfeedback'},'verb',opts.verb);
 

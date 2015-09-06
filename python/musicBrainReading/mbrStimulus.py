@@ -104,13 +104,13 @@ def runTrainingEpoch(nEpoch, nRep=3, maxLowered=3):
     tgt_sequence      = list()
     # add the repetitions for the stimuli, and the quiet ones if needed
     for i in range(0,len(set_sequence)):
-    	stimulus_sequence += [set_sequence[i]]*nRep # duplicate the stimulus nRep times
-        tmp = [False]*nRep # default to no-quiet
-    	if low_sequence[i]: # randomly choose the position to put the quiet one
-            if len(tmp)==1 :   tmp[0]=True
-            elif len(tmp)==2 : tmp[1]=True
-            else:              tmp[randint(1,len(tmp)-1)]=True # rand but not in 1st position
-        tgt_sequence      += tmp 
+		stimulus_sequence += [set_sequence[i]]*nRep # duplicate the stimulus nRep times
+		tmp = [False]*nRep # default to no-quiet
+		if low_sequence[i]: # randomly choose the position to put the quiet one
+			if len(tmp)==1 :   tmp[0]=True
+			elif len(tmp)==2 : tmp[1]=True
+			else:              tmp[randint(1,len(tmp)-1)]=True # rand but not in 1st position
+		tgt_sequence      += tmp 
     
     # play the stimulus sequence
     sendEvent("stimulus.trial", "start")

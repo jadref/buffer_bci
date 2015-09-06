@@ -107,13 +107,13 @@ def runTrainingEpoch(nEpoch, nRep=3, maxLowered=3):
     tgt_sequence      = list()
     # add the repetitions for the stimuli, and the quiet ones if needed
     for i in range(0,len(set_sequence)):
-    	stimulus_sequence += [set_sequence[i]]*nRep # duplicate the stimulus nRep times
-        tmp = [False]*nRep # default to no-quiet
-    	if low_sequence[i]: # randomly choose the position to put the quiet one
-            if len(tmp)==1 :   tmp[0]=True
-            elif len(tmp)==2 : tmp[1]=True
-            else:              tmp[randint(1,len(tmp)-1)]=True # rand but not in 1st position
-        tgt_sequence      += tmp 
+		stimulus_sequence += [set_sequence[i]]*nRep # duplicate the stimulus nRep times
+		tmp = [False]*nRep # default to no-quiet
+		if low_sequence[i]: # randomly choose the position to put the quiet one
+			if len(tmp)==1 :   tmp[0]=True
+			elif len(tmp)==2 : tmp[1]=True
+			else:              tmp[randint(1,len(tmp)-1)]=True # rand but not in 1st position
+		tgt_sequence      += tmp 
     
     # play the stimulus sequence
     sendEvent("stimulus.trial", "start")
@@ -123,14 +123,14 @@ def runTrainingEpoch(nEpoch, nRep=3, maxLowered=3):
         tgt     = tgt_sequence[i]
         print(str(i) + ") aud=" + str(audioID) + " tgt=" + str(tgt)) # logging info
 
-        #if tgt == False:          stimulusChan.set_volume(full_vol)  # full volume for non-targets
-        #else:                     stimulusChan.set_volume(lowered_vol) # reduce volume for targets
+        if tgt == False:    audioDat=data[audioID]        # full volume for non-targets
+        else:               audioDat=lowereddata[audioID] # reduce volume for targets
         
         # send events as close in time as possible to when the actual stimulus starts
         offset = 0#stream.get_output_latency()*fSample
         sendEvent("stimulus.target", tgt, offset)   # target/non-target
         sendEvent("stimulus.play", audioID, offset) # which stimulus
-        stream.write(data[audioID]) # this should block until the audio is finished....
+        stream.write(audioDat) # this should block until the audio is finished....
 
         # wait requested inter-stimulus interval
         if inter_stimulus_interval > 0 : sleep(inter_stimulus_interval)
@@ -257,8 +257,6 @@ while hdr is None :
 fSample = hdr.fSample
 
 # set  up pygame and PyAudio
-pygame.mixer.pre_init(44100, -16, 1, 128) # set audio to 1 channel and minimual buffer = fast startup
-pygame.init()
 p = PyAudio()
 
 # set up the window
@@ -274,9 +272,24 @@ pygame.display.set_caption('BCI Music Experiment')
 # Pre-Loading Music data
 nrStimuli = 7;
 
-wf = map(lambda x: wave.open("stimuli/BR7_" + str(x) + ".wav" , 'rb'), range(1,nrStimuli+1))
-#wf += map(lambda x: wave.open("stimuli/BR7_" + str(x) + "_lowered.wav" , 'rb'), range(1,nrStimuli+1))
-data = map(lambda x: x.readframes(x.getnframes()),wf)
+wf  = map(lambda x: wave.open("stimuli/BR7_" + str(x) + ".wav" , 'rb'), range(1,nrStimuli+1))
+data= map(lambda x: x.readframes(x.getnframes()),wf)
+
+# make the lowered volume equivalents
+import array;
+lowereddata=[]
+for i in range(0,len(data)):
+    # convert the raw bytes into an integer array
+    a=[];
+    if wf[i].getsampwidth() == 1 :
+         a=array.array("b",data[i]) 
+    elif wf[i].getsampwidth() == 2:
+         a=array.array("h",data[i]) #get as integer data         
+    # transform the volume in the array
+    for j in range(1,len(a)):
+        a[j] = int(a[j]*lowered_vol)
+    # save the lowered volume data back to raw bytes
+    lowereddata.append(a.tostring());
 
 names = ["Nutcracker Suite: March (Tchaikovsky)",
          "Galvanize",
