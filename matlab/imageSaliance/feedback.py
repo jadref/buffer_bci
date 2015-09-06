@@ -109,8 +109,12 @@ def loadImage(name):
 	image_path = os.path.join(targetPath, evt.value + ".jpg")
 	img = PIL.Image.open(image_path)
 	
-	cols = 3; # TODO: Determine amount of colums from image.
+	cols = 3;
 	rows = 3;
+
+	(img_width, img_height) = im.size
+	if img_width > 1.5 * img_height:
+		cols = 4
 
 	slices = sliceImage(img, cols, rows)
 
