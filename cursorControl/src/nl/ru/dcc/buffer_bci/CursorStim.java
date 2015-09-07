@@ -3,6 +3,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.lang.System;
+import java.io.*;
 import nl.fcdonders.fieldtrip.bufferclient.*;
 
  public class CursorStim extends JPanel {
@@ -58,7 +59,7 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 			int   nSymbs=8;
 			float seqDuration=3.5f;
 			float isi=1f/10;
-			String blockName=null;
+			String blockName="Untitled";
 			// This method implements the main experiment control flow
 			InstructWaitKeyScreen instruct=new InstructWaitKeyScreen(this);
 			BlankScreen   blank=new BlankScreen();
@@ -70,11 +71,12 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 			runScreen(instruct);
 			waitScreen();
 
-			StimSeq ss=null;
 			// for each block each target happens twice
 			int [] tgtSeq=new int[2*nSymbs]; 
 			for( int i=0; i<nSymbs; i++ ) { tgtSeq[i*2]=i; tgtSeq[i*2+1]=i; }
 
+			StimSeq ss=null;
+			
 			// Block 1: SSEP -- LF @ 2Phase
 			isi=1f/60;
 			blockName = "SSEP_2phase_"+(int)Math.round(1./isi)+"hz";
@@ -84,13 +86,14 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 											 true);
 			//System.out.println(ss.toString()); // debug stuff
 			StimSeq.shuffle(tgtSeq);
-			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms,true);
+			//runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms,true);
 
 			// Block 2: p3-radial @ 10hz
 			isi=1f/10;
 			blockName = "radial_"+(int)Math.round(1./isi)+"hz";
 			ss=StimSeq.mkStimSeqScan(nSymbs,seqDuration,isi);
 			StimSeq.shuffle(tgtSeq);
+			System.out.println("New block: " + blockName);System.out.print(ss.toString());
 			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
 			// Block 3: p3-radial @ 20hz
@@ -150,23 +153,55 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
 			// Block 10: Noise @10
-			isi=1f/10;
-			blockName="noise_"+(int)Math.round(1./isi)+"hz";
-			ss=StimSeq.mkStimSeqGold(nSymbs,seqDuration,isi);
+			// isi=1f/10;
+			// blockName="noise_"+(int)Math.round(1./isi)+"hz";
+			// ss=StimSeq.mkStimSeqGold(nSymbs,seqDuration,isi);
+			// StimSeq.shuffle(tgtSeq);
+			// runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
+
+			// Load from save file
+			blockName = "gold_10hz";
+			{
+				 BufferedReader is = new BufferedReader(new InputStreamReader(new FileInputStream(new File("stimSeq/"+blockName+".txt"))));
+				 ss = StimSeq.fromString(is);
+				 is.close();
+			}
+			// Play this sequence
 			StimSeq.shuffle(tgtSeq);
 			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
-			// Block 10: Noise @20
-			isi=1f/20;
-			blockName="noise_"+(int)Math.round(1./isi)+"hz";
-			ss=StimSeq.mkStimSeqGold(nSymbs,seqDuration,isi);
+			// // Block 10: Noise @20
+			// isi=1f/20;
+			// blockName="noise_"+(int)Math.round(1./isi)+"hz";
+			// ss=StimSeq.mkStimSeqGold(nSymbs,seqDuration,isi);
+			// StimSeq.shuffle(tgtSeq);
+			// runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
+			// Load from save file
+			blockName = "gold_20hz";
+			{
+				 BufferedReader is = new BufferedReader(new InputStreamReader(new FileInputStream(new File("stimSeq/"+blockName+".txt"))));
+				 ss = StimSeq.fromString(is);
+				 is.close();
+			}
+			// Play this sequence
 			StimSeq.shuffle(tgtSeq);
 			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
-			// Block 10: Noise @40
-			isi=1f/40;
-			blockName="noise_"+(int)Math.round(1./isi)+"hz";
-			ss=StimSeq.mkStimSeqGold(nSymbs,seqDuration,isi);
+			// // Block 10: Noise @40
+			// isi=1f/40;
+			// blockName="noise_"+(int)Math.round(1./isi)+"hz";
+			// ss=StimSeq.mkStimSeqGold(nSymbs,seqDuration,isi);
+			// StimSeq.shuffle(tgtSeq);
+			// runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
+
+			// Load from save file
+			blockName = "gold_40hz";
+			{
+				 BufferedReader is = new BufferedReader(new InputStreamReader(new FileInputStream(new File("stimSeq/"+blockName+".txt"))));
+				 ss = StimSeq.fromString(is);
+				 is.close();
+			}
+			// Play this sequence
 			StimSeq.shuffle(tgtSeq);
 			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 

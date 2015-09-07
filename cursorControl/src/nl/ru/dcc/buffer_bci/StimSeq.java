@@ -58,8 +58,9 @@ class StimSeq {
 		  }
 		  float [][]stimSeq = readArray(bufferedReader);
 		  if ( stimSeq.length<1 ){
-		  } else if ( stimSeq[0].length != tmpStimTime[0].length ) {
-				System.out.println("Mismatched lenghts of stimTime and stimSeq");
+		  } else if ( stimSeq.length != tmpStimTime[0].length ) {
+				System.out.println("Mismatched lengths of stimTime (1x" + tmpStimTime[0].length + ")" +
+										 " and stimSeq (" + stimSeq.length + "x" + stimSeq[0].length + ")");
 				throw new IOException("stimTime and stimSeq lengths unequal");
 		  }
 		  // All is good convert stimTimes to int vector and construct
@@ -176,13 +177,13 @@ class StimSeq {
 		  float[][] stimSeq=new float[nEvent][nSymb];
 		  
 		  // Make 2 LSFR's with the appropriate number of bits..
-		  int nBits = (int)Math.max(8,Math.floor(Math.log(nEvent)/Math.log(2))+1); // Min seq has 8 bits
+		  int nBits = (int)Math.max(8,Math.ceil(Math.log(nEvent+1)/Math.log(2))); // Min seq has 8 bits
 		  int mask  = 0; for ( int i=0; i<nBits; i++) mask|=1<<i;
 		  int taps1 = 0;
 		  int taps2 = 0;
 		  if ( nBits==8 ) {
-				taps1 = makeTaps(new int[]{7,6,5,0});     // magic: [8,7,6,1]
-				taps2 = makeTaps(new int[]{7,6,5,4,1,0}); // magic: [8,7,6,5,2,1]
+				taps1 = makeTaps(new int[]{7,6,5,4,1,0}); // magic: [8,7,6,5,2,1]
+				taps2 = makeTaps(new int[]{7,6,5,0});     // magic: [8,7,6,1]
 		  } else {
 				try { 
 					 taps1 = makeTaps(nBits); 
