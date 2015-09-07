@@ -2,10 +2,15 @@ package nl.ru.dcc.buffer_bci;
 /* ToDo:
  [] - eventSeq - include boolean eventSeq which says at which event times we should
                  send a stimulus event
- [] - StimSeq loader, to load a stimulus sequence from a inputstream
+ [X] - StimSeq loader, to load a stimulus sequence from a inputstream
  [] - StimSeqPSK - phase-shift keying, convert a direct stim-seq to one at
                    double the clock rate where 1->10, 0->01
 */ 
+
+import java.util.ArrayList;
+import java.io.BufferedReader;
+import java.io.IOException;
+
 
 class StimSeq {
 	 // [ nEvent x nSymb ] stimulus code for each time point for each stimulus
@@ -15,42 +20,56 @@ class StimSeq {
 	 public int[]     stimTime_ms=null; 
 	 public boolean[] eventSeq=null;
 
-	 public static void shuffle(int [] array){
-		  // utility function to shuffle elements in a raw array
-		  java.util.Random rgen = new java.util.Random();  // Random number generator 
-		  for (int i=0; i<array.length; i++) {
-				int randomPosition = rgen.nextInt(array.length);
-				int temp = array[i];
-				array[i] = array[randomPosition];
-				array[randomPosition] = temp;
-		  }		
-	 }
-
+	 //-----------------------------------------------------------------------------------
+	 // Constructor
 	 StimSeq(float [][]istimSeq, int[] istimTime_ms){ stimSeq=istimSeq; stimTime_ms=istimTime_ms; }
+
+	 //-----------------------------------------------------------------------------------
+	 // S T R I N G (to/from)
 	 public String toString(){
 		  return toString(stimSeq,stimTime_ms);
 	 }
 	 public static String toString(float [][]stimSeq, int[] stimTime_ms){
 		  String str=new String();
-		  str = str + "stimTimes : ";
+		  str = str + "# stimTimes : ";
 		  if ( stimSeq==null ) {
-				str += "<null>\n";
+				str += "<null>\n\n\n";
 		  }else{
-				for(int i=0;i<stimTime_ms.length;i++) str += stimTime_ms[i]+" ";
-				str += "\n"; 
+				str += "1x" +  stimTime_ms.length + "\n";
+				for(int i=0;i<stimTime_ms.length-1;i++) str += stimTime_ms[i]+"\t";
+				str += stimTime_ms[stimTime_ms.length-1] + "\n";
+				str += "\n\n"; // two new lines mark the end of the array
 		  }
-		  if ( stimTime_ms==null ) {
-				str += "stimSeq[]=<null>\n";
+		  if ( stimSeq==null ) {
+				str += "# stimSeq[]=<null>\n";
 		  } else {
-				for ( int ti=0; ti<stimSeq.length; ti++){ // time points
-					 str += "stimSeq[ " + ti + " ] = ";
-					 for(int i=0;i<stimSeq[ti].length;i++) str += stimSeq[ti][i] + " ";
-					 str += "\n";
-				}
+				str += "# stimSeq : " + stimSeq.length + "x" + stimSeq[0].length + "\n";
+				str += writeArray(stimSeq,false);
 		  }
 		  return str;
 	 }
-	 
+
+	 public static StimSeq fromString(BufferedReader bufferedReader) throws IOException {
+		  // Read the stimTimes_ms
+		  float [][]tmpStimTime = readArray(bufferedReader);
+		  if ( tmpStimTime.length>1 ) {
+				System.out.println("more than 1 row of stim Times?\n");
+				throw new IOException("Vector stim times expected");
+		  }
+		  float [][]stimSeq = readArray(bufferedReader);
+		  if ( stimSeq.length<1 ){
+		  } else if ( stimSeq[0].length != tmpStimTime[0].length ) {
+				System.out.println("Mismatched lenghts of stimTime and stimSeq");
+				throw new IOException("stimTime and stimSeq lengths unequal");
+		  }
+		  // All is good convert stimTimes to int vector and construct
+		  int[] stimTime_ms = new int[tmpStimTime[0].length];
+		  for ( int i=0; i<tmpStimTime[0].length; i++) stimTime_ms[i]=(int)tmpStimTime[0][i];
+		  return new StimSeq(stimSeq,stimTime_ms);
+	 }
+
+	 //-----------------------------------------------------------------------------------
+	 // S C A N
 	 public static StimSeq mkStimSeqScan(int nSymb, float seqDuration, float isi){
 		  int nEvent = (int)(seqDuration/isi)+1;
 		  int[] stimTime_ms=new int[nEvent];
@@ -88,6 +107,8 @@ class StimSeq {
 		  return new StimSeq(stimSeq,stimTime_ms);
 	 }
 
+	 //-----------------------------------------------------------------------------------
+	 // R A N D
 	 public static StimSeq mkStimSeqRand(int nSymb, float seqDuration, float isi){
 		  // make a basic sequence for all symbs to use collections shuffle
 		  int []perm = new int[nSymb]; for(int i=0; i<nSymb; i++) perm[i]=i;
@@ -106,6 +127,8 @@ class StimSeq {
 		  return new StimSeq(stimSeq,stimTime_ms);
 	 }
 
+	 //-----------------------------------------------------------------------------------
+	 // S S E P
 	 public static StimSeq mkStimSeqSSEP(int nSymb, float seqDuration, float isi, float[] period, float[] phase, boolean smooth){
 		  //N.B. period,phase as times in the same units as isi
 		  if ( phase==null ) phase=new float[nSymb];
@@ -129,6 +152,8 @@ class StimSeq {
 		  return new StimSeq(stimSeq,stimTime_ms);
 	 }
 
+	 //-----------------------------------------------------------------------------------
+	 // N O I S E sequences
 	 public static StimSeq mkStimSeqNoise(int nSymb, float seqDuration, float isi, float weight){
 		  int nEvent = (int)(seqDuration/isi)+1;
 		  int[] stimTime_ms = new int[nEvent];
@@ -143,6 +168,8 @@ class StimSeq {
 		  return new StimSeq(stimSeq,stimTime_ms);
 	 }
 
+	 //-----------------------------------------------------------------------------------
+	 // G O L D sequences
 	 public static StimSeq mkStimSeqGold(int nSymb, float seqDuration, float isi){
 		  int nEvent = (int)(seqDuration/isi)+1;
 		  int[] stimTime_ms = new int[nEvent];
@@ -243,4 +270,84 @@ class StimSeq {
 		  }     
 	 }
 
+	 //-------------------------------------------------------------------------------------------
+	 // Utiltity functions
+	 public static void shuffle(int [] array){
+		  // utility function to shuffle elements in a raw array
+		  java.util.Random rgen = new java.util.Random();  // Random number generator 
+		  for (int i=0; i<array.length; i++) {
+				int randomPosition = rgen.nextInt(array.length);
+				int temp = array[i];
+				array[i] = array[randomPosition];
+				array[randomPosition] = temp;
+		  }		
+	 }
+
+	 public static String writeArray(float [][]array, boolean incSize){
+		  String str=new String();
+		  if ( incSize ) {
+				str += "# size = " + array.length + "x" + array[0].length + "\n";
+		  }
+		  for ( int ti=0; ti<array.length; ti++){ // time points
+				for(int i=0;i<array[ti].length-1;i++) str += array[ti][i] + "\t";
+				str += array[ti][array[ti].length-1] + "\n";
+		  }
+		  str += "\n\n"; // two new-lines mark the end of the array
+		  return str;
+	 }
+ 
+	 public static float[][] readArray(BufferedReader bufferedReader) throws IOException {
+		  if ( bufferedReader == null ) {
+				System.out.println("could not allocate reader");
+				throw new IOException("Couldnt allocate a reader");
+		  }
+		  int width=-1;
+		  // tempory store for all the values loaded from file
+		  ArrayList<float[]> rows=new ArrayList<float[]>(10);
+		  String line;
+		  int nEmptyLines=0;
+		  System.out.println("Starting new matrix");
+		  while ( (line = bufferedReader.readLine()) != null ) {
+				// skip comment lines
+				if ( line == null || line.startsWith("#") ){
+					 continue;
+				} if ( line.length()==0 ) { // double empty line means end of this array
+					 nEmptyLines++;
+					 if ( nEmptyLines >1 && width>0 ) { // end of matrix by 2 empty lines
+						  System.out.println("Got 2 empty lines");
+						  break;
+					 } else { // skip them
+						  continue;
+					 }
+				}
+				System.out.println("Reading line " + rows.size());
+				
+				// split the line into entries on the split character
+				String[] values = line.split("[ ,	]"); // split on , or white-space
+				if ( width>0 && values.length != width ) {
+					 throw new IOException("Row widths are not consistent!");
+				} else if ( width<0 ) {
+					 width = values.length;
+				}					 
+				// read the row
+				float[] cols = new float[width]; // tempory store for the cols data
+				for ( int i=0; i<values.length; i++ ) {
+					 try { 
+						  cols[i] = Float.valueOf(values[i]);
+					 } catch ( NumberFormatException e ) {
+						  throw new IOException("Not a float number " + values[i]);
+					 }
+				}
+				// add to the tempory store
+				rows.add(cols);
+		  }
+		  if ( line==null ) System.out.println("line == null");
+		  
+		  if ( width<0 ) return null; // didn't load anything
+
+		  // Now put the data into an array
+		  float[][] array = new float[rows.size()][width];
+		  for ( int i=0; i<rows.size(); i++) array[i]=rows.get(i);
+		  return array;
+    }
 };
