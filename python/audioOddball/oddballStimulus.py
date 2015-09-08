@@ -27,6 +27,7 @@ sequence_duration         = 15
 inter_stimulus_interval   = .3
 target_to_target_interval = 1
 baseline_duration         = 3
+sequences_for_break       = 3
 
 
 ## END OF CONFIGURABLE VARIABLES
@@ -34,7 +35,6 @@ import pygame, sys
 from random import shuffle, randint
 from time import sleep, time
 from pygame.locals import *
-from math import ceil
 import os
 sys.path.append(bufferpath)
 import FieldTrip
@@ -81,7 +81,7 @@ def close():
     sys.exit()
     
 def playSingleStimulus(i):
-    sendEvent("stimulus.online.play", str(i))
+    sendEvent("stimulus.online.play", names[i])
     stimulusChan.play(sounds[i])
     # wait for the audio to finish
     while stimulusChan.get_busy()>0 : 
@@ -163,7 +163,7 @@ def doTraining():
       # run with given parameters, and max audio difference
       runTrainingEpoch(i,sequence_duration,inter_stimulus_interval,target_to_target_interval,
                        0,nrStimuli-1)
-      if (i == ceil(number_of_epochs/2)):
+      if i == sequences_for_break:
           updateframe(["Long Break","Press space to continue"])
           waitForSpaceKey()
       elif i!= number_of_epochs:
