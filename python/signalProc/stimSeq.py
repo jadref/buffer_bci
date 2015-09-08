@@ -1,7 +1,7 @@
 from random import shuffle, randint
 from math import ceil
 
-class stimSeq :
+class stimseq :
     stimSeq     = None # [ nEvent x nSymb ] stimulus code for each time point for each stimulus
     stimTime_ms = None # time stim i ends, i.e. stimulus i is on screen from stimTime_ms[i-1]-stimTime_ms[i]
     eventSeq    = None # events to send at each stimulus point
@@ -45,7 +45,7 @@ class stimSeq :
         stimSeq     = [[None]*nSymb for i in range(nEvent)]
         for ei in range(nEvent):
             stimSeq[ei][ei%nSymb]=1
-        return stimSeq(stimTime_ms,stimSeq)
+        return StimSeq(stimTime_ms,stimSeq)
     
     @staticmethod        
     def mkStimSeqRand(nSymb, seqDuration, isi):

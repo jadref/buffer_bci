@@ -2,6 +2,8 @@
 ## CONFIGURABLE VARIABLES
 # Path of the folder containing the buffer client
 bufferpath = "../../dataAcq/buffer/python"
+sigProcPath = "../signalProc"
+
 # Connection options of fieldtrip, hostname and port of the computer running the fieldtrip buffer.
 hostname='localhost'
 port=1972
@@ -18,27 +20,26 @@ number_of_stimuli = 6
 #The number of times to repeat each stimulus in a training sequence
 number_of_repeats = 3
 
-#The maximum number of lowered stimuli in a training sequence
-max_lowered = 3
-full_vol    = 1
-lowered_vol = .5
-
 # set to true for keyboard control of the experimental progression
 keyboard = True
 
-inter_stimulus_interval = .2
-baseline_duration       = 3
+sequence_duration         = 15
+inter_stimulus_interval   = .3
+target_to_target_interval = 1
+baseline_duration         = 3
+
 
 ## END OF CONFIGURABLE VARIABLES
-
 import pygame, sys
 from random import shuffle, randint
-from time import sleep
+from time import sleep, time
 from pygame.locals import *
-sys.path.append(bufferpath)
-import FieldTrip
 from math import ceil
 import os
+sys.path.append(bufferpath)
+import FieldTrip
+sys.path.append(sigProcPath)
+import stimseq
 
 ## HELPER FUNCTIONS
 
@@ -87,68 +88,54 @@ def playSingleStimulus(i):
         sleep(0.1);
     sendEvent("stimulus.online", "end", 0)
 
-def runTrainingEpoch(nEpoch, nRep=3, maxLowered=3):
+def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
     dobreak(baseline_duration, ["Get Ready"]+["Training Epoch " + str(nEpoch)])
     updateframe("+", True)
 
     ## Set up training sequence
-    set_sequence = range(0,number_of_stimuli)
-    shuffle(set_sequence)
-    ## number of the stimuli which have reduced volume (for the user task)
-    nr_lowered = randint(0,maxLowered)
-    ## quiet stimuli are in same order after the loud stimuli
-    low_sequence = [True]*nr_lowered + [False]*(number_of_stimuli - nr_lowered)
-    shuffle(low_sequence)
+    ss = stimseq.StimSeq.mkStimSeqOddball(1,seqDur,isi,tti)
     
-    stimulus_sequence = list()
-    tgt_sequence      = list()
-    # add the repetitions for the stimuli, and the quiet ones if needed
-    for i in range(0,len(set_sequence)):
-    	stimulus_sequence += [set_sequence[i]]*nRep # duplicate the stimulus nRep times
-        tmp = [False]*nRep # default to no-quiet
-    	if low_sequence[i]: # randomly choose the position to put the quiet one
-            if len(tmp)==1 :   tmp[0]=True
-            elif len(tmp)==2 : tmp[1]=True
-            else:              tmp[randint(1,len(tmp)-1)]=True # rand but not in 1st position
-        tgt_sequence      += tmp 
-    
+    ## get num targets
+    nTgt=0; 
+    for s in ss.stimSeq: nTgt+= 1 if s[0]==1 else 0
+
     # play the stimulus sequence
     sendEvent("stimulus.trial", "start")
-    sendEvent("stimulus.numTargets", nr_lowered)
-    for i in range(0,len(stimulus_sequence)):
-        audioID = stimulus_sequence[i]
-        tgt     = tgt_sequence[i]
-        print(str(i) + ") aud=" + str(audioID) + " tgt=" + str(tgt)) # logging info
+    sendEvent("stimulus.numTargets", nTgt)
+    
+    t0=time()
+    for ei in range(0,len(ss.stimTime_ms)):
+        st  = ss.stimTime_ms[ei]
+        ssi = ss.stimSeq[ei]
+        tgt = ssi[0]==1
+        audioID = tgtID if tgt else distID
 
-        if tgt == False:          stimulusChan.set_volume(full_vol)  # full volume for non-targets
-        else:                     stimulusChan.set_volume(lowered_vol) # reduce volume for targets
-        
+        #print(str(time()-t0) + ") tn= " + str(st/1000) + " ttg=" + str((t0+st/1000)-time()))
+        sleep((t0+st/1000)-time()) # sleep until we should play this sound
         # send events as close in time as possible to when the actual stimulus starts
         sendEvent("stimulus.target", tgt)   # target/non-target
-        sendEvent("stimulus.play", audioID) # which stimulus
+        sendEvent("stimulus.play", names[audioID]) # which stimulus
         stimulusChan.play(sounds[audioID])
-        # wait audio to finish before starting the next one
-        while stimulusChan.get_busy()>0 : 
-            sleep(0.01);    
-        # wait requested inter-stimulus interval
-        if inter_stimulus_interval > 0 : sleep(inter_stimulus_interval)
 
     # get user count of targets
     sleep(0.5)
-    getFeedback(number_of_stimuli,nr_lowered)
+    getFeedback(int(len(ss.stimTime_ms)/2),nTgt)
     sendEvent("stimulus.trail","end")
 
 def getFeedback(maxLowered,trueLowered):
 	updateframe(["How many lowered volume fragments?", "0-" + str(maxLowered)], False)
-	key = waitForKey()
-	while not key in numKeyDict:
-            key = waitForKey()
-        respLowered=int(str(numKeyDict[key]))
+        key=[None]*2
+        for i in range(2):
+            key[i] = waitForKey()
+            while not key[i] in numKeyDict:
+                key[i] = waitForKey()
+        respLowered=int(str(numKeyDict[key[0]]))*10 + int(str(numKeyDict[key[1]]))
 	sendEvent("response.numTargets", respLowered)
         fbStr = [];
         if respLowered == trueLowered: fbStr += ["Correct!"]
         else:                          fbStr += ["Wrong!"]
-        updateframe(fbStr + ["True lowered fragments = " + str(trueLowered)])
+        updateframe(fbStr + ["Response = " + str(respLowered)] 
+                    + ["True lowered fragments = " + str(trueLowered)])
         sleep(1)
     
 def dobreak(n, message):
@@ -173,7 +160,9 @@ def showKeyboardInstructions():
 
 def doTraining():
   for i in range(1,(number_of_epochs+1)):
-      runTrainingEpoch(i,number_of_repeats,max_lowered)
+      # run with given parameters, and max audio difference
+      runTrainingEpoch(i,sequence_duration,inter_stimulus_interval,target_to_target_interval,
+                       0,nrStimuli-1)
       if (i == ceil(number_of_epochs/2)):
           updateframe(["Long Break","Press space to continue"])
           waitForSpaceKey()
@@ -276,9 +265,9 @@ pygame.display.set_caption('BCI Music Experiment')
 ## LOADING GLOBAL VARIABLES
 
 # Pre-Loading Music data
-names     = ['500' '505' '510' '515' '520' '525' '530' '535' '540' '545' '550'];
-nrStimuli = len(stimFiles);
-sounds = map(lambda i: pygame.mixer.Sound("stimuli/" + names(i) + ".wav"), range(1,nrStimuli+1))
+names     = ['500', '505', '510', '515', '520', '525', '530', '535', '540', '545', '550']
+nrStimuli = len(names)
+sounds = map(lambda i: pygame.mixer.Sound("stimuli/" + names[i] + ".wav"), range(0,nrStimuli))
 
 # set up the colors
 BLACK = (0, 0, 0)
