@@ -33,52 +33,59 @@ class stimSeq :
         str+="\n\n"
         return str
 
-    def fromString(self, str):
+    @staticmethod
+    def fromString(str):
         raise("Error not defined yet")
+        return stimSeq()
 
-    def mkStimSeqScan(self, nSymb, seqDuration, isi):
+    @staticmethod
+    def mkStimSeqScan(nSymb, seqDuration, isi):
         nEvent = seqDuration/isi + 1
-        self.stimTime_ms = [ (ei+1)*1000.0*isi for ei in range(nEvent) ]
-        self.stimSeq     = [[None]*nSymb for i in range(nEvent)]
+        stimTime_ms = [ (ei+1)*1000.0*isi for ei in range(nEvent) ]
+        stimSeq     = [[None]*nSymb for i in range(nEvent)]
         for ei in range(nEvent):
-            self.stimSeq[ei][ei%nSymb]=1
-        return self
-            
-    def mkStimSeqRand(self, nSymb, seqDuration, isi):
+            stimSeq[ei][ei%nSymb]=1
+        return stimSeq(stimTime_ms,stimSeq)
+    
+    @staticmethod        
+    def mkStimSeqRand(nSymb, seqDuration, isi):
         perm = [i for i in range(nSymb)] # pre-alloc order for later shuffle
         nEvent=seqDuration/isi + 1
-        self.stimTime_ms = [ (ei+1)*1000.0*isi for ei in range(nEvent) ]
-        self.stimSeq     = [[None]*nSymb for i in range(nEvent)]
+        stimTime_ms = [ (ei+1)*1000.0*isi for ei in range(nEvent) ]
+        stimSeq     = [[None]*nSymb for i in range(nEvent)]
         for ri in range(0,nEvent,nSymb):
             shuffle(perm)
             for ei in range(nSymb):
-                self.stimSeq[ri+ei][perm[ei]]=1
-        return self
+                stimSeq[ri+ei][perm[ei]]=1
+        return stimSeq(stimTime_ms,stimSeq)
 
-    def mkStimSeqOddball(self, nSymb, seqDuration, isi, tti=None, distractor=False):
+    @staticmethod
+    def mkStimSeqOddball(nSymb, seqDuration, isi, tti=None, distractor=False):
         nEvent=seqDuration/isi + 1
         tti_ev      = tti/isi # ave num events between targets
-        self.stimTime_ms = [ (ei+1)*1000.0*isi for ei in range(nEvent) ]
-        self.stimSeq     = [[None]*nSymb for i in range(nEvent)]
+        stimTime_ms = [ (ei+1)*1000.0*isi for ei in range(nEvent) ]
+        stimSeq     = [[None]*nSymb for i in range(nEvent)]
 
         for ei in range(nSymb):
             si= 1+random.random()*tti_ev # last stimulus time
             for ri in range(0,nEvent):
-                self.stimSeq[ri][ei] = 0
+                stimSeq[ri][ei] = 0
                 if ri==int(si) :
-                    self.stimSeq[ri][ei] = 1
+                    stimSeq[ri][ei] = 1
                     si = si + tti_ev*(.5 + random.random()) # step [.5-1.5]*tti
-        return self
+        return stimSeq(stimTime_ms,stimSeq)
                 
-    def mkStimSeqNoise(self, nSymb, seqDuration, isi, weight=.5):
+
+    @staticmethod
+    def mkStimSeqNoise(nSymb, seqDuration, isi, weight=.5):
         nEvent=seqDuration/isi + 1
-        self.stimTime_ms = [ (ei+1)*1000.0*isi for ei in range(nEvent) ]
-        self.stimSeq     = [[None]*nSymb for i in range(nEvent)]
+        stimTime_ms = [ (ei+1)*1000.0*isi for ei in range(nEvent) ]
+        stimSeq     = [[None]*nSymb for i in range(nEvent)]
         for ei in range(nEvent):
             for si in range(nSymb):
                 if random.random() > weight :
-                    self.stimSeq[ei][si]=1
-        return self
+                    stimSeq[ei][si]=1
+        return stimSeq(stimTime_ms,stimSeq)
 
 
 # testcase code
