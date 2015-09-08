@@ -1,20 +1,21 @@
+package nl.dcc.buffer_bci;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.SourceDataLine;
 
-public class soundline {
+public class SoundLine {
 	 AudioFormat audioFormat=null;
 	 SourceDataLine soundLine=null;
 	 int nbytes=2;
 	 long sampleRate=2000;
 	 byte[] audBuf=null;
 	 
-	 public soundline(int sr,int bufferSize, int nbytes) throws Exception {		  
+	 public SoundLine(int sr,int bufferSize, int nbytes) throws Exception {		  
 		  init(sr,bufferSize,nbytes);
 	 }
-	 public soundline(double sr,double bufferSize, double nbytes) throws Exception {		  
+	 public SoundLine(double sr,double bufferSize, double nbytes) throws Exception {		  
 		  init((int)sr,(int)bufferSize,(int)nbytes);
 	 }
 

@@ -92,7 +92,7 @@ if ( isempty(soundLine) || ~isempty(opts.soundLine) ) % make a new one if wanted
   soundLine = opts.soundLine; % use old soundline if available
   if ( isempty(soundLine) ) 
 	 javaaddpath(fileparts(mfilename('fullpath'))); % add this directory to java path
-	 soundLine = javaObject('soundline',opts.audiofs,audioStep*4,nbytes); % creat the playback object
+	 soundLine = javaObject('SoundLine',opts.audiofs,audioStep*4,nbytes); % creat the playback object
   end
 end
 soundLine.start();
