@@ -1,2 +1,2 @@
 call ..\utilities\findMatlab.bat
-start "matlab" %matexe% -nodesktop -nosplash -minimize -singleCompThread -r "startNFSigProc();quit;"
+echo "startNFSigProc();quit;" | %matexe% %matopts%

@@ -68,6 +68,18 @@ function [clsfr]=train_nf_clsfr(trlen_ms,nfParams,varargin)
 %           |.windowFn -- [float] window used in frequency domain transformation (ERsP only)
 %           |.welchAveType -- [str] type of averaging used in frequency domain transformation (ERsP only)
 %           |.freqIdx     -- [2x1] range of frequency to keep  (ERsP only)
+%
+% Examples:
+%  % 1) build a processing pipe for 2 outputs for alpha power from channels 1 and channel 2
+%  %    where we use 2hz bins for the power computation
+%  clsfr=train_nf_clsfr(1000,struct('label',{'a1' 'a2'},'freqband',[8 12],'electrodes',{1 2}),...
+%                       'fs',hdr.fSample,'width_ms',500)
+%  % 2) build a single processing pipeline which outputs the average alpha power over electrodes
+%  %    FP1 and FP2 from the given channel names.
+%  %    N.B. Note the use of a double nested struct {{}} in the struct creation to prevent 
+%  %         making a two element struct array.
+%  clsfr=train_nf_clsfr(1000,struct('label','alpha','freqband',[8 12],'electrodes',{{'FP1' 'FP2'}}),...
+%                       'fs',hdr.fSample,'ch_names',hdr.labels);
 opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],...
             'width_ms',250,'windowType','hanning','aveType','amp',...
             'downsample',[],'detrend',1,'spatialfilter','car',...
@@ -89,7 +101,9 @@ if ( isempty(ch_pos) && ~isempty(opts.capFile) && (~isempty(ch_names) || opts.ov
     ch_pos=[];
   end
 end
+if(isempty(ch_names)) error('No channel information given.... must specify ch_names or capFile'); end;
 fs=opts.fs; if ( isempty(fs) ) warning('No sampling rate specified... assuming fs=250'); fs=250; end;
+
 
 % convert from time in _ms to time in samples
 trlen_samp = round(trlen_ms/1000 * fs);
@@ -243,3 +257,16 @@ clsfr.badtrthresh = [];
 clsfr.badchthresh = []; 
 clsfr.dvstats     = [];
 return;
+%------------------------------------------------------------------------------------
+
+function testCase()
+% 1) build a processing pipe for 2 outputs for alpha power from channels 1 and channel 2
+%    where we use 2hz bins for the power computation
+clsfr=train_nf_clsfr(1000,struct('label',{'a1' 'a2'},'freqband',[8 12],'electrodes',{1 2}),...
+                     'fs',hdr.fSample,'width_ms',500)
+% 2) build a single processing pipeline which outputs the average alpha power over electrodes
+%    FP1 and FP2 from the given capfile.
+%    N.B. Note the use of a double nested struct {{}} in the struct creation to prevent 
+%         making a two element struct array.
+clsfr=train_nf_clsfr(1000,struct('label','alpha','freqband',[8 12],'electrodes',{{'FP1' 'FP2'}}),...
+							'fs',hdr.fSample,'ch_names',hdr.labels);

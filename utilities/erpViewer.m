@@ -19,7 +19,11 @@ function [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin);
 %  capFile   - [str] cap file to use to position the electrodes     ([])
 %  welch_width_ms - [float] width of window to use for spectral analysis  (500)
 %  sigProcOptsGui -- [bool] show the GUI to set signal processing options (true) 
-opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,'nSymbols',0,...
+%  maxEvents - [int] maximume number of events to store             (inf)
+%                >1 - moving window ERP
+%                0<maxEvents<1 - exp decay moving average rate to use
+opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,...
+				'nSymbols',0,'maxEvents',[],...
 				'trlen_ms',1000,'trlen_samp',[],'offset_ms',[],'offset_samp',[],...
 				'detrend',1,'fftfilter',[],'freqbands',[],'downsample',128,'spatfilt','car',...
 				'badchrm',0,'badchthresh',3,'badtrthresh',3,...
@@ -30,7 +34,7 @@ if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
 if ( isempty(opts.freqbands) && ~isempty(opts.fftfilter) ) opts.freqbands=opts.fftfilter; end;
 if ( isstr(opts.endType) ) opts.endType={opts.endType}; end;
-
+wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ); run(fullfile(fileparts(mfilename('fullpath')),'../utilities/initPaths.m')); end;
 if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics facility
   if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
     graphics_toolkit('qthandles'); % use fast rendering library
@@ -57,7 +61,8 @@ ch_names=hdr.channel_names; ch_pos=[]; iseeg=true(numel(ch_names),1);
 % get capFile info for positions
 capFile=opts.capFile; overridechnms=opts.overridechnms; 
 if(isempty(opts.capFile)) 
-  [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); drawnow;
+  [fn,pth]=uigetfile(fullfile(fileparts(mfilename('fullpath')),'../utilities/*.txt'),'Pick cap-file');
+  drawnow;
   if ( ~isequal(fn,0) ) capFile=fullfile(pth,fn); end;
   %if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
 end
@@ -233,9 +238,12 @@ while ( ~endTraining )
         updateLines(mi)=true;
       
         % store the 'raw' data
-        nTarget=nTarget+1;
-        rawIds(nTarget)=mi;
-        rawEpochs(:,:,nTarget) = datai(ei).buf(iseeg,:);      
+		  nTarget=nTarget+1;
+		  if ( nTarget < maxEvents ) insertIdx=nTarget; % insert at end
+		  else                       insertIdx=mod(nTarget,maxEvents)+1; % insert in circular buffer
+		  end
+		  rawIds(insertIdx)=mi;
+		  rawEpochs(:,:,insertIdx) = datai(ei).buf(iseeg,:);      
       end
     end
 

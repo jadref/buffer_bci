@@ -8,10 +8,6 @@ if [ `uname -s` == 'Linux' ]; then
     else
 		  arch='glnx86';
    fi
-
-	echo Sorry Linux isnt supported yet!
-	kill %1 # kill the background java job
-	exit -1	 	 
 else # Mac
 	 arch='maci'
 fi
@@ -29,6 +25,9 @@ fi
 if [ ${arch} == 'maci' ]; then
 	# Argh: on mac need to ensure can find the libraries that muse-io depends on
    export DYLD_LIBRARY_PATH=${buffexe%/*}:$DYLD_LIBRARY_PATH
+else
+   # Argh: on linux also need the libraries that muse-io depends on
+   export LD_LIBRARY_PATH=${buffexe%/*}:$LD_LIBRARY_PATH
 fi
 
 # 1) run the OSC -> ft_buffer converter with parameters for the MUSE  !in the background!
@@ -40,7 +39,7 @@ trap 'kill %1' SIGTERM SIGINT SIGHUP
 
 # 2) run the muse-io driver, by default search for device with name muse
 #oscdevice=ffc3
-$buffexe --preset ab --osc osc.udp://localhost:$oscport
+$buffexe --preset ab --osc osc.udp://localhost:$oscport --50hz $@
 if [ $? -ne 0 ]; then
 	 echo "Error couldn't connect to the MUSE"
 	 kill %1 # kill the background java job

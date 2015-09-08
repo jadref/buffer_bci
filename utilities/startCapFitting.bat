@@ -1,2 +1,2 @@
 call ..\utilities\findMatlab.bat
-echo capFitting | %matexe%
+echo capFitting | %matexe% %matopts%

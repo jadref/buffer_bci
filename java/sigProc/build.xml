@@ -1,0 +1,73 @@
+<project name="nl.dcc.buffer_bci" basedir="." default="main">
+  
+  <!-- Set the default java version to 1.5 to maximise compatability over OS/versions -->
+  <property name="ant.build.javac.source" value="1.5"/>
+  <property name="ant.build.javac.target" value="1.5"/>
+
+    <property name="src.dir"     value="."/>
+    <property name="build.dir"   value="build"/>
+    <property name="classes.dir" value="${build.dir}/classes"/>
+    <property name="jar.dir"     value="${build.dir}/jar"/>
+
+	 <!-- Any library jar's we depend on? -->
+	 <property name="lib.dir"     value="lib"/>
+    <path id="classpath">
+        <fileset dir="${lib.dir}" includes="**/*.jar"/>
+    </path>
+
+    <target name="compile">
+        <mkdir dir="${classes.dir}"/>
+        <mkdir dir="${lib.dir}"/>
+        <javac srcdir="${src.dir}" 
+					destdir="${classes.dir}" 
+					classpathref="classpath" 
+					debug="on"
+					debuglevel="lines,vars,source"/>
+	 </target>
+
+    <target name="jar" depends="compile">
+        <mkdir dir="${jar.dir}"/>
+        <jar destfile="${jar.dir}/MatrixAlgebra.jar">
+			 <fileset dir="${classes.dir}" includes="**/matrixalgebra/**/*.class"/>
+			 <fileset dir="${src.dir}/MatrixAlgebra" includes="**/*.java"/>
+			 <fileset dir="${lib.dir}" includes="**/*.jar"/>
+        </jar>
+		  
+        <jar destfile="${jar.dir}/ContinuousClassifier.jar">
+			 <fileset dir="${classes.dir}" includes="**/*.class"/>
+			 <fileset dir="${src.dir}" includes="**/*.java"/>
+			 <fileset dir="${lib.dir}" includes="**/*.jar"/>
+          <manifest>
+            <attribute name="Main-Class" value="${ant.project.name}.signalprocessing.ContinuousClassifier"/>
+          </manifest>
+        </jar>
+        <jar destfile="${jar.dir}/FilePlayback.jar">
+			 <fileset dir="${classes.dir}" includes="**/FilePlayback.class"/>
+			 <fileset dir="${src.dir}" includes="FilePlayback.java"/>
+			 <fileset dir="${lib.dir}" includes="**/BufferClient.jar"/>
+          <manifest>
+            <attribute name="Main-Class" value="${ant.project.name}.FilePlayback"/>
+          </manifest>
+        </jar>
+    </target>
+
+	 <target name="dist" depends="jar">
+		<copy file="${jar.dir}/ContinuousClassifier.jar" todir="."/>
+		<copy file="${jar.dir}/MatrixAlgebra.jar" todir="."/>
+	 </target>
+
+    <target name="run" depends="jar">
+      <java fork="false" classname="${ant.project.name}.signalprocessing.ContinuousClassifier">
+        <classpath>
+			 <path refid="classpath"/>
+			 <path location="${jar.dir}/ContinuousClassifier.jar"/>
+        </classpath>
+		  <arg line="localhost 1972 1000 res/sigproxy_alphaW.csv"/>
+      </java>
+    </target>
+
+    <target name="clean">   <delete dir="${build.dir}"/>  </target>
+    <target name="build" depends="jar"/>
+    <target name="clean-build" depends="clean,build"/>
+    <target name="main" depends="build,dist"/>
+</project>
