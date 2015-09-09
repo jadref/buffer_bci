@@ -31,9 +31,9 @@ sequences_for_break       = 3
 
 ## END OF CONFIGURABLE VARIABLES
 import pygame, sys
+from pygame.locals import *
 from random import shuffle, randint
 from time import sleep, time
-from pygame.locals import *
 from pyaudio import PyAudio
 import wave
 sys.path.append(bufferpath)
@@ -125,20 +125,20 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
     sendEvent("stimulus.trail","end")
 
 def getFeedback(maxLowered,trueLowered):
-	updateframe(["How many lowered volume fragments?", "0-" + str(maxLowered)], False)
-        key=[None]*2
-        for i in range(2):
+    updateframe(["How many lowered volume fragments?", "0-" + str(maxLowered)], False)
+    key=[None]*2
+    for i in range(2):
+        key[i] = waitForKey()
+        while not key[i] in numKeyDict:
             key[i] = waitForKey()
-            while not key[i] in numKeyDict:
-                key[i] = waitForKey()
-        respLowered=int(str(numKeyDict[key[0]]))*10 + int(str(numKeyDict[key[1]]))
-	sendEvent("response.numTargets", respLowered)
-        fbStr = [];
-        if respLowered == trueLowered: fbStr += ["Correct!"]
-        else:                          fbStr += ["Wrong!"]
-        updateframe(fbStr + ["Response = " + str(respLowered)] 
+    respLowered=int(str(numKeyDict[key[0]]))*10 + int(str(numKeyDict[key[1]]))
+    sendEvent("response.numTargets", respLowered)
+    fbStr = [];
+    if respLowered == trueLowered: fbStr += ["Correct!"]
+    else:                          fbStr += ["Wrong!"]
+    updateframe(fbStr + ["Response = " + str(respLowered)] 
                     + ["True lowered fragments = " + str(trueLowered)])
-        sleep(1)
+    sleep(1)
     
 def dobreak(n, message):
     while n > 0:
@@ -228,20 +228,20 @@ ftc = FieldTrip.Client()
 # Wait until the buffer connects correctly and returns a valid header
 hdr = None;
 while hdr is None :
-    print 'Trying to connect to buffer on %s:%i ...'%(hostname,port)
+    print('Trying to connect to buffer on %s:%i ...'%(hostname,port))
     try:
         ftc.connect(hostname, port)
-        print '\nConnected - trying to read header...'
+        print ('\nConnected - trying to read header...')
         hdr = ftc.getHeader()
     except IOError:
         pass
 
     if hdr is None:
-        print 'Invalid Header... waiting'
+        print ('Invalid Header... waiting')
         sleep(1)
     else:
-        print hdr
-        print hdr.labels
+        print (hdr)
+        print (hdr.labels)
   
 fSample = hdr.fSample
 

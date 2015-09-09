@@ -1,2 +1,2 @@
-call ..\utilities\findMatlab.bat
-echo runImageSalience;quit; | %matexe% %matopts%
+call ..\..\utilities\findMatlab.bat
+echo runImageSalience | %matexe% %matopts%

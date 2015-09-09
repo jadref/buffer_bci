@@ -1,3 +1,3 @@
 set batdir=%~dp0
-
-python.exe mbrStimulus.py
+call ../../utilities/findPython.bat
+%pythonexe% oddballStimulus.py
