@@ -32,19 +32,19 @@ sequences_for_break       = 3
 
 ## END OF CONFIGURABLE VARIABLES
 import pygame, sys
+from pygame.locals import *
 from random import shuffle, randint
 from time import sleep, time
-from pygame.locals import *
 import os
-sys.path.append(bufferpath)
+sys.path.append(os.path.dirname(__file__) + bufferpath)
 import FieldTrip
-sys.path.append(sigProcPath)
+sys.path.append(os.path.dirname(__file__) + sigProcPath)
 import stimseq
 
 ## HELPER FUNCTIONS
 
 
-def updateframe(string, big=False):
+def updateframe(string, big=False, center=False):
     if type(string) is not list:
         string = [string]
 
@@ -64,7 +64,7 @@ def updateframe(string, big=False):
     # move the text to the center and draw onto the screen
     for t in text:
         textRect = t.get_rect()
-        textRect.centerx = windowSurface.get_rect().centerx
+        if center: textRect.centerx = windowSurface.get_rect().centerx
 
         textRect.centery = windowSurface.get_rect().centery - offset
         offset -= textRect.h
@@ -74,7 +74,7 @@ def updateframe(string, big=False):
 
     # draw the window onto the screen
     pygame.display.update()
-
+    pygame.display.update()
 
 def close():
     pygame.quit()
@@ -90,7 +90,7 @@ def playSingleStimulus(i):
 
 def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
     dobreak(baseline_duration, ["Get Ready"]+["Training Epoch " + str(nEpoch)])
-    updateframe("+", True)
+    updateframe("+", True, True)
 
     ## Set up training sequence
     ss = stimseq.StimSeq.mkStimSeqOddball(1,seqDur,isi,tti)
@@ -140,7 +140,7 @@ def getFeedback(maxLowered,trueLowered):
     
 def dobreak(n, message):
     while n > 0:
-        updateframe(message + [" "] + [str(n)])
+        updateframe(message + [" "] + [str(n)],False,True)
         sleep(0.1)
         n -= 0.1
 
@@ -148,17 +148,22 @@ def showInstructions():
   instructions = ["The training phase of the experiment will last about " + str(number_of_epochs) + " minutes.",
                   "About once every minute there will be a short break.",
                   "During training please focus on the spot on the screen",
-                  "and try not to blink.","Press key to continue."]
+                  "and try to count the number of 'odd' sounds you hear.",
+                  "Try not to blink!","","Press key to continue."]
 
-  updateframe(instructions)
+  updateframe(instructions,False,False)
   waitForKey()
 
 def showKeyboardInstructions():
-    instructions=["Press:", " i - show expt instructions"," t - run training loop"," c - close", " 1..7 - play stimulus 1..7"]
+    instructions=["Press:", " i - show expt instructions"," e - show eeg Viewer"," t - run training loop"," q - quit", " 1..7 - play stimulus 1..7"]
     updateframe(instructions)
 
+def showeeg():
+    sendEvent('runPhase.cmd','eegviewer')
 
 def doTraining():
+  sendEvent('runPhase.cmd','erpvis')
+  sendEvent('stimulus.training','start')
   for i in range(1,(number_of_epochs+1)):
       # run with given parameters, and max audio difference
       runTrainingEpoch(i,sequence_duration,inter_stimulus_interval,target_to_target_interval,
@@ -171,6 +176,7 @@ def doTraining():
 
   updateframe("Training Finished")
   sleep(2)
+  sendEvent('erpvis','end')
   sendEvent('stimulus.training','end')
   
 def waitForSpaceKey():
@@ -260,7 +266,7 @@ if fullscreen:
 else:
   windowSurface = pygame.display.set_mode((640,480),  1, 32)
   
-pygame.display.set_caption('BCI Music Experiment')
+pygame.display.set_caption('BCI Audio OddBall Experiment')
 
 ## LOADING GLOBAL VARIABLES
 
@@ -284,16 +290,20 @@ numKeyDict = {K_0 : 0, K_1 : 1, K_2 : 2, K_3 : 3, K_4 : 4, K_5 : 5, K_6 : 6, K_7
 
 actions = dict()
 
+actions["showeeg"] = showeeg
 actions["showinstructions"] = showInstructions
 actions["starttraining"] =  doTraining
 actions["close"] = close
+actions["quit"] = close
 actions["stimulus"] = lambda x: playStimulus(x)
 
 actions_key = dict()
 
+actions_key[K_e] = showeeg
 actions_key[K_i] = showInstructions
 actions_key[K_t] = doTraining
 actions_key[K_c] = close
+actions_key[K_q] = close
 actions_key[K_s] = lambda: playSingleStimulus(0)
 actions_key[K_1] = lambda: playSingleStimulus(0)
 actions_key[K_2] = lambda: playSingleStimulus(1)
