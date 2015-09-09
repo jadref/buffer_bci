@@ -105,10 +105,13 @@ if(~isempty(opts.downsample)) % update the plotting info
 end;
 
 % recording the ERP data
+maxEvents = opts.maxEvents;
 key      = {};
 label    = {};
 nCls     = opts.nSymbols;
-rawEpochs= zeros(sum(iseeg),outsz(1)); % stores the raw data
+if ( ~isempty(maxEvents) )  rawEpochs= zeros(sum(iseeg),outsz(1),maxEvents); % stores the raw data
+else                        rawEpochs= zeros(sum(iseeg),outsz(1),40); 
+end
 rawIds   = 0;
 nTarget  = 0;
 erp      = zeros(sum(iseeg),outsz(2),max(1,nCls)); % stores the pre-proc data used in the figures
@@ -164,6 +167,8 @@ end
 
 % pre-call buffer_waitData to cache its options
 [datai,deventsi,state,waitDatopts]=buffer_waitData(buffhost,buffport,[],'startSet',{opts.cuePrefix},'trlen_samp',trlen_samp,'offset_samp',offset_samp,'exitSet',{opts.redraw_ms 'data' opts.endType{:}},'verb',opts.verb,varargin{:},'getOpts',1);
+
+fprintf("Waiting for events of type: %s\n",opts.cuePrefix);
 
 endTraining=false;
 while ( ~endTraining )
@@ -239,8 +244,10 @@ while ( ~endTraining )
       
         % store the 'raw' data
 		  nTarget=nTarget+1;
-		  if ( nTarget < maxEvents ) insertIdx=nTarget; % insert at end
-		  else                       insertIdx=mod(nTarget,maxEvents)+1; % insert in circular buffer
+		  if ( isempty(maxEvents) || nTarget < maxEvents ) 
+			 insertIdx=nTarget;  % insert at end
+		  else                       
+			 insertIdx=mod(nTarget,maxEvents)+1; % ring buffer
 		  end
 		  rawIds(insertIdx)=mi;
 		  rawEpochs(:,:,insertIdx) = datai(ei).buf(iseeg,:);      

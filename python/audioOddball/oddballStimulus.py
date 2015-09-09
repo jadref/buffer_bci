@@ -123,7 +123,7 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
     sendEvent("stimulus.trail","end")
 
 def getFeedback(maxLowered,trueLowered):
-    updateframe(["How many lowered volume fragments?", "0-" + str(maxLowered)], False)
+    updateframe(["How many 'odd' beeps?", "0-" + str(maxLowered)], False)
     key=[None]*2
     for i in range(2):
        key[i] = waitForKey()
