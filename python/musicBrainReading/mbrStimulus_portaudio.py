@@ -10,7 +10,7 @@ port=1972
 fullscreen = False #True
 
 #The default number of epochs.
-number_of_epochs = 7
+number_of_epochs = 14
 
 #The number of stimuli to play.
 number_of_stimuli = 6
@@ -300,7 +300,7 @@ names = ["Nutcracker Suite: March (Tchaikovsky)",
          "Erkilet Guzeli"]
 
 # Opening Audio Stream
-
+pygame.init()
 stream = p.open(format=p.get_format_from_width(wf[0].getsampwidth()),
             channels=wf[0].getnchannels(),
             rate=wf[0].getframerate(),
