@@ -246,7 +246,6 @@ while hdr is None :
 fSample = hdr.fSample
 
 # set  up pygame and PyAudio
-pygame.mixer.pre_init(44100, -16, 1, 128) # set audio to 1 channel and minimual buffer = fast startup
 pygame.init()
 p = PyAudio()
 
