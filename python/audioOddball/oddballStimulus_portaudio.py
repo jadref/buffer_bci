@@ -162,10 +162,10 @@ def showKeyboardInstructions():
     updateframe(instructions)
 
 def showeeg():
-    sendEvent('runPhase.cmd','eegviewer')
+    sendEvent('startPhase.cmd','eegviewer')
 
 def doTraining():
-  sendEvent('runPhase.cmd','erpvis')
+  sendEvent('startPhase.cmd','erpvis')
   sendEvent('stimulus.training','start')
   for i in range(1,(number_of_epochs+1)):
       # run with given parameters, and max audio difference
