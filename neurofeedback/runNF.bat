@@ -1,2 +1,6 @@
 call ..\utilities\findMatlab.bat
-echo "runNF;quit;" | %matexe% %matopts%
+if %ismatlab%==1 (
+  start "Matlab" /b %matexe% -r "runNF;quit;" %matopts%
+) else (
+  echo "runNF;quit;" | %matexe% %matopts%
+)

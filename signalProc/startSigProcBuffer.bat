@@ -1,2 +1,6 @@
 call ..\utilities\findMatlab.bat
-echo startSigProcBuffer; | %matexe% %matopts%
+if %ismatlab%==1 (
+  start "Matlab" /b %matexe% -r "startSigProcBuffer;quit;" %matopts%
+) else (
+  echo startSigProcBuffer; | %matexe% %matopts%
+)
