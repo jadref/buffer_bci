@@ -6,7 +6,7 @@
 %remove menubar and toolbar. Also set the background color for the frame.
 stimfig = figure(2);
 clf;
-set(stimfig,'Name','Experiment - Training',...
+set(stimfig,'Name','Experiment - Testing',...
     'color',framebgColor,'menubar','none','toolbar','none',...
     'renderer','painters','doublebuffer','on','Interruptible','off');
 set(stimfig,'Units','pixel');wSize=get(stimfig,'position');set(stimfig,'units','normalized');% win size in pixels
@@ -96,7 +96,7 @@ waitforbuttonpress;
 set(txthdl,'visible', 'off');
 
 %Send a start of training event
-sendEvent('stimulus.training', 'start');
+sendEvent('stimulus.testing', 'start');
 
 %Start the sequences
 for seqi = 1:nSeq
@@ -188,7 +188,7 @@ for seqi = 1:nSeq
 end
 
 %Send an event to indicate that training has ended
-sendEvent('stimulus.training', 'end');
+sendEvent('stimulus.testing', 'end');
 
 %Thank subject and end experiment
 set(txthdl,'string', 'Thank you for participating!','visible', 'on');
