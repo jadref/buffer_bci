@@ -38,7 +38,9 @@ opts=struct('fs',[],'log',0,...
             'verb',0);
 opts=parseOpts(opts,varargin);
 
-dim(dim<0)=dim(dim<0)+ndims(X)+1; % convert neg dim specs
+if ( ~isempty(dim) ) dim(dim<0)=dim(dim<0)+ndims(X)+1; % convert neg dim specs
+else                 dim=find(size(X)>1); % first non-singlenton dim
+end;
 
 % convert win-specs from time to samples if necessary
 fs=opts.fs;

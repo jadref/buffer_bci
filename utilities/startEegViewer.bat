@@ -1,2 +1,6 @@
 call ..\utilities\findMatlab.bat
-echo run ../utilities/initPaths.m;eegViewer();quit; | %matexe% %matopts%
+if %ismatlab%==1 (
+  start "Matlab" /b %matexe% -r "run ../utilities/initPaths.m;eegViewer();quit;" %matopts%
+) else (
+  echo run ../utilities/initPaths.m;eegViewer();quit; | %matexe% %matopts%
+)

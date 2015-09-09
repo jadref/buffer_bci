@@ -1,2 +1,6 @@
 call ..\utilities\findMatlab.bat
-echo run ../utilities/initPaths.m;erpViewer();quit; | %matexe% %matopts%
+if %ismatlab%==1 (
+  start "Matlab" /b %matexe% -r "../utilities/initPaths.m;erpViewer();quit;" %matopts%
+) else (
+  echo run ../utilities/initPaths.m;erpViewer();quit; | %matexe% %matopts%
+)

@@ -1,2 +1,6 @@
 call ..\utilities\findMatlab.bat
-echo "configureNF;nfStartSigProcBuffer();quit;" | %matexe% %matopts%
+if %ismatlab%==1 (
+  start "Matlab" /b %matexe% -r "configureNF;nfStartSigProcBuffer();quit;" %matopts%
+) else (
+  echo "configureNF;nfStartSigProcBuffer();quit;" | %matexe% %matopts%
+)

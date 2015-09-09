@@ -1,2 +1,6 @@
 call ..\utilities\findMatlab.bat
-echo runCursor | %matexe% %matopts%
+if %ismatlab%==1 (
+  start "Matlab" /b %matexe% -r "runCursor;quit;" %matopts%
+) else (
+  echo runCursor | %matexe% %matopts%
+)

@@ -1,2 +1,6 @@
 call ..\utilities\findMatlab.bat
-echo runSpeller | %matexe% %matopts%
+if %ismatlab%==1 (
+  start "Matlab" /b %matexe% -r "runSpeller;quit;" %matopts%
+) else (
+  echo runSpeller | %matexe% %matopts%
+)

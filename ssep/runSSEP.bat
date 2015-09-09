@@ -1,2 +1,6 @@
 call ..\utilities\findMatlab.bat
-echo runSSEP;quit; | %matexe% %matopts%
+if %ismatlab%==1 (
+  start "Matlab" /b %matexe% -r "runSSEP;quit;" %matopts%
+) else (
+  echo runSSEP;quit; | %matexe% %matopts%
+)
