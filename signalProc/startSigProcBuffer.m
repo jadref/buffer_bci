@@ -3,6 +3,10 @@ function []=startSigProcBuffer(varargin)
 %
 % Trigger events: (type,value)
 %  (startPhase.cmd,capfitting) -- show capfitting
+%  (startPhase.cmd,eegviewer)  -- show the live signal viewer
+%  (startPhase.cmd,erpviewer)  -- show a running event-locked average viewer
+%                                 N.B. the event type used to lock to is given in the option:
+%                                    erpEventType
 %  (startPhase.cmd,calibrate)  -- start calibration phase processing (i.e. cat data)
 %                                 Specificially for each epoch the specificed block of data will be
 %                                 saved and labelled with the value of this event.
@@ -73,7 +77,8 @@ if ( isempty(wb) || isempty(strfind('dataAcq',wb)) )
   initgetwTime;
   initsleepSec;
 end;
-opts=struct('phaseEventType','startPhase.cmd','epochEventType',[],'testepochEventType',[],...
+opts=struct('phaseEventType','startPhase.cmd',...
+				'epochEventType',[],'testepochEventType',[],'erpEventType',[],...
 				'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],...
             'epochPredFilt',[],'contPredFilt',[],'capFile',[],...
 				'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1);
@@ -105,6 +110,7 @@ if ( isempty(opts.epochEventType) && opts.useGUI )
   end
 end
 if ( isempty(opts.testepochEventType) ) opts.testepochEventType=opts.epochEventType; end;
+if ( isempty(opts.erpEventType) )       opts.erpEventType=opts.epochEventType; end;
 
 datestr = datevec(now); datestr = sprintf('%02d%02d%02d',datestr(1)-2000,datestr(2:3));
 dname='training_data';
@@ -176,6 +182,12 @@ while ( true )
    case 'eegviewer';
     eegViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms);
     
+    %---------------------------------------------------------------------------------
+   case {'erspvis','erpvis','erpviewer','erpvisptb'};
+    [X,Y,key]=erpViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix','stimulus','endType',lower(phaseToRun),'trlen_ms',opts.trlen_ms,'freqbands',[.0 .3 45 47]);
+    fn=sprintf('erpvis_%s_%s',subject,datestr);fprintf('Saving to: %s\n',fn); % save results
+    save(fn,'X','Y','key');
+
    %---------------------------------------------------------------------------------
    case {'calibrate','calibration'};
     [traindata,traindevents,state]=buffer_waitData(opts.buffhost,opts.buffport,[],'startSet',opts.epochEventType,'exitSet',{{'calibrate' 'calibration'} 'end'},'verb',opts.verb,'trlen_ms',opts.trlen_ms);
