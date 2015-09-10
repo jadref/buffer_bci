@@ -126,10 +126,10 @@ public class ContinuousClassifier {
         String[] subProbDescription = new String[]{"alphaL", "alphaR", "badness", "badChL", "badChR"};
         Integer[] isBad = new Integer[]{0, 0, 0};
         ERSPClassifier classifier = 
-				new ERSPClassifier(Ws, b, true, null, 
-										 Windows.WindowType.HANNING, WelchOutputType.AMPLITUDE, 
-										 null, freqIdx, 1, null, null, 128, 100., 
-										 new Integer[]{0}, subProbDescription, isBad);
+				new ERSPClassifier(128,true, isBad, 
+										 null, null, null,
+										 null, WelchOutputType.AMPLITUDE, freqIdx,  
+										 subProbDescription, Ws, b);
         List<ERSPClassifier> classifiers = new LinkedList<ERSPClassifier>();
         classifiers.add(classifier);
         return classifiers;

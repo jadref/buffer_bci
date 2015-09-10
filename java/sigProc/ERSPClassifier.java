@@ -18,16 +18,26 @@ import java.util.List;
  */
 public class ERSPClassifier extends PreprocClassifier {
 
+	 public ERSPClassifier(double samplingFrequency,
+								  boolean detrend,
+								  Integer[] badchIdx,
+		  Matrix spatialFilter,RealVector spectralFilter,/*Integer[] outSize,*/Integer[] windowTimeIdx,
+		  double[] welchWindow,WelchOutputType welchAveType,Integer[] windowFrequencyIdx,
+								  //Double badChannelThreshold,Double badTrialThreshold,
+								  String[] subProbDescription, List<Matrix> clsfrW, RealVector clsfrb){
+		  super("ERSP",samplingFrequency,detrend,badchIdx,spatialFilter,spectralFilter,windowTimeIdx,welchWindow,welchAveType,windowFrequencyIdx,subProbDescription,clsfrW,clsfrb);
+	 }
+
 	 public Matrix preproc(Matrix data){
 		  // Common pre-processing
 		  super.preproc(data);
 
 		  // Welch frequency estimation
-		  if (data.getColumnDimension() >= windowFn.length) {
-				System.out.println( "Spectral filtering with welch method");
-				data = data.welch(1, windowFn, welchStartMs, windowLength, true, true);
-				System.out.println( "Data shape after welch frequency estimation: " + data.shapeString());
-        }
+		  System.out.println( "Spectral transformation with welch method");
+		  // TODO: Make welch more intelligent....
+		  //data = data.welch(1, welchWindow, welchAveType) //windowFn, welchStartMs, windowLength, true, true);
+		  System.out.println( "Data shape after welch frequency estimation: " + data.shapeString());
+
 
 		  // Selecting frequencies
 		  if (windowFrequencyIdx != null) {
@@ -44,14 +54,9 @@ public class ERSPClassifier extends PreprocClassifier {
 		  
 		  // Linearly classifying the data
 		  System.out.println( "Classifying with linear classifier");
-		  Matrix fraw = applylinearClassifier(data, 0);
+		  Matrix fraw = applyLinearClassifier(data, 0);
 		  System.out.println( "Results from the classifier (fraw): " + fraw.toString());
 		  Matrix f = new Matrix(fraw.copy());
-		  // Removing bad channels from the classification
-		  if (badChannels != null) {
-				for (int channel : badChannels)
-					 f.setRowMatrix(channel, Matrix.zeros(1, f.getColumnDimension()));
-		  }
 		  Matrix p = new Matrix(f.copy());
 		  p.walkInOptimizedOrder(new DefaultRealMatrixChangingVisitor() {
 					 public double visit(int row, int column, double value) {
