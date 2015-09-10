@@ -52,7 +52,7 @@ verb=1; % verbosity level for debug info
 tgtDir ='pictures/targets';
 distDir='pictures/distractors';
 
-nSeq = 7;
+nSeq = 14;
 seqLen = 30;  % number of flashes per sequence
 nTgtFlashes= 6; % number of target flashes in each sequence
 ntgtPieces = 9; % number of bits each target is cut into
