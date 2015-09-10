@@ -267,10 +267,12 @@ pygame.display.set_caption('BCI Audio OddBall Experiment')
 ## LOADING GLOBAL VARIABLES
 
 # Pre-Loading Music data
-names     = ['500', '505', '510', '515', '520', '525', '530', '535', '540', '545', '550']
-nrStimuli = len(names)
-sounds = map(lambda i: wave.open("stimuli/" + names[i] + ".wav"), range(0,nrStimuli))
+#names     = ['500', '505', '510', '515', '520', '525', '530', '535', '540', '545', '550']
+#sounds = map(lambda i: wave.open("stimuli/" + names[i] + ".wav"), range(0,len(names)))
+names     = ['500', '550']
+sounds = map(lambda i: wave.open("stimuli_smth/" + names[i] + ".wav"), range(0,len(names)))
 data = map(lambda x: x.readframes(x.getnframes()),sounds)
+nrStimuli = len(names)
 
 # Opening Audio Stream
 stream = p.open(format=p.get_format_from_width(sounds[0].getsampwidth()),
