@@ -12,7 +12,7 @@ port=1972
 fullscreen = False #True
 
 #The default number of epochs.
-number_of_epochs = 7
+number_of_epochs = 14
 
 #The number of stimuli to play.
 number_of_stimuli = 6
