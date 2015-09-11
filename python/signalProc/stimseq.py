@@ -3,7 +3,7 @@
 #  [] - use of the event sequence
 #  [] - noise codes stimulus
 from random import shuffle, randint, random
-from math import ceil
+from math import ceil, cos, sin, pi
 
 class StimSeq :
     stimSeq     = None # [ nEvent x nSymb ] stimulus code for each time point for each stimulus
@@ -40,6 +40,7 @@ class StimSeq :
     @staticmethod
     def fromString(str):
         raise("Error not defined yet")
+        
         return StimSeq()
 
     @staticmethod
@@ -92,11 +93,32 @@ class StimSeq :
                     stimSeq[ei][si]=1
         return StimSeq(stimTime_ms,stimSeq)
 
+    @staticmethod
+    def mkStimSeqSSEP(nSymb, seqDuration, isi, periods=None, smooth=False):
+        # N.B. Periods is in *seconds*
+        nEvent = int(seqDuration/isi) + 1
+        stimTime_ms = [ (ei+1)*1000.0*isi for ei in range(nEvent) ]
+        stimSeq     = [[None]*nSymb for i in range(nEvent)]        
+        for si in range(nSymb):
+            if not type(periods[si]) is list: # ensure periods has duration and phase
+                periods[si] = [periods[si],0]
+            for ei in range(nEvent):
+                # N.B. include slight phase offset to prevent value being exactly==0
+                stimSeq[ei][si]=cos((stimTime_ms[ei]/1000.0+.0001+periods[si][1])/periods[si][0]*2*pi);
+                if smooth :
+                    stimSeq[ei][si]=(stimSeq[ei][si]+1)/2; # ensure all positive values in range 0-1
+                else:
+                    stimSeq[ei][si]=1 if stimSeq[ei][si]>0 else 0
+        return StimSeq(stimTime_ms,stimSeq)
+        
+
+
 
 # testcase code
 if __name__ == "__main__":
-    print("Noise:" + stimseq.stimseq.mkStimSeqNoise(4,3,.1))
-    print("Scan: " + stimseq.stimseq.mkStimSeqScan(4,3))
-    print("Rand: " + stimseq.stimseq.mkStimSeqRand(4,3))
-    print("Odd:  " + stimseq.stimseq.mkStimSeqOddball(1,3,.4))
+    print("Noise:" + stimseq.StimSeq.mkStimSeqNoise(4,3,.1))
+    print("Scan: " + stimseq.StimSeq.mkStimSeqScan(4,3))
+    print("Rand: " + stimseq.StimSeq.mkStimSeqRand(4,3))
+    print("Odd:  " + stimseq.StimSeq.mkStimSeqOddball(1,3,.4))
+    print("SSEP: " + stimseq.StimSeq.mkStimSeqSSEP(4,3,.1,[2,3,4,5]))
     
