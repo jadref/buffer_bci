@@ -38,10 +38,32 @@ class StimSeq :
         return res
 
     @staticmethod
-    def fromString(str):
-        raise("Error not defined yet")
-        
-        return StimSeq()
+    def readArray(f,width=-1):
+        array=[]
+        nEmpty=0
+        for line in f:
+            line = line.strip();
+            if len(line)==0 :
+                nEmpty += 1
+                if nEmpty>1 and len(array)>0 : break # double empty means end-of-array
+                else: continue 
+            elif line[0]=="#" : continue # comment line
+            cols = line.split();
+            if width<0 : width=len(line)
+            elif width>0 and not len(cols) == width : 
+                raise(Exception("Row widths are not consistent: "+ str(width) + "!=" + str(len(cols))))
+            cols = [ float(c) for c in cols ] # convert string to numeric
+            array.append(cols) # add to the stimSeq
+        return array
+
+    @staticmethod
+    def fromString(fname):
+        f=open(fname,'r') if type(fname) is str else fname
+        st=readArray(f) # read the stim times
+        if len(st)>1 : raise(Exception("Error: stimSeq has multiple rows!"))
+        else: st=st[0] # un-nest
+        ss=readArray(f,len(st)) # read stim-seq - check same length
+        return StimSeq(ss,st)
 
     @staticmethod
     def mkStimSeqScan(nSymb, seqDuration, isi):
@@ -121,4 +143,5 @@ if __name__ == "__main__":
     print("Rand: " + stimseq.StimSeq.mkStimSeqRand(4,3))
     print("Odd:  " + stimseq.StimSeq.mkStimSeqOddball(1,3,.4))
     print("SSEP: " + stimseq.StimSeq.mkStimSeqSSEP(4,3,.1,[2,3,4,5]))
+    print("gold: " + stimseq.StimSeq.fromString("../../stimulus/gold_10hz.txt"))
     
