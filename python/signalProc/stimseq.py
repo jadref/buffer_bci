@@ -132,6 +132,18 @@ class StimSeq :
                 else:
                     stimSeq[ei][si]=1 if stimSeq[ei][si]>0 else 0
         return StimSeq(stimTime_ms,stimSeq)
+
+    @staticmethod
+    def mkStimSeqInterval(nSymb, seqDuration, isi, periods=None):
+        # N.B. Periods is in *seconds*
+        nEvent = int(seqDuration/isi) + 1
+        stimTime_ms = [ (ei+1)*1000.0*isi for ei in range(nEvent) ]
+        stimSeq     = [[None]*nSymb for i in range(nEvent)]        
+        for si in range(nSymb):
+            for ii in range(0,int(seqDuration/periods[si])+1):
+                ei = int(ii*periods[si]/isi) # convert to event number
+                if  ei < nEvent: stimSeq[ei][si]=1
+        return StimSeq(stimTime_ms,stimSeq)
         
 
 
@@ -144,4 +156,5 @@ if __name__ == "__main__":
     print("Odd:  " + stimseq.StimSeq.mkStimSeqOddball(1,3,.4))
     print("SSEP: " + stimseq.StimSeq.mkStimSeqSSEP(4,3,.1,[2,3,4,5]))
     print("gold: " + stimseq.StimSeq.fromString("../../stimulus/gold_10hz.txt"))
+    print("interval:" + stimseq.StimSeq.mkStimSeqInterval("../../stimulus/gold_10hz.txt"))
     
