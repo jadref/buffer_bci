@@ -59,11 +59,11 @@ class StimSeq :
     @staticmethod
     def fromString(fname):
         f=open(fname,'r') if type(fname) is str else fname
-        st=readArray(f) # read the stim times
+        st=StimSeq.readArray(f) # read the stim times
         if len(st)>1 : raise(Exception("Error: stimSeq has multiple rows!"))
         else: st=st[0] # un-nest
-        ss=readArray(f,len(st)) # read stim-seq - check same length
-        return StimSeq(ss,st)
+        ss=StimSeq.readArray(f,len(st)) # read stim-seq - check same length
+        return StimSeq(st,ss)
 
     @staticmethod
     def mkStimSeqScan(nSymb, seqDuration, isi):
