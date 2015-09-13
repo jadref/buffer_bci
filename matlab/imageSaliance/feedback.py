@@ -28,7 +28,7 @@ def sendEvent(event_type, event_value=1, offset=0):
         e.sample = sample + offset + 1
     ftc.putEvents(e)
 
-def buffer_newevents(timeout):
+def buffer_newevents(timeout=3000):
     '''
     Wait for and return any new events recieved from the buffer between
     calls to this function
@@ -84,7 +84,7 @@ clock = pygame.time.Clock()
 
 # Initialize display state data
 surfaces = {}
-last_fragment = 0
+fragmentSampleMap = {}
 
 # Function to slice image into fragments.
 def sliceImage(img,columns,rows):
@@ -129,8 +129,8 @@ def loadImage(name):
 			surf.set_alpha(255)
 
 			# determine target blit area
-			pos_x = x == 0 ? 0 : width / cols
-			pos_y = y == 0 ? 0 : width / rows
+			pos_x = 0 if x == 0 else width/cols  #pos_x = x == 0 ? 0 : width / cols
+			pos_y = 0 if y == 0 else height/rows #pos_y = y == 0 ? 0 : width / rows
 			w = pos_x + width/cols
 			h = pos_y + height/rows
 	
@@ -158,16 +158,25 @@ def processBufferEvents():
 
 	for evt in events:
 		if evt.type == 'stimulus.target.image': # Target image was received, load the image.
+			surfaces = {} # Clear surfaces, i.e. reset.
 			loadImage(evt.value)
 
 		elif evt.type == 'stimulus.image': # Select the next fragment.
-			last_fragment = int(evt.value.split('/')[1])
+			fragment = int(evt.value.split('/')[1])
+			sample = evt.sample
+			fragmentSampleMap[sample] = fragment
 
-		elif evt.type = 'classifier.prediction':
+		elif evt.type == 'classifier.prediction':
+			# Get fragment from map and delete entry.
+			sample = evt.sample
+			fragment = fragmentSampleMap[sample]
+			del fragmentSampleMap[sample]
+
+			# Set alpha value.
 			pred = evt.value
 			prob = predictionToProbability(pred)
 			alpha = 255 * scaleAlpha(prob)
-			surfaces[last_fragment][1].set_alpha(alpha)
+			surfaces[fragment][1].set_alpha(alpha)
 	
 
 
