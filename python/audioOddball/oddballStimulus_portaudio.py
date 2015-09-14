@@ -29,6 +29,7 @@ bci_isi                   = .15
 target_to_target_interval = 1
 baseline_duration         = 3
 target_duration           = 2
+inter_trial_duration      = 3
 sequences_for_break       = 3
 
 ## END OF CONFIGURABLE VARIABLES
@@ -114,12 +115,18 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
     dobreak(baseline_duration, ["Get Ready"]+["Training Epoch " + str(nEpoch)])
     updateframe("+", True, True)
 
+    updateframe(["Target Sound: " + str(tgtID)],False,True)
+    sleep(target_duration/2)
+    t0=time()
+    for ei in range(3): # play 3 beeps of the target sound at the target interval
+        ttg = (t0+ei*tti/2)-time()
+        sleep(ttg if ttg>0 else 0) 
+        stream.write(data[tgtID])
+    sleep(target_duration/2)      
+    updateframe("+", True, True)
+
     ## Set up training sequence
     ss = stimseq.StimSeq.mkStimSeqOddball(1,seqDur,isi,tti)
-    ## setup the audioData in left/right set
-    audioArray[0]=rebalance(data[tgtID], sounds[tgtID].getsamplerate(),1)
-    audioArray[1]=rebalance(data[distID],sounds[distID].getsamplerate(),0)
-
     
     ## get num targets
     nTgt=0; 
@@ -128,6 +135,7 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
     # play the stimulus sequence
     sendEvent("stimulus.trial", "start")
     sendEvent("stimulus.numTargets", nTgt)
+    sendEvent("stimulus.targetID", names[tgtID])
     
     t0=time()
     for ei in range(0,len(ss.stimTime_ms)):
@@ -233,7 +241,7 @@ def getFeedback(prompt,maxLowered,trueLowered):
     if respLowered == trueLowered: fbStr += ["Correct!"]
     else:                          fbStr += ["Wrong!"]
     updateframe(fbStr + ["Response = " + str(respLowered)] 
-                + ["True lowered fragments = " + str(trueLowered)])
+                + ["True fragments = " + str(trueLowered)])
     sleep(1)
     
 def dobreak(n, message):
@@ -276,7 +284,8 @@ def doTraining():
           updateframe(["Long Break","Press space to continue"])
           waitForSpaceKey()
       elif i!= number_of_epochs:
-          dobreak(3,["Break", "(Blink eyes)"])
+          updateframe("")
+          sleep(inter_trial_duration)
 
   updateframe("Training Finished")
   sleep(2)
@@ -284,7 +293,7 @@ def doTraining():
   sendEvent('stimulus.training','end')
 
 def doBCITraining():
-  sendEvent('startPhase.cmd','erpvis')
+  sendEvent('startPhase.cmd','calibrate')
   sendEvent('stimulus.training','start')
   stimIDs=[0,nrStimuli-1]
   stimi = list(stimIDs) # left/right positon for each sequence
@@ -303,12 +312,12 @@ def doBCITraining():
           updateframe(["Long Break","Press space to continue"])
           waitForSpaceKey()
       elif i!= number_of_epochs:
-          dobreak(3,["Break", "(Blink eyes)"])
+          updateframe("")
+          sleep(inter_trial_duration)
 
   updateframe("Training Finished")
   sleep(2)
-  sendEvent('erpvis','end')
-  sendEvent('stimulus.training','end')
+  sendEvent('calibrate','end')
   
 def waitForSpaceKey():
   event = pygame.event.wait()
