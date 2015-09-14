@@ -157,7 +157,6 @@ def processBufferEvents():
 		if evt.type == 'stimulus.target.image': # Target image was received, load the image.
 			surfaces = {} # Clear surfaces, i.e. reset.
 			loadImage(evt.value)
-			print(surfaces)
 
 		elif evt.type == 'stimulus.image': # Select the next fragment.
 			fragment = int(evt.value.split('/')[1])
