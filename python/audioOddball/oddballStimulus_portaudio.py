@@ -154,12 +154,30 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
 
 
 def runBCITrainingEpoch(nEpoch,seqDur,isi,periods,audioIDs,tgtIdx):
+
+    # spatialize the audio into left/right channels, and convert to an integer array
+    audioArray   =[None]*2
+    audioArray[0]=rebalance(data[audioIDs[0]],sounds[audioIDs[0]].getsampwidth(), 0)
+    audioArray[1]=rebalance(data[audioIDs[1]],sounds[audioIDs[1]].getsampwidth(), 1)
+
+
     dobreak(baseline_duration, ["Get Ready","Training Epoch " + str(nEpoch)])
+
+    # display the cue to the subject for the target for this sequence
+    updateframe(["Target Sound: " + str(audioIDs[tgtIdx])] + ["->" if tgtIdx==0 else "<-"],False,True)
+    sleep(target_duration/2)
+    t0=time()
+    for ei in range(3): # play 3 beeps of the target sound at the target interval
+        ttg = (t0+ei*periods[tgtIdx])-time()
+        sleep(ttg if ttg>0 else 0) 
+        stream.write(audioArray[tgtIdx].tostring())
+    sleep(target_duration/2)      
     updateframe("+", True, True)
 
     ## Set up training sequence, 2 stim different intervals
     ## N.B. stimilus 0 is always assumed to be the target
     ss = stimseq.StimSeq.mkStimSeqInterval(2,seqDur,isi,periods)
+    print(ss)
     
     ## get num targets
     nTgt=0; 
@@ -170,11 +188,6 @@ def runBCITrainingEpoch(nEpoch,seqDur,isi,periods,audioIDs,tgtIdx):
     sendEvent("stimulus.numTargets", nTgt)
     sendEvent("stimulus.targetID", names[audioIDs[tgtIdx]])
     
-    # spatialize the audio into left/right channels, and convert to an integer array
-    audioArray   =[None]*2
-    audioArray[0]=rebalance(data[audioIDs[0]],sounds[audioIDs[0]].getsampwidth(), 0)
-    audioArray[1]=rebalance(data[audioIDs[1]],sounds[audioIDs[1]].getsampwidth(), 1)
-
     t0=time()
     for ei in range(0,len(ss.stimTime_ms)):
         st  = ss.stimTime_ms[ei]
@@ -283,11 +296,6 @@ def doBCITraining():
       tgtIdx = randint(0,1)
       # randomly shuffle who gets what period
       shuffle(periodsi) # N.B. shuffle modifies in place...
-      # display the cue to the subject for the target for this sequence
-      updateframe(["Target Sound: " + str(stimi[tgtIdx])] + ["<-" if tgtIdx==0 else "->"],False,True)
-      sleep(target_duration/2)
-      playSingleStimulus(stimi[tgtIdx])
-      sleep(target_duration/2)      
 
       # run with given parameters, and max audio difference      
       runBCITrainingEpoch(i,sequence_duration,bci_isi,periodsi,stimi,tgtIdx)
