@@ -121,10 +121,13 @@ def loadImage(name):
 			surf.set_alpha(255)
 
 			# determine target blit area
-			pos_x = 0 if x == 0 else width/cols  #pos_x = x == 0 ? 0 : width / cols
-			pos_y = 0 if y == 0 else height/rows #pos_y = y == 0 ? 0 : height / rows
-			w = pos_x + width/cols
-			h = pos_y + height/rows
+			pos_x = (width /cols)*x 
+			pos_y = (height/rows)*y
+			w = pos_x + (width/cols)
+			h = pos_y + (height/rows)
+
+			# Scale image to new dimension
+			surf = pygame.transform.scale(surf, (width/cols - 1, height/rows - 1))
 	
 			# Store in dictionary
 			frag_no = x * cols + y + 1
