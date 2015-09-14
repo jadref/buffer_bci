@@ -95,22 +95,6 @@ def playSingleStimulus(i):
     sendEvent("stimulus.online", "end", 0)
 
 
-# make the lowered volume equivalents
-import array;
-def rebalance(data,sampwidth,balance):
-    # convert the raw bytes into an integer array
-    a=[];
-    if sampwidth == 1 :
-         a=array.array("b",data) 
-    elif sampwidth == 2:
-         a=array.array("h",data) #get as integer data         
-    # transform the volume in the array
-    for j in range(0,len(a)-1,2): # N.B. audio is interleaved in left-right pairs
-        a[j]   = int(a[j]  *balance)
-        a[j+1] = int(a[j+1]*(1-balance))  
-    # save the lowered volume data back to raw bytes
-    return a;
-
 def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
     dobreak(baseline_duration, ["Get Ready"]+["Training Epoch " + str(nEpoch)])
     updateframe("+", True, True)
@@ -160,6 +144,20 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
     getFeedback("How many 'odd' beeps?",int(len(ss.stimTime_ms)/2),nTgt)
     sendEvent("stimulus.trail","end")
 
+import array;
+def rebalance(data,sampwidth,balance):
+    ''' data in stereo audio data and re-balance the left-right mapping'''
+    # convert the raw bytes into an integer array
+    a=[];
+    if sampwidth == 1 :
+         a=array.array("b",data) 
+    elif sampwidth == 2:
+         a=array.array("h",data) #get as short integer data         
+    # transform the volume in the array
+    for j in range(0,len(a)-1,2): # N.B. audio is interleaved in left-right pairs
+        a[j]   = int(a[j]  *balance)
+        a[j+1] = int(a[j+1]*(1-balance))  
+    return a;
 
 def runBCITrainingEpoch(nEpoch,seqDur,isi,periods,audioIDs,tgtIdx):
 
