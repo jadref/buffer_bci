@@ -117,7 +117,14 @@ for seqi = 1:nSeq
         drawnow;
     end
     
-	 tgtIdx = tgtOrder(1,seqi);
+    [fn] = uigetfile(fullfile(fileparts(mfilename('fullpath')),'pictures/targets/*.jpg'),'Pick a Target');
+    fn = fn(1:end-4);
+    for tix = 1:size(targets,2)
+        if (find(strcmp(targets(tix).name, fn)) == 1)
+            tgtIdx = tix;
+        end
+    end
+	 %tgtIdx = tgtOrder(1,seqi);
 	 tgtInfo= targets(tgtIdx);
     %Show target image
     set(imghdl,'cdata',tgtInfo.image,'visible','on');
