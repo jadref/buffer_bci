@@ -136,7 +136,7 @@ def loadImage(name):
 	
 			# Store in dictionary
 			frag_no = x * cols + y
-			surfaces[frag_no] = (pygame.Rect(pos_x, pos_y, w,h), surf) # Store as (screen_dst, surface)
+			surfaces[frag_no] = (pygame.Rect(pos_x, pos_y, w,h), surf, []) # Store as (screen_dst, surface, [probabilities])
 						
 	
 
@@ -175,7 +175,8 @@ def processBufferEvents():
 			# Set alpha value.
 			pred = evt.value
 			prob = predictionToProbability(pred)
-			alpha = 255 * scaleAlpha(prob)
+			surfaces[fragment][2].append(prob)
+			alpha = 255 * scaleAlpha(sum(surfaces[fragment][2])/len(surfaces[fragment][2])) # compute alpha of average probability over time.
 			surfaces[fragment][1].set_alpha(alpha)
 	
 
