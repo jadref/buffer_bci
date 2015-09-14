@@ -2,6 +2,7 @@
 #  [] - load sequence from file
 #  [] - use of the event sequence
 #  [] - noise codes stimulus
+from __future__ import division  # ensure the divisions produce float if needed
 from random import shuffle, randint, random
 from math import ceil, cos, sin, pi
 
@@ -141,7 +142,7 @@ class StimSeq :
         stimSeq     = [[None]*nSymb for i in range(nEvent)]        
         for si in range(nSymb):
             for ii in range(0,int(seqDuration/periods[si])+1):
-                ei = int(ii*periods[si]/isi) # convert to event number
+                ei = int(round(ii*periods[si]/isi)) # convert to event number
                 if  ei < nEvent: stimSeq[ei][si]=1
         return StimSeq(stimTime_ms,stimSeq)
         
@@ -150,11 +151,11 @@ class StimSeq :
 
 # testcase code
 if __name__ == "__main__":
-    print("Noise:" + stimseq.StimSeq.mkStimSeqNoise(4,3,.1))
-    print("Scan: " + stimseq.StimSeq.mkStimSeqScan(4,3))
-    print("Rand: " + stimseq.StimSeq.mkStimSeqRand(4,3))
-    print("Odd:  " + stimseq.StimSeq.mkStimSeqOddball(1,3,.4))
-    print("SSEP: " + stimseq.StimSeq.mkStimSeqSSEP(4,3,.1,[2,3,4,5]))
-    print("gold: " + stimseq.StimSeq.fromString("../../stimulus/gold_10hz.txt"))
-    print("interval:" + stimseq.StimSeq.mkStimSeqInterval("../../stimulus/gold_10hz.txt"))
+    print("Noise:" + str(stimseq.StimSeq.mkStimSeqNoise(4,3,.1)))
+    print("Scan: " + str(stimseq.StimSeq.mkStimSeqScan(4,3)))
+    print("Rand: " + str(stimseq.StimSeq.mkStimSeqRand(4,3)))
+    print("Odd:  " + str(stimseq.StimSeq.mkStimSeqOddball(1,3,.4)))
+    print("SSEP: " + str(stimseq.StimSeq.mkStimSeqSSEP(4,3,.1,[2,3,4,5])))
+    print("gold: " + str(stimseq.StimSeq.fromString("../../stimulus/gold_10hz.txt")))
+    print("interval:" + str(stimseq.StimSeq.mkStimSeqInterval(2,4,.15,[3*.15,4*.15])))
     
