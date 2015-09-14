@@ -153,7 +153,7 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
     sendEvent("stimulus.trail","end")
 
 
-def runBCITrainingEpoch(nEpoch,seqDur,isi,periods,distID,tgtID):
+def runBCITrainingEpoch(nEpoch,seqDur,isi,periods,audioIDs,tgtIdx):
     dobreak(baseline_duration, ["Get Ready","Training Epoch " + str(nEpoch)])
     updateframe("+", True, True)
 
@@ -168,13 +168,12 @@ def runBCITrainingEpoch(nEpoch,seqDur,isi,periods,distID,tgtID):
     # play the stimulus sequence
     sendEvent("stimulus.trial", "start")
     sendEvent("stimulus.numTargets", nTgt)
-    sendEvent("stimulus.targetID", tgtID)
+    sendEvent("stimulus.targetID", names[audioIDs[tgtIdx]])
     
-    audioIDs =[tgtID,distID]
     # spatialize the audio into left/right channels, and convert to an integer array
     audioArray   =[None]*2
-    audioArray[0]=rebalance(data[tgtID], sounds[tgtID].getsampwidth(), 0)
-    audioArray[1]=rebalance(data[distID],sounds[distID].getsampwidth(),1)
+    audioArray[0]=rebalance(data[audioIDs[0]],sounds[audioIDs[0]].getsampwidth(), 0)
+    audioArray[1]=rebalance(data[audioIDs[1]],sounds[audioIDs[1]].getsampwidth(), 1)
 
     t0=time()
     for ei in range(0,len(ss.stimTime_ms)):
@@ -182,7 +181,7 @@ def runBCITrainingEpoch(nEpoch,seqDur,isi,periods,distID,tgtID):
         ssei= ss.stimSeq[ei]
         ssei= [x if not x is None else 0 for x in ssei] # convert None=>0
         audioID = filter(lambda(ai): ssei[ai]==1, range(len(ssei)))
-        tgt = ssei[0]==1  # target stimuli if played the target stimuli
+        tgt = ssei[tgtIdx]==1  # target stimuli if played the target stimuli
 
         if len(audioID)>0 : # if something to play
             # mix the fragments to make the audio we play
@@ -275,21 +274,23 @@ def doBCITraining():
   sendEvent('startPhase.cmd','erpvis')
   sendEvent('stimulus.training','start')
   stimIDs=[0,nrStimuli-1]
-  stimi = list(stimIDs) # order for each sequence
+  stimi = list(stimIDs) # left/right positon for each sequence
   periods=[x*bci_isi for x in [3,4]]
   periodsi=list(periods)
   for i in range(1,(number_of_epochs+1)):
       # Pick a target sound for this sequence      
       shuffle(stimi)    # N.B. shuffle modifies in place....
+      tgtIdx = randint(0,1)
       # randomly shuffle who gets what period
       shuffle(periodsi) # N.B. shuffle modifies in place...
       # display the cue to the subject for the target for this sequence
-      updateframe(["Target Sound: " + str(stimi[0])])
-      playSingleStimulus(stimi[0])
-      sleep(target_duration)      
+      updateframe(["Target Sound: " + str(stimi[tgtIdx])] + ["<-" if tgtIdx==0 else "->"],False,True)
+      sleep(target_duration/2)
+      playSingleStimulus(stimi[tgtIdx])
+      sleep(target_duration/2)      
 
       # run with given parameters, and max audio difference      
-      runBCITrainingEpoch(i,sequence_duration,bci_isi,periodsi,stimi[0],stimi[1])
+      runBCITrainingEpoch(i,sequence_duration,bci_isi,periodsi,stimi,tgtIdx)
       if i == sequences_for_break:
           updateframe(["Long Break","Press space to continue"])
           waitForSpaceKey()
