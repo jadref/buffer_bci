@@ -25,7 +25,7 @@ keyboard = True
 
 sequence_duration         = 15
 inter_stimulus_interval   = .3
-bci_isi                   = .1
+bci_isi                   = .15
 target_to_target_interval = 1
 baseline_duration         = 3
 target_duration           = 2
@@ -93,12 +93,33 @@ def playSingleStimulus(i):
     sleep(0.5);
     sendEvent("stimulus.online", "end", 0)
 
+
+# make the lowered volume equivalents
+import array;
+def rebalance(data,sampwidth,balance):
+    # convert the raw bytes into an integer array
+    a=[];
+    if sampwidth == 1 :
+         a=array.array("b",data) 
+    elif sampwidth == 2:
+         a=array.array("h",data) #get as integer data         
+    # transform the volume in the array
+    for j in range(0,len(a)-1,2): # N.B. audio is interleaved in left-right pairs
+        a[j]   = int(a[j]  *balance)
+        a[j+1] = int(a[j+1]*(1-balance))  
+    # save the lowered volume data back to raw bytes
+    return a;
+
 def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
     dobreak(baseline_duration, ["Get Ready"]+["Training Epoch " + str(nEpoch)])
     updateframe("+", True, True)
 
     ## Set up training sequence
     ss = stimseq.StimSeq.mkStimSeqOddball(1,seqDur,isi,tti)
+    ## setup the audioData in left/right set
+    audioArray[0]=rebalance(data[tgtID], sounds[tgtID].getsamplerate(),1)
+    audioArray[1]=rebalance(data[distID],sounds[distID].getsamplerate(),0)
+
     
     ## get num targets
     nTgt=0; 
@@ -149,19 +170,26 @@ def runBCITrainingEpoch(nEpoch,seqDur,isi,periods,distID,tgtID):
     sendEvent("stimulus.numTargets", nTgt)
     sendEvent("stimulus.targetID", tgtID)
     
-    audioIDs=[tgtID,distID]
+    audioIDs =[tgtID,distID]
+    # spatialize the audio into left/right channels, and convert to an integer array
+    audioArray   =[None]*2
+    audioArray[0]=rebalance(data[tgtID], sounds[tgtID].getsampwidth(), 0)
+    audioArray[1]=rebalance(data[distID],sounds[distID].getsampwidth(),1)
+
     t0=time()
     for ei in range(0,len(ss.stimTime_ms)):
         st  = ss.stimTime_ms[ei]
         ssei= ss.stimSeq[ei]
+        ssei= [x if not x is None else 0 for x in ssei] # convert None=>0
         audioID = filter(lambda(ai): ssei[ai]==1, range(len(ssei)))
-        if len(audioID)>0 :
-            #BODGE: randomly pick 1 stimuli if >1 at same time
-            audioID = audioID[randint(0,len(audioID)-1)] 
-        else:
-            audioID = None
+        tgt = ssei[0]==1  # target stimuli if played the target stimuli
 
-        tgt = audioID==0 # target stimuli if played the target stimuli
+        if len(audioID)>0 : # if something to play
+            # mix the fragments to make the audio we play
+            audio = array.array(audioArray[0].typecode);
+            for i in range(len(audioArray[0])):
+                audio.append(audioArray[0][i]*ssei[0] + audioArray[1][i]*ssei[1])
+
         # sleep until we should play this sound
         ttg = (t0+st/1000)-time()
         if ttg>0 : 
@@ -170,9 +198,9 @@ def runBCITrainingEpoch(nEpoch,seqDur,isi,periods,distID,tgtID):
             print(str(time()-t0) + ") Lagging behind! tn=" + str(st/1000) + " ttg=" + str(ttg));
         # send events as close in time as possible to when the actual stimulus starts
         sendEvent("stimulus.target", tgt)   # target/non-target
-        if not audioID is None:
-            sendEvent("stimulus.play", names[audioIDs[audioID]]) # which stimulus
-            stream.write(data[audioIDs[audioID]]) # this should block until the audio is finished....
+        if len(audioID)>0: # if something to play
+            sendEvent("stimulus.play", names[audioIDs[audioID[0]]]) # which stimulus
+            stream.write(audio.tostring()) # this should block until the audio is finished....
 
     # get user count of targets
     sleep(0.5)
