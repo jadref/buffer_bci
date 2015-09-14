@@ -140,7 +140,7 @@ def loadImage(name):
 
 
 # Function convert prediction to probablity [0-1]
-def predictionToProbablity(pred):
+def predictionToProbability(pred):
 	return 1.0 / (1.0 + math.exp(pred))
 
 # Scales alpha [0-1] to (possibly) more useful alpha values [0-1]
