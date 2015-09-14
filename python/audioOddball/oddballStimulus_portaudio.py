@@ -1,4 +1,9 @@
 #!/usr/bin/python
+
+# TODO: 
+#  [] - Add a testing phase, where extent of odd-ballness is controllable by key-press
+#  [] - Add BCI testing phase, which just runs for a long time
+
 ## CONFIGURABLE VARIABLES
 # Path of the folder containing the buffer client
 bufferpath = "../../dataAcq/buffer/python"
