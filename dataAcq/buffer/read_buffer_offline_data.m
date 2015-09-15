@@ -1,10 +1,12 @@
-function dat = read_buffer_offline_data(datafile, hdr, range)
-% function dat = read_buffer_offline_data(datafile, header, range)
+function [dat,hdr] = read_buffer_offline_data(datafile, hdr, range)
+% function [dat,hdr] = read_buffer_offline_data(datafile, header, range)
 %
 % This function reads FCDC buffer-type data from a binary file.
 
 % (C) 2010 S. Klanke
-
+if ( nargin<2 || isempty(hdr))
+   hdr=read_buffer_offline_header(fullfile(fileparts(datafile),'header'));
+end
 if ( nargin<3 || isempty(range)) 
   range=[1 hdr.nSamples];
 end
