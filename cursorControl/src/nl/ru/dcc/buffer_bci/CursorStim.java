@@ -162,7 +162,7 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 			// Load from save file
 			blockName = "gold_10hz";
 			{
-				 BufferedReader is = new BufferedReader(new InputStreamReader(new FileInputStream(new File("stimSeq/"+blockName+".txt"))));
+				 BufferedReader is = new BufferedReader(new InputStreamReader(new FileInputStream(new File("../stimulus/"+blockName+".txt"))));
 				 ss = StimSeq.fromString(is);
 				 is.close();
 			}
@@ -179,7 +179,7 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 			// Load from save file
 			blockName = "gold_20hz";
 			{
-				 BufferedReader is = new BufferedReader(new InputStreamReader(new FileInputStream(new File("stimSeq/"+blockName+".txt"))));
+				 BufferedReader is = new BufferedReader(new InputStreamReader(new FileInputStream(new File("../stimulus/"+blockName+".txt"))));
 				 ss = StimSeq.fromString(is);
 				 is.close();
 			}
@@ -197,7 +197,7 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 			// Load from save file
 			blockName = "gold_40hz";
 			{
-				 BufferedReader is = new BufferedReader(new InputStreamReader(new FileInputStream(new File("stimSeq/"+blockName+".txt"))));
+				 BufferedReader is = new BufferedReader(new InputStreamReader(new FileInputStream(new File("../stimulus/"+blockName+".txt"))));
 				 ss = StimSeq.fromString(is);
 				 is.close();
 			}

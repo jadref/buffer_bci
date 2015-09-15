@@ -1,7 +1,7 @@
 bufferpath = "../../dataAcq/buffer/python"
 
 import os, sys, pygame, random, math
-sys.path.append(bufferpath)
+sys.path.append(os.path.dirname(__file__)+bufferpath)
 import FieldTrip
 from PIL import Image
 
@@ -16,27 +16,33 @@ height=600
 
 black = (0,0,0)
 
-nEvents = -1
-
-def buffer_newevents(timeout=3000):
+def buffer_newevents(evtype=None,timeout=3000,verbose=False):
     '''
     Wait for and return any new events recieved from the buffer between
     calls to this function
     
     timeout    = maximum time to wait in milliseconds before returning
     '''
-    global nEvents
-    if nEvents == -1:
+    global ftc,nEvents # use to store number events processed accross function calls
+    if not 'nEvents' in globals(): # first time initialize to events up to now
     	start, nEvents = ftc.poll()
 
-    stop = False
-    timetogo=timeout
-    while not stop and timetogo>0:
-        nSamples,curEvents=ftc.wait(-1,nEvents, timetogo)
-        if curEvents>nEvents:
-            return ftc.getEvents([nEvents,curEvents-1])
-            nEvents = curEvents
+    if verbose:
+        print "Waiting for event(s) " + str(evtypes) + " with timeout_ms " + str(timeout_ms)
+
+    start = time.time()
+    elapsed_ms = 0
+    events=[]
+    while len(events)==0 and elapsed_ms<timeout:
+        nSamples,curEvents=ftc.wait(-1,nEvents, timeout_ms - elapsed_ms)
+        if curEvents>nEvents:            
+            events = ftc.getEvents([nEvents,curEvents-1])            
+            if not evttype is None:
+                events = filter(lambda x: x.type in evtype, events)
+        nEvents = curEvents # update starting number events (allow for buffer restarts)
+        elapsed_ms = (time.time() - start)*1000        
     return events
+
 
 #Connect to Buffer
 timeout=5000
@@ -133,10 +139,6 @@ def loadImage(name):
 			frag_no = x * cols + y + 1
 			surfaces[frag_no] = (pygame.Rect(pos_x, pos_y, w,h), surf, []) # Store as (screen_dst, surface, [probabilities])
 						
-	
-
-
-
 
 
 # Function convert prediction to probablity [0-1]
@@ -175,9 +177,6 @@ def processBufferEvents():
 			surfaces[fragment][2].append(prob)
 			alpha = 255 * scaleAlpha(sum(surfaces[fragment][2])/len(surfaces[fragment][2])) # compute alpha of average probability over time.
 			surfaces[fragment][1].set_alpha(alpha)
-	
-
-
 
 # Event loop
 done = False

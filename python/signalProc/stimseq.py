@@ -2,6 +2,7 @@
 #  [] - load sequence from file
 #  [] - use of the event sequence
 #  [] - noise codes stimulus
+from __future__ import division  # ensure the divisions produce float if needed
 from random import shuffle, randint, random
 from math import ceil, cos, sin, pi
 
@@ -38,10 +39,32 @@ class StimSeq :
         return res
 
     @staticmethod
-    def fromString(str):
-        raise("Error not defined yet")
-        
-        return StimSeq()
+    def readArray(f,width=-1):
+        array=[]
+        nEmpty=0
+        for line in f:
+            line = line.strip();
+            if len(line)==0 :
+                nEmpty += 1
+                if nEmpty>1 and len(array)>0 : break # double empty means end-of-array
+                else: continue 
+            elif line[0]=="#" : continue # comment line
+            cols = line.split();
+            if width<0 : width=len(line)
+            elif width>0 and not len(cols) == width : 
+                raise(Exception("Row widths are not consistent: "+ str(width) + "!=" + str(len(cols))))
+            cols = [ float(c) for c in cols ] # convert string to numeric
+            array.append(cols) # add to the stimSeq
+        return array
+
+    @staticmethod
+    def fromString(fname):
+        f=open(fname,'r') if type(fname) is str else fname
+        st=StimSeq.readArray(f) # read the stim times
+        if len(st)>1 : raise(Exception("Error: stimSeq has multiple rows!"))
+        else: st=st[0] # un-nest
+        ss=StimSeq.readArray(f,len(st)) # read stim-seq - check same length
+        return StimSeq(st,ss)
 
     @staticmethod
     def mkStimSeqScan(nSymb, seqDuration, isi):
@@ -110,15 +133,29 @@ class StimSeq :
                 else:
                     stimSeq[ei][si]=1 if stimSeq[ei][si]>0 else 0
         return StimSeq(stimTime_ms,stimSeq)
+
+    @staticmethod
+    def mkStimSeqInterval(nSymb, seqDuration, isi, periods=None):
+        # N.B. Periods is in *seconds*
+        nEvent = int(seqDuration/isi) + 1
+        stimTime_ms = [ (ei+1)*1000.0*isi for ei in range(nEvent) ]
+        stimSeq     = [[None]*nSymb for i in range(nEvent)]        
+        for si in range(nSymb):
+            for ii in range(0,int(seqDuration/periods[si])+1):
+                ei = int(round(ii*periods[si]/isi)) # convert to event number
+                if  ei < nEvent: stimSeq[ei][si]=1
+        return StimSeq(stimTime_ms,stimSeq)
         
 
 
 
 # testcase code
 if __name__ == "__main__":
-    print("Noise:" + stimseq.StimSeq.mkStimSeqNoise(4,3,.1))
-    print("Scan: " + stimseq.StimSeq.mkStimSeqScan(4,3))
-    print("Rand: " + stimseq.StimSeq.mkStimSeqRand(4,3))
-    print("Odd:  " + stimseq.StimSeq.mkStimSeqOddball(1,3,.4))
-    print("SSEP: " + stimseq.StimSeq.mkStimSeqSSEP(4,3,.1,[2,3,4,5]))
+    print("Noise:" + str(stimseq.StimSeq.mkStimSeqNoise(4,3,.1)))
+    print("Scan: " + str(stimseq.StimSeq.mkStimSeqScan(4,3)))
+    print("Rand: " + str(stimseq.StimSeq.mkStimSeqRand(4,3)))
+    print("Odd:  " + str(stimseq.StimSeq.mkStimSeqOddball(1,3,.4)))
+    print("SSEP: " + str(stimseq.StimSeq.mkStimSeqSSEP(4,3,.1,[2,3,4,5])))
+    print("gold: " + str(stimseq.StimSeq.fromString("../../stimulus/gold_10hz.txt")))
+    print("interval:" + str(stimseq.StimSeq.mkStimSeqInterval(2,4,.15,[3*.15,4*.15])))
     

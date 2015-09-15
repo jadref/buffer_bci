@@ -12,7 +12,7 @@ port=1972
 fullscreen = False #True
 
 #The default number of epochs.
-number_of_epochs = 7
+number_of_epochs = 14
 
 #The number of stimuli to play.
 number_of_stimuli = 6
@@ -25,15 +25,17 @@ keyboard = True
 
 sequence_duration         = 15
 inter_stimulus_interval   = .3
+bci_isi                   = .1
 target_to_target_interval = 1
 baseline_duration         = 3
+target_duration           = 2
 sequences_for_break       = 3
 
 
 ## END OF CONFIGURABLE VARIABLES
 import pygame, sys
 from pygame.locals import *
-from random import shuffle, randint
+from random import shuffle, randint, random
 from time import sleep, time
 import os
 sys.path.append(os.path.dirname(__file__) + bufferpath)
@@ -78,7 +80,7 @@ def updateframe(string, big=False, center=False):
 
 def close():
     pygame.quit()
-    sys.exit()
+    #sys.exit()
     
 def playSingleStimulus(i):
     sendEvent("stimulus.online.play", names[i])
@@ -110,8 +112,11 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
         tgt = ssi[0]==1
         audioID = tgtID if tgt else distID
 
-        #print(str(time()-t0) + ") tn= " + str(st/1000) + " ttg=" + str((t0+st/1000)-time()))
-        sleep((t0+st/1000)-time()) # sleep until we should play this sound
+        ttg = (t0+st/1000)-time()
+        if ttg>0 : 
+            sleep(ttg) 
+        else: 
+            print(str(time()-t0) + ") Lagging behind! tn=" + str(st/1000) + " ttg=" + str(ttg));
         # send events as close in time as possible to when the actual stimulus starts
         sendEvent("stimulus.target", tgt)   # target/non-target
         sendEvent("stimulus.play", names[audioID]) # which stimulus
@@ -119,11 +124,61 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
 
     # get user count of targets
     sleep(0.5)
-    getFeedback(int(len(ss.stimTime_ms)/2),nTgt)
+    getFeedback("How many 'odd' beeps?",int(len(ss.stimTime_ms)/2),nTgt)
     sendEvent("stimulus.trail","end")
 
-def getFeedback(maxLowered,trueLowered):
-    updateframe(["How many 'odd' beeps?", "0-" + str(maxLowered)], False)
+
+def runBCITrainingEpoch(nEpoch,seqDur,isi,periods,distID,tgtID):
+    dobreak(baseline_duration, ["Get Ready","Training Epoch " + str(nEpoch)])
+    updateframe("+", True, True)
+
+    ## Set up training sequence, 2 stim different intervals
+    ## N.B. stimilus 0 is always assumed to be the target
+    ss = stimseq.StimSeq.mkStimSeqInterval(2,seqDur,isi,periods)
+    print(ss)
+    
+    ## get num targets
+    nTgt=0; 
+    for s in ss.stimSeq: nTgt+= 1 if s[0]==1 else 0
+
+    # play the stimulus sequence
+    sendEvent("stimulus.trial", "start")
+    sendEvent("stimulus.numTargets", nTgt)
+    sendEvent("stimulus.targetID", tgtID)
+    
+    audioIDs=[tgtID,distID]
+    t0=time()
+    for ei in range(0,len(ss.stimTime_ms)):
+        st  = ss.stimTime_ms[ei]
+        ssei= ss.stimSeq[ei]
+        audioID = filter(lambda(ai): ssei[ai]==1, range(len(ssei)))
+        if len(audioID)>0 :
+            #BODGE: randomly pick 1 stimuli if >1 at same time
+            audioID = audioID[randint(0,len(audioID)-1)] 
+        else:
+            audioID = None
+
+        tgt = audioID==0 # target stimuli if played the target stimuli
+        # sleep until we should play this sound
+        ttg = (t0+st/1000)-time()
+        if ttg>0 : 
+            sleep(ttg) 
+        else: 
+            print(str(time()-t0) + ") Lagging behind! tn=" + str(st/1000) + " ttg=" + str(ttg));
+        # send events as close in time as possible to when the actual stimulus starts
+        sendEvent("stimulus.target", tgt)   # target/non-target
+        if not audioID is None:
+            sendEvent("stimulus.play", names[audioIDs[audioID]]) # which stimulus
+            stimulusChan.play(sounds[audioIDs[audioID]])
+
+    # get user count of targets
+    sleep(0.5)
+    getFeedback("How many 'target' beeps?",int(len(ss.stimTime_ms)/2),nTgt)
+    sendEvent("stimulus.trail","end")
+
+
+def getFeedback(prompt,maxLowered,trueLowered):
+    updateframe([prompt, "0-" + str(maxLowered)], False)
     key=[None]*2
     for i in range(2):
        key[i] = waitForKey()
@@ -155,7 +210,13 @@ def showInstructions():
   waitForKey()
 
 def showKeyboardInstructions():
-    instructions=["Press:", " i - show expt instructions"," e - show eeg Viewer"," t - run training loop"," q - quit", " 1..7 - play stimulus 1..7"]
+    instructions=["Press:", 
+                  " i - show expt instructions",
+                  " e - show eeg Viewer",
+                  " t - run training loop",
+                  " b - run BCI training loop",
+                  " q - quit", 
+                  " 1..7 - play stimulus 1..7"]
     updateframe(instructions)
 
 def showeeg():
@@ -168,6 +229,36 @@ def doTraining():
       # run with given parameters, and max audio difference
       runTrainingEpoch(i,sequence_duration,inter_stimulus_interval,target_to_target_interval,
                        0,nrStimuli-1)
+      if i == sequences_for_break:
+          updateframe(["Long Break","Press space to continue"])
+          waitForSpaceKey()
+      elif i!= number_of_epochs:
+          dobreak(3,["Break", "(Blink eyes)"])
+
+  updateframe("Training Finished")
+  sleep(2)
+  sendEvent('erpvis','end')
+  sendEvent('stimulus.training','end')
+
+def doBCITraining():
+  sendEvent('startPhase.cmd','erpvis')
+  sendEvent('stimulus.training','start')
+  stimIDs=[0,nrStimuli-1]
+  stimi = list(stimIDs) # order for each sequence
+  periods=[x*bci_isi for x in [3,4]]
+  periodsi=list(periods)
+  for i in range(1,(number_of_epochs+1)):
+      # Pick a target sound for this sequence      
+      shuffle(stimi)    # N.B. shuffle modifies in place....
+      # randomly shuffle who gets what period
+      shuffle(periodsi) # N.B. shuffle modifies in place...
+      # display the cue to the subject for the target for this sequence
+      updateframe(["Target Sound: " + str(stimi[0])])
+      playSingleStimulus(stimi[0])
+      sleep(target_duration)      
+
+      # run with given parameters, and max audio difference      
+      runBCITrainingEpoch(i,sequence_duration,bci_isi,periodsi,stimi[0],stimi[1])
       if i == sequences_for_break:
           updateframe(["Long Break","Press space to continue"])
           waitForSpaceKey()
@@ -293,6 +384,7 @@ actions = dict()
 actions["showeeg"] = showeeg
 actions["showinstructions"] = showInstructions
 actions["starttraining"] =  doTraining
+actions["startBCItraining"] = doBCITraining
 actions["close"] = close
 actions["quit"] = close
 actions["stimulus"] = lambda x: playStimulus(x)
@@ -302,6 +394,7 @@ actions_key = dict()
 actions_key[K_e] = showeeg
 actions_key[K_i] = showInstructions
 actions_key[K_t] = doTraining
+actions_key[K_b] = doBCITraining
 actions_key[K_c] = close
 actions_key[K_q] = close
 actions_key[K_s] = lambda: playSingleStimulus(0)
