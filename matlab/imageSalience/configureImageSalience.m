@@ -53,9 +53,11 @@ tgtDir ='pictures/targets';
 distDir='pictures/distractors';
 
 nSeq = 14;
-seqLen = 30;  % number of flashes per sequence
+trainSeqLen = 60; % number of flashes per sequence
+testSeqLen = 120; % number flashes for testing sequences
 nTgtFlashes= 6; % number of target flashes in each sequence
 ntgtPieces = 9; % number of bits each target is cut into
+
 
 textDuration=5;
 countdownDuration=3;

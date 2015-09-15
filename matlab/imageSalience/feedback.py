@@ -1,6 +1,6 @@
 bufferpath = "../../dataAcq/buffer/python"
 
-import os, sys, pygame, random, math
+import os, sys, pygame, random, math, time
 sys.path.append(os.path.dirname(__file__)+bufferpath)
 import FieldTrip
 from PIL import Image
@@ -16,7 +16,7 @@ height=600
 
 black = (0,0,0)
 
-def buffer_newevents(evtype=None,timeout=3000,verbose=False):
+def buffer_newevents(evttype=None,timeout_ms=3000,verbose=False):
     '''
     Wait for and return any new events recieved from the buffer between
     calls to this function
@@ -33,12 +33,12 @@ def buffer_newevents(evtype=None,timeout=3000,verbose=False):
     start = time.time()
     elapsed_ms = 0
     events=[]
-    while len(events)==0 and elapsed_ms<timeout:
-        nSamples,curEvents=ftc.wait(-1,nEvents, timeout_ms - elapsed_ms)
+    while len(events)==0 and elapsed_ms<timeout_ms:
+        nSamples,curEvents=ftc.wait(-1,nEvents, int(timeout_ms - elapsed_ms))
         if curEvents>nEvents:            
             events = ftc.getEvents([nEvents,curEvents-1])            
             if not evttype is None:
-                events = filter(lambda x: x.type in evtype, events)
+                events = filter(lambda x: x.type in evttype, events)
         nEvents = curEvents # update starting number events (allow for buffer restarts)
         elapsed_ms = (time.time() - start)*1000        
     return events
