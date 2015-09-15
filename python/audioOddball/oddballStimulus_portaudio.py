@@ -127,13 +127,14 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
     updateframe("+", True, True)
 
     updateframe(["Target Sound: " + names[tgtID]],False,True)
-    sleep(target_duration/2)
+    sleep(target_duration/2.0)
     t0=time()
     for ei in range(3): # play 3 beeps of the target sound at the target interval
-        ttg = (t0+ei*tti/2)-time()
+        ttg = (t0+ei*tti/2.0)-time()
+        print("ttg="+str(ttg)+"\n")
         if ttg>0 : playSlience(ttg,stream)  # avoid clicks by playing slience...
         stream.write(data[tgtID])
-    sleep(target_duration/2)      
+    sleep(target_duration/2.0)      
     updateframe("+", True, True)
 
     ## Set up training sequence
