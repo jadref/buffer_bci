@@ -244,6 +244,7 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
     end    
   end
   X=X(:,fIdx,:); % sub-set to the interesting frequency range
+  freqs=freqs(fIdx); % update labelling info
 end;
 
 %5.5) Visualise the input?
@@ -294,14 +295,15 @@ if ( opts.visualize )
    elseif ( ~isempty(di) ) xy=cat(2,di.extra.pos2d); % use the pre-comp ones if there
    else   xy=[];
    end
-   yvals=freqs; if( ~isempty(fIdx) ) yvals=freqs(fIdx); end
-   image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels,'disptype','plot','ticklabs','sw','clabel',opts.aveType);   
+   erpfig=gcf;figure(erpfig);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');
+   yvals=freqs;
+   image3d(mu(:,:,:),1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels(:),'disptype','plot','ticklabs','sw','clabel',opts.aveType);
    try; zoomplots; saveaspdf('ERSP'); catch; end;
-   if ( ~(all(Yci(:)==Yci(1))) ) % only if >1 class input
-   aucfig=gcf+1;figure(aucfig);clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');
-   image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
-   colormap ikelvin;
-   try; zoomplots; saveaspdf('AUC'); catch; end;
+   if ( ~(all(Yci(:)==Yci(1))) )
+    aucfig=figure();clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');
+    image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
+    colormap ikelvin; 
+    try; zoomplots; saveaspdf('AUC'); catch; end;
    end
    drawnow;
    figure(erpfig);
