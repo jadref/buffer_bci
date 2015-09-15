@@ -61,8 +61,8 @@ textDuration=5;
 countdownDuration=3;
 targetDuration=5;
 postTargetDuration=1;
-stimDuration=0.2;
-whiteSquareDuration=0.3;
+stimDuration=0.10;
+whiteSquareDuration=0.10;
 interSeqDuration=1;
 
 framebgColor     = [0 0 0];
