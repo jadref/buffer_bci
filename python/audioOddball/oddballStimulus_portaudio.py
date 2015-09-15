@@ -38,6 +38,9 @@ target_duration           = 2
 inter_trial_duration      = 3
 sequences_for_break       = 3
 
+# flag to indicate we should end training/testing early
+endSeq=False
+
 ## END OF CONFIGURABLE VARIABLES
 import pygame, sys
 from pygame.locals import *
@@ -131,7 +134,6 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
     t0=time()
     for ei in range(3): # play 3 beeps of the target sound at the target interval
         ttg = (t0+ei*tti/2.0)-time()
-        print("ttg="+str(ttg)+"\n")
         if ttg>0 : playSlience(ttg,stream)  # avoid clicks by playing slience...
         stream.write(data[tgtID])
     sleep(target_duration/2.0)      
@@ -157,7 +159,7 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
         audioID = tgtID if tgt else distID
 
         # sleep until we should play this sound
-        ttg = (t0+st/1000)-time()
+        ttg = (t0+st/1000.0)-time()
         if ttg>0 : 
             #if sys.platform=='win32' or sys.platform=='win64':
                 playSlience(ttg,stream)  # avoid clicks on windows by playing slience...
@@ -176,18 +178,19 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
     sendEvent("stimulus.trail","end")
 
 def runTestingEpoch(nEpoch,seqDur,isi,tti,audioIDs,tgtIdx=None):
+    global endSeq
     if tgtIdx is None: tgtIdx=len(audioIDs)-1
     dobreak(baseline_duration, ["Get Ready"]+["Testing Epoch " + str(nEpoch)])
 
     updateframe(["Target: " + names[audioIDs[tgtIdx]]],False,True)
-    sleep(target_duration/2)
+    sleep(target_duration/2.0)
     t0=time()
     for ei in range(3): # play 3 beeps of the target sound at the target interval
-        ttg = (t0+ei*tti/2)-time()
+        ttg = (t0+ei*tti/2.0)-time()
         if ttg>0 : playSlience(ttg,stream)  # avoid clicks by playing slience...
         #sleep(ttg if ttg>0 else 0) 
         stream.write(data[audioIDs[tgtIdx]])
-    sleep(target_duration/2)      
+    sleep(target_duration/2.0)      
 
     ## Set up training sequence
     ss = stimseq.StimSeq.mkStimSeqOddball(1,seqDur,isi,tti)
@@ -219,7 +222,7 @@ def runTestingEpoch(nEpoch,seqDur,isi,tti,audioIDs,tgtIdx=None):
         if newTgt: updateframe(["Target: " + names[audioIDs[tgtIdx]]],False,True)
 
         # sleep until we should play this sound
-        ttg = (t0+st/1000)-time()
+        ttg = (t0+st/1000.0)-time()
         if ttg>0 : 
             #if sys.platform=='win32' or sys.platform=='win64':
                 playSlience(ttg,stream)  # avoid clicks on windows by playing slience...
@@ -254,14 +257,14 @@ def runBCITrainingEpoch(nEpoch,seqDur,isi,periods,audioIDs,tgtIdx):
 
     # display the cue to the subject for the target for this sequence
     updateframe(["Target Sound: " + str(audioIDs[tgtIdx])] + ["->" if tgtIdx==0 else "<-"],False,True)
-    sleep(target_duration/2)
+    sleep(target_duration/2.0)
     t0=time()
     for ei in range(3): # play 3 beeps of the target sound at the target interval
-        ttg = (t0+ei*periods[tgtIdx])-time()
+        ttg = (t0+ei*1.0*periods[tgtIdx])-time()
         if ttg>0 : playSlience(ttg,stream)  # avoid clicks by playing slience...
         #sleep(ttg if ttg>0 else 0) 
         stream.write(audioArray[tgtIdx].tostring())
-    sleep(target_duration/2)      
+    sleep(target_duration/2.0)      
     updateframe("+", True, True)
 
     ## Set up training sequence, 2 stim different intervals
@@ -293,7 +296,7 @@ def runBCITrainingEpoch(nEpoch,seqDur,isi,periods,audioIDs,tgtIdx):
                 audio.append(audioArray[0][i]*ssei[0] + audioArray[1][i]*ssei[1])
 
         # sleep until we should play this sound
-        ttg = (t0+st/1000)-time()
+        ttg = (t0+st/1000.0)-time()
         if ttg>0 : 
             #if sys.platform=='win32' or sys.platform=='win64':
                 playSlience(ttg,stream)  # avoid clicks on windows by playing slience...
@@ -310,16 +313,20 @@ def runBCITrainingEpoch(nEpoch,seqDur,isi,periods,audioIDs,tgtIdx):
     # get user count of targets
     sleep(0.5)
     getFeedback("How many 'target' beeps?",int(len(ss.stimTime_ms)/2),nTgt)
-    sendEvent("stimulus.trail","end")
-
+    sendEvent("stimulus.trial","end")
 
 def getFeedback(prompt,maxLowered,trueLowered):
+    global endSeq
     updateframe([prompt, "0-" + str(maxLowered)], False)
     key=[None]*2
     for i in range(2):
         key[i] = waitForKey()
-        while not key[i] in numKeyDict:
+        while not (key[i] in numKeyDict or key[i]==pygame.K_ESCAPE):
             key[i] = waitForKey()
+        print("Got key: " + str(key[i]) + "\n")                
+        if key[i]==pygame.K_ESCAPE:
+            endSeq=True # mark that we should stop
+            return None # abort
     respLowered=int(str(numKeyDict[key[0]]))*10 + int(str(numKeyDict[key[1]]))
     sendEvent("response.numTargets", respLowered)
     fbStr = [];
@@ -328,6 +335,7 @@ def getFeedback(prompt,maxLowered,trueLowered):
     updateframe(fbStr + ["Response = " + str(respLowered)] 
                 + ["True fragments = " + str(trueLowered)])
     sleep(1)
+    return respLowered
     
 def dobreak(n, message):
     while n > 0:
@@ -374,13 +382,7 @@ def doTraining():
           updateframe("")
           sleep(inter_trial_duration)
 
-      # check for quit key-press
-      events = pygame.event.get()
-      for event in events:
-          if event.type == pygame.QUIT :
-              break
-          elif event.type == pygame.KEYDOWN and event.key==pygame.K_ESCAPE:
-              break
+      if endSeq : break    
 
 
   updateframe("Training Finished")
@@ -425,13 +427,7 @@ def doBCITraining():
           updateframe("")
           sleep(inter_trial_duration)
 
-      # check for quit key-press
-      events = pygame.event.get()
-      for event in events:
-          if event.type == pygame.QUIT :
-              break
-          elif event.type == pygame.KEYDOWN and event.key==pygame.K_ESCAPE:
-              break
+      if endSeq : break    
            
   updateframe("Training Finished")
   sleep(2)
@@ -456,6 +452,8 @@ def bciTesting():
       elif i!= number_of_epochs:
           updateframe("")
           sleep(inter_trial_duration)
+
+      if endSeq : break    
 
   updateframe("Testing Finished")
   sleep(2)
@@ -580,6 +578,7 @@ actions_key[K_c] = doBCITraining
 actions_key[K_t] = doTesting
 actions_key[K_b] = bciTesting
 actions_key[K_q] = close
+actions_key[K_ESCAPE] = close
 actions_key[K_s] = lambda: playSingleStimulus(0)
 actions_key[K_1] = lambda: playSingleStimulus(0)
 actions_key[K_2] = lambda: playSingleStimulus(1)
