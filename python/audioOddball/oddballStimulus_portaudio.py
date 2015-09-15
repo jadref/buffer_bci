@@ -29,6 +29,7 @@ number_of_repeats = 3
 keyboard = True
 
 sequence_duration         = 15
+testing_sequence_duration = 120
 inter_stimulus_interval   = .3
 bci_isi                   = .15
 target_to_target_interval = 1
@@ -125,7 +126,7 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
     dobreak(baseline_duration, ["Get Ready"]+["Training Epoch " + str(nEpoch)])
     updateframe("+", True, True)
 
-    updateframe(["Target Sound: " + str(tgtID)],False,True)
+    updateframe(["Target Sound: " + names[tgtID]],False,True)
     sleep(target_duration/2)
     t0=time()
     for ei in range(3): # play 3 beeps of the target sound at the target interval
@@ -158,7 +159,7 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
         ttg = (t0+st/1000)-time()
         if ttg>0 : 
             #if sys.platform=='win32' or sys.platform=='win64':
-                playSlience(ttg)  # avoid clicks on windows by playing slience...
+                playSlience(ttg,stream)  # avoid clicks on windows by playing slience...
             #else:
             #    sleep(ttg) 
         else: 
@@ -172,6 +173,72 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
     sleep(0.5)
     getFeedback("How many 'odd' beeps?",int(len(ss.stimTime_ms)/2),nTgt)
     sendEvent("stimulus.trail","end")
+
+def runTestingEpoch(nEpoch,seqDur,isi,tti,audioIDs,tgtIdx=None):
+    if tgtIdx is None: tgtIdx=len(audioIDs)-1
+    dobreak(baseline_duration, ["Get Ready"]+["Testing Epoch " + str(nEpoch)])
+
+    updateframe(["Target: " + names[audioIDs[tgtIdx]]],False,True)
+    sleep(target_duration/2)
+    t0=time()
+    for ei in range(3): # play 3 beeps of the target sound at the target interval
+        ttg = (t0+ei*tti/2)-time()
+        sleep(ttg if ttg>0 else 0) 
+        stream.write(data[audioIDs[tgtIdx]])
+    sleep(target_duration/2)      
+
+    ## Set up training sequence
+    ss = stimseq.StimSeq.mkStimSeqOddball(1,seqDur,isi,tti)
+    
+    # play the stimulus sequence
+    sendEvent("stimulus.trial", "start")
+    sendEvent("stimulus.targetID", names[audioIDs[tgtIdx]])
+    
+    endSeq=False
+    t0=time()
+    for ei in range(0,len(ss.stimTime_ms)):
+        st  = ss.stimTime_ms[ei]
+        ssi = ss.stimSeq[ei]
+        tgt = ssi[0]==1
+        
+        # update the target sound based on pressed keys..
+        newTgt=False
+        events = pygame.event.get()
+        for event in events:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    endSeq=True
+                if event.key in numKeyDict : 
+                    ntgtIdx = numKeyDict[event.key]
+                    if ntgtIdx < len(audioIDs)-1:
+                        tgtIdx = ntgtIdx+1
+                        newTgt = True
+        if endSeq : break
+        if newTgt: updateframe(["Target: " + names[audioIDs[tgtIdx]]],False,True)
+
+        # sleep until we should play this sound
+        ttg = (t0+st/1000)-time()
+        if ttg>0 : 
+            #if sys.platform=='win32' or sys.platform=='win64':
+                playSlience(ttg,stream)  # avoid clicks on windows by playing slience...
+            #else:
+            #    sleep(ttg) 
+        else: 
+            print(str(time()-t0) + ") Lagging behind! tn=" + str(st/1000) + " ttg=" + str(ttg));
+
+        # send events as close in time as possible to when the actual stimulus starts
+        audioID = audioIDs[tgtIdx if tgt else 0]
+        sendEvent("stimulus.target", tgt)   # target/non-target
+        sendEvent("stimulus.play", names[audioID]) # which stimulus
+        stream.write(data[audioID]) # this should block until the audio is finished....
+
+    sleep(0.5)
+    if not endSeq:
+        # get user count of targets
+        getFeedback("How many 'odd' beeps?",int(len(ss.stimTime_ms)/2),nTgt)
+    sendEvent("stimulus.trail","end")
+
+
 
 def runBCITrainingEpoch(nEpoch,seqDur,isi,periods,audioIDs,tgtIdx):
 
@@ -279,8 +346,10 @@ def showKeyboardInstructions():
     instructions=["Press:", 
                   " i - show expt instructions",
                   " e - show eeg Viewer",
-                  " t - run training loop",
-                  " b - run BCI training loop",
+                  " o - audio oddball training",
+                  " t - audio oddball testing",
+                  " c - BCI training loop",
+                  " b - BCI testing",
                   " q - quit", 
                   " 1..7 - play stimulus 1..7"]
     updateframe(instructions)
@@ -302,10 +371,33 @@ def doTraining():
           updateframe("")
           sleep(inter_trial_duration)
 
+      # check for quit key-press
+      events = pygame.event.get()
+      for event in events:
+          if event.type == pygame.QUIT :
+              break
+          elif event.type == pygame.KEYDOWN and event.key==pygame.K_ESCAPE:
+              break
+
+
   updateframe("Training Finished")
   sleep(2)
   sendEvent('erpvis','end')
   sendEvent('stimulus.training','end')
+
+
+def doTesting():
+  sendEvent('startPhase.cmd','erpvis')
+  sendEvent('stimulus.testing','start')
+  # run with given parameters, and max audio difference
+  runTestingEpoch(0,testing_sequence_duration,inter_stimulus_interval,target_to_target_interval,
+                  range(nrStimuli))
+
+  updateframe("Training Finished")
+  sleep(2)
+  sendEvent('erpvis','end')
+  sendEvent('stimulus.testing','end')
+
 
 def doBCITraining():
   sendEvent('startPhase.cmd','calibrate')
@@ -330,9 +422,41 @@ def doBCITraining():
           updateframe("")
           sleep(inter_trial_duration)
 
+      # check for quit key-press
+      events = pygame.event.get()
+      for event in events:
+          if event.type == pygame.QUIT :
+              break
+          elif event.type == pygame.KEYDOWN and event.key==pygame.K_ESCAPE:
+              break
+           
   updateframe("Training Finished")
   sleep(2)
   sendEvent('calibrate','end')
+
+def bciTesting():
+  sendEvent('startPhase.cmd','testing')
+  sendEvent('stimulus.testing','start')
+  stimIDs=[0,nrStimuli-1]
+  periods=[x*bci_isi for x in [3,4]]
+  for i in range(1,(number_of_epochs+1)):
+      # Pick a target sound for this sequence      
+      tgtIdx = randint(0,1)
+      # randomly shuffle who gets what period
+      shuffle(periodsi) # N.B. shuffle modifies in place...
+
+      # run with given parameters, and max audio difference      
+      runBCITrainingEpoch(i,testing_sequence_duration,bci_isi,periodsi,stimi,tgtIdx)
+      if i == sequences_for_break:
+          updateframe(["Long Break","Press space to continue"])
+          waitForSpaceKey()
+      elif i!= number_of_epochs:
+          updateframe("")
+          sleep(inter_trial_duration)
+
+  updateframe("Testing Finished")
+  sleep(2)
+  sendEvent('testing','end')
   
 def waitForSpaceKey():
   event = pygame.event.wait()
@@ -419,10 +543,10 @@ pygame.display.set_caption('BCI Audio OddBall Experiment')
 ## LOADING GLOBAL VARIABLES
 
 # Pre-Loading Music data
-#names     = ['500', '505', '510', '515', '520', '525', '530', '535', '540', '545', '550']
-#sounds = map(lambda i: wave.open("stimuli/" + names[i] + ".wav"), range(0,len(names)))
-names     = ['500', '550']
-sounds = map(lambda i: wave.open("stimuli_smth/" + names[i] + ".wav"), range(0,len(names)))
+names   = ['500', '505', '510', '515', '520', '525', '530', '535', '540', '545', '550']
+sounds  = map(lambda i: wave.open("stimuli/" + names[i] + ".wav"), range(0,len(names)))
+#names   = ['500', '550']
+#sounds  = map(lambda i: wave.open("stimuli_smth/" + names[i] + ".wav"), range(0,len(names)))
 data = map(lambda x: x.readframes(x.getnframes()),sounds)
 nrStimuli = len(names)
 
@@ -445,23 +569,13 @@ updateframe(["Welcome to the BCI Music Experiment"])
 
 numKeyDict = {K_0 : 0, K_1 : 1, K_2 : 2, K_3 : 3, K_4 : 4, K_5 : 5, K_6 : 6, K_7 : 7, K_8 : 8, K_9 : 9, K_KP0 : 0, K_KP1 : 1, K_KP2 : 2, K_KP3 : 3, K_KP4 : 4, K_KP5 : 5, K_KP6 : 6, K_KP7 : 7, K_KP8 : 8, K_KP9 : 9 } 
 
-actions = dict()
-
-actions["showeeg"] = showeeg
-actions["showinstructions"] = showInstructions
-actions["starttraining"] =  doTraining
-actions["startBCItraining"] = doBCITraining
-actions["close"] = close
-actions["quit"] = close
-actions["stimulus"] = lambda x: playStimulus(x)
-
 actions_key = dict()
-
 actions_key[K_e] = showeeg
 actions_key[K_i] = showInstructions
-actions_key[K_t] = doTraining
-actions_key[K_b] = doBCITraining
-actions_key[K_c] = close
+actions_key[K_o] = doTraining
+actions_key[K_c] = doBCITraining
+actions_key[K_t] = doTesting
+actions_key[K_b] = bciTesting
 actions_key[K_q] = close
 actions_key[K_s] = lambda: playSingleStimulus(0)
 actions_key[K_1] = lambda: playSingleStimulus(0)
@@ -473,15 +587,9 @@ actions_key[K_6] = lambda: playSingleStimulus(5)
 actions_key[K_7] = lambda: playSingleStimulus(6)
 
 ## STARTING PROGRAM LOOP
-
-if not keyboard:
-    showInstructions()
-    waitForKey()
-    doTraining()
-    close()
-else:
-    while True:
-        showKeyboardInstructions()
-        key = waitForKey()
-        if key in actions_key:
-            actions_key[key]()
+while True:
+    showKeyboardInstructions()
+    key = waitForKey()
+    print("Got key: " + str(key) + "\n")
+    if key in actions_key:
+        actions_key[key]()
