@@ -212,6 +212,7 @@ for foldi=1:size(fIdxs,ndims(fIdxs));
          end
          rt=cputime()-rt;
          
+			if ( size(f,1)==size(Ytrn,2) && size(f,2) == size(Ytrn,1) ) f=f'; end; % ensure same size as Y
          if ( isstruct(seed) && isfield(seed,'soln') ) sol=seed.soln; else sol=seed; end;
          if ( opts.binsp ) soln{spi,ci,foldi}=sol; else soln{ci,foldi}=sol; end;
          %res.fold.rt(:,ci,foldi,spi)=rt;

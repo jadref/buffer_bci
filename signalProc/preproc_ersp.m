@@ -290,7 +290,7 @@ if ( opts.visualize )
     end
    end
    times=(1:size(mu,2))/fs;
-   erpfig=figure('Name','Data Visualisation: ERP');
+   erpfig=figure(1); clf(erpfig); set(erpfig,'Name','Data Visualisation: ERP');
    if (size(ch_pos,1)==3) xy = xyz2xy(ch_pos);
    elseif ( ~isempty(di) ) xy=cat(2,di.extra.pos2d); % use the pre-comp ones if there
    else   xy=[];

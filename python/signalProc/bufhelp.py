@@ -94,6 +94,34 @@ def update(verbose = True):
     if verbose:
         print "Updated. nSamples = " + str(nSamples) + " at lastupdate " + str(lastupdate)
 
+
+def buffer_newevents(evtype=None,timeout=3000,verbose=False):
+    '''
+    Wait for and return any new events recieved from the buffer between
+    calls to this function
+    
+    timeout    = maximum time to wait in milliseconds before returning
+    '''
+    global ftc,nEvents # use to store number events processed accross function calls
+    if not 'nEvents' in globals(): # first time initialize to events up to now
+    	start, nEvents = ftc.poll()
+
+    if verbose:
+        print "Waiting for event(s) " + str(evtypes) + " with timeout_ms " + str(timeout_ms)
+
+    start = time.time()
+    elapsed_ms = 0
+    events=[]
+    while len(events)==0 and elapsed_ms<timeout:
+        nSamples,curEvents=ftc.wait(-1,nEvents, timeout_ms - elapsed_ms)
+        if curEvents>nEvents:            
+            events = ftc.getEvents([nEvents,curEvents-1])            
+            if not evttype is None:
+                events = filter(lambda x: x.type in evtype, events)
+        nEvents = curEvents # update starting number events (allow for buffer restarts)
+        elapsed_ms = (time.time() - start)*1000        
+    return events
+
 procnEvents=0
 def waitnewevents(evtypes, timeout_ms=1000,verbose = True):      
     """Function that blocks until a certain type of event is recieved. 

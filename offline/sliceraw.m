@@ -105,7 +105,7 @@ end
 if ( iscell(opts.startSet) )
   mi=matchEvents(events,opts.startSet{:});
 elseif ( isstruct(opts.startSet) ) % already the set of events to slice on
-  devents=opts.startSet; mi=true(numel(devents),1);
+  events=opts.startSet; mi=true(numel(events),1);
 elseif ( isa(opts.startSet,'function_handle') || exist(opts.startSet)==2 )
   mi=feval(opts.startSet,events);
 elseif ( isempty(opts.startSet) ) % return all events
