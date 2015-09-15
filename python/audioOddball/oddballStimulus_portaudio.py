@@ -51,8 +51,6 @@ sys.path.append(os.path.dirname(__file__)+sigProcPath)
 import stimseq
 
 ## HELPER FUNCTIONS
-
-
 def updateframe(string, big=False, center=False):
     if type(string) is not list:
         string = [string]
@@ -83,7 +81,30 @@ def updateframe(string, big=False, center=False):
 
     # draw the window onto the screen
     pygame.display.update()
-    pygame.display.update()
+
+# Audio Manipulation functions
+import array;
+def rebalance(data,sampwidth,balance):
+    ''' data in stereo audio data and re-balance the left-right mapping'''
+    # convert the raw bytes into an integer array
+    a=[];
+    if sampwidth == 1 :
+         a=array.array("b",data) 
+    elif sampwidth == 2:
+         a=array.array("h",data) #get as short integer data         
+    # transform the volume in the array
+    for j in range(0,len(a)-1,2): # N.B. audio is interleaved in left-right pairs
+        a[j]   = int(a[j]  *balance)
+        a[j+1] = int(a[j+1]*(1-balance))  
+    return a;
+
+def playSlience(duration,stream):
+    channels=stream._channels
+    rate    =stream._rate
+    sampWidth=p.get_sample_size(stream._format)
+    nSamp   =int(duration*channels*sampWidth*rate)
+    audio   ='\0'*nSamp
+    stream.write(audio) # blocking call
 
 def close():
     pygame.quit()
@@ -136,7 +157,10 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
         # sleep until we should play this sound
         ttg = (t0+st/1000)-time()
         if ttg>0 : 
-            sleep(ttg) 
+            #if sys.platform=='win32' or sys.platform=='win64':
+                playSlience(ttg)  # avoid clicks on windows by playing slience...
+            #else:
+            #    sleep(ttg) 
         else: 
             print(str(time()-t0) + ") Lagging behind! tn=" + str(st/1000) + " ttg=" + str(ttg));
         # send events as close in time as possible to when the actual stimulus starts
@@ -148,21 +172,6 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
     sleep(0.5)
     getFeedback("How many 'odd' beeps?",int(len(ss.stimTime_ms)/2),nTgt)
     sendEvent("stimulus.trail","end")
-
-import array;
-def rebalance(data,sampwidth,balance):
-    ''' data in stereo audio data and re-balance the left-right mapping'''
-    # convert the raw bytes into an integer array
-    a=[];
-    if sampwidth == 1 :
-         a=array.array("b",data) 
-    elif sampwidth == 2:
-         a=array.array("h",data) #get as short integer data         
-    # transform the volume in the array
-    for j in range(0,len(a)-1,2): # N.B. audio is interleaved in left-right pairs
-        a[j]   = int(a[j]  *balance)
-        a[j+1] = int(a[j+1]*(1-balance))  
-    return a;
 
 def runBCITrainingEpoch(nEpoch,seqDur,isi,periods,audioIDs,tgtIdx):
 
@@ -216,7 +225,10 @@ def runBCITrainingEpoch(nEpoch,seqDur,isi,periods,audioIDs,tgtIdx):
         # sleep until we should play this sound
         ttg = (t0+st/1000)-time()
         if ttg>0 : 
-            sleep(ttg) 
+            #if sys.platform=='win32' or sys.platform=='win64':
+                playSlience(ttg,stream)  # avoid clicks on windows by playing slience...
+            #else:
+            #    sleep(ttg) 
         else: 
             print(str(time()-t0) + ") Lagging behind! tn=" + str(st/1000) + " ttg=" + str(ttg));
         # send events as close in time as possible to when the actual stimulus starts
