@@ -37,6 +37,7 @@ baseline_duration         = 3
 target_duration           = 2
 inter_trial_duration      = 3
 sequences_for_break       = 3
+periods                   = [x*bci_isi for x in [3,4]] # interval in isi between left/right stimuli
 
 # flag to indicate we should end training/testing early
 endSeq=False
@@ -240,7 +241,6 @@ def doBCITraining(names,data,periods):
   sendEvent('stimulus.training','start')
   stimIDs=[0,len(sounds)-1]
   stimi = list(stimIDs) # left/right position for each sequence
-  periods=[x*bci_isi for x in [3,4]]
   periodsi=list(periods)
   for i in range(1,(number_of_epochs+1)):
       # Pick a target sound for this sequence      
@@ -268,7 +268,6 @@ def bciTesting(names,sounds,periods):
   sendEvent('startPhase.cmd','testing')
   sendEvent('stimulus.testing','start')
   stimIDs=[0,len(sounds)-1]
-  periods=[x*bci_isi for x in [3,4]]
   for i in range(1,(number_of_epochs+1)):
       # Pick a target sound for this sequence      
       tgtIdx = randint(0,1)
@@ -356,8 +355,8 @@ data    = map(lambda x: x.readframes(x.getnframes()),sounds)
 
 # Pre-loading yes/no data
 ynnames   = ['no_f', 'yes_m']
-ynsounds  = map(lambda i: wave.open("stimuli_yesno/" + names[i] + ".wav"), range(0,len(names)))
-yndata    = map(lambda x: x.readframes(x.getnframes()),sounds)
+ynsounds  = map(lambda i: wave.open("stimuli_yesno/" + ynnames[i] + ".wav"), range(0,len(ynnames)))
+yndata    = map(lambda x: x.readframes(x.getnframes()),ynsounds)
 
 # Opening Audio Stream
 stream = p.open(format=p.get_format_from_width(sounds[0].getsampwidth()),
