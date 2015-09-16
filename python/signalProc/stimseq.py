@@ -1,5 +1,5 @@
 # TODO :
-#  [] - load sequence from file
+#  [X] - load sequence from file
 #  [] - use of the event sequence
 #  [] - noise codes stimulus
 from __future__ import division  # ensure the divisions produce float if needed
@@ -28,11 +28,11 @@ class StimSeq :
         res+= "\n\n"
         res += "#stimSeq : "
         if not self.stimSeq is None:
-            res += "(" + str(len(self.stimSeq)) + "," + str(len(self.stimSeq[0])) + ")\n"
-            for i in range(len(self.stimSeq)):
-                for j in range(0,len(self.stimSeq[i])-1):
-                    res += str(self.stimSeq[i][j]) + " "
-                res+= str(self.stimSeq[i][-1]) + "\n"
+            res += "(" + str(len(self.stimSeq[0])) + "," + str(len(self.stimSeq)) + ")\n"
+            for j in range(0,len(self.stimSeq[0])):
+                for i in range(len(self.stimSeq)-1):
+                    res += str(self.stimSeq[i][j]) + " "                
+                res+= str(self.stimSeq[-1][j]) + "\n"
         else:
             res+= "<null>\n"
         res+="\n\n"
@@ -61,10 +61,15 @@ class StimSeq :
     def fromString(fname):
         f=open(fname,'r') if type(fname) is str else fname
         st=StimSeq.readArray(f) # read the stim times
-        if len(st)>1 : raise(Exception("Error: stimSeq has multiple rows!"))
+        if len(st)>1 : raise(Exception("Error: stimTime has multiple rows!"))
         else: st=st[0] # un-nest
         ss=StimSeq.readArray(f,len(st)) # read stim-seq - check same length
-        return StimSeq(st,ss)
+        # transpose ss to have time in the major dimension
+        ss2=[[None]*len(ss)]*len(ss[0]);
+        for s in range(len(ss)):
+            for t in range(len(ss[s])):
+                ss2[t][s]=ss[s][t]        
+        return StimSeq(st,ss2)
 
     @staticmethod
     def mkStimSeqScan(nSymb, seqDuration, isi):
@@ -145,17 +150,39 @@ class StimSeq :
                 ei = int(round(ii*periods[si]/isi)) # convert to event number
                 if  ei < nEvent: stimSeq[ei][si]=1
         return StimSeq(stimTime_ms,stimSeq)
-        
 
+    def phaseShiftKey(self,speedup=False):
+        ''' Convert a normal encoded stim sequence into a phase-shift-keyed version where
+            0 -> 01, and 1 -> 10.
+            speedup - if true then keep duration the same but half the isi, false = double duration.'''
+        if speedup:
+            st=[]
+            for i in range(len(self.stimTime_ms)-1): # insert new point between existing ones
+                st += [self.stimTime_ms[i], self.stimTime_ms[i]+(self.stimTime_ms[i+1]-self.stimTime_ms[i])//2]
+            st += [self.stimTime_ms[-1], 
+                   self.stimTime_ms[-1]+(self.stimTime_ms[-1]-self.stimTime_ms[-2])//2]
+        else:
+            # start again 1 isi after the end
+            offset = self.stimTime_ms[-1]+self.stimTime_ms[1]-self.stimTime_ms[0] 
+            st=self.stimTime_ms + [i+offset for i in self.stimTime_ms]
+        self.stimTime_ms=st
+
+        ss = [[None]*len(self.stimSeq[0]) for i in range(len(self.stimSeq)*2)]
+        for ei in range(len(self.stimSeq)):
+            ss[ei*2]   = self.stimSeq[ei]
+            ss[ei*2+1] = [0 if ssei==1 else 1 for ssei in self.stimSeq[ei]]
+        self.stimSeq=ss
+        return self
 
 
 # testcase code
 if __name__ == "__main__":
     print("Noise:" + str(stimseq.StimSeq.mkStimSeqNoise(4,3,.1)))
-    print("Scan: " + str(stimseq.StimSeq.mkStimSeqScan(4,3)))
-    print("Rand: " + str(stimseq.StimSeq.mkStimSeqRand(4,3)))
+    print("Scan: " + str(stimseq.StimSeq.mkStimSeqScan(4,3,.1)))
+    print("Rand: " + str(stimseq.StimSeq.mkStimSeqRand(4,3,.1)))
     print("Odd:  " + str(stimseq.StimSeq.mkStimSeqOddball(1,3,.4)))
-    print("SSEP: " + str(stimseq.StimSeq.mkStimSeqSSEP(4,3,.1,[2,3,4,5])))
+    print("SSEP: " + str(stimseq.StimSeq.mkStimSeqSSEP(4,3,.1,[x*.1 for x in [2,3,4,5]])))
     print("gold: " + str(stimseq.StimSeq.fromString("../../stimulus/gold_10hz.txt")))
     print("interval:" + str(stimseq.StimSeq.mkStimSeqInterval(2,4,.15,[3*.15,4*.15])))
+    print("Scan(psk): " + str(stimseq.StimSeq.mkStimSeqScan(4,3,.1).phaseShiftKey()))
     
