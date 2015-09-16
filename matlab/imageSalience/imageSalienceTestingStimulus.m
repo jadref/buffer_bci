@@ -111,14 +111,14 @@ for seqi = 1:nSeq
     for stimi = 1:seqLen
         %Flash the next piece
         %If the random order array says target take the next target piece
-        if (flashOrder(stimi, seqi) == 1)
+        if (flashOrder(stimi) == 1)
            piecesTaken= piecesTaken + 1;
 			  flashVal   = 'target';
 			  imgInfo    = tgtInfo;
-           piece      = tgtPieces(piecesTaken, seqi);
+           piece      = tgtPieces(piecesTaken);
 
         %If the random order array says distractor take the next distractor
-        elseif (flashOrder(stimi, seqi) == 0)
+        elseif (flashOrder(stimi) == 0)
           distTaken  = distTaken + 1;
 			 distIdx    = distOrder(distTaken,seqi);
 			 flashVal   = 'dist';
@@ -138,7 +138,7 @@ for seqi = 1:nSeq
         %send events describing what just happened
         sendEvent('stimulus.target', flashVal);                       % target state
 		  sendEvent('stimulus.image', sprintf('%s/%d',imgInfo.name,piece)); % image info
-		  if ( verb>0 ) if flashOrder(stimi, seqi) fprintf('t'); else fprintf('.'); end; end;
+		  if ( verb>0 ) if flashOrder(stimi) fprintf('t'); else fprintf('.'); end; end;
         
         %Flash the white square
         set(imghdl,'cdata',whiteSquare,'visible','on');
