@@ -12,6 +12,8 @@ function []=startSigProcBuffer(varargin)
 %                                 saved and labelled with the value of this event.
 %                                 N.B. the event type used to define an epoch is given in the option:
 %                                        epochEventType
+%  (startPhase.cmd,erpviewcalibrate)  -- start calibration phase processing with simultaneous 
+%                                        erp viewing
 %  (calibrate,end)             -- end calibration phase
 %  (startPhase.cmd,train)      -- train a classifier based on the saved calibration data
 %  (startPhase.cmd,testing)    -- start test phase, i.e. on-line prediction generation
@@ -189,6 +191,14 @@ while ( true )
     fn=sprintf('erpvis_%s_%s',subject,datestr);fprintf('Saving to: %s\n',fn); % save results
     save(fn,'X','Y','key');
 
+   %---------------------------------------------------------------------------------
+	case {'erpviewcalibrate'};
+    [traindata,traindevents]=erpViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix',opts.erpEventType,'endType',{lower(phaseToRun) 'calibrate'},'trlen_ms',opts.trlen_ms,'freqbands',[.0 .3 45 47],'maxEvents',opts.erpMaxEvents);
+    mi=matchEvents(traindevents,{'calibrate' 'calibration'},'end'); traindevents(mi)=[]; traindata(mi)=[];%remove exit event
+    fname=[dname '_' subject '_' datestr];
+    fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save(fname,'traindata','traindevents','hdr');
+    trainSubj=subject;
+	 
    %---------------------------------------------------------------------------------
    case {'calibrate','calibration'};
     [traindata,traindevents,state]=buffer_waitData(opts.buffhost,opts.buffport,[],'startSet',opts.epochEventType,'exitSet',{{'calibrate' 'calibration'} 'end'},'verb',opts.verb,'trlen_ms',opts.trlen_ms);

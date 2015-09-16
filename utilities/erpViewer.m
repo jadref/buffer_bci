@@ -1,7 +1,7 @@
-function [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin);
+function [data,events]=erpViewer(buffhost,buffport,varargin);
 % simple viewer for ERPs based on matching buffer events
 %
-% [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin)
+% [data,events]=erpViewer(buffhost,buffport,varargin)
 %
 % Options
 %  cuePrefix - 'str' event type to match for an ERP to be stored    ('stimulus')
@@ -112,8 +112,10 @@ maxEvents = opts.maxEvents;
 key      = {};
 label    = {};
 nCls     = opts.nSymbols;
-if ( ~isempty(maxEvents) )  rawEpochs= zeros(sum(iseeg),outsz(1),maxEvents); % stores the raw data
-else                        rawEpochs= zeros(sum(iseeg),outsz(1),40); 
+if ( ~isempty(maxEvents) && ~(isnan(maxEvents) || isinf(maxEvents)) )  
+  rawEpochs= zeros(sum(iseeg),outsz(1),maxEvents); % stores the raw data
+else                        
+  rawEpochs= zeros(sum(iseeg),outsz(1),40); 
 end
 rawIds   = 0;
 nTarget  = 0;
@@ -174,6 +176,7 @@ endType=opts.endType; if ( numel(opts.endType)>0 && iscell(opts.endType{1}) ) en
 
 fprintf('Waiting for events of type: %s\n',opts.cuePrefix);
 
+data={}; devents=[]; # for returning the data/events
 endTraining=false;
 while ( ~endTraining )
 
@@ -216,7 +219,7 @@ while ( ~endTraining )
   resetval=get(resethdl,'value');
   if ( resetval ) 
     fprintf('reset detected\n');
-    key={}; nTarget=0; rawIds=[];
+    key={}; nTarget=0; rawIds=[]; devents=[];
     erp=zeros(sum(iseeg),numel(yvals),1);
     updateLines(1)=true; updateLines(:)=true; % everything must be re-drawn
     resetval=0;
@@ -246,6 +249,14 @@ while ( ~endTraining )
         end;
         updateLines(mi)=true;
       
+		  if ( nargout>0 ) % store the data to return like buffer_waitdata
+			  if ( isempty(devents) ) 
+				 data={datai(ei)};        devents=event;
+			  else
+				 data(end+1)={datai(ei)}; devents(end+1) = event;
+			 end
+		  end
+		  
         % store the 'raw' data
 		  nTarget=nTarget+1;
 		  if ( isempty(maxEvents) || nTarget < maxEvents ) 
