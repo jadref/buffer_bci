@@ -168,7 +168,7 @@ end
 % pre-call buffer_waitData to cache its options
 [datai,deventsi,state,waitDatopts]=buffer_waitData(buffhost,buffport,[],'startSet',{opts.cuePrefix},'trlen_samp',trlen_samp,'offset_samp',offset_samp,'exitSet',{opts.redraw_ms 'data' opts.endType{:}},'verb',opts.verb,varargin{:},'getOpts',1);
 
-fprintf("Waiting for events of type: %s\n",opts.cuePrefix);
+fprintf('Waiting for events of type: %s\n',opts.cuePrefix);
 
 endTraining=false;
 while ( ~endTraining )
