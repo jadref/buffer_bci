@@ -116,6 +116,7 @@ def close():
     stream.stop_stream()
     stream.close()
     p.terminate()
+    sendEvent('startPhase.cmd','exit')
     #sys.exit()
     
 def playSingleStimulus(i):

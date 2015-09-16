@@ -52,6 +52,7 @@ tgtOrder = tgtOrder(1:min(end,nSeq));
 %This array indicates whether a target or distractor should be flashed
 %ALSO has a built in check for at least 3 zero's in between 1's.
 %A 0 is a distractor, a 1 is a target 
+nTgtFlashes = ceil(seqLen/tti); % target every tti't event on average
 flashOrder = zeros(seqLen, nSeq);
 for i = 1:nSeq
     ok = true;
@@ -69,9 +70,11 @@ end
 
 %Create random arrays for all sequences with random numbers to select each
 %target piece that should be flashed
-tgtPieces = zeros(ntgtPieces, nSeq);
+nRep  = ceil(nTgtFlashes/ntgtPieces);
+tgtIdxs   = repmat([1:ntgtPieces],1,nRep);
+tgtPieces = zeros(numel(tgtIdxs), nSeq);
 for i = 1:size(tgtPieces,2);
-	 tgtPieces(:,i)=randperm(size(tgtPieces,1));
+   tgtPieces(:,i) = tgtIdxs(randperm(numel(tgtIdxs)));
 end
 
 %Create  arrays for all sequences with random numbers to select each 

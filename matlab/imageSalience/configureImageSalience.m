@@ -52,11 +52,11 @@ verb=1; % verbosity level for debug info
 tgtDir ='pictures/targets';
 distDir='pictures/distractors';
 
-nSeq = 14;
-trainSeqLen = 60; % number of flashes per sequence
-testSeqLen = 120; % number flashes for testing sequences
-nTgtFlashes= 6; % number of target flashes in each sequence
-ntgtPieces = 9; % number of bits each target is cut into
+nSeq = 7;
+trainSeqDuration = 15;
+testSeqDuration  = 60;
+tti              = 6; % average number flashes between target flashes
+ntgtPieces       = 9; % number of bits each target is cut into
 
 
 textDuration=5;
@@ -66,6 +66,9 @@ postTargetDuration=1;
 stimDuration=0.10;
 whiteSquareDuration=0.10;
 interSeqDuration=1;
+trainSeqLen= ceil(trainSeqDuration/(stimDuration+whiteSquareDuration)); 
+testSeqLen = ceil(testSeqDuration/(stimDuration+whiteSquareDuration));  
+
 
 framebgColor     = [0 0 0];
 whiteSquareColor = [1 1 1];

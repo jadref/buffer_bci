@@ -2,7 +2,6 @@
 
 # TODO: 
 #  [X] - Add a testing phase, where extent of odd-ballness is controllable by key-press
-#  [X] - Add BCI testing phase, which just runs for a long time
 
 ## CONFIGURABLE VARIABLES
 # Path of the folder containing the buffer client
@@ -99,7 +98,8 @@ def close():
     stream.stop_stream()
     stream.close()
     p.terminate()
-    #sys.exit()
+    sendEvent('startPhase.cmd','exit')
+        #sys.exit()
     
 def playSingleStimulus(i):
     offset = stream.get_output_latency()*fSample
@@ -152,7 +152,7 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
         else: 
             print(str(time()-t0) + ") Lagging behind! tn=" + str(st/1000) + " ttg=" + str(ttg));
         # send events as close in time as possible to when the actual stimulus starts
-        sendEvent("stimulus.target", tgt)   # target/non-target
+        sendEvent("stimulus.target", "tgt" if tgt else "dist")   # target/non-target
         sendEvent("stimulus.play", names[audioID]) # which stimulus
         stream.write(data[audioID]) # this should block until the audio is finished....
 
@@ -161,7 +161,26 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
     getFeedback("How many 'odd' beeps?",int(len(ss.stimTime_ms)/2),nTgt)
     sendEvent("stimulus.trail","end")
 
-def runTestingEpoch(nEpoch,seqDur,isi,tti,audioIDs,tgtIdx=None):
+def doTraining():
+  sendEvent('startPhase.cmd','erpvis')
+  sendEvent('stimulus.training','start')
+  for i in range(1,(number_of_epochs+1)):
+      # run with given parameters, and max audio difference
+      runTrainingEpoch(i,sequence_duration,inter_stimulus_interval,target_to_target_interval,
+                       0,len(sounds)-1)
+      if endSeq : break    
+      if i == sequences_for_break:
+          updateframe(["Long Break","Press space to continue"])
+          waitForSpaceKey()
+      elif i!= number_of_epochs:
+          updateframe("")
+          sleep(inter_trial_duration)
+  updateframe("Training Finished")
+  sleep(2)
+  sendEvent('erpvis','end')
+  sendEvent('stimulus.training','end')
+      
+def runTestingEpoch(nEpoch,seqDur,isi,tti,audioIDs,tgtIdx=None,uniqueEvents=False):
     global endSeq
     if tgtIdx is None: tgtIdx=len(audioIDs)-1
     dobreak(baseline_duration, ["Get Ready"]+["Testing Epoch " + str(nEpoch)])
@@ -217,12 +236,27 @@ def runTestingEpoch(nEpoch,seqDur,isi,tti,audioIDs,tgtIdx=None):
 
         # send events as close in time as possible to when the actual stimulus starts
         audioID = audioIDs[tgtIdx if tgt else 0]
-        sendEvent("stimulus.target", tgt)   # target/non-target
+        if uniqueEvents :
+            sendEvent("stimulus.target", names[audioID])
+        else:
+            sendEvent("stimulus.target", "tgt" if tgt else "dist")   # target/non-target
         sendEvent("stimulus.play", names[audioID]) # which stimulus
         stream.write(data[audioID]) # this should block until the audio is finished....
 
     sleep(0.5)
     sendEvent("stimulus.trail","end")
+
+def doTesting(uniqueEvents=False):
+  sendEvent('startPhase.cmd','erpvis')
+  sendEvent('stimulus.testing','start')
+  # run with given parameters, and max audio difference
+  runTestingEpoch(0,testing_sequence_duration,inter_stimulus_interval,target_to_target_interval,
+                  range(len(sounds)),len(sounds)-1,uniqueEvents)
+  updateframe("Training Finished")
+  sleep(2)
+  sendEvent('erpvis','end')
+  sendEvent('stimulus.testing','end')
+  
 
 def getFeedback(prompt,maxLowered,trueLowered):
     global endSeq
@@ -262,54 +296,8 @@ def showInstructions():
   updateframe(instructions,False,False)
   waitForKey()
 
-def showKeyboardInstructions():
-    instructions=["Press:", 
-                  " i - show expt instructions",
-                  " e - show eeg Viewer",
-                  " o - audio oddball training",
-                  " t - audio oddball testing",
-                  " esc - quit", 
-                  " 1..7 - play stimulus 1..7"]
-    updateframe(instructions)
-
 def showeeg():
     sendEvent('startPhase.cmd','eegviewer')
-
-def doTraining():
-  sendEvent('startPhase.cmd','erpvis')
-  sendEvent('stimulus.training','start')
-  for i in range(1,(number_of_epochs+1)):
-      # run with given parameters, and max audio difference
-      runTrainingEpoch(i,sequence_duration,inter_stimulus_interval,target_to_target_interval,
-                       0,nrStimuli-1)
-      if i == sequences_for_break:
-          updateframe(["Long Break","Press space to continue"])
-          waitForSpaceKey()
-      elif i!= number_of_epochs:
-          updateframe("")
-          sleep(inter_trial_duration)
-
-      if endSeq : break    
-
-
-  updateframe("Training Finished")
-  sleep(2)
-  sendEvent('erpvis','end')
-  sendEvent('stimulus.training','end')
-
-
-def doTesting():
-  sendEvent('startPhase.cmd','erpvis')
-  sendEvent('stimulus.testing','start')
-  # run with given parameters, and max audio difference
-  runTestingEpoch(0,testing_sequence_duration,inter_stimulus_interval,target_to_target_interval,
-                  range(nrStimuli))
-
-  updateframe("Training Finished")
-  sleep(2)
-  sendEvent('erpvis','end')
-  sendEvent('stimulus.testing','end')
-  
 
 def waitForSpaceKey():
   event = pygame.event.wait()
@@ -373,7 +361,6 @@ pygame.display.set_caption('BCI Audio OddBall Experiment')
 names   = ['500', '505', '510', '515', '520', '525', '530', '535', '540', '545', '550']
 sounds  = map(lambda i: wave.open("stimuli/" + names[i] + ".wav"), range(0,len(names)))
 data = map(lambda x: x.readframes(x.getnframes()),sounds)
-nrStimuli = len(names)
 
 # Opening Audio Stream
 stream = p.open(format=p.get_format_from_width(sounds[0].getsampwidth()),
@@ -394,11 +381,24 @@ updateframe(["Welcome to the Oddball Music Experiment"])
 
 numKeyDict = {K_0 : 0, K_1 : 1, K_2 : 2, K_3 : 3, K_4 : 4, K_5 : 5, K_6 : 6, K_7 : 7, K_8 : 8, K_9 : 9, K_KP0 : 0, K_KP1 : 1, K_KP2 : 2, K_KP3 : 3, K_KP4 : 4, K_KP5 : 5, K_KP6 : 6, K_KP7 : 7, K_KP8 : 8, K_KP9 : 9 } 
 
+
+def showKeyboardInstructions():
+    instructions=["Press:", 
+                  " i - show expt instructions",
+                  " e - show eeg Viewer",
+                  " o - audio oddball training",
+                  " t - audio oddball testing",
+                  " l - line/beep testing",
+                  " esc - quit", 
+                  " 1..7 - play stimulus 1..7"]
+    updateframe(instructions)
+
 actions_key = dict()
 actions_key[K_e] = showeeg
 actions_key[K_i] = showInstructions
 actions_key[K_o] = doTraining
 actions_key[K_t] = doTesting
+actions_key[K_l] = lambda: doTesting(True)
 actions_key[K_q] = close
 actions_key[K_ESCAPE] = close
 actions_key[K_s] = lambda: playSingleStimulus(0)
