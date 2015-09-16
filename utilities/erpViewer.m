@@ -6,6 +6,10 @@ function [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin);
 % Options
 %  cuePrefix - 'str' event type to match for an ERP to be stored    ('stimulus')
 %  endType   - 'str' event type to match to say stop recording ERPs ('end.training')
+%               OR
+%              {'type1' 'type2'} set of types any of which can match
+%               OR
+%              {{'type1' 'type2'} {'val'}} set of type,values both of which should match
 %  trlen_ms/samp  - [int] length of data after to cue to record     (1000)
 %  offset_ms/samp - [2x1] offset from [cue cue+trlen] to record data([]) 
 %                    i.e. actual data is from [cue+offset(1) : cue+trlen+offset(2)]
@@ -64,7 +68,6 @@ if(isempty(opts.capFile))
   [fn,pth]=uigetfile(fullfile(fileparts(mfilename('fullpath')),'../utilities/*.txt'),'Pick cap-file');
   drawnow;
   if ( ~isequal(fn,0) ) capFile=fullfile(pth,fn); end;
-  %if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
 end
 if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
 if ( ~isempty(capFile) ) 
@@ -166,7 +169,8 @@ if ( isequal(opts.sigProcOptsGui,1) )
 end
 
 % pre-call buffer_waitData to cache its options
-[datai,deventsi,state,waitDatopts]=buffer_waitData(buffhost,buffport,[],'startSet',{opts.cuePrefix},'trlen_samp',trlen_samp,'offset_samp',offset_samp,'exitSet',{opts.redraw_ms 'data' opts.endType{:}},'verb',opts.verb,varargin{:},'getOpts',1);
+endType=opts.endType; if ( numel(opts.endType)>0 && iscell(opts.endType{1}) ) endType=opts.endType{1}; end;
+[datai,deventsi,state,waitDatopts]=buffer_waitData(buffhost,buffport,[],'startSet',{opts.cuePrefix},'trlen_samp',trlen_samp,'offset_samp',offset_samp,'exitSet',{opts.redraw_ms 'data' endType{:}},'verb',opts.verb,varargin{:},'getOpts',1);
 
 fprintf('Waiting for events of type: %s\n',opts.cuePrefix);
 
@@ -222,7 +226,7 @@ while ( ~endTraining )
   keep=true(numel(deventsi),1);
   for ei=1:numel(deventsi);
       event=deventsi(ei);
-      if( ~isempty(strmatch(event.type,opts.endType)) )
+      if( any(matchEvents(event,opts.endType{:})) )
         % end-training event
         keep(ei:end)=false;
         endTraining=true; % mark to finish

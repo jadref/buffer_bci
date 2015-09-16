@@ -131,11 +131,13 @@ while (ishandle(contFig) && ~strcmp(phaseToRun,'quit') )
   end
 end
 % display thanks
-cla;
-text(.25,.5,{'Thankyou for participating in our experiment.'},...
-	 'fontunits','pixel','fontsize',.05*wSize(4),...
-	 'HorizontalAlignment','left','color',[1 1 1]);
-drawnow;
-pause(2);
+if ( ishandle(contFig) )
+   cla;
+   text(.25,.5,{'Thankyou for participating in our experiment.'},...
+        'fontunits','pixel','fontsize',.05*wSize(4),...
+        'HorizontalAlignment','left','color',[1 1 1]);
+   drawnow;
+   pause(2);
+end
 % shut down signal proc
 sendEvent('startPhase.cmd','exit');
