@@ -121,7 +121,7 @@ for seqi = 1:nSeq
         drawnow;
     end
     
-    [fn] = uigetfile(fullfile(fileparts(mfilename('fullpath')),'pictures/targets/*.jpg'),'Pick a Target');
+    [fn] = uigetfile(fullfile(fileparts(mfilename('fullpath')),strcat(tgtDir,'/*.jpg')),'Pick a Target');
     fn = fn(1:end-4);
     for tix = 1:size(targets,2)
         if (find(strcmp(targets(tix).name, fn)) == 1)
