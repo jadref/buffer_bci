@@ -205,6 +205,36 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 			StimSeq.shuffle(tgtSeq);
 			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
+			// // Block 10: Noise @20
+			// isi=1f/20;
+			// blockName="noise_"+(int)Math.round(1./isi)+"hz";
+			// ss=StimSeq.mkStimSeqGold(nSymbs,seqDuration,isi);
+			// StimSeq.shuffle(tgtSeq);
+			// runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
+			// Load from save file
+			blockName = "gold_20hz_psk";
+			{
+				 BufferedReader is = new BufferedReader(new InputStreamReader(new FileInputStream(new File("../stimulus/gold_10hz.txt"))));
+				 ss = StimSeq.fromString(is);
+				 is.close();
+			}
+			ss.phaseShiftKey(true); // map to psk version and double the ISI
+			// Play this sequence
+			StimSeq.shuffle(tgtSeq);
+			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
+
+			// Load from save file
+			blockName = "gold_40hz_psk";
+			{
+				 BufferedReader is = new BufferedReader(new InputStreamReader(new FileInputStream(new File("../stimulus/gold_20hz.txt"))));
+				 ss = StimSeq.fromString(is);
+				 is.close();
+			}
+			ss.phaseShiftKey(true); // map to psk version and double the ISI			
+			// Play this sequence
+			StimSeq.shuffle(tgtSeq);
+			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
+
 			// Finally display thanks
 			instruct.setString("That ends the experiment.\nThanks for participating");
 			instruct.setDuration_ms(5000);

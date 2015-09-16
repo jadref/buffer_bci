@@ -271,8 +271,42 @@ class StimSeq {
 		  }     
 	 }
 
+	 public StimSeq phaseShiftKey(boolean speedup){
+		  float[][] ss = new float[stimSeq.length*2][];
+		  int[]     st = new int[stimTime_ms.length*2];
+		  for ( int ei=0; ei<stimTime_ms.length; ei++){
+				// update the stimTime
+				if ( speedup ) {
+					 st[ei*2]   = stimTime_ms[ei];
+					 if ( ei+1<stimTime_ms.length ) {
+						  st[ei*2+1] = stimTime_ms[ei] + (int)(stimTime_ms[ei+1]-stimTime_ms[ei])/2;
+					 } else {
+						  st[ei*2+1] = stimTime_ms[ei] + (int)(stimTime_ms[ei]-stimTime_ms[ei-1])/2;
+					 }
+				} else {
+					 st[ei]                    = stimTime_ms[ei];
+					 st[stimTime_ms.length+ei] = stimTime_ms[ei]+ // +1 isi after end
+						  stimTime_ms[stimTime_ms.length-1]+(stimTime_ms[1]-stimTime_ms[0]); 
+				}
+				// update the stimSeq
+				ss[ei*2] = stimSeq[ei];
+				ss[ei*2+1] = new float[stimSeq[ei].length];
+				for ( int si=0; si<stimSeq[ei].length; si++){
+					 if ( stimSeq[ei][si]>=0 ) { // for positive stim-types, invert the code
+						  ss[ei*2+1][si] = stimSeq[ei][si]>0 ? 0 : 1;
+					 } else { // neg stim-types remain unchanged
+						  ss[ei*2+1][si] = stimSeq[ei][si];
+					 }
+				}
+		  }
+		  stimTime_ms=st;
+		  stimSeq    =ss;
+		  return this;
+	 }
+
+
 	 //-------------------------------------------------------------------------------------------
-	 // Utiltity functions
+	 // Utility functions
 	 public static void shuffle(int [] array){
 		  // utility function to shuffle elements in a raw array
 		  java.util.Random rgen = new java.util.Random();  // Random number generator 
