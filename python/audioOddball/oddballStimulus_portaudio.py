@@ -222,9 +222,6 @@ def runTestingEpoch(nEpoch,seqDur,isi,tti,audioIDs,tgtIdx=None):
         stream.write(data[audioID]) # this should block until the audio is finished....
 
     sleep(0.5)
-    if not endSeq:
-        # get user count of targets
-        getFeedback("How many 'odd' beeps?",int(len(ss.stimTime_ms)/2),nTgt)
     sendEvent("stimulus.trail","end")
 
 def getFeedback(prompt,maxLowered,trueLowered):
