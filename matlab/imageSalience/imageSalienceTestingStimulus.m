@@ -45,43 +45,11 @@ fprintf('All images loaded.\n');
 % 5. CREATE ARRAYS FOR RANDOM PICTURE/PIECE SELECTIONS AND FLASH ORDERS
 %==========================================================================
     
-%Create array to select shuffeled target pictures for all sequences 
-tgtOrder = randperm(numel(targets));
-tgtOrder = tgtOrder(1:min(end,nSeq));
-
-%This array indicates whether a target or distractor should be flashed
-%ALSO has a built in check for at least 3 zero's in between 1's.
-%A 0 is a distractor, a 1 is a target 
-nTgtFlashes = ceil(seqLen/tti); % target every tti't event on average
-flashOrder = zeros(seqLen, nSeq);
-for i = 1:nSeq
-    ok = true;
-    while (ok)
-        ok = true;
-        x = [ones(1, nTgtFlashes) zeros(1, seqLen-nTgtFlashes)];
-        y = randperm(seqLen);
-        flashOrder(:,i) = x(y)';
-        indices = find(flashOrder(:,i) == 1);
-        if (all(diff(indices) > 3))
-            ok = false;
-        end
-    end
-end
-
-%Create random arrays for all sequences with random numbers to select each
-%target piece that should be flashed
-nRep  = ceil(nTgtFlashes/ntgtPieces);
-tgtIdxs   = repmat([1:ntgtPieces],1,nRep);
-tgtPieces = zeros(numel(tgtIdxs), nSeq);
-for i = 1:size(tgtPieces,2);
-   tgtPieces(:,i) = tgtIdxs(randperm(numel(tgtIdxs)));
-end
-
 %Create  arrays for all sequences with random numbers to select each 
 %distractor piece that should be flashed (= number of flashes - number of
 %target pieces that is flashed)
-distOrder = zeros((seqLen-nTgtFlashes),nSeq); % order of distractor pictures
-distPieces= zeros((seqLen-nTgtFlashes),nSeq); % order of distractor pieces of the picture
+distOrder = zeros(seqLen,nSeq); % order of distractor pictures
+distPieces= zeros(seqLen,nSeq); % order of distractor pieces of the picture
 for i = 1:size(distPieces,2);
    for j = 1:size(distPieces,1);
 	  distOrder(j,i)   = randi(numel(dists)); % randomly pick picture to get piece from
@@ -104,23 +72,6 @@ sendEvent('stimulus.testing', 'start');
 
 %Start the sequences
 for seqi = 1:nSeq
-    %Send an event to indicate that a sequence has started
-    sendEvent('stimulus.sequence', 'start');
-
-    %When it is not the last sequence, show the countdown
-    if (~(seqi==nSeq))
-        endTime=getwTime()+countdownDuration;
-        while getwTime()<endTime;
-            set(txthdl,'string', ...
-                sprintf('Next sequence in.. %3.1f',endTime-getwTime()),...
-                'visible', 'on');
-            drawnow;
-            sleepSec(1);
-        end
-        set(txthdl,'visible', 'off');
-        drawnow;
-    end
-    
     [fn] = uigetfile(fullfile(fileparts(mfilename('fullpath')),strcat(tgtDir,'/*.jpg')),'Pick a Target');
     fn = fn(1:end-4);
     for tix = 1:size(targets,2)
@@ -128,8 +79,18 @@ for seqi = 1:nSeq
             tgtIdx = tix;
         end
     end
-	% tgtIdx = tgtOrder(1,seqi);
-	tgtInfo= targets(tgtIdx);
+	 
+	 tgtInfo= targets(tgtIdx);
+	 % generate flash the ordering for this sequence, min-3, max-9 between flashes
+	 flashOrder = zeros(seqLen,1);
+	 si=1; while si<numel(flashOrder); flashOrder(si)=1; si=si+ceil((.5+rand(1))*tti); end; 
+	 % generate a piece order for this sequence
+	 tgtPiecesSeq= mkStimSeqRand(numel(tgtInfo.pieces),sum(flashOrder>0),1,3);
+	 tgtPieces=[]; for ei=1:size(tgtPiecesSeq,2); tgtPieces(ei,1)=find(tgtPiecesSeq(:,ei)>0,1); end;
+
+    %Send an event to indicate that a sequence has started
+    sendEvent('stimulus.sequence', 'start');
+
     %Show target image
     set(imghdl,'cdata',tgtInfo.image,'visible','on');
     drawnow;
