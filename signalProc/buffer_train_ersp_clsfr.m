@@ -50,6 +50,9 @@ if ( nargin<3 ) error('Insufficient arguments'); end;
 if ( iscell(X) ) 
   if ( isnumeric(X{1}) ) 
     X=cat(3,X{:});
+  elseif ( isstruct(X{1}) && isfield(X{1},'buf') )
+	 X=cat(1,X{:});
+	 X=cat(3,X.buf);
   else
     error('Unrecognised data format!');
   end

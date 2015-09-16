@@ -1,4 +1,4 @@
-function [data,events]=erpViewer(buffhost,buffport,varargin);
+function [data,devents]=erpViewer(buffhost,buffport,varargin);
 % simple viewer for ERPs based on matching buffer events
 %
 % [data,events]=erpViewer(buffhost,buffport,varargin)
@@ -37,7 +37,10 @@ opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,...
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
 if ( isempty(opts.freqbands) && ~isempty(opts.fftfilter) ) opts.freqbands=opts.fftfilter; end;
-if ( isstr(opts.endType) ) opts.endType={opts.endType}; end;
+if ( isstr(opts.endType) ) opts.endType={opts.endType}; 
+elseif ( iscell(opts.endType) && numel(opts.endType)>0 && ~iscell(opts.endType{1}) )
+  opts.endType={opts.endType}; % ensure correct nesting so opts.endType{:} expands to type,value pair
+end;
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ); run(fullfile(fileparts(mfilename('fullpath')),'../utilities/initPaths.m')); end;
 if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics facility
   if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
@@ -171,12 +174,13 @@ if ( isequal(opts.sigProcOptsGui,1) )
 end
 
 % pre-call buffer_waitData to cache its options
-endType=opts.endType; if ( numel(opts.endType)>0 && iscell(opts.endType{1}) ) endType=opts.endType{1}; end;
-[datai,deventsi,state,waitDatopts]=buffer_waitData(buffhost,buffport,[],'startSet',{opts.cuePrefix},'trlen_samp',trlen_samp,'offset_samp',offset_samp,'exitSet',{opts.redraw_ms 'data' endType{:}},'verb',opts.verb,varargin{:},'getOpts',1);
+endType=opts.endType;if(numel(opts.endType)>0 && iscell(opts.endType{1})) endType=opts.endType{1}; end
+[datai,deventsi,state,waitDatopts]=buffer_waitData(buffhost,buffport,[],'startSet',{opts.cuePrefix},'trlen_samp',trlen_samp,'offset_samp',offset_samp,'exitSet',{opts.redraw_ms 'data' endType},'verb',opts.verb,varargin{:},'getOpts',1);
 
 fprintf('Waiting for events of type: %s\n',opts.cuePrefix);
 
 data={}; devents=[]; # for returning the data/events
+curvistype=vistype;
 endTraining=false;
 while ( ~endTraining )
 
