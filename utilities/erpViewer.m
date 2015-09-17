@@ -32,7 +32,8 @@ opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,...
 				'detrend',1,'fftfilter',[],'freqbands',[],'downsample',128,'spatfilt','car',...
 				'badchrm',0,'badchthresh',3,'badtrthresh',3,...
 				'capFile',[],'overridechnms',0,'welch_width_ms',500,...
-				'redraw_ms',500,'lineWidth',2,'sigProcOptsGui',1,...
+				'redraw_ms',250,'lineWidth',2,'sigProcOptsGui',1,...
+            'dataStd',2.5,...
 				'incrementalDraw',1);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
@@ -186,6 +187,7 @@ fprintf('Waiting for events of type: %s\n',opts.cuePrefix);
 data={}; devents=[]; % for returning the data/events
 curvistype=vistype;
 endTraining=false;
+tic;
 while ( ~endTraining )
 
   updateLines=false(numel(key),1); % reset what needs to be re-drawn
@@ -359,11 +361,24 @@ while ( ~endTraining )
       end    
       %---------------------------------------------------------------------------------
       % Update the plot
-		if ( opts.incrementalDraw  && isequal(vistype,curvistype)) % update the changed lines only
-	       for hi=1:size(erp,1);
-              line_hdls=findobj(get(hdls(hi),'children'),'type','line');
+      if ( opts.incrementalDraw  && isequal(vistype,curvistype)) % update the changed lines only
+          % compute useful range of data to show, with some artifact robustness, data-lim is mean+3std-dev
+          datstats=[mean(erp(:)) std(erp(:))];
+          datrange=[max(min(erp(:)),datstats(1)-opts.dataStd*datstats(2)) ...
+                    min(datstats(1)+opts.dataStd*datstats(2),max(erp(:)))];      
+          % update each plot in turn
+          for hi=1:size(erp,1);
+             % update the plot
               xlim=get(hdls(hi),'xlim');
               if( xlim(1)~=yvals(1) || xlim(2)~=yvals(end) ) set(hdls(hi),'xlim',[yvals(1) yvals(end)]);end
+              ylim=get(hdls(hi),'ylim');
+              if ( ylim(1)<datrange(1)-.2*diff(datrange) || ylim(2)>datrange(2)+.2*diff(datrange) )
+                 if ( datrange(1)==datrange(2) ) datrange=datrange(1) + .5*[-1 1]; end;
+                 set(hdls(hi),'ylim',datrange);
+              end
+
+              % update the lines
+              line_hdls=findobj(get(hdls(hi),'children'),'type','line');
 		      for mi=damagedLines(:)';
 				  % if existing line, so update in-place
 				  if( size(line_hdls,1)>=mi && ishandle(line_hdls(mi)) && ~isequal(line_hdls(mi),0) )
@@ -393,7 +408,8 @@ while ( ~endTraining )
         end
         vistype=curvistype;
     end
-    drawnow;      
+    % redraw, but not too fast
+    if ( toc < opts.redraw_ms/1000 ) continue; else fprintf('\n\nRedraw\n\n'); drawnow; tic; end;
   end
 if ( ishandle(fig) ) close(fig); end;
 % close the options figure as well

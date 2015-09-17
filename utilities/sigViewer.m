@@ -322,7 +322,8 @@ while ( ~endTraining )
   % compute useful range of data to show
   % add some artifact robustness, data-lim is mean+3std-dev
   datstats=[mean(ppdat(:)) std(ppdat(:))];
-  datrange=[max(min(ppdat(:)),datstats(1)-opts.dataStd*datstats(2)) min(datstats(1)+opts.dataStd*datstats(2),max(ppdat(:)))];
+  datrange=[max(min(ppdat(:)),datstats(1)-opts.dataStd*datstats(2)) ...
+            min(datstats(1)+opts.dataStd*datstats(2),max(ppdat(:)))];
 
   %---------------------------------------------------------------------------------
   % Do visualisation mode switching work
