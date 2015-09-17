@@ -168,13 +168,13 @@ else
 end
 data=[]; devents=[];  exitEvent=false; 
 timeout_ms=opts.timeOut_ms; if ( timeExit ) timeout_ms=min(timeout_ms,timeExit); end;
-tic;if ( timeExit || opts.verb>0 ) t0=toc; end;
+if ( timeExit || opts.verb>0 ) t0=getTime(); end;
 while( ~exitEvent ) 
   if ( ~isempty(pending.events) ) endsamp=min(pending.ends); else endsamp=-1; end;
   % blocking wait for either all the data to be ready or for a new event to be recieved  
   % update info about what we've seen so far
   onevents=nevents;
-  if ( opts.verb>=0 ) t1=toc; end;
+  if ( opts.verb>=0 ) t1=getTime(); end;
   % N.B. nevents-1... because test is >nevents events!
   try
     status=buffer('wait_dat',[endsamp nevents timeout_ms],host,port);
@@ -187,7 +187,7 @@ while( ~exitEvent )
       nevents=0; endsamp=status.nsamples;
   end;
   if ( opts.verb>=0 ) 
-    t=toc-t1; 
+    t=getTime()-t1; 
     if ( t>=opts.timeOut_ms/1000*.9 ) 
       fprintf(' %5.3f seconds, %d samples %d events\r',t,status.nsamples,status.nevents);
       if ( ispc() ) drawnow; end; % re-draw display
@@ -290,7 +290,7 @@ while( ~exitEvent )
     end
   end % if pending events 
   % check for time based exit events
-  if ( timeExit && (toc-t0)*1000>timeExit ) 
+  if ( timeExit && (getTime()-t0)*1000>timeExit ) 
     exitEvent=true; 
   end;
 end
@@ -300,6 +300,14 @@ state.pending =pending;
 state.nevents =status.nevents;
 state.nsamples=status.nsamples;
 return;
+
+function t=getTime()
+if (usejava('jvm') ) 
+    t= javaMethod('currentTimeMillis','java.lang.System')/1000;
+else
+    t= clock()*[0 0 86400 3600 60 1]'; % in seconds
+end 
+
 %-----------------------
 function testCase();
 % in another matlab!
