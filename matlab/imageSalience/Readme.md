@@ -23,7 +23,7 @@ To run this example:
 
 2) Start the data Acquisation system.
 
-	Depending on the hardware you have (or not) start the appropriate data acquisition system driver:
+	Depending on the hardware you have (or not) start the appropriate data acquisition system driver,
 
       * No-EEG hardware:  start the simulated EEG driver: dataAcq/startSignalProxy.sh or .bat
 
