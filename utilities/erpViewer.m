@@ -409,7 +409,7 @@ while ( ~endTraining )
         vistype=curvistype;
     end
     % redraw, but not too fast
-    if ( toc < opts.redraw_ms/1000 ) continue; else fprintf('\n\nRedraw\n\n'); drawnow; tic; end;
+    if ( toc < opts.redraw_ms/1000 ) continue; else drawnow; tic; end;
   end
 if ( ishandle(fig) ) close(fig); end;
 % close the options figure as well
