@@ -32,7 +32,8 @@ opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,...
 				'detrend',1,'fftfilter',[],'freqbands',[],'downsample',128,'spatfilt','car',...
 				'badchrm',0,'badchthresh',3,'badtrthresh',3,...
 				'capFile',[],'overridechnms',0,'welch_width_ms',500,...
-				'redraw_ms',500,'lineWidth',2,'sigProcOptsGui',1);
+				'redraw_ms',500,'lineWidth',2,'sigProcOptsGui',1,...
+				'incrementalDraw',0);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
@@ -50,6 +51,9 @@ if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics fac
   end
   opts.sigProcOptsGui=0;
 end
+
+% to auto set the color of the lines
+linecols='bgrcmyk';
 
 % get channel info for plotting
 hdr=[];
@@ -152,6 +156,13 @@ end
 set(fig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
 set(fig,'userdata',[]);
 drawnow; % make sure the figure is visible
+
+% extract the lines so we can directly update them.
+for hi=1:numel(hdls); set(hdls(hi),'nextplot','add'); end; % all plots hold on.  Needed for OCTAVE
+for hi=1:numel(hdls);
+  cldhdls = get(hdls(hi),'children');
+  line_hdls(:,hi)=findobj(cldhdls,'type','line'); % N.B. assume all plots have same number lines!
+end;
 
 ppopts.badchrm=opts.badchrm;
 ppopts.preproctype='none';if(opts.detrend)ppopts.preproctype='detrend'; end;
@@ -351,13 +362,39 @@ while ( ~endTraining )
           label{mi}=sprintf('%g (%d)',key{mi},sum(rawIds(1:nTarget)==mi));
         else
           label{mi}=sprintf('%s (%d)',key{mi},sum(rawIds(1:nTarget)==mi));
-        end
+        end		  
       end
       vistype=curvistype;
     
       %---------------------------------------------------------------------------------
       % Update the plot
-      hdls=image3d(erp,1,'handles',hdls,'Xvals',ch_names(iseeg),'Yvals',yvals,'ylabel',ylabel,'zlabel','class','disptype','plot','ticklabs','sw','Zvals',label(1:numel(key)),'lineWidth',opts.lineWidth);
+		if ( opts.incrementalDraw ) % update the changed lines only
+		  for mi=damagedLines(:)';
+			 for hi=1:size(erp,1);
+				  % if existing line, so update in-place
+				  if( size(line_hdls,1)>=mi && ishandle(line_hdls(mi,hi)) && ~isequal(line_hdls(mi,hi),0) )
+					 set(line_hdls(mi,hi),'ydata',erp(hi,:,mi),'displayname',label{mi});
+				  else % add a new line
+					 line_hdls(mi,hi)=plot(yvals,erp(hi,:,mi),'parent',hdls(hi),...
+												  'color',linecols(mod(mi-1,numel(linecols))+1),...
+												  'linewidth',opts.lineWidth,'displayname',label{mi});
+				  end
+			 end
+		  end
+		  % update the legend
+		  if ( strcmp(get(hdls(end),'type'),'axes') ) % legend is a normal set of axes
+			 labhdls = findobj(get(hdls(end),'children'),'type','text');
+			 for mi=damagedLines(:)';
+				if ( numel(labhdls)>=mi ) 
+				%set(labhdls(mi),'string',label{mi});
+				else % add this line to the legend figure...
+					  ;
+				end
+			 end
+		  end
+		else % redraw the whole thing every update
+        hdls=image3d(erp,1,'handles',hdls,'Xvals',ch_names(iseeg),'Yvals',yvals,'ylabel',ylabel,'zlabel','class','disptype','plot','ticklabs','sw','Zvals',label(1:numel(key)),'lineWidth',opts.lineWidth);
+		end
     end
     drawnow;      
   end
