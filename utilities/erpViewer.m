@@ -33,7 +33,7 @@ opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,...
 				'badchrm',0,'badchthresh',3,'badtrthresh',3,...
 				'capFile',[],'overridechnms',0,'welch_width_ms',500,...
 				'redraw_ms',500,'lineWidth',2,'sigProcOptsGui',1,...
-				'incrementalDraw',0);
+				'incrementalDraw',1);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
@@ -157,13 +157,6 @@ set(fig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:))));
 set(fig,'userdata',[]);
 drawnow; % make sure the figure is visible
 
-% extract the lines so we can directly update them.
-for hi=1:numel(hdls); set(hdls(hi),'nextplot','add'); end; % all plots hold on.  Needed for OCTAVE
-for hi=1:numel(hdls);
-  cldhdls = get(hdls(hi),'children');
-  line_hdls(:,hi)=findobj(cldhdls,'type','line'); % N.B. assume all plots have same number lines!
-end;
-
 ppopts.badchrm=opts.badchrm;
 ppopts.preproctype='none';if(opts.detrend)ppopts.preproctype='detrend'; end;
 ppopts.spatfilttype=opts.spatfilt;
@@ -190,7 +183,7 @@ endType=opts.endType;if(numel(opts.endType)>0 && iscell(opts.endType{1})) endTyp
 
 fprintf('Waiting for events of type: %s\n',opts.cuePrefix);
 
-data={}; devents=[]; # for returning the data/events
+data={}; devents=[]; % for returning the data/events
 curvistype=vistype;
 endTraining=false;
 while ( ~endTraining )
@@ -363,22 +356,25 @@ while ( ~endTraining )
         else
           label{mi}=sprintf('%s (%d)',key{mi},sum(rawIds(1:nTarget)==mi));
         end		  
-      end
-      vistype=curvistype;
-    
+      end    
       %---------------------------------------------------------------------------------
       % Update the plot
-		if ( opts.incrementalDraw ) % update the changed lines only
-		  for mi=damagedLines(:)';
-			 for hi=1:size(erp,1);
+		if ( opts.incrementalDraw  && isequal(vistype,curvistype)) % update the changed lines only
+	       for hi=1:size(erp,1);
+              line_hdls=findobj(get(hdls(hi),'children'),'type','line');
+              xlim=get(hdls(hi),'xlim');
+              if( xlim(1)~=yvals(1) || xlim(2)~=yvals(end) ) set(hdls(hi),'xlim',[yvals(1) yvals(end)]);end
+		      for mi=damagedLines(:)';
 				  % if existing line, so update in-place
-				  if( size(line_hdls,1)>=mi && ishandle(line_hdls(mi,hi)) && ~isequal(line_hdls(mi,hi),0) )
-					 set(line_hdls(mi,hi),'ydata',erp(hi,:,mi),'displayname',label{mi});
+				  if( size(line_hdls,1)>=mi && ishandle(line_hdls(mi)) && ~isequal(line_hdls(mi),0) )
+					 set(line_hdls(mi),'xdata',yvals,'ydata',erp(hi,:,mi),'displayname',label{mi});
 				  else % add a new line
-					 line_hdls(mi,hi)=plot(yvals,erp(hi,:,mi),'parent',hdls(hi),...
-												  'color',linecols(mod(mi-1,numel(linecols))+1),...
-												  'linewidth',opts.lineWidth,'displayname',label{mi});
-				  end
+                     set(hdls(hi),'nextplot','add');
+					 line_hdls(mi)=plot(yvals,erp(hi,:,mi),'parent',hdls(hi),...
+                                    	'color',linecols(mod(mi-1,numel(linecols))+1),...
+                                        'linewidth',opts.lineWidth,'displayname',label{mi});
+                     set(hdls(hi),'nextplot','replace');
+                  end
 			 end
 		  end
 		  % update the legend
@@ -392,9 +388,10 @@ while ( ~endTraining )
 				end
 			 end
 		  end
-		else % redraw the whole thing every update
-        hdls=image3d(erp,1,'handles',hdls,'Xvals',ch_names(iseeg),'Yvals',yvals,'ylabel',ylabel,'zlabel','class','disptype','plot','ticklabs','sw','Zvals',label(1:numel(key)),'lineWidth',opts.lineWidth);
-		end
+		else % redraw the whole from scratch
+            hdls=image3d(erp,1,'handles',hdls,'Xvals',ch_names(iseeg),'Yvals',yvals,'ylabel',ylabel,'zlabel','class','disptype','plot','ticklabs','sw','Zvals',label(1:numel(key)),'lineWidth',opts.lineWidth);
+        end
+        vistype=curvistype;
     end
     drawnow;      
   end
