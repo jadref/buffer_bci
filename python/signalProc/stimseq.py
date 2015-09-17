@@ -95,6 +95,7 @@ class StimSeq :
 
     @staticmethod
     def mkStimSeqOddball(nSymb, seqDuration, isi, tti=None, distractor=False):
+        # TODO: [] add check to minimize cross-talk with other symbols
         nEvent = int(seqDuration/isi) + 1        
         tti_ev      = tti/isi if not tti is None else nSymb # ave num events between targets
         stimTime_ms = [ (ei+1)*1000.0*isi for ei in range(nEvent) ]

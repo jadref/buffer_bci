@@ -1,11 +1,15 @@
-function [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin);
+function [data,devents]=erpViewer(buffhost,buffport,varargin);
 % simple viewer for ERPs based on matching buffer events
 %
-% [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin)
+% [data,events]=erpViewer(buffhost,buffport,varargin)
 %
 % Options
 %  cuePrefix - 'str' event type to match for an ERP to be stored    ('stimulus')
 %  endType   - 'str' event type to match to say stop recording ERPs ('end.training')
+%               OR
+%              {'type1' 'type2'} set of types any of which can match
+%               OR
+%              {{'type1' 'type2'} {'val'}} set of type,values both of which should match
 %  trlen_ms/samp  - [int] length of data after to cue to record     (1000)
 %  offset_ms/samp - [2x1] offset from [cue cue+trlen] to record data([]) 
 %                    i.e. actual data is from [cue+offset(1) : cue+trlen+offset(2)]
@@ -28,12 +32,16 @@ opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,...
 				'detrend',1,'fftfilter',[],'freqbands',[],'downsample',128,'spatfilt','car',...
 				'badchrm',0,'badchthresh',3,'badtrthresh',3,...
 				'capFile',[],'overridechnms',0,'welch_width_ms',500,...
-				'redraw_ms',500,'lineWidth',2,'sigProcOptsGui',1);
+				'redraw_ms',500,'lineWidth',2,'sigProcOptsGui',1,...
+				'incrementalDraw',0);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
 if ( isempty(opts.freqbands) && ~isempty(opts.fftfilter) ) opts.freqbands=opts.fftfilter; end;
-if ( isstr(opts.endType) ) opts.endType={opts.endType}; end;
+if ( isstr(opts.endType) ) opts.endType={opts.endType}; 
+elseif ( iscell(opts.endType) && numel(opts.endType)>0 && ~iscell(opts.endType{1}) )
+  opts.endType={opts.endType}; % ensure correct nesting so opts.endType{:} expands to type,value pair
+end;
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ); run(fullfile(fileparts(mfilename('fullpath')),'../utilities/initPaths.m')); end;
 if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics facility
   if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
@@ -43,6 +51,9 @@ if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics fac
   end
   opts.sigProcOptsGui=0;
 end
+
+% to auto set the color of the lines
+linecols='bgrcmyk';
 
 % get channel info for plotting
 hdr=[];
@@ -64,7 +75,6 @@ if(isempty(opts.capFile))
   [fn,pth]=uigetfile(fullfile(fileparts(mfilename('fullpath')),'../utilities/*.txt'),'Pick cap-file');
   drawnow;
   if ( ~isequal(fn,0) ) capFile=fullfile(pth,fn); end;
-  %if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
 end
 if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
 if ( ~isempty(capFile) ) 
@@ -109,8 +119,10 @@ maxEvents = opts.maxEvents;
 key      = {};
 label    = {};
 nCls     = opts.nSymbols;
-if ( ~isempty(maxEvents) && ~(isinf(maxEvents) || isnan(maxEvents)) )  rawEpochs= zeros(sum(iseeg),outsz(1),maxEvents); % stores the raw data
-else                        rawEpochs= zeros(sum(iseeg),outsz(1),40); 
+if ( ~isempty(maxEvents) && ~(isnan(maxEvents) || isinf(maxEvents)) )  
+  rawEpochs= zeros(sum(iseeg),outsz(1),maxEvents); % stores the raw data
+else                        
+  rawEpochs= zeros(sum(iseeg),outsz(1),40); 
 end
 rawIds   = 0;
 nTarget  = 0;
@@ -145,6 +157,13 @@ set(fig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:))));
 set(fig,'userdata',[]);
 drawnow; % make sure the figure is visible
 
+% extract the lines so we can directly update them.
+for hi=1:numel(hdls); set(hdls(hi),'nextplot','add'); end; % all plots hold on.  Needed for OCTAVE
+for hi=1:numel(hdls);
+  cldhdls = get(hdls(hi),'children');
+  line_hdls(:,hi)=findobj(cldhdls,'type','line'); % N.B. assume all plots have same number lines!
+end;
+
 ppopts.badchrm=opts.badchrm;
 ppopts.preproctype='none';if(opts.detrend)ppopts.preproctype='detrend'; end;
 ppopts.spatfilttype=opts.spatfilt;
@@ -166,10 +185,13 @@ if ( isequal(opts.sigProcOptsGui,1) )
 end
 
 % pre-call buffer_waitData to cache its options
-[datai,deventsi,state,waitDatopts]=buffer_waitData(buffhost,buffport,[],'startSet',{opts.cuePrefix},'trlen_samp',trlen_samp,'offset_samp',offset_samp,'exitSet',{opts.redraw_ms 'data' opts.endType{:}},'verb',opts.verb,varargin{:},'getOpts',1);
+endType=opts.endType;if(numel(opts.endType)>0 && iscell(opts.endType{1})) endType=opts.endType{1}; end
+[datai,deventsi,state,waitDatopts]=buffer_waitData(buffhost,buffport,[],'startSet',{opts.cuePrefix},'trlen_samp',trlen_samp,'offset_samp',offset_samp,'exitSet',{opts.redraw_ms 'data' endType},'verb',opts.verb,varargin{:},'getOpts',1);
 
 fprintf('Waiting for events of type: %s\n',opts.cuePrefix);
 
+data={}; devents=[]; # for returning the data/events
+curvistype=vistype;
 endTraining=false;
 while ( ~endTraining )
 
@@ -212,7 +234,7 @@ while ( ~endTraining )
   resetval=get(resethdl,'value');
   if ( resetval ) 
     fprintf('reset detected\n');
-    key={}; nTarget=0; rawIds=[];
+    key={}; nTarget=0; rawIds=[]; devents=[];
     erp=zeros(sum(iseeg),numel(yvals),1);
     updateLines(1)=true; updateLines(:)=true; % everything must be re-drawn
     resetval=0;
@@ -222,7 +244,7 @@ while ( ~endTraining )
   keep=true(numel(deventsi),1);
   for ei=1:numel(deventsi);
       event=deventsi(ei);
-      if( ~isempty(strmatch(event.type,opts.endType)) )
+      if( any(matchEvents(event,opts.endType{:})) )
         % end-training event
         keep(ei:end)=false;
         endTraining=true; % mark to finish
@@ -242,6 +264,14 @@ while ( ~endTraining )
         end;
         updateLines(mi)=true;
       
+		  if ( nargout>0 ) % store the data to return like buffer_waitdata
+			  if ( isempty(devents) ) 
+				 data={datai(ei)};        devents=event;
+			  else
+				 data(end+1)={datai(ei)}; devents(end+1) = event;
+			 end
+		  end
+		  
         % store the 'raw' data
 		  nTarget=nTarget+1;
 		  if ( isempty(maxEvents) || nTarget < maxEvents ) 
@@ -332,13 +362,39 @@ while ( ~endTraining )
           label{mi}=sprintf('%g (%d)',key{mi},sum(rawIds(1:nTarget)==mi));
         else
           label{mi}=sprintf('%s (%d)',key{mi},sum(rawIds(1:nTarget)==mi));
-        end
+        end		  
       end
       vistype=curvistype;
     
       %---------------------------------------------------------------------------------
       % Update the plot
-      hdls=image3d(erp,1,'handles',hdls,'Xvals',ch_names(iseeg),'Yvals',yvals,'ylabel',ylabel,'zlabel','class','disptype','plot','ticklabs','sw','Zvals',label(1:numel(key)),'lineWidth',opts.lineWidth);
+		if ( opts.incrementalDraw ) % update the changed lines only
+		  for mi=damagedLines(:)';
+			 for hi=1:size(erp,1);
+				  % if existing line, so update in-place
+				  if( size(line_hdls,1)>=mi && ishandle(line_hdls(mi,hi)) && ~isequal(line_hdls(mi,hi),0) )
+					 set(line_hdls(mi,hi),'ydata',erp(hi,:,mi),'displayname',label{mi});
+				  else % add a new line
+					 line_hdls(mi,hi)=plot(yvals,erp(hi,:,mi),'parent',hdls(hi),...
+												  'color',linecols(mod(mi-1,numel(linecols))+1),...
+												  'linewidth',opts.lineWidth,'displayname',label{mi});
+				  end
+			 end
+		  end
+		  % update the legend
+		  if ( strcmp(get(hdls(end),'type'),'axes') ) % legend is a normal set of axes
+			 labhdls = findobj(get(hdls(end),'children'),'type','text');
+			 for mi=damagedLines(:)';
+				if ( numel(labhdls)>=mi ) 
+				%set(labhdls(mi),'string',label{mi});
+				else % add this line to the legend figure...
+					  ;
+				end
+			 end
+		  end
+		else % redraw the whole thing every update
+        hdls=image3d(erp,1,'handles',hdls,'Xvals',ch_names(iseeg),'Yvals',yvals,'ylabel',ylabel,'zlabel','class','disptype','plot','ticklabs','sw','Zvals',label(1:numel(key)),'lineWidth',opts.lineWidth);
+		end
     end
     drawnow;      
   end

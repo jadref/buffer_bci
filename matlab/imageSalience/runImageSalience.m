@@ -10,7 +10,7 @@ fontSize = .05*wSize(4);
 %        Instruct String          Phase-name
 menustr={'0) EEG'                 'eegviewer';
          '1) Practice'            'practice';
-			'2) Calibrate'           'calibrate'; 
+			'2) Calibrate'           'erpviewcalibrate'; 
          '3) Train Classifier'    'train';
 			'4) Testing/Feedback'    'test';
 			'q) quit'                'quit';
@@ -88,7 +88,7 @@ while (ishandle(contFig) && ~strcmp(phaseToRun,'quit') )
     nSeq=onSeq;
     
    %---------------------------------------------------------------------------
-   case {'calibrate','calibration'};
+   case {'calibrate','calibration','erpviewcalibrate'};
     sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun)
     sendEvent(phaseToRun,'start');
@@ -131,11 +131,13 @@ while (ishandle(contFig) && ~strcmp(phaseToRun,'quit') )
   end
 end
 % display thanks
-cla;
-text(.25,.5,{'Thankyou for participating in our experiment.'},...
-	 'fontunits','pixel','fontsize',.05*wSize(4),...
-	 'HorizontalAlignment','left','color',[1 1 1]);
-drawnow;
-pause(2);
+if ( ishandle(contFig) )
+   cla;
+   text(.25,.5,{'Thankyou for participating in our experiment.'},...
+        'fontunits','pixel','fontsize',.05*wSize(4),...
+        'HorizontalAlignment','left','color',[1 1 1]);
+   drawnow;
+   pause(2);
+end
 % shut down signal proc
 sendEvent('startPhase.cmd','exit');

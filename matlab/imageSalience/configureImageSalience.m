@@ -56,8 +56,6 @@ nSeq = 7;
 trainSeqDuration = 15;
 testSeqDuration  = 60;
 tti              = 6; % average number flashes between target flashes
-ntgtPieces       = 9; % number of bits each target is cut into
-
 
 textDuration=5;
 countdownDuration=3;
