@@ -109,7 +109,7 @@ maxEvents = opts.maxEvents;
 key      = {};
 label    = {};
 nCls     = opts.nSymbols;
-if ( ~isempty(maxEvents) )  rawEpochs= zeros(sum(iseeg),outsz(1),maxEvents); % stores the raw data
+if ( ~isempty(maxEvents) && ~(isinf(maxEvents) || isnan(maxEvents)) )  rawEpochs= zeros(sum(iseeg),outsz(1),maxEvents); % stores the raw data
 else                        rawEpochs= zeros(sum(iseeg),outsz(1),40); 
 end
 rawIds   = 0;
