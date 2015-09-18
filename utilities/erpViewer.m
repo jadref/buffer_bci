@@ -398,8 +398,9 @@ while ( ~endTraining )
               linenames=get(line_hdls,'displayname'); % get names of all lines to find the one to update
 		      for mi=damagedLines(:)';
 				  % if existing line, so update in-place
-                  li = strmatch(key{mi},linenames); 
-                  if(mi==1 && numel(line_hdls)==1 ) li=1; end; % single line is special case
+				  keymi=key{mi}; if ( isnumeric(keymi) ) keymi=sprintf('%g',keymi); end;
+				  li = strmatch(keymi,linenames); 
+              if(mi==1 && numel(line_hdls)==1 ) li=1; end; % single line is special case
 				  if( size(line_hdls,1)>=mi && ~isempty(li) && ishandle(line_hdls(li)) && ~isequal(line_hdls(li),0) )
 					 set(line_hdls(li),'xdata',yvals,'ydata',erp(hi,:,mi),'displayname',label{mi});
 				  else % add a new line
