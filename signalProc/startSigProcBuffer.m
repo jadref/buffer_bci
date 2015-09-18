@@ -90,7 +90,7 @@ opts=struct('phaseEventType','startPhase.cmd',...
 thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
 capFile=opts.capFile;
 if( isempty(capFile) ) 
-  [fn,pth]=uigetfile(fullfile(mdir,'../utilities/*.txt'),'Pick cap-file'); capFile=fullfile(pth,fn);
+  [fn,pth]=uigetfile(fullfile(mdir,'../utilities/caps/*.txt'),'Pick cap-file'); capFile=fullfile(pth,fn);
   if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
 end
 if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
