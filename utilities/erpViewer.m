@@ -144,7 +144,7 @@ clf;
 fig=gcf;
 set(fig,'Name','ER(s)P Viewer : t=time, f=freq, r=rest, q,close window=quit','menubar','none','toolbar','none','doublebuffer','on');
 plotPos=ch_pos; if ( ~isempty(plotPos) ) plotPos=plotPos(:,iseeg); end;
-hdls=image3d(erp,1,'plotPos',plotPos,'Xvals',ch_names(iseeg),'Yvals',times,'ylabel','time (s)','zlabel','class','disptype','plot','ticklabs','sw','legend','se','plotPosOpts.plotsposition',[.05 .08 .91 .85],'lineWidth',opts.lineWidth);
+hdls=image3d(erp,1,'plotPos',plotPos,'Xvals',ch_names(iseeg),'Yvals',times,'ylabel','time (s)','disptype','plot','ticklabs','sw','legend','se','plotPosOpts.plotsposition',[.05 .08 .91 .85],'lineWidth',opts.lineWidth);
 
 % make popup menu for selection of TD/FD
 modehdl=uicontrol(fig,'Style','popup','units','normalized','position',[.8 .9 .2 .1],'String','Time|Frequency');
@@ -237,6 +237,7 @@ while ( ~endTraining )
     set(resethdl,'value',resetval); % pop the button back out
   end
   
+  newClass   =false;
   keep=true(numel(deventsi),1);
   for ei=1:numel(deventsi);
       event=deventsi(ei);
@@ -253,8 +254,9 @@ while ( ~endTraining )
           for ki=1:numel(key) if ( isequal(val,key{ki}) ) mi=ki; break; end; end; 
         end;
         if ( isempty(mi) ) % new class to average
-          key{end+1}=val;
-          mi=numel(key);
+			 newClass   =true;
+          key{end+1} =val;
+          mi         =numel(key);
           erp(:,:,mi)=0;
           nCls       =mi;
         end;
@@ -362,7 +364,9 @@ while ( ~endTraining )
       end    
       %---------------------------------------------------------------------------------
       % Update the plot
-      if ( opts.incrementalDraw  && isequal(vistype,curvistype)) % update the changed lines only
+		incrementalDraw = opts.incrementalDraw && isequal(vistype,curvistype);
+		if ( exist('OCTAVE_VERSION','builtin') ) incrementalDraw = incrementalDraw & ~newClass ; end;
+      if ( incrementalDraw ) % update the changed lines only
           % compute useful range of data to show, with some artifact robustness, data-lim is mean+3std-dev
           datstats=[mean(erp(:)) std(erp(:))];
           datrange=[max(min(erp(:)),datstats(1)-opts.dataStd*datstats(2)) ...
@@ -408,7 +412,7 @@ while ( ~endTraining )
 			 end
 		  end
 		else % redraw the whole from scratch
-            hdls=image3d(erp,1,'handles',hdls,'Xvals',ch_names(iseeg),'Yvals',yvals,'ylabel',ylabel,'zlabel','class','disptype','plot','ticklabs','sw','Zvals',label(1:numel(key)),'lineWidth',opts.lineWidth);
+            hdls=image3d(erp,1,'handles',hdls,'Xvals',ch_names(iseeg),'Yvals',yvals,'ylabel',ylabel,'disptype','plot','ticklabs','sw','Zvals',label(1:numel(key)),'lineWidth',opts.lineWidth);
         end
         vistype=curvistype;
     end
