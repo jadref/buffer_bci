@@ -26,7 +26,7 @@ function [data,devents]=erpViewer(buffhost,buffport,varargin);
 %  maxEvents - [int] maximume number of events to store             (inf)
 %                >1 - moving window ERP
 %                0<maxEvents<1 - exp decay moving average rate to use
-debug if error;
+% dbstop if error
 opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,...
 				'nSymbols',0,'maxEvents',[],...
 				'trlen_ms',1000,'trlen_samp',[],'offset_ms',[],'offset_samp',[],...
@@ -354,8 +354,18 @@ while ( ~endTraining )
         
          otherwise; error('Unrecognised visualisation type: ');
         end
-
-        erp(:,:,mi) = sum(ppdatmi,3)./size(ppdatmi,3);
+		  
+		  erpmi = sum(ppdatmi,3)./size(ppdatmi,3);		  
+		  if ( size(erpmi,2)==size(erp,2) )
+			 erp(:,:,mi) = erpmi; 
+		  else % BODGE: this should never happen..... but check for size mis-matches and fix if found
+			 if ( size(erpmi,2) < size(erp,2) ) % erpmi smaller: pad with last entry to get full size
+				erp(:,1:size(erpmi,2),mi)=erpmi;
+				erp(:,size(erpmi,2)+1:end,mi) =repmat(erpmi(:,end),1,size(erp,2)-size(erpmi,2)-1); 
+			 elseif ( size(erpmi,2)>size(erp,2) ) % erp smaller: only use this much
+				erp(:,:,mi) = erpmi(:,1:size(erp,2));
+			 end			 
+		  end
         if ( isnumeric(key{mi}) ) % line label -- including number of times seen
           label{mi}=sprintf('%g (%d)',key{mi},sum(rawIds(1:nTarget)==mi));
         else
