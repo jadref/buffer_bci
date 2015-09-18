@@ -63,7 +63,7 @@ end
 %==========================================================================
 
 %Change text object and display start-up texts
-set(txthdl,'string', 'Press SPACE when ready', 'visible', 'on')
+set(txthdl,'string', 'Click mouse when ready', 'visible', 'on')
 waitforbuttonpress;
 set(txthdl,'visible', 'off');
 
