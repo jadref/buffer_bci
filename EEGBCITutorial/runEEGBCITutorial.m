@@ -34,8 +34,8 @@ subject='test';
 
 % run the control handeling loop
 while (ishandle(contFig))
-  set(contFig,'visible','on');
   if ( ~ishandle(contFig) ) break; end;
+  set(contFig,'visible','on');
 
   phaseToRun=[];
   if ( ~exist('OCTAVE_VERSION','builtin') ) 
@@ -214,21 +214,7 @@ while (ishandle(contFig))
     sendEvent('stimulus.test','end');
     sendEvent(phaseToRun,'end');
   
-  end
-  
-  if ( ~ishandle(contFig) &&  ~exist('OCTAVE_VERSION','builtin') ) 
-    oinfo=info; % store old info
-    contFig=controller(); % make new figure
-    info=guidata(contFig); % get new info
-                           % re-place old info
-    info.phasesCompleted=oinfo.phasesCompleted;
-    info.phaseToRun=oinfo.phaseToRun;
-    info.subject=oinfo.subject; set(info.subjectName,'String',info.subject);
-    guidata(contFig,info);
-  end;
-  %for i=1:numel(info.phasesCompleted); % set all run phases to have green text
-  %    set(getfield(info,[info.phasesCompleted{i} 'But']),'ForegroundColor',[0 1 0]);
-  %end
+  end  
 end
 %uiwait(msgbox({'Thank you for participating in our experiment.'},'Thanks','modal'),10);
 pause(1);

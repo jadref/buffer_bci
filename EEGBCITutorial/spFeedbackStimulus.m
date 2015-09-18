@@ -1,8 +1,7 @@
 if ( ~exist('runConfig','var') || ~runConfig ) configureDemo; end;
 
 % make the stimulus
-clf;
-fig=figure(2);
+fig=figure(2);clf;
 set(fig,'Name','Matrix Speller','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
 ax=axes('position',[0.025 0.025 .975 .975],'units','normalized','visible','off','box','off',...
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...

@@ -64,16 +64,14 @@ while ( true )
     
     %---------------------------------------------------------------------------------
    case 'capfitting';
-    clf;
     capFitting('noiseThresholds',thresh,'badChThreshold',badchThresh,'verb',verb,'showOffset',0,'capFile',capFile,'overridechnms',overridechnms);
 
     %---------------------------------------------------------------------------------
    case 'eegviewer';
-    clf;
     eegViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms);
 
     %---------------------------------------------------------------------------------
-   case {'erspvis','erpvis','erpviewer','erpvisptb'};
+   case {'erspvis','erpvis','erpviewer','erpvisptb'};	
     erpViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix','stimulus','endType',lower(phaseToRun),'trlen_ms',ersptrlen_ms,'freqbands',[.0 .3 45 47]);
     
    %---------------------------------------------------------------------------------
