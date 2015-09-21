@@ -388,7 +388,8 @@ while ( ~endTraining )
               xlim=get(hdls(hi),'xlim');
               if( xlim(1)~=yvals(1) || xlim(2)~=yvals(end) ) set(hdls(hi),'xlim',[yvals(1) yvals(end)]);end
               ylim=get(hdls(hi),'ylim');
-              if ( ylim(1)<datrange(1)-.2*diff(datrange) || ylim(2)>datrange(2)+.2*diff(datrange) )
+              %if ( size(rawEpochs,3)>100 ) keyboard; end;
+              if ( abs(ylim(1)-datrange(1))>.2*diff(datrange) || abs(ylim(2)-datrange(2))>.2*diff(datrange) )
                  if ( datrange(1)==datrange(2) ) datrange=datrange(1) + .5*[-1 1]; end;
                  set(hdls(hi),'ylim',datrange);
               end
