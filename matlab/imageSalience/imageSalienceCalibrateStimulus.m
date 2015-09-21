@@ -83,7 +83,8 @@ for seqi = 1:nSeq
 	 flashOrder = zeros(seqLen,1);
 	 si=1; while si<numel(flashOrder); flashOrder(si)=1; si=si+ceil((.5+rand(1))*tti); end; 
 	 % generate a piece order for this sequence
-	 tgtPiecesSeq= mkStimSeqRand(numel(tgtInfo.pieces),sum(flashOrder>0),1,3);
+	 % random order of bits, but not the same one within 3 of itself
+	 tgtPiecesSeq=mkStimSeqRand(numel(tgtInfo.pieces),sum(flashOrder>0),1,3);
 	 tgtPieces=[]; for ei=1:size(tgtPiecesSeq,2); tgtPieces(ei,1)=find(tgtPiecesSeq(:,ei)>0,1); end;
 
     %Send an event to indicate that a sequence has started
