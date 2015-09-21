@@ -417,10 +417,10 @@ while ( ~endTraining )
         elseif ( datrange(1)==datrange(2) ) 
           datrange=datrange(1)+.5*[-1 1];
         elseif ( isnan(datrange(1)) || isinf(datrange(1)) )
-			datrange(1) = datrange(2)-1;
-		elseif ( isnan(datrange(2) || isinf(datrnage(2)) )
-			datrange(2) = datrange(1)+1;
-		end;         
+			 datrange(1) = datrange(2)-1;
+		  elseif ( isnan(datrange(2)) || isinf(datrange(2)) )
+			 datrange(2) = datrange(1)+1;
+		  end;         
         if ( isequal(curvistype,'spect') ) % spectrogram, datalim is color range
           datlim=datrange; set(hdls(1:size(ppdat,1)),'clim',datlim);
           % update the colorbar info
