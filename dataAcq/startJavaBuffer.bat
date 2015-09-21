@@ -34,4 +34,4 @@ if exist "%folder%\raw_buffer" (
 
 
 echo Starting: /buffer/java/BufferServer.jar %folder%\raw_buffer
-%javaexe% -jar %batdir%/buffer/java/BufferServer.jar %folder%\raw_buffer
+%javaexe% -jar "%batdir%/buffer/java/BufferServer.jar" %folder%\raw_buffer
