@@ -238,7 +238,7 @@ while ( ~endTraining )
   if ( ~isequal(get(fig,'currentpoint'),oldPoint) )
 	  oldPoint = get(fig,'currentpoint');
 	  fprintf('Click at [%d,%d]',oldPoint);
-	  # find any axes we are within
+	  % find any axes we are within
 	  for hi=1:numel(hdls);
 		 apos=get(hdls(hi),'position')
 	  end
