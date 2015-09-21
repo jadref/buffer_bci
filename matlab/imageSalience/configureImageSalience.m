@@ -52,10 +52,10 @@ verb=1; % verbosity level for debug info
 tgtDir ='pictures/targets';
 distDir='pictures/distractors';
 
-nSeq = 7;
-trainSeqDuration = 15;
+nSeq = 6;
+trainSeqDuration = 20;
 testSeqDuration  = 60;
-tti              = 6; % average number flashes between target flashes
+tti              = 7; % average number flashes between target flashes
 
 textDuration=5;
 countdownDuration=3;
