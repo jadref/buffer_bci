@@ -1,10 +1,11 @@
 % make the stimulus
-clf;fig=gcf;
+fig=figure(2);clf;
 set(fig,'Name','Matrix Speller','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
 ax=axes('position',[0.025 0.025 .975 .975],'units','normalized','visible','off','box','off',...
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
         'color',[0 0 0],'DrawMode','fast','nextplot','replacechildren',...
         'xlim',[-1.5 1.5],'ylim',[-1.5 1.5],'Ydir','normal');
+set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
 [h]=initGrid(symbols);
 
 % make the target stimulus sequence
@@ -19,9 +20,11 @@ set(h(:),'color',bgColor*.5);
 sendEvent('stimulus.training','start');
 % Waik for key-press to being stimuli
 t=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),spInstruct,...
-		 'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.07);
-% wait for key to begin
-set(fig,'keypressfcn',@(x,y) uiresume);drawnow; uiwait(fig);set(fig,'keypressfcn',[]);delete(t);drawnow;
+		 'HorizontalAlignment','center','color',[0 1 0],'fontunits','pixel','FontSize',.07*wSize(4));
+% wait for button press to continue
+waitforbuttonpress;
+delete(t);
+
 sleepSec(1);
 for si=1:nSeq;
 
@@ -67,5 +70,5 @@ end % sequences
 % end training marker
 sendEvent('stimulus.training','end');
 
-text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the training phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.1);
+text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the training phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','pixel','FontSize',.1*wSize(4));
 pause(3);

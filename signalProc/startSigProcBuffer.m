@@ -12,6 +12,8 @@ function []=startSigProcBuffer(varargin)
 %                                 saved and labelled with the value of this event.
 %                                 N.B. the event type used to define an epoch is given in the option:
 %                                        epochEventType
+%  (startPhase.cmd,erpviewcalibrate)  -- start calibration phase processing with simultaneous 
+%                                        erp viewing
 %  (calibrate,end)             -- end calibration phase
 %  (startPhase.cmd,train)      -- train a classifier based on the saved calibration data
 %  (startPhase.cmd,testing)    -- start test phase, i.e. on-line prediction generation
@@ -78,17 +80,22 @@ if ( isempty(wb) || isempty(strfind('dataAcq',wb)) )
   initsleepSec;
 end;
 opts=struct('phaseEventType','startPhase.cmd',...
-				'epochEventType',[],'testepochEventType',[],'erpEventType',[],...
-				'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],...
+				'epochEventType',[],'testepochEventType',[],...
+            'erpEventType',[],'erpMaxEvents',[],'erpOpts',{{}},...
+				'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],'trainOpts',{{}},...
             'epochPredFilt',[],'contPredFilt',[],'capFile',[],...
-				'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1);
+				'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1,'timeout_ms',1000);
 [opts,varargin]=parseOpts(opts,varargin);
+if ( ~iscell(opts.erpOpts) ) opts.erpOpts={opts.erpOpts}; end;
+if ( ~iscell(opts.trainOpts))opts.trainOpts={opts.trainOpts}; end;
 
 thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
 capFile=opts.capFile;
 if( isempty(capFile) ) 
-  [fn,pth]=uigetfile(fullfile(mdir,'../utilities/*.txt'),'Pick cap-file'); capFile=fullfile(pth,fn);
-  if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
+  [fn,pth]=uigetfile(fullfile(mdir,'../utilities/caps/*.txt'),'Pick cap-file'); 
+  if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; 
+  else                                   capFile=fullfile(pth,fn);
+  end; % 1010 default if not selected
 end
 if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
 if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4; end;
@@ -143,7 +150,7 @@ while ( true )
   % wait for a phase control event
   if ( opts.verb>0 ) fprintf('%d) Waiting for phase command\n',nsamples); end;
   [devents,state,nevents,nsamples]=buffer_newevents(opts.buffhost,opts.buffport,state,...
-																	 {opts.phaseEventType 'subject'},[],5000);
+																	 {opts.phaseEventType 'subject'},[],opts.timeout_ms);
   if ( numel(devents)==0 ) 
     continue;
   elseif ( numel(devents)>1 ) 
@@ -184,10 +191,16 @@ while ( true )
     
     %---------------------------------------------------------------------------------
    case {'erspvis','erpvis','erpviewer','erpvisptb'};
-    [X,Y,key]=erpViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix',opts.erpEventType,'endType',lower(phaseToRun),'trlen_ms',opts.trlen_ms,'freqbands',[.0 .3 45 47]);
-    fn=sprintf('erpvis_%s_%s',subject,datestr);fprintf('Saving to: %s\n',fn); % save results
-    save(fn,'X','Y','key');
+    erpViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix',opts.erpEventType,'endType',lower(phaseToRun),'trlen_ms',opts.trlen_ms,'freqbands',[.0 .3 45 47],'maxEvents',opts.erpMaxEvents,opts.erpOpts{:});
 
+   %---------------------------------------------------------------------------------
+	case {'erpviewcalibrate'};
+    [traindata,traindevents]=erpViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix',opts.erpEventType,'endType',{{lower(phaseToRun) 'calibrate'} 'end'},'trlen_ms',opts.trlen_ms,'freqbands',[.0 .3 45 47],'maxEvents',opts.erpMaxEvents,opts.erpOpts{:});
+    mi=matchEvents(traindevents,{'calibrate' 'calibration'},'end'); traindevents(mi)=[]; traindata(mi)=[];%remove exit event
+    fname=[dname '_' subject '_' datestr];
+    fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save(fname,'traindata','traindevents','hdr');
+    trainSubj=subject;
+	 
    %---------------------------------------------------------------------------------
    case {'calibrate','calibration'};
     [traindata,traindevents,state]=buffer_waitData(opts.buffhost,opts.buffport,[],'startSet',opts.epochEventType,'exitSet',{{'calibrate' 'calibration'} 'end'},'verb',opts.verb,'trlen_ms',opts.trlen_ms);

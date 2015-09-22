@@ -1,11 +1,15 @@
-function [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin);
+function [data,devents]=erpViewer(buffhost,buffport,varargin);
 % simple viewer for ERPs based on matching buffer events
 %
-% [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin)
+% [data,events]=erpViewer(buffhost,buffport,varargin)
 %
 % Options
 %  cuePrefix - 'str' event type to match for an ERP to be stored    ('stimulus')
 %  endType   - 'str' event type to match to say stop recording ERPs ('end.training')
+%               OR
+%              {'type1' 'type2'} set of types any of which can match
+%               OR
+%              {{'type1' 'type2'} {'val'}} set of type,values both of which should match
 %  trlen_ms/samp  - [int] length of data after to cue to record     (1000)
 %  offset_ms/samp - [2x1] offset from [cue cue+trlen] to record data([]) 
 %                    i.e. actual data is from [cue+offset(1) : cue+trlen+offset(2)]
@@ -22,18 +26,26 @@ function [rawEpochs,rawIds,key]=erpViewer(buffhost,buffport,varargin);
 %  maxEvents - [int] maximume number of events to store             (inf)
 %                >1 - moving window ERP
 %                0<maxEvents<1 - exp decay moving average rate to use
+%  closeFig  - [bool] do we close the figure when we finish         (1)
+
+%if ( exist('OCTAVE_VERSION','builtin') ) debug_on_error(1); else dbstop if error; end;
 opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,...
 				'nSymbols',0,'maxEvents',[],...
 				'trlen_ms',1000,'trlen_samp',[],'offset_ms',[],'offset_samp',[],...
 				'detrend',1,'fftfilter',[],'freqbands',[],'downsample',128,'spatfilt','car',...
 				'badchrm',0,'badchthresh',3,'badtrthresh',3,...
 				'capFile',[],'overridechnms',0,'welch_width_ms',500,...
-				'redraw_ms',500,'lineWidth',2,'sigProcOptsGui',1);
+				'redraw_ms',250,'lineWidth',1,'sigProcOptsGui',1,...
+            'dataStd',2.5,...
+				'incrementalDraw',1,'closeFig',1);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
 if ( isempty(opts.freqbands) && ~isempty(opts.fftfilter) ) opts.freqbands=opts.fftfilter; end;
-if ( isstr(opts.endType) ) opts.endType={opts.endType}; end;
+if ( isstr(opts.endType) ) opts.endType={opts.endType}; 
+elseif ( iscell(opts.endType) && numel(opts.endType)>0 && ~iscell(opts.endType{1}) )
+  opts.endType={opts.endType}; % ensure correct nesting so opts.endType{:} expands to type,value pair
+end;
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ); run(fullfile(fileparts(mfilename('fullpath')),'../utilities/initPaths.m')); end;
 if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics facility
   if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
@@ -43,6 +55,9 @@ if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics fac
   end
   opts.sigProcOptsGui=0;
 end
+
+% to auto set the color of the lines
+linecols='bgrcmyk';
 
 % get channel info for plotting
 hdr=[];
@@ -61,10 +76,9 @@ ch_names=hdr.channel_names; ch_pos=[]; iseeg=true(numel(ch_names),1);
 % get capFile info for positions
 capFile=opts.capFile; overridechnms=opts.overridechnms; 
 if(isempty(opts.capFile)) 
-  [fn,pth]=uigetfile(fullfile(fileparts(mfilename('fullpath')),'../utilities/*.txt'),'Pick cap-file');
+  [fn,pth]=uigetfile(fullfile(fileparts(mfilename('fullpath')),'../utilities/caps/*.txt'),'Pick cap-file');
   drawnow;
   if ( ~isequal(fn,0) ) capFile=fullfile(pth,fn); end;
-  %if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
 end
 if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
 if ( ~isempty(capFile) ) 
@@ -109,8 +123,10 @@ maxEvents = opts.maxEvents;
 key      = {};
 label    = {};
 nCls     = opts.nSymbols;
-if ( ~isempty(maxEvents) )  rawEpochs= zeros(sum(iseeg),outsz(1),maxEvents); % stores the raw data
-else                        rawEpochs= zeros(sum(iseeg),outsz(1),40); 
+if ( ~isempty(maxEvents) && ~(isnan(maxEvents) || isinf(maxEvents)) )  
+  rawEpochs= zeros(sum(iseeg),outsz(1),maxEvents); % stores the raw data
+else                        
+  rawEpochs= zeros(sum(iseeg),outsz(1),40); 
 end
 rawIds   = 0;
 nTarget  = 0;
@@ -130,7 +146,7 @@ clf;
 fig=gcf;
 set(fig,'Name','ER(s)P Viewer : t=time, f=freq, r=rest, q,close window=quit','menubar','none','toolbar','none','doublebuffer','on');
 plotPos=ch_pos; if ( ~isempty(plotPos) ) plotPos=plotPos(:,iseeg); end;
-hdls=image3d(erp,1,'plotPos',plotPos,'Xvals',ch_names(iseeg),'Yvals',times,'ylabel','time (s)','zlabel','class','disptype','plot','ticklabs','sw','legend','se','plotPosOpts.plotsposition',[.05 .08 .91 .85],'lineWidth',opts.lineWidth);
+hdls=image3d(erp,1,'plotPos',plotPos,'Xvals',ch_names(iseeg),'Yvals',times,'ylabel','time (s)','disptype','plot','ticklabs','sw','legend','se','plotPosOpts.plotsposition',[.05 .08 .91 .85],'lineWidth',opts.lineWidth);
 
 % make popup menu for selection of TD/FD
 modehdl=uicontrol(fig,'Style','popup','units','normalized','position',[.8 .9 .2 .1],'String','Time|Frequency');
@@ -166,11 +182,15 @@ if ( isequal(opts.sigProcOptsGui,1) )
 end
 
 % pre-call buffer_waitData to cache its options
-[datai,deventsi,state,waitDatopts]=buffer_waitData(buffhost,buffport,[],'startSet',{opts.cuePrefix},'trlen_samp',trlen_samp,'offset_samp',offset_samp,'exitSet',{opts.redraw_ms 'data' opts.endType{:}},'verb',opts.verb,varargin{:},'getOpts',1);
+endType=opts.endType;if(numel(opts.endType)>0 && iscell(opts.endType{1})) endType=opts.endType{1}; end
+[datai,deventsi,state,waitDatopts]=buffer_waitData(buffhost,buffport,[],'startSet',{opts.cuePrefix},'trlen_samp',trlen_samp,'offset_samp',offset_samp,'exitSet',{opts.redraw_ms 'data' endType},'verb',opts.verb,varargin{:},'getOpts',1);
 
-fprintf("Waiting for events of type: %s\n",opts.cuePrefix);
+fprintf('Waiting for events of type: %s\n',opts.cuePrefix);
 
+data={}; devents=[]; % for returning the data/events
+curvistype=vistype;
 endTraining=false;
+tic;
 while ( ~endTraining )
 
   updateLines=false(numel(key),1); % reset what needs to be re-drawn
@@ -212,17 +232,18 @@ while ( ~endTraining )
   resetval=get(resethdl,'value');
   if ( resetval ) 
     fprintf('reset detected\n');
-    key={}; nTarget=0; rawIds=[];
+    key={}; nTarget=0; rawIds=[]; devents=[];
     erp=zeros(sum(iseeg),numel(yvals),1);
     updateLines(1)=true; updateLines(:)=true; % everything must be re-drawn
     resetval=0;
     set(resethdl,'value',resetval); % pop the button back out
   end
   
+  newClass   =false;
   keep=true(numel(deventsi),1);
   for ei=1:numel(deventsi);
       event=deventsi(ei);
-      if( ~isempty(strmatch(event.type,opts.endType)) )
+      if( any(matchEvents(event,opts.endType{:})) )
         % end-training event
         keep(ei:end)=false;
         endTraining=true; % mark to finish
@@ -235,13 +256,22 @@ while ( ~endTraining )
           for ki=1:numel(key) if ( isequal(val,key{ki}) ) mi=ki; break; end; end; 
         end;
         if ( isempty(mi) ) % new class to average
-          key{end+1}=val;
-          mi=numel(key);
+			 newClass   =true;
+          key{end+1} =val;
+          mi         =numel(key);
           erp(:,:,mi)=0;
           nCls       =mi;
         end;
         updateLines(mi)=true;
       
+		  if ( nargout>0 ) % store the data to return like buffer_waitdata
+			  if ( isempty(devents) ) 
+				 data={datai(ei)};        devents=event;
+			  else
+				 data(end+1)={datai(ei)}; devents(end+1) = event;
+			 end
+		  end
+		  
         % store the 'raw' data
 		  nTarget=nTarget+1;
 		  if ( isempty(maxEvents) || nTarget < maxEvents ) 
@@ -326,23 +356,84 @@ while ( ~endTraining )
         
          otherwise; error('Unrecognised visualisation type: ');
         end
-
-        erp(:,:,mi) = sum(ppdatmi,3)./size(ppdatmi,3);
+		  
+		  erpmi = sum(ppdatmi,3)./size(ppdatmi,3);		  
+		  if ( size(erpmi,2)==size(erp,2) )
+			 erp(:,:,mi) = erpmi; 
+		  else % BODGE: this should never happen..... but check for size mis-matches and fix if found
+			 if ( size(erpmi,2) < size(erp,2) ) % erpmi smaller: pad with last entry to get full size
+				erp(:,1:size(erpmi,2),mi)=erpmi;
+				erp(:,size(erpmi,2)+1:end,mi) =repmat(erpmi(:,end),1,size(erp,2)-size(erpmi,2)); 
+			 elseif ( size(erpmi,2)>size(erp,2) ) % erp smaller: only use this much
+				erp(:,:,mi) = erpmi(:,1:size(erp,2));
+			 end			 
+		  end
         if ( isnumeric(key{mi}) ) % line label -- including number of times seen
           label{mi}=sprintf('%g (%d)',key{mi},sum(rawIds(1:nTarget)==mi));
         else
           label{mi}=sprintf('%s (%d)',key{mi},sum(rawIds(1:nTarget)==mi));
-        end
-      end
-      vistype=curvistype;
-    
+        end		  
+      end    
       %---------------------------------------------------------------------------------
       % Update the plot
-      hdls=image3d(erp,1,'handles',hdls,'Xvals',ch_names(iseeg),'Yvals',yvals,'ylabel',ylabel,'zlabel','class','disptype','plot','ticklabs','sw','Zvals',label(1:numel(key)),'lineWidth',opts.lineWidth);
+		incrementalDraw = opts.incrementalDraw && isequal(vistype,curvistype);
+		if ( exist('OCTAVE_VERSION','builtin') ) incrementalDraw = incrementalDraw & ~newClass ; end;
+      if ( incrementalDraw ) % update the changed lines only
+          % compute useful range of data to show, with some artifact robustness, data-lim is mean+3std-dev
+          datstats=[mean(erp(:)) std(erp(:))];
+          datrange=[max(min(erp(:)),datstats(1)-opts.dataStd*datstats(2)) ...
+                    min(datstats(1)+opts.dataStd*datstats(2),max(erp(:)))];      
+          % update each plot in turn
+          for hi=1:size(erp,1);
+             % update the plot
+              xlim=get(hdls(hi),'xlim');
+              if( xlim(1)~=yvals(1) || xlim(2)~=yvals(end) ) set(hdls(hi),'xlim',[yvals(1) yvals(end)]);end
+              ylim=get(hdls(hi),'ylim');
+              %if ( size(rawEpochs,3)>100 ) keyboard; end;
+              if ( abs(ylim(1)-datrange(1))>.2*diff(datrange) || abs(ylim(2)-datrange(2))>.2*diff(datrange) )
+                 if ( datrange(1)==datrange(2) ) datrange=datrange(1) + .5*[-1 1]; end;
+                 set(hdls(hi),'ylim',datrange);
+              end
+
+              % update the lines
+              line_hdls=findobj(get(hdls(hi),'children'),'type','line');
+              linenames=get(line_hdls,'displayname'); % get names of all lines to find the one to update
+		      for mi=damagedLines(:)';
+				  % if existing line, so update in-place
+				  keymi=key{mi}; if ( isnumeric(keymi) ) keymi=sprintf('%g',keymi); end;
+				  li = strmatch(keymi,linenames); 
+              if(mi==1 && numel(line_hdls)==1 ) li=1; end; % single line is special case
+				  if( size(line_hdls,1)>=mi && ~isempty(li) && ishandle(line_hdls(li)) && ~isequal(line_hdls(li),0) )
+					 set(line_hdls(li),'xdata',yvals,'ydata',erp(hi,:,mi),'displayname',label{mi});
+				  else % add a new line
+                     set(hdls(hi),'nextplot','add');
+					 line_hdls(mi)=plot(yvals,erp(hi,:,mi),'parent',hdls(hi),...
+                                    	'color',linecols(mod(mi-1,numel(linecols))+1),...
+                                        'linewidth',opts.lineWidth,'displayname',label{mi});
+                     set(hdls(hi),'nextplot','replace');
+                  end
+			 end
+		  end
+		  % update the legend
+		  if ( strcmp(get(hdls(end),'type'),'axes') ) % legend is a normal set of axes
+			 labhdls = findobj(get(hdls(end),'children'),'type','text');
+			 for mi=damagedLines(:)';
+				if ( numel(labhdls)>=mi ) 
+				%set(labhdls(mi),'string',label{mi});
+				else % add this line to the legend figure...
+					  ;
+				end
+			 end
+		  end
+		else % redraw the whole from scratch
+            hdls=image3d(erp,1,'handles',hdls,'Xvals',ch_names(iseeg),'Yvals',yvals,'ylabel',ylabel,'disptype','plot','ticklabs','sw','Zvals',label(1:numel(key)),'lineWidth',opts.lineWidth);
+        end
+        vistype=curvistype;
     end
-    drawnow;      
+    % redraw, but not too fast
+    if ( toc < opts.redraw_ms/1000 ) continue; else drawnow; tic; end;
   end
-if ( ishandle(fig) ) close(fig); end;
+if ( opts.closeFig && ishandle(fig) ) close(fig); end;
 % close the options figure as well
 if ( exist('optsFigh') && ishandle(optsFigh) ) close(optsFigh); end;
 

@@ -61,7 +61,7 @@ ch_names=hdr.channel_names; ch_pos=[]; iseeg=true(numel(ch_names),1);
 % get capFile info for positions
 capFile=opts.capFile; overridechnms=opts.overridechnms; 
 if(isempty(opts.capFile)) 
-  [fn,pth]=uigetfile(fullfile(fileparts(mfilename('fullpath')),'../utilities/*.txt'),'Pick cap-file'); drawnow;
+  [fn,pth]=uigetfile(fullfile(fileparts(mfilename('fullpath')),'../utilities/caps/*.txt'),'Pick cap-file'); drawnow;
   if ( ~isequal(fn,0) ); capFile=fullfile(pth,fn); end;
   %if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
 end
@@ -190,6 +190,7 @@ else
   damage=false(4,1);	 
 end
 
+oldPoint = get(fig,'currentpoint'); % initial mouse position
 endTraining=false; state=[]; 
 cursamp=hdr.nSamples;
 while ( ~endTraining )  
@@ -233,6 +234,16 @@ while ( ~endTraining )
     set(fig,'userdata',[]);
     if ( ~isempty(modehdl) ); set(modehdl,'value',modekey); end;
   end
+  % process mouse clicks
+  if ( ~isequal(get(fig,'currentpoint'),oldPoint) )
+	  oldPoint = get(fig,'currentpoint');
+	  fprintf('Click at [%d,%d]',oldPoint);
+	  % find any axes we are within
+	  for hi=1:numel(hdls);
+		 apos=get(hdls(hi),'position')
+	  end
+  end
+
   % get updated sig-proc parameters if needed
   if ( ~isempty(optsFighandles) && ishandle(optsFighandles.figure1) )
     [ppopts,damage]=getSigProcOpts(optsFighandles,ppopts);
@@ -322,7 +333,8 @@ while ( ~endTraining )
   % compute useful range of data to show
   % add some artifact robustness, data-lim is mean+3std-dev
   datstats=[mean(ppdat(:)) std(ppdat(:))];
-  datrange=[max(min(ppdat(:)),datstats(1)-opts.dataStd*datstats(2)) min(datstats(1)+opts.dataStd*datstats(2),max(ppdat(:)))];
+  datrange=[max(min(ppdat(:)),datstats(1)-opts.dataStd*datstats(2)) ...
+            min(datstats(1)+opts.dataStd*datstats(2),max(ppdat(:)))];
 
   %---------------------------------------------------------------------------------
   % Do visualisation mode switching work
@@ -399,12 +411,16 @@ while ( ~endTraining )
     if ( ~isequal(curvistype,'power') )
       if ( datrange(1)<datlim(1)-diff(datlim)*.2 || datrange(1)>datlim(1)+diff(datlim)*.2 || ...
            datrange(2)>datlim(2)+diff(datlim)*.2 || datrange(2)<datlim(2)-diff(datlim)*.2 )
-        if ( isequal(datrange,[0 0]) ) 
+        if ( isequal(datrange,[0 0]) || all(isnan(datrange)) || all(isinf(datrange)) ) 
           %fprintf('Warning: Clims are equal -- reset to clim+/- .5');
           datrange=.5*[-1 1]; 
         elseif ( datrange(1)==datrange(2) ) 
           datrange=datrange(1)+.5*[-1 1];
-        end;         
+        elseif ( isnan(datrange(1)) || isinf(datrange(1)) )
+			 datrange(1) = datrange(2)-1;
+		  elseif ( isnan(datrange(2)) || isinf(datrange(2)) )
+			 datrange(2) = datrange(1)+1;
+		  end;         
         if ( isequal(curvistype,'spect') ) % spectrogram, datalim is color range
           datlim=datrange; set(hdls(1:size(ppdat,1)),'clim',datlim);
           % update the colorbar info
@@ -466,4 +482,3 @@ function testCase();
 % start the buffer proxy
 % dataAcq/startSignalProxy
 sigViewer();
-

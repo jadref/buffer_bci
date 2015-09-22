@@ -22,4 +22,4 @@ if [ -r "$buffdir/buffer/${arch}/${execname}" ]; then
 	 buffexe="$buffdir/buffer/${arch}/${execname}";
 fi
 
-$buffexe 
+$buffexe $@

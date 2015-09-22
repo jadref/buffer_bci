@@ -1,3 +1,4 @@
+seqLen=trainSeqLen;
 
 %==========================================================================
 % Initialize the display
@@ -6,7 +7,7 @@
 %remove menubar and toolbar. Also set the background color for the frame.
 stimfig = figure(2);
 clf;
-set(stimfig,'Name','Experiment - Testing',...
+set(stimfig,'Name','Experiment - Training',...
     'color',framebgColor,'menubar','none','toolbar','none',...
     'renderer','painters','doublebuffer','on','Interruptible','off');
 set(stimfig,'Units','pixel');wSize=get(stimfig,'position');set(stimfig,'units','normalized');% win size in pixels
@@ -48,36 +49,10 @@ fprintf('All images loaded.\n');
 tgtOrder = randperm(numel(targets));
 tgtOrder = tgtOrder(1:min(end,nSeq));
 
-%This array indicates whether a target or distractor should be flashed
-%ALSO has a built in check for at least 3 zero's in between 1's.
-%A 0 is a distractor, a 1 is a target 
-flashOrder = zeros(seqLen, nSeq);
-for i = 1:nSeq
-    ok = true;
-    while (ok)
-        ok = true;
-        x = [ones(1, nTgtFlashes) zeros(1, seqLen-nTgtFlashes)];
-        y = randperm(seqLen);
-        flashOrder(:,i) = x(y)';
-        indices = find(flashOrder(:,i) == 1);
-        if (all(diff(indices) > 3))
-            ok = false;
-        end
-    end
-end
-
-%Create random arrays for all sequences with random numbers to select each
-%target piece that should be flashed
-tgtPieces = zeros(ntgtPieces, nSeq);
-for i = 1:size(tgtPieces,2);
-	 tgtPieces(:,i)=randperm(size(tgtPieces,1));
-end
-
 %Create  arrays for all sequences with random numbers to select each 
-%distractor piece that should be flashed (= number of flashes - number of
-%target pieces that is flashed)
-distOrder = zeros((seqLen-nTgtFlashes),nSeq); % order of distractor pictures
-distPieces= zeros((seqLen-nTgtFlashes),nSeq); % order of distractor pieces of the picture
+%distractor piece that should be flashed
+distOrder = zeros(seqLen,nSeq); % order of distractor pictures
+distPieces= zeros(seqLen,nSeq); % order of distractor pieces of the picture
 for i = 1:size(distPieces,2);
    for j = 1:size(distPieces,1);
 	  distOrder(j,i)   = randi(numel(dists)); % randomly pick picture to get piece from
@@ -91,15 +66,27 @@ end
 %==========================================================================
 
 %Change text object and display start-up texts
-set(txthdl,'string', 'Press SPACE when ready', 'visible', 'on')
+set(txthdl,'string', 'Click mouse when ready', 'visible', 'on')
 waitforbuttonpress;
 set(txthdl,'visible', 'off');
 
 %Send a start of training event
-sendEvent('stimulus.testing', 'start');
+sendEvent('stimulus.training', 'start');
 
 %Start the sequences
 for seqi = 1:nSeq
+	 
+	 tgtIdx = tgtOrder(1,seqi);
+	 tgtInfo= targets(tgtIdx);
+
+	 % generate flash the ordering for this sequence, min-3, max-9 between flashes
+	 flashOrder = zeros(seqLen,1);
+	 si=ceil(rand(1)*tti/2); while si<numel(flashOrder); flashOrder(si)=1; si=si+ceil((.5+rand(1))*tti); end; 
+	 % generate a piece order for this sequence
+	 % random order of bits, but not the same one within 3 of itself
+	 tgtPiecesSeq=mkStimSeqRand(numel(tgtInfo.pieces),sum(flashOrder>0),1,3);
+	 tgtPieces=[]; for ei=1:size(tgtPiecesSeq,2); tgtPieces(ei,1)=find(tgtPiecesSeq(:,ei)>0,1); end;
+
     %Send an event to indicate that a sequence has started
     sendEvent('stimulus.sequence', 'start');
 
@@ -117,8 +104,13 @@ for seqi = 1:nSeq
         drawnow;
     end
     
-	 tgtIdx = tgtOrder(1,seqi);
-	 tgtInfo= targets(tgtIdx);
+    % [fn] = uigetfile(fullfile(fileparts(mfilename('fullpath')),'pictures/targets/*.jpg'),'Pick a Target');
+    % fn = fn(1:end-4);
+    % for tix = 1:size(targets,2)
+        % if (find(strcmp(targets(tix).name, fn)) == 1)
+            % tgtIdx = tix;
+        % end
+    % end
     %Show target image
     set(imghdl,'cdata',tgtInfo.image,'visible','on');
     drawnow;
@@ -127,7 +119,7 @@ for seqi = 1:nSeq
     
     set(imghdl, 'visible', 'off');
     drawnow;
-	 if ( verb>0 ) fprintf('%d) tgt=%s',seqi,tgtInfo.name); end;
+	 if ( verb>0 ) fprintf('%d) tgt=%s\t',seqi,tgtInfo.name); end;
     sleepSec(postTargetDuration);
      
     piecesTaken = 0;
@@ -139,14 +131,14 @@ for seqi = 1:nSeq
     for stimi = 1:seqLen
         %Flash the next piece
         %If the random order array says target take the next target piece
-        if (flashOrder(stimi, seqi) == 1)
+        if (flashOrder(stimi, min(end,seqi)) == 1)
            piecesTaken= piecesTaken + 1;
 			  flashVal   = 'target';
 			  imgInfo    = tgtInfo;
-           piece      = tgtPieces(piecesTaken, seqi);
+           piece      = tgtPieces(piecesTaken, min(end,seqi));
 
         %If the random order array says distractor take the next distractor
-        elseif (flashOrder(stimi, seqi) == 0)
+        elseif (flashOrder(stimi, min(end,seqi)) == 0)
           distTaken  = distTaken + 1;
 			 distIdx    = distOrder(distTaken,seqi);
 			 flashVal   = 'dist';
@@ -166,7 +158,7 @@ for seqi = 1:nSeq
         %send events describing what just happened
         sendEvent('stimulus.target', flashVal);                       % target state
 		  sendEvent('stimulus.image', sprintf('%s/%d',imgInfo.name,piece)); % image info
-		  if ( verb>0 ) if flashOrder(stimi, seqi) fprintf('t'); else fprintf('.'); end; end;
+		  if ( verb>0 ) if flashOrder(stimi, min(end,seqi)) fprintf('t'); else fprintf('.'); end; end;
         
         %Flash the white square
         set(imghdl,'cdata',whiteSquare,'visible','on');
@@ -188,7 +180,7 @@ for seqi = 1:nSeq
 end
 
 %Send an event to indicate that training has ended
-sendEvent('stimulus.testing', 'end');
+sendEvent('stimulus.training', 'end');
 
 %Thank subject and end experiment
 set(txthdl,'string', 'Thank you for participating!','visible', 'on');

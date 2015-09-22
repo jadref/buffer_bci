@@ -20,14 +20,15 @@ public class ERSPClassifier extends PreprocClassifier {
 
 	 public ERSPClassifier(double samplingFrequency,
 								  boolean detrend,
-								  Integer[] badchIdx,
-		  Matrix spatialFilter,RealVector spectralFilter,/*Integer[] outSize,*/Integer[] windowTimeIdx,
-		  double[] welchWindow,WelchOutputType welchAveType,Integer[] windowFrequencyIdx,
+								  boolean[] isbadCh,
+		  Matrix spatialFilter, double[] spectralFilter,/*Integer[] outSize,*/int[] windowTimeIdx,
+		  double[] welchWindow,WelchOutputType welchAveType,int[] windowFrequencyIdx,
 								  //Double badChannelThreshold,Double badTrialThreshold,
-								  String[] subProbDescription, List<Matrix> clsfrW, RealVector clsfrb){
-		  super("ERSP",samplingFrequency,detrend,badchIdx,spatialFilter,spectralFilter,windowTimeIdx,welchWindow,welchAveType,windowFrequencyIdx,subProbDescription,clsfrW,clsfrb);
+								  String[] subProbDescription, List<Matrix> clsfrW, double[] clsfrb){
+		  super("ERSP",samplingFrequency,detrend,isbadCh,spatialFilter,spectralFilter,windowTimeIdx,welchWindow,welchAveType,windowFrequencyIdx,subProbDescription,clsfrW,clsfrb);
 	 }
 
+	 @Override
 	 public Matrix preproc(Matrix data){
 		  // Common pre-processing
 		  super.preproc(data);
@@ -42,7 +43,7 @@ public class ERSPClassifier extends PreprocClassifier {
 		  // Selecting frequencies
 		  if (windowFrequencyIdx != null) {
 				int[] allRows = Matrix.range(0, data.getRowDimension(), 1);
-				data = new Matrix(data.getSubMatrix(allRows, ArrayFunctions.toPrimitiveArray(windowFrequencyIdx)));
+				data = new Matrix(data.getSubMatrix(allRows, windowFrequencyIdx));
 				System.out.println( "Data shape after frequency selection: " + data.shapeString());
 		  }
 		  return data;

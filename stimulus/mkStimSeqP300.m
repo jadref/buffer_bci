@@ -26,39 +26,42 @@ if ( nargin<2 || isempty(duration) ) duration=3; end; % default to 3sec
 if ( nargin<3 || isempty(isi) )  isi=1/5; end;        % default to 5hz
 if ( nargin<4 || isempty(tti) )  tti =1; end;         % default to ave target every second
 if ( nargin<5 || isempty(oddp) ) oddp=false; end;
-tti=tti*isi; % convert to in terms of event times
 % make a simple visual intermittent flash stimulus
 colors=[1 1 1;...  % color(1) = flash
         0 1 0]';   % color(2) = target
 nStim = duration/isi;
-stimTime=(1:nStim)*isi(0); % event every isi
+stimTime=(1:nStim)*isi(1); % event every isi
 stimSeq =-ones(nSymbs,numel(stimTime)); % make stimSeq where everything is turned off
-stimSeq(2:end-1,:)=0; % turn-on all symbols, to background color
 if ( oddp ) 
   colors=[0  1  0;...   % flash
           0  1  0;...   % target
           .7 .7 .7]';   % std - approx iso-luminant
-  stimSeq(2:end-1,2:2:end-1)=3; % every stimulus event
+  stimSeq(:,2:2:end)=3; % every stimulus event
 end
 eventSeq=cell(numel(stimTime),1);
-% seq is random flash about 1/sec
+tti_ev = ceil(tti/isi);
+flashStim=zeros(nSymbs,1);
 for stimi=1:nSymbs;
-  flashStim=-ones(nSymbs,1); 
-  flashStim(2:end-1)=0; 
-  if ( oddp ) flashStim(2:end-1)=3; end;
-  flashStim(1+stimi)=1; % flash only has symbol 1 set
-  t=isi+fix(rand(1)*10)/10; dt=0;
-  while (t<max(stimTime)) % loop to find a flash time not at the same time as another symbol
-    [ans,si]=min(abs(stimTime-t)); % find nearest stim time    
-    si=2*fix(si/2);
-    if ( ~any(stimSeq(2:end-1,si)==1) || rand(1)>.99 ) % only insert if nothing else happening
-      stimSeq(:,si)=flashStim;
-      t=stimTime(si); % only update t if we inserted something
-    else
-      t=t-dt; % revert the previous candidate and try again
-    end; 
-    dt=(.5+rand(1)/2)*tti;
-    t=t+dt;
+  flashStim(:)=0; 
+  if ( oddp ) flashStim(:)=3; end;
+  flashStim(stimi)=1; % flash only has symbol 1 set
+  si=0;
+  while (si<numel(stimTime)) % loop to find a flash time not at the same time as another symbol
+	 if ( si==0 ) sstart=0; else sstart=si+ceil(tti_ev/2); end
+	 possIdx = sstart+(1:tti_ev);
+	 if ( isempty(possIdx) || possIdx(1)>numel(stimTime) ) break; end
+	 emptyPos = stimSeq(:,possIdx(possIdx<numel(stimTime)));
+	 if ( oddp )  emptyPos = all(emptyPos==3,1); else emptyPos=all(emptyPos<=0,1); end;
+	 if ( any(emptyPos) ) % use one of the empty slots
+		possIdx = possIdx(emptyPos);
+	 end	 
+	 si = possIdx(randi(numel(possIdx))); % now randomly pick one of the possibilties
+    if ( oddp ) si=2*ceil(si/2); end;	 
+	 if ( si>numel(stimTime) ) break; end;
+	 % and insert into the stimSeq
+	 if ( ~any(stimSeq(:,si)==1) ) 	stimSeq(:,si)     = flashStim;
+	 else                            stimSeq(stimi,si) = 1;
+	 end
   end
 end
 return;
@@ -66,5 +69,5 @@ return;
 function testCase();
 % binary
 [stimSeq,stimTime]=mkStimSeqP300(10,10,1/10,2,1);
-clf;mcplot(stimTime,stimSeq,'lineWidth',1)
+clf;imagesc('cdata',stimSeq)
 clf;playStimSeq(stimSeq,stimTime)

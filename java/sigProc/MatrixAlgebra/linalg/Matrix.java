@@ -19,9 +19,6 @@ import org.apache.commons.math3.util.MathArrays;
 
 import java.util.ArrayList;
 import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.IOException;
 
 import static org.apache.commons.math3.stat.StatUtils.max;
