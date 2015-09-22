@@ -220,7 +220,7 @@ if ( opts.visualize )
     end
    end
    times=(1:size(mu,2))/opts.fs;
-   erpfig=figure('Name','Data Visualisation: ERP');
+   erpfig=figure(1); clf(erpfig);  set(erpfig,'Name','Data Visualisation: ERP');
    if ( ~isempty(di) ) xy=cat(2,di.extra.pos2d); % use the pre-comp ones if there
    elseif (size(ch_pos,1)==3) xy = xyz2xy(ch_pos);
    else   xy=[];
@@ -228,7 +228,7 @@ if ( opts.visualize )
    image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',labels,'disptype','plot','ticklabs','sw');
    try; zoomplots; saveaspdf('ERP'); catch; end;
    if ( ~(all(Yci(:)==Yci(1))) ) % only if >1 class input
-     aucfig=figure('Name','Data Visualisation: ERP AUC');
+     aucfig=figure(2); clf(aucfig); set(aucfig,'Name','Data Visualisation: ERP AUC');
      image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel',auc);
 	  colormap ikelvin;
      try;  zoomplots; saveaspdf('AUC'); catch; end;

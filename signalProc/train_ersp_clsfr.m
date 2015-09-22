@@ -271,12 +271,12 @@ if ( opts.visualize )
    elseif (size(ch_pos,1)==3) xy = xyz2xy(ch_pos);
    else   xy=[];
    end
-   erpfig=gcf;figure(erpfig);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');
+   erpfig=figure(1);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');
    yvals=freqs;
    image3d(mu(:,:,:),1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels(:),'disptype','plot','ticklabs','sw','clabel',opts.aveType);
    try; zoomplots; saveaspdf('ERSP'); catch; end;
    if ( ~(all(Yci(:)==Yci(1))) )
-    aucfig=figure();clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');
+    aucfig=figure(2);clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');
     image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
     colormap ikelvin; 
     try; zoomplots; saveaspdf('AUC'); catch; end;
