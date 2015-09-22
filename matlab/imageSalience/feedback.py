@@ -16,7 +16,7 @@ height=600
 
 black = (0,0,0)
 
-def buffer_newevents(evttype=None,timeout_ms=3000,verbose=False):
+def buffer_newevents(evttype=None,timeout_ms=500,verbose=False):
     '''
     Wait for and return any new events recieved from the buffer between
     calls to this function
@@ -143,6 +143,7 @@ def loadImage(name):
 
 # Function convert prediction to probablity [0-1]
 def predictionToProbability(pred):
+	if type(pred) is list: pred=pred[0]
 	return 1.0 / (1.0 + math.exp(pred))
 
 # Scales alpha [0-1] to (possibly) more useful alpha values [0-1]
@@ -168,6 +169,7 @@ def processBufferEvents():
 		elif evt.type == 'classifier.prediction':
 			# Get fragment from map and delete entry.
 			sample = evt.sample
+			if not sample in fragmentSampleMap : continue
 			fragment = fragmentSampleMap[sample]
 			del fragmentSampleMap[sample]
 

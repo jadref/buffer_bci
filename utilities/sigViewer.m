@@ -482,4 +482,3 @@ function testCase();
 % start the buffer proxy
 % dataAcq/startSignalProxy
 sigViewer();
-
