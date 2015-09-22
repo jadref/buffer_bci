@@ -33,7 +33,7 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %              0 - do nothing
 %              1 - detrend the data
 %              2 - center the data (i.e. subtract the mean)
-%  visualize - [int] visualize the data
+%  visualize - [int] visualize the data                     (1)
 %               0 - don't visualize
 %               1 - visualize, but don't wait
 %               2 - visualize, and wait for user before continuing
@@ -66,7 +66,7 @@ opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],'downsample',[],'de
     'badchrm',1,'badchthresh',3.1,'badchscale',2,...
     'badtrrm',1,'badtrthresh',3,'badtrscale',2,...
     'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
-    'visualize',2,'badCh',[],'nFold',10,'class_names',[],'zeroLab',1);
+    'visualize',1,'badCh',[],'nFold',10,'class_names',[],'zeroLab',1);
 [opts,varargin]=parseOpts(opts,varargin);
 
 di=[]; ch_pos=opts.ch_pos; ch_names=opts.ch_names;

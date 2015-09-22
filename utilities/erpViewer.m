@@ -26,6 +26,7 @@ function [data,devents]=erpViewer(buffhost,buffport,varargin);
 %  maxEvents - [int] maximume number of events to store             (inf)
 %                >1 - moving window ERP
 %                0<maxEvents<1 - exp decay moving average rate to use
+%  closeFig  - [bool] do we close the figure when we finish         (1)
 
 %if ( exist('OCTAVE_VERSION','builtin') ) debug_on_error(1); else dbstop if error; end;
 opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,...
@@ -36,7 +37,7 @@ opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,...
 				'capFile',[],'overridechnms',0,'welch_width_ms',500,...
 				'redraw_ms',250,'lineWidth',1,'sigProcOptsGui',1,...
             'dataStd',2.5,...
-				'incrementalDraw',1);
+				'incrementalDraw',1,'closeFig',1);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
@@ -431,7 +432,7 @@ while ( ~endTraining )
     % redraw, but not too fast
     if ( toc < opts.redraw_ms/1000 ) continue; else drawnow; tic; end;
   end
-if ( ishandle(fig) ) close(fig); end;
+if ( opts.closeFig && ishandle(fig) ) close(fig); end;
 % close the options figure as well
 if ( exist('optsFigh') && ishandle(optsFigh) ) close(optsFigh); end;
 

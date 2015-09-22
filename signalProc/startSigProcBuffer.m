@@ -81,11 +81,13 @@ if ( isempty(wb) || isempty(strfind('dataAcq',wb)) )
 end;
 opts=struct('phaseEventType','startPhase.cmd',...
 				'epochEventType',[],'testepochEventType',[],...
-            'erpEventType',[],'erpMaxEvents',[],...
-				'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],'visualize',2,...
+            'erpEventType',[],'erpMaxEvents',[],'erpOpts',{{}},...
+				'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],'trainOpts',{{}},...
             'epochPredFilt',[],'contPredFilt',[],'capFile',[],...
 				'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1);
 [opts,varargin]=parseOpts(opts,varargin);
+if ( ~iscell(opts.erpOpts) ) opts.erpOpts={opts.erpOpts}; end;
+if ( ~iscell(opts.trainOpts))opts.trainOpts={opts.trainOpts}; end;
 
 thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
 capFile=opts.capFile;
@@ -189,11 +191,11 @@ while ( true )
     
     %---------------------------------------------------------------------------------
    case {'erspvis','erpvis','erpviewer','erpvisptb'};
-    erpViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix',opts.erpEventType,'endType',lower(phaseToRun),'trlen_ms',opts.trlen_ms,'freqbands',[.0 .3 45 47],'maxEvents',opts.erpMaxEvents);
+    erpViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix',opts.erpEventType,'endType',lower(phaseToRun),'trlen_ms',opts.trlen_ms,'freqbands',[.0 .3 45 47],'maxEvents',opts.erpMaxEvents,opts.erpOpts{:});
 
    %---------------------------------------------------------------------------------
 	case {'erpviewcalibrate'};
-    [traindata,traindevents]=erpViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix',opts.erpEventType,'endType',{{lower(phaseToRun) 'calibrate'} 'end'},'trlen_ms',opts.trlen_ms,'freqbands',[.0 .3 45 47],'maxEvents',opts.erpMaxEvents);
+    [traindata,traindevents]=erpViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix',opts.erpEventType,'endType',{{lower(phaseToRun) 'calibrate'} 'end'},'trlen_ms',opts.trlen_ms,'freqbands',[.0 .3 45 47],'maxEvents',opts.erpMaxEvents,opts.erpOpts{:});
     mi=matchEvents(traindevents,{'calibrate' 'calibration'},'end'); traindevents(mi)=[]; traindata(mi)=[];%remove exit event
     fname=[dname '_' subject '_' datestr];
     fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save(fname,'traindata','traindevents','hdr');

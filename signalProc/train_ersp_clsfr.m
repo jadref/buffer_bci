@@ -33,7 +33,7 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %              0 - do nothing
 %              1 - detrend the data
 %              2 - center the data (i.e. subtract the mean)
-%  visualize - [int] visualize the data
+%  visualize - [int] visualize the data                      (1)
 %               0 - don't visualize
 %               1 - visualize, but don't wait
 %               2 - visualize, and wait for user before continuing
