@@ -84,7 +84,7 @@ opts=struct('phaseEventType','startPhase.cmd',...
             'erpEventType',[],'erpMaxEvents',[],...
 				'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],'visualize',2,...
             'epochPredFilt',[],'contPredFilt',[],'capFile',[],...
-				'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1);
+				'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1,'timeout_ms',1000);
 [opts,varargin]=parseOpts(opts,varargin);
 
 thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
@@ -148,7 +148,7 @@ while ( true )
   % wait for a phase control event
   if ( opts.verb>0 ) fprintf('%d) Waiting for phase command\n',nsamples); end;
   [devents,state,nevents,nsamples]=buffer_newevents(opts.buffhost,opts.buffport,state,...
-																	 {opts.phaseEventType 'subject'},[],5000);
+																	 {opts.phaseEventType 'subject'},[],opts.timeout_ms);
   if ( numel(devents)==0 ) 
     continue;
   elseif ( numel(devents)>1 ) 
