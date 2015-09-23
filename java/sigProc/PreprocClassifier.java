@@ -53,8 +53,6 @@ public class PreprocClassifier {
 		  double[] welchWindow,WelchOutputType welchAveType,int[] windowFrequencyIdx,
 									  //Double badChannelThreshold,Double badTrialThreshold,
 									  String[] subProbDescription, List<Matrix> clsfrW, double[] clsfrb){
-        ParameterChecker.checkString(welchAveType.toString(), new String[]{"AMPLITUDE", "power", "db"});
-
         // TODO: immediately check if the right combination of parameters is given
         this.type = type;
         this.samplingFrequency = samplingFrequency;
@@ -71,9 +69,6 @@ public class PreprocClassifier {
         this.welchAveType = welchAveType;
         this.windowFrequencyIdx = windowFrequencyIdx;
         //this.outSize = null;
-        //this.windowLength = windowLength;
-        //this.windowType = windowType;
-        //this.windowFn = Windows.getWindow(windowLength, windowType, true);
 
         //this.badChannelThreshold = badChannelThreshold;
         //this.badTrialThreshold   = badTrialThreshold;
@@ -82,17 +77,15 @@ public class PreprocClassifier {
         this.clsfrW = clsfrW;
         this.clsfrb = clsfrb;
 
-        //if (welchStartMs == null) this.welchStartMs = computeSampleStarts(samplingFrequency, new double[]{0});
-        //else this.welchStartMs = ArrayFunctions.toPrimitiveArray(welchStartMs);
-
-        System.out.println( "Just created PreprocClassifier with these settings: \n" + this.toString());
+        if ( VERB>=0 ) 
+				System.out.println( "Just created PreprocClassifier with settings: \n" + this.toString());
     }
 
 	 public Matrix preproc(Matrix data){
 
         // Bad channel removal
         if ( isbadCh != null ) {
-            System.out.println( "Do bad channel removal");
+            if ( VERB>0 ) System.out.println( "Do bad channel removal");
             int[] columns = Matrix.range(0, data.getColumnDimension(), 1);
             int[] rows = new int[isbadCh.length];
             int index = 0;
@@ -104,25 +97,25 @@ public class PreprocClassifier {
 				}
             rows = Arrays.copyOf(rows, index);
             data = new Matrix(data.getSubMatrix(rows, columns));
-            System.out.println( "Data shape after bad channel removal: " + data.shapeString());
+            if ( VERB>0 ) System.out.println( "Data shape after bad channel removal: " + data.shapeString());
         }
 
         // Detrend the data
         if (detrend) {
-            System.out.println( "Linearly detrending the data");
+            if ( VERB>0 ) System.out.println( "Linearly detrending the data");
             data = data.detrend(1, "linear");
         }
 
         // Now adaptive bad-channel removal if needed
         List<Integer> badChannels = null;
         if (badChannelThreshold > 0 ) {
-            System.out.println( "Adaptive bad-channel detection+removal.");
+            if ( VERB>0 ) System.out.println( "Adaptive bad-channel detection+removal.");
             Matrix norm = new Matrix(data.multiply(data.transpose()).scalarMultiply(1. / data.getColumnDimension()));
             badChannels = new LinkedList<Integer>();
             // Detecting bad channels
             for (int r = 0; r < data.getRowDimension(); r++)
                 if (norm.getEntry(r, 0) > badChannelThreshold) {
-                    System.out.println( "Removing channel " + r);
+                    if ( VERB>0 ) System.out.println( "Removing channel " + r);
                     badChannels.add(r);
                 }
 
@@ -135,15 +128,15 @@ public class PreprocClassifier {
 
         // Select the time range
         if (windowTimeIdx != null) {
-            System.out.println( "Selecting a time range");
+            if ( VERB>0 ) System.out.println( "Selecting a time range");
             int[] rows = Matrix.range(0, data.getRowDimension(), 1);
             data = new Matrix(data.getSubMatrix(rows, windowTimeIdx));
-            System.out.println( "New data shape after time range selection: " + data.shapeString());
+            if ( VERB>0 ) System.out.println( "New data shape after time range selection: " + data.shapeString());
         }
 
         // Spatial filtering
         if (spatialFilter != null) {
-            System.out.println( "Spatial filtering the data");
+            if ( VERB>0 ) System.out.println( "Spatial filtering the data");
 				data.multiply(spatialFilter);
         }
 		  return data;
@@ -154,9 +147,9 @@ public class PreprocClassifier {
 		  data = preproc(data);
 		  
 		  // Linearly classifying the data
-		  System.out.println( "Classifying with linear classifier");
+		  if ( VERB>0 ) System.out.println( "Classifying with linear classifier");
 		  Matrix fraw = applyLinearClassifier(data, 0);
-		  System.out.println( "Results from the classifier (fraw): " + fraw.toString());
+		  if ( VERB>0 ) System.out.println( "Results from the classifier (fraw): " + fraw.toString());
 		  Matrix f = new Matrix(fraw.copy());
 		  Matrix p = new Matrix(f.copy());
 		  p.walkInOptimizedOrder(new DefaultRealMatrixChangingVisitor() {
@@ -164,7 +157,7 @@ public class PreprocClassifier {
                 return 1. / (1. + Math.exp(-value));
 					 }
 				});
-		  System.out.println( "Results from the classifier (p): " + p.toString());
+		  if ( VERB>=0 ) System.out.println( "Results from the classifier (p): " + p.toString());
 		  return new ClassifierResult(f, fraw, p, data);		  
 	 }
 
