@@ -75,7 +75,7 @@ fSample = hdr.fSample
 
 # Initialize pygame
 pygame.init()
-screen = pygame.display.set_mode((width,height),  pygame.RESIZABLE, 32)
+screen = pygame.display.set_mode((width,height), 1, 32)
 pygame.display.set_caption("Image Salience -- Feedback")
 
 clock = pygame.time.Clock()
@@ -140,7 +140,6 @@ def loadImage(name):
 			surfaces[frag_no] = (pygame.Rect(pos_x, pos_y, w,h), surf, []) # Store as (screen_dst, surface, [probabilities])
 						
 
-
 # Function convert prediction to probablity [0-1]
 def predictionToProbability(pred):
 	if type(pred) is list: pred=pred[0]
@@ -148,7 +147,7 @@ def predictionToProbability(pred):
 
 # Scales alpha [0-1] to (possibly) more useful alpha values [0-1]
 def scaleAlpha(alpha):
-	return alpha * 1.3 #TODO: Determine if we want to change this.
+	return min(alpha * 1.3, 1) #TODO: Determine if we want to change this.
 
 # Receive events from the buffer and process them.
 def processBufferEvents():
@@ -165,6 +164,10 @@ def processBufferEvents():
 			fragment = int(evt.value.split('/')[1])
 			sample = evt.sample
 			fragmentSampleMap[sample] = fragment
+            
+		#elif evt.type == 'stimulus.sequence' and evt.value == 'start':
+			#for s in surfaces:
+				#s[1].set_alpha(0)
 
 		elif evt.type == 'classifier.prediction':
 			# Get fragment from map and delete entry.
@@ -186,11 +189,6 @@ while not done:
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			done=True
-		elif event.Type == pygame.VIDEORESIZE:
-			width = event.w
-			height = event.h
-			screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE, 32)
-			pygame.display.set_caption("Image Salience -- Feedback")
 
 	# Fetch and process events.
 	processBufferEvents()
