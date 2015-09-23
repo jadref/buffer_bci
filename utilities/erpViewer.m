@@ -26,6 +26,7 @@ function [data,devents]=erpViewer(buffhost,buffport,varargin);
 %  maxEvents - [int] maximume number of events to store             (inf)
 %                >1 - moving window ERP
 %                0<maxEvents<1 - exp decay moving average rate to use
+%  closeFig  - [bool] do we close the figure when we finish         (1)
 
 %if ( exist('OCTAVE_VERSION','builtin') ) debug_on_error(1); else dbstop if error; end;
 opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,...
@@ -36,7 +37,7 @@ opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,...
 				'capFile',[],'overridechnms',0,'welch_width_ms',500,...
 				'redraw_ms',250,'lineWidth',1,'sigProcOptsGui',1,...
             'dataStd',2.5,...
-				'incrementalDraw',1);
+				'incrementalDraw',1,'closeFig',1);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
@@ -130,7 +131,7 @@ end
 rawIds   = 0;
 nTarget  = 0;
 erp      = zeros(sum(iseeg),outsz(2),max(1,nCls)); % stores the pre-proc data used in the figures
-isbad    = false(sum(iseeg),1);
+isbadch  = false(sum(iseeg),1);
 
 % pre-compute the SLAP spatial filter
 slapfilt=[];
@@ -161,6 +162,7 @@ set(fig,'userdata',[]);
 drawnow; % make sure the figure is visible
 
 ppopts.badchrm=opts.badchrm;
+ppopts.badchthresh=opts.badchthresh;
 ppopts.preproctype='none';if(opts.detrend)ppopts.preproctype='detrend'; end;
 ppopts.spatfilttype=opts.spatfilt;
 ppopts.freqbands=opts.freqbands;
@@ -177,6 +179,7 @@ if ( isequal(opts.sigProcOptsGui,1) )
     if ( strcmpi(get(h,'string'),ppopts.preproctype) ) set(h,'value',1); break;end; 
   end;
   set(optsFighandles.badchrm,'value',ppopts.badchrm);
+  set(optsFighandles.badchthresh,'value',ppopts.badchthresh);
   ppopts=getSigProcOpts(optsFighandles);
 end
 
@@ -315,10 +318,27 @@ while ( ~endTraining )
       end
         
       % bad-channel identify and remove
-      if( ~isempty(ppopts.badchrm) && ppopts.badchrm>0 )
-        isbadch=idOutliers(rawEpochs,1,opts.badchthresh);
+      if( ~isempty(ppopts.badchrm) && ppopts.badchrm>0 && ppopts.badchthresh>0 )
+        oisbadch = isbadch;
+        isbadch=idOutliers(rawEpochs,1,ppopts.badchthresh);
         % set the data in this channel to 0
         ppdat(isbadch,:)=0;
+        % give feedback on which channels are marked as bad
+        for hi=find(oisbadch(:)~=isbadch(:))';
+           th=[];
+           try;
+              th = get(hdls(hi),'title');
+           catch; 
+           end
+           if ( ~isempty(th) ) 
+              tstr=get(th,'string'); 
+              if(isbadch(hi))
+                 if ( ~strcmp(tstr(max(end-5,1):end),' (bad)')) set(th,'string',[tstr ' (bad)']); end
+              elseif ( ~isbadch(hi) )
+                 if (strcmp(tstr(max(end-5,1):end),' (bad)'));  set(th,'string',tstr(1:end-6)); end;
+              end
+           end
+        end
         
         % bad-ch rm also implies bad trial
         isbadtr=idOutliers(ppdat,3,opts.badtrthresh);
@@ -332,12 +352,12 @@ while ( ~endTraining )
         % spatial filter
         switch(lower(ppopts.spatfilttype))
          case 'none';
-         case 'car';    ppdatmi(~isbad,:,:)=repop(ppdatmi(~isbad,:,:),'-',mean(ppdatmi(~isbad,:,:),1));
+         case 'car';    ppdatmi(~isbadch,:,:)=repop(ppdatmi(~isbadch,:,:),'-',mean(ppdatmi(~isbadch,:,:),1));
          case 'slap';   
           if ( ~isempty(slapfilt) ) % only use and update from the good channels
-            ppdatmi(~isbad,:,:)=tprod(ppdatmi(~isbad,:,:),[-1 2 3],slapfilt(~isbad,~isbad),[-1 1]); 
+            ppdatmi(~isbadch,:,:)=tprod(ppdatmi(~isbadch,:,:),[-1 2 3],slapfilt(~isbadch,~isbadch),[-1 1]); 
           end;
-         case 'whiten'; [W,D,ppdatmi(~isbad,:,:)]=whiten(ppdatmi(~isbad,:,:),1,'opt',1,0,1); %symetric whiten
+         case 'whiten'; [W,D,ppdatmi(~isbadch,:,:)]=whiten(ppdatmi(~isbadch,:,:),1,'opt',1,0,1); %symetric whiten
          otherwise; warning(sprintf('Unrecognised spatial filter type : %s',ppopts.spatfilttype));
         end        
         
@@ -403,26 +423,20 @@ while ( ~endTraining )
 				  li = strmatch(keymi,linenames); 
               if(mi==1 && numel(line_hdls)==1 ) li=1; end; % single line is special case
 				  if( size(line_hdls,1)>=mi && ~isempty(li) && ishandle(line_hdls(li)) && ~isequal(line_hdls(li),0) )
-					 set(line_hdls(li),'xdata',yvals,'ydata',erp(hi,:,mi),'displayname',label{mi});
+                 set(line_hdls(li),'xdata',yvals,'ydata',erp(hi,:,mi),'displayname',label{mi});
 				  else % add a new line
-                     set(hdls(hi),'nextplot','add');
-					 line_hdls(mi)=plot(yvals,erp(hi,:,mi),'parent',hdls(hi),...
-                                    	'color',linecols(mod(mi-1,numel(linecols))+1),...
-                                        'linewidth',opts.lineWidth,'displayname',label{mi});
-                     set(hdls(hi),'nextplot','replace');
-                  end
+                 set(hdls(hi),'nextplot','add');
+                 line_hdls(mi)=plot(yvals,erp(hi,:,mi),'parent',hdls(hi),...
+                                    'color',linecols(mod(mi-1,numel(linecols))+1),...
+                                    'linewidth',opts.lineWidth,'displayname',label{mi});
+                 set(hdls(hi),'nextplot','replace');
+              end
 			 end
 		  end
 		  % update the legend
-		  if ( strcmp(get(hdls(end),'type'),'axes') ) % legend is a normal set of axes
-			 labhdls = findobj(get(hdls(end),'children'),'type','text');
-			 for mi=damagedLines(:)';
-				if ( numel(labhdls)>=mi ) 
-				%set(labhdls(mi),'string',label{mi});
-				else % add this line to the legend figure...
-					  ;
-				end
-			 end
+		  if ( any(strcmp(get(hdls(end),'type'),{'axes','legend'})) ) % legend is a normal set of axes
+           pos=get(hdls(end),'position');
+           legend(hdls(end-1),'off'); hdls(end) = legend(hdls(end-1),'show'); set(hdls(end),'position',pos);
 		  end
 		else % redraw the whole from scratch
             hdls=image3d(erp,1,'handles',hdls,'Xvals',ch_names(iseeg),'Yvals',yvals,'ylabel',ylabel,'disptype','plot','ticklabs','sw','Zvals',label(1:numel(key)),'lineWidth',opts.lineWidth);
@@ -432,7 +446,7 @@ while ( ~endTraining )
     % redraw, but not too fast
     if ( toc < opts.redraw_ms/1000 ) continue; else drawnow; tic; end;
   end
-if ( ishandle(fig) ) close(fig); end;
+if ( opts.closeFig && ishandle(fig) ) close(fig); end;
 % close the options figure as well
 if ( exist('optsFigh') && ishandle(optsFigh) ) close(optsFigh); end;
 
@@ -446,27 +460,6 @@ function freqIdx=getfreqIdx(freqs,freqbands)
 if ( nargin<1 || isempty(freqbands) ) freqIdx=[1 numel(freqs)]; return; end;
 [ans,freqIdx(1)]=min(abs(freqs-max(freqs(1),freqbands(1)))); 
 [ans,freqIdx(2)]=min(abs(freqs-min(freqs(end),freqbands(end))));
-
-function [sigprocopts,damage]=getSigProcOpts(optsFighandles,oldopts)
-% get the current options from the sig-proc-opts figure
-sigprocopts.badchrm=get(optsFighandles.badchrm,'value');
-sigprocopts.spatfilttype=get(get(optsFighandles.spatfilt,'SelectedObject'),'String');
-sigprocopts.preproctype=get(get(optsFighandles.preproc,'SelectedObject'),'String');
-sigprocopts.freqbands=[str2num(get(optsFighandles.lowcutoff,'string')) ...
-                    str2num(get(optsFighandles.highcutoff,'string'))];  
-if ( numel(sigprocopts.freqbands)>4 ) sigprocopts.freqbands=sigprocopts.freqbands(1:min(end,4));
-elseif ( numel(sigprocopts.freqbands)<2 ) sigprocopts.freqbands=[];
-end;
-damage=false(4,1);
-if( nargout>1 && nargin>1) 
-  if ( isstruct(oldopts) )
-    damage(1)= ~isequal(oldopts.badchrm,sigprocopts.badchrm);
-    damage(2)= ~isequal(oldopts.spatfilttype,sigprocopts.spatfilttype);
-    damage(3)= ~isequal(oldopts.preproctype,sigprocopts.preproctype);
-    damage(4)= ~isequal(oldopts.freqbands,sigprocopts.freqbands);
-  end
-end
-
 
 %-----------------------
 function testCase();

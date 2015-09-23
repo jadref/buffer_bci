@@ -33,7 +33,7 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %              0 - do nothing
 %              1 - detrend the data
 %              2 - center the data (i.e. subtract the mean)
-%  visualize - [int] visualize the data
+%  visualize - [int] visualize the data                      (1)
 %               0 - don't visualize
 %               1 - visualize, but don't wait
 %               2 - visualize, and wait for user before continuing
@@ -271,12 +271,12 @@ if ( opts.visualize )
    elseif (size(ch_pos,1)==3) xy = xyz2xy(ch_pos);
    else   xy=[];
    end
-   erpfig=gcf;figure(erpfig);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');
+   erpfig=figure(1);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');
    yvals=freqs;
    image3d(mu(:,:,:),1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels(:),'disptype','plot','ticklabs','sw','clabel',opts.aveType);
    try; zoomplots; saveaspdf('ERSP'); catch; end;
    if ( ~(all(Yci(:)==Yci(1))) )
-    aucfig=figure();clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');
+    aucfig=figure(2);clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');
     image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
     colormap ikelvin; 
     try; zoomplots; saveaspdf('AUC'); catch; end;
@@ -319,13 +319,14 @@ clsfr.dvstats.std = [std(tstf(res.Y(:,1)>0))  std(tstf(res.Y(:,1)<=0))  std(tstf
 
 if ( opts.visualize > 1 ) 
   summary = sprintf('%4.1f ',res.tstbin(:,:,res.opt.Ci)*100);
-  if(size(res.tstbin,2)>1)summary=[summary sprintf(' = %4.1f <ave>',mean(res.tstbin(:,:,res.opt.Ci),2)*100)];end
-  tic;
-  b=msgbox({sprintf('Classifier performance : %s',summary) 'OK to continue!'},'Results');
-   while ( ishandle(b) && toc<120 ) drawnow; pause(.2); end; % wait to close auc figure
-   %if ( ishandle(aucfig) ) close(aucfig); end;
-   %if ( ishandle(erpfig) ) close(erpfig); end;
-   if ( ishandle(b) ) close(b); end;
+  if(size(res.tstbin,2)>1)
+     summary=[summary sprintf(' = %4.1f <ave>',mean(res.tstbin(:,:,res.opt.Ci),2)*100)];
+  end
+  if ( opts.visualize > 1 )
+     b=msgbox({sprintf('Classifier performance : %s',summary) 'OK to continue!'},'Results');
+     for i=0:.2:120; if ( ~ishandle(b) ) break; end; drawnow; pause(.2); end; % wait to close auc figure
+     if ( ishandle(b) ) close(b); end;
+   end
    drawnow;
 end
 

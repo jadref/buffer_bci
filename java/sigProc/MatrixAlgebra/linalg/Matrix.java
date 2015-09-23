@@ -19,9 +19,6 @@ import org.apache.commons.math3.util.MathArrays;
 
 import java.util.ArrayList;
 import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.IOException;
 
 import static org.apache.commons.math3.stat.StatUtils.max;
@@ -950,7 +947,12 @@ public class Matrix extends Array2DRowRealMatrix {
 				if ( width>0 && values.length != width ) {
 					 throw new IOException("Row widths are not consistent!");
 				} else if ( width<0 ) {
-					 width = values.length;
+					 if ( ! (values.equals("null") || values.equals("[]")) ){
+						  System.out.println("Got null value");
+						  break;
+					 } else {
+						  width = values.length;
+					 }
 				}					 
 				// read the row
 				double[] cols = new double[width]; // tempory store for the cols data

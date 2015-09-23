@@ -28,7 +28,7 @@ number_of_repeats = 3
 keyboard = True
 
 sequence_duration         = 15
-testing_sequence_duration = 120
+testing_sequence_duration = 1200
 inter_stimulus_interval   = .3
 target_to_target_interval = 1
 baseline_duration         = 3
@@ -189,7 +189,7 @@ def runTestingEpoch(nEpoch,seqDur,isi,tti,audioIDs,tgtIdx=None,uniqueEvents=Fals
     if tgtIdx is None: tgtIdx=len(audioIDs)-1
     dobreak(baseline_duration, ["Get Ready"]+["Testing Epoch " + str(nEpoch)])
 
-    updateframe(["Target: " + names[audioIDs[tgtIdx]]],False,True)
+    updateframe(["Target: " + names[audioIDs[tgtIdx]],"","","Space to begin."],False,True)
     sleep(target_duration/2.0)
     t0=time()
     for ei in range(3): # play 3 beeps of the target sound at the target interval
@@ -198,6 +198,8 @@ def runTestingEpoch(nEpoch,seqDur,isi,tti,audioIDs,tgtIdx=None,uniqueEvents=Fals
         #sleep(ttg if ttg>0 else 0) 
         stream.write(data[audioIDs[tgtIdx]])
     sleep(target_duration/2.0)      
+    waitForSpaceKey()
+    updateframe(["Target: " + names[audioIDs[tgtIdx]],"","","<esc> to finish"],False,True)
 
     ## Set up training sequence
     ss = stimseq.StimSeq.mkStimSeqOddball(1,seqDur,isi,tti)
@@ -226,7 +228,7 @@ def runTestingEpoch(nEpoch,seqDur,isi,tti,audioIDs,tgtIdx=None,uniqueEvents=Fals
                         tgtIdx = ntgtIdx+1
                         newTgt = True
         if endSeq : break
-        if newTgt: updateframe(["Target: " + names[audioIDs[tgtIdx]]],False,True)
+        if newTgt: updateframe(["Target: " + names[audioIDs[tgtIdx]],"","","<esc> to finish"],False,True)
 
         # sleep until we should play this sound
         ttg = (t0+st/1000.0)-time()

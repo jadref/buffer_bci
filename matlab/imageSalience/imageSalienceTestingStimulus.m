@@ -37,7 +37,7 @@ imghdl= image(axlim(:,1),axlim(:,2),whiteSquare, 'visible', 'off');
 % LOAD & SET-UP TARGET PICTURES + TARGET PIECES + DISTRACTOR PIECES 
 %==========================================================================
 %Load the full target pictures
-targets=loadnSliceImages(tgtDir);
+targets=loadnSliceImages(testDir);
 dists  =loadnSliceImages(distDir);
 fprintf('All images loaded.\n');
 
@@ -72,7 +72,7 @@ sendEvent('stimulus.testing', 'start');
 
 %Start the sequences
 for seqi = 1:nSeq
-    [fn] = uigetfile(fullfile(fileparts(mfilename('fullpath')),strcat(tgtDir,'/*.jpg')),'Pick a Target');
+    [fn] = uigetfile(fullfile(fileparts(mfilename('fullpath')),strcat(testDir,'/*.jpg')),'Pick a Target');
     fn = fn(1:end-4);
     for tix = 1:size(targets,2)
         if (find(strcmp(targets(tix).name, fn)) == 1)
@@ -88,9 +88,6 @@ for seqi = 1:nSeq
 	 tgtPiecesSeq= mkStimSeqRand(numel(tgtInfo.pieces),sum(flashOrder>0),1,3);
 	 tgtPieces=[]; for ei=1:size(tgtPiecesSeq,2); tgtPieces(ei,1)=find(tgtPiecesSeq(:,ei)>0,1); end;
 
-    %Send an event to indicate that a sequence has started
-    sendEvent('stimulus.sequence', 'start');
-
     %Show target image
     set(imghdl,'cdata',tgtInfo.image,'visible','on');
     drawnow;
@@ -102,6 +99,9 @@ for seqi = 1:nSeq
 	 if ( verb>0 ) fprintf('%d) tgt=%s\t',seqi,tgtInfo.name); end;
     sleepSec(postTargetDuration);
      
+    %Send an event to indicate that a sequence has started
+    sendEvent('stimulus.sequence', 'start');
+
     piecesTaken = 0;
     distTaken = 0;
     %Flash pieces in the center of the screen

@@ -33,7 +33,7 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %              0 - do nothing
 %              1 - detrend the data
 %              2 - center the data (i.e. subtract the mean)
-%  visualize - [int] visualize the data
+%  visualize - [int] visualize the data                     (1)
 %               0 - don't visualize
 %               1 - visualize, but don't wait
 %               2 - visualize, and wait for user before continuing
@@ -66,7 +66,7 @@ opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],'downsample',[],'de
     'badchrm',1,'badchthresh',3.1,'badchscale',2,...
     'badtrrm',1,'badtrthresh',3,'badtrscale',2,...
     'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
-    'visualize',2,'badCh',[],'nFold',10,'class_names',[],'zeroLab',1);
+    'visualize',1,'badCh',[],'nFold',10,'class_names',[],'zeroLab',1);
 [opts,varargin]=parseOpts(opts,varargin);
 
 di=[]; ch_pos=opts.ch_pos; ch_names=opts.ch_names;
@@ -220,7 +220,7 @@ if ( opts.visualize )
     end
    end
    times=(1:size(mu,2))/opts.fs;
-   erpfig=figure('Name','Data Visualisation: ERP');
+   erpfig=figure(1); clf(erpfig);  set(erpfig,'Name','Data Visualisation: ERP');
    if ( ~isempty(di) ) xy=cat(2,di.extra.pos2d); % use the pre-comp ones if there
    elseif (size(ch_pos,1)==3) xy = xyz2xy(ch_pos);
    else   xy=[];
@@ -228,7 +228,7 @@ if ( opts.visualize )
    image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',labels,'disptype','plot','ticklabs','sw');
    try; zoomplots; saveaspdf('ERP'); catch; end;
    if ( ~(all(Yci(:)==Yci(1))) ) % only if >1 class input
-     aucfig=figure('Name','Data Visualisation: ERP AUC');
+     aucfig=figure(2); clf(aucfig); set(aucfig,'Name','Data Visualisation: ERP AUC');
      image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel',auc);
 	  colormap ikelvin;
      try;  zoomplots; saveaspdf('AUC'); catch; end;
@@ -267,15 +267,16 @@ clsfr.dvstats.mu  = [mean(tstf(res.Y(:,1)>0)) mean(tstf(res.Y(:,1)<=0)) mean(tst
 clsfr.dvstats.std = [std(tstf(res.Y(:,1)>0))  std(tstf(res.Y(:,1)<=0))  std(tstf)];
 %  bins=[-inf -200:5:200 inf]; clf;plot([bins(1)-1 bins(2:end-1) bins(end)+1],[histc(tstf(Y>0),bins) histc(tstf(Y<=0),bins)]); 
 
-if ( opts.visualize > 1 ) 
+if ( opts.visualize >= 1 ) 
   summary = sprintf('%4.1f ',res.tstbin(:,:,res.opt.Ci)*100);
-  if(size(res.tstbin,2)>1)summary=[summary sprintf(' = %4.1f <ave>',mean(res.tstbin(:,:,res.opt.Ci),2)*100)];end
-  tic;
-  b=msgbox({sprintf('Classifier performance : %s',summary) 'OK to continue!'},'Results');
-   while ( ishandle(b) && toc<120 ) drawnow; pause(.2); end; % wait to close auc figure
-   %if ( ishandle(aucfig) ) close(aucfig); end;
-   %if ( ishandle(erpfig) ) close(erpfig); end;
-   if ( ishandle(b) ) close(b); end;
+  if(size(res.tstbin,2)>1)
+     summary=[summary sprintf(' = %4.1f <ave>',mean(res.tstbin(:,:,res.opt.Ci),2)*100)];
+  end
+  if ( opts.visualize > 1 )
+     b=msgbox({sprintf('Classifier performance : %s',summary) 'OK to continue!'},'Results');
+     for i=0:.2:120; if ( ~ishandle(b) ) break; end; drawnow; pause(.2); end; % wait to close auc figure
+     if ( ishandle(b) ) close(b); end;
+   end
    drawnow;
 end
 

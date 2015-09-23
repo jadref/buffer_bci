@@ -50,6 +50,7 @@ end
 verb=1; % verbosity level for debug info
 
 tgtDir ='pictures/targets';
+testDir='pictures/test';
 distDir='pictures/distractors';
 
 nSeq = 6;
