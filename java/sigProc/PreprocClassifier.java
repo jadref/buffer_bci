@@ -233,32 +233,47 @@ public class PreprocClassifier {
 		  boolean detrend  = Boolean.valueOf(readNonCommentLine(is));
 
 		  // read isbadCh       [1 x nCh boolean]
+		  boolean isbadCh[]=null;
 		  cols = readNonCommentLine(is).split("[ ,	]"); // split on , or white-space;
-		  boolean isbadCh[] = new boolean[cols.length];
-		  for ( int i=0; i<cols.length; i++ ) isbadCh[i]=Boolean.valueOf(cols[i]);
-
+		  if ( ! (cols[0].equals("null") || cols[0].equals("[]")) ){
+				isbadCh= new boolean[cols.length];
+				for ( int i=0; i<cols.length; i++ ) isbadCh[i]=Boolean.valueOf(cols[i]);
+		  } 
+		   
 		  // read spatialfilt   [d x d2 double]
 		  Matrix spatialFilter = Matrix.fromString(is);
 
 		  // read spectralfilt  [t/2 x 1 double]  // for the fftfilter method
 		  cols = readNonCommentLine(is).split("[ ,	]");
-		  double spectralFilter[] = new double[cols.length];
-		  for ( int i=0; i<cols.length; i++ ) spectralFilter[i]=Double.valueOf(cols[i]);
+		  double spectralFilter[]=null;
+		  if ( ! (cols[0].equals("null") || cols[0].equals("[]")) ){				
+				spectralFilter = new double[cols.length];
+				for ( int i=0; i<cols.length; i++ ) spectralFilter[i]=Double.valueOf(cols[i]);
+		  }
 
 		  // read outsz         [2 x 1 int]      // for downsampling during filtering
 		  cols = readNonCommentLine(is).split("[ ,	]");
-		  int[] outSz = new int[2];
-		  for ( int i=0; i<cols.length; i++ ) outSz[i]=Integer.valueOf(cols[i]);
+		  int[] outSz =null;
+		  if ( ! (cols[0].equals("null") || cols[0].equals("[]")) ){				
+				outSz=new int[2];
+				for ( int i=0; i<cols.length; i++ ) outSz[i]=Integer.valueOf(cols[i]);
+		  }
 
 		  // read timeIdx       [t2 x 1 int]
 		  cols = readNonCommentLine(is).split("[ ,	]");
-		  int[] timeIdx = new int[cols.length];
-		  for ( int i=0; i<cols.length; i++ ) timeIdx[i]=Integer.valueOf(cols[i]);
+		  int[] timeIdx =null;
+		  if ( ! (cols[0].equals("null") || cols[0].equals("[]")) ){				
+				timeIdx = new int[cols.length];
+				for ( int i=0; i<cols.length; i++ ) timeIdx[i]=Integer.valueOf(cols[i]);
+		  }
 
 		  // read welchWindowFn [t2 x 1 double]
 		  cols = readNonCommentLine(is).split("[ ,	]");
-		  double[] welchWindow = new double[cols.length];
-		  for ( int i=0; i<cols.length; i++ ) welchWindow[i]=Double.valueOf(cols[i]);
+		  double[] welchWindow =null;
+		  if ( ! (cols[0].equals("null") || cols[0].equals("[]")) ){				
+				welchWindow = new double[cols.length];
+				for ( int i=0; i<cols.length; i++ ) welchWindow[i]=Double.valueOf(cols[i]);
+		  }
 
 		  // read welchAveType  [enum]
 		  line = readNonCommentLine(is);
@@ -266,9 +281,12 @@ public class PreprocClassifier {
 		  
 		  // read freqIdx       [f2 x 1 int]
 		  cols = readNonCommentLine(is).split("[ ,	]");
-		  int[] freqIdx = new int[cols.length];
-		  for ( int i=0; i<cols.length; i++ ) freqIdx[i]=Integer.valueOf(cols[i]);
-		  
+		  int[] freqIdx = null;
+		  if ( ! (cols[0].equals("null") || cols[0].equals("[]")) ){				
+				freqIdx = new int[cols.length];
+				for ( int i=0; i<cols.length; i++ ) freqIdx[i]=Integer.valueOf(cols[i]);
+		  }
+
 		  // read subProbDesc,  [nSp Strings]
 		  cols = readNonCommentLine(is).split("[ ,	]");
 		  String[] subProbDesc=cols;
@@ -282,8 +300,11 @@ public class PreprocClassifier {
 
 		  // read b             [ 1 x nSp ]		  
 		  cols = readNonCommentLine(is).split("[ ,	]");		  
-		  double[]      b=new double[subProbDesc.length];
-		  for ( int i=0; i<subProbDesc.length; i++ ) b[i]=Double.valueOf(cols[i]);		  
+		  double[]      b=null;
+		  if ( ! (cols[0].equals("null") || cols[0].equals("[]")) ){				
+				b=new double[subProbDesc.length];
+				for ( int i=0; i<subProbDesc.length; i++ ) b[i]=Double.valueOf(cols[i]);		  
+		  }
 
 		  return new PreprocClassifier(type,
 												 fs,

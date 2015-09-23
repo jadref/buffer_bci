@@ -9,6 +9,7 @@ else % add double new line if not there
 	  str=[str sprintf('\n\n')];
   end
 end
+if ( isempty(mat) ) str=[str sprintf('[]')]; return; end;
 for zi=1:size(mat(:,:,:),3);
 	 for j=1:size(mat,1); % each row on it's own line
 		str=[str sprintf('%g\t',mat(j,1:end-1,zi)) sprintf('%g',mat(j,end,zi)) sprintf('\n')];
