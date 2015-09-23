@@ -1,3 +1,3 @@
 #!/bin/bash
 batdir=`dirname $0`
-python feedback.py $@
+python feedback_fragments.py $@

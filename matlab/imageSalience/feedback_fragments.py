@@ -6,10 +6,10 @@ import FieldTrip
 from PIL import Image
 
 # Value definitions
+image_paths = ['./pictures/targets', './pictures/distractors', './pictures/test', './pictures/training']
+
 hostname='localhost'
 port=1972
-
-targetPath = './pictures/targets'
 
 width=800
 height=600
@@ -76,7 +76,7 @@ fSample = hdr.fSample
 # Initialize pygame
 pygame.init()
 screen = pygame.display.set_mode((width,height), 1, 32)
-pygame.display.set_caption("Image Salience -- Feedback")
+pygame.display.set_caption("Image Salience -- Fragment feedback")
 
 clock = pygame.time.Clock()
 
@@ -102,10 +102,20 @@ def sliceImage(img,columns,rows):
 
 	return slices
 
+
+def tryOpenImage(name):
+	for p in image_paths:
+		try:
+			image_path = os.path.join(p, name + '.jpg')
+			return Image.open(image_path)
+		except IOError:
+			pass
+	raise IOError('Image ' + name + ' could not be found in any of the directories configured in paths. Is the image saved as .jpg?');
+	
+
 # Load image, create fragments, convert to surfaces and store.
 def loadImage(name):
-	image_path = os.path.join(targetPath, name + ".jpg")
-	img = Image.open(image_path)
+	img = tryOpenImage(name)
 	
 	cols = 3;
 	rows = 3;
@@ -133,7 +143,7 @@ def loadImage(name):
 			h = pos_y + (height/rows)
 
 			# Scale image to new dimension
-			surf = pygame.transform.scale(surf, (width/cols - 1, height/rows - 1))
+			surf = pygame.transform.scale(surf, (width/cols - 2, height/rows - 2))
 	
 			# Store in dictionary
 			frag_no = x * cols + y + 1
