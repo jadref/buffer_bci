@@ -169,6 +169,7 @@ for hi=1:size(ppdat,1);
 end;
 
 ppopts.badchrm=opts.badchrm;
+ppopts.badchthresh=opts.badchthresh;
 ppopts.preproctype='none';if(opts.detrend);ppopts.preproctype='detrend'; end;
 ppopts.spatfilttype=opts.spatfilt;
 ppopts.freqbands=opts.freqbands;
@@ -185,6 +186,7 @@ if ( isequal(opts.sigProcOptsGui,1) )
     if ( strcmpi(get(h,'string'),ppopts.preproctype) ); set(h,'value',1); break;end; 
   end;
   set(optsFighandles.badchrm,'value',ppopts.badchrm);
+  set(optsFighandles.badchthresh,'value',ppopts.badchthresh);  
   ppopts=getSigProcOpts(optsFighandles);
 else
   damage=false(4,1);	 
@@ -274,13 +276,33 @@ while ( ~endTraining )
   if ( ~strcmp(curvistype,'power') ) % BODGE: 50Hz power doesn't do any spatial filtering, or bad-channel removal
 
     % bad channel removal
-    if ( ppopts.badchrm>0 || strcmp(ppopts.badchrm,'1') )
-      chPow = chCov(1:size(chCov,1)+1:end);
-      fprintf('%s < %g\n',sprintf('%g ',chPow),mean(chPow)+opts.badchthresh*std(chPow));
+    if ( ( ppopts.badchrm>0 || strcmp(ppopts.badchrm,'1') ) && ppopts.badchthresh>0 )
+       oisbadch=isbadch;
+       chPow = chCov(1:size(chCov,1)+1:end)';
+       if ( opts.verb > 1 )
+          fprintf('%s < %g  %g\n',sprintf('%g ',chPow),mean(chPow)+ppopts.badchthresh*std(chPow),ppopts.badchthresh);
+       end
       for i=1:3;
-        isbadch = chPow>(mean(chPow(~isbadch))+opts.badchthresh*std(chPow(~isbadch))) | chPow<eps;
+        isbadch = chPow>(mean(chPow(~isbadch))+ppopts.badchthresh*std(chPow(~isbadch))) | chPow<eps;
       end
       ppdat(isbadch,:)=0; % zero out the bad channels
+    
+      % give feedback on which channels are marked as bad
+      for hi=find(oisbadch(:)~=isbadch(:))';
+         th=[];
+         try;
+            th = get(hdls(hi),'title');
+         catch; 
+         end
+         if ( ~isempty(th) ) 
+            tstr=get(th,'string'); 
+            if(isbadch(hi))
+               if ( ~strcmp(tstr(max(end-5,1):end),' (bad)')) set(th,'string',[tstr ' (bad)']); end
+            elseif ( ~isbadch(hi) )
+               if (strcmp(tstr(max(end-5,1):end),' (bad)'));  set(th,'string',tstr(1:end-6)); end;
+            end
+         end
+      end
     else
       isbadch(:)=false;
     end
@@ -458,25 +480,6 @@ if ( nargin<1 || isempty(freqbands) ); freqIdx=[1 numel(freqs)]; return; end;
 [ans,freqIdx(1)]=min(abs(freqs-max(freqs(1),freqbands(1)))); 
 [ans,freqIdx(2)]=min(abs(freqs-min(freqs(end),freqbands(end))));
 
-function [sigprocopts,damage]=getSigProcOpts(optsFighandles,oldopts)
-% get the current options from the sig-proc-opts figure
-sigprocopts.badchrm=get(optsFighandles.badchrm,'value');
-sigprocopts.spatfilttype=get(get(optsFighandles.spatfilt,'SelectedObject'),'String');
-sigprocopts.preproctype=get(get(optsFighandles.preproc,'SelectedObject'),'String');
-sigprocopts.freqbands=[real(str2num(get(optsFighandles.lowcutoff,'string'))) ...
-                    real(str2num(get(optsFighandles.highcutoff,'string')))];  
-if ( numel(sigprocopts.freqbands)>4 ); sigprocopts.freqbands=sigprocopts.freqbands(1:min(end,4));
-elseif ( numel(sigprocopts.freqbands)<2 ); sigprocopts.freqbands=[];
-end;
-damage=false(4,1);
-if( nargout>1 && nargin>1) 
-  if ( isstruct(oldopts) )
-    damage(1)= ~isequal(oldopts.badchrm,sigprocopts.badchrm);
-    damage(2)= ~isequal(oldopts.spatfilttype,sigprocopts.spatfilttype);
-    damage(3)= ~isequal(oldopts.preproctype,sigprocopts.preproctype);
-    damage(4)= ~isequal(oldopts.freqbands,sigprocopts.freqbands);
-  end
-end
 %-----------------------
 function testCase();
 % start the buffer proxy

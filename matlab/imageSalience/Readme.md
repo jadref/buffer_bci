@@ -35,6 +35,9 @@ To run this example:
 
 3) Start the Matlab based signal processing proces by running: startSigProcBuffer.bat or .sh
 
+   This will ask you to choose a cap-file which gives the system the electrode locations to use for
+   this experiment.  For this type of data a good cap-file to use is: `cap_tmsi_mobita_black.txt`
+
 4) Start the actual experiment by running: runImageSalience.bat or .sh
 
 5) Start the audience feedback display by running: startFeedback.bat or .sh

@@ -33,6 +33,9 @@ To run this example:
 
 3) Start the Matlab based signal processing proces by running: startSigProcBuffer.bat or .sh
 
+   This will ask you to choose a cap-file which gives the system the electrode locations to use for
+   this experiment.  For this type of data a good cap-file to use is: `cap_midline_15ch.txt`
+
 4) Start the actual experiment by running: runOddball_portaudio.bat or .sh
 
 5) Run the experiment.  This experiment has the following phases selected from the main menu:

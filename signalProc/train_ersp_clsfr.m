@@ -319,13 +319,14 @@ clsfr.dvstats.std = [std(tstf(res.Y(:,1)>0))  std(tstf(res.Y(:,1)<=0))  std(tstf
 
 if ( opts.visualize > 1 ) 
   summary = sprintf('%4.1f ',res.tstbin(:,:,res.opt.Ci)*100);
-  if(size(res.tstbin,2)>1)summary=[summary sprintf(' = %4.1f <ave>',mean(res.tstbin(:,:,res.opt.Ci),2)*100)];end
-  tic;
-  b=msgbox({sprintf('Classifier performance : %s',summary) 'OK to continue!'},'Results');
-   while ( ishandle(b) && toc<120 ) drawnow; pause(.2); end; % wait to close auc figure
-   %if ( ishandle(aucfig) ) close(aucfig); end;
-   %if ( ishandle(erpfig) ) close(erpfig); end;
-   if ( ishandle(b) ) close(b); end;
+  if(size(res.tstbin,2)>1)
+     summary=[summary sprintf(' = %4.1f <ave>',mean(res.tstbin(:,:,res.opt.Ci),2)*100)];
+  end
+  if ( opts.visualize > 1 )
+     b=msgbox({sprintf('Classifier performance : %s',summary) 'OK to continue!'},'Results');
+     for i=0:.2:120; if ( ~ishandle(b) ) break; end; drawnow; pause(.2); end; % wait to close auc figure
+     if ( ishandle(b) ) close(b); end;
+   end
    drawnow;
 end
 

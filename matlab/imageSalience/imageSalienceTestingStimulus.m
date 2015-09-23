@@ -37,7 +37,7 @@ imghdl= image(axlim(:,1),axlim(:,2),whiteSquare, 'visible', 'off');
 % LOAD & SET-UP TARGET PICTURES + TARGET PIECES + DISTRACTOR PIECES 
 %==========================================================================
 %Load the full target pictures
-targets=loadnSliceImages(tgtDir);
+targets=loadnSliceImages(testDir);
 dists  =loadnSliceImages(distDir);
 fprintf('All images loaded.\n');
 
@@ -72,7 +72,7 @@ sendEvent('stimulus.testing', 'start');
 
 %Start the sequences
 for seqi = 1:nSeq
-    [fn] = uigetfile(fullfile(fileparts(mfilename('fullpath')),strcat(tgtDir,'/*.jpg')),'Pick a Target');
+    [fn] = uigetfile(fullfile(fileparts(mfilename('fullpath')),strcat(testDir,'/*.jpg')),'Pick a Target');
     fn = fn(1:end-4);
     for tix = 1:size(targets,2)
         if (find(strcmp(targets(tix).name, fn)) == 1)
