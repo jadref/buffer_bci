@@ -63,7 +63,7 @@ end
 %==========================================================================
 
 %Change text object and display start-up texts
-set(txthdl,'string', 'Press SPACE when ready', 'visible', 'on')
+set(txthdl,'string', 'Click mouse when ready', 'visible', 'on')
 waitforbuttonpress;
 set(txthdl,'visible', 'off');
 
@@ -83,7 +83,7 @@ for seqi = 1:nSeq
 	 tgtInfo= targets(tgtIdx);
 	 % generate flash the ordering for this sequence, min-3, max-9 between flashes
 	 flashOrder = zeros(seqLen,1);
-	 si=1; while si<numel(flashOrder); flashOrder(si)=1; si=si+ceil((.5+rand(1))*tti); end; 
+	 si=ceil(rand(1)*tti/2); while si<numel(flashOrder); flashOrder(si)=1; si=si+ceil((.5+rand(1))*tti); end; 
 	 % generate a piece order for this sequence
 	 tgtPiecesSeq= mkStimSeqRand(numel(tgtInfo.pieces),sum(flashOrder>0),1,3);
 	 tgtPieces=[]; for ei=1:size(tgtPiecesSeq,2); tgtPieces(ei,1)=find(tgtPiecesSeq(:,ei)>0,1); end;
@@ -96,7 +96,7 @@ for seqi = 1:nSeq
     
     set(imghdl, 'visible', 'off');
     drawnow;
-	 if ( verb>0 ) fprintf('%d) tgt=%s',seqi,tgtInfo.name); end;
+	 if ( verb>0 ) fprintf('%d) tgt=%s\t',seqi,tgtInfo.name); end;
     sleepSec(postTargetDuration);
      
     %Send an event to indicate that a sequence has started

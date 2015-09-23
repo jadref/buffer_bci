@@ -15,6 +15,8 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.io.BufferedReader;
+
 
 /**
  * Created by Pieter on 23-2-2015.
@@ -40,7 +42,7 @@ public class ContinuousClassifier {
     private Integer sampleStepMs = 100; // BUG: changing this shouldn't matter for anything else...
     private Integer timeoutMs = 1000;
     private boolean normalizeLatitude = true;
-    private List<ERSPClassifier> classifiers;
+    private List<PreprocClassifier> classifiers;
     private BufferClientClock C = null;
     private Integer sampleTrialLength=-1;
     private Integer sampleStep=-1;
@@ -118,20 +120,24 @@ public class ContinuousClassifier {
      * @param is, input stream to read the weight matrix from 
      * @return List of classifiers (only one)
      */
-    private static List<ERSPClassifier> createClassifiers(InputStream is) {
-        List<Matrix> Ws = loadWFromFile(is);
-        RealVector b = Matrix.zeros(Ws.size(), 1).getColumnVector(0);
-		  // BUG: These numbers should *not* be hard coded here.....
-        Integer[] freqIdx = ArrayFunctions.toObjectArray(Matrix.range(0, 26, 1));
-        String[] subProbDescription = new String[]{"alphaL", "alphaR", "badness", "badChL", "badChR"};
-        Integer[] isBad = new Integer[]{0, 0, 0};
-        ERSPClassifier classifier = 
-				new ERSPClassifier(128,true, isBad, 
-										 null, null, null,
-										 null, WelchOutputType.AMPLITUDE, freqIdx,  
-										 subProbDescription, Ws, b);
-        List<ERSPClassifier> classifiers = new LinkedList<ERSPClassifier>();
-        classifiers.add(classifier);
+    private static List<PreprocClassifier> createClassifiers(BufferedReader is) {
+        // List<Matrix> Ws = loadWFromFile(is);
+        // double[] b = Matrix.zeros(Ws.size(), 1).getColumnVector(0);
+		  // // BUG: These numbers should *not* be hard coded here.....
+        // int[] freqIdx = ArrayFunctions.toPrimitaveArray(Matrix.range(0, 26, 1));
+        // String[] subProbDescription = new String[]{"alphaL", "alphaR", "badness", "badChL", "badChR"};
+        // int[] isBad = new int[]{0, 0, 0};
+        // ERSPClassifier classifier = 
+		  // 		new ERSPClassifier(128,true, isBad, 
+		  // 								 null, null, null,
+		  // 								 null, WelchOutputType.AMPLITUDE, freqIdx,  
+		  // 								 subProbDescription, Ws, b);
+        List<PreprocClassifier> classifiers = new LinkedList<PreprocClassifier>();
+		  try { 
+				classifiers.add(PreprocClassifier.fromString(is));
+		  } catch ( java.io.IOException e ) {
+				e.printStackTrace(System.out);
+		  }
         return classifiers;
     }
 
@@ -186,7 +192,7 @@ public class ContinuousClassifier {
         }
 
         // Set windows
-        for (ERSPClassifier c : classifiers) {
+        for (PreprocClassifier c : classifiers) {
             sampleTrialLength = c.getSampleTrialLength(sampleTrialLength);
         }
 
@@ -228,7 +234,8 @@ public class ContinuousClassifier {
      * Initializes the attributes of this class
      */
     private void initialize(InputStream is) {
-        classifiers = createClassifiers(is);
+		  BufferedReader br = new BufferedReader(new InputStreamReader(is));
+        classifiers = createClassifiers(br);
         C = new BufferClientClock();
         // Initialize the classifier and connect to the buffer
         connect();
@@ -299,7 +306,7 @@ public class ContinuousClassifier {
                 Matrix f = new Matrix(classifiers.get(0).getOutputSize(), 1);
                 Matrix fraw = new Matrix(classifiers.get(0).getOutputSize(), 1);
                 ClassifierResult result = null;
-                for (ERSPClassifier c : classifiers) {
+                for (PreprocClassifier c : classifiers) {
                     result = c.apply(data);
                     f = new Matrix(f.add(result.f));
                     fraw = new Matrix(fraw.add(result.fraw));

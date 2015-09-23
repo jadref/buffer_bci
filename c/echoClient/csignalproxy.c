@@ -95,12 +95,13 @@ int main(int argc, char *argv[]) {
     WSAStartup(MAKEWORD(1,1), &wsa_data);
 #endif    
   
-	 if (argc>1 && (strcmp(argv[1],"-help")==0 || strcmp(argv[1],"-h")==0) ){
-		fprintf(stderr, "Usage: csignalproxy buffersocket buffrate sampleratedivider\n");
+	 if(argc>1&&(strcmp(argv[1],"--help")==0 || strcmp(argv[1],"-help")==0 || strcmp(argv[1],"-h")==0)){
+		fprintf(stderr, "Usage: csignalproxy buffersocket fsample buffrate\n");
 		fprintf(stderr, "where:\n");
 		fprintf(stderr, "\t buffersocket\t is a string of the form bufferhost:bufferport         (localhost:1972)\n");
-		fprintf(stderr, "\t buffrate\t is the frequency in Hz that data is sent to the buffer    (50)\n");
-		sig_handler(0);
+		fprintf(stderr, "\t fsample\t is the frequency data is generated in Hz                 (100)\n");
+		fprintf(stderr, "\t buffrate\t is the frequency in Hz that data is sent to the buffer   (50)\n");
+		exit(0);
 	 }
 
 	 if (argc>1) {
@@ -121,7 +122,12 @@ int main(int argc, char *argv[]) {
 	 if (verbose>0) fprintf(stderr, "csignalproxy: buffer = %s:%d\n", buffhost.name,buffhost.port);
   
 	 if ( argc>2 ) {
-		BUFFRATE = atoi(argv[2]);
+		fsample = atoi(argv[2]);
+		if (verbose>0) fprintf(stderr, "csignalproxy: fsample = %f\n", fsample); 
+	 }
+
+	 if ( argc>3 ) {
+		BUFFRATE = atoi(argv[3]);
 		if (verbose>0) fprintf(stderr, "csignalproxy: BUFFRATE = %d\n", BUFFRATE); 
 	 }
   

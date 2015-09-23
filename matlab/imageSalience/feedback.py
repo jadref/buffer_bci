@@ -16,7 +16,7 @@ height=600
 
 black = (0,0,0)
 
-def buffer_newevents(evttype=None,timeout_ms=3000,verbose=False):
+def buffer_newevents(evttype=None,timeout_ms=500,verbose=False):
     '''
     Wait for and return any new events recieved from the buffer between
     calls to this function
@@ -75,7 +75,7 @@ fSample = hdr.fSample
 
 # Initialize pygame
 pygame.init()
-screen = pygame.display.set_mode((width,height),  1, 32)
+screen = pygame.display.set_mode((width,height),  pygame.RESIZABLE, 32)
 pygame.display.set_caption("Image Salience -- Feedback")
 
 clock = pygame.time.Clock()
@@ -143,11 +143,12 @@ def loadImage(name):
 
 # Function convert prediction to probablity [0-1]
 def predictionToProbability(pred):
+	if type(pred) is list: pred=pred[0]
 	return 1.0 / (1.0 + math.exp(pred))
 
 # Scales alpha [0-1] to (possibly) more useful alpha values [0-1]
 def scaleAlpha(alpha):
-	return alpha #TODO: Determine if we want to change this.
+	return alpha * 1.3 #TODO: Determine if we want to change this.
 
 # Receive events from the buffer and process them.
 def processBufferEvents():
@@ -168,6 +169,7 @@ def processBufferEvents():
 		elif evt.type == 'classifier.prediction':
 			# Get fragment from map and delete entry.
 			sample = evt.sample
+			if not sample in fragmentSampleMap : continue
 			fragment = fragmentSampleMap[sample]
 			del fragmentSampleMap[sample]
 
@@ -184,6 +186,11 @@ while not done:
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			done=True
+		elif event.Type == pygame.VIDEORESIZE:
+			width = event.w
+			height = event.h
+			screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE, 32)
+			pygame.display.set_caption("Image Salience -- Feedback")
 
 	# Fetch and process events.
 	processBufferEvents()

@@ -162,7 +162,7 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
     sendEvent("stimulus.trail","end")
 
 def doTraining():
-  sendEvent('startPhase.cmd','erpvis')
+  sendEvent('startPhase.cmd','erpviewcalibrate')
   sendEvent('stimulus.training','start')
   for i in range(1,(number_of_epochs+1)):
       # run with given parameters, and max audio difference
@@ -177,8 +177,12 @@ def doTraining():
           sleep(inter_trial_duration)
   updateframe("Training Finished")
   sleep(2)
-  sendEvent('erpvis','end')
+  sendEvent('calibrate','end')
   sendEvent('stimulus.training','end')
+
+def trainClsfr():
+    sendEvent('startPhase.cmd','train')
+    sleep(1)
       
 def runTestingEpoch(nEpoch,seqDur,isi,tti,audioIDs,tgtIdx=None,uniqueEvents=False):
     global endSeq
@@ -397,6 +401,7 @@ actions_key = dict()
 actions_key[K_e] = showeeg
 actions_key[K_i] = showInstructions
 actions_key[K_o] = doTraining
+actions_key[K_c] = trainClsfr
 actions_key[K_t] = doTesting
 actions_key[K_l] = lambda: doTesting(True)
 actions_key[K_q] = close

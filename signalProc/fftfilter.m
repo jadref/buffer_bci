@@ -9,6 +9,7 @@ function [fg,g]=fftfilter(f,g,len,dim,detrendp,win,hilbertp,MAXEL,verb);
 %          mkFilter(floor(size(f,dim)/2),[8 10 24 28],1/duration); % 10-24 Hz band pass)
 %  len -- [2x1] len(1) = N-point fft to use for *f*, ([size(f,dim), size(f,dim)])
 %               len(2) = Output sample size (for up/down sample) 
+%         **N.B.** due to a bug, down-sampling only allows **ODD** sized outputs....
 %  dim -- dimension to filter along. (first non-singlenton dimension)
 %  detrendp -- [int] do we detrend the input before fourier filtering?  (1)
 %               0=no, 1=detrend, 2=center

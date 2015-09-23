@@ -3,8 +3,9 @@ tgtSeq=mkStimSeqRand(nSymbs,nSeq);
 
 % make the stimulus
 %figure;
-fig=gcf;
+fig=figure(2);
 set(fig,'Name','Imagined Movement','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
+set(stimfig,'Units','pixel');wSize=get(stimfig,'position');set(stimfig,'units','normalized');% win size in pixels
 clf;
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
@@ -29,9 +30,10 @@ set(gca,'visible','off');
 set(h(:),'facecolor',bgColor);
 sendEvent('stimulus.training','start');
 % Wait for key-press to being stimuli
-t=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),imInstruct,'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.1);
-% wait for key to begin
-set(fig,'keypressfcn',@(x,y) uiresume);drawnow; uiwait(fig);set(fig,'keypressfcn',[]);delete(t);drawnow;
+t=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),imInstruct,'HorizontalAlignment','center','color',[0 1 0],'fontunits','pixel','FontSize',.1*wSize(4));
+% wait for button press to continue
+waitforbuttonpress;
+
 drawnow; pause(1); % N.B. pause so fig redraws
 for si=1:nSeq;
 
