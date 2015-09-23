@@ -22,6 +22,7 @@ import java.io.IOException;
 public class PreprocClassifier {
 
     public static final String TAG = ERSPClassifier.class.toString();
+	 public static final int VERB = 0; // debugging verbosity level
 
 	 protected final String type;
     protected final double samplingFrequency;
@@ -55,7 +56,7 @@ public class PreprocClassifier {
         ParameterChecker.checkString(welchAveType.toString(), new String[]{"AMPLITUDE", "power", "db"});
 
         // TODO: immediately check if the right combination of parameters is given
-        this.type = "???";
+        this.type = type;
         this.samplingFrequency = samplingFrequency;
         this.detrend = detrend;
 		  this.isbadCh = isbadCh;
@@ -225,12 +226,16 @@ public class PreprocClassifier {
 
 		  // read type          [string]
 		  String type = readNonCommentLine(is);
+		  if ( VERB>0 ) System.out.println("Type = " + type);
 
 		  // read fs            [1 x 1 double]
 		  double  fs   = Double.valueOf(readNonCommentLine(is));
+		  if ( VERB>0 ) System.out.println("fs = " + fs);
 
 		  // read detrend       [1 x 1 boolean]
 		  boolean detrend  = Boolean.valueOf(readNonCommentLine(is));
+		  if ( VERB>0 ) System.out.println("detrend = " + detrend);
+
 
 		  // read isbadCh       [1 x nCh boolean]
 		  boolean isbadCh[]=null;
@@ -239,9 +244,15 @@ public class PreprocClassifier {
 				isbadCh= new boolean[cols.length];
 				for ( int i=0; i<cols.length; i++ ) isbadCh[i]=Boolean.valueOf(cols[i]);
 		  } 
+		  if ( VERB>0 ) System.out.println("isbad = " + Arrays.toString(isbadCh));
 		   
 		  // read spatialfilt   [d x d2 double]
 		  Matrix spatialFilter = Matrix.fromString(is);
+		  if ( VERB>0 ) if ( spatialFilter != null ) {
+				System.out.println("spatfilt = " + spatialFilter.toString());
+		  } else { 
+				System.out.println("spatfilt = null"); 
+		  }
 
 		  // read spectralfilt  [t/2 x 1 double]  // for the fftfilter method
 		  cols = readNonCommentLine(is).split("[ ,	]");
@@ -250,6 +261,7 @@ public class PreprocClassifier {
 				spectralFilter = new double[cols.length];
 				for ( int i=0; i<cols.length; i++ ) spectralFilter[i]=Double.valueOf(cols[i]);
 		  }
+		  if ( VERB>0 ) System.out.println("spectFilt = " + Arrays.toString(spectralFilter));
 
 		  // read outsz         [2 x 1 int]      // for downsampling during filtering
 		  cols = readNonCommentLine(is).split("[ ,	]");
@@ -258,6 +270,7 @@ public class PreprocClassifier {
 				outSz=new int[2];
 				for ( int i=0; i<cols.length; i++ ) outSz[i]=Integer.valueOf(cols[i]);
 		  }
+		  if ( VERB>0 ) System.out.println("outsz = " + Arrays.toString(outSz));
 
 		  // read timeIdx       [t2 x 1 int]
 		  cols = readNonCommentLine(is).split("[ ,	]");
@@ -266,6 +279,7 @@ public class PreprocClassifier {
 				timeIdx = new int[cols.length];
 				for ( int i=0; i<cols.length; i++ ) timeIdx[i]=Integer.valueOf(cols[i]);
 		  }
+		  if ( VERB>0 ) System.out.println("outsz = " + Arrays.toString(timeIdx));
 
 		  // read welchWindowFn [t2 x 1 double]
 		  cols = readNonCommentLine(is).split("[ ,	]");
@@ -274,10 +288,12 @@ public class PreprocClassifier {
 				welchWindow = new double[cols.length];
 				for ( int i=0; i<cols.length; i++ ) welchWindow[i]=Double.valueOf(cols[i]);
 		  }
+		  if ( VERB>0 ) System.out.println("welchWindow = " + Arrays.toString(welchWindow));
 
 		  // read welchAveType  [enum]
 		  line = readNonCommentLine(is);
 		  WelchOutputType welchAveType=WelchOutputType.AMPLITUDE;
+		  if ( VERB>0 ) System.out.println("welchAveType = " + welchAveType);
 		  
 		  // read freqIdx       [f2 x 1 int]
 		  cols = readNonCommentLine(is).split("[ ,	]");
@@ -286,16 +302,21 @@ public class PreprocClassifier {
 				freqIdx = new int[cols.length];
 				for ( int i=0; i<cols.length; i++ ) freqIdx[i]=Integer.valueOf(cols[i]);
 		  }
+		  if ( VERB>0 ) System.out.println("freqIdx = " + Arrays.toString(freqIdx));
 
 		  // read subProbDesc,  [nSp Strings]
 		  cols = readNonCommentLine(is).split("[ ,	]");
 		  String[] subProbDesc=cols;
 		  //      also tells us the number of classifier weight matrices to expect
+		  if ( VERB>0 ) System.out.println("subProbDesc = " + Arrays.toString(subProbDesc));
 
 		  // read W             [ d2 x t2 x nSp ]
 		  List<Matrix> W=new LinkedList<Matrix>();
 		  for ( int spi=0; spi<subProbDesc.length; spi++){
 				W.add(Matrix.fromString(is));
+				if ( VERB>0 ) if( W.get(spi) != null ) {
+					 System.out.println(W.get(spi).toString());
+				}
 		  }
 
 		  // read b             [ 1 x nSp ]		  
@@ -305,6 +326,7 @@ public class PreprocClassifier {
 				b=new double[subProbDesc.length];
 				for ( int i=0; i<subProbDesc.length; i++ ) b[i]=Double.valueOf(cols[i]);		  
 		  }
+		  if ( VERB>0 ) System.out.println("b = " + Arrays.toString(b));
 
 		  return new PreprocClassifier(type,
 												 fs,
@@ -315,43 +337,55 @@ public class PreprocClassifier {
 												 //Double badChannelThreshold,Double badTrialThreshold,
 												 subProbDesc, W, b);
 	 }
+
 	 protected static String readNonCommentLine(BufferedReader is) throws java.io.IOException {
 		  String line;
 		  while ( (line = is.readLine()) != null ) {
+				if ( VERB>0 ) System.out.println("Line: [" + line + "]");
 				// skip comment lines
 				if ( line == null || line.startsWith("#") || line.length()==0 ){
+					 if ( VERB>0 ) System.out.println(" skipped");
 					 continue;
-				} // double empty line means end of this array
+				} else { 
+					 break;
+				}
 		  }
+		  if ( VERB>0 ) System.out.println(" Returned");
 		  return line;
 	 }
 
-
-
     public String toString() {
         String str = 
-				"ERSPClassifier with parameters:" + 
-				//"\nWindow Fn length:  \t" + windowFn.length + 
-				//"\nwelchStartMs       \t" + Arrays.toString(welchStartMs) + 
-				"\nSpatial filter     \t" + (spatialFilter != null ? spatialFilter.shapeString() : "null") +
-				"\nclsfr Weights      \t" + (clsfrW != null ? clsfrW.get(0).toString() : "null") + 
-				"\nclsfr bias         \t" + clsfrb + 
-				"\nspectralFilter     \t" + (spectralFilter != null ? spectralFilter.length : "null") + 
-				"\nSpectrum desc      \t" + Arrays.toString((subProbDescription)) + 
 				"\nType               \t" + type + 
-				"\nWelch ave type     \t" + welchAveType +
-				"\nDetrend            \t" + detrend + 
-				"\nBad channel thres  \t" + badChannelThreshold + 
-				"\nBad trial thres    \t" + badTrialThreshold + 
-				"\nTime idx           \t" + Arrays.toString(windowTimeIdx) + 
-				"\nFrequency idx      \t" + Arrays.toString(windowFrequencyIdx) + 
-				"\nIs bad channel     \t" + isbadCh.length + 
-				//"\nDimension          \t" + dimension + 
-				//"\nWindow length      \t" + windowLength + 
 				"\nSampling frequency \t" + samplingFrequency + 
-				// "\nWindow type        \t" + windowType
+				"\nDetrend            \t" + detrend + 
+				"\nIs bad channel     \t" + Arrays.toString(isbadCh) + 
+				"\nSpatial filter     \t" + (spatialFilter != null ? spatialFilter.toString() : "null") +
+				"\nspectralFilter     \t" + Arrays.toString(spectralFilter) + 
+				"\nTime idx           \t" + Arrays.toString(windowTimeIdx) + 
+				"\nwelchTaper         \t" + Arrays.toString(welchWindow) + 
+				"\nWelch ave type     \t" + welchAveType +
+				"\nFrequency idx      \t" + Arrays.toString(windowFrequencyIdx) + 
+				"\nsubProb desc       \t" + Arrays.toString((subProbDescription)) + 
+				"\nclsfr Weights      \t" + (clsfrW != null ? clsfrW.get(0).toString() : "null") + 
+				"\nclsfr bias         \t" + Arrays.toString(clsfrb) + 
+				//"\nDimension          \t" + dimension + 
 				"";
 		  
 		  return str;
     }
+
+
+	 public static void main(String[] args) throws IOException,InterruptedException {
+		  // test cases
+			 try { 
+				  java.io.FileInputStream is = new java.io.FileInputStream(new java.io.File(args[0]));
+				  if ( is==null ) System.out.println("Huh, couldnt open file stream.");
+				  PreprocClassifier.fromString(new java.io.BufferedReader(new java.io.InputStreamReader(is)));
+			 }  catch ( java.io.FileNotFoundException e ) {
+				  e.printStackTrace();
+			 } catch ( IOException e ) {
+				  e.printStackTrace();
+			 }
+	 }
 }

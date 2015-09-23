@@ -30,6 +30,9 @@ import static org.apache.commons.math3.stat.StatUtils.max;
  */
 public class Matrix extends Array2DRowRealMatrix {
 
+	 public static final int VERB = 0; // debugging verbosity level
+
+
     /**
      * Uninitialized matrix
      */
@@ -925,8 +928,8 @@ public class Matrix extends Array2DRowRealMatrix {
 		  ArrayList<double[]> rows=new ArrayList<double[]>(10);
 		  String line;
 		  int nEmptyLines=0;
-		  System.out.println("Starting new matrix");
-		  if ( bufferedReader.ready() ) System.out.println("reader is ready");	else System.out.println("reader is *not* ready");
+		  if ( VERB>0 ) System.out.println("Starting new matrix");
+		  if ( VERB>0 ) if ( bufferedReader.ready() ) System.out.println("reader is ready");	else System.out.println("reader is *not* ready");
 		  while ( (line = bufferedReader.readLine()) != null ) {
 				// skip comment lines
 				if ( line == null || line.startsWith("#") ){
@@ -934,21 +937,21 @@ public class Matrix extends Array2DRowRealMatrix {
 				} if ( line.length()==0 ) { // double empty line means end of this array
 					 nEmptyLines++;
 					 if ( nEmptyLines >1 && width>0 ) { // end of matrix by 2 empty lines
-						  System.out.println("Got 2 empty lines");
+						  if ( VERB>0 ) System.out.println("Got 2 empty lines");
 						  break;
 					 } else { // skip them
 						  continue;
 					 }
 				}
-				System.out.println("Reading line " + rows.size());
+				if ( VERB>0 ) System.out.println("Reading line " + rows.size());
 				
 				// split the line into entries on the split character
 				String[] values = line.split("[ ,	]"); // split on , or white-space
 				if ( width>0 && values.length != width ) {
 					 throw new IOException("Row widths are not consistent!");
 				} else if ( width<0 ) {
-					 if ( ! (values.equals("null") || values.equals("[]")) ){
-						  System.out.println("Got null value");
+					 if ( values[0].equals("null") || values[0].equals("[]") ){
+						  if ( VERB>0 ) System.out.println("Got null value");
 						  break;
 					 } else {
 						  width = values.length;
@@ -966,7 +969,7 @@ public class Matrix extends Array2DRowRealMatrix {
 				// add to the tempory store
 				rows.add(cols);
 		  }
-		  if ( line==null ) System.out.println("line == null");
+		  if ( line==null ) if ( VERB>0 ) System.out.println("line == null");
 		  
 		  if ( width<0 ) return null; // didn't load anything
 
