@@ -947,7 +947,12 @@ public class Matrix extends Array2DRowRealMatrix {
 				if ( width>0 && values.length != width ) {
 					 throw new IOException("Row widths are not consistent!");
 				} else if ( width<0 ) {
-					 width = values.length;
+					 if ( ! (values.equals("null") || values.equals("[]")) ){
+						  System.out.println("Got null value");
+						  break;
+					 } else {
+						  width = values.length;
+					 }
 				}					 
 				// read the row
 				double[] cols = new double[width]; // tempory store for the cols data
