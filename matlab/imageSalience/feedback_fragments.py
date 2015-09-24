@@ -166,7 +166,10 @@ def processBufferEvents():
 
 	for evt in events:
 		print(str(evt.sample) + ": " + str(evt))
-		if evt.type == 'stimulus.target.image': # Target image was received, load the image.
+		if evt.type == 'startPhase.cmd' and evt.value == 'exit' : # finish
+                        done=True
+
+                if evt.type == 'stimulus.target.image': # Target image was received, load the image.
 			surfaces = {} # Clear surfaces, i.e. reset.
 			loadImage(evt.value)
 

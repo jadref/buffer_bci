@@ -132,6 +132,9 @@ def processBufferEvents():
 	for evt in events:
 		print(str(evt.sample) + ": " + str(evt))
 
+		if evt.type == 'startPhase.cmd' and evt.value == 'exit' : # finish
+                        done=True
+                        
 		if evt.type == 'stimulus.image': # Select the next fragment.
 			image = evt.value.split('/')[0]
 			sample = evt.sample
