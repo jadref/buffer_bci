@@ -17,6 +17,11 @@ import java.util.List;
  * Classifies a piece of the data using a linear classifier on the welch spectrum.
  */
 public class ERSPClassifier extends PreprocClassifier {
+    public static String TAG = ERSPClassifier.class.toString();
+
+	 public ERSPClassifier( PreprocClassifier pc ){
+		  super(pc);
+	 }
 
 	 public ERSPClassifier(double samplingFrequency,
 								  boolean detrend,
@@ -49,7 +54,9 @@ public class ERSPClassifier extends PreprocClassifier {
 		  return data;
 	 }
 
+	 @Override
     public ClassifierResult apply(Matrix data) {	
+		  if ( VERB>0 ) System.out.println("ERSP apply");
 		  // Do the standard pre-processing
 		  data = preproc(data);
 		  

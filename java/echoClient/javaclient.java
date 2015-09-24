@@ -10,22 +10,15 @@ class javaclient {
 	
 		if (args.length>=1) {
 			hostname = args[0];
+			int sep = hostname.indexOf(':');
+			if ( sep>0 ) {
+				 port=Integer.parseInt(hostname.substring(sep+1,hostname.length()));
+				 hostname=hostname.substring(0,sep);
+			}			
 		}
 		if (args.length>=2) {
 			try {
 				port = Integer.parseInt(args[1]);
-			}
-			catch (NumberFormatException e) {
-				port = 0;
-			}
-			if (port <= 0) {
-				System.out.println("Second parameter ("+args[1]+") is not a valid port number.");
-				System.exit(1);
-			}
-		}
-		if (args.length>=3) {
-			try {
-				port = Integer.parseInt(args[2]);
 			}
 			catch (NumberFormatException e) {
 				timeout = 5000;

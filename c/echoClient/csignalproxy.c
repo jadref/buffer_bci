@@ -96,10 +96,11 @@ int main(int argc, char *argv[]) {
 #endif    
   
 	 if(argc>1&&(strcmp(argv[1],"--help")==0 || strcmp(argv[1],"-help")==0 || strcmp(argv[1],"-h")==0)){
-		fprintf(stderr, "Usage: csignalproxy buffersocket fsample buffrate\n");
+		fprintf(stderr, "Usage: csignalproxy buffersocket fsample nchans buffrate\n");
 		fprintf(stderr, "where:\n");
-		fprintf(stderr, "\t buffersocket\t is a string of the form bufferhost:bufferport         (localhost:1972)\n");
+		fprintf(stderr, "\t buffersocket\t is a string of the form bufferhost:bufferport (localhost:1972)\n");
 		fprintf(stderr, "\t fsample\t is the frequency data is generated in Hz                 (100)\n");
+		fprintf(stderr, "\t nchans\t is the number of simulated channels to make                 (3)\n");
 		fprintf(stderr, "\t buffrate\t is the frequency in Hz that data is sent to the buffer   (50)\n");
 		exit(0);
 	 }
@@ -119,17 +120,23 @@ int main(int argc, char *argv[]) {
 		sprintf(buffhost.name, "%s", DEFAULT_HOSTNAME);
 		buffhost.port = DEFAULT_PORT;
 	 }
-	 if (verbose>0) fprintf(stderr, "csignalproxy: buffer = %s:%d\n", buffhost.name,buffhost.port);
+	 if (verbose>0) fprintf(stderr, "csignalproxy: buffer      = %s:%d\n", buffhost.name,buffhost.port);
   
 	 if ( argc>2 ) {
 		fsample = atoi(argv[2]);
-		if (verbose>0) fprintf(stderr, "csignalproxy: fsample = %f\n", fsample); 
+		if (verbose>0) fprintf(stderr, "csignalproxy: fsample   = %f\n", fsample); 
 	 }
 
 	 if ( argc>3 ) {
-		BUFFRATE = atoi(argv[3]);
+		nchans = atoi(argv[3]);
+		if (verbose>0) fprintf(stderr, "csignalproxy: nChannels = %d\n", nchans); 
+	 }
+
+	 if ( argc>4 ) {
+		BUFFRATE = atoi(argv[4]);
 		if (verbose>0) fprintf(stderr, "csignalproxy: BUFFRATE = %d\n", BUFFRATE); 
 	 }
+
   
   //-------------------------------------------------------------------------------
   /* allocate the elements that will be used in the buffer communication */
