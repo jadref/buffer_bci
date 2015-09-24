@@ -161,15 +161,16 @@ def scaleAlpha(alpha):
 
 # Receive events from the buffer and process them.
 def processBufferEvents():
-	global surfaces
+	global surfaces,done
 	events = buffer_newevents()
 
 	for evt in events:
 		print(str(evt.sample) + ": " + str(evt))
 		if evt.type == 'startPhase.cmd' and evt.value == 'exit' : # finish
-                        done=True
-
-                if evt.type == 'stimulus.target.image': # Target image was received, load the image.
+			print('Got exit event')
+			done=True
+		
+		elif evt.type == 'stimulus.target.image': # Target image was received, load the image.
 			surfaces = {} # Clear surfaces, i.e. reset.
 			loadImage(evt.value)
 

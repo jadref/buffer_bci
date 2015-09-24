@@ -124,7 +124,7 @@ def avg(l):
 
 # Receive events from the buffer and process them.
 def processBufferEvents():
-	global surfaces
+	global surfaces, done
 	global imageSampleMap
 	global numPredictions
 	events = buffer_newevents()
@@ -133,9 +133,9 @@ def processBufferEvents():
 		print(str(evt.sample) + ": " + str(evt))
 
 		if evt.type == 'startPhase.cmd' and evt.value == 'exit' : # finish
-                        done=True
-                        
-		if evt.type == 'stimulus.image': # Select the next fragment.
+			done=True
+			
+		elif evt.type == 'stimulus.image': # Select the next fragment.
 			image = evt.value.split('/')[0]
 			sample = evt.sample
 			imageSampleMap[sample] = image
