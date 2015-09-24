@@ -1,3 +1,3 @@
 set batdir=%~dp0
 call ../../utilities/findPython.bat
-%pythonexe% feedback.py
+%pythonexe% feedback_target.py
