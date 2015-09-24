@@ -172,11 +172,11 @@ switch cmd;
  
  case 'put_evt';
   if ( numel(detail)==1 ) 
-    e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.bufferclient.BufferEvent',detail.type,detail.value,int32(detail.sample)));
+    e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.bufferclient.BufferEvent',detail.type,detail.value,detail.sample));
   else
     for ei=1:numel(detail);
       evt=detail(ei);
-      e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.bufferclient.BufferEvent',evt.type,evt.value,int32(evt.sample)));
+      e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.bufferclient.BufferEvent',evt.type,evt.value,evt.sample));
     end
   end
   if ( nargout>0 ) % convert to matlab (quickly, getArray is v.slow)
