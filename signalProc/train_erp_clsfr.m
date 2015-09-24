@@ -272,8 +272,8 @@ if ( opts.visualize >= 1 )
   if(size(res.tstbin,2)>1)
      summary=[summary sprintf(' = %4.1f <ave>',mean(res.tstbin(:,:,res.opt.Ci),2)*100)];
   end
+  b=msgbox({sprintf('Classifier performance : %s',summary) 'OK to continue!'},'Results');
   if ( opts.visualize > 1 )
-     b=msgbox({sprintf('Classifier performance : %s',summary) 'OK to continue!'},'Results');
      for i=0:.2:120; if ( ~ishandle(b) ) break; end; drawnow; pause(.2); end; % wait to close auc figure
      if ( ishandle(b) ) close(b); end;
    end
