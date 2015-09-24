@@ -21,8 +21,8 @@ import java.io.IOException;
  */
 public class PreprocClassifier {
 
-    public static final String TAG = ERSPClassifier.class.toString();
-	 public static final int VERB = 0; // debugging verbosity level
+    public static String TAG = PreprocClassifier.class.toString();
+	 public static final int VERB = 1; // debugging verbosity level
 
 	 protected final String type;
     protected final double samplingFrequency;
@@ -45,6 +45,30 @@ public class PreprocClassifier {
     protected final List<Matrix> clsfrW;
     protected final double[] clsfrb;
 
+    public PreprocClassifier(PreprocClassifier pc){
+        this.type = pc.type;
+        this.samplingFrequency = pc.samplingFrequency;
+        this.detrend = pc.detrend;
+		  this.isbadCh = pc.isbadCh;
+
+        //this.dimension = dimension;
+
+        this.spatialFilter  = pc.spatialFilter;
+        this.spectralFilter = pc.spectralFilter;
+        this.windowTimeIdx  = pc.windowTimeIdx;
+
+		  this.welchWindow   = pc.welchWindow;
+        this.welchAveType = pc.welchAveType;
+        this.windowFrequencyIdx = pc.windowFrequencyIdx;
+        //this.outSize = pc.outSize;
+
+        //this.badChannelThreshold = pc.badChannelThreshold;
+        //this.badTrialThreshold   = pc.badTrialThreshold;
+
+        this.subProbDescription = pc.subProbDescription;
+        this.clsfrW = pc.clsfrW;
+        this.clsfrb = pc.clsfrb;		  
+	 }
     public PreprocClassifier(String type,
 									  double samplingFrequency,
 									  boolean detrend,
@@ -80,6 +104,8 @@ public class PreprocClassifier {
         if ( VERB>=0 ) 
 				System.out.println( "Just created PreprocClassifier with settings: \n" + this.toString());
     }
+
+	 public String getType() { return type; }
 
 	 public Matrix preproc(Matrix data){
 
@@ -143,6 +169,7 @@ public class PreprocClassifier {
 	 }
 
 	 public ClassifierResult apply(Matrix data){
+		  if ( VERB>0 ) System.out.println("Preproc preproc");
 		  // Do the standard pre-processing
 		  data = preproc(data);
 		  

@@ -24,32 +24,33 @@ import java.io.BufferedReader;
  */
 public class ContinuousClassifier {
 
-    private static final String TAG = ContinuousClassifier.class.getSimpleName();
+    protected static final String TAG = ContinuousClassifier.class.getSimpleName();
+	 public static final int VERB = 1; // debugging verbosity level
 
-    private String hostname ="localhost";
-    private int port = 1972;
-    private String endType = "stimulus.test";
-    private String endValue = "end";
-    private String predictionEventType = "classifier.prediction";
-    private String baselineEventType = "stimulus.startbaseline";
-    private String baselineEnd = null;
-    private String baselineStart = "start";
-    private Integer nBaselineStep = 5000;
+    protected String hostname ="localhost";
+    protected int port = 1972;
+    protected String endType = "stimulus.test";
+    protected String endValue = "end";
+    protected String predictionEventType = "classifier.prediction";
+    protected String baselineEventType = "stimulus.startbaseline";
+    protected String baselineEnd = null;
+    protected String baselineStart = "start";
+    protected Integer nBaselineStep = 5000;
 
-    private Double overlap = .5;
-    private Double predictionFilter = 1.0;
-    private Integer sampleTrialMs = null;
-    private Integer sampleStepMs = 100; // BUG: changing this shouldn't matter for anything else...
-    private Integer timeoutMs = 1000;
-    private boolean normalizeLatitude = true;
-    private List<PreprocClassifier> classifiers;
-    private BufferClientClock C = null;
-    private Integer sampleTrialLength=-1;
-    private Integer sampleStep=-1;
-    private Float fs=-1.0f;
-    private Header header=null;
+    protected Double predictionFilter = 1.0;
+    protected Integer timeout_ms = 1000;
+    protected boolean normalizeLatitude = true;
+    protected List<PreprocClassifier> classifiers;
+    protected BufferClientClock C = null;
+    protected Integer trialLength_ms = 500;
+    protected Integer trialLength_samp=null;
+    protected Double overlap = .5;
+    protected Integer step_ms = 100; // BUG: changing this shouldn't matter for anything else...
+    protected Integer step_samp=-1;
+    protected Float fs=-1.0f;
+    protected Header header=null;
 
-	 static final String usage="java ContinuousClassifer buffhost buffport timeoutms weightfile";
+	 static final String usage="java ContinuousClassifer buffhost:buffport timeoutms weightfile trlen_ms step_ms";
 
 	 public static void main(String[] args) throws IOException,InterruptedException {	
 		  String hostname=null;
@@ -60,22 +61,15 @@ public class ContinuousClassifier {
 
 		if (args.length>=1) {
 			hostname = args[0];
+			int sep = hostname.indexOf(':');
+			if ( sep>0 ) {
+				 port=Integer.parseInt(hostname.substring(sep+1,hostname.length()));
+				 hostname=hostname.substring(0,sep);
+			}			
 		}
 		if (args.length>=2) {
 			try {
-				port = Integer.parseInt(args[1]);
-			}
-			catch (NumberFormatException e) {
-				port = 0;
-			}
-			if (port <= 0) {
-				System.out.println("Second parameter ("+args[1]+") is not a valid port number.");
-				System.exit(1);
-			}
-		}
-		if (args.length>=3) {
-			try {
-				timeout = Integer.parseInt(args[2]);
+				timeout = Integer.parseInt(args[1]);
 			}
 			catch (NumberFormatException e) {
 				 System.out.println("Couldnt understand your timeout spec....");
@@ -83,8 +77,8 @@ public class ContinuousClassifier {
 			}
 		}
 		// Open the file from which to read the classifier parameters
-		if (args.length>=4) {
-			 String clsfrFile = args[3];
+		if (args.length>=3) {
+			 String clsfrFile = args[2];
 			 System.out.println("Clsfr file = " + clsfrFile);
 			 try { 
 				  clsfrStream = new FileInputStream(new File(clsfrFile));
@@ -99,6 +93,27 @@ public class ContinuousClassifier {
 			 System.out.println(usage);
 			 System.exit(-1);
 		}
+
+		int trialLength_ms = -1;
+		if (args.length>=3) {
+			try {
+				 trialLength_ms = Integer.parseInt(args[1]);
+			}
+			catch (NumberFormatException e) {
+				 System.out.println("Couldnt understand your triallength spec.... using 1000ms");
+				 trialLength_ms = 1000;
+			}			 
+		}
+		int step_ms = -1;
+		if (args.length>=4) {
+			try {
+				 step_ms = Integer.parseInt(args[1]);
+			}
+			catch (NumberFormatException e) {
+				 System.out.println("Couldnt understand your step spec....");
+				step_ms = -1;
+			}			 
+		}
 		
 		// make the cont classifier object
 		ContinuousClassifier cc=new ContinuousClassifier(hostname,port,timeout);
@@ -111,7 +126,7 @@ public class ContinuousClassifier {
 	 ContinuousClassifier(String host, int port, int timeout){
 		  if ( host !=null )     this.hostname=host;
 		  if ( port >0 )     this.port=port;
-		  if ( timeout >=0 ) this.timeoutMs=timeout;
+		  if ( timeout >=0 ) this.timeout_ms=timeout;
 	 }
 
     /**
@@ -120,18 +135,7 @@ public class ContinuousClassifier {
      * @param is, input stream to read the weight matrix from 
      * @return List of classifiers (only one)
      */
-    private static List<PreprocClassifier> createClassifiers(BufferedReader is) {
-        // List<Matrix> Ws = loadWFromFile(is);
-        // double[] b = Matrix.zeros(Ws.size(), 1).getColumnVector(0);
-		  // // BUG: These numbers should *not* be hard coded here.....
-        // int[] freqIdx = ArrayFunctions.toPrimitaveArray(Matrix.range(0, 26, 1));
-        // String[] subProbDescription = new String[]{"alphaL", "alphaR", "badness", "badChL", "badChR"};
-        // int[] isBad = new int[]{0, 0, 0};
-        // ERSPClassifier classifier = 
-		  // 		new ERSPClassifier(128,true, isBad, 
-		  // 								 null, null, null,
-		  // 								 null, WelchOutputType.AMPLITUDE, freqIdx,  
-		  // 								 subProbDescription, Ws, b);
+    protected static List<PreprocClassifier> createClassifiers(BufferedReader is) {
         List<PreprocClassifier> classifiers = new LinkedList<PreprocClassifier>();
 		  try { 
 				classifiers.add(PreprocClassifier.fromString(is));
@@ -142,72 +146,37 @@ public class ContinuousClassifier {
     }
 
     /**
-     * Load the linear classifier data from a file
-     *
-     * @return List of matrices that are used for a linear classifier.
-     */
-    private static List<Matrix> loadWFromFile(InputStream is) {
-		  BufferedReader br = new BufferedReader(new InputStreamReader(is));
-		  if ( is == null ) System.out.println("input stream is null?");
-
-        List<Matrix> matrices = new LinkedList<Matrix>();
-        try {
-				Matrix m = Matrix.fromString(br);
-				int h=m.getRowDimension();
-				int w=m.getColumnDimension();
-				while ( m != null ){
-					 if ( m.getRowDimension() != h || m.getColumnDimension() != w ){
-						  throw new IOException("matrix sizes are incompatiable");
-					 }
-					 matrices.add(m);
-					 m = Matrix.fromString(br); // get another
-				}
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return matrices;
-    }
-
-    /**
      * Compute the necessary variable using the variables that were set by the user. Throws an error if to few variables
      * are set.
      */
-    private void setNullFields() {
+    protected void setNullFields() {
         // Set trial length
         if (header != null) {
             fs = header.fSample;
         } else {
             throw new RuntimeException("First connect to the buffer");
         }
-        if (sampleTrialLength == null) {
-            sampleTrialLength = 0;
-            if (sampleTrialMs != null) {
-                Float ret = sampleTrialMs / 1000 * fs;
-                sampleTrialLength = ret.intValue();
+        if (trialLength_samp == null) {
+            trialLength_samp = 0;
+            if (trialLength_ms != null) {
+                trialLength_samp = Double.valueOf(Math.round(trialLength_ms/1000.0*fs)).intValue();
             } else {
-                throw new IllegalArgumentException("sampleTrialLength and sampleTrialMs should not both be zero");
+                throw new IllegalArgumentException("trialLength_samp and trialLength_ms should not both be zero");
             }
         }
 
-        // Set windows
-        for (PreprocClassifier c : classifiers) {
-            sampleTrialLength = c.getSampleTrialLength(sampleTrialLength);
-        }
-
         // Set wait time
-        if (sampleStepMs != null) {
-            sampleStep = Double.valueOf(Math.round(sampleStepMs / 1000.0 * fs)).intValue();
-        } else {
-            sampleStep = Long.valueOf(Math.round(sampleTrialLength * overlap)).intValue();
+        if (step_ms != null) {
+            step_samp = Double.valueOf(Math.round(step_ms / 1000.0 * fs)).intValue();
+        } else if ( overlap != null ) {
+            step_samp = Long.valueOf(Math.round(trialLength_samp * overlap)).intValue();
         }
     }
 
     /**
      * Connects to the buffer
      */
-    private void connect() {
+    protected void connect() {
         while (header == null) {
             try {
                 System.out.println( "Connecting to " + hostname + ":" + port);
@@ -233,14 +202,33 @@ public class ContinuousClassifier {
     /**
      * Initializes the attributes of this class
      */
-    private void initialize(InputStream is) {
+    protected void initialize(InputStream is) {
+		  initialize(is,-1,-1);
+	 }
+	 protected void initialize(InputStream is, int trialLength_ms, int step_ms) {
 		  BufferedReader br = new BufferedReader(new InputStreamReader(is));
         classifiers = createClassifiers(br);
+		  // convert the classifier to the right type
+		  // TODO: BODGE: THERE REALLY SHOULD BE A BETTER WAY TO DO THIS!!!!!!
+		  for ( int i=0 ; i<classifiers.size(); i++){ // Note: need to use list.set to change inplace
+				PreprocClassifier c = classifiers.get(i);
+				if ( c.getType().equals("ERP") ) {
+					 if ( VERB>0 ) System.out.println("Making ERPClassifier");
+					 classifiers.set(i,new ERPClassifier(c));
+				}else if ( c.getType().equals("ERsP") ) {
+					 if ( VERB>0 ) System.out.println("Making ERSPClassifier");
+					 classifiers.set(i,new ERSPClassifier(c));
+				} else {
+					 System.out.println("Huh? Unknown classifer type="+c.getType());
+				}
+		  }
         C = new BufferClientClock();
         // Initialize the classifier and connect to the buffer
         connect();
+		  if ( trialLength_ms>0 ) this.trialLength_ms = trialLength_ms;
+		  if ( step_ms>0 )        this.step_ms        = step_ms;
         setNullFields();
-        System.out.println( this.toString() );
+        if ( VERB>0 ) System.out.println( this.toString() );
     }
 
     public void mainloop() {
@@ -250,12 +238,6 @@ public class ContinuousClassifier {
 
         // Initialize initial variables. These are used later on to store the data.
 		  int nOut=classifiers.get(0).getOutputSize()-1; nOut=nOut>0?nOut:1;
-        Matrix baseLineVal = Matrix.zeros(nOut, 1);
-        Matrix baseLineVar = Matrix.ones(nOut, 1);
-        boolean baselinePhase = false;
-        int nBaseline = 0;
-        Matrix dvBaseline = null;
-        Matrix dv2Baseline = null;
         Matrix dv = null;
         boolean endExpected = false;
         long t0 = 0;
@@ -267,8 +249,8 @@ public class ContinuousClassifier {
             SamplesEventsCount status = null;
             // Block until there are new events
             try {
-                System.out.println( "Waiting for " + (nSamples + sampleTrialLength + 1) + " samples");
-                status = C.waitForSamples(nSamples + sampleTrialLength + 1, this.timeoutMs);
+                System.out.println( "Waiting for " + (nSamples + trialLength_samp + 1) + " samples");
+                status = C.waitForSamples(nSamples + trialLength_samp + 1, this.timeout_ms);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -288,12 +270,12 @@ public class ContinuousClassifier {
 
             // Process any new data
             int onSamples = nSamples;
-            int[] startIdx = Matrix.range(onSamples, status.nSamples - sampleTrialLength - 1, sampleStep);
-            if (startIdx.length > 0) nSamples = startIdx[startIdx.length - 1] + sampleStep;
+            int[] startIdx= Matrix.range(onSamples, status.nSamples - trialLength_samp - 1, step_samp);
+            if (startIdx.length > 0) nSamples = startIdx[startIdx.length - 1] + step_samp;
 
             for (int fromId : startIdx) {
                 // Get the data
-                int toId = fromId + sampleTrialLength - 1;
+                int toId = fromId + trialLength_samp - 1;
                 Matrix data = null;
                 try {
                     data = new Matrix(new Matrix(C.getDoubleData(fromId, toId)).transpose());
@@ -308,42 +290,18 @@ public class ContinuousClassifier {
                 ClassifierResult result = null;
                 for (PreprocClassifier c : classifiers) {
                     result = c.apply(data);
-                    f = new Matrix(f.add(result.f));
-                    fraw = new Matrix(fraw.add(result.fraw));
+                    f      = new Matrix(f.add(result.f));    // accumulate predictions over classifiers
+                    fraw   = new Matrix(fraw.add(result.fraw));
                 }
 
-                // Postprocessing of alpha lat score
-                double[] dvColumn = f.getColumn(0);
-                f = new Matrix(dvColumn.length - 1, 1);
-                f.setColumn(0, Arrays.copyOfRange(dvColumn, 1, dvColumn.length));
-                if (normalizeLatitude) f.setEntry(0, 0, (dvColumn[0] - dvColumn[1]) / (dvColumn[0] + dvColumn[1]));
-                else f.setEntry(0, 0, dvColumn[0] - dvColumn[1]);
-
-
                 // Smooth the classifiers
-                if (dv == null || predictionFilter == null) dv = f;
-                else {
-                    if (predictionFilter >= 0.) {
+                if (dv == null || predictionFilter == null) {
+						  dv = f;
+                } else {
+                    if (predictionFilter >= 0.) { // exponiential smoothing of predictions
                         dv = new Matrix(dv.scalarMultiply(1. - predictionFilter).add(f.scalarMultiply(predictionFilter)));
                     }
                 }
-
-                // Update baseline
-                if (baselinePhase) {
-                    nBaseline++;
-                    dvBaseline = new Matrix(dvBaseline.add(dv));
-                    dv2Baseline = new Matrix(dv2Baseline.add(dv.multiplyElements(dv)));
-                    if (nBaselineStep != null && nBaseline > nBaselineStep) {
-                        System.out.println( "Baseline timeout\n");
-                        baselinePhase = false;
-                        Tuple<Matrix, Matrix> ret = baselineValues(dvBaseline, dv2Baseline, nBaseline);
-                        baseLineVal = ret.x;
-                        baseLineVar = ret.y;
-                    }
-                }
-
-                // Compare to baseline
-                dv = new Matrix(dv.subtract(baseLineVal)).divideElements(baseLineVar);
 
                 // Send prediction event
                 try {
@@ -354,7 +312,7 @@ public class ContinuousClassifier {
                 }
             }
 
-            // Deal with events
+            // Deal with new events
             if (status.nEvents > nEvents) {
                 BufferEvent[] events = null;
                 try {
@@ -366,24 +324,11 @@ public class ContinuousClassifier {
                 for (BufferEvent event : events) {
                     String type = event.getType().toString();
                     String value = event.getValue().toString();
-                    System.out.println( "GET EVENT (" + event.sample + "): " + type + ", value: " + value);
+                    System.out.println("got(t:" + type + " v:" + value + "s:" + event.sample);
                     if (type.equals(endType) && value.equals(endValue)) {
                         System.out.println( "End expected");
                         endExpected = true;
-                    } else if (type.equals(baselineEventType) && value.equals(baselineEnd)) {
-                        System.out.println( "Baseline end event received");
-                        baselinePhase = false;
-                        Tuple<Matrix, Matrix> ret = baselineValues(dvBaseline, dv2Baseline, nBaseline);
-                        baseLineVal = ret.x;
-                        baseLineVar = ret.y;
-                    } else if (type.equals(baselineEventType) && value.equals(baselineStart)) {
-                        System.out.println( "Baseline start event received");
-                        baselinePhase = true;
-                        nBaseline = 0;
-                        dvBaseline = Matrix.zeros(classifiers.get(0).getOutputSize() - 1, 1);
-                        dv2Baseline = Matrix.ones(classifiers.get(0).getOutputSize() - 1, 1);
-                    }
-
+                    } 
                 }
                 nEvents = status.nEvents;
             }
@@ -395,42 +340,20 @@ public class ContinuousClassifier {
         }
     }
 
-    /**
-     * Computes the baseline values after the baseline has ended
-     *
-     * @param dvBaseline  the dv values of the baseline
-     * @param dv2Baseline the squared dv values of the baseline
-     * @param nBaseline   the number of samples the dv is based on
-     * @return The mean and variance of the baseline
-     */
-    public Tuple<Matrix, Matrix> baselineValues(Matrix dvBaseline, Matrix dv2Baseline, int nBaseline) {
-        double scale = 1. / nBaseline;
-        Matrix baseLineVal = new Matrix(dvBaseline.scalarMultiply(scale));
-        Matrix baseLineVar = new Matrix(new Matrix(dv2Baseline.subtract(dvBaseline.multiplyElements(dvBaseline)
-                .scalarMultiply(scale))).abs().scalarMultiply(scale)).sqrt();
-        System.out.println("New baseline value: " + Arrays.toString(baseLineVal.getColumn(0)));
-        System.out.println("New baseline variance: " + Arrays.toString(baseLineVar.getColumn(0)));
-        return new Tuple<Matrix, Matrix>(baseLineVal, baseLineVar);
-    }
-
     public String toString() {
         String str = "\nContinuousClassifier with parameters:\n" + 
 				"Buffer host:     \t" + hostname + "\n" +
 				"Buffer port:     \t" + port + "\n" + 
-				"Header:\n        \t" + header + "\n" + 
 				"End type:        \t" + endType + "\n" + 
 				"End value:       \t" + endValue + "\n" + 
 				"predictionEventType:\t" + predictionEventType + "\n" +
-				"Samp Trial ms:   \t" + sampleTrialMs + "\n"+
-				"sampleTrialLength:\t" + sampleTrialLength + "\n" + 
+				"trialLength_ms:  \t" + trialLength_ms + "\n"+
+				"trialLength_samp:\t" + trialLength_samp + "\n" + 
 				"Overlap:         \t" +	overlap + "\n" +
-				"sampleStepMs:    \t" + sampleStepMs + "\n" + 
+				"step_ms:         \t" + step_ms + "\n" + 
+				"step_samp:       \t" + step_samp + "\n" + 
 				"predictionFilter:\t" + predictionFilter + "\n" + 
-				"TimeoutMs:       \t" + timeoutMs + "\n" + 
-				"BaselineEnd:     \t" + baselineEnd + "\n" + 
-				"BaselineStart:   \t" + baselineStart + "\n" + 
-				"BaselineStep:    \t" + nBaselineStep + "\n" + 
-				"NormalizeLat:    \t" + normalizeLatitude + "\n" + 
+				"timeout_ms:      \t" + timeout_ms + "\n" + 
 				"Fs:              \t" + fs + "\n";
 		  str += "#Classifiers:   \t" + classifiers.size();
 		  for ( int i=0; i < classifiers.size(); i++ ) {

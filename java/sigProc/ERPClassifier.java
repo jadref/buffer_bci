@@ -17,7 +17,12 @@ import java.util.List;
  * Classifies a piece of the data using a linear classifier on the welch spectrum.
  */
 public class ERPClassifier extends PreprocClassifier {
+    public static String TAG = ERPClassifier.class.toString();
 
+	 public ERPClassifier( PreprocClassifier pc ){
+		  super(pc);
+	 }
+								  
 	 public ERPClassifier( double samplingFrequency,
 								  boolean detrend,
 								  boolean[] isbadCh,
@@ -30,6 +35,7 @@ public class ERPClassifier extends PreprocClassifier {
 
 	 @Override
 	 public Matrix preproc(Matrix data){
+		  if ( VERB>0 ) System.out.println("ERP preproc");
 		  // Common pre-processing
 		  super.preproc(data);
 
