@@ -90,6 +90,6 @@ feedback = struct('label','alphaL',...
                   'electrodes',{{'FP2'}}); % don't forget double cell for struct
 capFile = 'muse';
 overridechnms=1;
-clsfr = train_nf_clsfr(1000,feedback,[],'spatialfilter','none','capFile',capFile,'overridechnms',overridechnms);
+clsfr = train_nf_clsfr(1000,feedback,'fs',220,'spatialfilter','none','capFile',capFile,'overridechnms',overridechnms,'width_ms',[],'width_samp',128); % force a power2 welch window
 str=clsfr2txt([],clsfr)
-fid=fopen('clsfr_nf.txt','w');fprintf(fid,'%s',clsfr2txt([],clsfr));fclose(fid);
+fid=fopen('../java/sigProc/res/clsfr_nf.txt','w');fprintf(fid,'%s',clsfr2txt([],clsfr));fclose(fid);

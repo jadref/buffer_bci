@@ -1,6 +1,7 @@
 package nl.dcc.buffer_bci.matrixalgebra.test;
 
 import nl.dcc.buffer_bci.matrixalgebra.linalg.Matrix;
+import nl.dcc.buffer_bci.matrixalgebra.linalg.WelchOutputType;
 import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.Triple;
 import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.Tuple;
 import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.Windows;
@@ -28,8 +29,8 @@ public class MatrixTest extends TestCase {
     }
 
     public void testMeanAll() throws Exception {
-        Matrix mean = a.mean();
-        assertEquals(3.0, mean.getData()[0][0]);
+        double mean = a.mean();
+        assertEquals(3.0, mean);
     }
 
     public void testMean0() throws Exception {
@@ -45,8 +46,8 @@ public class MatrixTest extends TestCase {
     }
 
     public void testSumAll() throws Exception {
-        Matrix sum = a.sum();
-        assertEquals(12.0, sum.getData()[0][0]);
+        double sum = a.sum();
+        assertEquals(12.0, sum);
     }
 
     public void testSum0() throws Exception {
@@ -104,40 +105,40 @@ public class MatrixTest extends TestCase {
     }
 
     public void testFft0() throws Exception {
-        Matrix power = a.fft(0);
+        Matrix power = a.fft2(0);
         double[][] goodMatrix = {{36., 36.}, {16., 4.}};
         assertEquals(new Matrix(goodMatrix), power);
     }
 
     public void testFft1() throws Exception {
-        Matrix power = a.fft(1);
+        Matrix power = a.fft2(1);
         double[][] goodMatrix = {{9., 1.}, {81., 1.}};
         assertEquals(new Matrix(goodMatrix), power);
     }
 
     public void testIFft0() throws Exception {
-        Matrix inversePower = a.ifft(0);
+        Matrix inversePower = a.ifft2(0);
         //        System.out.println(inversePower);
     }
 
     public void testIFft1() throws Exception {
-        Matrix inversePower = a.ifft(1);
+        Matrix inversePower = a.ifft2(1);
         //        System.out.println(inversePower);
     }
 
     public void testZeros() throws Exception {
         Matrix zeros = Matrix.zeros(10, 10);
-        assertEquals(0.0, zeros.sum().getData()[0][0]);
+        assertEquals(0.0, zeros.sum());
     }
 
     public void testOnes() throws Exception {
         Matrix ones = Matrix.ones(10, 10);
-        assertEquals(100.0, ones.sum().getData()[0][0]);
+        assertEquals(100.0, ones.sum());
     }
 
     public void testEye() throws Exception {
         Matrix eye = Matrix.eye(10);
-        assertEquals(10.0, eye.sum().getData()[0][0]);
+        assertEquals(10.0, eye.sum());
     }
 
     public void testCar() throws Exception {
@@ -247,7 +248,7 @@ public class MatrixTest extends TestCase {
 
     public void testWelch1() throws Exception {
         double[] window = Windows.getWindow(4, Windows.WindowType.HANNING, true);
-        Matrix ret = e.welch(1, window, new int[]{0, 2}, 4, false, false);
+        Matrix ret = e.welch(1, window,  WelchOutputType.AMPLITUDE, new int[]{0, 2}, 0);
         double[][] good = new double[][]{{173.3378, 140.7474, 156.7158}, {551.7926, 354.3962, 85.6544}, {828.5935,
                 709.1306, 757.4176}};
         assertEquals(new Matrix(good).round(2), ret.round(2));
@@ -255,7 +256,7 @@ public class MatrixTest extends TestCase {
 
     public void testWelch2() throws Exception {
         double[] window = Windows.getWindow(4, Windows.WindowType.HANNING, true);
-        Matrix ret = e.welch(1, window, new int[]{0, 2}, 4, false, true);
+        Matrix ret = e.welch(1, window,  WelchOutputType.AMPLITUDE, new int[]{0, 2}, 0);
         double[][] good = new double[][]{{66.3479, 144.3827, 156.7158}, {195.3260, 315.4483, 85.6544}, {296.4003, //
                 714.9363, 757.4176}};
         assertEquals(new Matrix(good).round(2), ret.round(2));
@@ -263,7 +264,7 @@ public class MatrixTest extends TestCase {
 
     public void testWelch3() throws Exception {
         double[] window = Windows.getWindow(4, Windows.WindowType.HANNING, true);
-        Matrix ret = e.welch(1, window, new int[]{0, 2}, 4, true, true);
+        Matrix ret = e.welch(1, window, WelchOutputType.AMPLITUDE,  new int[]{0, 2}, 1);
         double[][] good = new double[][]{{66.3479, 135.7999, 153.3875}, {195.3260, 312.4941, 79.4878}, //
                 {296.4003, 646.8671, 738.2755}};
         assertEquals(new Matrix(good).round(2), ret.round(2));
@@ -271,7 +272,7 @@ public class MatrixTest extends TestCase {
 
     public void testWelch4() throws Exception {
         double[] window = Windows.getWindow(8, Windows.WindowType.HANNING, true);
-        Matrix ret = f.welch(1, window, new int[]{0, 4}, 8, true, false);
+        Matrix ret = f.welch(1, window, WelchOutputType.AMPLITUDE, new int[]{0, 4}, 1);
         double[][] good = new double[][]{{37.3481, 84.0159, 107.0543, 111.5361, 121.8311}, {124.8509, 271.8949, //
                 262.5604, 187.5628, 48.8474}, {181.4438, 397.0927, 539.5645, 535.5171, 622.1956}};
         assertEquals(new Matrix(good).round(2), ret.round(2));
