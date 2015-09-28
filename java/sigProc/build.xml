@@ -8,6 +8,7 @@
     <property name="build.dir"   value="build"/>
     <property name="classes.dir" value="${build.dir}/classes"/>
     <property name="jar.dir"     value="${build.dir}/jar"/>
+    <property name="bufferjava.dir"     value="../../dataAcq/buffer/java/"/>
 
 	 <!-- Any library jar's we depend on? -->
 	 <property name="lib.dir"     value="lib"/>
@@ -53,6 +54,8 @@
 
 	 <target name="dist" depends="jar">
 		<copy file="${jar.dir}/ContinuousClassifier.jar" todir="."/>
+		<copy file="${jar.dir}/FilePlayback.jar" todir="."/>
+		<copy file="${jar.dir}/FilePlayback.jar" todir="${bufferjava.dir}"/>
 		<copy file="${jar.dir}/MatrixAlgebra.jar" todir="."/>
 	 </target>
 
