@@ -80,7 +80,8 @@ testdata={}; testevents={}; %N.B. cell array to avoid expensive mem-realloc duri
 
 % get the current number of samples, so we can start from now
 status=buffer('wait_dat',[-1 -1 -1],opts.buffhost,opts.buffport);
-nEvents=status.nevents; nSamples=status.nsamples+step_samp;
+nEvents=status.nevents; nSamples=status.nSamples; % most recent event/sample seen
+endSample=nSamples+trlen_samp; % last sample of the first window to apply to
 
 dv=[];
 nEpochs=0; filtstate=[];
@@ -89,13 +90,15 @@ tic;t0=0;t1=t0;
 while( ~endTest )
 
   % block until new data to process
-  status=buffer('wait_dat',[nSamples -1 opts.timeout_ms],opts.buffhost,opts.buffport);
+  status=buffer('wait_dat',[endSample -1 opts.timeout_ms],opts.buffhost,opts.buffport);
   if ( status.nSamples < nSamples ) 
     fprintf('Buffer restart detected!'); 
-    nSamples=status.nSamples;
+    nSamples =status.nSamples;
+	 endSample=nSamples+trlen_samp;
     dv(:)=0;
     continue;
   end
+  nSamples=status.nSamples; % keep track of last sample seen for re-start detection
     
   % logging stuff for when nothing is happening... 
   if ( opts.verb>=0 ) 
@@ -108,9 +111,9 @@ while( ~endTest )
   end;
     
   % process any new data
-  onSamples=nSamples;
-  fin = onSamples:step_samp:status.nSamples; % window start positions
-  if( ~isempty(fin) ) nSamples=fin(end)+step_samp; end % fin of next trial for which not enough data yet
+  oendSample=endSample;
+  fin = oendSample:step_samp:status.nSamples; % window start positions
+  if( ~isempty(fin) ) endSample=fin(end)+step_samp; end %fin of next trial for which not enough data
   for si = 1:numel(fin);    
     nEpochs=nEpochs+1;
     
@@ -147,7 +150,9 @@ while( ~endTest )
       
     % Send prediction event
     sendEvent(opts.predEventType,dv,fin(si));
-    if ( opts.verb>0 ) fprintf('%d) Clsfr Pred: [%s]\n',fin(si),sprintf('%g ',dv)); end;
+    if ( opts.verb>0 ) fprintf('%d) Clsfr Pred: [%s]\n',fin(si),sprintf('%g ',dv)); 
+	 elseif ( opts.verb>-1 ) fprintf('.'); 
+	 end;
   end
     
   % deal with any events which have happened
