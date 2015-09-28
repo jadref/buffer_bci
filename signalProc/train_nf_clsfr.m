@@ -173,11 +173,11 @@ for ci=1:numel(nfParams)
   if ( isempty(parmsci.electrodes) ) chWght(:)=1; 
   elseif ( numel(parmsci.electrodes)==numel(ch_names) && isnumeric(parmsci.electrodes))
     chWght=parmsci.electrodes;
-  elseif ( iscell(parmsci.electrodes) || isstr(parmsci.electrodes) )
+  elseif ( iscell(parmsci.electrodes) || isstr(parmsci.electrodes) || isnumeric(parmsci.electrodes) )
     if ( isstr(parmsci.electrodes) ) parmsci.electrodes={parmsci.electrodes}; end;
     for ei=1:numel(parmsci.electrodes);
-      chei = parmsci.electrodes{ei};
-      if ( isnumeric(chei) ) % index of the channel to weight
+      if(iscell(parmsci.electrodes)) chei=parmsci.electrodes{ei}; else chei=parmsci.electrodes(ei); end
+      if( isnumeric(chei) ) % index of the channel to weight
         chWght(abs(chei))=sign(chei);
       elseif ( isstr(chei) )
         val=1; if ( isequal('-',chei(1)) ) val=-1; chei=chei(2:end); end;
