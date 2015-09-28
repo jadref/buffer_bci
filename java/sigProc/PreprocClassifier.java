@@ -114,9 +114,12 @@ public class PreprocClassifier {
         if ( isbadCh != null ) {
             if ( VERB>0 ) System.out.println( "Do bad channel removal");
             int[] columns = Matrix.range(0, data.getColumnDimension(), 1);
-            int[] rows = new int[isbadCh.length];
+            int[] rows = new int[data.getRowDimension()];
+				if ( rows.length != isbadCh.length ) {
+					 System.err.println("Huh? isbad and data rows are not equal!");
+				}
             int index = 0;
-            for (int i = 0; i < isbadCh.length; i++){
+            for (int i = 0; i < isbadCh.length && i<rows.length; i++){
                 if (isbadCh[i] == false) { // keep if *not* bad
                     rows[index] = i;
                     index++;

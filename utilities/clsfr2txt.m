@@ -90,6 +90,6 @@ feedback = struct('label','alpha',...
                   'electrodes',[1 2]); % don't forget double cell for struct
 capFile = 'sigproxy';
 overridechnms=1;
-clsfr = train_nf_clsfr((64*2)/100,feedback,'fs',100,'spatialfilter','none','capFile',capFile,'overridechnms',overridechnms,'width_ms',[],'width_samp',64); % force a power2 welch window
+clsfr = train_nf_clsfr((64*2*1000)/100,feedback,'fs',100,'spatialfilter','none','capFile',capFile,'overridechnms',overridechnms,'width_ms',[],'width_samp',64); % force a power2 welch window
 fid=fopen('../java/sigProc/res/clsfr_alpha_sigprox.txt','w');fprintf(fid,'%s',clsfr2txt([],clsfr));fclose(fid);
 str=clsfr2txt([],clsfr)
