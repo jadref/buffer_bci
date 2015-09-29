@@ -41,9 +41,8 @@ public class ERSPClassifier extends PreprocClassifier {
 		  // Welch frequency estimation
 		  System.out.println( "Spectral transformation with welch method");
 		  // TODO: Make welch more intelligent....
-		  //data = data.welch(1, welchWindow, welchAveType) //windowFn, welchStartMs, windowLength, true, true);
+		  data = data.welch(1, welchWindow, welchAveType, null, 0);
 		  System.out.println( "Data shape after welch frequency estimation: " + data.shapeString());
-
 
 		  // Selecting frequencies
 		  if (windowFrequencyIdx != null) {

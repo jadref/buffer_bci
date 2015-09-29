@@ -70,13 +70,20 @@ stopwatch=getwTime(); printtime=stopwatch; fstart=stopwatch;
 if ( opts.keyboardEvents || opts.key2signal ) 
   fig=figure(1);clf;
   set(fig,'name','Press key here to generate events','menubar','none','toolbar','none');
-  ax=axes('position',[0 0 1 1],'visible','off');
-  text(.5,.5,{'Keyboard Events' '-------'...
+  ax=axes('position',[0 0 1 1],'visible','off',...
+			 'xlim',[0 1],'XLimMode','manual','ylim',[0 1],'ylimmode','manual','nextplot','add');
+  set(fig,'Units','pixel');wSize=get(fig,'position');
+  fontSize = .05*wSize(4);
+  text(.25,.5,{'Keyboard Events' '-------'...
               'space = amplitude 0' '0= amplitude 1' '9= amplitude 2' 'Z=amplitude 26'...
              'e = exponential ERP' 't=tophat ERP' 'g=gaussian ERP' ...
-              sprintf('ERP trigger event type = %s',opts.triggerType)});
-  set(fig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character))); 
+              sprintf('ERP trigger event type = %s',opts.triggerType)},...
+		'fontunit','pixels','fontsize',fontSize);
+  % install listener for key-press mode change
+  set(fig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); set(fig,'userdata',[]);
   if ( exist('OCTAVE_VERSION','builtin') ) 
+	 % BODGE: point to move around to update the plot to force key processing
+	 set(ax,'nextplot','add');ph=plot(ax,.9,.1,'w'); 
     page_output_immediately(1); % prevent buffering output
     if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
       graphics_toolkit('qthandles'); % use fast rendering library
@@ -178,7 +185,9 @@ while( true )
   % N.B. due to a bug on OCTAVE we need to do this in the main loop to cause the display to re-draw...
   %  and allow us to update the mouse/keyboard information.
   set(fig,'userdata',[]); % mark any key's pressed as processed
-  if ( mod(nblk,ceil(fsample/blockSize/4))==0 ) % re-draw 10x a second
+  if ( mod(nblk,ceil(fsample/blockSize/4))==0 ) % re-draw 4x a second
+	 % BODGE: move point to force key-processing
+	 if ( exist('OCTAVE_VERSION','builtin') ) set(ph,'ydata',.1+rand(1)*.01); end
     drawnow;
     if ( ~ishandle(fig) ) break; end;
   end;

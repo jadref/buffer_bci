@@ -6,7 +6,8 @@ if ( ~exist('OCTAVE_VERSION','builtin') )
 else
   contFig=figure(1);
   set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
-  axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
+  ax=axes('position',[0 0 1 1],'visible','off',...
+			 'xlim',[0 1],'XLimMode','manual','ylim',[0 1],'ylimmode','manual','nextplot','add');
   set(contFig,'Units','pixel');wSize=get(contFig,'position');
   fontSize = .05*wSize(4);
   %        Instruct String                  Phase-name

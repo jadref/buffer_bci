@@ -1,4 +1,4 @@
-function [str]=mat2java(str,mat)
+function [str]=mat2txt(str,mat)
 % convert a matlab matrix into the java ascii format
 %
 %  [str]=mat2java(str,mat)

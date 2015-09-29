@@ -60,6 +60,13 @@ public class BufferEvent {
 		this.sample = sample;
 		offset = duration = 0;
 	}	
+	 // Special case for matlab/octave which uses double by default 
+	public BufferEvent(String type, double value, double sample) {
+		wType  = new WrappedObject(type);
+		wValue = new WrappedObject(value);
+		this.sample = (int)sample;
+		offset = duration = 0;
+	}	
 
 	public BufferEvent(String type, float value, int sample) {
 		wType  = new WrappedObject(type);

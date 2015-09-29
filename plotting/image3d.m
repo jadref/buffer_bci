@@ -537,7 +537,7 @@ if ( ~isempty(opts.legend) && ~isequal(opts.legend,0) )
      % default to se position
      if ( isnumeric(opts.legend) && numel(opts.legend)==1 ) opts.legend='se'; end; 
       if ( ischar(opts.legend) ) 
-          pos = get(hdls(1:N),'outerposition'); if(iscell(pos)) pos=cat(1,pos{:}); end;
+          pos = get(hdls(1:N),'position'); if(iscell(pos)) pos=cat(1,pos{:}); end;
           %pos=pos(:,1:2)+pos(:,3:4)./2; % middle of the axes
           if( strfind(lower(opts.legend),'w') ) exPlot(1)=min(pos(:,1),[],1);
           else                                  exPlot(1)=max(pos(:,1),[],1);
@@ -548,14 +548,14 @@ if ( ~isempty(opts.legend) && ~isequal(opts.legend,0) )
           [rX,rY]=packBoxes([pos(:,1);exPlot(1)],[pos(:,2);exPlot(2)]);
           pos=[exPlot rX(end) rY(end)];
       elseif ( isnumeric(opts.legend) && numel(opts.legend)==2) % given pos
-          pos = cell2mat(get(hdls,'outerposition'));      
+          pos = cell2mat(get(hdls,'position'));      
           [ans,pos]= posplot([pos(:,1);opts.legend(1)],[pos(:,2);opts.legend(2)],i,opts.plotPosOpts,'sizeOnly',1);
       else
           tmphdl  = subplot(w,h,w*h);
-          pos=get(tmphdl,'outerposition'); if( ~any(tmphdl==hdls) ) delete(tmphdl); end;
+          pos=get(tmphdl,'position'); if( ~any(tmphdl==hdls) ) delete(tmphdl); end;
       end
       if ( 0 && pos(3)>0 && pos(4)>0 ) % only if could position it
-          tpos = get(hdls(N),'outerposition');
+          tpos = get(hdls(N),'position');
           if ( tpos(3)<pos(3) ) pos(1)=pos(1);           pos(3)=tpos(3); 
           else                  pos(1)=pos(1)+.1*pos(3); pos(3)=pos(3)*.8; 
           end;
@@ -567,7 +567,7 @@ if ( ~isempty(opts.legend) && ~isequal(opts.legend,0) )
   % Only lines with DisplayName set earlier get legend entries!
   lines=findobj(get(hdls(N),'children'),'type','line');
   good=false(size(lines));for li=1:numel(lines);if(~isempty(get(lines(li),'DisplayName')))good(li)=true;end; end;
-  leghdl=legend(hdls(N),lines(good));
+  legend(hdls(N),lines(good));leghdl=legend('show');
   % get the size of the legend window and use it for the new window
   tpos=get(leghdl,'position'); 
   pos(3:4)=tpos(3:4); 
