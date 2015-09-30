@@ -1,4 +1,4 @@
-package edu.nl.ru.fieldtripclientsservice.base;
+package nl.dcc.buffer_bci.android.bufferclientsservice.base;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;

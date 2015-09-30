@@ -1,8 +1,9 @@
-package edu.nl.ru.fieldtripclientsservice.threads;
+package nl.dcc.buffer_bci.android.bufferclientsservice.threads;
 
 import android.util.Log;
-import edu.nl.ru.fieldtripclientsservice.base.Argument;
-import edu.nl.ru.fieldtripclientsservice.base.ThreadBase;
+
+import nl.dcc.buffer_bci.android.bufferclientsservice.base.Argument;
+import nl.dcc.buffer_bci.android.bufferclientsservice.base.ThreadBase;
 import nl.fcdonders.fieldtrip.bufferclient.BufferClient;
 import nl.fcdonders.fieldtrip.bufferclient.BufferEvent;
 import nl.fcdonders.fieldtrip.bufferclient.DataType;
@@ -14,9 +15,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 
-public class FilePlayback extends ThreadBase {
+public class FilePlaybackThread extends ThreadBase {
 
-    public static final String TAG = FilePlayback.class.toString();
+    public static final String TAG = FilePlaybackThread.class.toString();
 
     private final BufferClient client = new BufferClient();
     private int VERB = 1; // global verbosity level

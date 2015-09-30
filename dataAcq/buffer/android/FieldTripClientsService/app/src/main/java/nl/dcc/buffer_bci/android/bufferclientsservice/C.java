@@ -1,4 +1,4 @@
-package edu.nl.ru.fieldtripclientsservice;
+package nl.dcc.buffer_bci.android.bufferclientsservice;
 
 /**
  * Class containing all the constants of this project.
