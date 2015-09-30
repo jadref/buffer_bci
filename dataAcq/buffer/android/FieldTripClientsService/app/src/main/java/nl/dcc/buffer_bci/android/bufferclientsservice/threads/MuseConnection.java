@@ -1,9 +1,9 @@
-package edu.nl.ru.fieldtripclientsservice.threads;
+package nl.dcc.buffer_bci.android.bufferclientsservice.threads;
 
 import android.util.Log;
 import com.interaxon.libmuse.*;
-import edu.nl.ru.fieldtripclientsservice.base.Argument;
-import edu.nl.ru.fieldtripclientsservice.base.ThreadBase;
+import nl.dcc.buffer_bci.android.bufferclientsservice.base.Argument;
+import nl.dcc.buffer_bci.android.bufferclientsservice.base.ThreadBase;
 import nl.fcdonders.fieldtrip.bufferclient.BufferClient;
 import nl.fcdonders.fieldtrip.bufferclient.DataType;
 import nl.fcdonders.fieldtrip.bufferclient.Header;

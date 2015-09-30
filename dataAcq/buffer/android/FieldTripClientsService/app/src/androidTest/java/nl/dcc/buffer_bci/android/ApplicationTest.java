@@ -1,4 +1,4 @@
-package edu.nl.ru;
+package nl.dcc.buffer_bci.android;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

@@ -1,4 +1,4 @@
-package edu.nl.ru.fieldtripclientsservice.base;
+package nl.dcc.buffer_bci.android.bufferclientsservice.base;
 
 import android.util.Log;
 import nl.fcdonders.fieldtrip.bufferclient.BufferClient;
@@ -53,7 +53,7 @@ public abstract class ThreadBase {
     public void setArgument(final Argument argument) {
         String argDescription = argument.getDescription();
         for (Argument arg : this.arguments) {
-            if (arg.getDescription() == argDescription) {
+            if (arg.getDescription().equals(argDescription)) {
                 arg = argument;
                 return;
             }

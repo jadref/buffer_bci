@@ -1,4 +1,4 @@
-package edu.nl.ru.fieldtripclientsservice;
+package nl.dcc.buffer_bci.android.bufferclientsservice;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -14,10 +14,12 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.util.SparseArray;
 import android.widget.Toast;
-import edu.nl.ru.fieldtripclientsservice.base.AndroidHandle;
-import edu.nl.ru.fieldtripclientsservice.base.Argument;
-import edu.nl.ru.fieldtripclientsservice.base.ThreadBase;
-import edu.nl.ru.fieldtripclientsservice.threads.ThreadList;
+
+import nl.dcc.buffer_bci.android.bufferclientsservice.base.Argument;
+import nl.dcc.buffer_bci.android.bufferclientsservice.threads.ThreadList;
+import nl.dcc.buffer_bci.android.fieldtripclientsservice.R;
+import nl.dcc.buffer_bci.android.bufferclientsservice.base.AndroidHandle;
+import nl.dcc.buffer_bci.android.bufferclientsservice.base.ThreadBase;
 
 import java.io.*;
 

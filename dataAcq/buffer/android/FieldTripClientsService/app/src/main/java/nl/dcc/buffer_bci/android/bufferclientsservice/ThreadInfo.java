@@ -1,4 +1,4 @@
-package edu.nl.ru.fieldtripclientsservice;
+package nl.dcc.buffer_bci.android.bufferclientsservice;
 
 import android.os.Parcel;
 import android.os.Parcelable;
