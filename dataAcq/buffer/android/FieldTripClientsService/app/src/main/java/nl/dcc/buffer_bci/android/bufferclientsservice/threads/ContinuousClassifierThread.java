@@ -1,5 +1,7 @@
 package nl.dcc.buffer_bci.android.bufferclientsservice.threads;
 
+import java.io.InputStream;
+
 import nl.dcc.buffer_bci.android.bufferclientsservice.base.Argument;
 import nl.dcc.buffer_bci.signalprocessing.ContinuousClassifier;
 import nl.dcc.buffer_bci.android.bufferclientsservice.base.AndroidHandle;
@@ -14,29 +16,16 @@ public class ContinuousClassifierThread extends ThreadBase {
     private static final String TAG = ContinuousClassifier.class.getSimpleName();
 
     private ContinuousClassifier continuousClassifier;
-
-    /**
-     * Creates a ContinuousClassifier using a file stored in the project
-     *
-     * @param android used for getting a file
-     * @return List of classifiers (only one)
-     */
-    private static List<Classifier> createClassifiers(AndroidHandle android) {
-        List<Matrix> Ws = loadWFromFile(3, 56, android);
-        RealVector b = Matrix.zeros(5, 1).getColumnVector(0);
-        Integer[] freqIdx = ArrayFunctions.toObjectArray(Matrix.range(0, 56, 1));
-        String[] spectrumDescription = new String[]{"alphaL", "alphaR", "badness", "badChL", "badChR"};
-        Integer[] isBad = new Integer[]{0, 0, 0};
-        Classifier classifier = new Classifier(Ws, b, true, null, Windows.WindowType.HANNING, WelchOutputType
-                .AMPLITUDE, null, freqIdx, 1, null, null, 128, 100., new Integer[]{0}, spectrumDescription, isBad);
-        List<Classifier> classifiers = new LinkedList<Classifier>();
-        classifiers.add(classifier);
-        return classifiers;
-    }
+    protected String hostname ="localhost";
+    protected int port = 1972;
+    protected Integer timeout_ms = 1000;
+    protected Integer trialLength_ms  =-1;
+    protected Integer step_ms  = -1;
+    protected String clsfrFile;
 
     @Override
     public Argument[] getArguments() {
-        final Argument[] arguments = new Argument[17];
+        final Argument[] arguments = new Argument[18];
         arguments[0] = new Argument("Buffer address", "localhost");
         arguments[1] = new Argument("Buffer port", 1972, true);
         arguments[2] = new Argument("Header", null);
@@ -54,6 +43,7 @@ public class ContinuousClassifierThread extends ThreadBase {
         arguments[14] = new Argument("Sample trial length", 25, true);
         arguments[15] = new Argument("Sample trial ms", null);
         arguments[16] = new Argument("Normalize latitude", true);
+        arguments[17] = new Argument("Clsfr file","res/clsfr.txt");
         return arguments;
     }
 
@@ -61,26 +51,12 @@ public class ContinuousClassifierThread extends ThreadBase {
      * Initializes the attributes of this class
      */
     private void initialize() {
-        this.bufferHost = arguments[0].getString();
-        this.bufferPort = arguments[1].getInteger();
-        this.header = null; //arguments[2];
-        this.endType = arguments[3].getString();
-        this.endValue = arguments[4].getString();
-        this.predictionEventType = arguments[5].getString();
-        this.baselineEventType = arguments[6].getString();
-        this.baselineEnd = arguments[7].getString();
-        this.baselineStart = arguments[8].getString();
-        this.nBaselineStep = arguments[9].getInteger();
-        this.overlap = arguments[10].getDouble();
-        this.timeoutMs = arguments[11].getInteger();
-        this.sampleStepMs = arguments[12].getInteger();
-        this.predictionFilter = arguments[13].getDouble();
-        this.sampleTrialLength = arguments[14].getInteger();
-        this.sampleTrialMs = arguments[15].getInteger();
-        this.normalizeLatitude = arguments[16].getBoolean();
-
-        this.classifiers = createClassifiers(android);
-        this.C = new BufferClientClock();
+        this.hostname = arguments[0].getString();
+        this.port = arguments[1].getInteger();
+        this.timeout_ms = arguments[11].getInteger();
+        this.step_ms = arguments[12].getInteger();
+        this.trialLength_ms = arguments[15].getInteger();
+        this.clsfrFile = arguments[17].getString();
     }
 
     @Override
@@ -92,10 +68,14 @@ public class ContinuousClassifierThread extends ThreadBase {
     public void mainloop() {
         // Initialize the classifier and connect to the buffer
         initialize();
+        ContinuousClassifier clsfr = new ContinuousClassifier(hostname,port,timeout_ms);
+        InputStream clsfrReader = this.getClass().getClassLoader().getResourceAsStream(clsfrFile);
+        clsfr.initialize(clsfrReader,trialLength_ms,step_ms);
+        clsfr.mainloop();
     }
+
     @Override
     public void validateArguments(Argument[] arguments) {
-
     }
 
 }

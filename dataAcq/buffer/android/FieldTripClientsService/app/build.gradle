@@ -48,6 +48,7 @@ dependencies {
     compile 'com.android.support:support-v4:22.0.0'
     compile files('src/lib/BufferClient.jar')
     compile files('src/lib/commons-math3-3.4.jar')
+    compile files('src/lib/FilePlayback.jar')
     compile files('src/lib/ContinuousClassifier.jar')
     compile files('src/lib/MatrixAlgebra.jar')
 }

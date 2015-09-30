@@ -1,14 +1,14 @@
-package nl.dcc.buffer_bci;
+package nl.dcc.buffer_bci.signalprocessing;
 import java.io.*;
 import java.nio.*;
 import nl.fcdonders.fieldtrip.bufferclient.*;
 
-class FilePlayback {
+public class FilePlayback {
 	 final static int VERB=1;
     private static int BUFFERSIZE = 65500;
-    private static InputStream dataReader = null;
-    private static InputStream eventReader = null;
-    private static InputStream headerReader = null;
+    private InputStream dataReader = null;
+    private InputStream eventReader = null;
+    private InputStream headerReader = null;
 	 boolean run=true;
 	 final String hostname;
 	 final int port;
@@ -72,24 +72,38 @@ class FilePlayback {
 	 }
 	 
 
-	 FilePlayback(String hostname, int port, String dataDir, double speedup, int blockSize){
+	 public FilePlayback(String hostname, int port, 
+								InputStream dataReader, InputStream eventReader, InputStream headerReader, 
+								double speedup, int blockSize){
+			 this.hostname = hostname;
+			 this.port     = port;
+			 this.dataDir  = null;
+			 this.dataReader = dataReader;
+			 this.eventReader= eventReader;
+			 this.headerReader=headerReader;
+			 this.speedup  = speedup;
+			 this.blockSize= blockSize;
+			 client   = new BufferClient();
+	 }
+
+	 public FilePlayback(String hostname, int port, String dataDir, double speedup, int blockSize){
 			 this.hostname = hostname;
 			 this.port     = port;
 			 this.dataDir  = dataDir;
 			 this.speedup  = speedup;
 			 this.blockSize= blockSize;
 			 client   = new BufferClient();
+			 // Open the header/events/samples files
+			 try {
+				  initFiles(dataDir);
+			 } catch ( FileNotFoundException e ) {
+				  e.printStackTrace();
+				  System.exit(-1);
+			 }
 	 }
 
 
 	 public void mainloop(){
-		// Open the header/events/samples files
-		try {
-			 initFiles(dataDir);
-		} catch ( FileNotFoundException e ) {
-			 e.printStackTrace();
-			 System.exit(-1);
-		}
 		
 		while( !client.isConnected() ) {
 			 try {
@@ -260,7 +274,7 @@ class FilePlayback {
 		}
 	}
 
-    static void initFiles(String fdir) throws FileNotFoundException {
+	 void initFiles(String fdir) throws FileNotFoundException {
 		  dataReader = new BufferedInputStream(new FileInputStream(fdir + File.separator + "samples"));
 		  eventReader = new BufferedInputStream(new FileInputStream(fdir + File.separator + "events"));
 		  headerReader = new BufferedInputStream(new FileInputStream(fdir + File.separator + "header"));

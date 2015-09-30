@@ -121,7 +121,7 @@ public class ContinuousClassifier {
 		cc.mainloop();
 	 }
 
-	 ContinuousClassifier(String host, int port, int timeout){
+	 public ContinuousClassifier(String host, int port, int timeout){
 		  if ( host !=null )     this.hostname=host;
 		  if ( port >0 )     this.port=port;
 		  if ( timeout >=0 ) this.timeout_ms=timeout;
@@ -175,7 +175,8 @@ public class ContinuousClassifier {
     protected void initialize(InputStream is) {
 		  initialize(is,-1,-1);
 	 }
-	 protected void initialize(InputStream is, int trialLength_ms, int step_ms) {
+
+	 public void initialize(InputStream is, int trialLength_ms, int step_ms) {
 		  if ( VERB>0 ) System.out.println("trlen="+trialLength_ms+" step="+step_ms);
 		  BufferedReader br = new BufferedReader(new InputStreamReader(is));
         classifiers = createClassifiers(br);
