@@ -50,12 +50,21 @@
             <attribute name="Main-Class" value="${ant.project.name}.FilePlayback"/>
           </manifest>
         </jar>
+        <jar destfile="${jar.dir}/SignalProxy.jar">
+			 <fileset dir="${classes.dir}" includes="**/SignalProxy.class"/>
+			 <fileset dir="${src.dir}" includes="SignalProxy.java"/>
+			 <fileset dir="${lib.dir}" includes="**/BufferClient.jar"/>
+          <manifest>
+            <attribute name="Main-Class" value="${ant.project.name}.SignalProxy"/>
+          </manifest>
+        </jar>
     </target>
 
 	 <target name="dist" depends="jar">
 		<copy file="${jar.dir}/ContinuousClassifier.jar" todir="."/>
 		<copy file="${jar.dir}/FilePlayback.jar" todir="."/>
 		<copy file="${jar.dir}/FilePlayback.jar" todir="${bufferjava.dir}"/>
+		<copy file="${jar.dir}/SignalProxy.jar" todir="${bufferjava.dir}"/>
 		<copy file="${jar.dir}/MatrixAlgebra.jar" todir="."/>
 	 </target>
 
