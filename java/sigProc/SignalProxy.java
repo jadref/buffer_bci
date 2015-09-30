@@ -93,7 +93,7 @@ public class SignalProxy {
 				data[x][y] = generator.nextDouble();
 			}
 			// last channel is always pure sin wave
-			data[x][data[x].length] = Math.sin( (nSample + x)*sinFreq*2*Math.PI/fSample );
+			data[x][data[x].length-1] = Math.sin( (nSample + x)*sinFreq*2*Math.PI/fSample );
 		}
 
 		return data;

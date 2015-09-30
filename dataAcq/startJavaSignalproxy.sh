@@ -1,4 +1,9 @@
 #!/bin/bash
 buffdir=`dirname ${BASH_SOURCE[0]}`
+buffinfo=localhost:1972
+if [ $# -gt 0 ]; then
+	 buffinfo=$1;
+	 shift;
+fi
 echo Starting: ${buffdir}/buffer/java/SignalProxy.jar $@
-java -cp ${buffdir}/buffer/java/BufferClient.jar:${buffdir}/buffer/java/SignalProxy.jar nl.dcc.buffer_bci.SignalProxy $@
+java -cp ${buffdir}/buffer/java/BufferClient.jar:${buffdir}/buffer/java/SignalProxy.jar nl.dcc.buffer_bci.SignalProxy $buffinfo $@

@@ -4,23 +4,37 @@ import java.nio.*;
 import nl.fcdonders.fieldtrip.bufferclient.*;
 
 class FilePlayback {
-	 static int VERB=1;
-	 static boolean run=true;
+	 final static int VERB=1;
     private static int BUFFERSIZE = 65500;
     private static InputStream dataReader = null;
     private static InputStream eventReader = null;
     private static InputStream headerReader = null;
+	 boolean run=true;
+	 final String hostname;
+	 final int port;
+	 final String dataDir;
+	 final double speedup;
+	 final int blockSize;
+	 final BufferClient client;
+	 
+	 static final String usage=
+		    "Usage: FilePlayback buffhost:buffport dataDir speedup buffsamp\n"
+		  + "where:\n"
+		  + "\t buffersocket\t is a string of the form bufferhost:bufferport (localhost:1972)\n"
+		  + "\t dataDir\t is the directory which contains the saved data\n"
+		  + "\t speedup\t is a speedup factor to play back at                       (1)\n"
+		  + "\t buffsamp\t is the number of file samples to put in each buffer packet (1)\n";
 
 	 public static void main(String[] args) throws IOException,InterruptedException {
 		String hostname = "localhost";
 		int port = 1972;
 		int timeout = 5000;
 		double speedup=1;
-		int buffsamp=1;
-		String datDir=null;
+		int blockSize=1;
+		String dataDir=null;
 	
 		if (args.length==0 ){
-			 System.out.println("FilePlayback buffhost:buffport dataDir speedup buffsamp");
+			 System.out.print(usage);
 			 System.exit(-1);
 		}
 		if (args.length>=1) {
@@ -32,7 +46,7 @@ class FilePlayback {
 			}			
 		}
 		if (args.length>=2) {
-			 datDir=args[1];
+			 dataDir=args[1];
 		}
 
 		if ( args.length>=3 ) {
@@ -46,22 +60,37 @@ class FilePlayback {
 
 		if ( args.length>=4 ) {
 			try {
-				buffsamp = Integer.parseInt(args[3]);
+				blockSize = Integer.parseInt(args[3]);
 			}
 			catch (NumberFormatException e) {
-				 buffsamp = 1;
+				 blockSize = 1;
 			}			 
 		}
+		FilePlayback sp=new FilePlayback(hostname,port,dataDir,speedup,blockSize);
+		sp.mainloop();
+		sp.stop();		
+	 }
+	 
 
+	 FilePlayback(String hostname, int port, String dataDir, double speedup, int blockSize){
+			 this.hostname = hostname;
+			 this.port     = port;
+			 this.dataDir  = dataDir;
+			 this.speedup  = speedup;
+			 this.blockSize= blockSize;
+			 client   = new BufferClient();
+	 }
+
+
+	 public void mainloop(){
 		// Open the header/events/samples files
 		try {
-		initFiles(datDir);
+			 initFiles(dataDir);
 		} catch ( FileNotFoundException e ) {
 			 e.printStackTrace();
 			 System.exit(-1);
 		}
 		
-		BufferClientClock client = new BufferClientClock();
 		while( !client.isConnected() ) {
 			 try {
 				  System.out.println("Connecting to "+hostname+":"+port);
@@ -70,7 +99,12 @@ class FilePlayback {
 			 }
 			 if ( !client.isConnected() ){
  				  System.out.println("Couldn't connect. waiting");
-				  Thread.sleep(1000);
+				  try {
+						Thread.sleep(1000);
+				  } catch ( InterruptedException e ) {
+						run = false;
+						System.exit(-1);
+				  }
 			 }
 		}
 
@@ -102,7 +136,7 @@ class FilePlayback {
         }
 
         // Interval between sending samples to the buffer
-        int pktSamples = hdr.nChans * buffsamp; // number data samples in each buffer packet
+        int pktSamples = hdr.nChans * blockSize; // number data samples in each buffer packet
         int pktBytes = pktSamples * DataType.wordSize[hdr.dataType];
         int nsamp = 0; // sample counter
         int nblk = 0;
@@ -150,13 +184,13 @@ class FilePlayback {
             } // stop if run out of samples
 
             try {
-                client.putRawData(buffsamp, hdr.nChans, hdr.dataType, samples);
+                client.putRawData(blockSize, hdr.nChans, hdr.dataType, samples);
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
             // update the sample count
-            nsamp += buffsamp;
+            nsamp += blockSize;
             while (evtSample <= nsamp) {
                 if (evtSample > 0) { // send the current event
                     try {
@@ -213,7 +247,17 @@ class FilePlayback {
             nblk++;
         }
 
-		  client.disconnect();
+		  stop();
+	}
+	 
+	 public void stop() {
+		 //super.stop();
+		try {
+			client.disconnect();
+		} catch (final IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
     static void initFiles(String fdir) throws FileNotFoundException {
@@ -222,7 +266,7 @@ class FilePlayback {
 		  headerReader = new BufferedInputStream(new FileInputStream(fdir + File.separator + "header"));
     }
 
-    static void cleanup() throws IOException {
+	 void cleanup() throws IOException {
         if (headerReader != null) {
             headerReader.close();
             headerReader = null;
