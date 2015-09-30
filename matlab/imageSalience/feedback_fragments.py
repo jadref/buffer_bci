@@ -80,8 +80,10 @@ pygame.display.set_caption("Image Salience -- Fragment feedback")
 
 clock = pygame.time.Clock()
 
+font = pygame.font.SysFont("monospace", 18)
+
 # Initialize display state data
-surfaces = {}
+surfaces = {} # Store as {frag_no => (screen_dst, surface, [probabilities])}
 fragmentSampleMap = {}
 
 # Function to slice image into fragments.
@@ -194,8 +196,19 @@ def processBufferEvents():
 			pred = evt.value
 			prob = predictionToProbability(pred)
 			surfaces[fragment][2].append(prob)
-			alpha = 255 * scaleAlpha(sum(surfaces[fragment][2])/len(surfaces[fragment][2])) # compute alpha of average probability over time.
-			surfaces[fragment][1].set_alpha(alpha)
+			#surfaces[fragment][1].set_alpha(alpha)
+
+
+def calculate_alpha(min_prob, max_prob, prob):
+	if min_prob == max_prob:
+		return 0.0
+
+	# Scale to [0=min_prob, 1=max_prob]
+	scaled = (prob - min_prob) / (max_prob - min_prob)
+
+	# Scale to [0.2, 1.0] so stuff is still visible for low probability.
+	return scaled*0.8 + 0.2
+	
 
 # Event loop
 done = False
@@ -210,17 +223,32 @@ while not done:
 	# Clear screen.
 	screen.fill(black)
 
-	# Display surfaces.
-	for i in range(0, len(surfaces)):
-		key = i+1
-		#print(surfaces)
-		#print("key: " + str(key) + ", len(surfaces): " + str(len(surfaces)))
-		dst = surfaces[key][0]
-		img = surfaces[key][1]
-		screen.blit(img, dst)
+	# Get min and max
+	avgs = [sum(surface[1][2])/len(surface[1][2]) if len(surface[1][2]) > 0 else 0.0 for surface in surfaces.iteritems() ]
+
+	if len(avgs) > 1:
+		min_prob = min(avgs)
+		max_prob = max(avgs)
+
+		# Display surfaces.
+		for i in range(0, len(surfaces)):
+			key = i+1
+			dst = surfaces[key][0]
+			img = surfaces[key][1]
+			img.set_alpha(255 * calculate_alpha(min_prob, max_prob, avgs[i]))
+			screen.blit(img, dst)
+
+			label = font.render("{:1.4f}".format(avgs[i]), 1, (255,255,255), (0,0,0))
+			screen.blit(label, dst)
+			
 
 	# Flip buffers.
 	pygame.display.flip()
+
+# Delete temporary files.
+temp_files = [f for f in os.listdir(".") if f.endswith(".temp.png")]
+for f in temp_files:
+	os.remove(f)
 
 # Deinitialize
 pygame.quit()
