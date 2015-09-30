@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
   /* these represent the acquisition system properties */
   int nchans         = 3;
   float fsample      = 100;
-  float freq         = 10; /* frequency of ossilation in hz */
+  float sinFreq         = 10; /* frequency of ossilation in hz */
   int blocksize      = 1;
   int channamesize   = 0;
   char *labelsbuf    = NULL;
@@ -265,7 +265,7 @@ int main(int argc, char *argv[]) {
 		  ampsamples[chi]=ampsamples[chi]+ (float)(rand()-RAND_MAX/2)/((float)RAND_MAX); 
 		}
 		/* add the sin channel data */
-		ampsamples[chi]= (float)(sinf(nsamp*2.0*(M_PI)/freq)); 
+		ampsamples[chi]= (float)(sinf(nsamp*2.0*(M_PI)*sinFreq/fsample)); 
 
 		// copy the samples into the data buffer, 1 amp sample per buffer sample */
 		for (chi=0; chi<nchans; chi++){ samples[(si*nchans)+chi]=ampsamples[chi]; }
