@@ -17,14 +17,14 @@ import nl.fcdonders.fieldtrip.bufferserver.network.ConnectionThread;
  * Buffer class, a thread that opens a serverSocket to listen for connections
  * and starts a connectionThread to handle them.
  *
- * @author wieke
+ * @author wieke, jadref
  *
  */
 public class BufferServer extends Thread {
 
-	 static final int serverPort =1972;    // default server port
-	 static final int dataBufSize=1024*60; // default save samples = 60s @ 1024Hz
-	 static final int eventBufSize=10*60;  // default save events  = 60s @ 10Hz
+	 static final int serverPort  =1972;    // default server port
+	 static final int dataBufSize =1024*60; // default save samples = 60s @ 1024Hz
+	 static final int eventBufSize=10*60;   // default save events  = 60s @ 10Hz
 
 	/**
 	 * Main method, starts running a server thread in the current thread.
@@ -132,6 +132,13 @@ public class BufferServer extends Thread {
 		this.portNumber = portNumber;
 		System.err.println("Saving to : " + path);
 		dataStore = new SavingRingDataStore(nSamples, nEvents, path);
+		setName("Fieldtrip Buffer Server");
+	}
+
+	public BufferServer(final int portNumber, final int nSamples, final int nEvents, final java.io.File file) {
+		this.portNumber = portNumber;
+		System.err.println("Saving to : " + file.getPath());
+		dataStore = new SavingRingDataStore(nSamples, nEvents, file);
 		setName("Fieldtrip Buffer Server");
 	}
 
