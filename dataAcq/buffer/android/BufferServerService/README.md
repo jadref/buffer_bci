@@ -6,4 +6,4 @@ This project depends on:
 
 
 # Packaging #
-The yearmonthday_fieldtripserverservice.apk is generated using Intellij. Once all the libraries are imported the Gradle module app can be run to create the .apk files. They are located in the app/build/outputs dictionary. I copied the app-arm-debug.apk to the root folder.
+The bufferserverservice.apk is generated using Android Studio. Once all the libraries are imported the Gradle module app can be run to create the .apk files. They are located in the app/build/outputs dictionary. I copied the app-arm-debug.apk to the root folder.
