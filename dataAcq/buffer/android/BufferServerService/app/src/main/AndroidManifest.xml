@@ -26,7 +26,7 @@
             android:enabled="true"
             android:exported="true">
             <intent-filter>
-                <action android:name="edu.nl.ru.serverservice.action.FLUSH"/>
+                <action android:name="nl.dcc.buffer_bci.serverservice.action.FLUSH"/>
             </intent-filter>
         </receiver>
     </application>
