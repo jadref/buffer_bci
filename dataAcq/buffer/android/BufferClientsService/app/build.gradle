@@ -50,6 +50,7 @@ dependencies {
     compile files('libs/ContinuousClassifier.jar')
     compile files('libs/FilePlayback.jar')
     compile files('libs/MatrixAlgebra.jar')
+    compile files('libs/libmuseandroid.jar')
 }
 
 // Used to compile the native muse libraries into the apk
