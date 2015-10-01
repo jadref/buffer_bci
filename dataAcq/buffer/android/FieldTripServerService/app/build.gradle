@@ -23,5 +23,5 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:support-v4:21.0.3'
-    compile files('src/main/libs/BufferServer.jar')
+    compile files('libs/BufferServer.jar')
 }
