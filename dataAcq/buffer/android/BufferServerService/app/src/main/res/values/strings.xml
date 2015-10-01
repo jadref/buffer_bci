@@ -1,0 +1,79 @@
+<resources>
+    <string name="app_name">FieldTripServerService</string>
+    <string name="action_settings">Settings</string>
+
+    <!-- Buffer Service -->
+    <string name="buffer_service_name">Fieldtrip Buffer Server</string>
+    <string name="notification_title">Fieldtrip Buffer</string>
+    <string name="notification_text">Running on %s.</string>
+
+
+    <!-- Start Buffer Fragment -->
+    <string name="startbuffertitle">Start Fieldtrip Buffer</string>
+    <string name="startbufferdescription">The Fieldtrip buffer service is currently not running, it requires a port and ringbuffer size, you can alter the defaults or just hit start.</string>
+    <string name="startbufferbutton">Start Buffer</string>
+    <string name="port">Port</string>
+    <string name="ringbuffersize">Size of the ringbuffer</string>
+    <string name="nSamples">Number of Samples</string>
+    <string name="nEvents">Number of Events</string>
+    <string name="porthint">1972</string>
+    <string name="nSampleshint">10000</string>
+    <string name="nEventshint">1000</string>
+
+    <!-- Running Buffer Fragment -->
+    <string name="stopbufferbutton">Stop Buffer</string>
+    <string name="numberofchannels">n&lt;sub&gt;&lt;small&gt;channels&lt;/small&gt;&lt;/sub&gt; =</string>
+    <string name="numberofevents">n&lt;sub&gt;&lt;small&gt;events&lt;/small&gt;&lt;/sub&gt; =</string>
+    <string name="numberofsamples">n&lt;sub&gt;&lt;small&gt;samples&lt;/small&gt;&lt;/sub&gt; =</string>
+    <string name="samplingfrequency">f&lt;sub&gt;&lt;small&gt;sampling&lt;/small&gt;&lt;/sub&gt; =</string>
+    <string name="datatype">Data type:</string>
+    <string name="uptime">Uptime</string>
+    <string name="noheader">No header.</string>
+    <string name="dummyheader">Put dummy header</string>
+    <string name="flushheader">Flush header</string>
+    <string name="flushsamples">Flush samples</string>
+    <string name="flushevents">Flush events</string>
+    <string name="confirmation">Flush confirmation</string>
+    <string name="confirmationflushheader">Are you sure you wish to flush the header?</string>
+    <string name="confirmationflushsamples">Are you sure you wish to flush the samples?</string>
+    <string name="confirmationflushevents">Are you sure you wish to flush the events?</string>
+
+    <!-- ClientInfo items -->
+    <string name="connected">Opened</string>
+    <string name="disconnected">Closed</string>
+
+    <!-- ClientInfo Statuses -->
+    <string name="error_protocol">Network protocol violeted.</string>
+    <string name="error_connection">Lost connection unexpectedly.</string>
+    <string name="error_version">Client has wrong version.</string>
+    <string name="client_connected">Opened connection.</string>
+    <string name="client_disconnected">Closed Connection</string>
+    <string name="client_gotsamples">Requested %d samples.</string>
+    <string name="client_gotevents">Requested %d events.</string>
+    <string name="client_gotheader">Requested the header.</string>
+    <string name="client_putsamples">Put %d samples.</string>
+    <string name="client_putevents">Put %d events.</string>
+    <string name="client_putheader">Put header.</string>
+    <string name="client_flushedsamples">Flushed samples.</string>
+    <string name="client_flushedevents">Flushed events.</string>
+    <string name="client_flushheader">Flushed header.</string>
+    <string name="client_poll">Polling.</string>
+    <string name="client_wait"> Waiting, &lt;sub&gt;&lt;small&gt;s&lt;/small&gt;&lt;/sub&gt; %0$d n&lt;sub&gt;&lt;small&gt;e&lt;/small&gt;&lt;/sub&gt; %1$d, %2$d ms.</string>
+    <!--  -->
+    <string name="client_stopwaiting">Stopped waiting.</string>
+
+
+    <!-- DataTypes -->
+    <string name="CHAR">char</string>
+    <string name="UINT8">uint8</string>
+    <string name="INT8">int8</string>
+    <string name="UINT16">uint16</string>
+    <string name="INT16">int16</string>
+    <string name="UINT32">uint32</string>
+    <string name="INT32">int32</string>
+    <string name="FLOAT32">float32</string>
+    <string name="UINT64">uint64</string>
+    <string name="INT64">int64</string>
+    <string name="FLOAT64">float64</string>
+    <string name="UNKOWN">unkown</string>
+</resources>
