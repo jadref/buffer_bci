@@ -4,7 +4,7 @@ android {
     compileSdkVersion 16
     buildToolsVersion "21.1.2"
     defaultConfig {
-        applicationId 'edu.nl.ru.fieldtripclientsservice'
+        applicationId 'nl.dcc.buffer_bci.bufferclientservice'
         minSdkVersion 16
         targetSdkVersion 21
         versionCode 1
@@ -56,4 +56,3 @@ dependencies {
 task copyNativeLibs(type: Copy) {
     from(new File(project(':app').buildDir, 'jniLibs')) { include '**/*.so' }
     into new File(buildDir, 'native-libs')
-}
