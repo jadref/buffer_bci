@@ -5,7 +5,7 @@ tgtSeq=mkStimSeqRand(nSymbs,nSeq);
 %figure;
 fig=figure(2);
 set(fig,'Name','Imagined Movement','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
-set(stimfig,'Units','pixel');wSize=get(stimfig,'position');set(stimfig,'units','normalized');% win size in pixels
+set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
 clf;
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
