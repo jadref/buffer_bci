@@ -127,7 +127,7 @@ end
 % make the figure window
 clf;
 fig=gcf;
-set(fig,'Name','Sig-Viewer : t=time, f=freq, p=50Hz power, s=spectrogram, q,close window=quit.','menubar','none','toolbar','none','doublebuffer','on');
+set(fig,'Name','Sig-Viewer : t=time, f=freq, p=power, 5=50Hz power, s=spectrogram, close window=quit','menubar','none','toolbar','none','doublebuffer','on');
 axes('position',[0 0 1 1]); topohead();set(gca,'visible','off','nextplot','add');
 plotPos=ch_pos; if ( ~isempty(plotPos) ); plotPos=plotPos(:,iseeg); end;
 hdls=image3d(ppspect,1,'plotPos',plotPos,'Xvals',ch_names,'yvals',spectFreqs(spectFreqIdx(1):spectFreqIdx(2)),'ylabel','freq (hz)','zvals',start_s,'zlabel','time (s)','disptype','imaget','colorbar',1,'ticklabs','sw','legend',0,'plotPosOpts.plotsposition',[.05 .08 .91 .85]);
@@ -147,7 +147,7 @@ drawnow; % make sure the figure is visible
 % make popup menu for selection of TD/FD
 modehdl=[]; vistype=0; curvistype='time';
 if ( ~exist('OCTAVE_VERSION','builtin') ) % in octave have to manually convert arrays..
-  modehdl=uicontrol(fig,'Style','popup','units','normalized','position',[.8 .9 .2 .1],'String','Time|Frequency|50Hz|Spect');
+  modehdl=uicontrol(fig,'Style','popup','units','normalized','position',[.8 .9 .2 .1],'String','Time|Frequency|50Hz|Spect|Power');
   set(modehdl,'value',1);
 end
 colormap trafficlight; % red-green colormap for 50Hz pow
@@ -228,8 +228,9 @@ while ( ~endTraining )
     switch ( modekey(1) );
      case {1,'t'}; modekey=1;curvistype='time';
      case {2,'f'}; modekey=2;curvistype='freq';
-     case {3,'p'}; modekey=3;curvistype='power';
+     case {3,'5'}; modekey=3;curvistype='50hz';
      case {4,'s'}; modekey=4;curvistype='spect';
+	  case {5,'p'}; modekey=5;curvistype='power';
      case 'q';     break;
      otherwise;    modekey=1;
     end;
@@ -273,7 +274,9 @@ while ( ~endTraining )
   % track the covariance properties of the data
   chCov = chCov*covAlpha + (1-covAlpha)*(ppdat(:,blkIdx+1:end)*ppdat(:,blkIdx+1:end)'./(size(ppdat,2)-blkIdx));
   
-  if ( ~strcmp(curvistype,'power') ) % BODGE: 50Hz power doesn't do any spatial filtering, or bad-channel removal
+  %-------------------------------------------------------------------------------------
+  % bad-channel removal + spatial filtering
+  if ( ~strcmp(curvistype,'50hz') ) % BODGE: 50Hz power doesn't do any spatial filtering, or bad-channel removal
 
     % bad channel removal
     if ( ( ppopts.badchrm>0 || strcmp(ppopts.badchrm,'1') ) && ppopts.badchthresh>0 )
@@ -327,25 +330,30 @@ while ( ~endTraining )
     end
   end
   
+  %-------------------------------------------------------------------------------------
+  % Spectral filter and feature extraction
   switch (curvistype) 
     
-   case 'time'; % time-domain, spectral filter
+   case 'time'; % time-domain, spectral filter -----------------------------------
     if ( ~isempty(filt) && ~all(abs(1-filt(1:end-1))<1e-6)); 
             ppdat=fftfilter(ppdat,filt,outsz,2);  % N.B. downsample at same time
     elseif ( ~isempty(outsz) ); 
             ppdat=subsample(ppdat,outsz(2),2); % manual downsample
     end
     
-   case 'freq'; % freq-domain
+   case {'freq','power'}; % freq-domain  -----------------------------------
     ppdat = welchpsd(ppdat,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'aveType','db');
-    ppdat = ppdat(:,freqIdx(1):freqIdx(2));
-    
-   case 'power'; % 50Hz power, N.B. on the last 2s data only!
+    ppdat = ppdat(:,freqIdx(1):freqIdx(2));	 
+    if ( strcmp(curvistype,'power') ) % average over all the frequencies
+		 ppdat = sum(ppdat,2)/size(ppdat,2);
+	 end
+
+   case '50hz'; % 50Hz power, N.B. on the last 2s data only!  -----------------------------------
     ppdat = welchpsd(ppdat(:,find(times>-2,1):end),2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'aveType','amp');
     ppdat = mean(ppdat(:,noiseIdx(1):noiseIdx(2)),2); % ave power in this range
     ppdat = sqrt(ppdat); % BODGE: extra transformation to squeeze the large power values...
     
-   case 'spect'; % spectrogram
+   case 'spect'; % spectrogram  -----------------------------------
     ppdat = spectrogram(ppdat,2,'width_ms',opts.spect_width_ms,'fs',hdr.fsample);
     ppdat = ppdat(:,spectFreqIdx(1):spectFreqIdx(2),:);    
     % subtract the 'common-average' spectrum
@@ -354,7 +362,7 @@ while ( ~endTraining )
   
   % compute useful range of data to show
   % add some artifact robustness, data-lim is mean+3std-dev
-  datstats=[mean(ppdat(:)) std(ppdat(:))];
+  datstats=[median(ppdat(:)) std(ppdat(:))]; % N.B. use median for outlier robustness
   datrange=[max(min(ppdat(:)),datstats(1)-opts.dataStd*datstats(2)) ...
             min(datstats(1)+opts.dataStd*datstats(2),max(ppdat(:)))];
 
@@ -364,7 +372,7 @@ while ( ~endTraining )
     datlim=datrange;
     if ( datlim(1)>=datlim(2) || any(isnan(datlim)) ); datlim=[-1 1]; end;
     switch ( vistype ) % do pre-work dependent on current mode
-     case 'power'; % 50hz power
+     case {'50hz','power'}; % 50hz power
       for hi=1:size(ppdat,1); % turn the tickmarks and label visible again
         if ( ~isempty(get(hdls(hi),'Xlabel')) && isequal(get(get(hdls(hi),'xlabel'),'visible'),'on') ) 
           set(hdls(hi),'xticklabelmode','auto','yticklabelmode','auto');
@@ -378,7 +386,8 @@ while ( ~endTraining )
     
     % compute the current vis-types plot
     switch ( curvistype )       
-     case 'time'; % time-domain
+
+     case 'time'; % time-domain -----------------------------------
       for hi=1:size(ppdat,1);
         xlabel(hdls(hi),'time (s)');
         ylabel(hdls(hi),'');
@@ -387,7 +396,7 @@ while ( ~endTraining )
       set(img_hdls,'visible','off'); % make the colors invisible        
       set(line_hdls,'xdata',times(1:size(ppdat,2)),'visible','on');
       
-     case 'freq'; % frequency domain
+     case 'freq'; % frequency domain -----------------------------------
       for hi=1:size(ppdat,1);
         xlabel(hdls(hi),'freq(hz)');
         ylabel(hdls(hi),'');
@@ -396,9 +405,8 @@ while ( ~endTraining )
       set(img_hdls,'visible','off'); % make the colors invisible        
       set(line_hdls,'xdata',freqs(freqIdx(1):freqIdx(2)),'visible','on');
       
-     case 'power'; % 50Hz Power
-                   % all the same axes
-      datlim=[opts.noiseBins(1) opts.noiseBins(end)];
+     case {'50hz','power'}; % 50Hz Power all the same axes -----------------------------------
+      if ( strcmp(curvistype,'50hz') ) datlim=[opts.noiseBins(1) opts.noiseBins(end)]; end;
       set(hdls,'xlim',[.5 1.5],'ylim',[.5 1.5],'clim',datlim);
       set(line_hdls,'visible','off');
       set(img_hdls,'cdata',1,'xdata',[1 1],'ydata',[1 1],'visible','on'); % make the color images visible
@@ -415,7 +423,7 @@ while ( ~endTraining )
         set(get(cbarhdl,'children'),'ydata',datlim);set(cbarhdl,'ylim',datlim); 
       end;
       
-     case 'spect'; % spectrogram
+     case 'spect'; % spectrogram -----------------------------------
       set(hdls,'xlim',start_s([1 end]),'ylim',spectFreqs([spectFreqIdx(1) spectFreqIdx(2)]),'clim',datlim); % all the same axes
       set(line_hdls,'visible','off');
       % make the color images visible, in the right place with the right axes positions
@@ -428,11 +436,16 @@ while ( ~endTraining )
       end;
     
     end
+
     vistype=curvistype;
+
+
+  %---------------------------------------------------------------------------------
+  % same visualizaton - update the axes limits (if needed)
   else % adapt the axes to the data
-    if ( ~isequal(curvistype,'power') )
-      if ( datrange(1)<datlim(1)-diff(datlim)*.2 || datrange(1)>datlim(1)+diff(datlim)*.2 || ...
-           datrange(2)>datlim(2)+diff(datlim)*.2 || datrange(2)<datlim(2)-diff(datlim)*.2 )
+    if ( ~isequal(curvistype,'50hz') )
+      if ( abs(datlim(1)-datrange(1))>.3*diff(datrange) ...
+			  || abs(datlim(2)-datrange(2))>.3*diff(datrange) )
         if ( isequal(datrange,[0 0]) || all(isnan(datrange)) || all(isinf(datrange)) ) 
           %fprintf('Warning: Clims are equal -- reset to clim+/- .5');
           datrange=.5*[-1 1]; 
@@ -443,7 +456,8 @@ while ( ~endTraining )
 		  elseif ( isnan(datrange(2)) || isinf(datrange(2)) )
 			 datrange(2) = datrange(1)+1;
 		  end;         
-        if ( isequal(curvistype,'spect') ) % spectrogram, datalim is color range
+		  % spectrogram, power - datalim is color range
+        if ( any(strcmp(curvistype,{'spect','power'})) )
           datlim=datrange; set(hdls(1:size(ppdat,1)),'clim',datlim);
           % update the colorbar info
           if ( ~isempty(cbarhdl) ); set(get(cbarhdl,'children'),'ydata',datlim);set(cbarhdl,'ylim',datlim); end;
@@ -462,7 +476,7 @@ while ( ~endTraining )
       set(line_hdls(hi),'ydata',ppdat(hi,:));
     end
     
-   case {'power','spect'}; % 50Hz/spectrogram -- update the image data
+   case {'50hz','spect','power'}; % 50Hz/spectrogram -- update the image data
     % map from raw power into the colormap we're using, not needed as we use the auto-scaling function
     %ppdat=max(opts.noiseBins(1),min(ppdat,opts.noiseBins(end)))./(opts.noiseBins(end)-opts.noiseBins(1))*size(colormap,1);
     for hi=1:size(ppdat,1);
