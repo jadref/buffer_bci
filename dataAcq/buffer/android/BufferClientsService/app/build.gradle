@@ -56,3 +56,4 @@ dependencies {
 task copyNativeLibs(type: Copy) {
     from(new File(project(':app').buildDir, 'jniLibs')) { include '**/*.so' }
     into new File(buildDir, 'native-libs')
+}
