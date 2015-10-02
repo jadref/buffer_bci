@@ -132,20 +132,20 @@ while( true )
   end
   % sleep until the next data sample is due
   sendtime=(nblk*blockSize)./fsample; % time at which data should be sent, rel to start
-  curtime =getwTime()-fstart;         % current time, rel to start
+  curtime =getwTime();                % current time
   %check for v.long gap between calls (missed at 10s data)=> suspend, so reset start time
-  if ( curtime>sendtime+10 ) 
+  if ( curtime-fstart>sendtime+10 ) 
 	 fprintf('Warning suspend detected, reset start time.\n\n');
-    fstart=fstart+(curtime-sendtime);  curtime=getwTime()-fstart;
+    fstart=curtime-sendtime;
   end
-  trem=max(0,sendtime-curtime);sleepSec(trem);
+  trem=max(0,sendtime-(curtime-fstart));sleepSec(trem);
   %if ( nsamp > hdr.fsample*10 ) keyboard; end;
   buffer('put_dat',dat,host,port);
   %fprintf('fstart=%g cur=%g send=%g ',fstart,curtime,sendtime);
   if ( opts.verb~=0 )
-    if ( opts.verb>0 || (opts.verb<0 && getwTime()-printtime>-opts.verb) )
-      fprintf('%d %d %d %f (blk,samp,event,sec)\r',nblk,nsamp,nevents,getwTime()-fstart);
-      printtime=getwTime();
+    if ( opts.verb>0 || (opts.verb<0 && curtime-printtime>-opts.verb) )
+      fprintf('%d %d %d %f (blk,samp,event,sec)\r',nblk,nsamp,nevents,curtime-fstart);
+      printtime=curtime;
     end
   end  
   if ( opts.stimEventRate>0 && mod(nblk,ceil(opts.stimEventRate/blockSize))==0 )
@@ -218,7 +218,7 @@ while( true )
   % N.B. due to a bug on OCTAVE we need to do this in the main loop to cause the display to re-draw...
   %  and allow us to update the mouse/keyboard information.
   set(fig,'userdata',[]); % mark any key's pressed as processed
-  if ( mod(nblk,ceil(fsample/blockSize/4))==0 ) % re-draw 4x a second
+  if ( mod(nblk,ceil(fsample/blockSize/2))==0 ) % re-draw 2x a second
 	 % BODGE: move point to force key-processing
 	 if ( exist('OCTAVE_VERSION','builtin') ) set(ph,'ydata',.1+rand(1)*.01); end
     drawnow;
@@ -228,14 +228,14 @@ end
 return;
 
 function []=sleepSec(t)
-if ( exist('java')==2 )
+if ( usejava('jvm') )
   javaMethod('sleep','java.lang.Thread',max(0,t)*1000);      
 else
   pause(t);
 end
 
 function [t]=getwTime()
-if ( exist('java')==2 )
+if ( usejava('jvm') )
   t=javaMethod('currentTimeMillis','java.lang.System')/1000;
 else
   t=clock()*[0 0 86400 3600 60 1]';
