@@ -85,7 +85,7 @@ while ( true )
      trainSubj=subject;
 
    case {'sptrain','sptraining','spclassifier'};
-    %try
+    try
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
         fprintf('Loading training data from : %s\n',['sp_' dname '_' subject '_' datestr]);
         load(['sp_' dname '_' subject '_' datestr]); 
@@ -97,10 +97,10 @@ while ( true )
       clsSubj=subject;
       fprintf('Saving classifier to : %s\n',['sp_' cname '_' subject '_' datestr]);
       save(['sp_' cname '_' subject '_' datestr],'-struct','clsfr');
-    %catch
+    catch
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);      
       fprintf('Error in train classifier!');
-    %end
+    end
 
     %---------------------------------------------------------------------------------
    case {'sptest','sptesting'};
@@ -125,7 +125,7 @@ while ( true )
     trainSubj=subject;
 
    case {'imtrain','imtraining','imclassifier'};
-    %try
+     try
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
         fprintf('Loading training data from : %s\n',['im_' dname '_' subject '_' datestr]);
         load(['im_' dname '_' subject '_' datestr]); 
@@ -137,9 +137,9 @@ while ( true )
       clsSubj=subject;
       fname=['im_' cname '_' subject '_' datestr];
       fprintf('Saving classifier to : %s\n',fname); save(fname,'-struct','clsfr');
-    %catch
-    %  fprintf('Error in train classifier!');
-    %end
+    catch
+      fprintf('Error in train classifier!');
+    end
 
    case {'imtest','imtesting','imepochfeedback'};
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 

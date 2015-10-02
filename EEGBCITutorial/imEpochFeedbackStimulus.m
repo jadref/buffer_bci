@@ -100,5 +100,8 @@ for si=1:nSeq;
 end % loop over sequences in the experiment
 % end training marker
 sendEvent('stimulus.testing','end');
-text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the testing phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.1);
+if ( ishandle(fig) ) 
+text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the training phase.','Thanks for your patience'},'HorizontalAlignment','center',...
+	  'color',[0 1 0],'fontunits','pixel','FontSize',.05*wSize(4));
 pause(3);
+end
