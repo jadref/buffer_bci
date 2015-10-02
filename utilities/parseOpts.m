@@ -51,7 +51,7 @@ while i<=numel(varargin);  % while still options to consume
       %varargin={varargin{1:i-1} cellver{:} varargin{i+1:end} };
       [opts{:},tmp]=parseOpts(opts,cellver{:}); 
       varargin{i}=struct(tmp{:}); if ( ~isempty(tmp) );  unrec(end+1)=i; end
-   elseif ( isstr(varargin{i}) )
+   elseif ( ischar(varargin{i}) )
       fn=varargin{i}(1:min([find(varargin{i}=='.',1)-1,end]));
       sfn=varargin{i}(numel(fn)+2:end); % deal with name.subname
       for j=1:numel(opts); % assign fields, opts
@@ -92,7 +92,7 @@ end
 if ( nargout<=numel(opts) && ~isempty(unrec) )
    str='';
    for i=1:numel(unrec); % make a useful warning string
-      if ( isstr(varargin{unrec(i)}) ); str=[str sprintf('#%d=''%s'',',unrec(i),varargin{unrec(i)})]; 
+      if ( ischar(varargin{unrec(i)}) ); str=[str sprintf('#%d=''%s'',',unrec(i),varargin{unrec(i)})]; 
       else str=[str sprintf('#%d=<%s>,',unrec(i),class(varargin{unrec(i)}))];
       end
    end

@@ -61,7 +61,7 @@ elseif ( iscell(xscale) ) % exact match only
   end
   filt(mi(mi>0))=1;
   
-elseif ( isstr(bands{1}) )
+elseif ( ischar(bands{1}) )
    filt=zeros(len,1);
    switch bands{1}
     case {'rect','rectangle','one','tophat','box','boxcar'};

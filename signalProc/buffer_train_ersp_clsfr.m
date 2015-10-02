@@ -62,7 +62,7 @@ end
 X=single(X);
 if ( isstruct(Y) ) % convert event struct into labels
   if ( isnumeric(Y(1).value) ) Y=cat(1,Y.value); 
-  elseif(isstr(Y(1).value) )   Y=cat(1,{Y.value}); Y=Y(:);
+  elseif(ischar(Y(1).value) )   Y=cat(1,{Y.value}); Y=Y(:);
   else error('Dont know how to handle Y value type');
   end
 end; 
@@ -77,7 +77,7 @@ if ( isstruct(hdr) )
   elseif( isfield(hdr,'SampleRate') ) fs=hdr.SampleRate; 
   else warning('Couldnt find sample rate in header, using 100'); fs=100;
   end;
-elseif ( iscell(hdr) && isstr(hdr{1}) )
+elseif ( iscell(hdr) && ischar(hdr{1}) )
   chNames=hdr;
 end
 if ( isempty(chNames) ) 

@@ -62,7 +62,7 @@ opts=parseOpts(opts,varargin);
 
 % get the sampling rate
 di=[]; ch_pos  =opts.ch_pos; ch_names=opts.ch_names;
-if ( iscell(ch_pos) && isstr(ch_pos{1}) ) ch_names=ch_pos; ch_pos=[]; end;
+if ( iscell(ch_pos) && ischar(ch_pos{1}) ) ch_names=ch_pos; ch_pos=[]; end;
 if ( isempty(ch_names) && ~isempty(opts.hdr) ) % ARGH! deal with inconsistent field names in diff header vers
   if ( isfield(opts.hdr,'labels') ) ch_names=opts.hdr.labels;
   elseif( isfield(opts.hdr,'label') ) ch_names=opts.hdr.label;

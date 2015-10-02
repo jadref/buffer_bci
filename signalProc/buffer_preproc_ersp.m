@@ -43,7 +43,7 @@ if ( isstruct(hdr) )
   elseif( isfield(hdr,'SampleRate') ) fs=hdr.SampleRate; 
   else warning('Couldnt find sample rate in header, using 100'); fs=100;
   end;
-elseif ( iscell(hdr) && isstr(hdr{1}) )
+elseif ( iscell(hdr) && ischar(hdr{1}) )
   chNames=hdr;
 end
 if ( isempty(chNames) ) 

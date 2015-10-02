@@ -73,7 +73,7 @@ opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],...
 [opts,varargin]=parseOpts(opts,varargin);
 
 di=[]; ch_pos=opts.ch_pos; ch_names=opts.ch_names;
-if ( iscell(ch_pos) && isstr(ch_pos{1}) ) ch_names=ch_pos; ch_pos=[]; end;
+if ( iscell(ch_pos) && ischar(ch_pos{1}) ) ch_names=ch_pos; ch_pos=[]; end;
 % convert names to positions
 if ( isempty(ch_pos) && ~isempty(opts.capFile) && (~isempty(ch_names) || opts.overridechnms) ) 
   di = addPosInfo(ch_names,opts.capFile,opts.overridechnms); % get 3d-coords
@@ -173,13 +173,13 @@ for ci=1:numel(nfParams)
   if ( isempty(parmsci.electrodes) ) chWght(:)=1; 
   elseif ( numel(parmsci.electrodes)==numel(ch_names) && isnumeric(parmsci.electrodes))
     chWght=parmsci.electrodes;
-  elseif ( iscell(parmsci.electrodes) || isstr(parmsci.electrodes) || isnumeric(parmsci.electrodes) )
-    if ( isstr(parmsci.electrodes) ) parmsci.electrodes={parmsci.electrodes}; end;
+  elseif ( iscell(parmsci.electrodes) || ischar(parmsci.electrodes) || isnumeric(parmsci.electrodes) )
+    if ( ischar(parmsci.electrodes) ) parmsci.electrodes={parmsci.electrodes}; end;
     for ei=1:numel(parmsci.electrodes);
       if(iscell(parmsci.electrodes)) chei=parmsci.electrodes{ei}; else chei=parmsci.electrodes(ei); end
       if( isnumeric(chei) ) % index of the channel to weight
         chWght(abs(chei))=sign(chei);
-      elseif ( isstr(chei) )
+      elseif ( ischar(chei) )
         val=1; if ( isequal('-',chei(1)) ) val=-1; chei=chei(2:end); end;
         cheiIdx = strcmpi(chei,ch_names);
         if ( ~any(cheiIdx) ) warning('Couldnt find a channel name match for : %s\n',chei); end;
