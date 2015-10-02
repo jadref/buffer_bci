@@ -77,6 +77,8 @@ for si=1:nSeq;
     set(h(predTgt),'color',tgtColor);
     drawnow;
     sendEvent('stimulus.prediction',symbols{predTgt});
+  else
+		fprintf('No prediction events recieved!');
   end
   sleepSec(feedbackDuration);
   fprintf('\n');

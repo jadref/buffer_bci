@@ -23,11 +23,20 @@ h(nSymbs+1)=rectangle('curvature',[1 1],'position',[stimPos(:,end)-stimRadius/4;
                       'facecolor',bgColor); 
 set(gca,'visible','off');
 
-
 % play the stimulus
 set(h(:),'facecolor',bgColor);
+
+% Wait for key-press to being stimuli
+t=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),imInstruct,'HorizontalAlignment','center','color',[0 1 0],...
+		 'fontunits','pixel','FontSize',.05*wSize(4));
+% wait for button press to continue
+drawnow;
+waitforbuttonpress;
+delete(t);
+drawnow;
+
+
 sendEvent('stimulus.testing','start');
-drawnow; pause(5); % N.B. pause so fig redraws
 % initialize the state so don't miss classifier prediction events
 status=buffer('wait_dat',[-1 -1 -1],buffhost,buffport); state =[status.nsamples status.nevents 0];
 endTesting=false; dvs=[];

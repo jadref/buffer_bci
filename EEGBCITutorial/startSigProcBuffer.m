@@ -106,7 +106,7 @@ while ( true )
    case {'sptest','sptesting'};
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
       clsfrfile = ['sp_' cname '_' subject '_' datestr];
-      if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=['sp_' cname '_' subject]; end;
+      %if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=['sp_' cname '_' subject]; end;
       if(verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
       clsfr=load(clsfrfile);
       clsSubj = subject;
@@ -144,7 +144,7 @@ while ( true )
    case {'imtest','imtesting','imepochfeedback'};
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
       clsfrfile = ['im_' cname '_' subject '_' datestr];
-      if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=['im_' cname '_' subject]; end;
+      %if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=['im_' cname '_' subject]; end;
       if(verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
       clsfr=load(clsfrfile);
       clsSubj = subject;

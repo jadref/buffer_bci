@@ -97,4 +97,4 @@ intertrialDuration=2;
 %feedbackDuration=1;
 moveScale = .1;
 imtrlen_ms = imtrialDuration*1000;
-imInstruct={'Perform the task as indicated','by the Green symbol.','Click to begin.'};
+imInstruct={'Perform the task as indicated.','Green symbol is the target.','Blue symbol is the prediction','Click to begin.'};

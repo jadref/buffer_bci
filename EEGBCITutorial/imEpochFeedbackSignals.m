@@ -1,7 +1,7 @@
-function [testdata,testevents]=imContFeedbackSignals(clsfr,varargin)
+function [testdata,testevents]=imEpochFeedbackSignals(clsfr,varargin)
 % apply classifier to data after the indicated events
 %
-%  [testdata,testevents]=imContFeedbackSignals(clsfr,varargin)
+%  [testdata,testevents]=imEpochFeedbackSignals(clsfr,varargin)
 %
 % Inputs:
 %  clsfr  -- [struct] a classifier structure as returned by train_ersp_clsfr
