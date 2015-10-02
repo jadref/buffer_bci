@@ -194,7 +194,7 @@ end
 
 oldPoint = get(fig,'currentpoint'); % initial mouse position
 endTraining=false; state=[]; 
-cursamp=hdr.nSamples;
+status=buffer('wait_dat',[-1 -1 -1],buffhost,buffport); cursamp=status.nSamples;
 while ( ~endTraining )  
 
   %------------------------------------------------------------------------
@@ -207,15 +207,17 @@ while ( ~endTraining )
     cursamp=status.nSamples;
     if ( ~ishandle(fig) ); break; else continue; end;
   elseif ( status.nSamples > cursamp+update_samp*2 ) % missed a whole update window
+	 fprintf('Warning: Cant keep up with the data!\n%d Dropped samples...\n',status.nSamples-update_samp-1-cursamp);
     cursamp=status.nSamples - update_samp-1; % jump to the current time
   end;
-  dat   =buffer('get_dat',[cursamp cursamp+update_samp-1],buffhost,buffport);
-  cursamp = cursamp+update_samp;
+  dat    =buffer('get_dat',[cursamp cursamp+update_samp-1],buffhost,buffport);
+  cursamp=cursamp+update_samp;
   
   % shift and insert into the data buffer
   rawdat(:,1:blkIdx)=rawdat(:,update_samp+1:end);
   rawdat(:,blkIdx+1:end)=dat.buf(iseeg,:);
 
+  %if ( cursamp-hdr.nSamples > hdr.fSample*30 ) keyboard; end;
   if ( opts.verb>0 ); fprintf('.'); end;
   if ( ~ishandle(fig) ); break; end;
 
