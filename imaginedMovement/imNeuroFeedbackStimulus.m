@@ -57,12 +57,13 @@ state=[];
 trialDuration = 60*60; % 1hr...
 timetogo=trialDuration;
 nEpochs=0;
-dv = zeros(nSymbs,1);
+dv  = zeros(nSymbs,1);
+prob= ones(nSymbs,1)./nSymbs; % start with equal prob over everything
 while (timetogo>0)
   if ( ~ishandle(fig) ) break; end;
   timetogo = trialDuration - (getwTime()-trlStartTime); % time left to run in this trial
   % wait for new prediction events to process *or* end of trial
-  [events,state,nsamples,nevents] = buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],min(1000,timetogo*1000));
+  [events,state,nsamples,nevents] = buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],min(1500,timetogo*1000));
 
   % process the prediction events
   if ( ~isempty(events) ) 
@@ -95,12 +96,16 @@ while (timetogo>0)
         fprintf('%d) dv:',ev.sample);fprintf('%5.4f ',pred);fprintf('\t\tProb:');fprintf('%5.4f ',prob);fprintf('\n'); 
       end;
       
-      % feedback information... simply move to location indicated by the BCI
-      fixPos = stimPos(:,1:end-1)*prob(:); % position is weighted by class probabilties
-      set(h(end),'position',[fixPos-stimRadius/4;stimRadius/2*[1;1]]);
     end
-  end % if prediction events to processa  
+  else
+	 fprintf('%d) no predictions!\n',nsamples);
+  end % if prediction events to process
+  
+  % feedback information... simply move to location indicated by the BCI
+  fixPos = stimPos(:,1:end-1)*prob(:); % position is weighted by class probabilties
+  set(h(end),'position',[fixPos-stimRadius/4;(stimRadius/2).*[1;1]]);
   drawnow; % update the display after all events processed
+
 end % while time to go
 
 if ( ishandle(fig) ) % thanks message

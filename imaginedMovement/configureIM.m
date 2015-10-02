@@ -56,6 +56,7 @@ fbColor=[0 0 1];
 
 % Neurofeedback smoothing
 trlen_ms=trialDuration*1000; % how often to run the classifier
+trlen_ms_ol = trlen_ms;
 epochFeedbackOpts={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/50))};
-contFeedbackOpts ={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/50)),'step_ms',500};
-stimSmoothFactor= 0;%exp(log(.5)/5); % additional smoothing on the stimulus, 5-pred half life
+contFeedbackOpts ={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/50)),'step_ms',250};
+stimSmoothFactor= 0;%exp(log(.5)/5); % additional smoothing on the stimulus, not needed with 3s trlen
