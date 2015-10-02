@@ -4,7 +4,7 @@
 if ( ~exist('configRun','var') || isempty(configRun) ) 
 
   % setup the paths
-  run ../../utilities/initPaths.m;
+  run ../utilities/initPaths.m;
 
   buffhost='localhost';buffport=1972;
   % wait for the buffer to return valid header information
@@ -42,9 +42,8 @@ end
 verb=1;
 buffhost='localhost';
 buffport=1972;
-nSymbs=3;
+nSymbs=2;
 nSeq=20;
-nBlock=2;%10; % number of stim blocks to use
 trialDuration=3;
 baselineDuration=1;
 intertrialDuration=2;
@@ -57,7 +56,6 @@ fbColor=[0 0 1];
 
 % Neurofeedback smoothing
 trlen_ms=trialDuration*1000; % how often to run the classifier
-trlen_ms_ol=trlen_ms;
-contPredFilt = @(x,s) biasFilt(x,s,exp(log(.5)/50)); % bias adaption filter
-epochPredFilt= @(x,s) biasFilt(x,s,exp(log(.5)/50)); % bias adaption filter
-stimSmoothFactor= exp(log(.5)/5); % additional smoothing on the stimulus, 5-pred half life
+epochFeedbackOpts={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/50))};
+contFeedbackOpts ={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/50)),'step_ms',500};
+stimSmoothFactor= 0;%exp(log(.5)/5); % additional smoothing on the stimulus, 5-pred half life

@@ -1,6 +1,8 @@
 configureIM;
 % create the control window and execute the phase selection loop
-if ( exist('OCTAVE_VERSION','builtin') ) 
+if ~( exist('OCTAVE_VERSION','builtin') ) 
+  contFig=controller(); info=guidata(contFig); 
+else
   contFig=figure(1);
   set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
   axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
@@ -12,7 +14,8 @@ if ( exist('OCTAVE_VERSION','builtin') )
 			  '2) Calibrate'           'calibrate'; 
 			  '3) Train Classifier'    'train';
 			  '4) Epoch Feedback'      'epochfeedback';
-			  '5) Cont/Neuro Feedback' 'contfeedback'
+			  '5) Continuous Feedback' 'contfeedback';
+			  '6) NeuroFeedback'       'neurofeedback'
           };
   txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
 				'HorizontalAlignment','left','color',[1 1 1]);
@@ -21,8 +24,6 @@ if ( exist('OCTAVE_VERSION','builtin') )
   set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
   set(contFig,'userdata',[]);
   drawnow; % make sure the figure is visible
-else
-  contFig=controller(); info=guidata(contFig); 
 end
 subject='test';
 
@@ -48,9 +49,9 @@ while (ishandle(contFig))
   if ( ~isempty(modekey) ) 	 
 	 fprintf('key=%s\n',modekey);
 	 phaseToRun=[];
-	 if ( isstr(modekey(1)) )
+	 if ( ischar(modekey(1)) )
 		ri = int32(modekey(1)-'0')+1; % get the row in the instructions
-		if ( ri>0 & ri<size(menustr,1))
+		if ( ri>0 && ri<=size(menustr,1))
 		  phaseToRun = menustr{ri,2};
 		end
 	 end
