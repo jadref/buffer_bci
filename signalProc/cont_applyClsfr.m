@@ -114,6 +114,10 @@ while( ~endTest )
   oendSample=endSample;
   fin = oendSample:step_samp:status.nSamples; % window start positions
   if( ~isempty(fin) ) endSample=fin(end)+step_samp; end %fin of next trial for which not enough data
+  if ( numel(fin)>3 ) % drop frames if we can't keep up
+	  fprintf('Warning: classifier cant keep up, dropping %d frames!\n',numel(fin)-1);
+	  fin=fin(end);
+  end
   for si = 1:numel(fin);    
     nEpochs=nEpochs+1;
     
