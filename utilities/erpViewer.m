@@ -434,7 +434,7 @@ while ( ~endTraining )
 			 end
 		  end
 		  % update the legend
-		  if ( any(strcmp(get(hdls(end),'type'),{'axes','legend'})) ) % legend is a normal set of axes
+		  if ( numel(hdls)>size(erp,1) && any(strcmp(get(hdls(end),'type'),{'axes','legend'})) ) % legend is a normal set of axes
            pos=get(hdls(end),'position');
            legend(hdls(end-1),'off'); hdls(end) = legend(hdls(end-1),'show'); set(hdls(end),'position',pos);
 		  end
