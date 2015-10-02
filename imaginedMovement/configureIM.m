@@ -48,15 +48,30 @@ trialDuration=3;
 baselineDuration=1;
 intertrialDuration=2;
 feedbackDuration=1;
+
+warpCursor= 1; % flag if in feedback BCI output sets cursor location or how the cursor moves
 moveScale = .1;
-bgColor=[.5 .5 .5];
+
+bgColor =[.5 .5 .5];
 fixColor=[1 0 0];
 tgtColor=[0 1 0];
-fbColor=[0 0 1];
+fbColor =[0 0 1];
 
-% Neurofeedback smoothing
+% Epoch feedback opts
 trlen_ms=trialDuration*1000; % how often to run the classifier
-trlen_ms_ol = trlen_ms;
 epochFeedbackOpts={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/50))};
-contFeedbackOpts ={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/50)),'step_ms',250};
-stimSmoothFactor= 0;%exp(log(.5)/5); % additional smoothing on the stimulus, not needed with 3s trlen
+
+% different feedback configs (should all give similar results)
+
+%%1) Use exactly the same classification window for feedback as for training, but apply more often
+%%   but also include a bias adaption system to cope with train->test transfer
+contFeedbackOpts ={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/100)),'step_ms',250}; % normal way
+stimSmoothFactor= 0; % additional smoothing on the stimulus, not needed with 3s trlen
+
+%%2) Classify every welch-window-width (default 500ms), prediction is average of full trials worth of data, no-bias adaptation
+%contFeedbackOpts ={'predFilt',-(trlen_ms/500),'trlen_ms',[]}; % classify every window, prediction is average of last 3s windows
+%stimSmoothFactor= 0;% additional smoothing on the stimulus, not needed with equivalent of 3s trlen
+
+%%3) Classify every welch-window-width (default 500ms), 
+%contFeedbackOpts ={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/400)),'trlen_ms',[]}; % classify every window, bias adapt predictions
+%stimSmoothFactor= -(trlen_ms/500);% actual prediction is average of trail-length worth of predictions

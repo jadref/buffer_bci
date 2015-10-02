@@ -78,6 +78,6 @@ end % sequences
 sendEvent('stimulus.training','end');
 
 if ( ishandle(fig) ) % thanks message
-set(txthdl,'string',{'That ends the training phase.','Thanks for your patience'}, 'visible', 'on');
+set(txthdl,'string',{'That ends the training phase.','Thanks for your patience'}, 'visible', 'on', 'color',[0 1 0]);
 pause(3);
 end

@@ -89,17 +89,31 @@ for si=1:nSeq;
             pred=[pred -pred];
           end
         end
+
+		  % additional prediction smoothing for display, if wanted
+		  if ( ~isempty(stimSmoothFactor) && isnumeric(stimSmoothFactor) )
+			 if ( stimSmoothFactor>=0 ) % exp weighted moving average
+				dv=dv*stimSmoothFactor + (1-stimSmoothFactor)*pred(:);
+			 else % store predictions in a ring buffer
+				fbuff(:,mod(nEpochs-1,abs(stimSmoothFactor))+1)=pred(:); % store predictions in a ring buffer
+				dv=mean(fbuff,2);
+			 end
+		  end
+
+		  % convert from dv to normalised probability
         prob = 1./(1+exp(-pred)); prob=prob./sum(prob); % convert from dv to normalised probability
         if ( verb>=0 ) 
           fprintf('dv:');fprintf('%5.4f ',pred);fprintf('\t\tProb:');fprintf('%5.4f ',prob);fprintf('\n'); 
         end;
-          
-        % feedback information... simply move in direction detected by the BCI
-        dx = stimPos(:,1:end-1)*prob(:); % change in position is weighted by class probs
-        fixPos = fixPos + dx*moveScale;
-        set(h(end),'position',[fixPos-stimRadius/2;stimRadius/2*[1;1]]);
       end
-    end % if feedback events to process
+	 else
+		fprintf('%d) no predictions!\n',nsamples);
+	 end % if prediction events to process
+
+    % feedback information... simply move in direction detected by the BCI
+    dx = stimPos(:,1:end-1)*prob(:); % change in position is weighted by class probs
+	 if ( warpCursor ) fixPos=dx; else fixPos=fixPos + dx*moveScale; end; % relative or absolute cursor movement
+    set(h(end),'position',[fixPos-stimRadius/2;stimRadius/2*[1;1]]);
     drawnow; % update the display after all events processed    
   end % while time to go
 
