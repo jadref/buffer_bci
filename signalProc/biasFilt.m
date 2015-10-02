@@ -14,10 +14,10 @@ function [x,s]=biasFilt(x,s,alpha,verb)
 % Outputs:
 %   x - [nd x 1] filtered data,  x(t) = x(t) - fx(t)
 %   s - [struct] updated filter state, s.N = total weight, s.sx = smoothed estimate of x
-if ( nargin<3 || isempty(verb) ) verb=0; end;
+if ( nargin<4 || isempty(verb) ) verb=0; end;
 if ( isempty(s) ) s=struct('sx',zeros(size(x)),'N',0); end;
 if(any(alpha>1)) alpha=exp(log(.5)./alpha); end; % convert to decay factor
-s.N =alpha(:).*s.N  + (1-alpha(:)).*1; % weight accumulated so far, for adaptive weighting
+s.N =alpha(:).*s.N  + (1-alpha(:)).*1; % weight accumulated so far, for warmup
 s.sx=alpha(:).*s.sx + (1-alpha(:)).*x;
 if ( verb>0 ) fprintf('x=[%s]\ts=[%s]',sprintf('%g ',x),sprintf('%g ',s.sx./s.N)); end;
 x=x-s.sx./s.N;

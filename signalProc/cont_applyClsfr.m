@@ -143,7 +143,7 @@ while( ~endTest )
           fbuff(:,mod(nEpochs-1,abs(opts.predFilt))+1)=f; % store predictions in a ring buffer
           dv=mean(fbuff,2);
         end
-      elseif ( isstr(opts.predFilt) || isa(opts.predFilt,'function_handle') )
+      elseif ( ischar(opts.predFilt) || isa(opts.predFilt,'function_handle') )
         [dv,filtstate]=feval(opts.predFilt,f,filtstate);
       end
     end
@@ -154,21 +154,23 @@ while( ~endTest )
 	 elseif ( opts.verb>-1 ) fprintf('.'); 
 	 end;
   end
-    
-  % deal with any events which have happened
-  if ( ischar(opts.endType) && status.nevents > nEvents  )
+      
+  if ( isnumeric(opts.endType) ) % time-based termination
+	 t=toc;
+	 if ( t-t0 > opts.endType ) fprintf('Got to end time. Stopping'); endTest=true; end;
+  elseif( status.nevents > nEvents  ) % deal with any events which have happened
     devents=buffer('get_evt',[nEvents status.nevents-1],opts.buffhost,opts.buffport);
     mi=matchEvents(devents,opts.endType,opts.endValue);
     if ( any(mi) ) fprintf('Got exit event. Stopping'); endTest=true; end;
     nEvents=status.nevents;
-  elseif ( isnumeric(opts.endType) ) % time-based termination
-	 t=toc;
-	 if ( t-t0 > opts.endType ) fprintf('Got to end time. Stopping'); endTest=true; end;
   end
 end % while not endTest
 return;
 %--------------------------------------
 function testCase()
 cont_applyClsfr(clsfr,'overlap',.1)
+% bias adapting output smoothing, such that mean=0 over last 100 predictions
+cont_applyClsfr(clsfr,'biasFilt',@(x,s) bialFilt(x,s,exp(log(.5)/100)));
 % smooth output with standardising filter, such that mean=0 and variance=1 over last 100 predictions
 cont_applyClsfr(clsfr,'predFilt',@(x,s) stdFilt(x,s,exp(log(.5)/100)));
+
