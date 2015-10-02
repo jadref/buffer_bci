@@ -53,6 +53,13 @@ public class BufferEvent {
 		this.sample = sample;
 		offset = duration = 0;
 	}	
+
+	public BufferEvent(String type, boolean value, int sample) {
+		wType  = new WrappedObject(type);
+		wValue = new WrappedObject(value);
+		this.sample = sample;
+		offset = duration = 0;
+	}
 	
 	public BufferEvent(String type, double value, int sample) {
 		wType  = new WrappedObject(type);
@@ -95,6 +102,13 @@ public class BufferEvent {
 		  this.sample = sample;
 		  offset = duration = 0;
 	 }	
+
+	 public BufferEvent(String type, Integer[] value, int sample) {
+		  wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = sample;
+		  offset = duration = 0;
+	 }	
 		
 	 public BufferEvent(String type, short[] value, int sample) {
 		  wType  = new WrappedObject(type);
@@ -109,6 +123,27 @@ public class BufferEvent {
 		  this.sample = sample;
 		  offset = duration = 0;
 	 }	
+
+	 public BufferEvent(String type, Byte[] value, int sample) {
+		  wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = sample;
+		  offset = duration = 0;
+	 }	
+
+	 public BufferEvent(String type, boolean[] value, int sample) {
+		  wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = sample;
+		  offset = duration = 0;
+	 }	
+
+	 public BufferEvent(String type, Boolean[] value, int sample) {
+		  wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = sample;
+		  offset = duration = 0;
+	 }	
 		
 	 public BufferEvent(String type, double[] value, int sample) {
 		  wType  = new WrappedObject(type);
@@ -116,8 +151,22 @@ public class BufferEvent {
 		  this.sample = sample;
 		  offset = duration = 0;
 	 }	
+
+	 public BufferEvent(String type, Double[] value, int sample) {
+		  wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = sample;
+		  offset = duration = 0;
+	 }	
 	
 	 public BufferEvent(String type, float[] value, int sample) {
+		  wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = sample;
+		  offset = duration = 0;
+	 }		
+
+	 public BufferEvent(String type, Float[] value, int sample) {
 		  wType  = new WrappedObject(type);
 		  wValue = new WrappedObject(value);
 		  this.sample = sample;

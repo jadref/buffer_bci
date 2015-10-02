@@ -72,6 +72,13 @@ public class WrappedObject {
 		size  = 1;
 		array = new byte[] {x};
 	}	
+
+	public WrappedObject(boolean x) {
+		type  = DataType.INT8;
+		numel = 1;
+		size  = 1;
+		array = new byte[]{(byte)(x?1:0)};
+	}
 	
 	public WrappedObject(Object obj) {
 		this();
@@ -116,6 +123,13 @@ public class WrappedObject {
 				array = ((int[]) obj).clone();
 				numel = ((int[]) obj).length;
 			
+			} else if  (name == "[Ljava.lang.Integer") {
+				type = DataType.INT32;
+				int[] tmp = new int[((Integer[])obj).length];
+				for ( int i=0; i<tmp.length; i++ ) tmp[i] = (int) ((Integer[])obj)[i];
+				array = tmp;
+				numel = tmp.length;
+
 			} else if (name.equals("[S")) {
 				type = DataType.INT16;
 				array = ((short[]) obj).clone();
@@ -126,6 +140,27 @@ public class WrappedObject {
 				array = ((byte[]) obj).clone();
 				numel = ((byte[]) obj).length;
 			
+			} else if  (name == "[Ljava.lang.Byte") {
+				type = DataType.INT8;
+				double[] tmp = new double[((Boolean[])obj).length];
+				for ( int i=0; i<tmp.length; i++ ) tmp[i] = (byte)((Byte[])obj)[i];
+				array = tmp;
+				numel = tmp.length;
+
+			} else if (name.equals("[Z")) { // boolean
+				type = DataType.INT8;
+				byte[] tmp = new byte[((boolean[])obj).length];
+				for ( int i=0; i<tmp.length; i++ ) tmp[i] = (byte)((((boolean[])obj)[i])?1:0);
+				array = tmp;
+				numel = tmp.length;
+
+			} else if  (name == "[Ljava.lang.Boolean") {
+				type = DataType.INT8;
+				double[] tmp = new double[((Boolean[])obj).length];
+				for ( int i=0; i<tmp.length; i++ ) tmp[i] = (byte)((((Boolean[])obj)[i])?1:0);
+				array = tmp;
+				numel = tmp.length;
+
 			} else {
 				return; // keep as unknown
 			}
@@ -155,6 +190,9 @@ public class WrappedObject {
 		} else if (name.equals("java.lang.Byte")) {
 			type = DataType.INT8;
 			array = new byte[] {((Byte) obj).byteValue()};		
+		} else if (name.equals("java.lang.Boolean")) {
+			type = DataType.INT8;
+			array = new byte[] {(byte)(((Boolean) obj).booleanValue()?1:0)};		
 		} else {
 			return;
 		}

@@ -126,7 +126,7 @@ switch cmd;
   buf=bufj; 
   % N.B. matlab is col-major, java is row-major.  Need to transpose results
   if ( exist('OCTAVE_VERSION') ) % in octave have to manually convert arrays..
-    [w,h]=size(bufj); buf=zeros(h,w); for i=1:w; for j=1:h; buf(j,i)=bufj(i,j);end; end;
+    tic,[w,h]=size(bufj); buf=zeros(h,w); for i=1:w; tmp=bufj(i); for j=1:h; buf(j,i)=tmp(j);end; end;toc
   else
     buf=buf'; 
   end
@@ -172,10 +172,12 @@ switch cmd;
  
  case 'put_evt';
   if ( numel(detail)==1 ) 
+	 if ( islogical(detail.value) ) detail.value=single(detail.value); end; % BODGE: convert to single float
     e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.bufferclient.BufferEvent',detail.type,detail.value,int32(detail.sample)));
   else
     for ei=1:numel(detail);
       evt=detail(ei);
+		if ( islogical(evt.value) ) evt.value=single(evt.value); end; % BODGE: convert to single float
       e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.bufferclient.BufferEvent',evt.type,evt.value,int32(evt.sample)));
     end
   end
