@@ -567,18 +567,21 @@ if ( ~isempty(opts.legend) && ~isequal(opts.legend,0) )
   % Only lines with DisplayName set earlier get legend entries!
   lines=findobj(get(hdls(N),'children'),'type','line');
   good=false(size(lines));for li=1:numel(lines);if(~isempty(get(lines(li),'DisplayName')))good(li)=true;end; end;
-  legend(hdls(N),lines(good));leghdl=legend('show');
+  legend(hdls(N),lines(good));
+  leghdl=[]; try; leghdl=legend('show');catch;end;
   % get the size of the legend window and use it for the new window
-  tpos=get(leghdl,'position'); 
-  pos(3:4)=tpos(3:4); 
-  if ( ischar(opts.legend) )
-    if( strfind(lower(opts.legend),'e') ) pos(1)=min(pos(1),1-pos(3)); end; 
-    if( strfind(lower(opts.legend),'n') ) pos(2)=min(pos(2),1-pos(4)); end;
+  if ( ~isempty(leghdl) ) 
+	 tpos=get(leghdl,'position'); 
+	 pos(3:4)=tpos(3:4); 
+	 if ( ischar(opts.legend) )
+		if( strfind(lower(opts.legend),'e') ) pos(1)=min(pos(1),1-pos(3)); end; 
+		if( strfind(lower(opts.legend),'n') ) pos(2)=min(pos(2),1-pos(4)); end;
+	 end
+	 if ( all(pos(3:4)>0) ) % only if possible
+		set(leghdl,'position',[pos(1:2) pos(3:4)],'box','off');
+	 end
+	 hdls(N+1)=leghdl;
   end
-  if ( all(pos(3:4)>0) ) % only if possible
-    set(leghdl,'position',[pos(1:2) pos(3:4)],'box','off');
-  end
-  hdls(N+1)=leghdl;
 end % if legend
 
 if ( ~isempty(opts.colorbar) && opts.colorbar && ~isempty(opts.clim) )  % true colorbar  
