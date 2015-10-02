@@ -48,7 +48,7 @@ curTime =getTime();
 endTime =curTime+timeOut_ms/1000;
 while ( isempty(events) && endTime>curTime ) % until there are some matching events
   % wait for any new events, keeping track of elapsed time for time-based exits
-  status=buffer('wait_dat',[inf nevents endTime-curTime],host,port);
+  status=buffer('wait_dat',[inf nevents 1000*(endTime-curTime)],host,port);
   if( status.nevents>nevents )
     % N.B. event range is counted from start -> end-1!
     % N.B. event Id start from 0
