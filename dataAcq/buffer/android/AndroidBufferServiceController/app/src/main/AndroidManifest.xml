@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="edu.nl.ru.fieldtripbufferservicecontroller">
+          package="nl.dcc.buffer_bci.bufferservicecontroller">
     <uses-sdk android:minSdkVersion="16" android:targetSdkVersion="16"/>
 
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -18,7 +18,7 @@
             android:icon="@drawable/ic_launcher"
             android:label="@string/app_name">
         <activity
-                android:name=".MainActivity"
+                android:name="nl.dcc.buffer_bci.bufferservicecontroller.MainActivity"
                 android:exported="true"
                 android:label="@string/app_name">
             <intent-filter>
@@ -28,13 +28,12 @@
         </activity>
 
         <receiver
-                android:name=".FBServiceControllerBroadcastReceiver"
+                android:name="nl.dcc.buffer_bci.bufferservicecontroller.FBServiceControllerBroadcastReceiver"
                 android:enabled="true"
                 android:exported="true">
             <intent-filter>
-                <action android:name="edu.nl.ru.fieldtripbufferservicecontroller.action.UPDATEINFO"/>
+                <action android:name="nl.dcc.buffer_bci.bufferservicecontroller.action.UPDATEINFO"/>
             </intent-filter>
         </receiver>
     </application>
-
 </manifest>

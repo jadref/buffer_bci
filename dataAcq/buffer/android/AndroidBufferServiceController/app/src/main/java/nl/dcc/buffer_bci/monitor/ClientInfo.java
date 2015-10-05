@@ -1,8 +1,8 @@
-package edu.nl.ru.monitor;
+package nl.dcc.buffer_bci.monitor;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import edu.nl.ru.fieldtripbufferservicecontroller.C;
+import nl.dcc.buffer_bci.bufferservicecontroller.C;
 
 public class ClientInfo implements Parcelable {
     public static final Parcelable.Creator<ClientInfo> CREATOR = new Parcelable.Creator<ClientInfo>() {

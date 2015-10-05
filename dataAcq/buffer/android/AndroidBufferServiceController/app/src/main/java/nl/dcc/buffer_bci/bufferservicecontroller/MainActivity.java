@@ -1,4 +1,4 @@
-package edu.nl.ru.fieldtripbufferservicecontroller;
+package nl.dcc.buffer_bci.bufferservicecontroller;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -8,10 +8,10 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.*;
-import edu.nl.ru.fieldtripbufferservicecontroller.visualize.BubbleSurfaceView;
-import edu.nl.ru.fieldtripclientsservice.ThreadInfo;
-import edu.nl.ru.fieldtripclientsservice.base.Argument;
-import edu.nl.ru.monitor.ClientInfo;
+import nl.dcc.buffer_bci.bufferservicecontroller.visualize.BubbleSurfaceView;
+import nl.dcc.buffer_bci.bufferclientsservice.ThreadInfo;
+import nl.dcc.buffer_bci.bufferclientsservice.base.Argument;
+import nl.dcc.buffer_bci.monitor.ClientInfo;
 
 import java.util.HashMap;
 

@@ -34,10 +34,10 @@
                 android:text="New Text"
                 android:id="@+id/textView" android:autoText="false"/>
     </LinearLayout>
-    <edu.nl.ru.fieldtripbufferservicecontroller.visualize.BubbleSurfaceView
+    <nl.dcc.buffer_bci.bufferservicecontroller.visualize.BubbleSurfaceView
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:id="@+id/surfaceView">
-    </edu.nl.ru.fieldtripbufferservicecontroller.visualize.BubbleSurfaceView>
+    </nl.dcc.buffer_bci.bufferservicecontroller.visualize.BubbleSurfaceView>
 
 </LinearLayout>

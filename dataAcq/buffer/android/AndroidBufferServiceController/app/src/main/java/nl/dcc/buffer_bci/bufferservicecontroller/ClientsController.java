@@ -1,12 +1,12 @@
-package edu.nl.ru.fieldtripbufferservicecontroller;
+package nl.dcc.buffer_bci.bufferservicecontroller;
 
 import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
-import edu.nl.ru.fieldtripclientsservice.ThreadInfo;
-import edu.nl.ru.fieldtripclientsservice.base.Argument;
+import nl.dcc.buffer_bci.bufferclientsservice.ThreadInfo;
+import nl.dcc.buffer_bci.bufferclientsservice.base.Argument;
 
 import java.util.*;
 

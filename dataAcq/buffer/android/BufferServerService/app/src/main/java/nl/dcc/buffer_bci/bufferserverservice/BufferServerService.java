@@ -9,6 +9,7 @@ import android.content.res.Resources;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
+import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.PowerManager;
@@ -51,6 +52,15 @@ public class BufferServerService extends Service {
     private BufferMonitor monitor;
     private WakeLock wakeLock;
     private WifiLock wifiLock;
+
+    // For debugging, cause this service to call start itself when created
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        Intent mainService = new Intent(this,BufferServerService.class);
+        startService(mainService);
+        android.os.Debug.waitForDebugger();
+    }
 
     @Override
     public IBinder onBind(final Intent intent) {

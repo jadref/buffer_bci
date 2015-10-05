@@ -1,8 +1,8 @@
-package edu.nl.ru.fieldtripclientsservice;
+package nl.dcc.buffer_bci.bufferclientsservice;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import edu.nl.ru.fieldtripbufferservicecontroller.C;
+import nl.dcc.buffer_bci.bufferservicecontroller.C;
 
 public class ThreadInfo implements Parcelable {
     public static final Creator<ThreadInfo> CREATOR = new Creator<ThreadInfo>() {

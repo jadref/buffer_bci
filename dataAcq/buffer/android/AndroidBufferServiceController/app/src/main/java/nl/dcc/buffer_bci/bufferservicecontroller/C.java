@@ -1,4 +1,4 @@
-package edu.nl.ru.fieldtripbufferservicecontroller;
+package nl.dcc.buffer_bci.bufferservicecontroller;
 
 
 /**

@@ -1,4 +1,4 @@
-package edu.nl.ru.fieldtripbufferservicecontroller.visualize;
+package nl.dcc.buffer_bci.bufferservicecontroller.visualize;
 
 import android.content.Context;
 import android.graphics.Canvas;

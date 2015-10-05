@@ -1,4 +1,4 @@
-package edu.nl.ru.fieldtripbufferservicecontroller;
+package nl.dcc.buffer_bci.bufferservicecontroller;
 
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -9,8 +9,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.util.SparseArray;
-import edu.nl.ru.monitor.BufferInfo;
-import edu.nl.ru.monitor.ClientInfo;
+import nl.dcc.buffer_bci.monitor.BufferInfo;
+import nl.dcc.buffer_bci.monitor.ClientInfo;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
