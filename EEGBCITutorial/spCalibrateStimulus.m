@@ -11,8 +11,8 @@ set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized')
 % make the target stimulus sequence
 [ans,ans,ans,ans,tgtSeq]=mkStimSeqRand(numel(symbols),nSeq);
 % make the row/col flash sequence for each sequence
-[stimSeqRow]=mkStimSeqRand(size(symbols,1),nRepetitions*size(symbols,1),2);
-[stimSeqCol]=mkStimSeqRand(size(symbols,2),nRepetitions*size(symbols,2),2);
+[stimSeqRow]=mkStimSeqRand(size(symbols,1),nRepetitions*size(symbols,1));
+[stimSeqCol]=mkStimSeqRand(size(symbols,2),nRepetitions*size(symbols,2));
 
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
