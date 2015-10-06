@@ -45,12 +45,7 @@ android {
 
 dependencies {
     compile 'com.android.support:support-v4:22.0.0'
-    compile files('libs/BufferClient.jar')
-    compile files('libs/commons-math3-3.4.jar')
-    compile files('libs/ContinuousClassifier.jar')
-    compile files('libs/FilePlayback.jar')
-    compile files('libs/MatrixAlgebra.jar')
-    compile files('libs/libmuseandroid.jar')
+    compile fileTree(dir: 'libs', include: ['*.jar'])
 }
 
 // Used to compile the native muse libraries into the apk

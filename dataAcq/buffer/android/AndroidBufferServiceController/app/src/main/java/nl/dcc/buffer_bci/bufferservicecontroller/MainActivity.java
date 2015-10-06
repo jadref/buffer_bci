@@ -67,6 +67,7 @@ public class MainActivity extends Activity {
     public void onDestroy() {
         stopClients();
         stopServer();
+        super.onDestroy();
     }
 
     private void updateServerController(Intent intent) {
