@@ -1,4 +1,4 @@
-package nl.dcc.buffer_bci.android.bufferclientsservice.base;
+package nl.dcc.buffer_bci.bufferclientsservice.base;
 
 public abstract class FieldtripThread {
 

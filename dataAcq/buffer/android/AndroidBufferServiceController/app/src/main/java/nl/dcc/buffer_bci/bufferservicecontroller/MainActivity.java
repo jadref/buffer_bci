@@ -160,6 +160,7 @@ public class MainActivity extends Activity {
         if (!clientsController.isClientsServiceRunning()) {
             clientsName = clientsController.startClientsService();
         }
+        updateClientsGui();
     }
 
     public void stopServer() {

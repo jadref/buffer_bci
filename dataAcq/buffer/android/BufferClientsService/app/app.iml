@@ -111,12 +111,12 @@
     <orderEntry type="jdk" jdkName="Android API 16 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" name="support-v4-22.0.0" level="project" />
-    <orderEntry type="library" exported="" name="MatrixAlgebra" level="project" />
     <orderEntry type="library" exported="" name="FilePlayback" level="project" />
     <orderEntry type="library" exported="" name="support-annotations-22.0.0" level="project" />
     <orderEntry type="library" exported="" name="ContinuousClassifier" level="project" />
     <orderEntry type="library" exported="" name="libmuseandroid" level="project" />
     <orderEntry type="library" exported="" name="BufferClient" level="project" />
+    <orderEntry type="library" exported="" name="SignalProxy" level="project" />
     <orderEntry type="library" exported="" name="commons-math3-3.4" level="project" />
   </component>
 </module>

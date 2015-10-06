@@ -1,4 +1,4 @@
-package nl.dcc.buffer_bci.android.bufferclientsservice;
+package nl.dcc.buffer_bci.bufferclientsservice;
 
 import android.os.Parcel;
 import android.os.Parcelable;

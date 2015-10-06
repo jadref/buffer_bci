@@ -1,4 +1,4 @@
-package nl.dcc.buffer_bci.android.bufferclientsservice;
+package nl.dcc.buffer_bci.bufferclientsservice;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -15,11 +15,10 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.widget.Toast;
 
-import nl.dcc.buffer_bci.android.bufferclientsservice.base.Argument;
-import nl.dcc.buffer_bci.android.bufferclientsservice.threads.ThreadList;
-import nl.dcc.buffer_bci.android.bufferclientsservice.R;
-import nl.dcc.buffer_bci.android.bufferclientsservice.base.AndroidHandle;
-import nl.dcc.buffer_bci.android.bufferclientsservice.base.ThreadBase;
+import nl.dcc.buffer_bci.bufferclientsservice.base.Argument;
+import nl.dcc.buffer_bci.bufferclientsservice.threads.ThreadList;
+import nl.dcc.buffer_bci.bufferclientsservice.base.AndroidHandle;
+import nl.dcc.buffer_bci.bufferclientsservice.base.ThreadBase;
 
 import java.io.*;
 

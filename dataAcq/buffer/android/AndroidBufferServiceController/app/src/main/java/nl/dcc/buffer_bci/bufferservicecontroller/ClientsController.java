@@ -30,7 +30,7 @@ public class ClientsController {
     private String clientsServicePackageName = C.CLIENTS_SERVICE_PACKAGE_NAME;
     private String clientsServiceClassName = C.CLIENTS_SERVICE_CLASS_NAME;
     private LinkedHashMap<Integer, Argument[]> allArguments;
-    private List<Integer> threadIDs;
+    private List<Integer> threadIDs=null;
     private int port = 1972;
 
 
@@ -51,7 +51,7 @@ public class ClientsController {
 
     public String toString() {
         String ret = "ClientsController{}";
-        if (threadIDs.size() > 0) {
+        if (threadIDs!=null && threadIDs.size() > 0) {
             ret += " with \n";
             for (int id : threadIDs)
                 ret += "\t" + threadInfos.get(id).toString() + "\n";

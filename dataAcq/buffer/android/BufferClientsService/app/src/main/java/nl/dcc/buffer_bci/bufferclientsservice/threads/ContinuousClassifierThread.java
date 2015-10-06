@@ -1,11 +1,10 @@
-package nl.dcc.buffer_bci.android.bufferclientsservice.threads;
+package nl.dcc.buffer_bci.bufferclientsservice.threads;
 
 import java.io.InputStream;
 
-import nl.dcc.buffer_bci.android.bufferclientsservice.base.Argument;
+import nl.dcc.buffer_bci.bufferclientsservice.base.Argument;
 import nl.dcc.buffer_bci.signalprocessing.ContinuousClassifier;
-import nl.dcc.buffer_bci.android.bufferclientsservice.base.AndroidHandle;
-import nl.dcc.buffer_bci.android.bufferclientsservice.base.ThreadBase;
+import nl.dcc.buffer_bci.bufferclientsservice.base.ThreadBase;
 
 /**
  * Created by Pieter on 23-2-2015.

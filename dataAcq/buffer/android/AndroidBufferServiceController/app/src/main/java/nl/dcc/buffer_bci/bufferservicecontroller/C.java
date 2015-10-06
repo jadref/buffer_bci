@@ -8,13 +8,13 @@ package nl.dcc.buffer_bci.bufferservicecontroller;
  */
 
 public final class C {
-    public static final String FILTER_FROM_SERVER = "edu.nl.ru.fieldtripbufferservicecontroller.serverfilter";
-    public static final String FILTER_FOR_CLIENTS = "edu.nl.ru.fieldtripclientsservice.clientsfilter";
-    public static final String SEND_FLUSHBUFFER_REQUEST_TO_SERVICE = "edu.nl.ru.fieldtripserverservice.action.FLUSH";
-    public static final String SERVER_SERVICE_PACKAGE_NAME = "edu.nl.ru.fieldtripserverservice";
-    public static final String SERVER_SERVICE_CLASS_NAME = "edu.nl.ru.fieldtripserverservice.FieldTripServerService";
-    public static final String CLIENTS_SERVICE_PACKAGE_NAME = "edu.nl.ru.fieldtripclientsservice";
-    public static final String CLIENTS_SERVICE_CLASS_NAME = "edu.nl.ru.fieldtripclientsservice.FieldTripClientsService";
+    public static final String FILTER_FROM_SERVER = "nl.dcc.buffer_bci.bufferserverservice.serverfilter";
+    public static final String FILTER_FOR_CLIENTS = "nl.dcc.buffer_bci.bufferclientsservice.clientsfilter";
+    public static final String SEND_FLUSHBUFFER_REQUEST_TO_SERVICE = "nl.dcc.buffer_bci.bufferserverservice.action.FLUSH";
+    public static final String SERVER_SERVICE_PACKAGE_NAME = "nl.dcc.buffer_bci.bufferserverservice";
+    public static final String SERVER_SERVICE_CLASS_NAME = "nl.dcc.buffer_bci.bufferserverservice.BufferServerService";
+    public static final String CLIENTS_SERVICE_PACKAGE_NAME = "nl.dcc.buffer_bci.bufferclientservice";
+    public static final String CLIENTS_SERVICE_CLASS_NAME = "nl.dcc.buffer_bci.bufferclientservice.BufferClientsService";
 
     public static final String MESSAGE_TYPE = "a";
 
@@ -68,7 +68,7 @@ public final class C {
     public static final int ERROR_CONNECTION = 1;
     public static final int ERROR_VERSION = 2;
 
-    public static final String WAKELOCKTAG = "com.dcc.fieldtripbuffer.wakelock";
+    public static final String WAKELOCKTAG = "nl.dcc.buffer_bci.bufferservice.wakelock";
 
-    public static final String WAKELOCKTAGWIFI = "com.dcc.fieldtripbuffer.wakelockwifi";
+    public static final String WAKELOCKTAGWIFI = "nl.dcc.buffer_bci.bufferservice.wakelockwifi";
 }

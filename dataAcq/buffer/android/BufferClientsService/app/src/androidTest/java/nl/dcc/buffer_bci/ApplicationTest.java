@@ -1,4 +1,4 @@
-package nl.dcc.buffer_bci.android;
+package nl.dcc.buffer_bci;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

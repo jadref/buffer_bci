@@ -1,4 +1,4 @@
-package nl.dcc.buffer_bci.android.bufferclientsservice;
+package nl.dcc.buffer_bci.bufferclientsservice;
 
 /**
  * Class containing all the constants of this project.
@@ -6,9 +6,8 @@ package nl.dcc.buffer_bci.android.bufferclientsservice;
  * @author wieke
  */
 public final class C {
-    public static final String FILTER_FOR_CLIENTS = "edu.nl.ru.fieldtripclientsservice.clientsfilter";
-    public static final String SEND_UPDATE_INFO_TO_CONTROLLER_ACTION = "edu.nl.ru.fieldtripbufferservicecontroller" +
-            ".action.UPDATEINFO";
+    public static final String FILTER_FOR_CLIENTS = "nl.dcc.buffer_bci.bufferclientsservice.clientsfilter";
+    public static final String SEND_UPDATE_INFO_TO_CONTROLLER_ACTION = "nl.dcc.buffer_bci.buffserservicecontroller.action.UPDATEINFO";
 
     public static final String MESSAGE_TYPE = "a";
     public static final String THREAD_INDEX = "t_index";
@@ -27,8 +26,8 @@ public final class C {
     public static final int THREAD_UPDATE_ARGUMENTS = 9;
     public static final int THREAD_UPDATE_ARG_FROM_STR = 10;
 
-    public static final String WAKELOCKTAG = "edu.nl.ru.fieldtripclientsservice.wakelock";
+    public static final String WAKELOCKTAG = "nl.dcc.buffer_bci.bufferservice.wakelock";
 
-    public static final String WAKELOCKTAGWIFI = "edu.nl.ru.fieldtripclientsservice.wakelockwifi";
+    public static final String WAKELOCKTAGWIFI = "nl.dcc.buffer_bci.bufferservice.wakelockwifi";
 
 }

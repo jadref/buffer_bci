@@ -35,7 +35,7 @@
         </jar>
 		  
         <jar destfile="${jar.dir}/ContinuousClassifier.jar">
-			 <fileset dir="${classes.dir}" includes="**/*.class"/>
+			 <fileset dir="${classes.dir}" includes="**/*.class" excludes="**/FilePlayback.class,**/SignalProxy.class"/>
 			 <fileset dir="${src.dir}" includes="**/*.java"/>
 			 <fileset dir="${lib.dir}" includes="**/*.jar"/>
           <manifest>
@@ -65,6 +65,7 @@
 		<copy file="${jar.dir}/FilePlayback.jar" todir="."/>
 		<copy file="${jar.dir}/FilePlayback.jar" todir="${bufferjava.dir}"/>
 		<copy file="${jar.dir}/SignalProxy.jar" todir="${bufferjava.dir}"/>
+		<copy file="${jar.dir}/SignalProxy.jar" todir="."/>
 		<copy file="${jar.dir}/MatrixAlgebra.jar" todir="."/>
 	 </target>
 

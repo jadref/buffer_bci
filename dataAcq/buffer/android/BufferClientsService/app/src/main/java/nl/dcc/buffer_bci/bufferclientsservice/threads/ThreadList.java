@@ -1,4 +1,4 @@
-package nl.dcc.buffer_bci.android.bufferclientsservice.threads;
+package nl.dcc.buffer_bci.bufferclientsservice.threads;
 
 public abstract class ThreadList {
     public static final Class[] list = {
