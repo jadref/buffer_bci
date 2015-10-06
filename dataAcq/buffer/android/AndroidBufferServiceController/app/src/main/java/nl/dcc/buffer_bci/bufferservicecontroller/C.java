@@ -13,8 +13,8 @@ public final class C {
     public static final String SEND_FLUSHBUFFER_REQUEST_TO_SERVICE = "nl.dcc.buffer_bci.bufferserverservice.action.FLUSH";
     public static final String SERVER_SERVICE_PACKAGE_NAME = "nl.dcc.buffer_bci.bufferserverservice";
     public static final String SERVER_SERVICE_CLASS_NAME = "nl.dcc.buffer_bci.bufferserverservice.BufferServerService";
-    public static final String CLIENTS_SERVICE_PACKAGE_NAME = "nl.dcc.buffer_bci.bufferclientservice";
-    public static final String CLIENTS_SERVICE_CLASS_NAME = "nl.dcc.buffer_bci.bufferclientservice.BufferClientsService";
+    public static final String CLIENTS_SERVICE_PACKAGE_NAME = "nl.dcc.buffer_bci.bufferclientsservice";
+    public static final String CLIENTS_SERVICE_CLASS_NAME = "nl.dcc.buffer_bci.bufferclientsservice.BufferClientsService";
 
     public static final String MESSAGE_TYPE = "a";
 
