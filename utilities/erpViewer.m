@@ -421,7 +421,7 @@ while ( ~endTraining )
                   if ( mi<=numel(key) ) % if existing line, so update in-place
                     keymi=key{mi}; if ( isnumeric(keymi) ) keymi=sprintf('%g',keymi); end;
                     li = strmatch(keymi,linenames);
-                    if ( isempty(li) ) li=find(strcmp('',linenames),1); end
+                    if ( isempty(li) ) li=find(strcmp('',linenames),1); if ( isempty(li) && isequal(linenames(1),'1')) li=1; end;end
                   else % line without key, turn it off
                     if ( ishandle(line_hdls(mi)) ) set(line_hdls(mi),'visible','off','displayName',''); end;
                     continue;
