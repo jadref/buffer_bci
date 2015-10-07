@@ -14,10 +14,11 @@ function [x,s]=expFilt(x,s,alpha)
 % Outputs:
 %   x - [nd x 1] filtered data
 %   s - [struct] updated filter state
-if ( isempty(s) ) s=x; end;
+if ( isempty(s) ) s=struct('sx',zeros(size(x)),'N',0); end;
 if(any(alpha>1)) alpha=exp(log(.5)./alpha); end; % convert to decay factor
-s=(1-alpha)*x+s*alpha;
-x=s;
+s.N =alpha(:).*s.N  + (1-alpha(:)).*1; % weight accumulated so far, for warmup
+s.sx=alpha(:).*s.sx + (1-alpha(:)).*x;
+x=s.sx;
 return;
 function testCase()
 x=cumsum(randn(1,1000));

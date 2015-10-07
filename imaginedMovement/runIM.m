@@ -1,6 +1,8 @@
 configureIM;
 % create the control window and execute the phase selection loop
-if ( exist('OCTAVE_VERSION','builtin') ) 
+if ~( exist('OCTAVE_VERSION','builtin') ) 
+  contFig=controller(); info=guidata(contFig); 
+else
   contFig=figure(1);
   set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
   axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
@@ -12,7 +14,8 @@ if ( exist('OCTAVE_VERSION','builtin') )
 			  '2) Calibrate'           'calibrate'; 
 			  '3) Train Classifier'    'train';
 			  '4) Epoch Feedback'      'epochfeedback';
-			  '5) Cont/Neuro Feedback' 'contfeedback'
+			  '5) Continuous Feedback' 'contfeedback';
+			  '6) NeuroFeedback'       'neurofeedback'
           };
   txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
 				'HorizontalAlignment','left','color',[1 1 1]);
@@ -21,8 +24,6 @@ if ( exist('OCTAVE_VERSION','builtin') )
   set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
   set(contFig,'userdata',[]);
   drawnow; % make sure the figure is visible
-else
-  contFig=controller(); info=guidata(contFig); 
 end
 subject='test';
 
@@ -38,26 +39,25 @@ while (ishandle(contFig))
 	 phaseToRun=lower(info.phaseToRun);
   else % give time to process the key presses
 	 % BODGE: move point to force key-processing
-	 fprintf('.');set(ph,'ydata',rand(1)*.01); drawnow; pause(.1);  
+	 fprintf('.');set(ph,'ydata',rand(1)*.01); drawnow;
 	 if ( ~ishandle(contFig) ) break; end;
   end
 
   % process any key-presses
   modekey=get(contFig,'userdata'); 
-  modekey=get(contFig,'userdata'); 
   if ( ~isempty(modekey) ) 	 
 	 fprintf('key=%s\n',modekey);
 	 phaseToRun=[];
-	 if ( isstr(modekey(1)) )
-		ri = int32(modekey(1)-'0')+1; % get the row in the instructions
-		if ( ri>0 & ri<size(menustr,1))
+	 if ( ischar(modekey(1)) )
+		ri = strmatch(modekey(1),menustr(:,1)); % get the row in the instructions
+		if ( ~isempty(ri) ) 
 		  phaseToRun = menustr{ri,2};
 		end
 	 end
     set(contFig,'userdata',[]);
   end
 
-  if ( isempty(phaseToRun) ) continue; end;
+  if ( isempty(phaseToRun) ) pause(.3); continue; end;
 
   fprintf('Start phase : %s\n',phaseToRun);  
   set(contFig,'visible','off');
@@ -158,16 +158,6 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'end');
         
   end
-  if ( ~ishandle(contFig) && ~exist('OCTAVE_VERSION','builtin') ) 
-    oinfo=info; % store old info
-    contFig=controller(); % make new figure
-    info=guidata(contFig); % get new info
-                           % re-place old info
-    info.phasesCompleted=oinfo.phasesCompleted;
-    info.phaseToRun=oinfo.phaseToRun;
-    info.subject=oinfo.subject; set(info.subjectName,'String',subject);
-    guidata(contFig,info);
-  end;
 end
 uiwait(msgbox({'Thankyou for participating in our experiment.'},'Thanks','modal'),10);
 pause(1);

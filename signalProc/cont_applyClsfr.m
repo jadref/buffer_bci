@@ -80,7 +80,8 @@ testdata={}; testevents={}; %N.B. cell array to avoid expensive mem-realloc duri
 
 % get the current number of samples, so we can start from now
 status=buffer('wait_dat',[-1 -1 -1],opts.buffhost,opts.buffport);
-nEvents=status.nevents; nSamples=status.nsamples+step_samp;
+nEvents=status.nevents; nSamples=status.nSamples; % most recent event/sample seen
+endSample=nSamples+trlen_samp; % last sample of the first window to apply to
 
 dv=[];
 nEpochs=0; filtstate=[];
@@ -89,13 +90,15 @@ tic;t0=0;t1=t0;
 while( ~endTest )
 
   % block until new data to process
-  status=buffer('wait_dat',[nSamples -1 opts.timeout_ms],opts.buffhost,opts.buffport);
+  status=buffer('wait_dat',[endSample -1 opts.timeout_ms],opts.buffhost,opts.buffport);
   if ( status.nSamples < nSamples ) 
     fprintf('Buffer restart detected!'); 
-    nSamples=status.nSamples;
+    nSamples =status.nSamples;
+	 endSample=nSamples+trlen_samp;
     dv(:)=0;
     continue;
   end
+  nSamples=status.nSamples; % keep track of last sample seen for re-start detection
     
   % logging stuff for when nothing is happening... 
   if ( opts.verb>=0 ) 
@@ -108,9 +111,13 @@ while( ~endTest )
   end;
     
   % process any new data
-  onSamples=nSamples;
-  fin = onSamples:step_samp:status.nSamples; % window start positions
-  if( ~isempty(fin) ) nSamples=fin(end)+step_samp; end % fin of next trial for which not enough data yet
+  oendSample=endSample;
+  fin = oendSample:step_samp:status.nSamples; % window start positions
+  if( ~isempty(fin) ) endSample=fin(end)+step_samp; end %fin of next trial for which not enough data
+  if ( numel(fin)>3 ) % drop frames if we can't keep up
+	  fprintf('Warning: classifier cant keep up, dropping %d frames!\n',numel(fin)-1);
+	  fin=fin(end);
+  end
   for si = 1:numel(fin);    
     nEpochs=nEpochs+1;
     
@@ -140,30 +147,34 @@ while( ~endTest )
           fbuff(:,mod(nEpochs-1,abs(opts.predFilt))+1)=f; % store predictions in a ring buffer
           dv=mean(fbuff,2);
         end
-      elseif ( isstr(opts.predFilt) || isa(opts.predFilt,'function_handle') )
+      elseif ( ischar(opts.predFilt) || isa(opts.predFilt,'function_handle') )
         [dv,filtstate]=feval(opts.predFilt,f,filtstate);
       end
     end
       
     % Send prediction event
-    sendEvent(opts.predEventType,dv,fin(si));
-    if ( opts.verb>0 ) fprintf('%d) Clsfr Pred: [%s]\n',fin(si),sprintf('%g ',dv)); end;
+    sendEvent(opts.predEventType,dv,fin(si)-trlen_samp); %N.B. event sample is window-start!
+    if ( opts.verb>0 ) fprintf('%d) Clsfr Pred: [%s]\n',fin(si),sprintf('%g ',dv)); 
+	 elseif ( opts.verb>-1 ) fprintf('.'); 
+	 end;
   end
-    
-  % deal with any events which have happened
-  if ( ischar(opts.endType) && status.nevents > nEvents  )
+      
+  if ( isnumeric(opts.endType) ) % time-based termination
+	 t=toc;
+	 if ( t-t0 > opts.endType ) fprintf('Got to end time. Stopping'); endTest=true; end;
+  elseif( status.nevents > nEvents  ) % deal with any events which have happened
     devents=buffer('get_evt',[nEvents status.nevents-1],opts.buffhost,opts.buffport);
     mi=matchEvents(devents,opts.endType,opts.endValue);
     if ( any(mi) ) fprintf('Got exit event. Stopping'); endTest=true; end;
     nEvents=status.nevents;
-  elseif ( isnumeric(opts.endType) ) % time-based termination
-	 t=toc;
-	 if ( t-t0 > opts.endType ) fprintf('Got to end time. Stopping'); endTest=true; end;
   end
 end % while not endTest
 return;
 %--------------------------------------
 function testCase()
 cont_applyClsfr(clsfr,'overlap',.1)
+% bias adapting output smoothing, such that mean=0 over last 100 predictions
+cont_applyClsfr(clsfr,'biasFilt',@(x,s) bialFilt(x,s,exp(log(.5)/100)));
 % smooth output with standardising filter, such that mean=0 and variance=1 over last 100 predictions
 cont_applyClsfr(clsfr,'predFilt',@(x,s) stdFilt(x,s,exp(log(.5)/100)));
+

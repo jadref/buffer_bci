@@ -1,11 +1,11 @@
 % make the target sequence
-tgtSeq=mkStimSeqRand(nSymbs,nSeq);
+tgtSeq=mkStimSeqRand(nSymbs,nSeq,1,0);
 
 % make the stimulus
 %figure;
 fig=figure(2);
 set(fig,'Name','Imagined Movement','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
-set(stimfig,'Units','pixel');wSize=get(stimfig,'position');set(stimfig,'units','normalized');% win size in pixels
+set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
 clf;
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
@@ -29,12 +29,15 @@ set(gca,'visible','off');
 % reset the cue and fixation point to indicate trial has finished  
 set(h(:),'facecolor',bgColor);
 sendEvent('stimulus.training','start');
-% Wait for key-press to being stimuli
-t=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),imInstruct,'HorizontalAlignment','center','color',[0 1 0],'fontunits','pixel','FontSize',.1*wSize(4));
-% wait for button press to continue
-waitforbuttonpress;
 
-drawnow; pause(1); % N.B. pause so fig redraws
+% Wait for key-press to being stimuli
+t=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),imInstruct,'HorizontalAlignment','center','color',[0 1 0],...
+		 'fontunits','pixel','FontSize',.05*wSize(4));
+drawnow;
+waitforbuttonpress;% wait for button press to continue
+delete(t);
+drawnow;
+
 for si=1:nSeq;
 
   if ( ~ishandle(fig) ) break; end;
@@ -71,5 +74,8 @@ end % sequences
 sendEvent('stimulus.training','end');
 
 % thanks message
-text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the training phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.1);
+if ( ishandle(fig) ) 
+text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the training phase.','Thanks for your patience'},'HorizontalAlignment','center',...
+	  'color',[0 1 0],'fontunits','pixel','FontSize',.05*wSize(4));
 pause(3);
+end

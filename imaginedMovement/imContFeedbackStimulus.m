@@ -24,12 +24,24 @@ h(nSymbs+1)=rectangle('curvature',[1 1],'position',[stimPos(:,end)-stimRadius/4;
                       'facecolor',bgColor); 
 set(gca,'visible','off');
 
+%Create a text object with no text in it, center it, set font and color
+set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
+txthdl = text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),' ',...
+				  'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle',...
+				  'fontunits','pixel','fontsize',.05*wSize(4),...
+				  'color',[0.75 0.75 0.75],'visible','off');
+
 
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
 set(h(:),'facecolor',bgColor);
+
+% wait for user to become ready
+set(txthdl,'string', 'Click mouse when ready', 'visible', 'on'); drawnow;
+waitforbuttonpress;
+set(txthdl,'visible', 'off'); drawnow;
+
 sendEvent('stimulus.testing','start');
-drawnow; pause(5); % N.B. pause so fig redraws
 
 for si=1:nSeq;
 
@@ -77,17 +89,31 @@ for si=1:nSeq;
             pred=[pred -pred];
           end
         end
+
+		  % additional prediction smoothing for display, if wanted
+		  if ( ~isempty(stimSmoothFactor) && isnumeric(stimSmoothFactor) )
+			 if ( stimSmoothFactor>=0 ) % exp weighted moving average
+				dv=dv*stimSmoothFactor + (1-stimSmoothFactor)*pred(:);
+			 else % store predictions in a ring buffer
+				fbuff(:,mod(nEpochs-1,abs(stimSmoothFactor))+1)=pred(:); % store predictions in a ring buffer
+				dv=mean(fbuff,2);
+			 end
+		  end
+
+		  % convert from dv to normalised probability
         prob = 1./(1+exp(-pred)); prob=prob./sum(prob); % convert from dv to normalised probability
         if ( verb>=0 ) 
           fprintf('dv:');fprintf('%5.4f ',pred);fprintf('\t\tProb:');fprintf('%5.4f ',prob);fprintf('\n'); 
         end;
-          
-        % feedback information... simply move in direction detected by the BCI
-        dx = stimPos(:,1:end-1)*prob(:); % change in position is weighted by class probs
-        fixPos = fixPos + dx*moveScale;
-        set(h(end),'position',[fixPos-stimRadius/2;stimRadius/2*[1;1]]);
       end
-    end % if feedback events to process
+	 else
+		fprintf('%d) no predictions!\n',nsamples);
+	 end % if prediction events to process
+
+    % feedback information... simply move in direction detected by the BCI
+    dx = stimPos(:,1:end-1)*prob(:); % change in position is weighted by class probs
+	 if ( warpCursor ) fixPos=dx; else fixPos=fixPos + dx*moveScale; end; % relative or absolute cursor movement
+    set(h(end),'position',[fixPos-stimRadius/2;stimRadius/2*[1;1]]);
     drawnow; % update the display after all events processed    
   end % while time to go
 
@@ -105,7 +131,6 @@ end % loop over sequences in the experiment
 sendEvent('stimulus.testing','end');
 
 if ( ishandle(fig) ) % thanks message
-set(fig,'Units','pixel');wSize=get(stimfig,'position');set(stimfig,'units','normalized');% win size in pixels
-text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the testing phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','pixel','FontSize',.1*wSize(4));
+set(txthdl,'string',{'That ends the feedback phase.','Thanks for your patience'}, 'visible', 'on');
 pause(3);
 end

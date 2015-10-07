@@ -8,6 +8,7 @@
     <property name="build.dir"   value="build"/>
     <property name="classes.dir" value="${build.dir}/classes"/>
     <property name="jar.dir"     value="${build.dir}/jar"/>
+    <property name="bufferjava.dir"     value="../../dataAcq/buffer/java/"/>
 
 	 <!-- Any library jar's we depend on? -->
 	 <property name="lib.dir"     value="lib"/>
@@ -34,7 +35,7 @@
         </jar>
 		  
         <jar destfile="${jar.dir}/ContinuousClassifier.jar">
-			 <fileset dir="${classes.dir}" includes="**/*.class"/>
+			 <fileset dir="${classes.dir}" includes="**/*.class" excludes="**/FilePlayback.class,**/SignalProxy.class"/>
 			 <fileset dir="${src.dir}" includes="**/*.java"/>
 			 <fileset dir="${lib.dir}" includes="**/*.jar"/>
           <manifest>
@@ -46,13 +47,25 @@
 			 <fileset dir="${src.dir}" includes="FilePlayback.java"/>
 			 <fileset dir="${lib.dir}" includes="**/BufferClient.jar"/>
           <manifest>
-            <attribute name="Main-Class" value="${ant.project.name}.FilePlayback"/>
+            <attribute name="Main-Class" value="${ant.project.name}.signalprocessing.FilePlayback"/>
+          </manifest>
+        </jar>
+        <jar destfile="${jar.dir}/SignalProxy.jar">
+			 <fileset dir="${classes.dir}" includes="**/SignalProxy.class"/>
+			 <fileset dir="${src.dir}" includes="SignalProxy.java"/>
+			 <fileset dir="${lib.dir}" includes="**/BufferClient.jar"/>
+          <manifest>
+            <attribute name="Main-Class" value="${ant.project.name}.SignalProxy"/>
           </manifest>
         </jar>
     </target>
 
 	 <target name="dist" depends="jar">
 		<copy file="${jar.dir}/ContinuousClassifier.jar" todir="."/>
+		<copy file="${jar.dir}/FilePlayback.jar" todir="."/>
+		<copy file="${jar.dir}/FilePlayback.jar" todir="${bufferjava.dir}"/>
+		<copy file="${jar.dir}/SignalProxy.jar" todir="${bufferjava.dir}"/>
+		<copy file="${jar.dir}/SignalProxy.jar" todir="."/>
 		<copy file="${jar.dir}/MatrixAlgebra.jar" todir="."/>
 	 </target>
 
@@ -62,7 +75,7 @@
 			 <path refid="classpath"/>
 			 <path location="${jar.dir}/ContinuousClassifier.jar"/>
         </classpath>
-		  <arg line="localhost:1972 1000 res/clsfr_nf.txt"/>
+		  <arg line="localhost:1972 res/clsfr_alpha_sigprox.txt 1280 640"/>
       </java>
     </target>
 

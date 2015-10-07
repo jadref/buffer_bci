@@ -1,9 +1,6 @@
 package nl.dcc.buffer_bci.matrixalgebra.linalg;
 
-import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.ArrayFunctions;
-import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.ParameterChecker;
-import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.Triple;
-import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.Tuple;
+import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.*;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.linear.*;
 import org.apache.commons.math3.stat.correlation.Covariance;
@@ -30,7 +27,7 @@ import static org.apache.commons.math3.stat.StatUtils.max;
  */
 public class Matrix extends Array2DRowRealMatrix {
 
-	 public static final int VERB = 0; // debugging verbosity level
+	 public static final int VERB = 1; // debugging verbosity level
 
 
     /**
@@ -338,8 +335,8 @@ public class Matrix extends Array2DRowRealMatrix {
      *
      * @return new matrix with one element, which is the mean of the current matrix
      */
-    public Matrix mean() {
-        return mean(-1);
+    public double mean() {
+		  return this.sum() / this.getRowDimension() / this.getColumnDimension();
     }
 
     /**
@@ -352,9 +349,8 @@ public class Matrix extends Array2DRowRealMatrix {
         ParameterChecker.checkAxis(axis, true);
 
         double scalar;
-        if (axis == 0) scalar = this.getRowDimension();
+		  if (axis == 0) scalar = this.getRowDimension();
         else if (axis == 1) scalar = this.getColumnDimension();
-        else if (axis == -1) scalar = this.getRowDimension() * this.getColumnDimension();
         else throw new IllegalArgumentException("Wrong axis selected. Should be either -1, 0 or 1 but is " + axis);
         scalar = 1.0 / scalar;
         return new Matrix(this.sum(axis).scalarMultiply(scalar));
@@ -411,6 +407,28 @@ public class Matrix extends Array2DRowRealMatrix {
     }
 
     /**
+     * Element wise multiplication and summation one matrix with another. 
+	  * Matrices should have same shape.
+     *
+     * @param b the other matrix
+     * @return the accumulated sum \sum_{i,j} a[i,j]*b[i,j]
+     */
+    public double multiplyAccumulateElements(final Matrix b) {
+        ParameterChecker.checkEquals(this.getRowDimension(), b.getRowDimension());
+        ParameterChecker.checkEquals(this.getColumnDimension(), b.getColumnDimension());
+
+        double res = 
+				walkInOptimizedOrder(new DefaultRealMatrixPreservingVisitor() {
+						  double res=0.0;
+						  public void visit(int row, int column, double value) {
+								res += value * b.getEntry(row, column);
+						  }
+						  public double end(){ return res; }
+					 });
+        return res;
+    }
+
+    /**
      * Element wise division of the current matrix with another. Matrices should have same shape.
      *
      * @param b the other matrix
@@ -459,8 +477,14 @@ public class Matrix extends Array2DRowRealMatrix {
      *
      * @return Matrix with one value
      */
-    public Matrix sum() {
-        return sum(-1);
+    public double sum() {
+        double res = 
+				walkInOptimizedOrder(new DefaultRealMatrixPreservingVisitor() {
+						  double res=0.0;
+						  public void visit(int row, int column, double value) {res += value;}
+						  public double end(){ return res; }
+					 });
+        return res;
     }
 
     /**
@@ -588,8 +612,8 @@ public class Matrix extends Array2DRowRealMatrix {
      * @param axis the axis (0 is rows, 1 is columns)
      * @return The new matrix with a fft applied to each row or column
      */
-    public Matrix fft(int axis) {
-        return fft(axis, TransformType.FORWARD);
+    public Matrix fft2(int axis) {
+        return fft2(axis, TransformType.FORWARD);
     }
 
     /**
@@ -598,18 +622,20 @@ public class Matrix extends Array2DRowRealMatrix {
      * @param axis the axis (0 is rows, 1 is columns)
      * @return The new matrix with an ifft applied to each row or column
      */
-    public Matrix ifft(int axis) {
-        return fft(axis, TransformType.INVERSE);
+    public Matrix ifft2(int axis) {
+        return fft2(axis, TransformType.INVERSE);
     }
 
     /**
-     * Forward or Inverse fast fourier transform onto a particular axis
+     * Forward or Inverse *squared* fast fourier transform onto a particular axis
      *
+	  * N.B. returns the squared complex fourier component!
+	  *
      * @param axis      the axis (0 is rows, 1 is columns)
      * @param direction TransformType.FORWARD or TransformType.INVERSE
      * @return The new matrix with a fft or ifft applied to each row or column
      */
-    public Matrix fft(int axis, TransformType direction) {
+    public Matrix fft2(int axis, TransformType direction) {
         ParameterChecker.checkAxis(axis);
 
         FastFourierTransformer fft = new FastFourierTransformer(DftNormalization.STANDARD);
@@ -618,10 +644,11 @@ public class Matrix extends Array2DRowRealMatrix {
             for (int c = 0; c < this.getColumnDimension(); c++) {
                 Complex[] complexResult = fft.transform(this.getColumn(c), direction);
                 for (int i = 0; i < complexResult.length; i++)
-                    ft[i][c] = Math.pow(complexResult[i].abs(), 2.0);
+                    ft[i][c] = complexResult[i].abs()*complexResult[i].abs();
             }
         } else {
-            return this.transpose().fft(0, direction).transpose();
+				// TODO: This is inefficient....
+            return this.transpose().fft2(0, direction).transpose();
         }
         return new Matrix(ft);
     }
@@ -633,7 +660,7 @@ public class Matrix extends Array2DRowRealMatrix {
      * @param direction TransformType.FORWARD or TransformType.INVERSE
      * @return The new matrix with a fft or ifft applied to each row or column
      */
-    public Complex[][] fftComplex(int axis, TransformType direction) {
+    public Complex[][] fft(int axis, TransformType direction) {
         ParameterChecker.checkAxis(axis);
 
         FastFourierTransformer fft = new FastFourierTransformer(DftNormalization.STANDARD);
@@ -837,27 +864,65 @@ public class Matrix extends Array2DRowRealMatrix {
      * @param dim      direction to apply it on (0 is rows, 1 is columns)
      * @param taper    window function
      * @param start    start indexes
-     * @param width    width of the welch window
-     * @param detrendP if the resulting matrix should be detrended
+     * @param detrend  if the input matrix should be detrended (=1) or centered (=2) or nothing (=0)
      * @return precise estimation of the power of the frequencies of the matrix.
      */
-    public Matrix welch(final int dim, final double[] taper, int[] start, int width, boolean detrendP, boolean center) {
+    public Matrix welch(final int dim, int len_samp, Windows.WindowType wtype) {
+		  return welch(dim,len_samp,wtype,true);
+	 }
+    public Matrix welch(final int dim, int len_samp, Windows.WindowType wtype, boolean unitAmplitude) {
+		  double[] taper = Windows.getWindow(len_samp,wtype,unitAmplitude);
+		  return welch(dim,taper,WelchOutputType.AMPLITUDE,null,0);
+	 }
+    public Matrix welch(final int dim, final double[] taper) {
+		  return welch(dim,taper,WelchOutputType.AMPLITUDE,null,0); 
+	 }
+    public Matrix welch(final int dim, final double[] taper, int detrendP) {
+		  return welch(dim,taper,WelchOutputType.AMPLITUDE,null,detrendP); 
+	 }
+    public Matrix welch(final int dim, final double[] taper, WelchOutputType outType, int[] start, int detrendP) {
         ParameterChecker.checkAxis(dim, false);
-        ParameterChecker.checkPower(width, 2);
-        ParameterChecker.checkEquals(taper.length, width);
-        ParameterChecker.checkNonZero(start.length);
-        ParameterChecker.checkNonZero(width);
-        ParameterChecker.checkNonNegative(width);
+        ParameterChecker.checkNonZero(taper.length);
 
-        // TODO add output type, default is 'amp'
-        WelchOutputType outType = WelchOutputType.AMPLITUDE;
+        // TODO: add output type, default is 'amp'
+        outType = WelchOutputType.AMPLITUDE;
 
         // Abbreviations
         int otherDim = dim == 0 ? 1 : 0;
         int sizeDim = this.getDimension(dim);
         int sizeOtherDim = this.getDimension(otherDim);
 
+		  // Compute fft width needed (nearest larger power of 2)
+		  // int width = 0; 
+		  // //System.out.println("taper.len=" + taper.length);
+		  // while( (taper.length >> ++width) > 1) {
+		  // 		//System.out.println("width=" + width + " taper>>width= " + (taper.length>>width)); 
+		  // }
+		  // width=1<<width;
+		  int width = 1 << (int)Math.ceil(Math.log(taper.length)/Math.log(2));
+		  if ( VERB>1 ) System.out.println("1<<width="+width);
+		  // Compute the updated taper if needed.		  
+		  // N.B. technically don't need this as can just zero-pad the sub-matrix...
+		  final double[] taper2;
+		  if ( width  > taper.length ) {
+				System.err.println("Matrix::welch Warning: taper is not power of 2, zero-padding: " + taper.length + " -> " + width);
+				taper2=new double[width];
+				for ( int i=0;            i<taper.length;  i++) taper2[i]=taper[i];
+				for ( int i=taper.length; i<taper2.length; i++) taper2[i]=0; // zero pad the end
+		  } else {
+				taper2=taper;
+		  }
+
+		  // if not given compute start locations assuming 50% overlap in windows
+		  if ( start == null ) { 
+				start = Matrix.range(0,sizeDim-width+1,taper.length);				
+		  }
+		  if ( start.length==0 ) {
+				System.err.println("No start points?: sz="+sizeDim+" wdth="+width+" taper.len"+taper.length);
+		  }
+
         // Create W
+		  // Compute the size of the output, i.e. X x #freqs
         int wWidth, wHeight;
         int reducedDim = (int) Math.round(((Math.ceil(((double) width - 1) / 2) + 1)));
         if (dim == 0) {
@@ -878,43 +943,51 @@ public class Matrix extends Array2DRowRealMatrix {
         wIdx.add(Matrix.range(0, wWidth, 1));
 
         // Sum over the windows
-        for (int wi : start) {
+        for (int wi : start ) { 
             // Window the dimension
             idx.set(dim, Matrix.range(wi, wi + width, 1));
 
             // Get submatrix
             Matrix wX = new Matrix(this.getSubMatrix(idx.get(0), idx.get(1)));
 
-            if (center) // Subtract mean from window
+            if (detrendP==2) // Subtract mean from window
                 wX = wX.subtract(wX.mean(dim).repeat(wX.getDimension(dim), dim));
 
-            if (detrendP) // Detrend window
+            if (detrendP==1) // Detrend window
                 wX = wX.detrend(dim, "linear");
 
-            // Apply weighting to window
+            // Apply taper to this window
             wX.walkInOptimizedOrder(new DefaultRealMatrixChangingVisitor() {
                 @Override
                 public double visit(int row, int column, double value) {
-                    if (dim == 0) return value * taper[row];
-                    else return value * taper[column];
+                    if (dim == 0) return value * taper2[row];
+                    else return value * taper2[column];
                 }
             });
+				
+				if ( VERB>1 ) System.out.println("Welch: data+taper="+wX.toString());
 
-            // Fourier
-            wX = new Matrix(wX.fft(dim).scalarMultiply(2.0));
+            // squared Fourier
+            wX = new Matrix(wX.fft2(dim).scalarMultiply(2.0));
+				if ( VERB>1 ) System.out.println("Welch: data+fft2="+wX.toString());
 
             // Positive frequency only
             wX = new Matrix(wX.getSubMatrix(wIdx.get(0), wIdx.get(1)));
+				if ( VERB>1 ) System.out.println("Welch: data+fft2+freqIdx="+wX.toString());
 
             switch (outType) {
-                case AMPLITUDE:
-                    W = new Matrix(W.add(wX.sqrt()));
-                    break;
-                default:
-                    throw new IllegalArgumentException("Only amp is supported");
+				case AMPLITUDE:
+					 W = new Matrix(W.add(wX.sqrt()));
+					 break;
+				case POWER:
+					 W = new Matrix(W.add(wX));
+					 break;
+				default:
+					 throw new IllegalArgumentException("Only amp is supported");
             }
         }
-        W = new Matrix(W.scalarMultiply(1. / (start.length * new Matrix(taper).sum().getEntry(0, 0))));
+		  double tapersum=0; for ( int i=0;i<taper.length; i++ ) tapersum+=taper[i];
+        W = new Matrix(W.scalarMultiply(1. / (start.length * tapersum)));
         return W;
     }
 

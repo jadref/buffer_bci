@@ -1,0 +1,56 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 16
+    buildToolsVersion "21.1.2"
+    defaultConfig {
+        applicationId 'nl.dcc.buffer_bci.bufferclientservice'
+        minSdkVersion 16
+        targetSdkVersion 21
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+        debug {
+            debuggable true
+            jniDebuggable true
+        }
+    }
+
+    // Use to compile the native muse libraries into the apk
+    productFlavors {
+        x86 {
+            ndk {
+                abiFilter "x86"
+            }
+        }
+        arm {
+            ndk {
+                abiFilters "armeabi-v7a", "armeabi"
+            }
+        }
+    }
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/license.txt'
+        exclude 'META-INF/notice.txt'
+        exclude 'BufferClient.jar' // prevent double inclusion from FileProxy, SignalProxy etc..
+    }
+}
+
+dependencies {
+    compile 'com.android.support:support-v4:22.0.0'
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+}
+
+// Used to compile the native muse libraries into the apk
+task copyNativeLibs(type: Copy) {
+    from(new File(project(':app').buildDir, 'jniLibs')) { include '**/*.so' }
+    into new File(buildDir, 'native-libs')
+}

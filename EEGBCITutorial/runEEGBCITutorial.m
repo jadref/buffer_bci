@@ -6,10 +6,11 @@ if ( ~exist('OCTAVE_VERSION','builtin') )
 else
   contFig=figure(1);
   set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
-  axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
+  ax=axes('position',[0 0 1 1],'visible','off',...
+			 'xlim',[0 1],'XLimMode','manual','ylim',[0 1],'ylimmode','manual','nextplot','add');
   set(contFig,'Units','pixel');wSize=get(contFig,'position');
   fontSize = .05*wSize(4);
-  %        Instruct String                  Phase-name
+  %        Key Instruct String                  Phase-name
   menustr={'0) EEG'                          'eegviewer';
 			  '1) ERP Visualization'            'erpvis';
            '2) ERP Viz PTB'                  'erpvisptb';
@@ -20,9 +21,9 @@ else
 			  '7) Movement: Practice'           'impractice';
 			  '8) Movement: Calibrate'          'imcalibrate';
 			  '9) Movement: Train Classifier'   'imtrain';
-			  ':) Movement: Testing'            'imtesting';
+			  't) Movement: Testing'            'imtesting';
           };
-  txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
+  txth=text(.25,.5,menustr(:,2),'fontunits','pixel','fontsize',.05*wSize(4),...
 				'HorizontalAlignment','left','color',[1 1 1]);
   ph=plot(1,0,'k'); % BODGE: point to move around to update the plot to force key processing
   % install listener for key-press mode change
@@ -54,9 +55,9 @@ while (ishandle(contFig))
   if ( ~isempty(modekey) ) 	 
 	 fprintf('key=%s\n',modekey);
 	 phaseToRun=[];
-	 if ( isstr(modekey(1)) )
-		ri = int32(modekey(1)-'0')+1; % get the row in the instructions
-		if ( ri>0 & ri<size(menustr,1))
+	 if ( ischar(modekey(1)) )
+		ri = strmatch(modekey(1),menustr(:,1)); % get the row in the instructions
+		if ( ~isempty(ri) ) 
 		  phaseToRun = menustr{ri,2};
 		end
 	 end
@@ -91,23 +92,23 @@ while (ishandle(contFig))
     trialDuration=ersptrialDuration;
     sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun);
-    %try
+    try
       evokedDemoERPStimulus;
-    %catch
-      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-      % do nothing
-    %end
+    catch
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    % do nothing
+    end
     sendEvent(phaseToRun,'end');    
 
    case {'erpvisptb'};
     trialDuration=ersptrialDuration;
     sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun);
-    %try
+    try
       evokedDemoERPStimulusPTB;
-    %catch
-    %  le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-    %end
+    catch
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    end
     sendEvent(phaseToRun,'end');    
     
     %--------------------------------------------------------------

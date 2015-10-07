@@ -112,7 +112,7 @@ end % loop over sequences in the experiment
 sendEvent('stimulus.testing','end');
 
 if ( ishandle(fig) ) % thanks message
-set(fig,'Units','pixel');wSize=get(stimfig,'position');set(stimfig,'units','normalized');% win size in pixels
+set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
 text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the testing phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','pixel','FontSize',.1*wSize(4));
 pause(3);
 end

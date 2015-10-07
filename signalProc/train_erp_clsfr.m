@@ -70,7 +70,7 @@ opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],'downsample',[],'de
 [opts,varargin]=parseOpts(opts,varargin);
 
 di=[]; ch_pos=opts.ch_pos; ch_names=opts.ch_names;
-if ( iscell(ch_pos) && isstr(ch_pos{1}) ) ch_names=ch_pos; ch_pos=[]; end;
+if ( iscell(ch_pos) && ischar(ch_pos{1}) ) ch_names=ch_pos; ch_pos=[]; end;
 % convert names to positions
 if ( isempty(ch_pos) && ~isempty(opts.capFile) && (~isempty(ch_names) || opts.overridechnms) ) 
   di = addPosInfo(ch_names,opts.capFile,opts.overridechnms); % get 3d-coords
@@ -225,13 +225,21 @@ if ( opts.visualize )
    elseif (size(ch_pos,1)==3) xy = xyz2xy(ch_pos);
    else   xy=[];
    end
-   image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',labels,'disptype','plot','ticklabs','sw');
-   try; zoomplots; saveaspdf('ERP'); catch; end;
+   try; 
+	  image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',labels,'disptype','plot','ticklabs','sw');
+     zoomplots; saveaspdf('ERP'); 
+	catch; 
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	end;
    if ( ~(all(Yci(:)==Yci(1))) ) % only if >1 class input
      aucfig=figure(2); clf(aucfig); set(aucfig,'Name','Data Visualisation: ERP AUC');
-     image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel',auc);
-	  colormap ikelvin;
-     try;  zoomplots; saveaspdf('AUC'); catch; end;
+     try;  
+		 image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',times,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel',auc);
+		 colormap ikelvin;
+		 zoomplots; saveaspdf('AUC'); 
+	  catch; 
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  end;
    end
    drawnow;
 end

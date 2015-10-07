@@ -11,8 +11,8 @@ set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized')
 % make the target stimulus sequence
 [ans,ans,ans,ans,tgtSeq]=mkStimSeqRand(numel(symbols),nSeq);
 % make the row/col flash sequence for each sequence
-[stimSeqRow]=mkStimSeqRand(size(symbols,1),nRepetitions*size(symbols,1),2);
-[stimSeqCol]=mkStimSeqRand(size(symbols,2),nRepetitions*size(symbols,2),2);
+[stimSeqRow]=mkStimSeqRand(size(symbols,1),nRepetitions*size(symbols,1));
+[stimSeqCol]=mkStimSeqRand(size(symbols,2),nRepetitions*size(symbols,2));
 
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
@@ -23,7 +23,9 @@ t=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),spInstruct,...
 		 'HorizontalAlignment','center','color',[0 1 0],'fontunits','pixel','FontSize',.07*wSize(4));
 % wait for button press to continue
 waitforbuttonpress;
+set(t,'visible','off');
 delete(t);
+drawnow;
 
 sleepSec(1);
 for si=1:nSeq;
@@ -70,5 +72,5 @@ end % sequences
 % end training marker
 sendEvent('stimulus.training','end');
 
-text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the training phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','pixel','FontSize',.1*wSize(4));
+text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the training phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','pixel','FontSize',.05*wSize(4));
 pause(3);

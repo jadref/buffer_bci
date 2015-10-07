@@ -83,7 +83,9 @@ opts=struct('phaseEventType','startPhase.cmd',...
 				'epochEventType',[],'testepochEventType',[],...
             'erpEventType',[],'erpMaxEvents',[],'erpOpts',{{}},...
 				'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],'trainOpts',{{}},...
-            'epochPredFilt',[],'contPredFilt',[],'capFile',[],...
+            'epochPredFilt',[],'epochFeedbackOpts',{{}},...
+				'contPredFilt',[],'contFeedbackOpts',{{}},...
+				'capFile',[],...
 				'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1,'timeout_ms',1000);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( ~iscell(opts.erpOpts) ) opts.erpOpts={opts.erpOpts}; end;
@@ -211,7 +213,7 @@ while ( true )
 
     %---------------------------------------------------------------------------------
    case {'train','training'};
-    %try
+    try
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
         fname=[dname '_' subject '_' datestr];
         fprintf('Loading training data from : %s\n',fname);load(fname); 
@@ -233,9 +235,9 @@ while ( true )
       clsSubj=subject;
       fname=[cname '_' subject '_' datestr];
       fprintf('Saving classifier to : %s\n',fname);save(fname,'-struct','clsfr');
-    %catch
-    %  fprintf('Error in train classifier!');
-    %end
+    catch
+      fprintf('Error in train classifier!');
+    end
 
     %---------------------------------------------------------------------------------
    case {'test','testing','epochfeedback','eventfeedback'};
@@ -251,9 +253,10 @@ while ( true )
 
     event_applyClsfr(clsfr,'startSet',opts.testepochEventType,...
 							'predFilt',opts.epochPredFilt,...
-							'endType',{'testing','test','epochfeedback','eventfeedback'},'verb',opts.verb);
+							'endType',{'testing','test','epochfeedback','eventfeedback'},'verb',opts.verb,...
+							opts.epochfeedbackOpts{:});
 
-        %---------------------------------------------------------------------------------
+   %---------------------------------------------------------------------------------
    case {'contfeedback'};
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
       clsfrfile = [cname '_' subject '_' datestr];
@@ -266,13 +269,13 @@ while ( true )
     end;
 
     if ( ~any(strcmp(lower(opts.clsfr_type),{'ersp','induced'})) )
-      warning('Cant use an ERP classifier in continuous application mode. Ignored');
-    else
-		% generate prediction every trlen_ms/2 seconds using trlen_ms data
-      cont_applyClsfr(clsfr,'trlen_ms',opts.trlen_ms,'overlap',.5,...
-							 'endType',{'testing','test','contfeedback'},...
-							 'predFilt',opts.contPredFilt,'verb',opts.verb);
+      warning('Trying to use an ERP classifier in continuous application mode.\nAre you sure?');
     end
+	 % generate prediction every trlen_ms/2 seconds using trlen_ms data
+    cont_applyClsfr(clsfr,'trlen_ms',opts.trlen_ms,'overlap',.5,...
+						  'endType',{'testing','test','contfeedback'},...
+						  'predFilt',opts.contPredFilt,'verb',opts.verb,...
+						  opts.contFeedbackOpts{:});
       
    case 'exit';
     break;

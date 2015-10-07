@@ -131,7 +131,7 @@ for dd=1:size(Sigma(:,:,:),3); % for each dir
    [Udd,Ddd]=eig(Sigma(:,:,dd)); Ddd=diag(Ddd); 
    [ans,si]=sort(abs(Ddd),'descend'); Ddd=Ddd(si); Udd=Udd(:,si); % dec abs order
    % compute the regularised eigen-spectrum
-   if ( isstr(alpha) )     
+   if ( ischar(alpha) )     
      switch (alpha);
       case 'opt'; % optimal shrinkage regularisation estimate
        if ( numel(dim)>1 )

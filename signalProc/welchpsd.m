@@ -50,7 +50,7 @@ end
 dim(dim<0)=dim(dim<0)+ndims(X)+1; % convert neg dim specs
 
 % extract window size from given window function
-if( ~isstr(opts.windowType) && isempty(opts.width_samp) ) opts.width_samp=numel(opts.windowType); end; 
+if(~ischar(opts.windowType) && isempty(opts.width_samp) ) opts.width_samp=numel(opts.windowType); end; 
 
 % convert win-specs from time to samples if necessary
 ms2samp=[]; if (~isempty(opts.fs)) ms2samp=opts.fs./1000; end;

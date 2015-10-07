@@ -42,15 +42,15 @@ public class ContinuousClassifier {
     protected boolean normalizeLatitude = true;
     protected List<PreprocClassifier> classifiers;
     protected BufferClientClock C = null;
-    protected Integer trialLength_ms = 500;
-    protected Integer trialLength_samp=null;
-    protected Double overlap = .5;
-    protected Integer step_ms = 100; // BUG: changing this shouldn't matter for anything else...
-    protected Integer step_samp=-1;
+    protected Integer trialLength_ms  =-1;
+    protected Integer trialLength_samp=-1;
+    protected Double overlap   = .5;
+    protected Integer step_ms  = -1;
+    protected Integer step_samp= -1;
     protected Float fs=-1.0f;
     protected Header header=null;
 
-	 static final String usage="java ContinuousClassifer buffhost:buffport timeoutms weightfile trlen_ms step_ms";
+	 static final String usage="java ContinuousClassifer buffhost:buffport weightfile trlen_ms step_ms timeout_ms";
 
 	 public static void main(String[] args) throws IOException,InterruptedException {	
 		  String hostname=null;
@@ -67,18 +67,9 @@ public class ContinuousClassifier {
 				 hostname=hostname.substring(0,sep);
 			}			
 		}
-		if (args.length>=2) {
-			try {
-				timeout = Integer.parseInt(args[1]);
-			}
-			catch (NumberFormatException e) {
-				 System.out.println("Couldnt understand your timeout spec....");
-				timeout = 5000;
-			}
-		}
 		// Open the file from which to read the classifier parameters
-		if (args.length>=3) {
-			 String clsfrFile = args[2];
+		if (args.length>=2) {
+			 String clsfrFile = args[1];
 			 System.out.println("Clsfr file = " + clsfrFile);
 			 try { 
 				  clsfrStream = new FileInputStream(new File(clsfrFile));
@@ -97,33 +88,40 @@ public class ContinuousClassifier {
 		int trialLength_ms = -1;
 		if (args.length>=3) {
 			try {
-				 trialLength_ms = Integer.parseInt(args[1]);
+				 trialLength_ms = Integer.parseInt(args[2]);
 			}
 			catch (NumberFormatException e) {
-				 System.out.println("Couldnt understand your triallength spec.... using 1000ms");
-				 trialLength_ms = 1000;
+				 System.err.println("Couldnt understand your triallength spec.... using 1000ms");
 			}			 
 		}
 		int step_ms = -1;
 		if (args.length>=4) {
 			try {
-				 step_ms = Integer.parseInt(args[1]);
+				 step_ms = Integer.parseInt(args[3]);
 			}
 			catch (NumberFormatException e) {
-				 System.out.println("Couldnt understand your step spec....");
-				step_ms = -1;
+				 System.err.println("Couldnt understand your step spec....");
 			}			 
+		}
+		if (args.length>=4) {
+			try {
+				timeout = Integer.parseInt(args[3]);
+			}
+			catch (NumberFormatException e) {
+				 System.out.println("Couldnt understand your timeout spec....");
+				timeout = 5000;
+			}
 		}
 		
 		// make the cont classifier object
 		ContinuousClassifier cc=new ContinuousClassifier(hostname,port,timeout);
 		// load classifiers, make connection to buffer
-		cc.initialize(clsfrStream);
+		cc.initialize(clsfrStream,trialLength_ms,step_ms);
 		// run the classifier
 		cc.mainloop();
 	 }
 
-	 ContinuousClassifier(String host, int port, int timeout){
+	 public ContinuousClassifier(String host, int port, int timeout){
 		  if ( host !=null )     this.hostname=host;
 		  if ( port >0 )     this.port=port;
 		  if ( timeout >=0 ) this.timeout_ms=timeout;
@@ -143,34 +141,6 @@ public class ContinuousClassifier {
 				e.printStackTrace(System.out);
 		  }
         return classifiers;
-    }
-
-    /**
-     * Compute the necessary variable using the variables that were set by the user. Throws an error if to few variables
-     * are set.
-     */
-    protected void setNullFields() {
-        // Set trial length
-        if (header != null) {
-            fs = header.fSample;
-        } else {
-            throw new RuntimeException("First connect to the buffer");
-        }
-        if (trialLength_samp == null) {
-            trialLength_samp = 0;
-            if (trialLength_ms != null) {
-                trialLength_samp = Double.valueOf(Math.round(trialLength_ms/1000.0*fs)).intValue();
-            } else {
-                throw new IllegalArgumentException("trialLength_samp and trialLength_ms should not both be zero");
-            }
-        }
-
-        // Set wait time
-        if (step_ms != null) {
-            step_samp = Double.valueOf(Math.round(step_ms / 1000.0 * fs)).intValue();
-        } else if ( overlap != null ) {
-            step_samp = Long.valueOf(Math.round(trialLength_samp * overlap)).intValue();
-        }
     }
 
     /**
@@ -205,7 +175,9 @@ public class ContinuousClassifier {
     protected void initialize(InputStream is) {
 		  initialize(is,-1,-1);
 	 }
-	 protected void initialize(InputStream is, int trialLength_ms, int step_ms) {
+
+	 public void initialize(InputStream is, int trialLength_ms, int step_ms) {
+		  if ( VERB>0 ) System.out.println("trlen="+trialLength_ms+" step="+step_ms);
 		  BufferedReader br = new BufferedReader(new InputStreamReader(is));
         classifiers = createClassifiers(br);
 		  // convert the classifier to the right type
@@ -229,6 +201,47 @@ public class ContinuousClassifier {
 		  if ( step_ms>0 )        this.step_ms        = step_ms;
         setNullFields();
         if ( VERB>0 ) System.out.println( this.toString() );
+    }
+
+    /**
+     * Compute the necessary variable using the variables that were set by the user. Throws an error if to few variables
+     * are set.
+     */
+    protected void setNullFields() {
+        // Set trial length
+        if (header != null) {
+            fs = header.fSample;
+        } else {
+            throw new RuntimeException("First connect to the buffer");
+        }
+        if (trialLength_samp <0) {
+            trialLength_samp = -1;
+            if (trialLength_ms >0) {
+                trialLength_samp = Double.valueOf(Math.round(trialLength_ms/1000.0*fs)).intValue();
+            } else {
+					 for ( PreprocClassifier c : classifiers ) {
+						  if ( c.type.equals("ERP") || c.type.equals("erp") ) {
+								if ( false ) { //c.outSize != null) {
+									 ;//trialLength_samp = Math.max(trialLength_samp,outSz[1]);
+								} else {
+									 trialLength_samp = Math.max(trialLength_samp,c.clsfrW.get(0).getColumnDimension());
+								}
+						  } else if ( c.type.equals("ERSP") || c.type.equals("ERsP") ) {
+								System.out.println("ERSP size");
+								trialLength_samp = Math.max(trialLength_samp,c.welchWindow.length);
+						  } else {
+								System.err.println("ERROR: Unrecognized classifier type");
+						  }
+					 }
+				}
+        }
+
+        // Set wait time
+        if( step_ms >0 ) {
+            step_samp = Double.valueOf(Math.round(step_ms / 1000.0 * fs)).intValue();
+        } else if ( overlap>0 ) {
+            step_samp = Long.valueOf(Math.round(trialLength_samp * overlap)).intValue();
+        }
     }
 
     public void mainloop() {
@@ -324,7 +337,7 @@ public class ContinuousClassifier {
                 for (BufferEvent event : events) {
                     String type = event.getType().toString();
                     String value = event.getValue().toString();
-                    System.out.println("got(t:" + type + " v:" + value + "s:" + event.sample);
+                    System.out.println("got(t:" + type + " v:" + value + " s:" + event.sample +")");
                     if (type.equals(endType) && value.equals(endValue)) {
                         System.out.println( "End expected");
                         endExpected = true;

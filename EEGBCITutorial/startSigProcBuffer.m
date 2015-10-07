@@ -85,7 +85,7 @@ while ( true )
      trainSubj=subject;
 
    case {'sptrain','sptraining','spclassifier'};
-    %try
+    try
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
         fprintf('Loading training data from : %s\n',['sp_' dname '_' subject '_' datestr]);
         load(['sp_' dname '_' subject '_' datestr]); 
@@ -97,16 +97,16 @@ while ( true )
       clsSubj=subject;
       fprintf('Saving classifier to : %s\n',['sp_' cname '_' subject '_' datestr]);
       save(['sp_' cname '_' subject '_' datestr],'-struct','clsfr');
-    %catch
+    catch
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);      
       fprintf('Error in train classifier!');
-    %end
+    end
 
     %---------------------------------------------------------------------------------
    case {'sptest','sptesting'};
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
       clsfrfile = ['sp_' cname '_' subject '_' datestr];
-      if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=['sp_' cname '_' subject]; end;
+      %if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=['sp_' cname '_' subject]; end;
       if(verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
       clsfr=load(clsfrfile);
       clsSubj = subject;
@@ -125,7 +125,7 @@ while ( true )
     trainSubj=subject;
 
    case {'imtrain','imtraining','imclassifier'};
-    %try
+     try
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
         fprintf('Loading training data from : %s\n',['im_' dname '_' subject '_' datestr]);
         load(['im_' dname '_' subject '_' datestr]); 
@@ -137,14 +137,14 @@ while ( true )
       clsSubj=subject;
       fname=['im_' cname '_' subject '_' datestr];
       fprintf('Saving classifier to : %s\n',fname); save(fname,'-struct','clsfr');
-    %catch
-    %  fprintf('Error in train classifier!');
-    %end
+    catch
+      fprintf('Error in train classifier!');
+    end
 
    case {'imtest','imtesting','imepochfeedback'};
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
       clsfrfile = ['im_' cname '_' subject '_' datestr];
-      if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=['im_' cname '_' subject]; end;
+      %if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=['im_' cname '_' subject]; end;
       if(verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
       clsfr=load(clsfrfile);
       clsSubj = subject;

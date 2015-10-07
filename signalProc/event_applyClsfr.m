@@ -143,7 +143,7 @@ while ( ~endTest )
 				fbuff(:,mod(nEpochs-1,abs(opts.predFilt))+1)=f; % store predictions in a ring buffer
 				dv=mean(fbuff,2);
 			 end
-        elseif ( isstr(opts.predFilt) || isa(opts.predFilt,'function_handle') )
+        elseif ( ischar(opts.predFilt) || isa(opts.predFilt,'function_handle') )
 			 [dv,filtstate]=feval(opts.predFilt,f,filtstate);
         end
 		end

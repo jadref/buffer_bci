@@ -1,0 +1,31 @@
+import com.android.build.gradle.AppExtension
+
+apply plugin: 'com.android.application'
+
+android {
+    signingConfigs {
+    }
+    compileSdkVersion 16
+    buildToolsVersion "21.1.2"
+    defaultConfig {
+        applicationId 'nl.dcc.buffer_bci.bufferservicecontroller'
+        minSdkVersion 16
+        targetSdkVersion 16
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    productFlavors {
+    }
+    packagingOptions {
+        exclude 'BufferClient.jar'
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+}

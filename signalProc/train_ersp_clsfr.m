@@ -64,7 +64,7 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %  X       -- [ppch x pptime x ppepoch] pre-processed data (N.B. may/will have different size to input X)
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
 opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],...
-            'width_ms',250,'windowType','hanning','aveType','amp',...
+            'width_ms',500,'windowType','hanning','aveType','amp',...
             'detrend',1,'spatialfilter','slap',...
             'badchrm',1,'badchthresh',3.1,'badchscale',2,...
             'badtrrm',1,'badtrthresh',3,'badtrscale',2,...
@@ -75,7 +75,7 @@ opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],...
 % get the sampling rate
 if ( isempty(opts.fs) ) error('Sampling rate not specified!'); end;
 di=[]; ch_pos  =opts.ch_pos; ch_names=opts.ch_names;
-if ( iscell(ch_pos) && isstr(ch_pos{1}) ) ch_names=ch_pos; ch_pos=[]; end;
+if ( iscell(ch_pos) && ischar(ch_pos{1}) ) ch_names=ch_pos; ch_pos=[]; end;
 if ( isempty(ch_pos) && ~isempty(opts.capFile) && (~isempty(ch_names) || opts.overridechnms) ) % convert names to positions
   di = addPosInfo(ch_names,opts.capFile,opts.overridechnms); % get 3d-coords
   if ( any([di.extra.iseeg]) ) 
@@ -273,13 +273,21 @@ if ( opts.visualize )
    end
    erpfig=figure(1);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');
    yvals=freqs;
-   image3d(mu(:,:,:),1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels(:),'disptype','plot','ticklabs','sw','clabel',opts.aveType);
-   try; zoomplots; saveaspdf('ERSP'); catch; end;
+   try; 
+	  image3d(mu(:,:,:),1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels(:),'disptype','plot','ticklabs','sw','clabel',opts.aveType);
+     zoomplots; saveaspdf('ERSP'); 
+	catch; 
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	end;
    if ( ~(all(Yci(:)==Yci(1))) )
     aucfig=figure(2);clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');
-    image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
-    colormap ikelvin; 
-    try; zoomplots; saveaspdf('AUC'); catch; end;
+    try; 
+		image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
+		colormap ikelvin; 
+		zoomplots; saveaspdf('AUC'); 
+	 catch; 
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	 end;
    end
    drawnow;
    figure(erpfig);

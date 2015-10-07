@@ -33,7 +33,6 @@ function [clsfr]=train_nf_clsfr(trlen_ms,nfParams,varargin)
 %              estimation.  
 %              N.B. the output frequency resolution = 1000/width_ms, so 4Hz with 250ms
 %  spatialfilter -- [str] one of 'slap','car','none','csp','ssep'              ('slap')
-%       WARNING: CSP is particularly prone to *overfitting* so treat any performance estimates with care...
 %  badchrm   - [bool] do we do bad channel removal    (1)
 %  badchthresh - [float] threshold in std-dev units to id channel as bad (3.5)
 %  badtrrm   - [bool] do we do bad trial removal      (1)
@@ -42,10 +41,6 @@ function [clsfr]=train_nf_clsfr(trlen_ms,nfParams,varargin)
 %              0 - do nothing
 %              1 - detrend the data
 %              2 - center the data (i.e. subtract the mean)
-%  visualize - [int] visualize the data
-%               0 - don't visualize
-%               1 - visualize, but don't wait
-%               2 - visualize, and wait for user before continuing
 %  verb      - [int] verbosity level
 %  class_names - {str} names for each of the classes in Y in *increasing* order ([])
 % Outputs:
@@ -69,7 +64,7 @@ function [clsfr]=train_nf_clsfr(trlen_ms,nfParams,varargin)
 %           |.welchAveType -- [str] type of averaging used in frequency domain transformation (ERsP only)
 %           |.freqIdx     -- [2x1] range of frequency to keep  (ERsP only)
 opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],...
-            'width_ms',250,'windowType','hanning','aveType','amp',...
+            'width_ms',250,'width_samp',[],'windowType','hanning','aveType','amp',...
             'downsample',[],'detrend',1,'spatialfilter','car',...
             'badchrm',1,'badchthresh',3.1,'badchscale',2,...
             'badtrrm',1,'badtrthresh',3,'badtrscale',2,...
@@ -78,7 +73,7 @@ opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],...
 [opts,varargin]=parseOpts(opts,varargin);
 
 di=[]; ch_pos=opts.ch_pos; ch_names=opts.ch_names;
-if ( iscell(ch_pos) && isstr(ch_pos{1}) ) ch_names=ch_pos; ch_pos=[]; end;
+if ( iscell(ch_pos) && ischar(ch_pos{1}) ) ch_names=ch_pos; ch_pos=[]; end;
 % convert names to positions
 if ( isempty(ch_pos) && ~isempty(opts.capFile) && (~isempty(ch_names) || opts.overridechnms) ) 
   di = addPosInfo(ch_names,opts.capFile,opts.overridechnms); % get 3d-coords
@@ -92,7 +87,11 @@ end
 fs=opts.fs; if ( isempty(fs) ) warning('No sampling rate specified... assuming fs=250'); fs=250; end;
 
 % convert from time in _ms to time in samples
-trlen_samp = round(trlen_ms/1000 * fs);
+if ( isempty(trlen_ms) )
+  trlen_samp=opts.trlen_samp;
+else
+  trlen_samp=round(trlen_ms/1000 * fs);
+end
 
 %2) Bad channel identification & removal
 isbadch=[]; chthresh=[];
@@ -131,9 +130,13 @@ isbadtr=[]; trthresh=[];
 if ( opts.badtrrm )  warning('Bad-trial-remove : Not supported'); end
 
 %4) welch to convert to power spectral density
-[X,wopts,winFn]=welchpsd(zeros(1,trlen_samp),2,'width_ms',opts.width_ms,'windowType',opts.windowType,'fs',fs,...
-                         'aveType',opts.aveType,'detrend',1); 
-freqs=0:(1000/opts.width_ms):fs/2; % position of the frequency bins
+[X,wopts,winFn]=welchpsd(zeros(1,trlen_samp),2,...
+								 'width_ms',opts.width_ms,'width_samp',opts.width_samp,...
+								 'windowType',opts.windowType,'fs',fs,...
+                         'aveType',opts.aveType,'detrend',1);
+width_samp = wopts.width_samp; width_ms=wopts.width_ms;
+if ( isempty(width_ms) ) width_ms = width_samp * 1000 / fs; end;
+freqs=0:(1000/width_ms):fs/2; % position of the frequency bins
 
 %5) sub-select the range of frequencies we care about
 fIdx=[];
@@ -170,13 +173,13 @@ for ci=1:numel(nfParams)
   if ( isempty(parmsci.electrodes) ) chWght(:)=1; 
   elseif ( numel(parmsci.electrodes)==numel(ch_names) && isnumeric(parmsci.electrodes))
     chWght=parmsci.electrodes;
-  elseif ( iscell(parmsci.electrodes) || isstr(parmsci.electrodes) )
-    if ( isstr(parmsci.electrodes) ) parmsci.electrodes={parmsci.electrodes}; end;
+  elseif ( iscell(parmsci.electrodes) || ischar(parmsci.electrodes) || isnumeric(parmsci.electrodes) )
+    if ( ischar(parmsci.electrodes) ) parmsci.electrodes={parmsci.electrodes}; end;
     for ei=1:numel(parmsci.electrodes);
-      chei = parmsci.electrodes{ei};
-      if ( isnumeric(chei) ) % index of the channel to weight
+      if(iscell(parmsci.electrodes)) chei=parmsci.electrodes{ei}; else chei=parmsci.electrodes(ei); end
+      if( isnumeric(chei) ) % index of the channel to weight
         chWght(abs(chei))=sign(chei);
-      elseif ( isstr(chei) )
+      elseif ( ischar(chei) )
         val=1; if ( isequal('-',chei(1)) ) val=-1; chei=chei(2:end); end;
         cheiIdx = strcmpi(chei,ch_names);
         if ( ~any(cheiIdx) ) warning('Couldnt find a channel name match for : %s\n',chei); end;
@@ -184,8 +187,9 @@ for ci=1:numel(nfParams)
       end
     end
   end
-  chWght(chWght>0) = chWght(chWght>0) ./ sum(abs(chWght(chWght>0))); % average over electrodes
-  chWght(chWght<0) = chWght(chWght<0) ./ sum(abs(chWght(chWght<0))); % average over electrodes
+  % averge positive/negative weight over channels
+  if ( any(chWght>0) ) chWght(chWght>0) = chWght(chWght>0) ./ sum(abs(chWght(chWght>0)));  end;
+  if ( any(chWght<0) ) chWght(chWght<0) = chWght(chWght<0) ./ sum(abs(chWght(chWght<0)));  end;
   if ( sum(abs(chWght))>0 ) chWght = chWght./sum(abs(chWght)); end;
   
   % get the weighting over frequencies

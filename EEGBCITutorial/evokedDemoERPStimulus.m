@@ -20,7 +20,7 @@ set(gca,'visible','off');
 set(fig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:))));
 set(fig,'userdata',[]); % clear any old key info
 
-set(contFig,'Units','pixel');wSize=get(contFig,'position');fontSize = .05*wSize(4);
+set(fig,'Units','pixel');wSize=get(fig,'position');fontSize = .05*wSize(4);
 instructh=text(min(get(ax,'xlim'))+.25*diff(get(ax,'xlim')),mean(get(ax,'ylim')),instructstr,'HorizontalAlignment','left','VerticalAlignment','middle','color',[0 1 0],'fontunits','pixel','FontSize',fontSize,'visible','off');
 
 %BODGE: to force screen redraw
