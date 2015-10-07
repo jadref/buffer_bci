@@ -3,7 +3,7 @@ package nl.ru.dcc.buffer_bci;
  [] - eventSeq - include boolean eventSeq which says at which event times we should
                  send a stimulus event
  [X] - StimSeq loader, to load a stimulus sequence from a inputstream
- [] - StimSeqPSK - phase-shift keying, convert a direct stim-seq to one at
+ [X] - StimSeqPSK - phase-shift keying, convert a direct stim-seq to one at
                    double the clock rate where 1->10, 0->01
 */ 
 
@@ -31,9 +31,9 @@ class StimSeq {
 	 }
 	 public static String toString(float [][]stimSeq, int[] stimTime_ms){
 		  String str=new String();
-		  str = str + "# stimTimes : ";
+		  str = str + "# stimTime : ";
 		  if ( stimSeq==null ) {
-				str += "<null>\n\n\n";
+				str += "<null>\n[]\n\n";
 		  }else{
 				str += "1x" +  stimTime_ms.length + "\n";
 				for(int i=0;i<stimTime_ms.length-1;i++) str += stimTime_ms[i]+"\t";
@@ -41,7 +41,7 @@ class StimSeq {
 				str += "\n\n"; // two new lines mark the end of the array
 		  }
 		  if ( stimSeq==null ) {
-				str += "# stimSeq[]=<null>\n";
+				str += "# stimSeq[]=<null>\n[]\n";
 		  } else {
 				str += "# stimSeq : " + stimSeq.length + "x" + stimSeq[0].length + "\n";
 				str += writeArray(stimSeq,false);
@@ -56,16 +56,25 @@ class StimSeq {
 				System.out.println("more than 1 row of stim Times?\n");
 				throw new IOException("Vector stim times expected");
 		  }
-		  float [][]stimSeq = readArray(bufferedReader);
-		  if ( stimSeq.length<1 ){
-		  } else if ( stimSeq.length != tmpStimTime[0].length ) {
+		  float [][]tmpstimSeq = readArray(bufferedReader);
+		  if ( tmpstimSeq.length<1 ){
+				System.out.println("No stimSeq found in file!");
+				throw new IOException("no stimSeq in file");
+		  } else if ( tmpstimSeq[0].length != tmpStimTime[0].length ) {
 				System.out.println("Mismatched lengths of stimTime (1x" + tmpStimTime[0].length + ")" +
-										 " and stimSeq (" + stimSeq.length + "x" + stimSeq[0].length + ")");
+										 " and stimSeq (" + tmpstimSeq.length +"x"+ tmpstimSeq[0].length + ")");
 				throw new IOException("stimTime and stimSeq lengths unequal");
 		  }
 		  // All is good convert stimTimes to int vector and construct
 		  int[] stimTime_ms = new int[tmpStimTime[0].length];
 		  for ( int i=0; i<tmpStimTime[0].length; i++) stimTime_ms[i]=(int)tmpStimTime[0][i];
+		  // Transpose the stimSeq into [epoch][stimulus], i.e. so faster change over stimulus
+		  float[][] stimSeq = new float[tmpstimSeq[0].length][tmpstimSeq.length];
+		  for ( int si=0; si<tmpstimSeq.length; si++){
+				for ( int ei=0; ei<tmpstimSeq[si].length; ei++){
+					 stimSeq[ei][si]=tmpstimSeq[si][ei];
+				}
+		  }
 		  return new StimSeq(stimSeq,stimTime_ms);
 	 }
 
@@ -318,6 +327,7 @@ class StimSeq {
 		  }		
 	 }
 
+	 public static String writeArray(float [][]array){ return writeArray(array,true); }
 	 public static String writeArray(float [][]array, boolean incSize){
 		  String str=new String();
 		  if ( incSize ) {

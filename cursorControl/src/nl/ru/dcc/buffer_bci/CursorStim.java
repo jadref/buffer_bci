@@ -16,7 +16,11 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 	  static public int UPDATE_INTERVAL=1000/60; // Graphics re-draw rate
 	  static public int VERB=0;
 	  static public int avesleep=0;	  
-	  int nSymbs=8;
+	  float tgtDuration          =1.5f;
+	  float seqDuration          =3.5f;
+	  float interStimulusDuration=1.5f;
+	  int nSymbs                 =8;
+	  int nSeq                   =nSymbs*2;
 	  volatile BufferClientClock buff=null;
 
 	  public static void main(String[] args) throws java.io.IOException,InterruptedException {
@@ -56,8 +60,9 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 	  //--------------------------------------------------------------------------------
 	  // Main function to control the experiment at the top level
 	  public void runExpt() throws java.io.IOException  {
-			int   nSymbs=8;
-			float seqDuration=3.5f;
+			int   nSymbs     =this.nSymbs;
+			int   nSeq       =this.nSeq;
+			float seqDuration=this.seqDuration;
 			float isi=1f/10;
 			String blockName="Untitled";
 			// This method implements the main experiment control flow
@@ -72,21 +77,21 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 			waitScreen();
 
 			// for each block each target happens twice
-			int [] tgtSeq=new int[2*nSymbs]; 
+			int [] tgtSeq=new int[nSeq]; 
 			for( int i=0; i<nSymbs; i++ ) { tgtSeq[i*2]=i; tgtSeq[i*2+1]=i; }
 
 			StimSeq ss=null;
 			
-			// Block 1: SSEP -- LF @ 2Phase
-			isi=1f/60;
-			blockName = "SSEP_2phase_"+(int)Math.round(1./isi)+"hz";
-			ss=StimSeq.mkStimSeqSSEP(nSymbs,seqDuration,isi,
-											 new float[]{1f/10,1f/12,1f/15,1f/20,  1f/10, 1f/12, 1f/15, 1f/20}, 
-											 new float[]{0,    0,    0,    0,     .5f/10,.5f/12,.5f/15,.5f/20},
-											 true);
-			//System.out.println(ss.toString()); // debug stuff
-			StimSeq.shuffle(tgtSeq);
-			//runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms,true);
+			// // Block 1: SSEP -- LF @ 2Phase
+			// isi=1f/60;
+			// blockName = "SSEP_2phase_"+(int)Math.round(1./isi)+"hz";
+			// ss=StimSeq.mkStimSeqSSEP(nSymbs,seqDuration,isi,
+			// 								 new float[]{1f/10,1f/12,1f/15,1f/20,  1f/10, 1f/12, 1f/15, 1f/20}, 
+			// 								 new float[]{0,    0,    0,    0,     .5f/10,.5f/12,.5f/15,.5f/20},
+			// 								 true);
+			// //System.out.println(ss.toString()); // debug stuff
+			// StimSeq.shuffle(tgtSeq);
+			// //runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms,true);
 
 			// Block 2: p3-radial @ 10hz
 			isi=1f/10;
@@ -152,25 +157,27 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 			StimSeq.shuffle(tgtSeq);
 			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
-			// Block 10: Noise @10
+			// // Block 10: Noise @10
 			// isi=1f/10;
 			// blockName="noise_"+(int)Math.round(1./isi)+"hz";
 			// ss=StimSeq.mkStimSeqGold(nSymbs,seqDuration,isi);
 			// StimSeq.shuffle(tgtSeq);
 			// runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
+			// // Block 10: Noise @10
 			// Load from save file
 			blockName = "gold_10hz";
 			{
 				 BufferedReader is = new BufferedReader(new InputStreamReader(new FileInputStream(new File("../stimulus/"+blockName+".txt"))));
 				 ss = StimSeq.fromString(is);
 				 is.close();
+				 System.out.print(ss);
 			}
 			// Play this sequence
 			StimSeq.shuffle(tgtSeq);
 			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
-			// // Block 10: Noise @20
+			// // Block 11: Noise @20
 			// isi=1f/20;
 			// blockName="noise_"+(int)Math.round(1./isi)+"hz";
 			// ss=StimSeq.mkStimSeqGold(nSymbs,seqDuration,isi);
@@ -187,7 +194,7 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 			StimSeq.shuffle(tgtSeq);
 			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
-			// // Block 10: Noise @40
+			// // Block 12: Noise @40
 			// isi=1f/40;
 			// blockName="noise_"+(int)Math.round(1./isi)+"hz";
 			// ss=StimSeq.mkStimSeqGold(nSymbs,seqDuration,isi);
@@ -205,8 +212,8 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 			StimSeq.shuffle(tgtSeq);
 			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
-			// // Block 10: Noise @20
-			// isi=1f/20;
+			// // Block 13: Noise+psk @20
+			// isi=1f/10;
 			// blockName="noise_"+(int)Math.round(1./isi)+"hz";
 			// ss=StimSeq.mkStimSeqGold(nSymbs,seqDuration,isi);
 			// StimSeq.shuffle(tgtSeq);
@@ -223,6 +230,13 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 			StimSeq.shuffle(tgtSeq);
 			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
+			// Load from save file
+			// // Block 14: Noise+PSK @40
+			// isi=1f/20;
+			// blockName="noise_"+(int)Math.round(1./isi)+"hz";
+			// ss=StimSeq.mkStimSeqGold(nSymbs,seqDuration,isi);
+			// StimSeq.shuffle(tgtSeq);
+			// runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 			// Load from save file
 			blockName = "gold_40hz_psk";
 			{
@@ -265,7 +279,7 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 					  if ( ti==tgtSeq[seqi] ) tgtStim[0][ti]=2; else tgtStim[0][ti]=0;
 				 // N.B. Always set the stimSeq first....
 				 cursor.setStimSeq(tgtStim,tgtTime,new boolean[]{false});
-				 cursor.setDuration(1.5f);
+				 cursor.setDuration(tgtDuration);
 				 buff.putEvent(new BufferEvent("stimulus.target",tgtSeq[seqi],-1));
 				 runScreen(cursor);
 				 waitScreen();
@@ -281,7 +295,7 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 				 buff.putEvent(new BufferEvent("stimulus.trial","end",-1));
 
 				 // Blank for inter-sequence
-				 blank.setDuration_ms(2000);
+				 blank.setDuration(interStimulusDuration);
 				 runScreen(blank);
 				 waitScreen();
 			}
