@@ -1,3 +1,4 @@
+setlocal enabledelayedexpansion
 call ..\utilities\findJava.bat
 set batdir=%~dp0
 
