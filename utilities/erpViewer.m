@@ -57,7 +57,7 @@ if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics fac
 end
 
 % to auto set the color of the lines
-linecols='bgrcmyk';
+linecols='brkgcmyk';
 
 % get channel info for plotting
 hdr=[];
@@ -237,8 +237,7 @@ while ( ~endTraining )
     key={}; nTarget=0; rawIds=[]; devents=[];
     erp=zeros(sum(iseeg),numel(yvals),1);
     updateLines(1)=true; updateLines(:)=true; % everything must be re-drawn
-    resetval=0;
-    set(resethdl,'value',resetval); % pop the button back out
+    resetval=0;set(resethdl,'value',resetval); % pop the button back out
   end
   
   newClass   =false;
@@ -392,12 +391,13 @@ while ( ~endTraining )
         else
           label{mi}=sprintf('%s (%d)',key{mi},sum(rawIds(1:nTarget)==mi));
         end		  
-      end    
-      %---------------------------------------------------------------------------------
-      % Update the plot
-		incrementalDraw = opts.incrementalDraw && isequal(vistype,curvistype);
-		if ( exist('OCTAVE_VERSION','builtin') ) incrementalDraw = incrementalDraw & ~newClass ; end;
-      if ( incrementalDraw ) % update the changed lines only
+      end
+    end
+    %---------------------------------------------------------------------------------
+    % Update the plot
+	incrementalDraw = opts.incrementalDraw && isequal(vistype,curvistype);
+	if ( exist('OCTAVE_VERSION','builtin') ) incrementalDraw = incrementalDraw & ~newClass ; end;
+    if ( incrementalDraw ) % update the changed lines only
           % compute useful range of data to show, with some artifact robustness, data-lim is mean+3std-dev
           datstats=[mean(erp(:)) std(erp(:))];
           datrange=[max(min(erp(:)),datstats(1)-opts.dataStd*datstats(2)) ...
@@ -417,13 +417,17 @@ while ( ~endTraining )
               % update the lines
               line_hdls=findobj(get(hdls(hi),'children'),'type','line');
               linenames=get(line_hdls,'displayname'); % get names of all lines to find the one to update
-		      for mi=damagedLines(:)';
-				  % if existing line, so update in-place
-				  keymi=key{mi}; if ( isnumeric(keymi) ) keymi=sprintf('%g',keymi); end;
-				  li = strmatch(keymi,linenames); 
-              if(mi==1 && numel(line_hdls)==1 ) li=1; end; % single line is special case
+		      for mi=find(updateLines(:))';
+                  if ( mi<=numel(key) ) % if existing line, so update in-place
+                    keymi=key{mi}; if ( isnumeric(keymi) ) keymi=sprintf('%g',keymi); end;
+                    li = strmatch(keymi,linenames);
+                    if ( isempty(li) ) li=find(strcmp('',linenames),1); end
+                  else % line without key, turn it off
+                    if ( ishandle(line_hdls(mi)) ) set(line_hdls(mi),'visible','off','displayName',''); end;
+                    continue;
+                  end
 				  if( size(line_hdls,1)>=mi && ~isempty(li) && ishandle(line_hdls(li)) && ~isequal(line_hdls(li),0) )
-                 set(line_hdls(li),'xdata',yvals,'ydata',erp(hi,:,mi),'displayname',label{mi});
+                 set(line_hdls(li),'xdata',yvals,'ydata',erp(hi,:,mi),'displayname',label{mi},'visible','on');
 				  else % add a new line
                  set(hdls(hi),'nextplot','add');
                  line_hdls(mi)=plot(yvals,erp(hi,:,mi),'parent',hdls(hi),...
@@ -438,11 +442,10 @@ while ( ~endTraining )
            pos=get(hdls(end),'position');
            legend(hdls(end-1),'off'); hdls(end) = legend(hdls(end-1),'show'); set(hdls(end),'position',pos);
 		  end
-		else % redraw the whole from scratch
-            hdls=image3d(erp,1,'handles',hdls,'Xvals',ch_names(iseeg),'Yvals',yvals,'ylabel',ylabel,'disptype','plot','ticklabs','sw','Zvals',label(1:numel(key)),'lineWidth',opts.lineWidth);
-        end
-        vistype=curvistype;
+	else % redraw the whole from scratch
+      hdls=image3d(erp,1,'handles',hdls,'Xvals',ch_names(iseeg),'Yvals',yvals,'ylabel',ylabel,'disptype','plot','ticklabs','sw','Zvals',label(1:numel(key)),'lineWidth',opts.lineWidth);
     end
+    vistype=curvistype;
     % redraw, but not too fast
     if ( toc < opts.redraw_ms/1000 ) continue; else drawnow; tic; end;
   end
