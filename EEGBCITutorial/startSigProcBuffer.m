@@ -29,7 +29,7 @@ while ( true )
   pause(.1);
   
   % wait for a phase control event
-  if ( verb>0 ) fprintf('Waiting for phase command\n'); end;
+  if ( verb>=0 ) fprintf('Waiting for phase command\n'); end;
   [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,{'startPhase.cmd' 'subject'},[],1000);
   fprintf('.');
   if ( numel(devents)==0 ) 
@@ -161,7 +161,7 @@ while ( true )
     warning(sprintf('Unrecognised experiment phase ignored! : %s',phaseToRun));
     
   end
-  if ( verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;
+  if ( verb>=0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;
   sendEvent(lower(phaseToRun),'end');    
 end
 
