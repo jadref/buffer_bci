@@ -1,0 +1,1 @@
+call ..\utilities\startSigViewer.bat
