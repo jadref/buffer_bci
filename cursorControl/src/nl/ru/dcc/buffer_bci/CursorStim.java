@@ -93,13 +93,13 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 			// StimSeq.shuffle(tgtSeq);
 			// //runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms,true);
 
-			// Block 2: p3-radial @ 10hz
-			isi=1f/10;
-			blockName = "radial_"+(int)Math.round(1./isi)+"hz";
-			ss=StimSeq.mkStimSeqScan(nSymbs,seqDuration,isi);
-			StimSeq.shuffle(tgtSeq);
-			System.out.println("New block: " + blockName);System.out.print(ss.toString());
-			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
+			// // Block 2: p3-radial @ 10hz
+			// isi=1f/10;
+			// blockName = "radial_"+(int)Math.round(1./isi)+"hz";
+			// ss=StimSeq.mkStimSeqScan(nSymbs,seqDuration,isi);
+			// StimSeq.shuffle(tgtSeq);
+			// System.out.println("New block: " + blockName);System.out.print(ss.toString());
+			// runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
 			// Block 3: p3-radial @ 20hz
 			isi=1f/20;
@@ -108,19 +108,19 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 			StimSeq.shuffle(tgtSeq);
 			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
-			// Block 4: p3-radial @ 40hz
-			isi=1f/60;
-			blockName="radial_"+(int)Math.round(1./isi)+"hz";
-			ss=StimSeq.mkStimSeqScan(nSymbs,seqDuration,isi);
-			StimSeq.shuffle(tgtSeq);
-			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
+			// // Block 4: p3-radial @ 40hz
+			// isi=1f/60;
+			// blockName="radial_"+(int)Math.round(1./isi)+"hz";
+			// ss=StimSeq.mkStimSeqScan(nSymbs,seqDuration,isi);
+			// StimSeq.shuffle(tgtSeq);
+			// runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
-			// Block 5: p3-120 @ 10hz
-			isi=1f/10;
-			blockName="radial_120_"+(int)Math.round(1./isi)+"hz";
-			ss=StimSeq.mkStimSeqScanStep(nSymbs,seqDuration,isi,3);
-			StimSeq.shuffle(tgtSeq);
-			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
+			// // Block 5: p3-120 @ 10hz
+			// isi=1f/10;
+			// blockName="radial_120_"+(int)Math.round(1./isi)+"hz";
+			// ss=StimSeq.mkStimSeqScanStep(nSymbs,seqDuration,isi,3);
+			// StimSeq.shuffle(tgtSeq);
+			// runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
 			// Block 6: p3-120 @ 20hz
 			isi=1f/20;
@@ -129,19 +129,19 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 			StimSeq.shuffle(tgtSeq);
 			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
-			// Block 7: p3-120 @ 40hz
-			isi=1f/40;
-			blockName="radial_120_"+(int)Math.round(1./isi)+"hz";
-			ss=StimSeq.mkStimSeqScanStep(nSymbs,seqDuration,isi,3);
-			StimSeq.shuffle(tgtSeq);
-			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
+			// // Block 7: p3-120 @ 40hz
+			// isi=1f/40;
+			// blockName="radial_120_"+(int)Math.round(1./isi)+"hz";
+			// ss=StimSeq.mkStimSeqScanStep(nSymbs,seqDuration,isi,3);
+			// StimSeq.shuffle(tgtSeq);
+			// runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
-			// Block 8: P3 @10
-			isi=1f/10;
-			blockName="P3_"+(int)Math.round(1./isi)+"hz";
-			ss=StimSeq.mkStimSeqRand(nSymbs,seqDuration,isi);
-			StimSeq.shuffle(tgtSeq);
-			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
+			// // Block 8: P3 @10
+			// isi=1f/10;
+			// blockName="P3_"+(int)Math.round(1./isi)+"hz";
+			// ss=StimSeq.mkStimSeqRand(nSymbs,seqDuration,isi);
+			// StimSeq.shuffle(tgtSeq);
+			// runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
 			// Block 9: P3 @20
 			isi=1f/20;
@@ -150,12 +150,12 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 			StimSeq.shuffle(tgtSeq);
 			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
-			// Block 9: P3 @40
-			isi=1f/40;
-			blockName="P3_"+(int)Math.round(1./isi)+"hz";
-			ss=StimSeq.mkStimSeqRand(nSymbs,seqDuration,isi);
-			StimSeq.shuffle(tgtSeq);
-			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
+			// // Block 9: P3 @40
+			// isi=1f/40;
+			// blockName="P3_"+(int)Math.round(1./isi)+"hz";
+			// ss=StimSeq.mkStimSeqRand(nSymbs,seqDuration,isi);
+			// StimSeq.shuffle(tgtSeq);
+			// runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
 			// // Block 10: Noise @10
 			// isi=1f/10;
@@ -164,18 +164,18 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 			// StimSeq.shuffle(tgtSeq);
 			// runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
-			// // Block 10: Noise @10
-			// Load from save file
-			blockName = "gold_10hz";
-			{
-				 BufferedReader is = new BufferedReader(new InputStreamReader(new FileInputStream(new File("../stimulus/"+blockName+".txt"))));
-				 ss = StimSeq.fromString(is);
-				 is.close();
-				 System.out.print(ss);
-			}
-			// Play this sequence
-			StimSeq.shuffle(tgtSeq);
-			runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
+			// // // Block 10: Noise @10
+			// // Load from save file
+			// blockName = "gold_10hz";
+			// {
+			// 	 BufferedReader is = new BufferedReader(new InputStreamReader(new FileInputStream(new File("../stimulus/"+blockName+".txt"))));
+			// 	 ss = StimSeq.fromString(is);
+			// 	 is.close();
+			// 	 System.out.print(ss);
+			// }
+			// // Play this sequence
+			// StimSeq.shuffle(tgtSeq);
+			// runBlock(blockName,seqDuration,tgtSeq,ss.stimSeq,ss.stimTime_ms);
 
 			// // Block 11: Noise @20
 			// isi=1f/20;
