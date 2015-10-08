@@ -1,1 +1,1 @@
-call ..\utilities\startSigViewer.bat
+call ..\matlab\utilities\startSigViewer.bat

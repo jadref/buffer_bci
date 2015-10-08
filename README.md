@@ -47,12 +47,12 @@ To run the games demo:
 
  If you have *no* EEG hardware, but just want to test:
 
-  1.2) start a buffer by running: `dataAcq/startBuffer.bat` or `dataAcq/startBuffer.sh`  
-  1.2) start a *simulated* data source by running: `dataAcq/startSignalProxy.bat` or .sh
+  1.2) start a buffer by running: `dataAcq/startJavaBuffer.bat` or `dataAcq/startJavaBuffer.sh`  
+  1.2) start a *simulated* data source by running: `dataAcq/startJavaSignalProxy.bat` or .sh
 
  If you have EEG hardware connected then depending on the hardware:
 
-  1.1) start a buffer by running: `dataAcq/startBuffer.bat` or `buffer/startBuffer.sh`  
+  1.1) start a buffer by running: `dataAcq/startJavaBuffer.bat` or `buffer/startJavaBuffer.sh`  
   1.2) start appropriate acquisition driver for your device:  
   		 TMSi Mobita([mobita]):       `dataAcq/startMobita.bat`  or  `dataAcq/startMobita.sh`  
        Emotiv Epoc:        `dataAcq/startEmotiv.bat`  or  `dataAcq/startEmotiv.sh`  
@@ -64,9 +64,9 @@ Note: By default raw data is saved to:
 *  *Windows*: `C:\output\test\_YYMMDD_\_HHMM_\raw_buffer\0001`  
    where `_YYMMDD_` is the date in year/month/day format, `_HHMM_` is start time hour and minutes
 
-2. Start the Matlab/Octave based signal processing process by running: `games/startSigProcBuffer.bat` or .sh
+2. Start the Matlab/Octave based signal processing process by running: `matlab/games/startSigProcBuffer.bat` or .sh
 
-3. Start the Matlab/Octave based experiment control & stimulus presentation system by running : `games/runGame.bat` or runGame.sh
+3. Start the Matlab/Octave based experiment control & stimulus presentation system by running : `matlab/games/runGame.bat` or runGame.sh
 
 4. Type in the subject name to the experiment control window, and then run through each of the experiment phases: 
 
@@ -94,40 +94,34 @@ An overview of the included directories is:
 *  `dataAcq/buffer/python` -- buffer client driver code in Python
 *  `dataAcq/buffer/java`   -- buffer client driver code in java
 
-*  `signalProc` -- code for pre-processing EEG data, training classifiers, and applying the trained classifiers on-line for the ERP and ERSP based BCIs
+*  `matlab/signalProc` -- code for pre-processing EEG data, training classifiers, and applying the trained classifiers on-line for the ERP and ERSP based BCIs
 
-*  `stimulus` -- utility functions for generating correctly randomised stimulus sequences
+*  matlab/`stimulus` -- utility functions for generating correctly randomised stimulus sequences
 
-*  `utilties` -- various utility functions for BCI use, in particular for loading cap position layout files, setting up paths, option parsing etc.
+*  `matlab/utilties` -- various utility functions for BCI use, in particular for loading cap position layout files, setting up paths, option parsing etc.
 
-*  `classifiers` -- code for the linear logistic regression classifier, and associated utility functions for e.g. cross-validation, performance estimation etc.
+*  `matlab/classifiers` -- code for the linear logistic regression classifier, and associated utility functions for e.g. cross-validation, performance estimation etc.
 
-*  `plotting` -- various plotting utility functions, e.g. plotting topographic head outlines, plotting 3-d data (multi-plots), zooming multi-plots
+*  `matlab/plotting` -- various plotting utility functions, e.g. plotting topographic head outlines, plotting 3-d data (multi-plots), zooming multi-plots
   
-*  `games` -- Example BCI system for playing 3 simple games (Snake, Sokoban and Pacman) using and visual evoked response (ERP) type BCI
+*  `matlab/games` -- Example BCI system for playing 3 simple games (Snake, Sokoban and Pacman) using and visual evoked response (ERP) type BCI
 
-*  `offline` -- Example scripts for process saved BCI data offline, i.e. analysing data loaded from file
+*  `matlab/offline` -- Example scripts for process saved BCI data offline, i.e. analysing data loaded from file
 
-*  `example` -- Example clients for the major supported programming languages; Matlab, java, Python, C#, C
+*  `matlab/example` -- Example clients for the major supported programming languages; Matlab, java, Python, C#, C
 
 *  `tutorial` -- Tutorial arranged in lectures 1 through 5 about how BCIs work, 
               the structure and components of a BCI and how to build a standard BCI with the buffer_bci framework
 				 
-*  `imaginedMovement` -- Example BCI system for controlling a cursor using an imagined movement (ERSP) type BCI
+*  `matlab/imaginedMovement` -- Example BCI system for controlling a cursor using an imagined movement (ERSP) type BCI
 
-*  `matrixSpeller` -- Example BCI system for spelling characters using a visual matrix-speller (p300) type BCI
+*  `matlab/matrixSpeller` -- Example BCI system for spelling characters using a visual matrix-speller (p300) type BCI
 
-*  `matrixSpellerPTB` -- Example BCI system for spelling characters using a visual matrix-speller (p300) type BCI.  This version uses PsychToolBox to improve the timing of the visual stimulus rendering.  
+*  `matlab/matrixSpellerPTB` -- Example BCI system for spelling characters using a visual matrix-speller (p300) type BCI.  This version uses PsychToolBox to improve the timing of the visual stimulus rendering.  
     N.B. to use this you will need to set the PTB path correctly in `utilities/initPTBPaths.m`
 
-*  `cursorControl` -- Example BCI system for controlling a cursor in 2-d using
+*  `matlab/cursorControl` -- Example BCI system for controlling a cursor in 2-d using
                              visual evoked response (ERP) type BCI
-
-*  `evokedDemo` -- Example system for visualizing responses evoked by visual
-                            stimulus, both transient and steady state, and
-                            attention related (p300 type) changes.
-
-*  `inducedDemo` -- Example system for visualizing induced responses.
 
 ###Notes: TMSi mobita {mobita}
 This device uses wifi to connect between the computer and the amplifier.  When recording data this connection *cannot* be disconnected.  Unfortunately, most OSs currently have a wifi auto-scan system which will periodically scan for 'better' wifi networks.  This scanning will interrupt data sending and cause the connection to be temporally lost for 1-3seconds.   To prevent this you need to prevent wifi auto-scanning, how this is done differs depending on OS.
