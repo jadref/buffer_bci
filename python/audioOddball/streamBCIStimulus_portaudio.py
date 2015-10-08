@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 # TODO: 
-#  [] - Add a testing phase, where extent of odd-ballness is controllable by key-press
 #  [] - Add BCI testing phase, which just runs for a long time
 
 ## CONFIGURABLE VARIABLES
@@ -16,28 +15,15 @@ port=1972
 #Set to True if the program has to run in fullscreen mode.
 fullscreen = False #True
 
-#The default number of epochs.
-number_of_epochs = 14
-
-#The number of stimuli to play.
-number_of_stimuli = 6
-
-#The number of times to repeat each stimulus in a training sequence
-number_of_repeats = 3
-
-# set to true for keyboard control of the experimental progression
-keyboard = True
-
+number_of_sequences       = 14
 sequence_duration         = 15
 testing_sequence_duration = 120
-inter_stimulus_interval   = .3
-bci_isi                   = .15
-target_to_target_interval = 1
-baseline_duration         = 3
+inter_stimulus_interval   = .15 # =frame-rate, something happens every this many seconds
+baseline_duration         = 2
 target_duration           = 2
-inter_trial_duration      = 3
-sequences_for_break       = 3
-periods                   = [x*bci_isi for x in [3,4]] # interval in isi between left/right stimuli
+inter_sequence_duration   = 2
+sequences_for_break       = number_of_sequences//2
+periods                   = [x*inter_stimulus_interval for x in [3,4]] #interval between left/right stimuli
 
 # flag to indicate we should end training/testing early
 endSeq=False
@@ -133,7 +119,6 @@ def runBCITrainingEpoch(nEpoch,names,data,seqDur,isi,periods,audioIDs,tgtIdx):
     audioArray[0]=rebalance(data[audioIDs[0]],sounds[audioIDs[0]].getsampwidth(), 0)
     audioArray[1]=rebalance(data[audioIDs[1]],sounds[audioIDs[1]].getsampwidth(), 1)
 
-
     dobreak(baseline_duration, ["Get Ready","Training Epoch " + str(nEpoch)])
 
     # display the cue to the subject for the target for this sequence
@@ -191,9 +176,9 @@ def runBCITrainingEpoch(nEpoch,names,data,seqDur,isi,periods,audioIDs,tgtIdx):
             sendEvent("stimulus.play", names[audioIDs[audioID[0]]]) # which stimulus
             stream.write(audio.tostring()) # this should block until the audio is finished....
 
-    # get user count of targets
-    sleep(0.5)
-    getFeedback("How many 'target' beeps?",int(len(ss.stimTime_ms)/2),nTgt)
+    # # get user count of targets
+    # sleep(0.5)
+    # getFeedback("How many 'target' beeps?",int(len(ss.stimTime_ms)/2),nTgt)
     sendEvent("stimulus.trial","end")
 
 def getFeedback(prompt,maxLowered,trueLowered):
@@ -225,7 +210,7 @@ def dobreak(n, message):
         n -= 0.1
 
 def showInstructions():
-  instructions = ["The training phase of the experiment will last about " + str(number_of_epochs) + " minutes.",
+  instructions = ["The training phase of the experiment will last about " + str(number_of_sequences) + " minutes.",
                   "About once every minute there will be a short break.",
                   "During training please focus on the spot on the screen",
                   "and try to count the number of 'odd' sounds you hear.",
@@ -243,7 +228,7 @@ def doBCITraining(names,data,periods):
   stimIDs=[0,len(sounds)-1]
   stimi = list(stimIDs) # left/right position for each sequence
   periodsi=list(periods)
-  for i in range(1,(number_of_epochs+1)):
+  for i in range(1,(number_of_sequences+1)):
       # Pick a target sound for this sequence      
       shuffle(stimi)    # N.B. shuffle modifies in place....
       tgtIdx = randint(0,1)
@@ -251,13 +236,13 @@ def doBCITraining(names,data,periods):
       shuffle(periodsi) # N.B. shuffle modifies in place...
 
       # run with given parameters, and max audio difference      
-      runBCITrainingEpoch(i,names,data,sequence_duration,bci_isi,periodsi,stimi,tgtIdx)
+      runBCITrainingEpoch(i,names,data,sequence_duration,inter_stimulus_interval,periodsi,stimi,tgtIdx)
       if i == sequences_for_break:
           updateframe(["Long Break","Press space to continue"])
           waitForSpaceKey()
-      elif i!= number_of_epochs:
+      elif i!= number_of_sequences:
           updateframe("")
-          sleep(inter_trial_duration)
+          sleep(inter_sequence_duration)
 
       if endSeq : break    
            
@@ -269,20 +254,20 @@ def bciTesting(names,sounds,periods):
   sendEvent('startPhase.cmd','testing')
   sendEvent('stimulus.testing','start')
   stimIDs=[0,len(sounds)-1]
-  for i in range(1,(number_of_epochs+1)):
+  for i in range(1,(number_of_sequences+1)):
       # Pick a target sound for this sequence      
       tgtIdx = randint(0,1)
       # randomly shuffle who gets what period
       shuffle(periodsi) # N.B. shuffle modifies in place...
 
       # run with given parameters, and max audio difference      
-      runBCITrainingEpoch(i,names,data,testing_sequence_duration,bci_isi,periodsi,stimi,tgtIdx)
+      runBCITrainingEpoch(i,names,data,testing_sequence_duration,inter_stimulus_interval,periodsi,stimi,tgtIdx)
       if i == sequences_for_break:
           updateframe(["Long Break","Press space to continue"])
           waitForSpaceKey()
-      elif i!= number_of_epochs:
+      elif i!= number_of_sequences:
           updateframe("")
-          sleep(inter_trial_duration)
+          sleep(inter_sequence_duration)
 
       if endSeq : break    
 

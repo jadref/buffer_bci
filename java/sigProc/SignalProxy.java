@@ -16,21 +16,22 @@ public class SignalProxy {
 	 final BufferClient client;
 	 final Random generator;
 	 final double sinFreq = 10;
-	 int nSample=0;	 
+	 int nSample=0;
+	 int nBlk   =0;
 	 static final String usage=
-		    "Usage: SignalProxy buffhost:buffport fsample nchans buffrate\n"
+		    "Usage: SignalProxy buffhost:buffport fsample nchans blockSize\n"
 		  + "where:\n"
 		  + "\t buffersocket\t is a string of the form bufferhost:bufferport (localhost:1972)\n"
 		  + "\t fsample\t is the frequency data is generated in Hz                 (100)\n"
 		  + "\t nchans\t is the number of simulated channels to make                 (3)\n"
-		  + "\t buffrate\t is the frequency in Hz that data is sent to the buffer   (50)\n";
+		  + "\t blocksize\t is the number of samples to send in one packet           (5)\n";
 
 	 public static void main(String[] args) throws IOException,InterruptedException {
 		   String hostname="localhost";
 			int port=1972;
 			int nChannels=4;
 			double fSample=100;
-			int blockSize=1;
+			int blockSize=5;
 		  
 		if (args.length==0 ){
 			 System.out.print(usage);
@@ -112,7 +113,9 @@ public class SignalProxy {
 			System.out.println("Putting header");
 
 			client.putHeader(new Header(nChannels, fSample, 10));
-			double[][] data = null;
+			nSample = 0;
+			nBlk    = 0;
+			double[][] data = null;			
 			long printTime = 0;
 			long t0 = System.currentTimeMillis();
 			long t  = t0;
@@ -120,15 +123,20 @@ public class SignalProxy {
 			while (run) {
 				data = genData();
 				client.putData(data);
+				nBlk     = nBlk+1;
 				nSample  = nSample + blockSize; // current total samples sent
 				t        = System.currentTimeMillis() - t0; // current time since start
 				nextBlockTime = (long)((nSample+blockSize)*1000/fSample); // time to send next block
 				if (nextBlockTime > t) {
 					 Thread.sleep(nextBlockTime-t);
+				} else if ( t > nextBlockTime+10*1000  ) {
+					 // more than 10 seconds behind (probably due to sleep), reset start time
+					 System.out.println("Dropped samples/sleep detected.  Reset start.");
+					 t0 = System.currentTimeMillis() - nextBlockTime; // reset start time					 
 				}
 				if (t > printTime) {
-					 System.out.println(  nSample + " samples added.");
-					 printTime = printTime + 2000; // 2s between prints
+					 System.out.print(nBlk + " " + nSample + " 0 " + (t/1000) + " (blk,samp,event,sec)\r");
+					 printTime = printTime + 5000; // 5s between prints
 				}				
 			}
 		} catch (final IOException e) {
