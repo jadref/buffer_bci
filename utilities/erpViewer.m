@@ -424,7 +424,7 @@ while ( ~endTraining )
                     if ( isempty(li) ) 
                             li=find(strcmp('',linenames),1);
                             if ( isempty(li) ) li=strmatch('data',linenames); if(~isempty(li))li=li(1); end; end;
-                            if ( isempty(li) ) li=find(strcmp(sprintf('%d',mi),linenames),1)); end;
+                            if ( isempty(li) ) li=find(strcmp(sprintf('%d',mi),linenames),1); end;
                     end
                   else % line without key, turn it off
                     if ( ishandle(line_hdls(mi)) ) set(line_hdls(mi),'visible','off','displayName',''); end;
