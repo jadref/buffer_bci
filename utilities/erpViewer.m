@@ -421,13 +421,17 @@ while ( ~endTraining )
                   if ( mi<=numel(key) ) % if existing line, so update in-place
                     keymi=key{mi}; if ( isnumeric(keymi) ) keymi=sprintf('%g',keymi); end;
                     li = strmatch(keymi,linenames);
-                    if ( isempty(li) ) li=find(strcmp('',linenames),1); if ( isempty(li) && isequal(linenames(1),'1')) li=1; end;end
+                    if ( isempty(li) ) 
+                            li=find(strcmp('',linenames),1);
+                            if ( isempty(li) ) li=strmatch('data',linenames); if(~isempty(li))li=li(1); end; end;
+                            if ( isempty(li) ) li=find(strcmp(sprintf('%d',mi),linenames),1)); end;
+                    end
                   else % line without key, turn it off
                     if ( ishandle(line_hdls(mi)) ) set(line_hdls(mi),'visible','off','displayName',''); end;
                     continue;
                   end
 				  if( size(line_hdls,1)>=mi && ~isempty(li) && ishandle(line_hdls(li)) && ~isequal(line_hdls(li),0) )
-                 set(line_hdls(li),'xdata',yvals,'ydata',erp(hi,:,mi),'displayname',label{mi},'visible','on');
+                 set(line_hdls(li),'xdata',yvals,'ydata',erp(hi,:,mi),'displayname',label{mi},'visible','on','color',linecols(mod(mi-1,numel(linecols))+1));
 				  else % add a new line
                  set(hdls(hi),'nextplot','add');
                  line_hdls(mi)=plot(yvals,erp(hi,:,mi),'parent',hdls(hi),...
