@@ -4,9 +4,9 @@ android {
     compileSdkVersion 16
     buildToolsVersion "21.1.2"
     defaultConfig {
-        applicationId 'nl.dcc.buffer_bci.bufferclientservice'
-        minSdkVersion 16
-        targetSdkVersion 21
+        applicationId 'nl.dcc.buffer_bci.bufferclientsservice'
+        minSdkVersion 8
+        targetSdkVersion 16
         versionCode 1
         versionName "1.0"
     }
@@ -14,6 +14,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug {
             debuggable true
@@ -35,18 +36,13 @@ android {
         }
     }
     packagingOptions {
-        exclude 'META-INF/DEPENDENCIES'
-        exclude 'META-INF/NOTICE'
-        exclude 'META-INF/LICENSE'
-        exclude 'META-INF/license.txt'
-        exclude 'META-INF/notice.txt'
         exclude 'BufferClient.jar' // prevent double inclusion from FileProxy, SignalProxy etc..
     }
 }
 
 dependencies {
-    compile 'com.android.support:support-v4:22.0.0'
     compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.android.support:support-v4:21.0.3'
 }
 
 // Used to compile the native muse libraries into the apk
