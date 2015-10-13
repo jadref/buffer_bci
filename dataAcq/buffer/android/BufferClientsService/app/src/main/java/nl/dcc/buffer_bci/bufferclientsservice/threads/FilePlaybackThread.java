@@ -28,7 +28,7 @@ public class FilePlaybackThread extends ThreadBase {
         arguments[0] = new Argument("Buffer Address", "localhost:1972");
         arguments[1] = new Argument("Speedup", 1.0, false);
         arguments[2] = new Argument("Buffer size", 5, false);
-        arguments[3] = new Argument("Data directory", "res");
+        arguments[3] = new Argument("Data directory", "res/raw/");
         return arguments;
     }
 
@@ -88,9 +88,9 @@ public class FilePlaybackThread extends ThreadBase {
     }
 
     void initFiles() {
-        String samples_str = dataDir + "samples";
-        String events_str = dataDir + "events";
-        String header_str = dataDir + "header";
+        String samples_str = dataDir + "/samples";
+        String events_str = dataDir + "/events";
+        String header_str = dataDir + "/header";
         dataReader = this.getClass().getClassLoader().getResourceAsStream(samples_str);
         eventReader = this.getClass().getClassLoader().getResourceAsStream(events_str);
         headerReader = this.getClass().getClassLoader().getResourceAsStream(header_str);

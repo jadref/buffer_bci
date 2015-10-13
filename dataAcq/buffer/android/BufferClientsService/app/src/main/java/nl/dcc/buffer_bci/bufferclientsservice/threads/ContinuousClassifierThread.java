@@ -37,10 +37,10 @@ public class ContinuousClassifierThread extends ThreadBase {
         arguments[9] = new Argument("N Baseline step", 5000, true);
         arguments[10] = new Argument("Overlap", .5, true);
         arguments[11] = new Argument("Timeout ms", 1000, true);
-        arguments[12] = new Argument("Sample step ms", 500, true);
+        arguments[12] = new Argument("Sample step ms", -1, true);
         arguments[13] = new Argument("Prediction filter", 1.0, true);
         arguments[14] = new Argument("Sample trial length", 25, true);
-        arguments[15] = new Argument("Sample trial ms", null);
+        arguments[15] = new Argument("Sample trial ms", -1, true);
         arguments[16] = new Argument("Normalize latitude", true);
         arguments[17] = new Argument("Clsfr file","res/clsfr.txt");
         return arguments;
