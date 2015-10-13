@@ -4,7 +4,7 @@ set drive=%~d0
 set bciroot=output
 set subject=test
 rem get date/session
-For /f "tokens=2-4 delims=/- " %%a in ('date /t') do (set session=%%c%%b%%a) 
+For /f "tokens=1-3 delims=/-. " %%a in ('date /t') do (set session=%%c%%b%%a) 
 rem get time
 For /f "tokens=1-4 delims=: " %%a in ('time /t') do (set block=%%a%%b%%c)
 set pyfolder=dummy
