@@ -1,5 +1,5 @@
-seqLen=testSeqLen;
-
+%seqLen=testSeqLen;
+seqLen = 308;
 %==========================================================================
 % Initialize the display
 %==========================================================================
@@ -52,13 +52,15 @@ fprintf('All images loaded.\n');
 distOrder = zeros(seqLen,nSeq); % order of distractor pictures
 %distPieces= zeros(seqLen,nSeq); % order of distractor pieces of the picture
  for i = 1:size(distOrder,2);
-    for j = 1:size(distOrder,1);
- 	  distOrder(j,i)   = randi(numel(dists)); % randomly pick picture to get piece from
+     [~,~,~,~,distOrder(:,i)] = mkStimSeqRand(44,seqLen,1,5);
+ %   for j = 1:size(distOrder,1);
+ %	  distOrder(j,i)   = randi(numel(dists)); % randomly pick picture to get piece from
 % 	  % randomly pick piece of this picture
 % 	  distPieces(j, i) = randi(numel(dists(distOrder(j,i)).pieces)); 
-    end
+ %end
  end
 
+ 
 %==========================================================================
 % 6. START STIMULUS PRESENTATION AND THE ACTUAL DISPLAY OF THINGS
 %==========================================================================
@@ -129,7 +131,7 @@ for seqi = 1:nSeq
 
 		  % show the choosen image
 		  img    = imgInfo.image;
-		  set(imghdl,'cdata',imgInfo.image./4); % update the image
+		  set(imghdl,'cdata',imgInfo.image); % update the image
           colormap gray;
           axis equal;
 		  %% imghdl = image(linspace(0,1,size(img,2)),linspace(0,1,size(img,1)),...
