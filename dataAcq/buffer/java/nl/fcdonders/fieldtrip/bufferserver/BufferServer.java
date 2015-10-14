@@ -128,17 +128,17 @@ public class BufferServer extends Thread {
 		setName("Fieldtrip Buffer Server");
 	}
 
-	public BufferServer(final int portNumber, final int nSamples, final int nEvents, final String path) {
-		this.portNumber = portNumber;
-		System.err.println("Saving to : " + path);
-		dataStore = new SavingRingDataStore(nSamples, nEvents, path);
-		setName("Fieldtrip Buffer Server");
-	}
-
 	public BufferServer(final int portNumber, final int nSamples, final int nEvents, final java.io.File file) {
 		this.portNumber = portNumber;
 		System.err.println("Saving to : " + file.getPath());
 		dataStore = new SavingRingDataStore(nSamples, nEvents, file);
+		setName("Fieldtrip Buffer Server");
+	}
+
+	public BufferServer(final int portNumber, final int nSamples, final int nEvents, final String path) {
+		this.portNumber = portNumber;
+		System.err.println("Saving to : " + path);
+		dataStore = new SavingRingDataStore(nSamples, nEvents, path);
 		setName("Fieldtrip Buffer Server");
 	}
 

@@ -11,7 +11,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 public class SavingRingDataStore extends RingDataStore {
-    private static final int dataBufSize = 1024 * 10 * 10; // ~10s data
+    private static final int dataBufSize = 1024 * 10 * 10; // ~10s data file-write buffer
     private static final int eventBufSize = 100 * 10 * 10;  // ~10s event file-write buffer
     private BufferedOutputStream eventWriter;
     private BufferedOutputStream dataWriter;

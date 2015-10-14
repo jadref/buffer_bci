@@ -9,6 +9,8 @@ import nl.fcdonders.fieldtrip.bufferserver.network.Request;
 import nl.fcdonders.fieldtrip.bufferserver.network.WaitRequest;
 
 public class RingDataStore extends DataModel {
+    public final int MINNBUFFER=60*100;  // about 60s data @ 100hz
+    public final int MINEVENTS =100;     // about 100 events
 	protected final ArrayList<WaitRequest> requests = new ArrayList<WaitRequest>();
 	protected DataRingBuffer dataBuffer;
 	protected final EventRingBuffer eventBuffer;
@@ -25,8 +27,9 @@ public class RingDataStore extends DataModel {
 	 * @param nBuffer
 	 *            Capacit of sample and event buffers.
 	 */
-	public RingDataStore(final int nBuffer) {
-		eventBuffer = new EventRingBuffer(nBuffer);
+	public RingDataStore(int nBuffer) {
+      if ( nBuffer<=MINNBUFFER ) nBuffer=MINNBUFFER;
+		eventBuffer = new EventRingBuffer(MINEVENTS);
 		dataBufferSize = nBuffer;
 	}
 
@@ -38,7 +41,9 @@ public class RingDataStore extends DataModel {
 	 * @param nEvents
 	 *            Capacity of the event ringbuffer.
 	 */
-	public RingDataStore(final int nSamples, final int nEvents) {
+	public RingDataStore(int nSamples, int nEvents) {
+      if ( nSamples<=MINNBUFFER ) nSamples=MINNBUFFER;
+      if ( nEvents<=MINEVENTS )   nEvents =MINEVENTS;
 		eventBuffer = new EventRingBuffer(nEvents);
 		dataBufferSize = nSamples;
 	}
