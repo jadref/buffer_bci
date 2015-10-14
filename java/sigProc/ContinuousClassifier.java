@@ -49,6 +49,7 @@ public class ContinuousClassifier {
     protected Integer step_samp= -1;
     protected Float fs=-1.0f;
     protected Header header=null;
+    protected boolean run = true;
 
 	 static final String usage="java ContinuousClassifer buffhost:buffport weightfile trlen_ms step_ms timeout_ms";
 
@@ -256,8 +257,7 @@ public class ContinuousClassifier {
         long t0 = 0;
 
         // Run the code
-        boolean run = true;
-        while (!endExpected && run) {
+        while (!endExpected && run) {//The run switch allows control of stopping the thread and getting out of the loop
             // Getting data from buffer
             SamplesEventsCount status = null;
             // Block until there are new events
@@ -352,6 +352,7 @@ public class ContinuousClassifier {
             e.printStackTrace();
         }
     }
+    public void stop(){ run=false; }
 
     public String toString() {
         String str = "\nContinuousClassifier with parameters:\n" + 

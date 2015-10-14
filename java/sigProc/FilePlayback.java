@@ -176,7 +176,7 @@ public class FilePlayback {
         boolean eof = false;
 
 
-        while (!eof && run) { //The run switch allows control of stopping the thread and getting out of the loop
+        while(!eof && run) {//The run switch allows control of stopping the thread and getting out of the loop
             // Read one buffer packets worth of samples
             // increment the cursor position
             if (VERB > 0 && elapsed_ms > print_ms + 500) {
@@ -264,15 +264,7 @@ public class FilePlayback {
 		  stop();
 	}
 	 
-	 public void stop() {
-		 //super.stop();
-		try {
-			client.disconnect();
-		} catch (final IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
+	 public void stop() { run=false; }
 
 	 void initFiles(String fdir) throws FileNotFoundException {
 		  dataReader = new BufferedInputStream(new FileInputStream(fdir + File.separator + "samples"));
