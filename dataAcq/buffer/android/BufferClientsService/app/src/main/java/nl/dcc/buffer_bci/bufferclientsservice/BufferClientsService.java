@@ -138,6 +138,7 @@ public class BufferClientsService extends Service {
 
     public void handleExceptionCrash(final Exception e, final ThreadBase base) {
         Log.e(TAG, Log.getStackTraceString(e));
+        makeToast(base.getName() + " crashed!", Toast.LENGTH_SHORT);
         try {
             if (isExternalStorageWritable()) {
 
@@ -214,7 +215,7 @@ public class BufferClientsService extends Service {
 
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
-
+        android.os.Debug.waitForDebugger();
         if (wakeLock == null && wifiLock == null) {
             updater = new Updater(this);
             updater.start();
@@ -333,7 +334,7 @@ public class BufferClientsService extends Service {
         @Override
         public FileInputStream openReadFile(final String path) throws IOException {
             if (isExternalStorageReadable()) {
-                return new FileInputStream(new File(Environment.getExternalStorageDirectory(), path));
+                return new FileInputStream(new File(context.getExternalFilesDir(null), path));
             } else {
                 throw new IOException("Could not open external storage.");
             }
@@ -346,7 +347,7 @@ public class BufferClientsService extends Service {
         @Override
         public FileOutputStream openWriteFile(final String path) throws IOException {
             if (isExternalStorageWritable()) {
-                return new FileOutputStream(new File(Environment.getExternalStorageDirectory(), path));
+                return new FileOutputStream(new File(context.getExternalFilesDir(null), path));
             } else {
                 throw new IOException("Could not open external storage.");
             }

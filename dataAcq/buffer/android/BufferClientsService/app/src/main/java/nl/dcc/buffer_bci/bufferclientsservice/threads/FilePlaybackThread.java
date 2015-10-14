@@ -1,8 +1,15 @@
 package nl.dcc.buffer_bci.bufferclientsservice.threads;
 
+import android.os.Environment;
+import android.util.Log;
+
 import nl.dcc.buffer_bci.bufferclientsservice.base.Argument;
 import nl.dcc.buffer_bci.bufferclientsservice.base.ThreadBase;
-import nl.dcc.buffer_bci.signalprocessing.FilePlayback;
+import nl.dcc.buffer_bci.FilePlayback;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -20,6 +27,7 @@ public class FilePlaybackThread extends ThreadBase {
     private InputStream dataReader;
     private InputStream eventReader;
     private InputStream headerReader;
+    FilePlayback filePlayback=null;
 
     @Override
     public Argument[] getArguments() {
@@ -66,26 +74,25 @@ public class FilePlaybackThread extends ThreadBase {
         speedup = arguments[1].getDouble();
         blockSize = arguments[2].getInteger();
         dataDir = arguments[3].getString();
-        android.updateStatus("Address: " + hostname + ":" + String.valueOf(port));
+        androidHandle.updateStatus("Address: " + hostname + ":" + String.valueOf(port));
     }
 
     @Override
     public void mainloop() {
         initialize();
         initFiles();
-        FilePlayback filePlayback = new FilePlayback(hostname,port,dataReader,eventReader,headerReader,speedup,blockSize);
+        filePlayback = new FilePlayback(hostname,port,dataReader,eventReader,headerReader,speedup,blockSize);
         filePlayback.mainloop();
-        stop();
-    }
-
-    public void stop() {
-        super.stop();
         try {
             cleanup();
-        } catch (final IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
+        filePlayback=null;
     }
+
+    @Override
+    public void stop() { filePlayback.stop(); }
 
     void initFiles() {
         String samples_str = dataDir + "/samples";
@@ -93,11 +100,11 @@ public class FilePlaybackThread extends ThreadBase {
         String header_str = dataDir + "/header";
 		  try {
 				if ( isExternalStorageReadable() ){ // if available read from external storage
-				  dataReader=new FileInputStream(new File(Environment.getExternalFilesDir(),samples_str));
-				  eventReader=new FileInputStream(new File(Environment.getExternalFilesDir(),events_str));
-			  	  headerReader=new FileInputStream(new File(Environment.getExternalFilesDir(),header_str));
+				  dataReader  =androidHandle.openReadFile(samples_str);
+				  eventReader =androidHandle.openReadFile(events_str);
+			  	  headerReader=androidHandle.openReadFile(header_str);
 				} else {
-					 android.util.Log.w("FilePlayback","External storage is not readable.");
+					 Log.w("FilePlayback","External storage is not readable.");
 					 dataReader = this.getClass().getClassLoader().getResourceAsStream(samples_str);
 					 eventReader = this.getClass().getClassLoader().getResourceAsStream(events_str);
 					 headerReader = this.getClass().getClassLoader().getResourceAsStream(header_str);
@@ -108,9 +115,24 @@ public class FilePlaybackThread extends ThreadBase {
 				e.printStackTrace();
 		  }
 		  if ( dataReader==null ) {
-				android.util.Log.w("FilePlayback","Huh, couldnt open file stream : " + samples_str);
+                Log.w("FilePlayback", "Huh, couldnt open file stream : " + samples_str);
 		  }
 	 }
+
+    /* Checks if external storage is available for read and write */
+    public boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        return Environment.MEDIA_MOUNTED.equals(state);
+    }
+    /* Checks if external storage is available to at least read */
+    public boolean isExternalStorageReadable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state) ||
+                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+            return true;
+        }
+        return false;
+    }
 
     void cleanup() throws IOException {
         if (headerReader != null) {

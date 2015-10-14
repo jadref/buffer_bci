@@ -49,7 +49,7 @@ public class MuseConnection extends ThreadBase {
         channels = arguments[2].getInteger();
         samplingFrequency = arguments[3].getInteger();
         dataType = arguments[4].getInteger();
-        android.updateStatus("Address: " + address + ":" + String.valueOf(port));
+        androidHandle.updateStatus("Address: " + address + ":" + String.valueOf(port));
         Log.d(TAG, this.toString());
     }
 
@@ -88,7 +88,7 @@ public class MuseConnection extends ThreadBase {
         while (run) {
             long now = Calendar.getInstance().getTimeInMillis();
             if (startMs + elapsedMs > now + 5000) {
-                android.updateStatus(nSamples + "(" + elapsedMs / 1000 + ")");
+                androidHandle.updateStatus(nSamples + "(" + elapsedMs / 1000 + ")");
                 Log.i(TAG, "Elapsed time: " + elapsedMs + ". nSamples: " + nSamples);
             }
         }
@@ -163,14 +163,14 @@ public class MuseConnection extends ThreadBase {
     private void connectToBuffer() {
         while (!client.isConnected()) {
             Log.i(TAG, "Connecting to " + address + ":" + port);
-            android.updateStatus("Connecting to " + address + ":" + port);
+            androidHandle.updateStatus("Connecting to " + address + ":" + port);
             try {
                 client.connect(address, port);
             } catch (IOException ex) {
                 Log.e(TAG, "Could not connect to buffer. Maybe the address or port is wrong?");
             }
             if (!client.isConnected()) {
-                android.updateStatus("Couldn't connect. Waiting");
+                androidHandle.updateStatus("Couldn't connect. Waiting");
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {

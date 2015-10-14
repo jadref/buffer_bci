@@ -1,5 +1,12 @@
 package nl.dcc.buffer_bci.bufferclientsservice.threads;
 
+import android.os.Environment;
+import android.util.Log;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 
 import nl.dcc.buffer_bci.bufferclientsservice.base.Argument;
@@ -14,13 +21,13 @@ public class ContinuousClassifierThread extends ThreadBase {
 
     private static final String TAG = ContinuousClassifier.class.getSimpleName();
 
-    private ContinuousClassifier continuousClassifier;
     protected String hostname ="localhost";
     protected int port = 1972;
     protected Integer timeout_ms = 1000;
     protected Integer trialLength_ms  =-1;
     protected Integer step_ms  = -1;
     protected String clsfrFile;
+    private ContinuousClassifier clsfr=null;
 
     @Override
     public Argument[] getArguments() {
@@ -67,11 +74,11 @@ public class ContinuousClassifierThread extends ThreadBase {
     public void mainloop() {
         // Initialize the classifier and connect to the buffer
         initialize();
-        ContinuousClassifier clsfr = new ContinuousClassifier(hostname,port,timeout_ms);
+        clsfr = new ContinuousClassifier(hostname,port,timeout_ms);
 		  InputStream clsfrReader=null;
 		  try {
 				if ( isExternalStorageReadable() ){
-					 clsfrReader=new FileInputStream(new File(Environment.getExternalFilesDir(),clsfrFile));
+					 clsfrReader=androidHandle.openReadFile(clsfrFile);
 				} else {
 					 clsfrReader=this.getClass().getClassLoader().getResourceAsStream(clsfrFile);
 				}
@@ -80,12 +87,32 @@ public class ContinuousClassifierThread extends ThreadBase {
 		  } catch ( IOException e ) {
 				e.printStackTrace();
 		  }
-		  if ( clsfrStream==null ) {
-				android.util.Log.w("Continuous Classifier","Huh, couldnt open file stream : " + clsfrFile);
+		  if ( clsfrReader==null) {
+              Log.w(TAG, "Huh, couldnt open file stream : " + clsfrFile);
 		  }
 
         clsfr.initialize(clsfrReader,trialLength_ms,step_ms);
         clsfr.mainloop();
+        clsfr=null;
+    }
+
+    @Override public void stop() { clsfr.stop(); }
+
+
+
+    /* Checks if external storage is available for read and write */
+    public boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        return Environment.MEDIA_MOUNTED.equals(state);
+    }
+    /* Checks if external storage is available to at least read */
+    public boolean isExternalStorageReadable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state) ||
+                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+            return true;
+        }
+        return false;
     }
 
     @Override

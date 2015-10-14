@@ -12,13 +12,13 @@ public abstract class ThreadBase {
 
     public Argument[] arguments;
     protected boolean run = false;
-    protected AndroidHandle android;
+    protected AndroidHandle androidHandle;
 
     protected boolean connect(final BufferClient client, final String address, final int port) throws IOException,
             InterruptedException {
         if (!client.isConnected()) {
             client.connect(address, port);
-            android.updateStatus("Waiting for header.");
+            androidHandle.updateStatus("Waiting for header.");
         } else {
             return false;
         }
@@ -62,7 +62,7 @@ public abstract class ThreadBase {
     }
 
     public void setHandle(final AndroidHandle android) {
-        this.android = android;
+        this.androidHandle = android;
     }
 
     public void stop() {

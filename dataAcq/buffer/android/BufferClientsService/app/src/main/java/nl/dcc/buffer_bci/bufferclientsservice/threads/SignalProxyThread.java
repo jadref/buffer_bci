@@ -4,7 +4,6 @@ import nl.dcc.buffer_bci.bufferclientsservice.base.Argument;
 import nl.dcc.buffer_bci.bufferclientsservice.base.ThreadBase;
 import nl.dcc.buffer_bci.SignalProxy;
 import java.io.IOException;
-import java.io.InputStream;
 
 
 public class SignalProxyThread extends ThreadBase {
@@ -15,7 +14,9 @@ public class SignalProxyThread extends ThreadBase {
     private String hostname;
     private int port;
     private int blockSize;
-	 private float fSample;
+    private int nChannels;
+    private double fSample;
+    SignalProxy signalProxy=null;
 
     @Override
     public Argument[] getArguments() {
@@ -23,14 +24,14 @@ public class SignalProxyThread extends ThreadBase {
 
         arguments[0] = new Argument("Buffer Address", "localhost:1972");
         arguments[1] = new Argument("nChannels", 4, false);
-        arguments[2] = new Argument("Sample Rate", 100, false);
-        arguments[3] = new Argument("Blocksize", 1, false);
+        arguments[2] = new Argument("Sample Rate", 100.0, false);
+        arguments[3] = new Argument("Blocksize", 5, false);
         return arguments;
     }
 
     @Override
     public String getName() {
-        return "File Playback";
+        return "Signal Proxy";
     }
 
 
@@ -60,43 +61,19 @@ public class SignalProxyThread extends ThreadBase {
             hostname=hostname.substring(0,sep);
         }
 		  nChannels = arguments[1].getInteger();
-        fSample = arguments[2].getString();
+        fSample = arguments[2].getDouble();
         blockSize = arguments[3].getInteger();
-        android.updateStatus("Address: " + hostname + ":" + String.valueOf(port));
+        androidHandle.updateStatus("Address: " + hostname + ":" + String.valueOf(port));
     }
 
     @Override
     public void mainloop() {
         initialize();
-        SignalProxy signalProxy = new SignalProxy(hostname,port,nChannels,fSample,blockSize);
+        signalProxy = new SignalProxy(hostname,port,nChannels,fSample,blockSize);
         signalProxy.mainloop();
-        stop();
+        signalProxy=null; // delete the variable
     }
 
-    public void stop() {
-        super.stop();
-        try {
-            cleanup();
-        } catch (final IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    void cleanup() throws IOException {
-        if (headerReader != null) {
-            headerReader.close();
-            headerReader = null;
-        }
-        if (eventReader != null) {
-            eventReader.close();
-            eventReader = null;
-        }
-        if (dataReader != null) {
-            dataReader.close();
-            dataReader = null;
-        }
-        run = false;
-    }
-
+    @Override public void stop() { signalProxy.stop(); }
 
 }

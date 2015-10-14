@@ -21,6 +21,7 @@ import nl.fcdonders.fieldtrip.bufferserver.BufferServer;
 
 import java.io.File;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 
 public class BufferServerService extends Service {
@@ -90,6 +91,7 @@ public class BufferServerService extends Service {
 
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
+        android.os.Debug.waitForDebugger();
         Log.i(TAG, "Buffer Service Running");
         // If no buffer is running.
         if (buffer == null) {
@@ -126,30 +128,39 @@ public class BufferServerService extends Service {
                     .setContentTitle(res.getString(R.string.notification_title))
                     .setContentText(notification_text);
 
+
+            final int sampleBuffSize = intent.getIntExtra("nSamples", 100);
+            final int eventBuffSize  = intent.getIntExtra("nEvents", 100);
             // Create a buffer and start it.
+
             if (isExternalStorageWritable()) {
                 Log.i(TAG, "External storage is writable");
-					 java.lang.Date now = new java.lang.Date();
-                String session = new java.text.SimpleDateFormat("YYMMDD").format(now);
-                File savedir = new File(Environment.getExternalFilesDir(),session);
-					 if (!savedir.mkdirs()) {
-						  Log.e(LOG_TAG, "Save session directory not created");
-					 }
-					 String block   = new java.text.SimpleDateFormat("HHMM").format(now);
-					 savedir = new File(savedir,block);
-					 if (!savedir.mkdirs()) {
-						  Log.e(LOG_TAG, "Save block directory not created");
-					 }
-                buffer = new BufferServer(port, intent.getIntExtra("nSamples", 100),
-														intent.getIntExtra("nEvents", 100), savedir);
-            } else {
+                File savedir = new File(getExternalFilesDir(null),"raw_buffer");
+                if (!savedir.mkdirs()) {
+                    Log.e(TAG, "Save session directory not created");
+                }
+                Date now = new Date();
+                String session = (new java.text.SimpleDateFormat("yyMMdd", Locale.US)).format(now);
+                savedir = new File(savedir,session);
+				if (!savedir.mkdirs()) {
+					  Log.e(TAG, "Save session directory not created");
+				}
+				String block   = (new java.text.SimpleDateFormat("HHmm", Locale.US)).format(now);
+				savedir = new File(savedir,block);
+				if (!savedir.mkdirs()) {
+					  Log.e(TAG, "Save block directory not created");
+				}
+                if ( savedir.canWrite() ) {
+                    buffer = new BufferServer(port, sampleBuffSize, eventBuffSize, savedir);
+                }
+            }
+
+            if ( buffer==null ){
                 Log.i(TAG, "External storage is sadly not writable");
                 Log.w(TAG, "Storage is not writable. I am not saving the data.");
-                buffer = new BufferServer(port, intent.getIntExtra("nSamples", 100),
-                        intent.getIntExtra("nEvents", 100));
+                buffer = new BufferServer(port,sampleBuffSize,eventBuffSize);
             }
-            monitor = new BufferMonitor(this, ip + ":" + port,
-                    System.currentTimeMillis());
+            monitor = new BufferMonitor(this, ip + ":" + port,System.currentTimeMillis());
             buffer.addMonitor(monitor);
 
             // Start the buffer and Monitor
