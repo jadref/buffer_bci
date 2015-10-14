@@ -103,8 +103,9 @@ public class FilePlaybackThread extends ThreadBase {
 				  dataReader  =androidHandle.openReadFile(samples_str);
 				  eventReader =androidHandle.openReadFile(events_str);
 			  	  headerReader=androidHandle.openReadFile(header_str);
-				} else {
-					 Log.w("FilePlayback","External storage is not readable.");
+				}
+              if ( dataReader == null ){ // fall back on the resources directory
+                  Log.w("FilePlayback","External storage is not readable.");
 					 dataReader = this.getClass().getClassLoader().getResourceAsStream(samples_str);
 					 eventReader = this.getClass().getClassLoader().getResourceAsStream(events_str);
 					 headerReader = this.getClass().getClassLoader().getResourceAsStream(header_str);

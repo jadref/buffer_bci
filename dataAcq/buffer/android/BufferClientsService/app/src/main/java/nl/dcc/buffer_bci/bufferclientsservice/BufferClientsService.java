@@ -134,6 +134,7 @@ public class BufferClientsService extends Service {
         } catch (IOException e1) {
             makeToast("Failed to write stack trace!", Toast.LENGTH_LONG);
         }
+        updater.update = true;
     }
 
     public void handleExceptionCrash(final Exception e, final ThreadBase base) {
@@ -156,6 +157,7 @@ public class BufferClientsService extends Service {
         } catch (IOException e1) {
             makeToast("Failed to write stack trace!", Toast.LENGTH_LONG);
         }
+        updater.update = true;
     }
 
     /* Checks if external storage is available to at least read */

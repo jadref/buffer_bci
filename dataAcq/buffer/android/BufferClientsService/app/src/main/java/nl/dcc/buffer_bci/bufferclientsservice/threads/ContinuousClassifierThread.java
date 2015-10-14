@@ -71,26 +71,25 @@ public class ContinuousClassifierThread extends ThreadBase {
     }
 
     @Override
-    public void mainloop() {
-        // Initialize the classifier and connect to the buffer
+    public void mainloop() {// Initialize the classifier and connect to the buffer
         initialize();
         clsfr = new ContinuousClassifier(hostname,port,timeout_ms);
-		  InputStream clsfrReader=null;
-		  try {
-				if ( isExternalStorageReadable() ){
-					 clsfrReader=androidHandle.openReadFile(clsfrFile);
-				} else {
-					 clsfrReader=this.getClass().getClassLoader().getResourceAsStream(clsfrFile);
-				}
-		  } catch ( FileNotFoundException e ) {
-				e.printStackTrace();
-		  } catch ( IOException e ) {
-				e.printStackTrace();
-		  }
-		  if ( clsfrReader==null) {
-              Log.w(TAG, "Huh, couldnt open file stream : " + clsfrFile);
-		  }
-
+        InputStream clsfrReader=null;
+        try {
+            if ( isExternalStorageReadable() ){
+                clsfrReader=androidHandle.openReadFile(clsfrFile);
+            }
+            if ( clsfrReader == null ){ // fall back on the resources directory
+                clsfrReader=this.getClass().getClassLoader().getResourceAsStream(clsfrFile);
+            }
+        } catch ( FileNotFoundException e ) {
+            e.printStackTrace();
+        } catch ( IOException e ) {
+            e.printStackTrace();
+        }
+        if ( clsfrReader==null) {
+            Log.w(TAG, "Huh, couldnt open file stream : " + clsfrFile);
+        }
         clsfr.initialize(clsfrReader,trialLength_ms,step_ms);
         clsfr.mainloop();
         clsfr=null;
