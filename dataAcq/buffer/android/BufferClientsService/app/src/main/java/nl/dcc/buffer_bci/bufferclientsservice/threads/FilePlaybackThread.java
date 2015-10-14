@@ -91,10 +91,26 @@ public class FilePlaybackThread extends ThreadBase {
         String samples_str = dataDir + "/samples";
         String events_str = dataDir + "/events";
         String header_str = dataDir + "/header";
-        dataReader = this.getClass().getClassLoader().getResourceAsStream(samples_str);
-        eventReader = this.getClass().getClassLoader().getResourceAsStream(events_str);
-        headerReader = this.getClass().getClassLoader().getResourceAsStream(header_str);
-    }
+		  try {
+				if ( isExternalStorageReadable() ){ // if available read from external storage
+				  dataReader=new FileInputStream(new File(Environment.getExternalFilesDir(),samples_str));
+				  eventReader=new FileInputStream(new File(Environment.getExternalFilesDir(),events_str));
+			  	  headerReader=new FileInputStream(new File(Environment.getExternalFilesDir(),header_str));
+				} else {
+					 android.util.Log.w("FilePlayback","External storage is not readable.");
+					 dataReader = this.getClass().getClassLoader().getResourceAsStream(samples_str);
+					 eventReader = this.getClass().getClassLoader().getResourceAsStream(events_str);
+					 headerReader = this.getClass().getClassLoader().getResourceAsStream(header_str);
+				}
+		  } catch ( FileNotFoundException e ) {
+				e.printStackTrace();
+		  } catch ( IOException e ) {
+				e.printStackTrace();
+		  }
+		  if ( dataReader==null ) {
+				android.util.Log.w("FilePlayback","Huh, couldnt open file stream : " + samples_str);
+		  }
+	 }
 
     void cleanup() throws IOException {
         if (headerReader != null) {

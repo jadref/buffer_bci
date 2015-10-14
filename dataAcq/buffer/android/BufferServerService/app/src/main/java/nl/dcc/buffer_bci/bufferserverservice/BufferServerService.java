@@ -129,10 +129,19 @@ public class BufferServerService extends Service {
             // Create a buffer and start it.
             if (isExternalStorageWritable()) {
                 Log.i(TAG, "External storage is writable");
-                long time = Calendar.getInstance().getTimeInMillis();
-                File file = getStorageDir("buffer_dump_" + String.valueOf(time));
+					 java.lang.Date now = new java.lang.Date();
+                String session = new java.text.SimpleDateFormat("YYMMDD").format(now);
+                File savedir = new File(Environment.getExternalFilesDir(),session);
+					 if (!savedir.mkdirs()) {
+						  Log.e(LOG_TAG, "Save session directory not created");
+					 }
+					 String block   = new java.text.SimpleDateFormat("HHMM").format(now);
+					 savedir = new File(savedir,block);
+					 if (!savedir.mkdirs()) {
+						  Log.e(LOG_TAG, "Save block directory not created");
+					 }
                 buffer = new BufferServer(port, intent.getIntExtra("nSamples", 100),
-                        intent.getIntExtra("nEvents", 100), file);
+														intent.getIntExtra("nEvents", 100), savedir);
             } else {
                 Log.i(TAG, "External storage is sadly not writable");
                 Log.w(TAG, "Storage is not writable. I am not saving the data.");
@@ -168,14 +177,5 @@ public class BufferServerService extends Service {
     public boolean isExternalStorageWritable() {
         String state = Environment.getExternalStorageState();
         return Environment.MEDIA_MOUNTED.equals(state);
-    }
-
-    public File getStorageDir(String folderName) {
-        File file = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_DOWNLOADS), folderName);
-        if (!file.mkdirs()) {
-            Log.w(TAG, "Directory not created");
-        }
-        return file;
     }
 }

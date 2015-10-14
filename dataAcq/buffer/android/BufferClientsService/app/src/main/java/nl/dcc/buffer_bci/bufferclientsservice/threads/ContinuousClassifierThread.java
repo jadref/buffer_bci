@@ -42,7 +42,7 @@ public class ContinuousClassifierThread extends ThreadBase {
         arguments[14] = new Argument("Sample trial length", 25, true);
         arguments[15] = new Argument("Sample trial ms", -1, true);
         arguments[16] = new Argument("Normalize latitude", true);
-        arguments[17] = new Argument("Clsfr file","res/clsfr.txt");
+        arguments[17] = new Argument("Clsfr file","clsfr.txt");
         return arguments;
     }
 
@@ -68,7 +68,22 @@ public class ContinuousClassifierThread extends ThreadBase {
         // Initialize the classifier and connect to the buffer
         initialize();
         ContinuousClassifier clsfr = new ContinuousClassifier(hostname,port,timeout_ms);
-        InputStream clsfrReader = this.getClass().getClassLoader().getResourceAsStream(clsfrFile);
+		  InputStream clsfrReader=null;
+		  try {
+				if ( isExternalStorageReadable() ){
+					 clsfrReader=new FileInputStream(new File(Environment.getExternalFilesDir(),clsfrFile));
+				} else {
+					 clsfrReader=this.getClass().getClassLoader().getResourceAsStream(clsfrFile);
+				}
+		  } catch ( FileNotFoundException e ) {
+				e.printStackTrace();
+		  } catch ( IOException e ) {
+				e.printStackTrace();
+		  }
+		  if ( clsfrStream==null ) {
+				android.util.Log.w("Continuous Classifier","Huh, couldnt open file stream : " + clsfrFile);
+		  }
+
         clsfr.initialize(clsfrReader,trialLength_ms,step_ms);
         clsfr.mainloop();
     }
@@ -76,5 +91,4 @@ public class ContinuousClassifierThread extends ThreadBase {
     @Override
     public void validateArguments(Argument[] arguments) {
     }
-
 }
