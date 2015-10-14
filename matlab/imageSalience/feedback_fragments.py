@@ -6,7 +6,7 @@ import FieldTrip
 from PIL import Image
 
 # Value definitions
-image_root = './pictures'
+image_paths = ['./pictures/targets', './pictures/distractors', './pictures/test', './pictures/training']
 
 hostname='localhost'
 port=1972
@@ -105,29 +105,15 @@ def sliceImage(img,columns,rows):
 	return slices
 
 
-
-# Tries to load an image from one of the configured directories.
 def tryOpenImage(name):
-    img = tryOpenImageActual(name, image_root)
-    if img is None:
-    	raise IOError('Image ' + name + ' could not be found in any of the directories configured in paths. Is the image saved as .jpg?');
+	for p in image_paths:
+		try:
+			image_path = os.path.join(p, name + '.jpg')
+			return Image.open(image_path)
+		except IOError:
+			pass
+	raise IOError('Image ' + name + ' could not be found in any of the directories configured in paths. Is the image saved as .jpg?');
 	
-def tryOpenImageActual(name, dir):
-    # Try to load image in current dir
-    try:
-        image_path = os.path.join(dir, name + '.jpg')
-        return pygame.image.load(image_path)
-    except:
-        pass
-    
-    # Scan subdirs
-    for subdir in [d in os.listdir() if os.path.isdir(d)]:
-        img = tryOpenImageActual(name, os.path.join(dir, subdir))
-        if img != None:
-            return img
-           
-    # Return failure.
-    return None
 
 # Load image, create fragments, convert to surfaces and store.
 def loadImage(name):
