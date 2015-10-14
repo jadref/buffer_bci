@@ -106,7 +106,7 @@ def processBufferEvents():
 			if pred[1] > PRED_IDX_2_THRESHOLD: send_command(PRED_IDX_2_CMD)
 			if pred[2] > PRED_IDX_3_THRESHOLD: send_command(PRED_IDX_3_CMD)
 			
-		else if evt.type == 'startPhase.cmd'
+		elif evt.type == 'startPhase.cmd':
 			if evt.value == 'quit':
 				running = False
 				break
