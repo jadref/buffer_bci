@@ -1,4 +1,4 @@
-package nl.dcc.buffer_bci.signalprocessing;
+package nl.dcc.buffer_bci;
 import java.io.*;
 import java.nio.*;
 import nl.fcdonders.fieldtrip.bufferclient.*;
