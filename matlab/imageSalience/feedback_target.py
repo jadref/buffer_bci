@@ -6,7 +6,7 @@ import FieldTrip
 from PIL import Image
 
 # Value definitions
-image_paths = ['./pictures/targets', './pictures/distractors', './pictures/test', './pictures/training', './pictures/faces']
+image_root = './pictures'
 
 hostname='localhost'
 port=1972
@@ -91,14 +91,27 @@ numPredictions = 0
 
 # Tries to load an image from one of the configured directories.
 def tryOpenImage(name):
-	for p in image_paths:
-		try:
-			image_path = os.path.join(p, name + '.jpg')
-			return pygame.image.load(image_path)
-		except:
-			pass
-	raise IOError('Image ' + name + ' could not be found in any of the directories configured in paths. Is the image saved as .jpg?');
+    img = tryOpenImageActual(name, dir)
+    if img is None:
+    	raise IOError('Image ' + name + ' could not be found in any of the directories configured in paths. Is the image saved as .jpg?');
 	
+def tryOpenImageActual(name, dir):
+    # Try to load image in current dir
+    try:
+        image_path = os.path.join(dir, name + '.jpg')
+        return pygame.image.load(image_path)
+    except:
+        pass
+    
+    # Scan subdirs
+    for subdir in [d in os.listdir() if os.path.isdir(d)]:
+        img = tryOpenImageActual(name, os.path.join(dir, subdir))
+        if img != None:
+            return img
+           
+    # Return failure.
+    return None
+    
 # Loads an image from either the cache or from disk.
 def loadImage(name):
 	if name in loadedImages:
