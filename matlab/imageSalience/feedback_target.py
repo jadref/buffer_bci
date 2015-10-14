@@ -91,7 +91,7 @@ numPredictions = 0
 
 # Tries to load an image from one of the configured directories.
 def tryOpenImage(name):
-    img = tryOpenImageActual(name, dir)
+    img = tryOpenImageActual(name, image_root)
     if img is None:
     	raise IOError('Image ' + name + ' could not be found in any of the directories configured in paths. Is the image saved as .jpg?');
 	
