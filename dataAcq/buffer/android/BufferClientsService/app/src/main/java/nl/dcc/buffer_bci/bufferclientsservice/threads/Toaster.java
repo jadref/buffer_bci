@@ -14,6 +14,37 @@ public class Toaster extends ThreadBase {
     private final BufferClient client = new BufferClient();
 
     /**
+     * Connects to the buffer
+     */
+    protected Header connect(String hostname, int port) {
+        Header header=null;
+        while (header == null && run) {
+            try {
+                System.out.println( "Connecting to " + hostname + ":" + port);
+                if ( !client.isConnected() ) {
+                    client.connect(hostname, port);
+                }
+                //C.setAutoReconnect(true);
+                if (client.isConnected()) {
+                    header = client.getHeader();
+                }
+            } catch (IOException e) {
+                header = null;
+            }
+            if (header == null) {
+                System.out.println( "Invalid Header... waiting");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    run=false;
+                }
+            }
+        }
+        return header;
+    }
+
+    /**
      * Is used by the androidHandle app to determine what kind of arguments the thread
      * requires.
      */
@@ -107,7 +138,8 @@ public class Toaster extends ThreadBase {
              * false if the buffer could not be reached at the specified
              * address/port.
              */
-            if (!connect(client, address, port)) {
+            Header hdr = connect(address,port);
+            if ( hdr==null) {
                 androidHandle.updateStatus("Could not connect to buffer.");
                 run = false;
                 return;
@@ -118,8 +150,6 @@ public class Toaster extends ThreadBase {
              * app.
              */
             androidHandle.updateStatus("Waiting for events.");
-
-            Header hdr = client.getHeader();
 
             /**
              * The openWriteFile() and openReadFile() functions can be used to
@@ -196,8 +226,6 @@ public class Toaster extends ThreadBase {
             }
         } catch (final IOException e) {
             androidHandle.updateStatus("IOException caught, stopping.");
-        } catch (final InterruptedException e) {
-            androidHandle.updateStatus("InterruptException caught, stopping.");
         }
     }
 

@@ -14,28 +14,6 @@ public abstract class ThreadBase {
     protected boolean run = false;
     protected AndroidHandle androidHandle;
 
-    protected boolean connect(final BufferClient client, final String address, final int port) throws IOException,
-            InterruptedException {
-        if (!client.isConnected()) {
-            client.connect(address, port);
-            androidHandle.updateStatus("Waiting for header.");
-        } else {
-            return false;
-        }
-        Header hdr = null;
-        do {
-            try {
-                hdr = client.getHeader();
-            } catch (IOException e) {
-                if (!e.getMessage().contains("517")) {
-                    throw e;
-                }
-                Thread.sleep(1000);
-            }
-        } while (hdr == null);
-        return true;
-    }
-
     public abstract Argument[] getArguments();
 
     public void setArguments(final Argument[] arguments) {
