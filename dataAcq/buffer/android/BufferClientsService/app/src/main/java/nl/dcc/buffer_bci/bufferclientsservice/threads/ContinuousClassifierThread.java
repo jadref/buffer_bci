@@ -45,7 +45,7 @@ public class ContinuousClassifierThread extends ThreadBase {
         arguments[10] = new Argument("Overlap", .5, true);
         arguments[11] = new Argument("Timeout ms", 1000, true);
         arguments[12] = new Argument("Sample step ms", -1, true);
-        arguments[13] = new Argument("Prediction filter", 1.0, true);
+        arguments[13] = new Argument("Prediction filter", -1.0, true);
         arguments[14] = new Argument("Sample trial length", 25, true);
         arguments[15] = new Argument("Sample trial ms", -1, true);
         arguments[16] = new Argument("Normalize latitude", true);
