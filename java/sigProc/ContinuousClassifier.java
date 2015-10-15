@@ -32,22 +32,18 @@ public class ContinuousClassifier {
     protected String endType = "stimulus.test";
     protected String endValue = "end";
     protected String predictionEventType = "classifier.prediction";
-    protected String baselineEventType = "stimulus.startbaseline";
-    protected String baselineEnd = null;
-    protected String baselineStart = "start";
-    protected Integer nBaselineStep = 5000;
 
-    protected Double predictionFilter = 1.0;
-    protected Integer timeout_ms = 1000;
+    protected double predictionFilter = 1.0;
+    protected int timeout_ms = 1000;
     protected boolean normalizeLatitude = true;
-    protected List<PreprocClassifier> classifiers;
+    protected List<PreprocClassifier> classifiers=null;
     protected BufferClientClock C = null;
-    protected Integer trialLength_ms  =-1;
-    protected Integer trialLength_samp=-1;
-    protected Double overlap   = .5;
-    protected Integer step_ms  = -1;
-    protected Integer step_samp= -1;
-    protected Float fs=-1.0f;
+    protected int trialLength_ms  =-1;
+    protected int trialLength_samp=-1;
+    protected double overlap   = .5;
+    protected int step_ms  = -1;
+    protected int step_samp= -1;
+    protected double fs=-1.0;
     protected Header header=null;
     protected boolean run = true;
 
@@ -148,10 +144,12 @@ public class ContinuousClassifier {
      * Connects to the buffer
      */
     protected void connect() {
-        while (header == null) {
+        while (header == null && run) {
             try {
                 System.out.println( "Connecting to " + hostname + ":" + port);
-                C.connect(hostname, port);
+                if ( !C.isConnected() ) {
+                    C.connect(hostname, port);
+                }
                 //C.setAutoReconnect(true);
                 if (C.isConnected()) {
                     header = C.getHeader();
@@ -308,7 +306,7 @@ public class ContinuousClassifier {
                 }
 
                 // Smooth the classifiers
-                if (dv == null || predictionFilter == null) {
+                if (dv == null ) {
 						  dv = f;
                 } else {
                     if (predictionFilter >= 0.) { // exponiential smoothing of predictions
@@ -369,10 +367,15 @@ public class ContinuousClassifier {
 				"predictionFilter:\t" + predictionFilter + "\n" + 
 				"timeout_ms:      \t" + timeout_ms + "\n" + 
 				"Fs:              \t" + fs + "\n";
-		  str += "#Classifiers:   \t" + classifiers.size();
-		  for ( int i=0; i < classifiers.size(); i++ ) {
-				str += "W{" + i + "}=\n" + classifiers.get(i).toString() + "\n\n";
-		  }
+        str += "#Classifiers:   \t";
+        if ( classifiers != null ) {
+            str += classifiers.size();
+            for ( int i=0; i < classifiers.size(); i++ ) {
+                str += "W{" + i + "}=\n" + classifiers.get(i).toString() + "\n\n";
+            }
+        } else {
+            str += "<null>";
+        }
 		  return str;
     }
 }

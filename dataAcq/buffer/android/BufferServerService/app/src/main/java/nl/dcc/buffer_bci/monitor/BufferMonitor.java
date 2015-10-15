@@ -14,7 +14,7 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
 
     public static final String TAG = BufferMonitor.class.toString();
     private final Context context;
-    private final SparseArray<ClientInfo> clients = new SparseArray<ClientInfo>();
+    private final SparseArray<BufferConnectionInfo> clients = new SparseArray<BufferConnectionInfo>();
     private final BufferInfo info;
     private final BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
@@ -40,7 +40,7 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     @Override
     public void clientClosedConnection(final int clientID, final long time) {
         if (clientID != -1) {
-            final ClientInfo client = clients.get(clientID);
+            final BufferConnectionInfo client = clients.get(clientID);
             client.connected = false;
             client.timeLastActivity = time;
             client.lastActivity = C.DISCONNECTED;
@@ -53,7 +53,7 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     @Override
     public void clientContinues(final int clientID, final long time) {
         if (clientID != -1) {
-            final ClientInfo client = clients.get(clientID);
+            final BufferConnectionInfo client = clients.get(clientID);
             client.timeLastActivity = time;
             client.lastActivity = C.STOPWAITING;
             client.waitEvents = -1;
@@ -68,7 +68,7 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     public void clientError(final int clientID, final int errorType,
                             final long time) {
         if (clientID != -1) {
-            final ClientInfo client = clients.get(clientID);
+            final BufferConnectionInfo client = clients.get(clientID);
             client.timeLastActivity = time;
             client.error = errorType;
             client.connected = false;
@@ -81,7 +81,7 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     @Override
     public void clientFlushedData(final int clientID, final long time) {
         if (clientID != -1) {
-            final ClientInfo client = clients.get(clientID);
+            final BufferConnectionInfo client = clients.get(clientID);
             client.timeLastActivity = time;
             client.lastActivity = C.FLUSHSAMPLES;
             client.changed = true;
@@ -94,7 +94,7 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     @Override
     public void clientFlushedEvents(final int clientID, final long time) {
         if (clientID != -1) {
-            final ClientInfo client = clients.get(clientID);
+            final BufferConnectionInfo client = clients.get(clientID);
             client.timeLastActivity = time;
             client.lastActivity = C.FLUSHEVENTS;
             client.changed = true;
@@ -107,7 +107,7 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     @Override
     public void clientFlushedHeader(final int clientID, final long time) {
         if (clientID != -1) {
-            final ClientInfo client = clients.get(clientID);
+            final BufferConnectionInfo client = clients.get(clientID);
             client.timeLastActivity = time;
             client.lastActivity = C.FLUSHHEADER;
             client.changed = true;
@@ -123,7 +123,7 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     public void clientGetEvents(final int count, final int clientID,
                                 final long time) {
         if (clientID != -1) {
-            final ClientInfo client = clients.get(clientID);
+            final BufferConnectionInfo client = clients.get(clientID);
             client.timeLastActivity = time;
             client.lastActivity = C.GOTEVENTS;
             client.eventsGotten += count;
@@ -136,7 +136,7 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     @Override
     public void clientGetHeader(final int clientID, final long time) {
         if (clientID != -1) {
-            final ClientInfo client = clients.get(clientID);
+            final BufferConnectionInfo client = clients.get(clientID);
             client.timeLastActivity = time;
             client.lastActivity = C.GOTHEADER;
             client.changed = true;
@@ -148,7 +148,7 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     public void clientGetSamples(final int count, final int clientID,
                                  final long time) {
         if (clientID != -1) {
-            final ClientInfo client = clients.get(clientID);
+            final BufferConnectionInfo client = clients.get(clientID);
             client.timeLastActivity = time;
             client.samplesGotten += count;
             client.lastActivity = C.GOTSAMPLES;
@@ -162,7 +162,7 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     public void clientOpenedConnection(final int clientID, final String address,
                                        final long time) {
         if (clientID != -1) {
-            final ClientInfo client = new ClientInfo(address, clientID, time);
+            final BufferConnectionInfo client = new BufferConnectionInfo(address, clientID, time);
             clients.put(clientID, client);
             Log.i(TAG, "Added Client with id = " + clientID);
             change = true;
@@ -172,7 +172,7 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     @Override
     public void clientPolls(final int clientID, final long time) {
         if (clientID != -1) {
-            final ClientInfo client = clients.get(clientID);
+            final BufferConnectionInfo client = clients.get(clientID);
             client.timeLastActivity = time;
             client.lastActivity = C.POLL;
             client.changed = true;
@@ -184,7 +184,7 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     public void clientPutEvents(final int count, final int clientID,
                                 final int diff, final long time) {
         if (clientID != -1) {
-            final ClientInfo client = clients.get(clientID);
+            final BufferConnectionInfo client = clients.get(clientID);
             client.timeLastActivity = time;
             client.lastActivity = C.PUTEVENTS;
             client.eventsPut += diff;
@@ -200,7 +200,7 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     public void clientPutHeader(final int dataType, final float fSample,
                                 final int nChannels, final int clientID, final long time) {
         if (clientID != -1) {
-            final ClientInfo client = clients.get(clientID);
+            final BufferConnectionInfo client = clients.get(clientID);
             client.timeLastActivity = time;
             client.lastActivity = C.PUTHEADER;
             client.changed = true;
@@ -216,7 +216,7 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     public void clientPutSamples(final int count, final int clientID,
                                  final int diff, final long time) {
         if (clientID != -1) {
-            final ClientInfo client = clients.get(clientID);
+            final BufferConnectionInfo client = clients.get(clientID);
             client.timeLastActivity = time;
             client.lastActivity = C.PUTSAMPLES;
             client.samplesPut += diff;
@@ -232,14 +232,14 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     public void clientWaits(final int nSamples, final int nEvents,
                             final int timeout, final int clientID, final long time) {
         if (clientID != -1) {
-            final ClientInfo client = clients.get(clientID);
+            final BufferConnectionInfo client = clients.get(clientID);
             client.timeLastActivity = time;
             client.lastActivity = C.WAIT;
             client.waitSamples = nSamples;
             client.waitEvents = nEvents;
             client.waitTimeout = timeout;
             client.changed = true;
-            change = true;
+            change = false; // don't send every client wait...
         }
     }
 
@@ -286,7 +286,7 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     }
 
     private Intent generateClientsInfoIntent(Intent intent) {
-        final ArrayList<ClientInfo> clientInfo = new ArrayList<ClientInfo>();
+        final ArrayList<BufferConnectionInfo> clientInfo = new ArrayList<BufferConnectionInfo>();
 
         for (int i = 0; i < clients.size(); i++) {
             if (clients.valueAt(i).changed) {

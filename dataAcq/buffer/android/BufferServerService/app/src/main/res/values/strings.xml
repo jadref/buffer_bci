@@ -4,8 +4,10 @@
 
     <!-- Buffer Service -->
     <string name="buffer_service_name">Buffer Server</string>
-    <string name="notification_title">Buffer</string>
-    <string name="notification_text">Running on %s.</string>
+    <string name="notification_title">Buffer Server</string>
+    <string name="notification_text_host">Host: %s.</string>
+    <string name="notification_text_savedir">Saving to: %s</string>
+    <string name="notification_text_nosavedir">Not Saved!</string>
 
 
     <!-- Start Buffer Fragment -->
@@ -38,11 +40,11 @@
     <string name="confirmationflushsamples">Are you sure you wish to flush the samples?</string>
     <string name="confirmationflushevents">Are you sure you wish to flush the events?</string>
 
-    <!-- ClientInfo items -->
+    <!-- BufferConnectionInfo items -->
     <string name="connected">Opened</string>
     <string name="disconnected">Closed</string>
 
-    <!-- ClientInfo Statuses -->
+    <!-- BufferConnectionInfo Statuses -->
     <string name="error_protocol">Network protocol violeted.</string>
     <string name="error_connection">Lost connection unexpectedly.</string>
     <string name="error_version">Client has wrong version.</string>

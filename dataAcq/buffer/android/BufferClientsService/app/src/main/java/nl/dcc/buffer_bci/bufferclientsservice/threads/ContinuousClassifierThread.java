@@ -75,29 +75,29 @@ public class ContinuousClassifierThread extends ThreadBase {
         initialize();
         clsfr = new ContinuousClassifier(hostname,port,timeout_ms);
         InputStream clsfrReader=null;
-        try {
-            if ( isExternalStorageReadable() ){
+        if ( isExternalStorageReadable() ){
+            try {
                 clsfrReader=androidHandle.openReadFile(clsfrFile);
+            } catch ( FileNotFoundException e ) {
+                e.printStackTrace();
+            } catch ( IOException e ) {
+                e.printStackTrace();
             }
-            if ( clsfrReader == null ){ // fall back on the resources directory
-                clsfrReader=this.getClass().getClassLoader().getResourceAsStream(clsfrFile);
-            }
-        } catch ( FileNotFoundException e ) {
-            e.printStackTrace();
-        } catch ( IOException e ) {
-            e.printStackTrace();
+        }
+        if ( clsfrReader == null ){ // fall back on the resources directory
+            clsfrReader=this.getClass().getClassLoader().getResourceAsStream("assets/"+clsfrFile);
         }
         if ( clsfrReader==null) {
-            Log.w(TAG, "Huh, couldnt open file stream : " + clsfrFile);
+            Log.w(TAG, "Huh, couldn't open classifier file: " + clsfrFile);
+            Log.w(TAG, "Aborting!" + clsfrFile);
+            return;
         }
         clsfr.initialize(clsfrReader,trialLength_ms,step_ms);
         clsfr.mainloop();
         clsfr=null;
     }
 
-    @Override public void stop() { clsfr.stop(); }
-
-
+    @Override public void stop() { if ( clsfr != null ) clsfr.stop(); }
 
     /* Checks if external storage is available for read and write */
     public boolean isExternalStorageWritable() {

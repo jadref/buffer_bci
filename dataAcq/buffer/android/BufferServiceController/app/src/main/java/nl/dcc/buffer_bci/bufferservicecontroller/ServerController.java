@@ -8,9 +8,11 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.util.Log;
 import android.util.SparseArray;
+
+import nl.dcc.buffer_bci.monitor.BufferConnectionInfo;
 import nl.dcc.buffer_bci.monitor.BufferInfo;
-import nl.dcc.buffer_bci.monitor.ClientInfo;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -22,7 +24,7 @@ import java.util.Date;
 public class ServerController {
 
     public static String TAG = ServerController.class.getSimpleName();
-    private final ArrayList<ClientInfo> clientsArray = new ArrayList<ClientInfo>();
+    private final ArrayList<BufferConnectionInfo> bufferConnectionsArray = new ArrayList<BufferConnectionInfo>();
     protected BufferInfo buffer;
     protected String uptime;
     protected boolean initalUpdateCalled = false;
@@ -31,7 +33,7 @@ public class ServerController {
     private String serverServiceClassName = C.SERVER_SERVICE_CLASS_NAME;
     private Timer timer;
     private Context context;
-    private SparseArray<ClientInfo> clients = new SparseArray<ClientInfo>();
+    private SparseArray<BufferConnectionInfo> bufferConnections = new SparseArray<BufferConnectionInfo>();
     private String address;
     private int port = 1972;
     private int nSamples = 10000;
@@ -54,8 +56,8 @@ public class ServerController {
         String ret = "ServerController:{address=" + address + ", port=" + port + ", nSamples=" + nSamples + ", " +
                 "nEvent=" +
                 nEvents + ", datatype=" + dataType + ", nChannels=" + nChannels + ", fSample=" + fSample + "} with \n";
-        for (ClientInfo clientInfo : clientsArray)
-            ret += "\t" + clientInfo + "\n";
+        for (BufferConnectionInfo bufferConnectionInfo : bufferConnectionsArray)
+            ret += "\t" + bufferConnectionInfo + "\n";
         return ret;
     }
 
@@ -125,19 +127,19 @@ public class ServerController {
         }
     }
 
-    protected void updateClients(final ClientInfo[] clientinfo) {
-        for (final ClientInfo client : clientinfo) {
-            if (clients.get(client.clientID) == null) {
-                clients.put(client.clientID, client);
-                clientsArray.add(client);
+    protected void updateBufferConnections(final BufferConnectionInfo[] connectionInfos) {
+        for (final BufferConnectionInfo bufferconnection : connectionInfos) {
+            if (bufferConnections.get(bufferconnection.connectionID) == null) {
+                bufferConnections.put(bufferconnection.connectionID, bufferconnection);
+                bufferConnectionsArray.add(bufferconnection);
             } else {
-                clients.get(client.clientID).update(client);
-                ArrayList<ClientInfo> tempInfo = new ArrayList<ClientInfo>(clientsArray);
-                for (ClientInfo oldClient : tempInfo) {
-                    if (oldClient.clientID == client.clientID) { //Removing duplicates of ClientInfo with same clientID
-                        int index = tempInfo.indexOf(oldClient);
-                        clientsArray.remove(index);
-                        clientsArray.add(client);
+                bufferConnections.get(bufferconnection.connectionID).update(bufferconnection);
+                ArrayList<BufferConnectionInfo> tempInfo = new ArrayList<BufferConnectionInfo>(bufferConnectionsArray);
+                for (BufferConnectionInfo oldConnection : tempInfo) {
+                    if (oldConnection.connectionID == bufferconnection.connectionID) { //Removing duplicates of BufferConnectionInfo with same connectionID
+                        int index = tempInfo.indexOf(oldConnection);
+                        bufferConnectionsArray.remove(index);
+                        bufferConnectionsArray.add(bufferconnection);
                     }
                 }
             }
@@ -218,183 +220,183 @@ public class ServerController {
         return uptime;
     }
 
-    //Get Client Information
-    public ClientInfo[] getClientInfoArray() {
-        return (ClientInfo[]) clientsArray.toArray();
+    //Get Connection Information
+    public BufferConnectionInfo[] getConnectionInfoArray() {
+        return (BufferConnectionInfo[]) bufferConnectionsArray.toArray();
     }
 
-    public int getNumberOfClients() {
-        return clientsArray.size();
+    public int getNumberOfConnections() {
+        return bufferConnectionsArray.size();
     }
 
-    public int[] getClientIDs() {
-        int length = clients.size();
+    public int[] getConnectionIDs() {
+        int length = bufferConnections.size();
         int[] ids = new int[length];
         for (int i = 0; i < length; ++i) {
-            ids[i] = clients.valueAt(i).clientID;
+            ids[i] = bufferConnections.valueAt(i).connectionID;
         }
         return ids;
     }
 
-    public String getClientAddress(int clientID) {
-        synchronized (clientsArray) {
-            for (ClientInfo client : clientsArray) {
-                if (client.clientID == clientID) {
-                    return client.address;
+    public String getConnectionAddress(int connectionID) {
+        synchronized (bufferConnectionsArray) {
+            for (BufferConnectionInfo Connection : bufferConnectionsArray) {
+                if (Connection.connectionID == connectionID) {
+                    return Connection.address;
                 }
             }
         }
-        return "No Address for Client with ID: " + clientID;
+        return "No Address for Connection with ID: " + connectionID;
     }
 
-    public int getClientSamplesGotten(int clientID) {
-        synchronized (clientsArray) {
-            for (ClientInfo client : clientsArray) {
-                if (client.clientID == clientID) {
-                    return client.samplesGotten;
-                }
-            }
-        }
-        return 0;
-    }
-
-    public int getClientSamplesPut(int clientID) {
-        synchronized (clientsArray) {
-            for (ClientInfo client : clientsArray) {
-                if (client.clientID == clientID) {
-                    return client.samplesPut;
+    public int getConnectionSamplesGotten(int connectionID) {
+        synchronized (bufferConnectionsArray) {
+            for (BufferConnectionInfo Connection : bufferConnectionsArray) {
+                if (Connection.connectionID == connectionID) {
+                    return Connection.samplesGotten;
                 }
             }
         }
         return 0;
     }
 
-    public int getClientEventsGotten(int clientID) {
-        synchronized (clientsArray) {
-            for (ClientInfo client : clientsArray) {
-                if (client.clientID == clientID) {
-                    return client.eventsGotten;
+    public int getConnectionSamplesPut(int connectionID) {
+        synchronized (bufferConnectionsArray) {
+            for (BufferConnectionInfo Connection : bufferConnectionsArray) {
+                if (Connection.connectionID == connectionID) {
+                    return Connection.samplesPut;
                 }
             }
         }
         return 0;
     }
 
-    public int getClientEventsPut(int clientID) {
-        synchronized (clientsArray) {
-            for (ClientInfo client : clientsArray) {
-                if (client.clientID == clientID) {
-                    return client.eventsPut;
+    public int getConnectionEventsGotten(int connectionID) {
+        synchronized (bufferConnectionsArray) {
+            for (BufferConnectionInfo Connection : bufferConnectionsArray) {
+                if (Connection.connectionID == connectionID) {
+                    return Connection.eventsGotten;
                 }
             }
         }
         return 0;
     }
 
-    public int getClientLastActivity(int clientID) {
-        synchronized (clientsArray) {
-            for (ClientInfo client : clientsArray) {
-                if (client.clientID == clientID) {
-                    return client.lastActivity;
+    public int getConnectionEventsPut(int connectionID) {
+        synchronized (bufferConnectionsArray) {
+            for (BufferConnectionInfo Connection : bufferConnectionsArray) {
+                if (Connection.connectionID == connectionID) {
+                    return Connection.eventsPut;
                 }
             }
         }
         return 0;
     }
 
-    public int getClientWaitEvents(int clientID) {
-        synchronized (clientsArray) {
-            for (ClientInfo client : clientsArray) {
-                if (client.clientID == clientID) {
-                    return client.waitEvents;
+    public int getConnectionLastActivity(int connectionID) {
+        synchronized (bufferConnectionsArray) {
+            for (BufferConnectionInfo Connection : bufferConnectionsArray) {
+                if (Connection.connectionID == connectionID) {
+                    return Connection.lastActivity;
                 }
             }
         }
         return 0;
     }
 
-    public int getClientWaitSamples(int clientID) {
-        synchronized (clientsArray) {
-            for (ClientInfo client : clientsArray) {
-                if (client.clientID == clientID) {
-                    return client.waitSamples;
+    public int getConnectionWaitEvents(int connectionID) {
+        synchronized (bufferConnectionsArray) {
+            for (BufferConnectionInfo Connection : bufferConnectionsArray) {
+                if (Connection.connectionID == connectionID) {
+                    return Connection.waitEvents;
                 }
             }
         }
         return 0;
     }
 
-    public int getClientError(int clientID) {
-        synchronized (clientsArray) {
-            for (ClientInfo client : clientsArray) {
-                if (client.clientID == clientID) {
-                    return client.error;
+    public int getConnectionWaitSamples(int connectionID) {
+        synchronized (bufferConnectionsArray) {
+            for (BufferConnectionInfo Connection : bufferConnectionsArray) {
+                if (Connection.connectionID == connectionID) {
+                    return Connection.waitSamples;
                 }
             }
         }
         return 0;
     }
 
-    public long getClientTimeLastActivity(int clientID) {
-        synchronized (clientsArray) {
-            for (ClientInfo client : clientsArray) {
-                if (client.clientID == clientID) {
-                    return client.timeLastActivity;
+    public int getConnectionError(int connectionID) {
+        synchronized (bufferConnectionsArray) {
+            for (BufferConnectionInfo Connection : bufferConnectionsArray) {
+                if (Connection.connectionID == connectionID) {
+                    return Connection.error;
+                }
+            }
+        }
+        return 0;
+    }
+
+    public long getConnectionTimeLastActivity(int connectionID) {
+        synchronized (bufferConnectionsArray) {
+            for (BufferConnectionInfo Connection : bufferConnectionsArray) {
+                if (Connection.connectionID == connectionID) {
+                    return Connection.timeLastActivity;
                 }
             }
         }
         return 0L;
     }
 
-    public long getClientTime(int clientID) {
-        synchronized (clientsArray) {
-            for (ClientInfo client : clientsArray) {
-                if (client.clientID == clientID) {
-                    return client.time;
+    public long getConnectionTime(int connectionID) {
+        synchronized (bufferConnectionsArray) {
+            for (BufferConnectionInfo Connection : bufferConnectionsArray) {
+                if (Connection.connectionID == connectionID) {
+                    return Connection.time;
                 }
             }
         }
         return 0L;
     }
 
-    public long getClientWaitTimeout(int clientID) {
-        synchronized (clientsArray) {
-            for (ClientInfo client : clientsArray) {
-                if (client.clientID == clientID) {
-                    return client.waitTimeout;
+    public long getConnectionWaitTimeout(int connectionID) {
+        synchronized (bufferConnectionsArray) {
+            for (BufferConnectionInfo Connection : bufferConnectionsArray) {
+                if (Connection.connectionID == connectionID) {
+                    return Connection.waitTimeout;
                 }
             }
         }
         return 0L;
     }
 
-    public boolean getClientConnected(int clientID) {
-        synchronized (clientsArray) {
-            for (ClientInfo client : clientsArray) {
-                if (client.clientID == clientID) {
-                    return client.connected;
+    public boolean getConnectionConnected(int connectionID) {
+        synchronized (bufferConnectionsArray) {
+            for (BufferConnectionInfo Connection : bufferConnectionsArray) {
+                if (Connection.connectionID == connectionID) {
+                    return Connection.connected;
                 }
             }
         }
         return false;
     }
 
-    public boolean getClientChanged(int clientID) {
-        synchronized (clientsArray) {
-            for (ClientInfo client : clientsArray) {
-                if (client.clientID == clientID) {
-                    return client.changed;
+    public boolean getConnectionChanged(int connectionID) {
+        synchronized (bufferConnectionsArray) {
+            for (BufferConnectionInfo Connection : bufferConnectionsArray) {
+                if (Connection.connectionID == connectionID) {
+                    return Connection.changed;
                 }
             }
         }
         return false;
     }
 
-    public int getClientDiff(int clientID) {
-        synchronized (clientsArray) {
-            for (ClientInfo client : clientsArray) {
-                if (client.clientID == clientID) {
-                    return client.diff;
+    public int getConnectionDiff(int connectionID) {
+        synchronized (bufferConnectionsArray) {
+            for (BufferConnectionInfo Connection : bufferConnectionsArray) {
+                if (Connection.connectionID == connectionID) {
+                    return Connection.diff;
                 }
             }
         }
@@ -448,14 +450,21 @@ public class ServerController {
     }
 
     public boolean stopServerService() {
-        clients.clear();
-        clientsArray.clear();
+        bufferConnections.clear();
+        bufferConnectionsArray.clear();
         boolean stopped = context.stopService(intent);
         if (stopped) {
             if (timer != null) timer.running = false;
             initalUpdateCalled = false;
         }
         return stopped;
+    }
+
+    public void reloadConnections() {
+        Intent intent = new Intent(C.FILTER_FROM_SERVER);
+        intent.putExtra(C.MESSAGE_TYPE, C.UPDATE);
+        Log.i(TAG, "Refreshing all server bufferConnections info.");
+        context.sendOrderedBroadcast(intent, null);
     }
 
     protected class Timer extends Thread {

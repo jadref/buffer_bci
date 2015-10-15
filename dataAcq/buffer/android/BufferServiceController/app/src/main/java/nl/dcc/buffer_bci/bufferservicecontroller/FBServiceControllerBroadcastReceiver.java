@@ -15,7 +15,7 @@ public class FBServiceControllerBroadcastReceiver extends BroadcastReceiver {
     public void onReceive(final Context context, final Intent intent) {
         if (intent.getIntExtra(C.MESSAGE_TYPE, -1) == C.UPDATE) {
             boolean newBufferInfo = intent.getBooleanExtra(C.IS_BUFFER_INFO, false);
-            boolean newClientInfo = intent.getBooleanExtra(C.IS_CLIENT_INFO, false);
+            boolean newClientInfo = intent.getBooleanExtra(C.IS_BUFFER_CONNECTION_INFO, false);
             boolean newThreadInfo = intent.getBooleanExtra(C.IS_THREAD_INFO, false);
 
             Intent intent_for_MainActivity = new Intent(C.FILTER_FROM_SERVER);
@@ -29,11 +29,11 @@ public class FBServiceControllerBroadcastReceiver extends BroadcastReceiver {
             }
 
             if (newClientInfo) {
-                intent_for_MainActivity.putExtra(C.IS_CLIENT_INFO, newClientInfo);
-                int numOfClients = intent.getIntExtra(C.CLIENT_N_INFOS, 0);
-                intent_for_MainActivity.putExtra(C.CLIENT_N_INFOS, numOfClients);
+                intent_for_MainActivity.putExtra(C.IS_BUFFER_CONNECTION_INFO, newClientInfo);
+                int numOfClients = intent.getIntExtra(C.BUFFER_CONNECTION_N_INFOS, 0);
+                intent_for_MainActivity.putExtra(C.BUFFER_CONNECTION_N_INFOS, numOfClients);
                 for (int k = 0; k < numOfClients; ++k) {
-                    intent_for_MainActivity.putExtra(C.CLIENT_INFO + k, intent.getParcelableExtra(C.CLIENT_INFO + k));
+                    intent_for_MainActivity.putExtra(C.BUFFER_CONNECTION_INFO + k, intent.getParcelableExtra(C.BUFFER_CONNECTION_INFO + k));
                 }
                 Log.d(TAG, "From BroadcastReceiver Sending client info with " + numOfClients + " clients to " +
                         "MainActivity");

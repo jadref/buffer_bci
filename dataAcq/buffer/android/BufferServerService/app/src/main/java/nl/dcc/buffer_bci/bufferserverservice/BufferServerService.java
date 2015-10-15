@@ -29,6 +29,11 @@ public class BufferServerService extends Service {
     public static final String TAG = BufferServerService.class.toString();
     private final IntentFilter intentFilter = new IntentFilter(C.FILTER);
     private BufferServer buffer;
+    private BufferMonitor monitor;
+    private WakeLock wakeLock;
+    private WifiLock wifiLock;
+
+
     private final BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(final Context context, Intent intent) {
@@ -50,18 +55,6 @@ public class BufferServerService extends Service {
             }
         }
     };
-    private BufferMonitor monitor;
-    private WakeLock wakeLock;
-    private WifiLock wifiLock;
-
-    // For debugging, cause this service to call start itself when created
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        Intent mainService = new Intent(this,BufferServerService.class);
-        startService(mainService);
-        android.os.Debug.waitForDebugger();
-    }
 
     @Override
     public IBinder onBind(final Intent intent) {
@@ -87,17 +80,15 @@ public class BufferServerService extends Service {
         if (wifiLock != null) {
             wifiLock.release();
         }
+        buffer=null;
+        monitor=null;
     }
 
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
         android.os.Debug.waitForDebugger();
-        Log.i(TAG, "Buffer Service Running");
         // If no buffer is running.
-        if (buffer == null) {
-
-            final int port = intent.getIntExtra("port", 1972);
-            // Get Wakelocks
+        if (wakeLock==null && wifiLock==null ) { // Get Wakelocks
 
             final PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
             wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
@@ -108,79 +99,85 @@ public class BufferServerService extends Service {
             wifiLock = wifiMan.createWifiLock(C.WAKELOCKTAGWIFI);
             wifiLock.acquire();
 
-            // Create Foreground Notification
+        }
+        // Get the currently used ip-address
+        final int port = intent.getIntExtra("port", 1972);
+        final WifiInfo wifiInf = ((WifiManager) getSystemService(WIFI_SERVICE)).getConnectionInfo();
+        final int ipAddress = wifiInf.getIpAddress();
+        final String ip = String.format(Locale.ENGLISH, "%d.%d.%d.%d",
+                ipAddress & 0xff, ipAddress >> 8 & 0xff,
+                ipAddress >> 16 & 0xff, ipAddress >> 24 & 0xff);
+        String saveDirName="";
 
-            // Get the currently used ip-address
-            final WifiInfo wifiInf = wifiMan.getConnectionInfo();
-            final int ipAddress = wifiInf.getIpAddress();
-            final String ip = String.format(Locale.ENGLISH, "%d.%d.%d.%d",
-                    ipAddress & 0xff, ipAddress >> 8 & 0xff,
-                    ipAddress >> 16 & 0xff, ipAddress >> 24 & 0xff);
-
-            // Create notification text
-            final Resources res = getResources();
-            final String notification_text = String.format(
-                    res.getString(R.string.notification_text), ip + ":" + port);
-
-            final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(
-                    this)
-                    .setSmallIcon(R.drawable.ic_launcher)
-                    .setContentTitle(res.getString(R.string.notification_title))
-                    .setContentText(notification_text);
-
-
+        if ( buffer==null ) {
             final int sampleBuffSize = intent.getIntExtra("nSamples", 100);
-            final int eventBuffSize  = intent.getIntExtra("nEvents", 100);
+            final int eventBuffSize = intent.getIntExtra("nEvents", 100);
             // Create a buffer and start it.
 
             if (isExternalStorageWritable()) {
                 Log.i(TAG, "External storage is writable");
-                File savedir = new File(getExternalFilesDir(null),"raw_buffer");
-                if (!savedir.mkdirs()) {
-                    Log.e(TAG, "Save session directory not created");
-                }
                 Date now = new Date();
                 String session = (new java.text.SimpleDateFormat("yyMMdd", Locale.US)).format(now);
-                savedir = new File(savedir,session);
-				if (!savedir.mkdirs()) {
-					  Log.e(TAG, "Save session directory not created");
-				}
-				String block   = (new java.text.SimpleDateFormat("HHmm", Locale.US)).format(now);
-				savedir = new File(savedir,block);
-				if (!savedir.mkdirs()) {
-					  Log.e(TAG, "Save block directory not created");
-				}
-                if ( savedir.canWrite() ) {
+                String block = (new java.text.SimpleDateFormat("HHmm", Locale.US)).format(now);
+                File savedir = new File(getExternalFilesDir(null),
+                        "raw_buffer"+ "/" + session + "/" + block);
+                savedir.mkdirs();
+                if ( !savedir.canWrite()) {
+                    Log.e(TAG, "Save session directory not created :" + savedir.getPath());
+                } else {
+                    saveDirName=savedir.getPath();
+                    Log.i(TAG, "Saving to directory: " + saveDirName);
                     buffer = new BufferServer(port, sampleBuffSize, eventBuffSize, savedir);
                 }
             }
 
-            if ( buffer==null ){
+            if (buffer == null) {
+                saveDirName="";
                 Log.i(TAG, "External storage is sadly not writable");
                 Log.w(TAG, "Storage is not writable. I am not saving the data.");
-                buffer = new BufferServer(port,sampleBuffSize,eventBuffSize);
+                buffer = new BufferServer(port, sampleBuffSize, eventBuffSize);
             }
-            monitor = new BufferMonitor(this, ip + ":" + port,System.currentTimeMillis());
+            monitor = new BufferMonitor(this, ip + ":" + port, System.currentTimeMillis());
             buffer.addMonitor(monitor);
 
             // Start the buffer and Monitor
             buffer.start();
-            Log.i(TAG, "1");
+            Log.i(TAG, "Buffer started");
             monitor.start();
-            Log.i(TAG, "Buffer thread started.");
-
-            // Turn this service into a foreground service
-            startForeground(1, mBuilder.build());
-            Log.i(TAG, "Fieldtrip Buffer Service moved to foreground.");
-
-
-            if (buffer != null) {
-                this.registerReceiver(mMessageReceiver, intentFilter);
-                Log.i(TAG, "Registered receiver with buffer:" + buffer.getName());
-            }
-
-
+            Log.i(TAG, "Buffer monitor started.");
         }
+
+
+        if (buffer != null) {
+            this.registerReceiver(mMessageReceiver, intentFilter);
+            Log.i(TAG, "Registered receiver with buffer:" + buffer.getName());
+        }
+
+        Log.i(TAG, "Buffer Service Running");
+
+        // Create notification text
+        final Resources res = getResources();
+        final String notification_text;
+        if ( saveDirName == null ) {
+            notification_text =
+                    String.format(res.getString(R.string.notification_text_host), ip + ":" + port)
+                            + "      " + res.getString(R.string.notification_text_nosavedir);
+        } else {
+            notification_text =
+                       String.format(res.getString(R.string.notification_text_host), ip + ":" + port)
+                            + "      " + String.format(res.getString(R.string.notification_text_savedir), saveDirName);
+        }
+
+        final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(
+                this)
+                .setSmallIcon(R.drawable.ic_launcher)
+                .setContentTitle(res.getString(R.string.notification_title))
+                .setContentText(notification_text);
+
+        // Turn this service into a foreground service
+        startForeground(1, mBuilder.build());
+        Log.i(TAG, "Buffer Server Service moved to foreground.");
+
         return START_NOT_STICKY;
     }
 

@@ -25,6 +25,8 @@ public final class C {
     public static final int THREAD_START = 8;
     public static final int THREAD_UPDATE_ARGUMENTS = 9;
     public static final int THREAD_UPDATE_ARG_FROM_STR = 10;
+    public static final int THREAD_INFO_BROADCAST=11;
+    public static final int CLIENTS_INFO_BROADCAST=12;
 
     public static final String WAKELOCKTAG = "nl.dcc.buffer_bci.bufferservice.wakelock";
 

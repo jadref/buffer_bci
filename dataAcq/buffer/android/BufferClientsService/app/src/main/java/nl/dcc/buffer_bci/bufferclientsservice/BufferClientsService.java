@@ -108,6 +108,8 @@ public class BufferClientsService extends Service {
                     threads.get(id).setArgument(argument);
                     updater.update = true;
                     break;
+                case C.THREAD_INFO_BROADCAST:
+                    broadcastAllThreadInfo();
                 default:
             }
         }
@@ -217,6 +219,7 @@ public class BufferClientsService extends Service {
 
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
+        Log.d(TAG, "Buffer Clients Service - starting.");
         android.os.Debug.waitForDebugger();
         if (wakeLock == null && wifiLock == null) {
             updater = new Updater(this);
@@ -232,18 +235,6 @@ public class BufferClientsService extends Service {
             final WifiManager wifiMan = (WifiManager) getSystemService(WIFI_SERVICE);
             wifiLock = wifiMan.createWifiLock(C.WAKELOCKTAGWIFI);
             wifiLock.acquire();
-
-            // Create Foreground Notification
-            // Create notification text
-            final Resources res = getResources();
-            final String notification_text = res.getString(R.string.notification_text);
-            final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this).setSmallIcon(R.drawable
-                    .ic_launcher).setContentTitle(res.getString(R.string.notification_title)).setContentText
-                    (notification_text);
-
-            // Turn this service into a foreground service
-            startForeground(1, mBuilder.build());
-            Log.i(TAG, "Fieldtrip Clients Service moved to foreground.");
         }
 
         createAllThreadsAndBroadcastInfo();
@@ -251,6 +242,18 @@ public class BufferClientsService extends Service {
         if (threads != null) {
             this.registerReceiver(mMessageReceiver, intentFilter);
         }
+
+        // Create Foreground Notification
+        // Create notification text
+        final Resources res = getResources();
+        String notification_text = String.format(res.getString(R.string.notification_text),threadInfos.size());
+        final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this).setSmallIcon(R.drawable
+                .ic_launcher).setContentTitle(res.getString(R.string.notification_title)).setContentText(notification_text);
+
+        // Turn this service into a foreground service
+        startForeground(1, mBuilder.build());
+        Log.d(TAG, "Buffer Clients Service moved to foreground.");
+        Log.d(TAG, "Buffer Clients Service - started.");
 
         return START_NOT_STICKY;
     }
@@ -297,30 +300,40 @@ public class BufferClientsService extends Service {
                 ThreadInfo threadInfo = new ThreadInfo(i, wrapper.getName(), "", false);
                 threadInfos.put(i, threadInfo);
 
-                Intent intent = new Intent(C.SEND_UPDATE_INFO_TO_CONTROLLER_ACTION);
-                intent.putExtra(C.MESSAGE_TYPE, C.UPDATE);
-                intent.putExtra(C.IS_THREAD_INFO, true);
-                intent.putExtra(C.THREAD_INFO, threadInfo);
-                intent.putExtra(C.THREAD_INDEX, threadInfo.threadID);
-                intent.putExtra(C.THREAD_N_ARGUMENTS, arguments.length);
-                for (int k = 0; k < arguments.length; k++) {
-                    intent.putExtra(C.THREAD_ARGUMENTS + k, arguments[k]);
-                }
-                Log.i(TAG, "Sending broadcast with ThreadID = " + threadInfo.threadID);
-                sendOrderedBroadcast(intent, null);
-
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    Log.e(TAG, "Exception during sleeping. Very exceptional!");
-                    Log.e(TAG, Log.getStackTraceString(e));
-                }
+                broadcastThreadInfo(threadInfo,arguments);
 
             } catch (InstantiationException e) {
                 Log.w(TAG, "Instantiation failed!");
             } catch (IllegalAccessException e) {
                 Log.w(TAG, "Instantiation failed!");
             }
+        }
+    }
+
+    private void broadcastAllThreadInfo(){
+            for (int i = 0; i < threadInfos.size(); i++) {
+                int id = threadInfos.valueAt(i).threadID;
+                broadcastThreadInfo(threadInfos.valueAt(i),threads.get(id).getArguments());
+        }
+    }
+
+    private void broadcastThreadInfo(ThreadInfo threadInfo, Argument[] arguments){
+        Intent intent = new Intent(C.SEND_UPDATE_INFO_TO_CONTROLLER_ACTION);
+        intent.putExtra(C.MESSAGE_TYPE, C.UPDATE);
+        intent.putExtra(C.IS_THREAD_INFO, true);
+        intent.putExtra(C.THREAD_INFO, threadInfo);
+        intent.putExtra(C.THREAD_INDEX, threadInfo.threadID);
+        intent.putExtra(C.THREAD_N_ARGUMENTS, arguments.length);
+        for (int k = 0; k < arguments.length; k++) {
+            intent.putExtra(C.THREAD_ARGUMENTS + k, arguments[k]);
+        }
+        Log.i(TAG, "Sending broadcast with ThreadID = " + threadInfo.threadID);
+        sendOrderedBroadcast(intent, null);
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Log.e(TAG, "Exception during sleeping. Very exceptional!");
+            Log.e(TAG, Log.getStackTraceString(e));
         }
     }
 
@@ -336,7 +349,9 @@ public class BufferClientsService extends Service {
         @Override
         public FileInputStream openReadFile(final String path) throws IOException {
             if (isExternalStorageReadable()) {
-                return new FileInputStream(new File(context.getExternalFilesDir(null), path));
+                File f = new File(context.getExternalFilesDir(null), path);
+                Log.d(TAG,"Open for Reading:" + f.getPath());
+                return new FileInputStream(f);
             } else {
                 throw new IOException("Could not open external storage.");
             }
@@ -349,7 +364,9 @@ public class BufferClientsService extends Service {
         @Override
         public FileOutputStream openWriteFile(final String path) throws IOException {
             if (isExternalStorageWritable()) {
-                return new FileOutputStream(new File(context.getExternalFilesDir(null), path));
+                File f = new File(context.getExternalFilesDir(null), path);
+                Log.d(TAG,"Open for writing:" + f.getPath());
+                return new FileOutputStream(f);
             } else {
                 throw new IOException("Could not open external storage.");
             }

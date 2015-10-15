@@ -74,6 +74,6 @@ public class SignalProxyThread extends ThreadBase {
         signalProxy=null; // delete the variable
     }
 
-    @Override public void stop() { signalProxy.stop(); }
+    @Override public void stop() { if ( signalProxy != null ) signalProxy.stop(); }
 
 }

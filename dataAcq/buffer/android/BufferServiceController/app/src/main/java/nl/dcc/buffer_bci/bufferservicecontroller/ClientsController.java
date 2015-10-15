@@ -59,7 +59,7 @@ public class ClientsController {
         return ret;
     }
 
-    protected boolean isClientsServiceRunning() {
+    protected boolean isThreadsServiceRunning() {
         final ActivityManager manager = (ActivityManager) context.getSystemService(context.ACTIVITY_SERVICE);
         for (final ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
             if (service.service.getClassName().equals(clientsServiceClassName)) {
@@ -96,7 +96,7 @@ public class ClientsController {
 
     // Interface
     //Clients service controls
-    public String startClientsService() {
+    public String startThreadsService() {
         try {
             intent.putExtra("port", port);
         } catch (final NumberFormatException e) {
@@ -117,7 +117,7 @@ public class ClientsController {
     }
 
 
-    public boolean stopClientsService() {
+    public boolean stopThreadsService() {
         threadInfos.clear();
         if (threadIDs != null)
             threadIDs.clear();
@@ -239,4 +239,10 @@ public class ClientsController {
     }
 
 
+    public void reloadAllThreads() {
+        Intent intent = new Intent(C.FILTER_FOR_CLIENTS);
+        intent.putExtra(C.MESSAGE_TYPE, C.THREAD_INFO_BROADCAST);
+        Log.i(TAG, "Refreshing all threads info");
+        context.sendOrderedBroadcast(intent, null);
+    }
 }

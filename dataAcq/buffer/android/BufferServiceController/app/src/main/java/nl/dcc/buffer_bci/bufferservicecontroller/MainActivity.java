@@ -11,7 +11,7 @@ import android.widget.*;
 import nl.dcc.buffer_bci.bufferservicecontroller.visualize.BubbleSurfaceView;
 import nl.dcc.buffer_bci.bufferclientsservice.ThreadInfo;
 import nl.dcc.buffer_bci.bufferclientsservice.base.Argument;
-import nl.dcc.buffer_bci.monitor.ClientInfo;
+import nl.dcc.buffer_bci.monitor.BufferConnectionInfo;
 
 import java.util.HashMap;
 
@@ -31,7 +31,6 @@ public class MainActivity extends Activity {
     private HashMap<Integer, Integer> threadToView;
     private BubbleSurfaceView surfaceView;
 
-
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,7 +42,13 @@ public class MainActivity extends Activity {
         surfaceView = (BubbleSurfaceView) findViewById(R.id.surfaceView);
 
         serverController = new ServerController(this);
+        if (serverController.isBufferServerServiceRunning()) {// check if already running
+            serverController.reloadConnections();
+        }
         clientsController = new ClientsController(this);
+        if (clientsController.isThreadsServiceRunning()) {// check if already running
+            clientsController.reloadAllThreads();
+        }
 
         if (savedInstanceState == null) {
             IntentFilter intentFilter = new IntentFilter(C.FILTER_FROM_SERVER);
@@ -74,8 +79,8 @@ public class MainActivity extends Activity {
         if (intent.getBooleanExtra(C.IS_BUFFER_INFO, false)) {
             updateServerInfo(intent);
         }
-        if (intent.getBooleanExtra(C.IS_CLIENT_INFO, false)) {
-            updateClientInfoFromServer(intent);
+        if (intent.getBooleanExtra(C.IS_BUFFER_CONNECTION_INFO, false)) {
+            updateBufferConnectionInfo(intent);
         }
         if (intent.getBooleanExtra(C.IS_THREAD_INFO, false)) {
             updateThreadsInfo(intent);
@@ -88,17 +93,17 @@ public class MainActivity extends Activity {
             serverController.initialUpdate();
         }
         serverController.updateBufferInfo();
-        textView.setText(serverController.toString());
+        this.updateConnectionsGui();
     }
 
-    private void updateClientInfoFromServer(Intent intent) {
-        int numOfClients = intent.getIntExtra(C.CLIENT_N_INFOS, 0);
-        ClientInfo[] clientInfo = new ClientInfo[numOfClients];
+    private void updateBufferConnectionInfo(Intent intent) {
+        int numOfClients = intent.getIntExtra(C.BUFFER_CONNECTION_N_INFOS, 0);
+        BufferConnectionInfo[] bufferConnectionInfo = new BufferConnectionInfo[numOfClients];
         for (int k = 0; k < numOfClients; ++k) {
-            clientInfo[k] = intent.getParcelableExtra(C.CLIENT_INFO + k);
+            bufferConnectionInfo[k] = intent.getParcelableExtra(C.BUFFER_CONNECTION_INFO + k);
         }
-        serverController.updateClients(clientInfo);
-        this.updateClientsGui();
+        serverController.updateBufferConnections(bufferConnectionInfo);
+        this.updateConnectionsGui();
     }
 
     private void updateThreadsInfo(Intent intent) {
@@ -113,6 +118,10 @@ public class MainActivity extends Activity {
     }
 
     // Gui
+    private void updateConnectionsGui(){
+        textView.setText(serverController.toString());
+    }
+
     private void updateClientsGui() {
         int[] threadIDs = clientsController.getAllThreadIDs();
         if (threadIDs.length < 1) {
@@ -147,18 +156,21 @@ public class MainActivity extends Activity {
     }
 
     //Interface
-
     public void startServer() {
         String serverName = "";
         if (!serverController.isBufferServerServiceRunning()) {
             serverName = serverController.startServerService();
+        } else {
+            serverController.reloadConnections();
         }
     }
 
     public void startClients() {
         String clientsName = "";
-        if (!clientsController.isClientsServiceRunning()) {
-            clientsName = clientsController.startClientsService();
+        if (!clientsController.isThreadsServiceRunning()) {
+            clientsName = clientsController.startThreadsService();
+        } else { // query for the threads info
+            clientsController.reloadAllThreads();
         }
         updateClientsGui();
     }
@@ -168,12 +180,13 @@ public class MainActivity extends Activity {
         if (serverController.isBufferServerServiceRunning()) {
             result = serverController.stopServerService();
         }
+        updateConnectionsGui();
     }
 
     public void stopClients() {
         boolean result = false;
-        if (clientsController.isClientsServiceRunning()) {
-            result = clientsController.stopClientsService();
+        if (clientsController.isThreadsServiceRunning()) {
+            result = clientsController.stopThreadsService();
         }
         updateClientsGui();
     }

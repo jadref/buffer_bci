@@ -21,9 +21,9 @@ public final class C {
     public static final String IS_BUFFER_INFO = "b_info";
     public static final String BUFFER_INFO = "b";
 
-    public static final String IS_CLIENT_INFO = "c_info";
-    public static final String CLIENT_INFO = "c";
-    public static final String CLIENT_N_INFOS = "c_nClients";
+    public static final String IS_BUFFER_CONNECTION_INFO = "c_info";
+    public static final String BUFFER_CONNECTION_INFO = "c";
+    public static final String BUFFER_CONNECTION_N_INFOS = "c_nClients";
 
     public static final String THREAD_INDEX = "t_index";
     public static final String THREAD_ID = "t_id";
@@ -44,6 +44,7 @@ public final class C {
     public static final int THREAD_START = 8;
     public static final int THREAD_UPDATE_ARGUMENTS = 9;
     public static final int THREAD_UPDATE_ARG_FROM_STR = 10;
+    public static final int THREAD_INFO_BROADCAST=11;
 
     public static final int BUFFER_INFO_PARCEL = 0;
     public static final int CLIENT_INFO_PARCEL = 1;

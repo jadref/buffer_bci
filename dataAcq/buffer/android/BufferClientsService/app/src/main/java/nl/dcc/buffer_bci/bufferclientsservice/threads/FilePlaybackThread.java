@@ -1,5 +1,7 @@
 package nl.dcc.buffer_bci.bufferclientsservice.threads;
 
+import android.annotation.TargetApi;
+import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
 
@@ -36,7 +38,7 @@ public class FilePlaybackThread extends ThreadBase {
         arguments[0] = new Argument("Buffer Address", "localhost:1972");
         arguments[1] = new Argument("Speedup", 1.0, false);
         arguments[2] = new Argument("Buffer size", 5, false);
-        arguments[3] = new Argument("Data directory", "res/raw/");
+        arguments[3] = new Argument("Data directory", "raw_buffer/");
         return arguments;
     }
 
@@ -44,7 +46,6 @@ public class FilePlaybackThread extends ThreadBase {
     public String getName() {
         return "File Playback";
     }
-
 
     @Override
     public void validateArguments(Argument[] arguments) {
@@ -80,7 +81,12 @@ public class FilePlaybackThread extends ThreadBase {
     @Override
     public void mainloop() {
         initialize();
-        initFiles();
+        try {
+            initFiles();
+        } catch (FileNotFoundException e) { // abort if can't open files
+            run=false;
+            return;
+        }
         filePlayback = new FilePlayback(hostname,port,dataReader,eventReader,headerReader,speedup,blockSize);
         filePlayback.mainloop();
         try {
@@ -92,33 +98,35 @@ public class FilePlaybackThread extends ThreadBase {
     }
 
     @Override
-    public void stop() { filePlayback.stop(); }
+    public void stop() { if ( filePlayback!=null ) filePlayback.stop(); }
 
-    void initFiles() {
-        String samples_str = dataDir + "/samples";
-        String events_str = dataDir + "/events";
-        String header_str = dataDir + "/header";
-		  try {
-				if ( isExternalStorageReadable() ){ // if available read from external storage
-				  dataReader  =androidHandle.openReadFile(samples_str);
-				  eventReader =androidHandle.openReadFile(events_str);
-			  	  headerReader=androidHandle.openReadFile(header_str);
-				}
-              if ( dataReader == null ){ // fall back on the resources directory
-                  Log.w("FilePlayback","External storage is not readable.");
-					 dataReader = this.getClass().getClassLoader().getResourceAsStream(samples_str);
-					 eventReader = this.getClass().getClassLoader().getResourceAsStream(events_str);
-					 headerReader = this.getClass().getClassLoader().getResourceAsStream(header_str);
-				}
-		  } catch ( FileNotFoundException e ) {
-				e.printStackTrace();
-		  } catch ( IOException e ) {
-				e.printStackTrace();
-		  }
-		  if ( dataReader==null ) {
-                Log.w("FilePlayback", "Huh, couldnt open file stream : " + samples_str);
-		  }
-	 }
+    void initFiles() throws FileNotFoundException {
+        if ((dataDir.length() != 0) && !dataDir.endsWith("/")) { dataDir = dataDir + "/"; } // guard path if needed
+        String samples_str = dataDir + "samples";
+        String events_str = dataDir + "events";
+        String header_str = dataDir + "header";
+        if ( isExternalStorageReadable() ) { // if available read from external storage
+            try {
+                dataReader = androidHandle.openReadFile(samples_str);
+                eventReader = androidHandle.openReadFile(events_str);
+                headerReader = androidHandle.openReadFile(header_str);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        if ( dataReader == null ){ // fall back on the resources directory
+            Log.w("FilePlayback", "External storage is not readable.");
+            dataReader = this.getClass().getClassLoader().getResourceAsStream("assets/"+samples_str);
+            eventReader = this.getClass().getClassLoader().getResourceAsStream("assets/"+events_str);
+            headerReader = this.getClass().getClassLoader().getResourceAsStream("assets/"+header_str);
+        }
+        if ( dataReader==null ) {
+            Log.w("FilePlayback", "Huh, couldn't open file stream : " + samples_str);
+            throw new FileNotFoundException(samples_str);
+        }
+    }
 
     /* Checks if external storage is available for read and write */
     public boolean isExternalStorageWritable() {

@@ -15,6 +15,8 @@ public class BufferThread extends Thread {
 
     private static final String TAG = BufferThread.class.getSimpleName();
     private String host;
+    private String feedbackEventType="alphaLat";
+    private int timeout_ms=1000;
     private int port;
     private BufferClientClock C;
     private boolean run;
@@ -22,9 +24,16 @@ public class BufferThread extends Thread {
     private BufferEvent lastEvent;
     private float[] values;
 
-    public BufferThread(String localhost, int port) {
-        this.host = localhost;
+    public BufferThread(String host, int port) {
+        this.host = host;
         this.port = port;
+        C = new BufferClientClock();
+    }
+
+    public BufferThread(String host, int port, String feedbackEventType) {
+        this.host = host;
+        this.port = port;
+        this.feedbackEventType = feedbackEventType;
         C = new BufferClientClock();
     }
 
@@ -53,23 +62,27 @@ public class BufferThread extends Thread {
         int eventCount = 0;
         while (run) {
             if (connect()) {
-                BufferEvent[] events;
+                BufferEvent[] events=null;
                 try {
-                    SamplesEventsCount count = C.waitForEvents(1, 100000);
-                    events = C.getEvents(eventCount, count.nEvents - 1);
-                    eventCount = count.nEvents - 1;
+                    // wait and block until an update event is received
+                    SamplesEventsCount count = C.waitForEvents(eventCount, timeout_ms);
+                    // get any new events
+                    if ( count.nEvents > eventCount ) {
+                        events = C.getEvents(eventCount, count.nEvents - 1);
+                        eventCount = count.nEvents;
+                    }
                 } catch (IOException e) {
                     events = null;
                 }
-                boolean hasEvents = events != null && events.length > 0;
-                if (hasEvents) {
+
+                if ( events != null && events.length > 0 ) {
+                    // check which of these events we care about
                     for (int i = events.length - 1; i >= 0; i--) {
                         String type = String.valueOf(events[i].getType());
-                        if (type.equals("alphaLat")) {
+                        if (type.equals(feedbackEventType)) {
                             lastEvent = events[i];
                             values = convertToFloatArray(lastEvent.getValue().getArray());
-                            Log.d(TAG, "Alpha lat: " + Arrays.toString(values));
-                            break;
+                            Log.d(TAG, feedbackEventType + ": " + Arrays.toString(values));
                         }
                     }
                 }
