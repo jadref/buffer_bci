@@ -157,7 +157,9 @@ public class ContinuousClassifier extends ThreadBase {
         while (header == null) {
             try {
                 Log.i(TAG, "Connecting to " + bufferHost + ":" + bufferPort);
-                C.connect(bufferHost, bufferPort);
+					 if ( !C.isConnected() ) {
+						  C.connect(hostname, port);
+					 }
                 //C.setAutoReconnect(true);
                 if (C.isConnected()) {
                     header = C.getHeader();
