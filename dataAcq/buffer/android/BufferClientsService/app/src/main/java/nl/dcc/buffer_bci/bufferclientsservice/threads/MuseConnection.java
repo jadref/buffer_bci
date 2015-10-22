@@ -28,27 +28,30 @@ public class MuseConnection extends ThreadBase {
     private int nSamples;
     private String address;
     private int port;
-    private int channels;
+    private int nChannels;
     private int samplingFrequency;
     private int dataType;
+    private int blockSize;
 
     @Override
     public Argument[] getArguments() {
-        Argument[] arguments = new Argument[5];
+        Argument[] arguments = new Argument[6];
         arguments[0] = new Argument("Buffer Address", "localhost");
         arguments[1] = new Argument("Buffer port", 1972, true);
         arguments[2] = new Argument("Channels", 4, true);
         arguments[3] = new Argument("Sampling frequency", 220, true);
         arguments[4] = new Argument("Datatype", DataType.FLOAT64, true);
+        arguments[5] = new Argument("BlockSize", 10, true);
         return arguments;
     }
 
     private void initialize() {
         address = arguments[0].getString();
         port = arguments[1].getInteger();
-        channels = arguments[2].getInteger();
+        nChannels = arguments[2].getInteger();
         samplingFrequency = arguments[3].getInteger();
         dataType = arguments[4].getInteger();
+        blockSize = arguments[5].getInteger();
         androidHandle.updateStatus("Address: " + address + ":" + String.valueOf(port));
         Log.d(TAG, this.toString());
     }
@@ -68,15 +71,15 @@ public class MuseConnection extends ThreadBase {
 
         // Connect to the muse headband
         connectionListener = new ConnectionListener();
-        dataListener = new DataListener();
-        Log.i("Muse Headband", "libmuse version=" + LibMuseVersion.SDK_VERSION);
+        dataListener = new DataListener(blockSize, nChannels);
+        Log.i(TAG, "libmuse version=" + LibMuseVersion.SDK_VERSION);
         getMuse();
-        connectToMuse();
+        connectToMuseAndRun();
 
         // connect to the buffer
         client = new BufferClient();
         connectToBuffer();
-        uploadHeaderToBuffer(channels, samplingFrequency, dataType);
+        uploadHeaderToBuffer(nChannels, samplingFrequency, dataType);
 
         // For showing purposes
         long startMs = Calendar.getInstance().getTimeInMillis();
@@ -103,19 +106,28 @@ public class MuseConnection extends ThreadBase {
             MuseManager.refreshPairedMuses();
             List<Muse> pairedMuses = MuseManager.getPairedMuses();
             if (pairedMuses.size() > 0) muse = pairedMuses.get(0);
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                break;
+            }
         }
     }
 
     /**
      * Connect to the detected muse.
      */
-    private void connectToMuse() {
+    private void connectToMuseAndRun() {
         ConnectionState state = muse.getConnectionState();
         if (state == ConnectionState.CONNECTED || state == ConnectionState.CONNECTING) {
             Log.w("Muse Headband", "doesn't make sense to connect second time to the same muse");
             return;
         }
-        configureLibrary();
+        muse.registerConnectionListener(connectionListener);
+        muse.registerDataListener(dataListener, MuseDataPacketType.EEG);
+        muse.setPreset(MusePreset.PRESET_14);
+        muse.enableDataTransmission(dataTransmission);
         /**
          * In most cases libmuse native library takes care about
          * exceptions and recovery mechanism, but native code still
@@ -125,7 +137,7 @@ public class MuseConnection extends ThreadBase {
         try {
             muse.runAsynchronously();
         } catch (Exception e) {
-            Log.e("Muse Headband", Log.getStackTraceString(e));
+            Log.e(TAG, Log.getStackTraceString(e));
         }
     }
 
@@ -133,7 +145,7 @@ public class MuseConnection extends ThreadBase {
      * Disconnect from the connected muse
      */
     private void disconnectMuse() {
-        if (muse != null) {
+        if (muse != null && muse.getConnectionState()==ConnectionState.CONNECTED) {
             /**
              * true flag will force libmuse to unregister all listeners,
              * BUT AFTER disconnecting and sending disconnection event.
@@ -150,11 +162,7 @@ public class MuseConnection extends ThreadBase {
     /**
      * Configure the data receiver and processor.
      */
-    private void configureLibrary() {
-        muse.registerConnectionListener(connectionListener);
-        muse.registerDataListener(dataListener, MuseDataPacketType.EEG);
-        muse.setPreset(MusePreset.PRESET_14);
-        muse.enableDataTransmission(dataTransmission);
+    private void startSending() {
     }
 
     /**
@@ -183,7 +191,7 @@ public class MuseConnection extends ThreadBase {
     /**
      * Upload the header information to the buffer.
      *
-     * @param channels          The number of channels
+     * @param channels          The number of nChannels
      * @param samplingFrequency The expected sampling frequency
      * @param dataType          The datatype.
      */
@@ -210,6 +218,7 @@ public class MuseConnection extends ThreadBase {
 
     @Override
     public void stop() {
+        run=false;
         disconnectMuse();
         if (client != null) try {
             client.disconnect();
@@ -218,14 +227,13 @@ public class MuseConnection extends ThreadBase {
         } finally {
             client = null;
         }
-
         super.stop();
     }
 
     public String toString() {
         return "MuseConnection with parameters: \n" +
                 "Buffer: " + address + ":" + String.valueOf(port) + "\n" +
-                "Channels: " + String.valueOf(channels) + "\n" +
+                "Channels: " + String.valueOf(nChannels) + "\n" +
                 "Sampling frequency: " + String.valueOf(samplingFrequency) + "\n" +
                 "Datatype: " + String.valueOf(dataType);
     }
@@ -241,7 +249,12 @@ public class MuseConnection extends ThreadBase {
             final String status = p.getPreviousConnectionState().toString() +
                     " -> " + current;
             final String full = "Muse " + p.getSource().getMacAddress() + " " + status;
-            Log.i("Muse Headband", full);
+            // Check if we lost the connection
+            if ( p.getPreviousConnectionState()==ConnectionState.CONNECTED
+                 && p.getCurrentConnectionState()==ConnectionState.DISCONNECTED ){
+                stop();
+            }
+            Log.i(TAG,full);
         }
     }
 
@@ -255,14 +268,26 @@ public class MuseConnection extends ThreadBase {
      * consider to create another thread.
      */
     class DataListener extends MuseDataListener {
-
         public final String TAG = DataListener.class.toString();
+        double [][] dataMatrix; // buffer to store data before sending to the real buffer
+        int curPoint=0; // current position in the local buffer
+
+        public DataListener(int blockSize, int nChannels) {
+            dataMatrix = new double[blockSize][];
+            for ( int bi=0; bi<dataMatrix.length; bi++){
+                dataMatrix[bi] = new double[nChannels];
+                // zero initially
+                for ( int i=0; i<dataMatrix[bi].length; i++) {
+                    dataMatrix[bi][i] = 0.0;
+                }
+            }
+        }
 
         @Override
         public void receiveMuseDataPacket(MuseDataPacket p) {
             switch (p.getPacketType()) {
                 case EEG:
-                    updateEeg(p.getValues());
+                    updateEEG(p.getValues());
                     break;
                 default:
                     break;
@@ -272,22 +297,27 @@ public class MuseConnection extends ThreadBase {
         @Override
         public void receiveMuseArtifactPacket(MuseArtifactPacket p) {
             if (p.getHeadbandOn() && p.getBlink()) {
-                Log.i("Artifacts", "blink");
+                Log.i(TAG, "blink");
             }
         }
 
-        private void updateEeg(final ArrayList<Double> data) {
-            Log.v(TAG, "EEG: " + data.toString());
-            double[] dataArray = new double[data.size()];
-            for (int i = 0; i < data.size(); i++)
-                dataArray[i] = data.get(i);
-            double[][] dataMatrix = new double[][]{dataArray};
-            try {
-                client.putData(dataMatrix);
-            } catch (IOException e) {
-                Log.e(TAG, Log.getStackTraceString(e));
+        private void updateEEG(final ArrayList<Double> data) {
+            //Log.v(TAG, "EEG: " + data.toString());
+            for (int i = 0; i < data.size() && i < dataMatrix[0].length; i++) {
+                dataMatrix[curPoint][i] = data.get(i);
             }
+            curPoint += 1;
             nSamples += 1;
+            // block of data ready, send it all to the buffer-server
+            if ( curPoint==dataMatrix.length ) {
+                try {
+                    if ( client != null ) client.putData(dataMatrix);
+                } catch (IOException e) {
+                    Log.e(TAG, Log.getStackTraceString(e));
+                }
+                // TODO: Zero the dataMatrix as well?
+                curPoint = 0;
+            }
         }
     }
 }

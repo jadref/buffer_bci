@@ -41,22 +41,22 @@ public class BufferClientsService extends Service {
         @Override
         public void onReceive(final Context context, final Intent intent) {
             int id;
+            // pause update messages while processing the intent
+            if (updater != null) {
+                updater.stopUpdating();
+            }
             switch (intent.getIntExtra(C.MESSAGE_TYPE, -1)) {
                 case C.THREAD_STOP:
                     id = intent.getIntExtra(C.THREAD_ID, -1);
                     Log.i(TAG, "Stopping Thread with ID: " + id);
                     if (id != -1) {
                         threads.get(id).stop();
-                        threadInfos.get(id).running = false;
-                        updater.update = false;
                     }
                     break;
                 case C.THREAD_PAUSE:
                     id = intent.getIntExtra(C.THREAD_ID, -1);
                     Log.i(TAG, "Stopping Thread with ID: " + id);
                     threads.get(id).stop();
-                    threadInfos.get(id).running = false;
-                    updater.update = false;
                     break;
                 case C.THREAD_START:
                     id = intent.getIntExtra(C.THREAD_ID, -1);
@@ -66,8 +66,6 @@ public class BufferClientsService extends Service {
                     } else
                         Log.i(TAG, "Starting Thread with ID: " + id);
                     wrappers.get(id).start();
-                    threadInfos.get(id).running = true;
-                    updater.update = true;
                     break;
                 case C.THREAD_UPDATE_ARGUMENTS:
                     id = intent.getIntExtra(C.THREAD_ID, -1);
@@ -77,7 +75,6 @@ public class BufferClientsService extends Service {
                         arguments[i] = (Argument) intent.getSerializableExtra(C.THREAD_ARGUMENTS + i);
                     }
                     threads.get(id).setArguments(arguments);
-                    updater.update = true;
                     break;
                 case C.THREAD_UPDATE_ARG_FROM_STR:
                     String argumentAsString = intent.getStringExtra(C.THREAD_STRING_FOR_ARG);
@@ -106,14 +103,16 @@ public class BufferClientsService extends Service {
                             break;
                     }
                     threads.get(id).setArgument(argument);
-                    updater.update = true;
                     break;
                 case C.THREAD_INFO_BROADCAST:
                     broadcastAllThreadInfo();
                 default:
             }
+            // restart sending thread status updates
+            if (updater != null) {
+                updater.startUpdating();
+            }
         }
-
     };
 
     public void handleExceptionClose(final Exception e, final ThreadBase base) {
@@ -136,7 +135,6 @@ public class BufferClientsService extends Service {
         } catch (IOException e1) {
             makeToast("Failed to write stack trace!", Toast.LENGTH_LONG);
         }
-        updater.update = true;
     }
 
     public void handleExceptionCrash(final Exception e, final ThreadBase base) {
@@ -159,7 +157,6 @@ public class BufferClientsService extends Service {
         } catch (IOException e1) {
             makeToast("Failed to write stack trace!", Toast.LENGTH_LONG);
         }
-        updater.update = true;
     }
 
     /* Checks if external storage is available to at least read */
@@ -203,9 +200,6 @@ public class BufferClientsService extends Service {
         if (wifiLock != null) {
             wifiLock.release();
         }
-        if (updater != null) {
-            updater.stopUpdating();
-        }
         for (int i = 0; i < threadInfos.size(); i++) {
             int id = threadInfos.valueAt(i).threadID;
             try {
@@ -214,6 +208,11 @@ public class BufferClientsService extends Service {
                 handleExceptionClose(e, threads.get(id));
             }
         }
+        // lastly update the display
+        if (updater != null) {
+            updater.stopRunning();
+        }
+
         this.unregisterReceiver(mMessageReceiver);
     }
 
@@ -224,7 +223,7 @@ public class BufferClientsService extends Service {
         if (wakeLock == null && wifiLock == null) {
             updater = new Updater(this);
             updater.start();
-            updater.update = false;
+            updater.stopUpdating();
             final int port = intent.getIntExtra("port", 1972);
 
             // Get Wakelocks
@@ -247,20 +246,19 @@ public class BufferClientsService extends Service {
         // Create notification text
         final Resources res = getResources();
         String notification_text = String.format(res.getString(R.string.notification_text),threadInfos.size());
-        final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this).setSmallIcon(R.drawable
-                .ic_launcher).setContentTitle(res.getString(R.string.notification_title)).setContentText(notification_text);
+        final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this).setSmallIcon(R.drawable.ic_launcher).setContentTitle(res.getString(R.string.notification_title)).setContentText(notification_text);
 
         // Turn this service into a foreground service
         startForeground(1, mBuilder.build());
         Log.d(TAG, "Buffer Clients Service moved to foreground.");
         Log.d(TAG, "Buffer Clients Service - started.");
 
+        // start the status update thread sending info.
+        updater.startUpdating();
         return START_NOT_STICKY;
     }
 
     private void createAllThreadsAndBroadcastInfo() {
-
-        updater.update = false;
         Class[] allThreads = ThreadList.list;
         int numOfThreads = allThreads.length;
         Log.i(TAG, "Number of Threads = " + numOfThreads);
@@ -393,8 +391,8 @@ public class BufferClientsService extends Service {
     private class Updater extends Thread {
 
         private final Context context;
-        protected boolean update = true;
-        private boolean run = true;
+        protected boolean update = true; // only send update intentions if is true
+        private boolean run = true; // end thread if run=false
 
         public Updater(final Context context) {
             this.context = context;
@@ -427,7 +425,8 @@ public class BufferClientsService extends Service {
                 intent.putExtra(C.MESSAGE_TYPE, C.UPDATE);
                 intent.putExtra(C.IS_THREAD_INFO, true);
 
-                threadInfos.get(id).running = wrappers.get(id).isAlive();
+                // is this thread currently running? i.e. in it's main-loop?
+                threadInfos.get(id).running = threads.get(id).running();
 
                 intent.putExtra(C.THREAD_INFO, threadInfos.get(id));
                 intent.putExtra(C.THREAD_INDEX, i);
@@ -442,8 +441,12 @@ public class BufferClientsService extends Service {
 
         }
 
-        public void stopUpdating() {
+        public void stopRunning() {
             run = false;
+        }
+        public void startUpdating() { update = true; }
+        public void stopUpdating() {
+            update = false;
         }
     }
 
@@ -472,5 +475,4 @@ public class BufferClientsService extends Service {
         }
 
     }
-
 }
