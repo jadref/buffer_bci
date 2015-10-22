@@ -41,22 +41,22 @@ public class BufferClientsService extends Service {
         @Override
         public void onReceive(final Context context, final Intent intent) {
             int id;
+            // pause update messages while processing the intent
+            if (updater != null) {
+                updater.stopUpdating();
+            }
             switch (intent.getIntExtra(C.MESSAGE_TYPE, -1)) {
                 case C.THREAD_STOP:
                     id = intent.getIntExtra(C.THREAD_ID, -1);
                     Log.i(TAG, "Stopping Thread with ID: " + id);
                     if (id != -1) {
                         threads.get(id).stop();
-                        threadInfos.get(id).running = false;
-                        updater.update = false;
                     }
                     break;
                 case C.THREAD_PAUSE:
                     id = intent.getIntExtra(C.THREAD_ID, -1);
                     Log.i(TAG, "Stopping Thread with ID: " + id);
                     threads.get(id).stop();
-                    threadInfos.get(id).running = false;
-                    updater.update = false;
                     break;
                 case C.THREAD_START:
                     id = intent.getIntExtra(C.THREAD_ID, -1);
@@ -66,8 +66,6 @@ public class BufferClientsService extends Service {
                     } else
                         Log.i(TAG, "Starting Thread with ID: " + id);
                     wrappers.get(id).start();
-                    threadInfos.get(id).running = true;
-                    updater.update = true;
                     break;
                 case C.THREAD_UPDATE_ARGUMENTS:
                     id = intent.getIntExtra(C.THREAD_ID, -1);
@@ -77,7 +75,6 @@ public class BufferClientsService extends Service {
                         arguments[i] = (Argument) intent.getSerializableExtra(C.THREAD_ARGUMENTS + i);
                     }
                     threads.get(id).setArguments(arguments);
-                    updater.update = true;
                     break;
                 case C.THREAD_UPDATE_ARG_FROM_STR:
                     String argumentAsString = intent.getStringExtra(C.THREAD_STRING_FOR_ARG);
@@ -106,12 +103,16 @@ public class BufferClientsService extends Service {
                             break;
                     }
                     threads.get(id).setArgument(argument);
-                    updater.update = true;
                     break;
+                case C.THREAD_INFO_BROADCAST:
+                    broadcastAllThreadInfo();
                 default:
             }
+            // restart sending thread status updates
+            if (updater != null) {
+                updater.startUpdating();
+            }
         }
-
     };
 
     public void handleExceptionClose(final Exception e, final ThreadBase base) {
@@ -138,6 +139,7 @@ public class BufferClientsService extends Service {
 
     public void handleExceptionCrash(final Exception e, final ThreadBase base) {
         Log.e(TAG, Log.getStackTraceString(e));
+        makeToast(base.getName() + " crashed!", Toast.LENGTH_SHORT);
         try {
             if (isExternalStorageWritable()) {
 
@@ -198,9 +200,6 @@ public class BufferClientsService extends Service {
         if (wifiLock != null) {
             wifiLock.release();
         }
-        if (updater != null) {
-            updater.stopUpdating();
-        }
         for (int i = 0; i < threadInfos.size(); i++) {
             int id = threadInfos.valueAt(i).threadID;
             try {
@@ -209,16 +208,22 @@ public class BufferClientsService extends Service {
                 handleExceptionClose(e, threads.get(id));
             }
         }
+        // lastly update the display
+        if (updater != null) {
+            updater.stopRunning();
+        }
+
         this.unregisterReceiver(mMessageReceiver);
     }
 
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
-
+        Log.d(TAG, "Buffer Clients Service - starting.");
+        android.os.Debug.waitForDebugger();
         if (wakeLock == null && wifiLock == null) {
             updater = new Updater(this);
             updater.start();
-            updater.update = false;
+            updater.stopUpdating();
             final int port = intent.getIntExtra("port", 1972);
 
             // Get Wakelocks
@@ -229,18 +234,6 @@ public class BufferClientsService extends Service {
             final WifiManager wifiMan = (WifiManager) getSystemService(WIFI_SERVICE);
             wifiLock = wifiMan.createWifiLock(C.WAKELOCKTAGWIFI);
             wifiLock.acquire();
-
-            // Create Foreground Notification
-            // Create notification text
-            final Resources res = getResources();
-            final String notification_text = res.getString(R.string.notification_text);
-            final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this).setSmallIcon(R.drawable
-                    .ic_launcher).setContentTitle(res.getString(R.string.notification_title)).setContentText
-                    (notification_text);
-
-            // Turn this service into a foreground service
-            startForeground(1, mBuilder.build());
-            Log.i(TAG, "Fieldtrip Clients Service moved to foreground.");
         }
 
         createAllThreadsAndBroadcastInfo();
@@ -249,12 +242,23 @@ public class BufferClientsService extends Service {
             this.registerReceiver(mMessageReceiver, intentFilter);
         }
 
+        // Create Foreground Notification
+        // Create notification text
+        final Resources res = getResources();
+        String notification_text = String.format(res.getString(R.string.notification_text),threadInfos.size());
+        final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this).setSmallIcon(R.drawable.ic_launcher).setContentTitle(res.getString(R.string.notification_title)).setContentText(notification_text);
+
+        // Turn this service into a foreground service
+        startForeground(1, mBuilder.build());
+        Log.d(TAG, "Buffer Clients Service moved to foreground.");
+        Log.d(TAG, "Buffer Clients Service - started.");
+
+        // start the status update thread sending info.
+        updater.startUpdating();
         return START_NOT_STICKY;
     }
 
     private void createAllThreadsAndBroadcastInfo() {
-
-        updater.update = false;
         Class[] allThreads = ThreadList.list;
         int numOfThreads = allThreads.length;
         Log.i(TAG, "Number of Threads = " + numOfThreads);
@@ -272,12 +276,12 @@ public class BufferClientsService extends Service {
                 }
 
                 for (Argument a : arguments) {
-                    a.validate();
+                    if ( a!=null ) a.validate();
                 }
                 thread.validateArguments(arguments);
 
                 for (Argument a : arguments) {
-                    if (a.isInvalid()) {
+                    if (a!=null && a.isInvalid()) {
                         Log.e(TAG, "Argument: " + a.getDescription() + " is invalid");
                         return;
                     }
@@ -288,36 +292,48 @@ public class BufferClientsService extends Service {
                 wrappers.put(i, wrapper);
 
                 Log.i(TAG, "Number of Arguments = " + wrapper.base.arguments.length);
-                Log.i(TAG, "First argument is: " + wrapper.base.arguments[0].getDescription() + " with type: " +
-                        wrapper.base.arguments[0].getType());
+                //Log.i(TAG, "First argument is: " + wrapper.base.arguments[0].getDescription() + " with type: " +
+                //        wrapper.base.arguments[0].getType());
 
                 ThreadInfo threadInfo = new ThreadInfo(i, wrapper.getName(), "", false);
                 threadInfos.put(i, threadInfo);
 
-                Intent intent = new Intent(C.SEND_UPDATE_INFO_TO_CONTROLLER_ACTION);
-                intent.putExtra(C.MESSAGE_TYPE, C.UPDATE);
-                intent.putExtra(C.IS_THREAD_INFO, true);
-                intent.putExtra(C.THREAD_INFO, threadInfo);
-                intent.putExtra(C.THREAD_INDEX, threadInfo.threadID);
-                intent.putExtra(C.THREAD_N_ARGUMENTS, arguments.length);
-                for (int k = 0; k < arguments.length; k++) {
-                    intent.putExtra(C.THREAD_ARGUMENTS + k, arguments[k]);
-                }
-                Log.i(TAG, "Sending broadcast with ThreadID = " + threadInfo.threadID);
-                sendOrderedBroadcast(intent, null);
-
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    Log.e(TAG, "Exception during sleeping. Very exceptional!");
-                    Log.e(TAG, Log.getStackTraceString(e));
-                }
+                broadcastThreadInfo(threadInfo,arguments);
 
             } catch (InstantiationException e) {
                 Log.w(TAG, "Instantiation failed!");
             } catch (IllegalAccessException e) {
                 Log.w(TAG, "Instantiation failed!");
             }
+        }
+    }
+
+    private void broadcastAllThreadInfo(){
+            for (int i = 0; i < threadInfos.size(); i++) {
+                int id = threadInfos.valueAt(i).threadID;
+                broadcastThreadInfo(threadInfos.valueAt(i),threads.get(id).getArguments());
+        }
+    }
+
+    private void broadcastThreadInfo(ThreadInfo threadInfo, Argument[] arguments){
+        Intent intent = new Intent(C.SEND_UPDATE_INFO_TO_CONTROLLER_ACTION);
+        intent.putExtra(C.MESSAGE_TYPE, C.UPDATE);
+        intent.putExtra(C.IS_THREAD_INFO, true);
+        intent.putExtra(C.THREAD_INFO, threadInfo);
+        intent.putExtra(C.THREAD_INDEX, threadInfo.threadID);
+        intent.putExtra(C.THREAD_N_ARGUMENTS, arguments.length);
+        for (int k = 0; k < arguments.length; k++) {
+            if (arguments[k]!=null) {
+                intent.putExtra(C.THREAD_ARGUMENTS + k, arguments[k]);
+            }
+        }
+        Log.i(TAG, "Sending broadcast with ThreadID = " + threadInfo.threadID);
+        sendOrderedBroadcast(intent, null);
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Log.e(TAG, "Exception during sleeping. Very exceptional!");
+            Log.e(TAG, Log.getStackTraceString(e));
         }
     }
 
@@ -333,7 +349,9 @@ public class BufferClientsService extends Service {
         @Override
         public FileInputStream openReadFile(final String path) throws IOException {
             if (isExternalStorageReadable()) {
-                return new FileInputStream(new File(Environment.getExternalStorageDirectory(), path));
+                File f = new File(context.getExternalFilesDir(null), path);
+                Log.d(TAG,"Open for Reading:" + f.getPath());
+                return new FileInputStream(f);
             } else {
                 throw new IOException("Could not open external storage.");
             }
@@ -346,7 +364,9 @@ public class BufferClientsService extends Service {
         @Override
         public FileOutputStream openWriteFile(final String path) throws IOException {
             if (isExternalStorageWritable()) {
-                return new FileOutputStream(new File(Environment.getExternalStorageDirectory(), path));
+                File f = new File(context.getExternalFilesDir(null), path);
+                Log.d(TAG,"Open for writing:" + f.getPath());
+                return new FileOutputStream(f);
             } else {
                 throw new IOException("Could not open external storage.");
             }
@@ -373,8 +393,8 @@ public class BufferClientsService extends Service {
     private class Updater extends Thread {
 
         private final Context context;
-        protected boolean update = true;
-        private boolean run = true;
+        private boolean update = false; // only send update intentions if is true
+        private boolean run = true; // end thread if run=false
 
         public Updater(final Context context) {
             this.context = context;
@@ -407,14 +427,17 @@ public class BufferClientsService extends Service {
                 intent.putExtra(C.MESSAGE_TYPE, C.UPDATE);
                 intent.putExtra(C.IS_THREAD_INFO, true);
 
-                threadInfos.get(id).running = wrappers.get(id).isAlive();
+                // is this thread currently running? i.e. in it's main-loop?
+                threadInfos.get(id).running = threads.get(id).running();
 
                 intent.putExtra(C.THREAD_INFO, threadInfos.get(id));
                 intent.putExtra(C.THREAD_INDEX, i);
                 intent.putExtra(C.THREAD_N_ARGUMENTS, arguments.length);
 
                 for (int k = 0; k < arguments.length; k++) {
-                    intent.putExtra(C.THREAD_ARGUMENTS + k, arguments[k]);
+                    if ( arguments[k]!=null ) {
+                        intent.putExtra(C.THREAD_ARGUMENTS + k, arguments[k]);
+                    }
                 }
                 //Log.i(TAG, "Sending update broadcast with ThreadID = "+threadInfos.get(id).threadID);
                 sendOrderedBroadcast(intent, null);
@@ -422,8 +445,14 @@ public class BufferClientsService extends Service {
 
         }
 
-        public void stopUpdating() {
+        public void stopRunning() {
             run = false;
+        }
+        public void startUpdating() {
+            update = true;
+        }
+        public void stopUpdating() {
+            update = false;
         }
     }
 
@@ -452,5 +481,4 @@ public class BufferClientsService extends Service {
         }
 
     }
-
 }

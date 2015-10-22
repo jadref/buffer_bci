@@ -13,15 +13,16 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
 
     <application
-            android:allowBackup="true"
-            android:icon="@drawable/ic_launcher"
-            android:label="@string/app_name">
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name">
         <service
-                android:name="nl.dcc.buffer_bci.android.bufferclientsservice.BufferClientsService"
-                android:enabled="true"
-                android:exported="true">
+            android:name=".BufferClientsService"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="nl.dcc.buffer_bci.bufferclientsservice"/>
+            </intent-filter>
         </service>
     </application>
-
-
 </manifest>

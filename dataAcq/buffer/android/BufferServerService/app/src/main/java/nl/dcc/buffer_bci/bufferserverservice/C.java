@@ -51,6 +51,7 @@ public final class C {
     public static final int REQUEST_FLUSH_HEADER = 3;
     public static final int REQUEST_FLUSH_SAMPLES = 4;
     public static final int REQUEST_FLUSH_EVENTS = 5;
+    public static final int CLIENTS_INFO_BROADCAST=12;
 
     public static final int BUFFER_INFO_PARCEL = 0;
     public static final int CLIENT_INFO_PARCEL = 1;

@@ -1,8 +1,17 @@
 package nl.dcc.buffer_bci.bufferclientsservice.threads;
 
+import android.annotation.TargetApi;
+import android.os.Build;
+import android.os.Environment;
+import android.util.Log;
+
 import nl.dcc.buffer_bci.bufferclientsservice.base.Argument;
 import nl.dcc.buffer_bci.bufferclientsservice.base.ThreadBase;
-import nl.dcc.buffer_bci.signalprocessing.FilePlayback;
+import nl.dcc.buffer_bci.FilePlayback;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -20,15 +29,16 @@ public class FilePlaybackThread extends ThreadBase {
     private InputStream dataReader;
     private InputStream eventReader;
     private InputStream headerReader;
+    FilePlayback filePlayback=null;
 
     @Override
     public Argument[] getArguments() {
-        final Argument[] arguments = new Argument[4];
-
-        arguments[0] = new Argument("Buffer Address", "localhost:1972");
-        arguments[1] = new Argument("Speedup", 1.0, false);
-        arguments[2] = new Argument("Buffer size", 5, false);
-        arguments[3] = new Argument("Data directory", "res");
+        final Argument[] arguments = new Argument[]{
+                new Argument("Buffer Address", "localhost:1972"),
+        new Argument("Speedup", 1.0, false),
+        new Argument("Buffer size", 5, false),
+        new Argument("Data directory", "raw_buffer/")
+        };
         return arguments;
     }
 
@@ -36,7 +46,6 @@ public class FilePlaybackThread extends ThreadBase {
     public String getName() {
         return "File Playback";
     }
-
 
     @Override
     public void validateArguments(Argument[] arguments) {
@@ -66,34 +75,72 @@ public class FilePlaybackThread extends ThreadBase {
         speedup = arguments[1].getDouble();
         blockSize = arguments[2].getInteger();
         dataDir = arguments[3].getString();
-        android.updateStatus("Address: " + hostname + ":" + String.valueOf(port));
+        androidHandle.updateStatus("Address: " + hostname + ":" + String.valueOf(port));
     }
 
     @Override
     public void mainloop() {
         initialize();
-        initFiles();
-        FilePlayback filePlayback = new FilePlayback(hostname,port,dataReader,eventReader,headerReader,speedup,blockSize);
+        try {
+            initFiles();
+        } catch (FileNotFoundException e) { // abort if can't open files
+            run=false;
+            return;
+        }
+        filePlayback = new FilePlayback(hostname,port,dataReader,eventReader,headerReader,speedup,blockSize);
         filePlayback.mainloop();
-        stop();
-    }
-
-    public void stop() {
-        super.stop();
         try {
             cleanup();
-        } catch (final IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
+        filePlayback=null;
     }
 
-    void initFiles() {
+    @Override
+    public void stop() { if ( filePlayback!=null ) filePlayback.stop(); }
+
+    void initFiles() throws FileNotFoundException {
+        if ((dataDir.length() != 0) && !dataDir.endsWith("/")) { dataDir = dataDir + "/"; } // guard path if needed
         String samples_str = dataDir + "samples";
         String events_str = dataDir + "events";
         String header_str = dataDir + "header";
-        dataReader = this.getClass().getClassLoader().getResourceAsStream(samples_str);
-        eventReader = this.getClass().getClassLoader().getResourceAsStream(events_str);
-        headerReader = this.getClass().getClassLoader().getResourceAsStream(header_str);
+        if ( isExternalStorageReadable() ) { // if available read from external storage
+            try {
+                dataReader = androidHandle.openReadFile(samples_str);
+                eventReader = androidHandle.openReadFile(events_str);
+                headerReader = androidHandle.openReadFile(header_str);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        if ( dataReader == null ){ // fall back on the resources directory
+            Log.w("FilePlayback", "External storage is not readable.");
+            dataReader = this.getClass().getClassLoader().getResourceAsStream("assets/"+samples_str);
+            eventReader = this.getClass().getClassLoader().getResourceAsStream("assets/"+events_str);
+            headerReader = this.getClass().getClassLoader().getResourceAsStream("assets/"+header_str);
+        }
+        if ( dataReader==null ) {
+            Log.w("FilePlayback", "Huh, couldn't open file stream : " + samples_str);
+            throw new FileNotFoundException(samples_str);
+        }
+    }
+
+    /* Checks if external storage is available for read and write */
+    public boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        return Environment.MEDIA_MOUNTED.equals(state);
+    }
+    /* Checks if external storage is available to at least read */
+    public boolean isExternalStorageReadable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state) ||
+                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+            return true;
+        }
+        return false;
     }
 
     void cleanup() throws IOException {

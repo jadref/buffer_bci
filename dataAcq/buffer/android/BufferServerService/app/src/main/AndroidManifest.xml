@@ -17,7 +17,7 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name">
         <service
-            android:name="BufferServerService"
+            android:name=".BufferServerService"
             android:exported="true"
             android:enabled="true">
             <intent-filter>
@@ -26,7 +26,7 @@
         </service>
 
         <receiver
-            android:name="nl.dcc.buffer_bci.bufferserverservice.FBServiceBroadcastReceiver"
+            android:name=".FBServiceBroadcastReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>

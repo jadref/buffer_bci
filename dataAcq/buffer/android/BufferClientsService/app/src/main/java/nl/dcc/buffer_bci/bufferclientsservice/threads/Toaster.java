@@ -14,7 +14,38 @@ public class Toaster extends ThreadBase {
     private final BufferClient client = new BufferClient();
 
     /**
-     * Is used by the android app to determine what kind of arguments the thread
+     * Connects to the buffer
+     */
+    protected Header connect(String hostname, int port) {
+        Header header=null;
+        while (header == null && run) {
+            try {
+                System.out.println( "Connecting to " + hostname + ":" + port);
+                if ( !client.isConnected() ) {
+                    client.connect(hostname, port);
+                }
+                //C.setAutoReconnect(true);
+                if (client.isConnected()) {
+                    header = client.getHeader();
+                }
+            } catch (IOException e) {
+                header = null;
+            }
+            if (header == null) {
+                System.out.println( "Invalid Header... waiting");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    run=false;
+                }
+            }
+        }
+        return header;
+    }
+
+    /**
+     * Is used by the androidHandle app to determine what kind of arguments the thread
      * requires.
      */
     @Override
@@ -67,7 +98,7 @@ public class Toaster extends ThreadBase {
     }
 
     /**
-     * Is used by the android app to determine the name of the Class.
+     * Is used by the androidHandle app to determine the name of the Class.
      */
     @Override
     public String getName() {
@@ -77,7 +108,7 @@ public class Toaster extends ThreadBase {
     /**
      * Is called from within the public void run() method of a Thread object.
      * <p/>
-     * Before the mainloop is called, the arguments and android variables are
+     * Before the mainloop is called, the arguments and androidHandle variables are
      * set through functions defined in ThreadBase.
      */
     @Override
@@ -107,8 +138,9 @@ public class Toaster extends ThreadBase {
              * false if the buffer could not be reached at the specified
              * address/port.
              */
-            if (!connect(client, address, port)) {
-                android.updateStatus("Could not connect to buffer.");
+            Header hdr = connect(address,port);
+            if ( hdr==null) {
+                androidHandle.updateStatus("Could not connect to buffer.");
                 run = false;
                 return;
             }
@@ -117,9 +149,7 @@ public class Toaster extends ThreadBase {
              * The status message will be shown in the list of threads in the
              * app.
              */
-            android.updateStatus("Waiting for events.");
-
-            Header hdr = client.getHeader();
+            androidHandle.updateStatus("Waiting for events.");
 
             /**
              * The openWriteFile() and openReadFile() functions can be used to
@@ -128,7 +158,7 @@ public class Toaster extends ThreadBase {
              */
             PrintWriter floor = null;
             if (save) {
-                floor = new PrintWriter(android.openWriteFile(path));
+                floor = new PrintWriter(androidHandle.openWriteFile(path));
             }
             int nEventsOld = hdr.nEvents;
 
@@ -171,17 +201,17 @@ public class Toaster extends ThreadBase {
                             /**
                              * The small feedback popups that are sometimes
                              * shown at the bottom/center of the screen on
-                             * android devices are called toast. Calling the
+                             * androidHandle devices are called toast. Calling the
                              * toast() or toastLong() methods will create such a
                              * popup.
                              *
                              */
                             if (longMessage) {
-                                android.toastLong(message.toString());
+                                androidHandle.toastLong(message.toString());
                             } else {
-                                android.toast(message.toString());
+                                androidHandle.toast(message.toString());
                             }
-                            android.updateStatus("Last toast: " + message.toString());
+                            androidHandle.updateStatus("Last toast: " + message.toString());
                             if (save && floor != null) {
                                 floor.write(message.toString() + "\n");
                                 floor.flush();
@@ -195,9 +225,7 @@ public class Toaster extends ThreadBase {
 
             }
         } catch (final IOException e) {
-            android.updateStatus("IOException caught, stopping.");
-        } catch (final InterruptedException e) {
-            android.updateStatus("InterruptException caught, stopping.");
+            androidHandle.updateStatus("IOException caught, stopping.");
         }
     }
 
@@ -219,7 +247,7 @@ public class Toaster extends ThreadBase {
     }
 
     /**
-     * Used by the android app to determine if the arguments given by the user
+     * Used by the androidHandle app to determine if the arguments given by the user
      * are okay. If an argument is wrong, call the invalidate() method with some
      * kind reason for the invalidation in as the argument, this message will be
      * shown in red next to the input fields.
