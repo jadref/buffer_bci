@@ -35,13 +35,14 @@ public class MuseConnection extends ThreadBase {
 
     @Override
     public Argument[] getArguments() {
-        Argument[] arguments = new Argument[6];
-        arguments[0] = new Argument("Buffer Address", "localhost");
-        arguments[1] = new Argument("Buffer port", 1972, true);
-        arguments[2] = new Argument("Channels", 4, true);
-        arguments[3] = new Argument("Sampling frequency", 220, true);
-        arguments[4] = new Argument("Datatype", DataType.FLOAT64, true);
-        arguments[5] = new Argument("BlockSize", 10, true);
+        Argument[] arguments = new Argument[] {
+            new Argument("Buffer Address", "localhost"),
+            new Argument("Buffer port", 1972, true),
+            new Argument("Channels", 4, true),
+            new Argument("Sampling frequency", 220, true),
+            new Argument("Datatype", DataType.FLOAT64, true),
+            new Argument("BlockSize", 10, true)
+        };
         return arguments;
     }
 
@@ -155,8 +156,10 @@ public class MuseConnection extends ThreadBase {
              * muse.unregisterAllListeners();
              * muse.disconnect(false);
              */
+            muse.unregisterAllListeners();
             muse.disconnect(true);
         }
+        muse=null;
     }
 
     /**

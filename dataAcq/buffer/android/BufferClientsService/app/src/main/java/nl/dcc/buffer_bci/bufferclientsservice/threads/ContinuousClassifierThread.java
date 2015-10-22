@@ -23,33 +23,28 @@ public class ContinuousClassifierThread extends ThreadBase {
 
     protected String hostname ="localhost";
     protected int port = 1972;
-    protected Integer timeout_ms = 1000;
-    protected Integer trialLength_ms  =-1;
-    protected Integer step_ms  = -1;
+    protected int timeout_ms = 1000;
+    protected int trialLength_ms  =-1;
+    protected int step_ms  = 100;
     protected String clsfrFile;
     private ContinuousClassifier clsfr=null;
 
     @Override
     public Argument[] getArguments() {
-        final Argument[] arguments = new Argument[18];
-        arguments[0] = new Argument("Buffer address", "localhost");
-        arguments[1] = new Argument("Buffer port", 1972, true);
-        arguments[2] = new Argument("Header", null);
-        arguments[3] = new Argument("End type", "stimulus.test");
-        arguments[4] = new Argument("End value", "end");
-        arguments[5] = new Argument("Prediction event type", "alphaLat");
-        arguments[6] = new Argument("Baseline event type", "stimulus.startbaseline");
-        arguments[7] = new Argument("Baseline end", null);
-        arguments[8] = new Argument("Baseline start", "start");
-        arguments[9] = new Argument("N Baseline step", 5000, true);
-        arguments[10] = new Argument("Overlap", .5, true);
-        arguments[11] = new Argument("Timeout ms", 1000, true);
-        arguments[12] = new Argument("Sample step ms", -1, true);
-        arguments[13] = new Argument("Prediction filter", -1.0, true);
-        arguments[14] = new Argument("Sample trial length", 25, true);
-        arguments[15] = new Argument("Sample trial ms", -1, true);
-        arguments[16] = new Argument("Normalize latitude", true);
-        arguments[17] = new Argument("Clsfr file","clsfr.txt");
+        final Argument[] arguments = new Argument[]{
+                new Argument("Buffer address", new String(hostname)), //0
+                new Argument("Buffer port", port, true),
+                new Argument("Timeout ms", timeout_ms, true),
+                new Argument("End type", "stimulus.test"), //3
+                new Argument("End value", "end"),
+                new Argument("Prediction event type", "classifier.prediction"), //5
+                new Argument("Baseline event type", "stimulus.startbaseline"),
+                new Argument("Sample trial ms", trialLength_ms, true), //7
+                new Argument("Sample step ms", step_ms, true), //8
+                new Argument("Overlap", .5, true), //9
+                new Argument("Prediction filter", -1.0, true), //10
+                new Argument("Clsfr file","clsfr.txt") //11
+        };
         return arguments;
     }
 
@@ -59,10 +54,10 @@ public class ContinuousClassifierThread extends ThreadBase {
     private void initialize() {
         this.hostname = arguments[0].getString();
         this.port = arguments[1].getInteger();
-        this.timeout_ms = arguments[11].getInteger();
-        this.step_ms = arguments[12].getInteger();
-        this.trialLength_ms = arguments[15].getInteger();
-        this.clsfrFile = arguments[17].getString();
+        this.timeout_ms = arguments[2].getInteger();
+        this.trialLength_ms = arguments[7].getInteger();
+        this.step_ms = arguments[8].getInteger();
+        this.clsfrFile = arguments[11].getString();
     }
 
     @Override

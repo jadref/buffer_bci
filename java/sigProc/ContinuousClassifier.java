@@ -118,11 +118,12 @@ public class ContinuousClassifier {
 		cc.mainloop();
 	 }
 
-	 public ContinuousClassifier(String host, int port, int timeout){
-		  if ( host !=null )     this.hostname=host;
+	 public ContinuousClassifier(){}
+	 public ContinuousClassifier(String host, int port, int timeout_ms){
+		  if ( host !=null ) this.hostname=host;
 		  if ( port >0 )     this.port=port;
-		  if ( timeout >=0 ) this.timeout_ms=timeout;
-	 }
+		  if( timeout_ms>=0) this.timeout_ms=timeout_ms;
+    }
 
     /**
      * Creates a set of classifiers using a file stored in the project

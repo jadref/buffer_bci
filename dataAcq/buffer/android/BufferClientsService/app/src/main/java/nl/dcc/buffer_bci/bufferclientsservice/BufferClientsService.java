@@ -276,12 +276,12 @@ public class BufferClientsService extends Service {
                 }
 
                 for (Argument a : arguments) {
-                    a.validate();
+                    if ( a!=null ) a.validate();
                 }
                 thread.validateArguments(arguments);
 
                 for (Argument a : arguments) {
-                    if (a.isInvalid()) {
+                    if (a!=null && a.isInvalid()) {
                         Log.e(TAG, "Argument: " + a.getDescription() + " is invalid");
                         return;
                     }
@@ -292,8 +292,8 @@ public class BufferClientsService extends Service {
                 wrappers.put(i, wrapper);
 
                 Log.i(TAG, "Number of Arguments = " + wrapper.base.arguments.length);
-                Log.i(TAG, "First argument is: " + wrapper.base.arguments[0].getDescription() + " with type: " +
-                        wrapper.base.arguments[0].getType());
+                //Log.i(TAG, "First argument is: " + wrapper.base.arguments[0].getDescription() + " with type: " +
+                //        wrapper.base.arguments[0].getType());
 
                 ThreadInfo threadInfo = new ThreadInfo(i, wrapper.getName(), "", false);
                 threadInfos.put(i, threadInfo);
@@ -323,7 +323,9 @@ public class BufferClientsService extends Service {
         intent.putExtra(C.THREAD_INDEX, threadInfo.threadID);
         intent.putExtra(C.THREAD_N_ARGUMENTS, arguments.length);
         for (int k = 0; k < arguments.length; k++) {
-            intent.putExtra(C.THREAD_ARGUMENTS + k, arguments[k]);
+            if (arguments[k]!=null) {
+                intent.putExtra(C.THREAD_ARGUMENTS + k, arguments[k]);
+            }
         }
         Log.i(TAG, "Sending broadcast with ThreadID = " + threadInfo.threadID);
         sendOrderedBroadcast(intent, null);
@@ -391,7 +393,7 @@ public class BufferClientsService extends Service {
     private class Updater extends Thread {
 
         private final Context context;
-        protected boolean update = true; // only send update intentions if is true
+        private boolean update = false; // only send update intentions if is true
         private boolean run = true; // end thread if run=false
 
         public Updater(final Context context) {
@@ -433,7 +435,9 @@ public class BufferClientsService extends Service {
                 intent.putExtra(C.THREAD_N_ARGUMENTS, arguments.length);
 
                 for (int k = 0; k < arguments.length; k++) {
-                    intent.putExtra(C.THREAD_ARGUMENTS + k, arguments[k]);
+                    if ( arguments[k]!=null ) {
+                        intent.putExtra(C.THREAD_ARGUMENTS + k, arguments[k]);
+                    }
                 }
                 //Log.i(TAG, "Sending update broadcast with ThreadID = "+threadInfos.get(id).threadID);
                 sendOrderedBroadcast(intent, null);
@@ -444,7 +448,9 @@ public class BufferClientsService extends Service {
         public void stopRunning() {
             run = false;
         }
-        public void startUpdating() { update = true; }
+        public void startUpdating() {
+            update = true;
+        }
         public void stopUpdating() {
             update = false;
         }

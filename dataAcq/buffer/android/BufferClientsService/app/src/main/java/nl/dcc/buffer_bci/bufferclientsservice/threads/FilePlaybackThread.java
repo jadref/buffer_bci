@@ -33,12 +33,12 @@ public class FilePlaybackThread extends ThreadBase {
 
     @Override
     public Argument[] getArguments() {
-        final Argument[] arguments = new Argument[4];
-
-        arguments[0] = new Argument("Buffer Address", "localhost:1972");
-        arguments[1] = new Argument("Speedup", 1.0, false);
-        arguments[2] = new Argument("Buffer size", 5, false);
-        arguments[3] = new Argument("Data directory", "raw_buffer/");
+        final Argument[] arguments = new Argument[]{
+                new Argument("Buffer Address", "localhost:1972"),
+        new Argument("Speedup", 1.0, false),
+        new Argument("Buffer size", 5, false),
+        new Argument("Data directory", "raw_buffer/")
+        };
         return arguments;
     }
 
