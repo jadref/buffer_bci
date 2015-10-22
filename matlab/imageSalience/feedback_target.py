@@ -6,7 +6,7 @@ import FieldTrip
 from PIL import Image
 
 # Value definitions
-image_paths = ['./pictures/targets', './pictures/distractors', './pictures/test', './pictures/training']
+image_paths = ['./pictures/targets', './pictures/distractors', './pictures/test', './pictures/training', './pictures/faces']
 
 hostname='localhost'
 port=1972

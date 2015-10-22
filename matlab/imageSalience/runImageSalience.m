@@ -13,6 +13,7 @@ menustr={'0) EEG'                 'eegviewer';
 			'2) Calibrate'           'erpviewcalibrate'; 
          '3) Train Classifier'    'train';
 			'4) Testing/Feedback'    'test';
+            '5) Preference Detection'  'preference';
 			'q) quit'                'quit';
           };
 txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
@@ -115,6 +116,23 @@ while (ishandle(contFig) && ~strcmp(phaseToRun,'quit') )
     try
       sendEvent('startPhase.cmd','epochfeedback');
       imageSalienceTestingStimulus;
+    catch
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    end
+    sendEvent('test','end');
+    sendEvent(phaseToRun,'end');
+   
+	case 'quit';
+	  break;
+      
+   %---------------------------------------------------------------------------
+   case {'preference'};
+    sendEvent('subject',subject);
+    %sleepSec(.1);
+    sendEvent(phaseToRun,'start');
+    try
+      sendEvent('startPhase.cmd','epochfeedback');
+      imageSaliencePreferenceDetection;
     catch
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
     end

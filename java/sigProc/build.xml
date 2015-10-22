@@ -47,7 +47,7 @@
 			 <fileset dir="${src.dir}" includes="FilePlayback.java"/>
 			 <fileset dir="${lib.dir}" includes="**/BufferClient.jar"/>
           <manifest>
-            <attribute name="Main-Class" value="${ant.project.name}.signalprocessing.FilePlayback"/>
+            <attribute name="Main-Class" value="${ant.project.name}.FilePlayback"/>
           </manifest>
         </jar>
         <jar destfile="${jar.dir}/SignalProxy.jar">

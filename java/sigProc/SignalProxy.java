@@ -76,7 +76,7 @@ public class SignalProxy {
 		sp.stop();
 	 }
 
-	 SignalProxy(String hostname, int port, int nChannels, double fSample, int blockSize){
+	 public SignalProxy(String hostname, int port, int nChannels, double fSample, int blockSize){
 		  this.hostname = hostname;
 		  this.port     = port;
 		  this.nChannels= nChannels;
@@ -148,13 +148,5 @@ public class SignalProxy {
 		}
 	}
 
-	public void stop() {
-		 //super.stop();
-		try {
-			client.disconnect();
-		} catch (final IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
+	public void stop() { run=false; }
 }

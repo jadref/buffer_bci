@@ -25,6 +25,7 @@ public class BufferServer extends Thread {
 	 static final int serverPort  =1972;    // default server port
 	 static final int dataBufSize =1024*60; // default save samples = 60s @ 1024Hz
 	 static final int eventBufSize=10*60;   // default save events  = 60s @ 10Hz
+    boolean run=false;
 
 	/**
 	 * Main method, starts running a server thread in the current thread.
@@ -128,17 +129,17 @@ public class BufferServer extends Thread {
 		setName("Fieldtrip Buffer Server");
 	}
 
-	public BufferServer(final int portNumber, final int nSamples, final int nEvents, final String path) {
-		this.portNumber = portNumber;
-		System.err.println("Saving to : " + path);
-		dataStore = new SavingRingDataStore(nSamples, nEvents, path);
-		setName("Fieldtrip Buffer Server");
-	}
-
 	public BufferServer(final int portNumber, final int nSamples, final int nEvents, final java.io.File file) {
 		this.portNumber = portNumber;
 		System.err.println("Saving to : " + file.getPath());
 		dataStore = new SavingRingDataStore(nSamples, nEvents, file);
+		setName("Fieldtrip Buffer Server");
+	}
+
+	public BufferServer(final int portNumber, final int nSamples, final int nEvents, final String path) {
+		this.portNumber = portNumber;
+		System.err.println("Saving to : " + path);
+		dataStore = new SavingRingDataStore(nSamples, nEvents, path);
 		setName("Fieldtrip Buffer Server");
 	}
 
@@ -242,6 +243,7 @@ public class BufferServer extends Thread {
 	 */
 	@Override
 	public void run() {
+       run=true;
 		 //final Thread mainThread = Thread.currentThread();
 		 // Add shutdown hook to force close and flush to disk of open files if interrupted/aborted
 		 Runtime.getRuntime().addShutdownHook(new Thread() { public void run() { cleanup(); } });		
@@ -253,7 +255,7 @@ public class BufferServer extends Thread {
 			 e.printStackTrace();
 		}
 		try {
-			 while (true) {
+			 while (run) {
 				final ConnectionThread connection = new ConnectionThread(
 						nextClientID++, serverSocket.accept(), dataStore, this);
 				connection.setName("Fieldtrip Client Thread "
@@ -281,6 +283,7 @@ public class BufferServer extends Thread {
 	 * Stops the buffer thread and closes all existing client connections.
 	 */
 	public void stopBuffer() {
+      run=false;
 		try {
 			for (final ConnectionThread thread : threads) {
 				thread.disconnect();
@@ -295,5 +298,4 @@ public class BufferServer extends Thread {
 		  System.err.println("Running cleanup code");
 		  dataStore.cleanup();
 	 }
-	 
 }

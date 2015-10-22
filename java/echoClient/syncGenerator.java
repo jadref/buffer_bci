@@ -40,7 +40,9 @@ class syncGenerator {
 				while( hdr==null ) {
 					 try {
 						  System.out.println("Connecting to "+hostname+":"+port);
-						  C.connect(hostname, port);
+						  if ( !C.isConnected() ) {
+								C.connect(hostname, port);
+						  }
 						  //C.setAutoReconnect(true);
 						  if ( C.isConnected() ) { hdr = C.getHeader(); }
 					 } catch (IOException e) {
@@ -66,21 +68,21 @@ class syncGenerator {
 		  long t0=java.lang.System.currentTimeMillis();
 		  int  t =0;
 		  try {
-		  while ( true ) {
-				t = (int)(java.lang.System.currentTimeMillis() - t0);
-				syncEvt.setValue(t);
-				for (BufferClientClock C : clients ) {
-					 syncEvt.sample=-1;
-					 C.putEvent(syncEvt);
+				while ( true ) {
+					 t = (int)(java.lang.System.currentTimeMillis() - t0);
+					 syncEvt.setValue(t);
+					 for (BufferClientClock C : clients ) {
+						  syncEvt.sample=-1;
+						  C.putEvent(syncEvt);
+					 }
+					 System.out.print(".");
+					 // sleep until the next sync pulse
+					 Thread.sleep(syncInterval_s*1000);
 				}
-				System.out.print(".");
-				// sleep until the next sync pulse
-				Thread.sleep(syncInterval_s*1000);
-		  }
 		  } catch (InterruptedException e) {
 				System.out.println();
-		  // disconnect cleanly all clients
-		  for ( BufferClientClock C : clients ) { C.disconnect();  }
+				// disconnect cleanly all clients
+				for ( BufferClientClock C : clients ) { C.disconnect();  }
 		  }
 	 }
 	 

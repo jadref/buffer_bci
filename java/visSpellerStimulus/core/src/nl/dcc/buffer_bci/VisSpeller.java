@@ -170,7 +170,9 @@ public class VisSpeller extends ApplicationAdapter {
 		retryingText.draw();
 		if (TimeUtils.millis() - lastStateTime > TIME_RETRY_CLIENT) {
 			try {
-				ftc.connect(adress, port);
+				 if ( !ftc.isConnected() ) {
+					  ftc.connect(adress, port);
+				 }
 				Header hdr = ftc.getHeader();
 				nSamples = hdr.nSamples;
 				fSample = hdr.fSample;
@@ -195,7 +197,9 @@ public class VisSpeller extends ApplicationAdapter {
 		tryConnectText.draw();
 		if (TimeUtils.millis() - lastStateTime > TIME_RETRY_CLIENT) {
 			try {
-				ftc.connect(adress, port);
+				 if ( !ftc.isConnected() ) {
+					  ftc.connect(adress, port);
+				 }
 				Header hdr = ftc.getHeader();
 				nSamples = hdr.nSamples;
 				fSample = hdr.fSample;

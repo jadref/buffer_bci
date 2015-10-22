@@ -171,11 +171,13 @@ def runBCITrainingEpoch(nEpoch,names,data,seqDur,isi,periods,audioIDs,tgtIdx):
         else: 
             print(str(time()-t0) + ") Lagging behind! tn=" + str(st/1000) + " ttg=" + str(ttg));
         # send events as close in time as possible to when the actual stimulus starts
-        sendEvent("stimulus.target", tgt)   # target/non-target
         if len(audioID)>0: # if something to play
+            sendEvent("stimulus.target", [1 if tgt==1 else -1])     # target/non-target sound
             sendEvent("stimulus.play", names[audioIDs[audioID[0]]]) # which stimulus
             stream.write(audio.tostring()) # this should block until the audio is finished....
-
+        else:
+            sendEvent("stimulus.target",0) # non-target, no-sound
+            
     # # get user count of targets
     # sleep(0.5)
     # getFeedback("How many 'target' beeps?",int(len(ss.stimTime_ms)/2),nTgt)

@@ -31,7 +31,9 @@ class javaclient {
 		while( hdr==null ) {
 			 try {
 				  System.out.println("Connecting to "+hostname+":"+port);
-				  C.connect(hostname, port);
+				  if ( !C.isConnected() ) {
+						C.connect(hostname, port);
+				  }
 				  //C.setAutoReconnect(true);
 				  if ( C.isConnected() ) { hdr = C.getHeader(); }
 			 } catch (IOException e) {
