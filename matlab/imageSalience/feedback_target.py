@@ -14,6 +14,9 @@ port=1972
 width=800
 height=600
 
+cols = 3
+rows = 3
+
 black = (0,0,0)
 
 def buffer_newevents(evttype=None,timeout_ms=500,verbose=False):
@@ -77,6 +80,7 @@ fSample = hdr.fSample
 pygame.init()
 screen = pygame.display.set_mode((width,height), 1, 32)
 pygame.display.set_caption("Image Salience -- Target feedback")
+font = pygame.font.SysFont("monospace", 18)
 
 clock = pygame.time.Clock()
 
@@ -165,23 +169,23 @@ def processBufferEvents():
 				# Sort by average probability, highest to lowest.
 				sortedImages = sorted(sortedImages, key = lambda x: avg(x[1]), reverse = True)
 
-				# Display top 9.
-				top_nine = sortedImages[:9]
+				# Display top (rows*cols).
+				top_nine = sortedImages[:(rows*cols)]
 				update_surfaces(top_nine)
 
 
 # Updates the surfaces array, which contains the surfaces to be drawn.
 def update_surfaces(images): # images = [(image, [probabilities])], sorted by avg(probabilities), highest to lowest.
 	global surfaces
-	img_width = width / 3
-	img_height = height / 3
+	img_width = width / cols
+	img_height = height / rows
 
 	surfaces = []
 
-	for x in range(0, 3):
-		for y in range(0, 3):
+	for x in range(0, cols):
+		for y in range(0, rows):
 			# Get some values.
-			idx = x * 3 + y
+			idx = x * cols + y
 			if len(images) <= idx: print('len:' + str(len(images))); continue
 
 			img = images[idx]
@@ -195,9 +199,12 @@ def update_surfaces(images): # images = [(image, [probabilities])], sorted by av
 			# Set surface properties (size and alpha)
 			surf = pygame.transform.scale(surf, (img_width-3, img_height-3))
 			surf.set_alpha(scaleAlpha(sum(img_ps)/len(img_ps)) * 255)
+			
+			rank_surf = font.render("rank: " + str(idx+1), 1, (255,255,255), (0,0,0))
+			p_surf = font.render(str(sum(img_ps)/len(img_ps)), 1, (255, 255, 255), (0,0,0))
 
 			# save.
-			surfaces.append((target_dst, surf))
+			surfaces.append((target_dst, surf, rank_surf, p_surf))
 
 # Event loop
 done = False
@@ -216,7 +223,11 @@ while not done:
 	for surf in surfaces:
 		dst = surf[0]
 		img = surf[1]
+		rank_surf = surf[2]
+		p_surf = surf[3]
 		screen.blit(img, dst)
+		screen.blit(rank_surf, dst)
+		screen.blit(pygame.Rect(dst.x, dst.y + 20, dst.width, dst.height - 20))
 
 	# Flip buffers.
 	pygame.display.flip()
