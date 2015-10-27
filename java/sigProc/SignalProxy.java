@@ -149,4 +149,5 @@ public class SignalProxy {
 	}
 
 	public void stop() { run=false; }
+   public boolean isrunning(){ return run; }
 }

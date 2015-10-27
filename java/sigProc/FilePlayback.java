@@ -265,6 +265,7 @@ public class FilePlayback {
 	}
 	 
 	 public void stop() { run=false; }
+    public boolean isrunning(){ return run; }
 
 	 void initFiles(String fdir) throws FileNotFoundException {
 		  dataReader = new BufferedInputStream(new FileInputStream(fdir + File.separator + "samples"));

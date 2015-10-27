@@ -89,7 +89,10 @@ public class WrappedObject {
 		if (cls.isArray()) {
 			Class elc = cls.getComponentType();
 			
-			if        (name.equals("[D")) {
+         if ( name == null ) {
+             return; // keep as unknown
+
+         }else if   (name.equals("[D")) {
 				type = DataType.FLOAT64;
 				array = ((double[]) obj).clone();
 				numel = ((double[]) obj).length;

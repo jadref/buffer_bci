@@ -75,5 +75,6 @@ public class SignalProxyThread extends ThreadBase {
     }
 
     @Override public void stop() { if ( signalProxy != null ) signalProxy.stop(); }
+    @Override public boolean isrunning(){ if ( signalProxy!=null ) return signalProxy.isrunning(); return false; }
 
 }

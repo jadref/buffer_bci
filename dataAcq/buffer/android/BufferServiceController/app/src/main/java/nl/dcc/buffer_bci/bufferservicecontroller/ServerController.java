@@ -104,8 +104,8 @@ public class ServerController {
     protected void initialUpdate() {
         //Log.i(TAG, "Initially Updated Buffer Info.");
         address = buffer.address;
-        timer = new Timer();
-        timer.start();
+        //timer = new Timer();
+        //timer.start();
         startTime = buffer.startTime;
         initalUpdateCalled = true;
     }
@@ -462,7 +462,7 @@ public class ServerController {
 
     public void reloadConnections() {
         Intent intent = new Intent(C.FILTER_FROM_SERVER);
-        intent.putExtra(C.MESSAGE_TYPE, C.UPDATE);
+        intent.putExtra(C.MESSAGE_TYPE, C.BUFFER_INFO_BROADCAST);
         Log.i(TAG, "Refreshing all server bufferConnections info.");
         context.sendOrderedBroadcast(intent, null);
     }

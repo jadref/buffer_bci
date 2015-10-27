@@ -99,6 +99,8 @@ public class FilePlaybackThread extends ThreadBase {
 
     @Override
     public void stop() { if ( filePlayback!=null ) filePlayback.stop(); }
+    @Override public boolean isrunning(){ if ( filePlayback!=null ) return filePlayback.isrunning(); return false; }
+
 
     void initFiles() throws FileNotFoundException {
         if ((dataDir.length() != 0) && !dataDir.endsWith("/")) { dataDir = dataDir + "/"; } // guard path if needed

@@ -219,7 +219,7 @@ public class BufferClientsService extends Service {
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
         Log.d(TAG, "Buffer Clients Service - starting.");
-        android.os.Debug.waitForDebugger();
+        //android.os.Debug.waitForDebugger();
         if (wakeLock == null && wifiLock == null) {
             updater = new Updater(this);
             updater.start();
@@ -427,8 +427,8 @@ public class BufferClientsService extends Service {
                 intent.putExtra(C.MESSAGE_TYPE, C.UPDATE);
                 intent.putExtra(C.IS_THREAD_INFO, true);
 
-                // is this thread currently running? i.e. in it's main-loop?
-                threadInfos.get(id).running = threads.get(id).running();
+                // is this thread currently isrunning? i.e. in it's main-loop?
+                threadInfos.get(id).running = threads.get(id).isrunning();
 
                 intent.putExtra(C.THREAD_INFO, threadInfos.get(id));
                 intent.putExtra(C.THREAD_INDEX, i);

@@ -40,17 +40,19 @@ public class BufferServerService extends Service {
             Log.i(TAG, "Dealing with Flush request");
             switch (intent.getIntExtra(C.MESSAGE_TYPE, -1)) {
                 case C.REQUEST_PUT_HEADER:
-                    buffer.putHeader(0, 0, 0);
+                    if ( buffer!= null ) buffer.putHeader(0, 0, 0);
                     break;
                 case C.REQUEST_FLUSH_HEADER:
-                    buffer.flushHeader();
+                    if ( buffer!= null ) buffer.flushHeader();
                     break;
                 case C.REQUEST_FLUSH_SAMPLES:
-                    buffer.flushSamples();
+                    if ( buffer!= null ) buffer.flushSamples();
                     break;
                 case C.REQUEST_FLUSH_EVENTS:
-                    buffer.flushEvents();
+                    if ( buffer!= null ) buffer.flushEvents();
                     break;
+                case C.BUFFER_INFO_BROADCAST:
+                    if ( monitor != null ) monitor.sendAllInfo();
                 default:
             }
         }
@@ -86,7 +88,7 @@ public class BufferServerService extends Service {
 
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
-        android.os.Debug.waitForDebugger();
+        //android.os.Debug.waitForDebugger();
         // If no buffer is running.
         if (wakeLock==null && wifiLock==null ) { // Get Wakelocks
 

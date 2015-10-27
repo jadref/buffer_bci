@@ -29,8 +29,8 @@ public class ClientsController {
     Intent intent;
     private String clientsServicePackageName = C.CLIENTS_SERVICE_PACKAGE_NAME;
     private String clientsServiceClassName = C.CLIENTS_SERVICE_CLASS_NAME;
-    private LinkedHashMap<Integer, Argument[]> allArguments;
-    private List<Integer> threadIDs=null;
+    private LinkedHashMap<Integer, Argument[]> allArguments = new LinkedHashMap<Integer, Argument[]>();
+    private List<Integer> threadIDs=new ArrayList<Integer>();
     private int port = 1972;
 
 
@@ -103,8 +103,8 @@ public class ClientsController {
             intent.putExtra("port", 1972);
         }
         //threadInfos = new LinkedHashMap<Integer, ThreadInfo>();
-        allArguments = new LinkedHashMap<Integer, Argument[]>();
-        threadIDs = new ArrayList<Integer>();
+        //allArguments = new LinkedHashMap<Integer, Argument[]>();
+        //threadIDs = new ArrayList<Integer>();
 
         // Start the client.
         Log.i(TAG, "Attempting to start Clients Service");
@@ -118,10 +118,9 @@ public class ClientsController {
 
 
     public boolean stopThreadsService() {
-        threadInfos.clear();
-        if (threadIDs != null)
-            threadIDs.clear();
-        if (allArguments != null) allArguments.clear();
+        if ( threadInfos != null ) threadInfos.clear();
+        if (threadIDs != null)     threadIDs.clear();
+        if (allArguments != null)  allArguments.clear();
         boolean stopped = context.stopService(intent);
         Log.i(TAG, "Trying to stop clients service: " + stopped);
         return stopped;
@@ -229,6 +228,12 @@ public class ClientsController {
     public String getThreadStatus(int threadID) {
         synchronized (threadInfos) {
             return threadInfos.get(threadID).status;
+        }
+    }
+
+    public boolean getThreadRunning(int threadID) {
+        synchronized (threadInfos) {
+            return threadInfos.get(threadID).running;
         }
     }
 

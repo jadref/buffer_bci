@@ -60,6 +60,7 @@ public class BufferThread extends Thread {
 
     public void run() {
         int eventCount = 0;
+        int nSamples=0;
         while (run) {
             if (connect()) {
                 BufferEvent[] events=null;
@@ -70,7 +71,11 @@ public class BufferThread extends Thread {
                     if ( count.nEvents > eventCount ) {
                         events = C.getEvents(eventCount, count.nEvents - 1);
                         eventCount = count.nEvents;
+                    } if ( count.nSamples < nSamples) {
+                        Log.i(TAG,"Buffer restart detected!");
+                        eventCount=count.nEvents;
                     }
+                    nSamples=count.nSamples;
                 } catch (IOException e) {
                     events = null;
                 }

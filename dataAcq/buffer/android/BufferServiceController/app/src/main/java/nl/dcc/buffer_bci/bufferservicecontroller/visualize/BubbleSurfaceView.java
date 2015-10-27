@@ -42,13 +42,13 @@ public class BubbleSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
         sh.unlockCanvasAndPost(canvas);
 
-        bufferThread = new BufferThread("localhost", 1972);
-        bufferThread.setRunning(true);
-        bufferThread.start();
+        //bufferThread = new BufferThread("localhost", 1972);
+        //bufferThread.setRunning(true);
+        //bufferThread.start();
 
-        drawThread = new DrawThread(sh, ctx, null, bufferThread);
-        drawThread.setRunning(true);
-        drawThread.start();
+        //drawThread = new DrawThread(sh, ctx, null, bufferThread);
+        //drawThread.setRunning(true);
+        //drawThread.start();
     }
 
     public DrawThread getDrawThread() {
@@ -56,22 +56,24 @@ public class BubbleSurfaceView extends SurfaceView implements SurfaceHolder.Call
     }
 
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        drawThread.setSurfaceSize(width, height);
+        if ( drawThread != null ) drawThread.setSurfaceSize(width, height);
     }
 
     public void surfaceDestroyed(SurfaceHolder holder) {
         boolean retry = true;
-        drawThread.setRunning(false);
-        bufferThread.setRunning(false);
-        while (retry) {
-            try {
-                synchronized (sh) {
-                    drawThread.join();
+        if ( drawThread != null ) {
+            drawThread.setRunning(false);
+            while (retry) {
+                try {
+                    synchronized (sh) {
+                        drawThread.join();
+                    }
+                    bufferThread.join();
+                    retry = false;
+                } catch (InterruptedException e) {
                 }
-                bufferThread.join();
-                retry = false;
-            } catch (InterruptedException e) {
             }
         }
+        if ( bufferThread != null ) bufferThread.setRunning(false);
     }
 }

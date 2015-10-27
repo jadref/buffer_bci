@@ -352,6 +352,7 @@ public class ContinuousClassifier {
         }
     }
     public void stop(){ run=false; }
+    public boolean isrunning(){ return run; }
 
     public String toString() {
         String str = "\nContinuousClassifier with parameters:\n" + 

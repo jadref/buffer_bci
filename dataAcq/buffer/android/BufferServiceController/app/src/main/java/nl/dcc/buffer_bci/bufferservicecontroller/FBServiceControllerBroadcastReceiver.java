@@ -4,6 +4,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
+
+import nl.dcc.buffer_bci.bufferclientsservice.ThreadInfo;
 import nl.dcc.buffer_bci.monitor.BufferInfo;
 
 
@@ -42,19 +44,18 @@ public class FBServiceControllerBroadcastReceiver extends BroadcastReceiver {
 
             if (newThreadInfo) {
                 intent_for_MainActivity.putExtra(C.IS_THREAD_INFO, newThreadInfo);
-                intent_for_MainActivity.putExtra(C.THREAD_INFO, intent.getParcelableExtra(C.THREAD_INFO));
+                ThreadInfo tinfo = intent.getParcelableExtra(C.THREAD_INFO);
+                intent_for_MainActivity.putExtra(C.THREAD_INFO, tinfo);
                 intent_for_MainActivity.putExtra(C.THREAD_INDEX, intent.getIntExtra(C.THREAD_INDEX, 0));
                 intent_for_MainActivity.putExtra(C.THREAD_N_ARGUMENTS, intent.getIntExtra(C.THREAD_N_ARGUMENTS, 0));
                 int nArgs = intent.getIntExtra(C.THREAD_N_ARGUMENTS, 0);
                 for (int k = 0; k < nArgs; k++) {
-                    intent_for_MainActivity.putExtra(C.THREAD_ARGUMENTS + k, intent.getSerializableExtra(C
-                            .THREAD_ARGUMENTS + k));
+                    intent_for_MainActivity.putExtra(C.THREAD_ARGUMENTS + k,
+                            intent.getSerializableExtra(C.THREAD_ARGUMENTS + k));
                 }
                 //Log.i(TAG, "From BroadcastReceiver Sending intent with ThreadInfo to MainActivity");
                 context.sendBroadcast(intent_for_MainActivity);
             }
         }
-
-
     }
 }

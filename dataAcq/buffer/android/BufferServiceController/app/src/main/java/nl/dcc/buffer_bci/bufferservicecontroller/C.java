@@ -45,6 +45,7 @@ public final class C {
     public static final int THREAD_UPDATE_ARGUMENTS = 9;
     public static final int THREAD_UPDATE_ARG_FROM_STR = 10;
     public static final int THREAD_INFO_BROADCAST=11;
+    public static final int BUFFER_INFO_BROADCAST=12;
 
     public static final int BUFFER_INFO_PARCEL = 0;
     public static final int CLIENT_INFO_PARCEL = 1;

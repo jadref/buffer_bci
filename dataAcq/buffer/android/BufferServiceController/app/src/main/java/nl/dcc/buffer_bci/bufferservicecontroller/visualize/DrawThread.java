@@ -105,8 +105,8 @@ public class DrawThread extends Thread {
     }
 
     private void doDraw(Canvas canvas) {
-        String rgb = "(" + Color.red(color) + ", " + Color.green(color) + ", " + Color.blue(color) + ")";
-        Log.v(TAG, "Draw circle at (" + bubbleX + ", " + bubbleY + " with size " + size + " and color " + rgb);
+        //String rgb = "(" + Color.red(color) + ", " + Color.green(color) + ", " + Color.blue(color) + ")";
+        //Log.v(TAG, "Draw circle at (" + bubbleX + ", " + bubbleY + " with size " + size + " and color " + rgb);
         canvas.save();
         canvas.restore();
         canvas.drawColor(Color.BLACK);
