@@ -219,7 +219,7 @@ public class BufferClientsService extends Service {
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
         Log.d(TAG, "Buffer Clients Service - starting.");
-        android.os.Debug.waitForDebugger();
+		  // android.os.Debug.waitForDebugger();
         if (wakeLock == null && wifiLock == null) {
             updater = new Updater(this);
             updater.start();

@@ -86,7 +86,7 @@ public class BufferServerService extends Service {
 
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
-        android.os.Debug.waitForDebugger();
+        //android.os.Debug.waitForDebugger();
         // If no buffer is running.
         if (wakeLock==null && wifiLock==null ) { // Get Wakelocks
 
