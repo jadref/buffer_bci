@@ -42,13 +42,13 @@ public class BubbleSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
         sh.unlockCanvasAndPost(canvas);
 
-        //bufferThread = new BufferThread("localhost", 1972);
-        //bufferThread.setRunning(true);
-        //bufferThread.start();
+        bufferThread = new BufferThread("localhost", 1972);
+        bufferThread.setRunning(true);
+        bufferThread.start();
 
-        //drawThread = new DrawThread(sh, ctx, null, bufferThread);
-        //drawThread.setRunning(true);
-        //drawThread.start();
+        drawThread = new DrawThread(sh, ctx, null, bufferThread);
+        drawThread.setRunning(true);
+        drawThread.start();
     }
 
     public DrawThread getDrawThread() {
