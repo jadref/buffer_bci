@@ -30,7 +30,7 @@ public class DrawThread extends Thread {
     private float size;
     private float[] max;
 
-    float baddnessFilter;
+    float baddnessFilter=0.0f;
 
     private BufferThread bufferThread;
 
@@ -67,7 +67,10 @@ public class DrawThread extends Thread {
     }
 
     private int computeColor(float values[]) {
-        baddnessFilter = (float) (0.3 * values[1] + 0.7 * baddnessFilter);
+        if (values.length > 1){
+            // moving average badness estimate
+            baddnessFilter = (float) (0.3 * values[1] + 0.7 * baddnessFilter);
+        }
         int mean = 128;
         int std = 64;
         int red = (int) (mean + baddnessFilter * std);

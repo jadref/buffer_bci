@@ -253,7 +253,10 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     public void sendAllInfo(){ sendUpdate(true); } // force a complete send
     private void sendUpdate(){ sendUpdate(false); } // only send if updated
     private void sendUpdate(boolean forceSend) {
-        Intent intent = new Intent(C.SEND_UPDATE_INFO_TO_CONTROLLER_ACTION);
+        // send a Broadcast *Implicit* intent, i.e. no component name specified only the action
+        // This allows other applications to recieve the intent, and also multiple recievers
+        Intent intent = new Intent();
+        intent.setAction(C.SEND_UPDATE_INFO_TO_CONTROLLER_ACTION); 
         intent.putExtra(C.MESSAGE_TYPE, C.UPDATE);
         if (info.changed) {
             intent.putExtra(C.IS_BUFFER_INFO, true);

@@ -15,7 +15,7 @@ public class BufferThread extends Thread {
 
     private static final String TAG = BufferThread.class.getSimpleName();
     private String host;
-    private String feedbackEventType="alphaLat";
+    private String feedbackEventType="classifier.prediction";
     private int timeout_ms=1000;
     private int port;
     private BufferClientClock C;

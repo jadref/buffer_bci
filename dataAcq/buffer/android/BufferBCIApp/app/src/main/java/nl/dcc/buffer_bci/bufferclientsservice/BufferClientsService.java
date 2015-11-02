@@ -318,7 +318,10 @@ public class BufferClientsService extends Service {
     }
 
     private void broadcastThreadInfo(ThreadInfo threadInfo, Argument[] arguments){
-        Intent intent = new Intent(C.SEND_UPDATE_INFO_TO_CONTROLLER_ACTION);
+        // send a Broadcast *Implicit* intent, i.e. no component name specified only the action
+        // This allows other applications to recieve the intent, and also multiple recievers
+        Intent intent = new Intent();
+        intent.setAction(C.SEND_UPDATE_INFO_TO_CONTROLLER_ACTION); 
         intent.putExtra(C.MESSAGE_TYPE, C.UPDATE);
         intent.putExtra(C.IS_THREAD_INFO, true);
         intent.putExtra(C.THREAD_INFO, threadInfo);
