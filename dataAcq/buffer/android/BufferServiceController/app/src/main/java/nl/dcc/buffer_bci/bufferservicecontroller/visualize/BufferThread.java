@@ -15,13 +15,12 @@ public class BufferThread extends Thread {
 
     private static final String TAG = BufferThread.class.getSimpleName();
     private String host;
-    private String feedbackEventType="alphaLat";
+    private String feedbackEventType="classifier.prediction";
     private int timeout_ms=1000;
     private int port;
     private BufferClientClock C;
     private boolean run;
-
-    private BufferEvent lastEvent;
+    private boolean damage;
     private float[] values;
 
     public BufferThread(String host, int port) {
@@ -54,8 +53,15 @@ public class BufferThread extends Thread {
         return C.isConnected();
     }
 
+    public boolean isRunning(){ return run; }
     public void setRunning(boolean b) {
         run = b;
+    }
+    public boolean isDamage() {
+        return damage;
+    }
+    public void setDamage(boolean damage) {
+        this.damage = damage;
     }
 
     public void run() {
@@ -85,8 +91,8 @@ public class BufferThread extends Thread {
                     for (int i = events.length - 1; i >= 0; i--) {
                         String type = String.valueOf(events[i].getType());
                         if (type.equals(feedbackEventType)) {
-                            lastEvent = events[i];
-                            values = convertToFloatArray(lastEvent.getValue().getArray());
+                            values = convertToFloatArray(events[i].getValue().getArray());
+                            damage=true;
                             Log.d(TAG, feedbackEventType + ": " + Arrays.toString(values));
                         }
                     }
@@ -97,13 +103,16 @@ public class BufferThread extends Thread {
 
     private float[] convertToFloatArray(Object o) {
         float[] newValues;
-        if (o instanceof float[])
-            newValues = (float[]) lastEvent.getValue().getArray();
-        else if (o instanceof double[]) {
-            double[] doubleValues = (double[]) o;
-            newValues = new float[doubleValues.length];
-            for (int j = 0; j < doubleValues.length; j++)
-                newValues[j] = (float) doubleValues[j];
+        if (o instanceof float[]) {
+            float[] values = (float[]) o;
+            newValues = new float[values.length];
+            for (int j = 0; j < values.length; j++)
+                newValues[j] = (float) values[j];
+        } else if (o instanceof double[]) {
+            double[] values = (double[]) o;
+            newValues = new float[values.length];
+            for (int j = 0; j < values.length; j++)
+                newValues[j] = (float) values[j];
         } else {
             Log.w(TAG, "Unknown data type: " + o.getClass().toString());
             newValues = new float[]{};

@@ -5,6 +5,8 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
+
+import nl.dcc.buffer_bci.C;
 import nl.dcc.buffer_bci.bufferclientsservice.ThreadInfo;
 import nl.dcc.buffer_bci.bufferclientsservice.base.Argument;
 
@@ -86,12 +88,8 @@ public class ClientsController {
             allArguments.put(threadInfo.threadID, arguments);
             threadIDs.add(threadInfo.threadID);
         }
-        Log.i(TAG, "Updated a Thread with:");
-        Log.i(TAG, ((ThreadInfo) threadInfos.values().toArray()[threadInfos.size() - 1]).title);
-        Log.i(TAG, "and Number of Arguments = " + ((Argument[]) allArguments.values().toArray()[allArguments.size() -
-                1]).length);
-        Log.i(TAG, "Size of threadInfos = " + threadInfos.size());
-        Log.i(TAG, "Size of threadIDs = " + threadIDs.size());
+        Log.i(TAG, "Updated Thread:" + threadInfo.title + "(" + arguments.length + " args)");
+        Log.i(TAG, "Now : " + threadInfos.size() + " threadInfos and " + threadIDs.size() + "threadIDs");
     }
 
     // Interface
@@ -118,11 +116,11 @@ public class ClientsController {
 
 
     public boolean stopThreadsService() {
-        if ( threadInfos != null ) threadInfos.clear();
-        if (threadIDs != null)     threadIDs.clear();
-        if (allArguments != null)  allArguments.clear();
         boolean stopped = context.stopService(intent);
         Log.i(TAG, "Trying to stop clients service: " + stopped);
+        if (threadInfos != null )  threadInfos.clear();
+        if (threadIDs != null)     threadIDs.clear();
+        if (allArguments != null)  allArguments.clear();
         return stopped;
     }
 
@@ -135,7 +133,7 @@ public class ClientsController {
             int[] result = new int[threadIDs.size()];
             for (int i = 0; i < threadIDs.size(); ++i) {
                 result[i] = threadIDs.get(i);
-                Log.i(TAG, "id: " + result[i]);
+                //Log.i(TAG, "id: " + result[i]);
             }
             return result;
         }

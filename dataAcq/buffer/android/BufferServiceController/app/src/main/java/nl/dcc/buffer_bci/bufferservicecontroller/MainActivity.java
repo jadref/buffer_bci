@@ -5,18 +5,18 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.BadParcelableException;
 import android.os.Bundle;
-import android.os.Parcel;
 import android.util.Log;
 import android.view.View;
 import android.widget.*;
+
+import nl.dcc.buffer_bci.C;
+import nl.dcc.buffer_bci.R;
 import nl.dcc.buffer_bci.bufferservicecontroller.visualize.BubbleSurfaceView;
 import nl.dcc.buffer_bci.bufferclientsservice.ThreadInfo;
 import nl.dcc.buffer_bci.bufferclientsservice.base.Argument;
 import nl.dcc.buffer_bci.monitor.BufferConnectionInfo;
 
-import java.util.Date;
 import java.util.HashMap;
 
 
@@ -57,7 +57,7 @@ public class MainActivity extends Activity {
         }
 
         if (savedInstanceState == null) {
-            IntentFilter intentFilter = new IntentFilter(C.FILTER_FROM_SERVER);
+            IntentFilter intentFilter = new IntentFilter(C.SEND_UPDATE_INFO_TO_CONTROLLER_ACTION);
             mMessageReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(final Context context, Intent intent) {
@@ -110,17 +110,19 @@ public class MainActivity extends Activity {
     }
 
     private void updateServerStatus() {
+        boolean running=false;
         if (serverController != null) {
-            boolean running = serverController.isBufferServerServiceRunning();
-            //((Switch) table.getChildAt(0)).setChecked(running);
+            running = serverController.isBufferServerServiceRunning();
         }
+        ((Switch) table.getChildAt(0)).setChecked(running);
     }
 
     private void updateClientsStatus() {
+        boolean running=false;
         if (clientsController != null) {
-            boolean running = clientsController.isThreadsServiceRunning();
-            //((Switch) table.getChildAt(1)).setChecked(running);
+            running = clientsController.isThreadsServiceRunning();
         }
+        ((Switch) table.getChildAt(1)).setChecked(running);
     }
 
     private void updateBufferConnectionInfo(Intent intent) {
@@ -181,8 +183,9 @@ public class MainActivity extends Activity {
                 newIndex++;
             } else { // update the switch state based on the thread state
                 int threadViewIdx = threadToView.get(threadID);
+                boolean running = clientsController.getThreadRunning(threadID);
                 Switch threadSwitch = ((Switch) table.getChildAt(threadViewIdx));
-                threadSwitch.setChecked(clientsController.getThreadRunning(threadID));
+                threadSwitch.setChecked(running);
             }
         }
     }

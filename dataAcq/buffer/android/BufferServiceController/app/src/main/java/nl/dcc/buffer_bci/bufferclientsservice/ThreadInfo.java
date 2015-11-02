@@ -2,7 +2,7 @@ package nl.dcc.buffer_bci.bufferclientsservice;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import nl.dcc.buffer_bci.bufferservicecontroller.C;
+import nl.dcc.buffer_bci.C;
 
 public class ThreadInfo implements Parcelable {
     public static final Creator<ThreadInfo> CREATOR = new Creator<ThreadInfo>() {

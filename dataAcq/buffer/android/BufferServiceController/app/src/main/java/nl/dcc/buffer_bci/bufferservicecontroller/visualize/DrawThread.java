@@ -11,6 +11,8 @@ import android.view.SurfaceHolder;
 /**
  * Created by pieter on 18-5-15.
  */
+
+// TODO: This should really be a single class, with the buffer thread updating the canvas directly when something to do...
 public class DrawThread extends Thread {
 
     private static final String TAG = DrawThread.class.getSimpleName();
@@ -20,6 +22,7 @@ public class DrawThread extends Thread {
     private int canvasWidth;
     private int canvasHeight;
     private boolean run = false;
+    long minRedraw=15; // at least 15ms between screen re-draws
 
     private float bubbleX;
     private float bubbleY;
@@ -27,7 +30,7 @@ public class DrawThread extends Thread {
     private float size;
     private float[] max;
 
-    float baddnessFilter;
+    float baddnessFilter=0.0f;
 
     private BufferThread bufferThread;
 
@@ -49,16 +52,25 @@ public class DrawThread extends Thread {
         updateModel();
     }
 
-    public void updateModel() {
+    public boolean updateModel() {
+        boolean damage=false;
         synchronized (sh) {
-            float[] values = bufferThread.getValues();
-            color = computeColor(values);
-            size = computeSize(values);
+            damage = bufferThread.isDamage();
+            if ( damage ) {
+                float[] values = bufferThread.getValues();
+                color = computeColor(values);
+                size = computeSize(values);
+                bufferThread.setDamage(false); // mark as processed
+            }
         }
+        return damage;
     }
 
     private int computeColor(float values[]) {
-        baddnessFilter = (float) (0.3 * values[1] + 0.7 * baddnessFilter);
+        if (values.length > 1){
+            // moving average badness estimate
+            baddnessFilter = (float) (0.3 * values[1] + 0.7 * baddnessFilter);
+        }
         int mean = 128;
         int std = 64;
         int red = (int) (mean + baddnessFilter * std);
@@ -76,17 +88,25 @@ public class DrawThread extends Thread {
     }
 
     public void run() {
+        boolean damage=true;
         while (run) {
-            updateModel();
-            Canvas c = null;
-            try {
-                c = sh.lockCanvas(null);
-                synchronized (sh) {
-                    doDraw(c);
+            damage=updateModel();
+            if ( damage ) {
+                Canvas c = null;
+                try {
+                    c = sh.lockCanvas(null);
+                    synchronized (sh) {
+                        doDraw(c);
+                    }
+                } finally {
+                    if (c != null) {
+                        sh.unlockCanvasAndPost(c);
+                    }
                 }
-            } finally {
-                if (c != null) {
-                    sh.unlockCanvasAndPost(c);
+            } else {
+                try {
+                    Thread.sleep(minRedraw);
+                } catch ( InterruptedException ex) {
                 }
             }
         }
@@ -107,8 +127,8 @@ public class DrawThread extends Thread {
     private void doDraw(Canvas canvas) {
         //String rgb = "(" + Color.red(color) + ", " + Color.green(color) + ", " + Color.blue(color) + ")";
         //Log.v(TAG, "Draw circle at (" + bubbleX + ", " + bubbleY + " with size " + size + " and color " + rgb);
-        canvas.save();
-        canvas.restore();
+//        canvas.save();
+//        canvas.restore();
         canvas.drawColor(Color.BLACK);
         paint.setColor(color);
         canvas.drawCircle(bubbleX, bubbleY, size, paint);

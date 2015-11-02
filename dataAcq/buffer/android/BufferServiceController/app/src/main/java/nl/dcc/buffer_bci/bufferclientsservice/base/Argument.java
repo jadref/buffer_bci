@@ -182,7 +182,7 @@ public class Argument implements Serializable {
     }
 
     public Integer getInteger() {
-        if (type == TYPE_INTEGER_UNSIGNED || type == TYPE_INTEGER_UNSIGNED || type == TYPE_RADIO) {
+        if (type == TYPE_INTEGER_UNSIGNED || type == TYPE_INTEGER_SIGNED || type == TYPE_RADIO) {
             return valueInteger;
         } else {
             return null;

@@ -2,7 +2,8 @@ package nl.dcc.buffer_bci.monitor;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import nl.dcc.buffer_bci.bufferservicecontroller.C;
+
+import nl.dcc.buffer_bci.C;
 
 public class BufferConnectionInfo implements Parcelable {
     public static final Parcelable.Creator<BufferConnectionInfo> CREATOR = new Parcelable.Creator<BufferConnectionInfo>() {
@@ -17,8 +18,17 @@ public class BufferConnectionInfo implements Parcelable {
         }
     };
     private static final long serialVersionUID = -5926084016803995132L;
-    public final String address;
-    public final int connectionID;
+    private final String address;
+
+    public String getAddress() {
+        return address;
+    }
+
+    public int getConnectionID() {
+        return connectionID;
+    }
+
+    private final int connectionID;
     public int samplesGotten = 0;
     public int samplesPut = 0;
     public int eventsGotten = 0;
@@ -59,9 +69,9 @@ public class BufferConnectionInfo implements Parcelable {
         time = longs[2];
     }
 
-    public BufferConnectionInfo(final String adress, final int connectionID, final long time) {
-        this.address = adress;
-        this.connectionID = connectionID;
+    public BufferConnectionInfo(final String address, final int clientID, final long time) {
+        this.address = address;
+        this.connectionID = clientID;
         timeLastActivity = time;
         this.time = time;
     }
@@ -73,8 +83,7 @@ public class BufferConnectionInfo implements Parcelable {
 
     @Override
     public String toString() {
-        return "BufferConnectionInfo: {address=" + address + ", connectionID=" + connectionID + ", timeLastActivity=" +
-                timeLastActivity + ", time=" + time + "}";
+        return "{ ID: " + connectionID + " address=" + address + " }";
     }
 
     public void update(final BufferConnectionInfo update) {
@@ -97,8 +106,9 @@ public class BufferConnectionInfo implements Parcelable {
     @Override
     public void writeToParcel(final Parcel out, final int flags) {
         // Gathering data
-        final int[] integers = new int[]{connectionID, samplesGotten, samplesPut, eventsGotten, eventsPut, lastActivity,
-                waitEvents, waitSamples, error, diff};
+        final int[] integers = new int[]{connectionID, samplesGotten, samplesPut,
+                eventsGotten, eventsPut, lastActivity, waitEvents, waitSamples,
+                error, diff};
         final long[] longs = new long[]{timeLastActivity, waitTimeout, time};
 
         // Write it to parcel
