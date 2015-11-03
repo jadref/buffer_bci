@@ -38,7 +38,7 @@ if ( nargin < 3 || isempty(spMx) ); spMx='1vR'; end;
 if ( nargin < 2 || isempty(key) ) % default key
    key=unique(Y(:)); key=key(:)'; 
    if( iscell(key) ); key=sort(key); else key=sort(key,1,'ascend'); end % ascending label order
-   if( ~isempty(spMx) && ~isstr(spMx) && ((iscell(spMx) && numel(spMx)~=numel(key)) || (size(spMx,2)~=numel(key))) )
+   if( ~isempty(spMx) && ~ischar(spMx) && ((iscell(spMx) && numel(spMx)~=numel(key)) || (size(spMx,2)~=numel(key))) )
       warning(sprintf('subProb matrix and unique in Y dont agree -- using key=1:%d',size(spMx,2)));
       key=1:size(spMx,2);
    end
@@ -53,9 +53,9 @@ if ( nargin < 2 || isempty(key) ) % default key
 else
   zeroLab=true;
 end
-if ( isstr(Y) );    Y =single(Y); end;
+if ( ischar(Y) );    Y =single(Y); end;
 if ( islogical(Y)); Y =single(Y); key=single(key); zeroLab=1; end;
-if ( isstr(key) ); key=single(key); end;
+if ( ischar(key) ); key=single(key); end;
 key=key(:); % ensure key is col vector
 
 % BODGE: deal with class limits of repop, i.e. it's unhappy with int32 etc...
@@ -66,7 +66,7 @@ if ( isnumeric(key) && strncmp('int',class(key),3) ); key=single(Y); end;
 nClass=numel(key); nSp=nClass; 
 %deal with bin special case
 if ( compBinp && nClass==2 ); nSp=1; end;
-if ( isstr(spMx) ); spMx=mkspMx(1:nClass,spMx,compBinp); nSp=size(spMx,1);
+if ( ischar(spMx) ); spMx=mkspMx(1:nClass,spMx,compBinp); nSp=size(spMx,1);
 else
    if( isnumeric(spMx) )
       if ( ndims(spMx)==2 && size(spMx,2)==1 && all(ismember(spMx,key)) && numel(key)>2 ) % vector of +ve class labels input

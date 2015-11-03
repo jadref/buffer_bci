@@ -9,7 +9,7 @@ function [Cname latlong xy xyz capFile]=readCapInf(cap,capRoots)
 if ( nargin<2 || isempty(capRoots) ) 
    capRoots = {'.',fileparts(mfilename('fullpath')),fullfile(fileparts(mfilename('fullpath')),'./positions'),fullfile(fileparts(mfilename('fullpath')),'./caps'),''};
  end
- if ( isstr(capRoots) ); capRoots={capRoots}; end;
+ if ( ischar(capRoots) ); capRoots={capRoots}; end;
 [capDir capFn capExt]=fileparts(cap);
 % search given directories for the capfile
 for cr=1:numel(capRoots);

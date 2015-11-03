@@ -49,15 +49,15 @@ if ( nClass<= 1 ) warning('Only 1 class input!'); spMx=1; end
 if ( iscell(spType) && isstr(spType{1}) && ~isempty(strmatch(spType{1},{'1v1','1vR','Pv1','PvR','PvN'})) ) % cell array of type strings
    for i=1:numel(classIDs);
       % Positive only, so skip negative classIDs
-      if ( ~isempty(strmatch('P',spType)) & classIDs(i)<0 ) continue; end;
+      if ( ~isempty(strmatch('P',spType)) && classIDs(i)<0 ) continue; end;
       % 1vs1 first
-      if ( ~isempty(strmatch('1v1',spType)) | ~isempty(strmatch('Pv1',spType)) )
+      if ( ~isempty(strmatch('1v1',spType)) || ~isempty(strmatch('Pv1',spType)) )
          for j=i+1:numel(classIDs);
             nsp=nsp+1; spMx(nsp,i)=+1; spMx(nsp,j)=-1; % fill in decoding matrix
          end
       end
       % Then 1vsRest
-      if ( ~isempty(strmatch('1vR',spType)) | ~isempty(strmatch('PvR',spType)) )
+      if ( ~isempty(strmatch('1vR',spType)) || ~isempty(strmatch('PvR',spType)) )
          nsp=nsp+1; rest=[1:i-1 i+1:numel(classIDs)];
          spMx(nsp,i)=+1; spMx(nsp,rest)=-1; % fill in decoding matrix
       end

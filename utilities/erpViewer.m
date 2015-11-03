@@ -42,7 +42,7 @@ opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,...
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
 if ( isempty(opts.freqbands) && ~isempty(opts.fftfilter) ) opts.freqbands=opts.fftfilter; end;
-if ( isstr(opts.endType) ) opts.endType={opts.endType}; 
+if ( ischar(opts.endType) ) opts.endType={opts.endType}; 
 elseif ( iscell(opts.endType) && numel(opts.endType)>0 && ~iscell(opts.endType{1}) )
   opts.endType={opts.endType}; % ensure correct nesting so opts.endType{:} expands to type,value pair
 end;

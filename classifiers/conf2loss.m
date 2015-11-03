@@ -17,7 +17,7 @@ function [loss]=conf2loss(conf,dim,losstype)
 % Outputs:
 %  loss -- [1(or 2) x n-d] matrix of loss values
 if ( nargin < 3 || isempty(losstype) ) losstype='bin'; end;
-if ( size(conf,1)==2 & size(conf,2)==2 ) 
+if ( size(conf,1)==2 && size(conf,2)==2 ) 
   szConf=size(conf); szConf(end+1:3)=1; conf=reshape(conf,[szConf(1)*szConf(2) szConf(3:end)]); 
 end;
 if ( nargin < 2 ) dim=[]; end;
