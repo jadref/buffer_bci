@@ -200,7 +200,7 @@ while ( true )
     [traindata,traindevents]=erpViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix',opts.erpEventType,'endType',{{lower(phaseToRun) 'calibrate'} 'end'},'trlen_ms',opts.trlen_ms,'freqbands',[.0 .3 45 47],'maxEvents',opts.erpMaxEvents,opts.erpOpts{:});
     mi=matchEvents(traindevents,{'calibrate' 'calibration'},'end'); traindevents(mi)=[]; traindata(mi)=[];%remove exit event
     fname=[dname '_' subject '_' datestr];
-    fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save(fname,'traindata','traindevents','hdr');
+    fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save([fname '.mat'],'traindata','traindevents','hdr');
     trainSubj=subject;
 	 
    %---------------------------------------------------------------------------------
@@ -208,7 +208,7 @@ while ( true )
     [traindata,traindevents,state]=buffer_waitData(opts.buffhost,opts.buffport,[],'startSet',opts.epochEventType,'exitSet',{{'calibrate' 'calibration'} 'end'},'verb',opts.verb,'trlen_ms',opts.trlen_ms);
     mi=matchEvents(traindevents,{'calibrate' 'calibration'},'end'); traindevents(mi)=[]; traindata(mi)=[];%remove exit event
     fname=[dname '_' subject '_' datestr];
-    fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save(fname,'traindata','traindevents','hdr');
+    fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save([fname '.mat'],'traindata','traindevents','hdr');
     trainSubj=subject;
 
     %---------------------------------------------------------------------------------
@@ -234,7 +234,7 @@ while ( true )
       end
       clsSubj=subject;
       fname=[cname '_' subject '_' datestr];
-      fprintf('Saving classifier to : %s\n',fname);save(fname,'-struct','clsfr');
+      fprintf('Saving classifier to : %s\n',fname);save([fname '.mat'],'-struct','clsfr');
     catch
       fprintf('Error in train classifier!');
     end
