@@ -12,7 +12,7 @@ set(stimfig,'Name','Experiment - Training',...
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
         'color',[0 0 0],'DrawMode','fast','nextplot','replacechildren',...
-        'xlim',axlim,'ylim',axlim,'Ydir','normal');
+        'xlim',axlim(:,1),'ylim',axlim(:,2),'Ydir','normal');
 stimPos=[]; h=[];
 % center block only
 h(1) =rectangle('curvature',[1 1],'position',[[0;0]-stimRadius/2;stimRadius*[1;1]],'facecolor',bgColor); 
@@ -26,7 +26,8 @@ set(stimfig,'Units','pixel');wSize=get(stimfig,'position');fontSize = .05*wSize(
 instructh=text(min(get(ax,'xlim'))+.25*diff(get(ax,'xlim')),mean(get(ax,'ylim')),instructstr,'HorizontalAlignment','left','VerticalAlignment','middle','color',[0 1 0],'fontunits','pixel','FontSize',fontSize,'visible','off');
 
 % add a 2nd figure for the detection curve?
-figure(3);set(stimfig,'Name','Detection curve');clf;barh=bar(alphas,zeros(size(alphas)),'hist');
+detectfig=figure(3);set(detectfig,'Name','Detection curve');clf;
+barh=bar(alphas,zeros(size(alphas)));set(gca,'xlim',[alphas(1)-diff(alphas(1:2)) alphas(end)+diff(alphas(end-1:end))]);
 % ensure the stimulus figure is in the front
 figure(2);
 
@@ -78,21 +79,21 @@ for seqi = 1:nSeq
   status=buffer('wait_dat',[-1 -1 -1],buffhost,buffport); nevents=status.nevents;
 
   % now play the selected sequence
-  seqStartTime=getwTime(); ei=0; ndropped=0; frametime=zeros(numel(stimTime),4); 
+  seqStartTime=getwTime(); framei=0; ndropped=0; frametime=zeros(numel(stimTime),4); 
   nStim=0; nPred=0; % track the stimulus, and prediction state
   while ( stimTime(end)>=getwTime()-seqStartTime ) % frame-dropping version    
-	 ei=min(numel(stimTime),ei+1);
-	 frametime(ei,1)=getwTime()-seqStartTime;
+	 framei=min(numel(stimTime),framei+1);
+	 frametime(framei,1)=getwTime()-seqStartTime;
 	 % find nearest stim-time
-	 if ( ei<numel(stimTime) && frametime(ei,1)>=stimTime(min(numel(stimTime),ei+1)) ) 
-      oei = ei;
-      for ei=ei+1:numel(stimTime); if ( frametime(oei,1)<stimTime(ei) ) break; end; end; % find next valid frame
-      if ( verb>=0 ) fprintf('%d) Dropped %d Frame(s)!!!\n',ei,ei-oei); end;
-      ndropped=ndropped+(ei-oei);
+	 if ( framei<numel(stimTime) && frametime(framei,1)>=stimTime(min(numel(stimTime),framei+1)) ) 
+      oframei = framei;
+      for framei=framei+1:numel(stimTime); if ( frametime(oframei,1)<stimTime(framei) ) break; end; end; % find next valid frame
+      if ( verb>=0 ) fprintf('%d) Dropped %d Frame(s)!!!\n',framei,framei-oframei); end;
+      ndropped=ndropped+(framei-oframei);
 	 end
 	 
 
-	 ss=stimSeq(:,ei);	 
+	 ss=stimSeq(:,framei);	 
 	 set(h(ss<0),'visible','off');  % neg stimSeq codes for invisible stimulus
 	 set(h(ss>=0),'visible','on','facecolor',bgColor); % everybody starts as background color
 	 if(any(ss==1))
@@ -108,28 +109,28 @@ for seqi = 1:nSeq
 	 if(any(ss==3))set(h(ss==3),'facecolor',colors(:,min(size(colors,2),3)));end;
     
 	 % sleep until time to update the stimuli the screen
-	 if ( verb>1 ) fprintf('%d) Sleep : %gs\n',ei,stimTime(ei)-(getwTime()-seqStartTime)-flipInterval/2); end;
-	 sleepSec(max(0,stimTime(ei)-(getwTime()-seqStartTime))); % wait until time to call the draw-now
-	 if ( verb>1 ) frametime(ei,2)=getwTime()-seqStartTime; end;
+	 if ( verb>1 ) fprintf('%d) Sleep : %gs\n',framei,stimTime(framei)-(getwTime()-seqStartTime)-flipInterval/2); end;
+	 sleepSec(max(0,stimTime(framei)-(getwTime()-seqStartTime))); % wait until time to call the draw-now
+	 if ( verb>1 ) frametime(framei,2)=getwTime()-seqStartTime; end;
 	 drawnow;
 	 if(any(ss==-4))if(~isempty(audio{1}))play(audio{1});end;end;
 	 if(any(ss==-5))if(~isempty(audio{2}))play(audio{2});end;end; 
 	 if ( verb>1 ) 
-      frametime(ei,3)=getwTime()-seqStartTime;
-      fprintf('%d) dStart=%8.6f dEnd=%8.6f stim=[%s] lag=%g\n',ei,...
-				  frametime(ei,2),frametime(ei,3),...
-				  sprintf('%d ',stimSeq(:,ei)),stimTime(ei)-(getwTime()-seqStartTime));
+      frametime(framei,3)=getwTime()-seqStartTime;
+      fprintf('%d) dStart=%8.6f dEnd=%8.6f stim=[%s] lag=%g\n',framei,...
+				  frametime(framei,2),frametime(framei,3),...
+				  sprintf('%d ',stimSeq(:,framei)),stimTime(framei)-(getwTime()-seqStartTime));
 	 end
 	 % send event saying what we just showed
 	 ev=[];
 	 if ( ~isempty(eventSeq) )
 		if ( ~isempty(eventSeq{si}) )
-        ev=sendEvent(eventSeq{ei}{:});
+        ev=sendEvent(eventSeq{framei}{:});
 		end
 	 elseif ( any(ss>0) )
 		ev=sendEvent('stimulus.stimState',ss);
 	 end
-    if (~isempty(ev) && verb>1) fprintf('%d) Event: %s\n',ei,ev2str(ev)); end;
+    if (~isempty(ev) && verb>1) fprintf('%d) Event: %s\n',framei,ev2str(ev)); end;
 	 
 	 % record the displayed stimulus state, needed for decoding the classifier predictions later
 	 if ( any(ss>0) )
@@ -176,7 +177,7 @@ for seqi = 1:nSeq
       end
 
 		% update the histogram display as we've got new predictions
-		set(barh,'ydata',hits(:,1)./max(1,hits(:,2)));
+		set(barh,'ydata',hits(2,:)./max(1,hits(1,:)));
     end
     nevents=status.nevents; % record which events we've processed
 

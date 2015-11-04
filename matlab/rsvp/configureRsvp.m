@@ -54,8 +54,8 @@ verb=1; % verbosity level for debug info
 nSeq = 6;
 trainSeqDuration = 20;
 testSeqDuration  = 60;
-isi              = 1/10; % run at 5hz  (N.B. flash rate is 1/2 this as must turn off...)
-mintti           = .6;   % flash at most every 1/2 second
+isi              = 1/5; % run at 5hz  (N.B. flash rate is 1/2 this as must turn off...)
+mintti           = .8;   % flash at most every 1/2 second
 oddballp         = true; % make oddball stim, i.e. 3 levels, [bg=0, std=2, odd/tgt=1]
 pcorrect         = .5;   % target correct discrimination rate
 hitmissstep      = .5;   % require 2 hits to change the alpha
@@ -77,4 +77,4 @@ tgtColor   = [0 1 0]; % Green - target
 axlim      = [-1 1; -1 1]'; % axes limits for the main drawing axes [xmin xmax; ymin ymax]
 stimRadius = .5; % size of the central dot, in axes units
 
-instructstr={'Look on the central dot.' 'Count the number of times it changes color.' '' 'Good luck!'};
+instructstr={'Look on the central dot.' 'Count how many times it changes color.' '' 'Good luck!'};

@@ -12,7 +12,7 @@ set(stimfig,'Name','Experiment - Training',...
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
         'color',[0 0 0],'DrawMode','fast','nextplot','replacechildren',...
-        'xlim',axlim,'ylim',axlim,'Ydir','normal');
+        'xlim',axlim(:,1),'ylim',axlim(:,2),'Ydir','normal');
 stimPos=[]; h=[];
 % center block only
 h(1) =rectangle('curvature',[1 1],'position',[[0;0]-stimRadius/2;stimRadius*[1;1]],'facecolor',bgColor); 
@@ -23,7 +23,7 @@ set(stimfig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:))));
 set(stimfig,'userdata',[]); % clear any old key info
 
 set(stimfig,'Units','pixel');wSize=get(stimfig,'position');fontSize = .05*wSize(4);
-instructh=text(min(get(ax,'xlim'))+.25*diff(get(ax,'xlim')),mean(get(ax,'ylim')),instructstr,'HorizontalAlignment','left','VerticalAlignment','middle','color',[0 1 0],'fontunits','pixel','FontSize',fontSize,'visible','off');
+instructh=text(min(get(ax,'xlim'))+.15*diff(get(ax,'xlim')),mean(get(ax,'ylim')),instructstr,'HorizontalAlignment','left','VerticalAlignment','middle','color',[0 1 0],'fontunits','pixel','FontSize',fontSize,'visible','off');
  
 %==========================================================================
 % 2. START STIMULUS PRESENTATION AND THE ACTUAL DISPLAY OF THINGS
