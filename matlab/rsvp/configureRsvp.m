@@ -55,10 +55,10 @@ nSeq = 6;
 trainSeqDuration = 20;
 testSeqDuration  = 60;
 isi              = 1/5; % run at 5hz  (N.B. flash rate is 1/2 this as must turn off...)
-mintti           = .8;   % flash at most every 1/2 second
+mintti           = isi*2*3;   % flash at most every 1/2 second
 oddballp         = true; % make oddball stim, i.e. 3 levels, [bg=0, std=2, odd/tgt=1]
 pcorrect         = .5;   % target correct discrimination rate
-hitmissstep      = .5;   % require 2 hits to change the alpha
+hitmissstep      = 1;    % require 2 hits to change the alpha by one
 
 baselineDuration = 2;
 targetDuration   = 1;
@@ -67,7 +67,7 @@ interSeqDuration = 1;
 
 colors=[0  1  0;...   % oddball - green
         .7 .7 .7]';   % std - gray approx iso-luminant
-alphas = linspace(0,1,50); % 50 levels of graduation to search in on-line
+alphas = linspace(0,1,25); % 50 levels of graduation to search in on-line
 
 framebgColor=[0 0 0]; % black
 bgColor    = [.5 .5 .5]; % grey - background state

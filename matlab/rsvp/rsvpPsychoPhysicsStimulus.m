@@ -15,7 +15,7 @@ ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','b
         'xlim',axlim(:,1),'ylim',axlim(:,2),'Ydir','normal');
 stimPos=[]; h=[];
 % center block only
-h(1) =rectangle('curvature',[1 1],'position',[[0;0]-stimRadius/2;stimRadius*[1;1]],'facecolor',bgColor); 
+h(1) =rectangle('curvature',[1 1],'position',[[0;0]-stimRadius/2;stimRadius.*[1;1]],'facecolor',bgColor); 
     
 % add symbol for the center of the screen
 set(gca,'visible','off');
@@ -65,7 +65,7 @@ while ( numel(pcorrectstr)<2 );
   set(instructh,'string',{'Please enter desired detection rate' ['in percent : ' pcorrectstr]});
   drawnow;
 end
-pcorrect=str2num(pcorrectstr);
+pcorrect=str2num(pcorrectstr)/100;
 fprintf('pcorrect=%g\n',pcorrect);
 pause(.5);
 set(instructh,'visible','off');
@@ -75,7 +75,7 @@ sendEvent('stimulus.training', 'start');
 
 %Start the sequences
 tgtIdx=1;
-alphai=numel(alphas); % start with max difference
+alphai=numel(alphas)/2; % start in middle of the range
 hits = zeros(2,numel(alphas));
 for seqi = 1:nSeq
 	 
@@ -107,7 +107,7 @@ for seqi = 1:nSeq
 
   % now play the selected sequence
   seqStartTime=getwTime(); framei=0; ndropped=0; frametime=zeros(numel(stimTime),4); 
-  nStim=0; nPred=0; % track the stimulus, and prediction state
+  nTgt=0; nPred=0; % track the stimulus, and prediction state
   while ( stimTime(end)>=getwTime()-seqStartTime ) % frame-dropping version    
 	 framei=min(numel(stimTime),framei+1);
 	 frametime(framei,1)=getwTime()-seqStartTime;
@@ -119,11 +119,12 @@ for seqi = 1:nSeq
       ndropped=ndropped+(framei-oframei);
 	 end
 	 
-
+	 istarget=false;
 	 ss=stimSeq(:,framei);	 
 	 set(h(ss<0),'visible','off');  % neg stimSeq codes for invisible stimulus
 	 set(h(ss>=0),'visible','on','facecolor',bgColor); % everybody starts as background color
 	 if(any(ss==1))
+		istarget=true;
 		% compute what color we should use.....
 		% alphai is index into the alphas vector saying what alpha we should actually be using
 		alpha = alphas(max(1,min(round(alphai),numel(alphas))));
@@ -160,11 +161,12 @@ for seqi = 1:nSeq
     if (~isempty(ev) && verb>1) fprintf('%d) Event: %s\n',framei,ev2str(ev)); end;
 	 
 	 % record the displayed stimulus state, needed for decoding the classifier predictions later
-	 if ( any(ss>0) )
-		nStim=nStim+1;
-		stimSamp(1,nStim)=ev.sample;  % record sample this event was sent
-		dispStimSeq(:,nStim)=ss;   % record the status of the display for this flash
-	   % pred(:,nStim)            % record of the classifier predictions for the corrospending events
+	 % N.B. we only use targets, i.e NOT distractors for computing the hit rates....
+	 if ( istarget )
+		nTgt=nTgt+1;
+		tgtSamp(1,nTgt)=ev.sample;  % record sample this event was sent
+		dispStimSeq(:,nTgt)=ss;   % record the status of the display for this flash
+	   % pred(:,nTgt)            % record of the classifier predictions for the corrospending events
 	   % hits(:,2)                 % record the #times used, and #times hit for each stim
 	 end
 
@@ -175,11 +177,12 @@ for seqi = 1:nSeq
       mi=matchEvents(events,'classifier.prediction');
       % store the predictions
       for ei=find(mi(:)');
-        nPredei = find(stimSamp(1:nStim)==events(ei).sample); % find the flash this prediction is for
-        if ( isempty(nPredei) ) 
-          if ( verb>0 ) fprintf('Pred without flash =%d\n',events(ei).value); end;
+        nPredei = find(tgtSamp(1:nTgt)==events(ei).sample); % find the flash this prediction is for
+        if ( isempty(nPredei) ) % non-target, i.e. distractor response
+          if ( verb>0 ) fprintf('Pred without flash =%g\n',events(ei).value); end;
+			 % TODO: use the distractor outputs to adapt the hit/miss threshold...
           continue;
-        end
+		  end
         nPred=max(nPred,nPredei(1)); % keep track of the number of predictions which are valid
         pred(:,nPredei)=events(ei).value;
 
@@ -199,7 +202,7 @@ for seqi = 1:nSeq
         if ( verb>0 ) 
 			 if ( ishit ) hitmiss='hit'; else hitmiss='miss'; end;
 			 fprintf('%d) samp=%d pred=%g (%4s) alphai=%g\n',...
-						nStim,stimSamp(nPredei),pred(tgtIdx,nPredei),hitmiss,alphai); 
+						nTgt,tgtSamp(nPredei),pred(tgtIdx,nPredei),hitmiss,alphai); 
 		  end;
       end
 

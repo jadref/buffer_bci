@@ -43,7 +43,7 @@ while (ishandle(contFig) && ~strcmp(phaseToRun,'quit') )
 	 phaseToRun=[];
 	 if ( isstr(modekey(1)) )
 		ri = int32(modekey(1)-'0')+1; % get the row in the instructions
-		if ( ri>0 & ri<size(menustr,1))
+		if ( ri>0 && ri<size(menustr,1))
 		  phaseToRun = menustr{ri,2};
 		elseif ( any(strcmp(modekey(1),{'q','Q','esc'})) )
 		  phaseToRun  = 'quit';	  
@@ -115,12 +115,12 @@ while (ishandle(contFig) && ~strcmp(phaseToRun,'quit') )
     %sleepSec(.1);
 	 seqDuration=testSeqDuration;
     sendEvent(phaseToRun,'start');
-    try
+    %try
       sendEvent('startPhase.cmd','epochfeedback');
       rsvpPsychoPhysicsStimulus;
-    catch
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-    end
+    %catch
+    %  le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    %end
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');
    
