@@ -91,7 +91,7 @@ while (ishandle(contFig) && ~strcmp(phaseToRun,'quit') )
    %---------------------------------------------------------------------------
    case {'calibrate','calibration','erpviewcalibrate'};
     sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun)
+    sendEvent('startPhase.cmd',phaseToRun);
     sendEvent(phaseToRun,'start');
 	 seqDuration=trainSeqDuration;
     try

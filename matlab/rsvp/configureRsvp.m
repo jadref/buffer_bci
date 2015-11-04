@@ -56,7 +56,7 @@ trainSeqDuration = 20;
 testSeqDuration  = 60;
 isi              = 1/5; % run at 5hz  (N.B. flash rate is 1/2 this as must turn off...)
 mintti           = isi*2*3;   % flash at most every 1/2 second
-oddballp         = true; % make oddball stim, i.e. 3 levels, [bg=0, std=2, odd/tgt=1]
+oddballp         = false;true; % make oddball stim, i.e. 3 levels, [bg=0, std=2, odd/tgt=1]
 pcorrect         = .5;   % target correct discrimination rate
 hitmissstep      = 1;    % require 2 hits to change the alpha by one
 

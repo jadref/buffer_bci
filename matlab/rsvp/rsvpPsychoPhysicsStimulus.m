@@ -23,7 +23,7 @@ set(stimfig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:))));
 set(stimfig,'userdata',[]); % clear any old key info
 
 set(stimfig,'Units','pixel');wSize=get(stimfig,'position');fontSize = .05*wSize(4);
-instructh=text(min(get(ax,'xlim'))+.25*diff(get(ax,'xlim')),mean(get(ax,'ylim')),instructstr,'HorizontalAlignment','left','VerticalAlignment','middle','color',[0 1 0],'fontunits','pixel','FontSize',fontSize,'visible','off');
+instructh=text(min(get(ax,'xlim'))+.15*diff(get(ax,'xlim')),mean(get(ax,'ylim')),instructstr,'HorizontalAlignment','left','VerticalAlignment','middle','color',[0 1 0],'fontunits','pixel','FontSize',fontSize,'visible','off');
 
 % add a 2nd figure for the detection curve?
 detectfig=figure(3);set(detectfig,'Name','Detection curve');clf;
