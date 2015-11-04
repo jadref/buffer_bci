@@ -5,7 +5,7 @@
 %remove menubar and toolbar. Also set the background color for the frame.
 stimfig = figure(2);
 clf;
-set(stimfig,'Name','Experiment - Training',...
+set(stimfig,'Name','Experiment - Psychophysics',...
     'color',framebgColor,'menubar','none','toolbar','none',...
     'renderer','painters','doublebuffer','on','Interruptible','off');
 
@@ -42,6 +42,33 @@ set(h(:),'facecolor',bgColor);
 set(instructh,'visible','on');
 waitforbuttonpress;
 set(instructh,'visible', 'off');
+
+% ask for the target probability correct
+set(instructh,'string',{'Please enter desired detection rate' 'in percent :'},'visible','on');
+set(stimfig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
+set(stimfig,'userdata',[]);
+drawnow; % make sure the figure is visible
+pcorrectstr=[];
+while ( numel(pcorrectstr)<2 );
+  modekey=[];  
+  while ( isempty(modekey) ) 
+	 pause(.2); modekey=get(stimfig,'userdata'); 
+	 % BODGE: move the text a little to force key processing
+	 if(exist('OCTAVE_VERSION','builtin'))
+		if ( ~exist('dp','var') ) dp=+1e-3; else dp=-dp; end;
+		set(instructh,'position',get(instructh,'position')+dp); 
+	 end
+  end;
+  set(stimfig,'userdata',[]); % mark key consumed
+  fprintf('key=%s\n',modekey);
+  if ( isstr(modekey(1)) ) pcorrectstr=[pcorrectstr modekey(1)]; end
+  set(instructh,'string',{'Please enter desired detection rate' ['in percent : ' pcorrectstr]});
+  drawnow;
+end
+pcorrect=str2num(pcorrectstr);
+fprintf('pcorrect=%g\n',pcorrect);
+pause(.5);
+set(instructh,'visible','off');
 
 %Send a start of training event
 sendEvent('stimulus.training', 'start');
@@ -177,7 +204,7 @@ for seqi = 1:nSeq
       end
 
 		% update the histogram display as we've got new predictions
-		set(barh,'ydata',hits(2,:)./max(1,hits(1,:)));
+		set(barh,'ydata',hits(2,:)'./max(1,hits(1,:)'));
     end
     nevents=status.nevents; % record which events we've processed
 
