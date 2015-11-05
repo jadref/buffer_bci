@@ -118,12 +118,12 @@ while (ishandle(contFig) && ~strcmp(phaseToRun,'quit') )
     %sleepSec(.1);
 	 seqDuration=testSeqDuration;
     sendEvent(phaseToRun,'start');
-    %try
+    try
       sendEvent('startPhase.cmd','epochfeedback');
       rsvpPsychoPhysicsStimulus;
-    %catch
-    %  le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-    %end
+    catch
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    end
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');
    

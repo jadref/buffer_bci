@@ -216,7 +216,12 @@ while ( true )
     try
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
         fname=[dname '_' subject '_' datestr];
-        fprintf('Loading training data from : %s\n',fname);load(fname); 
+        fprintf('Loading training data from : %s\n',fname);
+        if ( ~(exist([fname '.mat'],'file') || exist(fname,'file')) ) 
+          warning(['Couldnt find a classifier to load file: ' fname]);
+          break;
+        end
+        load(fname); 
         trainSubj=subject;
       end;
       if ( opts.verb>0 ) fprintf('%d epochs\n',numel(traindevents)); end;
@@ -236,16 +241,20 @@ while ( true )
       fname=[cname '_' subject '_' datestr];
       fprintf('Saving classifier to : %s\n',fname);save([fname '.mat'],'-struct','clsfr');
     catch
-      fprintf('Error in train classifier!');
+      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+	  fprintf('Error in : %s',phaseToRun);
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+      sendEvent('training','end');    
     end
 
     %---------------------------------------------------------------------------------
    case {'test','testing','epochfeedback','eventfeedback'};
+    try
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
       clsfrfile = [cname '_' subject '_' datestr];
       if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
 		  clsfrfile=[cname '_' subject]; 
-		end;
+	  end;
       if(opts.verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
       clsfr=load(clsfrfile);
       clsSubj = subject;
@@ -255,9 +264,16 @@ while ( true )
 							'predFilt',opts.epochPredFilt,...
 							'endType',{'testing','test','epochfeedback','eventfeedback'},'verb',opts.verb,...
 							opts.epochFeedbackOpts{:});
+    catch
+      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+      fprintf('Error in : %s',phaseToRun);
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+      sendEvent('training','end');    
+    end
 
    %---------------------------------------------------------------------------------
    case {'contfeedback'};
+    try
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
       clsfrfile = [cname '_' subject '_' datestr];
       if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
@@ -276,6 +292,12 @@ while ( true )
 						  'endType',{'testing','test','contfeedback'},...
 						  'predFilt',opts.contPredFilt,'verb',opts.verb,...
 						  opts.contFeedbackOpts{:});
+    catch
+      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+      fprintf('Error in : %s',phaseToRun);
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+      sendEvent('training','end');    
+    end
       
    case 'exit';
     break;

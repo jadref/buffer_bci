@@ -5,7 +5,7 @@ switch testType;
   case 'color';  levels = alphas;
   case 'images'; % Load the images if needed
 	 files = dir(imagesDir); % get all files
-	 [ans,si]=sort({files.name},'ascend'); files=files(si);
+	 [ans,si]=sort({files.name}); files=files(si);
 	 levels={};
 	 for fi=1:numel(files);
 		filei = files(fi);
@@ -20,9 +20,12 @@ switch testType;
 			 continue;
 		  end
 		  if (size(img,3)==1 ) img=repmat(img,[1 1 3]); end; % make RGB to enforce color display
-		  levels(end+1) = img; % store in levels set
+		  levels{numel(levels)+1} = img; % store in levels set
 		end
 	 end
+	 % background should brightness match the target
+	 bgLevel = mean(levels{1},3); bgLevel=median(bgLevel(:));
+	 if ( isinteger(levels{1}) ) bgLevel=bgLevel/255.0; end; % convert to 0-1 float value 
 end
 
 
@@ -48,7 +51,11 @@ switch ( testType )
 case 'color';
   h(1) =rectangle('curvature',[1 1],'position',[[0;0]-stimRadius/2;stimRadius.*[1;1]],'facecolor',bgColor); 
 case 'images';
-  h(1) =image([-1 1]*stimRadius/2,[-1 1]*stimRadius/2,reshape(bgColor,[1,1,3]));
+  set(ax,'ydir','reverse'); % for images to display right way round....
+    % ARGH: Matlab uses the xrange/yrange to say the center of the pixels
+    % of the image.  Thus if you have very large pixels the size on the
+    % screen is bigger....  Thus, for color blocks use a 20x20 image...
+  h(1) =image([-1 1]*stimRadius/2,[-1 1]*stimRadius/2,repmat(reshape(bgColor,[1,1,3]),[20 20 1]));
 otherwise;
   error('Unrecog test type');
 end
@@ -72,7 +79,7 @@ figure(2);
 set(h(:),'visible','off'); % make them all invisible
 switch ( testType ) 
 case 'color';   set(h(:),'facecolor',bgColor);
-case 'images';  set(h(:),'cdata',reshape(bgColor,[1 1 3]));
+case 'images';  set(h(:),'cdata',repmat(reshape(bgColor,[1 1 3]),[20 20 1]));
 end
 set(instructh,'visible','on');
 waitforbuttonpress;
@@ -122,9 +129,10 @@ for seqi = 1:nSeq
   
   % show the screen to alert the subject to trial start
   set(h(1:end-1),'visible','off');
+  set(h(end),'visible','on');
   switch ( testType ) % red fixation indicates trial about to start/baseline
 	 case 'color';      set(h(end),'facecolor',bgColor);
-	 case 'images';     set(h(end),'cdata',reshape(fixColor,[1 1 3]));
+	 case 'images';     set(h(end),'cdata',repmat(reshape(fixColor,[1 1 3]),[20 20 1]));
   end
   drawnow;% expose; % N.B. needs a full drawnow for some reason
   sendEvent('stimulus.baseline','start');
@@ -133,8 +141,8 @@ for seqi = 1:nSeq
 
   %Show target image
   switch ( testType ) % red fixation indicates trial about to start/baseline
-	 case 'color';      set(h(end),'visible','on','facecolor',tgtColor);
-	 case 'images';     set(h(end),'cdata',reshape(tgtColor,[1 1 3]));
+	 case 'color';      set(h(end),'facecolor',tgtColor);
+	 case 'images';     set(h(end),'cdata',repmat(reshape(tgtColor,[1 1 3]),[20 20 1]));
   end
   drawnow;
   sendEvent('stimulus.target',1);
@@ -169,14 +177,15 @@ for seqi = 1:nSeq
 	 set(h(rawss<0),'visible','off');  % neg stimSeq codes for invisible stimulus
 	 % everybody starts as background color
 	 switch ( testType ) 
-		case 'color';      set(h(rawss>=0),'visible','on','facecolor',bgColor);
+		case 'color';      set(h(rawss>=0),'facecolor',bgColor);
 		case 'images';
 		  % when oddball, 0=background & 2=standard, otherwise 0=standard
-		  if ( oddballp ) set(h(rawss>=0),'cdata',reshape(bgColor,[1 1 3]),'visible','on'); 
-		  else            set(h(rawss>=0),'cdata',levels{1},'visible','on'); 
+		  if ( oddballp ) set(h(rawss>=0),'cdata',repmat(reshape(bgColor*bgLevel,[1 1 3]),[20 20 1])); 
+		  else            set(h(rawss>=0),'cdata',levels{1}); 
 		  end
 	 end
 	 if(any(rawss==1))
+		set(h(rawss>=0),'visible','on');
 		istarget=true;
 		% compute what stimulus we should use
 		% alphai is index into the levels vector saying what stimulus we should actually be using
@@ -191,21 +200,23 @@ for seqi = 1:nSeq
 		  case 'images';
 			 set(h(rawss==1),'cdata',levels{leveli});
 		end
-	 end% stimSeq codes into a colortable
+	 end
 	 if(any(rawss==2)) % std image
+		set(h(rawss==2),'visible','on');
 		switch ( testType ) 
 		  case 'color';      
 			 color=colors(:,min(size(colors,2),2));
-			 set(h(rawss==2),'visible','on','facecolor',color);
+			 set(h(rawss==2),'facecolor',color);
 		  case 'images';
 			 set(h(rawss==2),'cdata',levels{1});
 		end
 	 end;
 	 if(any(rawss==3))
+		set(h(rawss==3),'visible','on');
 		color=colors(:,min(size(colors,2),3));
 		switch ( testType ) 
-		  case 'color';      set(h(rawss==2),'visible','on','facecolor',color);
-		  case 'images';     set(h(rawss==2),'cdata',reshape(color,[1 1 3]));
+		  case 'color';      set(h(rawss==2),'facecolor',color);
+		  case 'images';     set(h(rawss==2),'cdata',repmat(reshape(color,[1 1 3]),[20 20 1]));
 		end
 	 end;
     
@@ -291,8 +302,8 @@ for seqi = 1:nSeq
 
   % reset the cue and fixation point to indicate trial has finished  
   switch ( testType ) 
-	 case 'color';      set(h(:),'visible','on','facecolor',bgColor,'visible','off');
-	 case 'images';     set(h(:),'cdata',reshape(bgColor,[1 1 3]),'visible','off');
+	 case 'color';      set(h(:),'facecolor',bgColor,'visible','off');
+	 case 'images';     set(h(:),'cdata',repmat(reshape(bgColor,[1 1 3]),[20 20 1]),'visible','off');
   end
   drawnow;
   sendEvent('stimulus.trial','end');
