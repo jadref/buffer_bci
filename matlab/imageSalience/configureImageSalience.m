@@ -57,7 +57,7 @@ faceDir='pictures/faces';
 nSeq = 6;
 trainSeqDuration = 20;
 testSeqDuration  = 60;
-tti              = 7; % average number flashes between target flashes
+tti              = 5; % average number flashes between target flashes
 
 textDuration=5;
 countdownDuration=3;

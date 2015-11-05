@@ -229,10 +229,11 @@ while ( true )
       switch lower(opts.clsfr_type);
        
        case {'erp','evoked'};
-         [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','freqband',opts.freqband,'badchrm',1,'badtrrm',1,'capFile',capFile,'overridechnms',overridechnms,varargin{:});
+         [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car',...
+                    'freqband',opts.freqband,'badchrm',1,'badtrrm',1,'capFile',capFile,'overridechnms',overridechnms,'verb',opts.verb,varargin{:});
        
        case {'ersp','induced'};
-         [clsfr,res]=buffer_train_ersp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','freqband',opts.freqband,'badchrm',1,'badtrrm',1,'capFile',capFile,'overridechnms',overridechnms,varargin{:});
+         [clsfr,res]=buffer_train_ersp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','freqband',opts.freqband,'badchrm',1,'badtrrm',1,'capFile',capFile,'overridechnms',overridechnms,'verb',opts.verb,varargin{:});
        
        otherwise;
         error('Unrecognised classifer type');
