@@ -12,7 +12,8 @@ menustr={'0) EEG'                 'eegviewer';
          '1) Practice'            'practice';
 			'2) Calibrate'           'erpviewcalibrate'; 
          '3) Train Classifier'    'train';
-			'4) PsychoPhysics'       'test';
+			'4) PsychoPhysics - color'       'psycho-color';
+			'5) PsychoPhysics - compression' 'psycho-images';
 			'q) quit'                'quit';
           };
 txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
@@ -110,7 +111,9 @@ while (ishandle(contFig) && ~strcmp(phaseToRun,'quit') )
     buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
 
    %---------------------------------------------------------------------------
-   case {'test','testing','epochfeedback'};
+   case {'test','testing','epochfeedback','psycho-color','psycho-images'};
+	 testType='color';
+	 if (strcmp(phaseToRun,'psycho-images') ) testType='images'; end;
     sendEvent('subject',subject);
     %sleepSec(.1);
 	 seqDuration=testSeqDuration;

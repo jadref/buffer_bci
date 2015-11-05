@@ -1,3 +1,31 @@
+
+% setup the set of levels we are to test
+% set the levels we are to test
+switch testType;
+  case 'color';  levels = alphas;
+  case 'images'; % Load the images if needed
+	 files = dir(imagesDir); % get all files
+	 [ans,si]=sort({files.name},'ascend'); files=files(si);
+	 levels={};
+	 for fi=1:numel(files);
+		filei = files(fi);
+		if (filei.isdir) continue;
+		else
+		  fprintf('Loading :%s...',filei.name);
+		  try
+			 img=imread(fullfile(imagesDir,filei.name));
+			 fprintf('OK.\n',filei.name);
+		  catch
+			 fprintf('Failed!\n',filei.name);
+			 continue;
+		  end
+		  if (size(img,3)==1 ) img=repmat(img,[1 1 3]); end; % make RGB to enforce color display
+		  levels(end+1) = img; % store in levels set
+		end
+	 end
+end
+
+
 %==========================================================================
 % Initialize the display
 %==========================================================================
@@ -13,21 +41,25 @@ ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','b
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
         'color',[0 0 0],'DrawMode','fast','nextplot','replacechildren',...
         'xlim',axlim(:,1),'ylim',axlim(:,2),'Ydir','normal');
+set(gca,'visible','off');
 stimPos=[]; h=[];
 % center block only
-h(1) =rectangle('curvature',[1 1],'position',[[0;0]-stimRadius/2;stimRadius.*[1;1]],'facecolor',bgColor); 
-    
-% add symbol for the center of the screen
-set(gca,'visible','off');
-set(stimfig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:))));
-set(stimfig,'userdata',[]); % clear any old key info
-
+switch ( testType ) 
+case 'color';
+  h(1) =rectangle('curvature',[1 1],'position',[[0;0]-stimRadius/2;stimRadius.*[1;1]],'facecolor',bgColor); 
+case 'images';
+  h(1) =image([-1 1]*stimRadius/2,[-1 1]*stimRadius/2,reshape(bgColor,[1,1,3]));
+otherwise;
+  error('Unrecog test type');
+end
+% text object for instructions / user-interaction
 set(stimfig,'Units','pixel');wSize=get(stimfig,'position');fontSize = .05*wSize(4);
 instructh=text(min(get(ax,'xlim'))+.15*diff(get(ax,'xlim')),mean(get(ax,'ylim')),instructstr,'HorizontalAlignment','left','VerticalAlignment','middle','color',[0 1 0],'fontunits','pixel','FontSize',fontSize,'visible','off');
 
 % add a 2nd figure for the detection curve?
 detectfig=figure(3);set(detectfig,'Name','Detection curve');clf;
-barh=bar(alphas,zeros(size(alphas)));set(gca,'xlim',[alphas(1)-diff(alphas(1:2)) alphas(end)+diff(alphas(end-1:end))]);
+barh=bar((1:numel(levels))',zeros(size(levels)));
+%set(gca,'xlim',[0 numel(levels)]);alphas(1)-diff(alphas(1:2)) alphas(end)+diff(alphas(end-1:end))]);
 % ensure the stimulus figure is in the front
 figure(2);
 
@@ -38,7 +70,10 @@ figure(2);
 %Change text object and display start-up texts
 % reset the cue and fixation point to indicate trial has finished  
 set(h(:),'visible','off'); % make them all invisible
-set(h(:),'facecolor',bgColor);
+switch ( testType ) 
+case 'color';   set(h(:),'facecolor',bgColor);
+case 'images';  set(h(:),'cdata',reshape(bgColor,[1 1 3]));
+end
 set(instructh,'visible','on');
 waitforbuttonpress;
 set(instructh,'visible', 'off');
@@ -75,8 +110,11 @@ sendEvent('stimulus.training', 'start');
 
 %Start the sequences
 tgtIdx=1;
-alphai=numel(alphas)/2; % start in middle of the range
-hits = zeros(2,numel(alphas));
+switch ( testType ) 
+case 'color';   alphai=numel(levels)/2; % start in middle of the range
+case 'images';  alphai=numel(levels); % start in edge of the range
+end
+hits = zeros(2,numel(levels));
 for seqi = 1:nSeq
 	 
   % make a simple odd-ball stimulus sequence, with targets mintti apart
@@ -84,18 +122,24 @@ for seqi = 1:nSeq
   
   % show the screen to alert the subject to trial start
   set(h(1:end-1),'visible','off');
-  set(h(end),'visible','on','facecolor',fixColor); % red fixation indicates trial about to start/baseline
+  switch ( testType ) % red fixation indicates trial about to start/baseline
+	 case 'color';      set(h(end),'facecolor',bgColor);
+	 case 'images';     set(h(end),'cdata',reshape(fixColor,[1 1 3]));
+  end
   drawnow;% expose; % N.B. needs a full drawnow for some reason
   sendEvent('stimulus.baseline','start');
   sleepSec(baselineDuration);
   sendEvent('stimulus.baseline','end');
 
   %Show target image
-  set(h(1),'visible','on','facecolor',tgtColor);
+  switch ( testType ) % red fixation indicates trial about to start/baseline
+	 case 'color';      set(h(end),'visible','on','facecolor',tgtColor);
+	 case 'images';     set(h(end),'cdata',reshape(tgtColor,[1 1 3]));
+  end
   drawnow;
   sendEvent('stimulus.target',1);
   sleepSec(targetDuration);    
-  set(h(:), 'visible', 'off','facecolor',bgColor);
+  set(h(:), 'visible', 'off');
   drawnow;
   if ( verb>0 ) fprintf('%d) tgt=%d\t',seqi,1); end;
   sleepSec(postTargetDuration);
@@ -120,34 +164,63 @@ for seqi = 1:nSeq
 	 end
 	 
 	 istarget=false;
-	 ss=stimSeq(:,framei);	 
-	 set(h(ss<0),'visible','off');  % neg stimSeq codes for invisible stimulus
-	 set(h(ss>=0),'visible','on','facecolor',bgColor); % everybody starts as background color
-	 if(any(ss==1))
+	 ss=stimSeq(:,framei); % initial stimulus state, updated with actual used stimulus later
+	 rawss=ss; % N.B. raw stim state used to decide what type of stimulus we should use
+	 set(h(rawss<0),'visible','off');  % neg stimSeq codes for invisible stimulus
+	 % everybody starts as background color
+	 switch ( testType ) 
+		case 'color';      set(h(rawss>=0),'visible','on','facecolor',bgColor);
+		case 'images';
+		  % when oddball, 0=background & 2=standard, otherwise 0=standard
+		  if ( oddballp ) set(h(rawss>=0),'cdata',reshape(bgColor,[1 1 3]),'visible','on'); 
+		  else            set(h(rawss>=0),'cdata',levels{1},'visible','on'); 
+		  end
+	 end
+	 if(any(rawss==1))
 		istarget=true;
-		% compute what color we should use.....
-		% alphai is index into the alphas vector saying what alpha we should actually be using
-		alpha = alphas(max(1,min(round(alphai),numel(alphas))));
-		% interpolate between tgt/bgColor to get the 
-		color = colors(:,1) * alpha + colors(:,2)*(1-alpha);
-		set(h(ss==1),'facecolor',color); 
-		ss(ss==1)= alpha; % update the stim-state with the actual stim parameters
+		% compute what stimulus we should use
+		% alphai is index into the levels vector saying what stimulus we should actually be using
+		leveli = max(1,min(round(alphai),numel(levels)));
+		switch ( testType ) 
+		  case 'color';
+			 alpha = levels(leveli);
+			 % interpolate between tgt/bgColor to get the 
+			 color = colors(:,1) * alpha + colors(:,2)*(1-alpha);
+			 set(h(rawss==1),'facecolor',color); 
+			 ss(rawss==1)= alpha; % update the stim-state with the actual stim parameters
+		  case 'images';
+			 set(h(rawss==1),'cdata',levels{leveli});
+		end
 	 end% stimSeq codes into a colortable
-	 if(any(ss==2))set(h(ss==2),'facecolor',colors(:,min(size(colors,2),2)));end;
-	 if(any(ss==3))set(h(ss==3),'facecolor',colors(:,min(size(colors,2),3)));end;
+	 if(any(rawss==2)) % std image
+		switch ( testType ) 
+		  case 'color';      
+			 color=colors(:,min(size(colors,2),2));
+			 set(h(rawss==2),'visible','on','facecolor',color);
+		  case 'images';
+			 set(h(rawss==2),'cdata',levels{1});
+		end
+	 end;
+	 if(any(rawss==3))
+		color=colors(:,min(size(colors,2),3));
+		switch ( testType ) 
+		  case 'color';      set(h(rawss==2),'visible','on','facecolor',color);
+		  case 'images';     set(h(rawss==2),'cdata',reshape(color,[1 1 3]));
+		end
+	 end;
     
 	 % sleep until time to update the stimuli the screen
 	 if ( verb>1 ) fprintf('%d) Sleep : %gs\n',framei,stimTime(framei)-(getwTime()-seqStartTime)-flipInterval/2); end;
 	 sleepSec(max(0,stimTime(framei)-(getwTime()-seqStartTime))); % wait until time to call the draw-now
 	 if ( verb>1 ) frametime(framei,2)=getwTime()-seqStartTime; end;
 	 drawnow;
-	 if(any(ss==-4))if(~isempty(audio{1}))play(audio{1});end;end;
-	 if(any(ss==-5))if(~isempty(audio{2}))play(audio{2});end;end; 
 	 if ( verb>1 ) 
       frametime(framei,3)=getwTime()-seqStartTime;
       fprintf('%d) dStart=%8.6f dEnd=%8.6f stim=[%s] lag=%g\n',framei,...
 				  frametime(framei,2),frametime(framei,3),...
 				  sprintf('%d ',stimSeq(:,framei)),stimTime(framei)-(getwTime()-seqStartTime));
+	 elseif ( verb>=0 )
+		if ( istarget ) fprintf('t'); else fprintf('.'); end;
 	 end
 	 % send event saying what we just showed
 	 ev=[];
@@ -165,8 +238,8 @@ for seqi = 1:nSeq
 	 if ( istarget )
 		nTgt=nTgt+1;
 		tgtSamp(1,nTgt)=ev.sample;  % record sample this event was sent
-		dispStimSeq(:,nTgt)=ss;   % record the status of the display for this flash
-	   % pred(:,nTgt)            % record of the classifier predictions for the corrospending events
+		dispStimSeq(:,nTgt)=ss;     % record the status of the display for this flash
+	   % pred(:,nTgt)              % record of the classifier predictions for the corrospending events
 	   % hits(:,2)                 % record the #times used, and #times hit for each stim
 	 end
 
@@ -188,7 +261,10 @@ for seqi = 1:nSeq
 
 		  ishit = pred(tgtIdx,nPredei)>0;
 		  % update the hits list
-		  [ans,bini]=min(abs(alphas-dispStimSeq(nPredei))); % find the alpha-bin this is in
+		  switch ( testType ) % find the level-bin this is in
+			 case 'color'; [ans,bini]=min(abs(levels-dispStimSeq(nPredei))); 
+			 case 'images'; bini=dispStimSeq(nPredei);
+		  end
 		  hits(1,bini)=hits(1,bini)+1;      % counts
 		  hits(2,bini)=hits(2,bini)+ishit;  % hits
 
@@ -197,7 +273,7 @@ for seqi = 1:nSeq
 		  if ( ishit ) alphai=alphai-hitmissstep*(1-pcorrect); % hit so make harder => decrease
 		  else 			alphai=alphai+hitmissstep*pcorrect;     % miss so make easier => increase
 		  end;
-		  alphai=min(numel(alphas),max(1,alphai)); % limit the range of values...
+		  alphai=min(numel(levels),max(1,alphai)); % limit the range of values...
 		  
         if ( verb>0 ) 
 			 if ( ishit ) hitmiss='hit'; else hitmiss='miss'; end;
@@ -214,7 +290,10 @@ for seqi = 1:nSeq
   end % sequence
 
   % reset the cue and fixation point to indicate trial has finished  
-  set(h(:),'facecolor',bgColor,'visible','off');
+  switch ( testType ) 
+	 case 'color';      set(h(:),'visible','on','facecolor',bgColor,'visible','off');
+	 case 'images';     set(h(:),'cdata',reshape(bgColor,[1 1 3]),'visible','off');
+  end
   drawnow;
   sendEvent('stimulus.trial','end');
   sleepSec(interSeqDuration);
