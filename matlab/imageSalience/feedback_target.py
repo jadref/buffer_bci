@@ -227,7 +227,7 @@ while not done:
 		p_surf = surf[3]
 		screen.blit(img, dst)
 		screen.blit(rank_surf, dst)
-		screen.blit(pygame.Rect(dst.x, dst.y + 20, dst.width, dst.height - 20))
+		#screen.blit(pygame.Rect(dst.x, dst.y + 20, dst.width, dst.height - 20))
 
 	# Flip buffers.
 	pygame.display.flip()
