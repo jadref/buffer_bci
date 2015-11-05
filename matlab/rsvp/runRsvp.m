@@ -85,6 +85,7 @@ while (ishandle(contFig) && ~strcmp(phaseToRun,'quit') )
       rsvpCalibrateStimulus;
     catch
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  if(~isempty(le.stack)) fprintf('%s>%s : %d\n',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
     end
     sendEvent(phaseToRun,'end');
     nSeq=onSeq;
@@ -99,6 +100,7 @@ while (ishandle(contFig) && ~strcmp(phaseToRun,'quit') )
       rsvpCalibrateStimulus;
     catch
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  if ( ~isempty(le.stack) ) fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
       sendEvent('training','end');    
     end
     sendEvent(phaseToRun,'end');
@@ -123,6 +125,7 @@ while (ishandle(contFig) && ~strcmp(phaseToRun,'quit') )
       rsvpPsychoPhysicsStimulus;
     catch
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  if ( ~isempty(le.stack) ) fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
     end
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');

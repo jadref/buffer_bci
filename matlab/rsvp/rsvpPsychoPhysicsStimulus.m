@@ -199,6 +199,7 @@ for seqi = 1:nSeq
 			 ss(rawss==1)= alpha; % update the stim-state with the actual stim parameters
 		  case 'images';
 			 set(h(rawss==1),'cdata',levels{leveli});
+			 ss(rawss==1)=leveli;
 		end
 	 end
 	 if(any(rawss==2)) % std image

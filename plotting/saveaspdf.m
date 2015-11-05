@@ -48,7 +48,7 @@ set(fig, 'renderer', 'painters');
 
 % Do the print with matlab
 if ( ispc() ) tfname='saveaspdf'; else tfname='/tmp/saveaspdf'; end;
-if ( exist(tfname,'file') ) del(tfname); end;
+if ( exist([tfname '.pdf'],'file') ) delete([tfname '.pdf']); end;
 print(fig,'-dpdf','-r300',tfname);
 if ( ispc() ) % hack round file-name limitation of ghostscript
   system(['move "' tfname '.pdf' '" "' fname '.pdf"']);

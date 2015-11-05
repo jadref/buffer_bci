@@ -244,6 +244,7 @@ while ( true )
       msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
 	  fprintf('Error in : %s',phaseToRun);
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  if ( ~isempty(le.stack) ) fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
       sendEvent('training','end');    
     end
 
@@ -268,6 +269,7 @@ while ( true )
       msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
       fprintf('Error in : %s',phaseToRun);
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  if ( ~isempty(le.stack) ) fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
       sendEvent('training','end');    
     end
 
@@ -296,6 +298,7 @@ while ( true )
       msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
       fprintf('Error in : %s',phaseToRun);
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  if ( ~isempty(le.stack) ) fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
       sendEvent('training','end');    
     end
       

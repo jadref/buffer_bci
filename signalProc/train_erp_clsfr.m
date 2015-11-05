@@ -230,6 +230,7 @@ if ( opts.visualize )
      zoomplots; saveaspdf('ERP'); 
 	catch; 
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  if ( ~isempty(le.stack) ) fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
 	end;
    if ( ~(all(Yci(:)==Yci(1))) ) % only if >1 class input
      aucfig=figure(2); clf(aucfig); set(aucfig,'Name','Data Visualisation: ERP AUC');
@@ -239,6 +240,7 @@ if ( opts.visualize )
 		 zoomplots; saveaspdf('AUC'); 
 	  catch; 
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  if ( ~isempty(le.stack) ) fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
 	  end;
    end
    drawnow;
