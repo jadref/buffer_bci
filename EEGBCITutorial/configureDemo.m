@@ -1,7 +1,7 @@
 % guard to prevent running multiple times
 %if ( exist('runConfig','var') && ~isempty(runConfig) ) return; end;
 runConfig=true;
-run ../utilities/initPaths.m;
+run ../matlab/utilities/initPaths.m;
 
 buffhost='localhost';buffport=1972;
 % wait for the buffer to return valid header information

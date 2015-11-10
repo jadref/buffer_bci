@@ -10,7 +10,7 @@ if ( ~exist('configRun','var') || isempty(configRun) )
   %% cd(mfiledir)
 
   % setup the paths
-  run ../../utilities/initPaths.m;
+  run ../utilities/initPaths.m;
 
   buffhost='localhost';buffport=1972;
   % wait for the buffer to return valid header information

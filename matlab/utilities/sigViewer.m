@@ -61,7 +61,7 @@ ch_names=hdr.channel_names; ch_pos=[]; iseeg=true(numel(ch_names),1);
 % get capFile info for positions
 capFile=opts.capFile; overridechnms=opts.overridechnms; 
 if(isempty(opts.capFile)) 
-  [fn,pth]=uigetfile(fullfile(fileparts(mfilename('fullpath')),'../utilities/caps/*.txt'),'Pick cap-file'); drawnow;
+  [fn,pth]=uigetfile(fullfile(fileparts(mfilename('fullpath')),'../../resources/caps/*.txt'),'Pick cap-file'); drawnow;
   if ( ~isequal(fn,0) ); capFile=fullfile(pth,fn); end;
   %if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
 end

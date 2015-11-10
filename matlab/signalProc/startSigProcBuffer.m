@@ -94,7 +94,7 @@ if ( ~iscell(opts.trainOpts))opts.trainOpts={opts.trainOpts}; end;
 thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
 capFile=opts.capFile;
 if( isempty(capFile) ) 
-  [fn,pth]=uigetfile(fullfile(mdir,'../utilities/caps/*.txt'),'Pick cap-file'); 
+  [fn,pth]=uigetfile(fullfile(mdir,'../../resources/caps/*.txt'),'Pick cap-file'); 
   if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; 
   else                                   capFile=fullfile(pth,fn);
   end; % 1010 default if not selected
