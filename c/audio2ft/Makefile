@@ -23,14 +23,27 @@ CXXFLAGS = $(CFLAGS)
 CPPOBJS = $(patsubst %,$(CPPDIR)/%,\
 	SignalConfiguration.o GdfWriter.o FtConnection.o StringServer.o)
 
-ifeq "$(PLATFORM)" "mingw32"
+ifneq (,$(findstring mingw, $(PLATFORM)))
 	BINDIR = $(FTBUFFER)/win32
 	SUFFIX = .exe
 	fixpath = $(subst /,\,$1)
 	# LDFLAGS += -L$(BINDIR) does not seem to work for DLLs. Hence:
 	LDLIBS += $(CPPOBJS) -lbuffer -lws2_32 $(BINDIR)/pthreadGC2.dll $(BINDIR)/PortAudio.dll 
-	INCPATH += ../../external/portaudio
+	INCPATH += -I./portaudio
+	LDFLAGS += -static
 	RM = del
+endif
+ifneq (,$(findstring msys, $(PLATFORM)))
+	BINDIR = $(FTBUFFER)/win32
+	SUFFIX = .exe
+	fixpath = $(subst /,\,$1)
+	# LDFLAGS += -L$(BINDIR) does not seem to work for DLLs. Hence:
+	LDLIBS += $(CPPOBJS) -lbuffer -lws2_32 $(BINDIR)/pthreadGC2.dll $(BINDIR)/PortAudio.dll 
+	INCPATH += -I./portaudio
+	LDFLAGS += -static
+	RM = rm
+endif
+ifneq (,$(findstring cygwin, $(PLATFORM))) # cygwin is *not* w32!
 endif
 
 ifeq "$(UNAME)" "Linux"
@@ -80,4 +93,5 @@ $(BINDIR)/%$(SUFFIX): %.cc
 	$(CXX) -o $@ $(CFLAGS) $(LDFLAGS) $^ $(LDLIBS)
 
 clean:
-	$(RM) *.o $(call fixpath, $(TARGETS))
+	$(RM) $(call fixpath, $(TARGETS))
+	$(RM) *.o
