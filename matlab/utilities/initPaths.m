@@ -4,13 +4,13 @@ if ( exist('OCTAVE_VERSION','builtin') ) % octave specific
 end
 %Add necessary paths
 buffer_bcidir=fileparts(fileparts(mfilename('fullpath'))); % parent directory
-if ( exist(fullfile(buffer_bcidir,'dataAcq'),'dir') ) 
-  addpath(fullfile(buffer_bcidir,'dataAcq')); 
-  if ( exist(fullfile(buffer_bcidir,'dataAcq','buffer'),'dir') ) 
-    addpath(fullfile(buffer_bcidir,'dataAcq','buffer')); 
+if ( exist(fullfile(buffer_bcidir,'..\dataAcq'),'dir') ) 
+  addpath(fullfile(buffer_bcidir,'..\dataAcq')); 
+  if ( exist(fullfile(buffer_bcidir,'..\dataAcq','buffer'),'dir') ) 
+    addpath(fullfile(buffer_bcidir,'..\dataAcq','buffer')); 
   end
-  if ( exist(fullfile(buffer_bcidir,'dataAcq','buffer','java'),'dir') ) % use java buffer if it's there
-    bufferjavaclassdir=fullfile(buffer_bcidir,'dataAcq','buffer','java');
+  if ( exist(fullfile(buffer_bcidir,'..\dataAcq','buffer','java'),'dir') ) % use java buffer if it's there
+    bufferjavaclassdir=fullfile(buffer_bcidir,'..\dataAcq','buffer','java');
     addpath(bufferjavaclassdir); 
     bufferjar = fullfile(bufferjavaclassdir,'BufferClient.jar');
     if ( exist(bufferjar,'file') ) 
