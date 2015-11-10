@@ -44,8 +44,8 @@ while( ~endTest )
   % Send prediction event when wanted
   sendEvent('stimulus.prediction',f);
   
-  % check for exit events
-  [devents,state]=buffer_newevents(buffhost,buffport,state,'',[],0);
+  % check for exit events -- any event with t:stimulus.testing v:end
+  [devents,state]=buffer_newevents(buffhost,buffport,state,'stimulus.testing','end',0);
   if ( numel(devents)>0 ) 
     fprintf('Got exit event. Stopping'); endTest=true; 
   end;

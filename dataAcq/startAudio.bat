@@ -1,8 +1,11 @@
 set batdir=%~dp0
-set drive=%~d0
-rem Search for the buffer executable
-set execname=emotiv2ft
+cd %batdir%
+rem Search for the executable
+set execname=audio2ft
 if exist "%batdir%buffer\bin\win32\%execname%.exe" ( set buffexe="%batdir%buffer\bin\win32\%execname%.exe" )
 if exist "%batdir%buffer\win32\%execname%.exe" ( set buffexe="%batdir%buffer\win32\%execname%.exe" )
 if exist "%batdir%%execname%.exe" ( set buffexe="%batdir%%execname%.exe" )
-start /b "%execname%" %buffexe% emotiv.cfg localhost 1972
+
+rem audio2ft deviceID host port
+rem N.B. config paramters from audio.cfg in this directory
+start /b "%execname%" %buffexe% 0 localhost 1972

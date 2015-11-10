@@ -10,7 +10,7 @@ PLATFORM = $(shell gcc -dumpmachine)
 UNAME = $(shell uname)
 MACHINE = $(shell uname -m)
 
-FTBUFFER = ../buffer
+FTBUFFER = ../../dataAcq/buffer
 CPPDIR  = $(FTBUFFER)/cpp
 
 # defaults, might be overwritten further down
