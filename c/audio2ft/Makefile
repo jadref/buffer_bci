@@ -8,7 +8,9 @@
 
 PLATFORM = $(shell gcc -dumpmachine)
 UNAME = $(shell uname)
-MACHINE = $(shell uname -m)
+ifndef MACHINE
+	MACHINE = $(shell uname -m)
+endif
 
 FTBUFFER = ../../dataAcq/buffer
 CPPDIR  = $(FTBUFFER)/cpp
@@ -19,17 +21,19 @@ LDFLAGS = -L$(FTBUFFER)/c
 CFLAGS = $(INCPATH) -Wunused -Wall -pedantic -O3
 CXXFLAGS = $(CFLAGS)
 
-# better would be to make a proper library of the C++ framework
-CPPOBJS = $(patsubst %,$(CPPDIR)/%,\
-	SignalConfiguration.o GdfWriter.o FtConnection.o StringServer.o)
+# to avoid dependencies just build everything from source every time...
+CPPSRCS = $(patsubst %,$(CPPDIR)/%,\
+	SignalConfiguration.cc GdfWriter.cc FtConnection.cc StringServer.cc)
+FTSRCS = $(patsubst %,$(FTBUFFER)/c/%,\
+	clientrequest.c util.c tcprequest.c socketserver.c tcpsocket.c endianutil.c cleanup.c extern.c dmarequest.c)
 
 ifneq (,$(findstring mingw, $(PLATFORM)))
 	BINDIR = $(FTBUFFER)/win32
 	SUFFIX = .exe
 	fixpath = $(subst /,\,$1)
 	# LDFLAGS += -L$(BINDIR) does not seem to work for DLLs. Hence:
-	LDLIBS += $(CPPOBJS) -lbuffer -lws2_32 $(BINDIR)/pthreadGC2.dll $(BINDIR)/PortAudio.dll 
-	INCPATH += -I./portaudio
+	LDLIBS += -lbuffer -lws2_32 $(BINDIR)/pthreadGC2.dll $(BINDIR)/PortAudio.dll 
+	INCPATH += -I./portaudio -I$(FTBUFFER)/win32/include
 	LDFLAGS += -static
 	RM = del
 endif
@@ -38,8 +42,8 @@ ifneq (,$(findstring msys, $(PLATFORM)))
 	SUFFIX = .exe
 	fixpath = $(subst /,\,$1)
 	# LDFLAGS += -L$(BINDIR) does not seem to work for DLLs. Hence:
-	LDLIBS += $(CPPOBJS) -lbuffer -lws2_32 $(BINDIR)/pthreadGC2.dll $(BINDIR)/PortAudio.dll 
-	INCPATH += -I./portaudio
+	LDLIBS += -lbuffer -lws2_32 $(BINDIR)/pthreadGC2.dll $(BINDIR)/PortAudio.dll 
+	INCPATH += -I./portaudio -I$(FTBUFFER)/win32/include
 	LDFLAGS += -static
 	RM = rm
 endif
@@ -57,8 +61,18 @@ ifeq "$(UNAME)" "Linux"
     ifeq "$(MACHINE)" "armv6l"
 		BINDIR = $(FTBUFFER)/raspberrypi
     endif
-	 LDFLAGS += -L$(FTBUFFER)/c
-	 LDLIBS += $(CPPOBJS) -lbuffer -lpthread -ldl -lportaudio
+	# Cross-compile for windows on linux
+	ifeq "$(MACHINE)" "mingw32"
+		CXX = i586-mingw32msvc-g++
+		BINDIR = $(FTBUFFER)/win32
+		SUFFIX = .exe
+		fixpath = $(subst /,\,$1)
+		LDLIBS += -lws2_32 -lbuffer $(BINDIR)/pthreadGC2.dll $(BINDIR)/PortAudio.dll 
+		INCPATH += -I./portaudio -I$(FTBUFFER)/win32/include
+	else
+		LDLIBS += -lbuffer -lpthread -ldl -lportaudio
+	   LDFLAGS += -L$(FTBUFFER)/c
+	endif
 endif
 
 ifeq "$(UNAME)" "Darwin"
@@ -75,7 +89,7 @@ ifeq "$(UNAME)" "Darwin"
         CXXFLAGS += -m64
         LDFLAGS += -m64
     endif
-    LDLIBS += $(CPPOBJS) -lpthread -lportaudio
+    LDLIBS += -lpthread -lportaudio
 endif
 
 
@@ -89,7 +103,7 @@ TARGETS = $(BINDIR)/audio2ft$(SUFFIX)
 ##############################################################################
 all: $(TARGETS)
 
-$(BINDIR)/%$(SUFFIX): %.cc
+$(BINDIR)/%$(SUFFIX): %.cc $(CPPSRCS) $(FTSRCS)
 	$(CXX) -o $@ $(CFLAGS) $(LDFLAGS) $^ $(LDLIBS)
 
 clean:

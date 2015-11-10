@@ -5,11 +5,6 @@ audio data from the sound card, and stream it to a FieldTrip buffer. Further
 processing can be performed by clients that connect to the FieldTrip buffer. To
 acquire the audio data, the PortAudio library [1] is used.
 
-## TODO:
-- Compilation is broken. Perhaps it is designed for an outdated PortAudio
-  library.
-- Remove config file and replace with getopt.
-
 
 # Usage
 
@@ -27,7 +22,7 @@ the desired device for the next call.
 When called with only the device argument, the application will use localhost
 with port 1972 as the default settings. Audio data will be captured at a
 sampling rate of 44100 Hz, but down sampling can be enabled in the
-configuration file config.txt (must be in the same directory), where you can
+configuration file audio.cfg (must be in the same directory), where you can
 select channels and attach labels. For more information, please refer to
 example_config.txt.
 
