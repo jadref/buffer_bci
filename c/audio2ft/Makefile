@@ -24,8 +24,6 @@ CXXFLAGS = $(CFLAGS)
 # to avoid dependencies just build everything from source every time...
 CPPSRCS = $(patsubst %,$(CPPDIR)/%,\
 	SignalConfiguration.cc GdfWriter.cc FtConnection.cc StringServer.cc)
-FTSRCS = $(patsubst %,$(FTBUFFER)/c/%,\
-	clientrequest.c util.c tcprequest.c socketserver.c tcpsocket.c endianutil.c cleanup.c extern.c dmarequest.c)
 
 ifneq (,$(findstring mingw, $(PLATFORM)))
 	BINDIR = $(FTBUFFER)/win32
@@ -69,6 +67,10 @@ ifeq "$(UNAME)" "Linux"
 		fixpath = $(subst /,\,$1)
 		LDLIBS += -lws2_32 -lbuffer $(BINDIR)/pthreadGC2.dll $(BINDIR)/PortAudio.dll 
 		INCPATH += -I./portaudio -I$(FTBUFFER)/win32/include
+		# Build directly from sources to avoid dependency issues with e.g. .o files
+		FTSRCS = $(patsubst %,$(FTBUFFER)/c/%,\
+						clientrequest.c util.c tcprequest.c socketserver.c \
+						tcpsocket.c endianutil.c cleanup.c extern.c dmarequest.c)
 	else
 		LDLIBS += -lbuffer -lpthread -ldl -lportaudio
 	   LDFLAGS += -L$(FTBUFFER)/c
