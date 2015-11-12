@@ -8,7 +8,7 @@ function []=startSigProcBuffer(varargin)
 %                                 N.B. the event type used to lock to is given in the option:
 %                                    erpEventType
 %  (startPhase.cmd,calibrate)  -- start calibration phase processing (i.e. cat data)
-%                                 Specificially for each epoch the specificed block of data will be
+%                                 Specifically for each epoch the specified block of data will be
 %                                 saved and labelled with the value of this event.
 %                                 N.B. the event type used to define an epoch is given in the option:
 %                                        epochEventType
@@ -22,7 +22,7 @@ function []=startSigProcBuffer(varargin)
 %                                 NB. The event to predict for is given in option: testepochEventType
 %                                  (FYI: this uses the function event_applyClsfr)
 %  (startPhase.cmd,contfeedback) -- start continuous feedback phase,
-%                                     i.e. prediciton event generated every trlen_ms/2 milliseconds
+%                                     i.e. prediction event generated every trlen_ms/2 milliseconds
 %                                  (FYI: this uses the function cont_applyClsfr)
 %  (testing,end)               -- end testing phase
 %  (startPhase.cmd,exit)       -- stop everything

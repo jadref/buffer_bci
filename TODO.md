@@ -1,3 +1,8 @@
+Bugs
+====
+[] Fix layout of channel plots when capfile is invalid...
+[] Refactor matlab code into the matlab sub-directory
+
 Basic buffer integeration
 =========================
 [] - Add async put_dat, put_evt, and wait_dat, methods to the java buffer client
