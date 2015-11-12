@@ -253,7 +253,7 @@ def showeeg():
 def doBCITraining(names,data,periods):
   sendEvent('startPhase.cmd','calibrate')
   sendEvent('stimulus.training','start')
-  stimIDs=[0,len(sounds)-1]
+  stimIDs=[0,len(data)-1]
   stimi = list(stimIDs) # left/right position for each sequence
   periodsi=list(periods)
   for i in range(1,(number_of_sequences+1)):
@@ -278,10 +278,10 @@ def doBCITraining(names,data,periods):
   sleep(2)
   sendEvent('calibrate','end')
 
-def bciTesting(names,sounds,periods):
+def bciTesting(names,data,periods):
   sendEvent('startPhase.cmd','testing')
   sendEvent('stimulus.testing','start')
-  stimIDs=[0,len(sounds)-1]
+  stimIDs=[0,len(data)-1]
   for i in range(1,(number_of_sequences+1)):
       # Pick a target sound for this sequence      
       tgtIdx = randint(0,1)
@@ -365,14 +365,18 @@ pygame.display.set_caption('BCI Audio OddBall Experiment')
 # Pre-Loading Music data
 names   = ['500', '505', '510', '515', '520', '525', '530', '535', '540', '545', '550']
 sounds  = map(lambda i: wave.open("stimuli/" + names[i] + ".wav"), range(0,len(names)))
+print(sounds[0])
 data    = map(lambda x: x.readframes(x.getnframes()),sounds)
 
 # Pre-loading yes/no data
 ynnames   = ['no_f', 'yes_m']
 ynsounds  = map(lambda i: wave.open("stimuli_yesno/" + ynnames[i] + ".wav"), range(0,len(ynnames)))
+print(ynsounds[0])
 yndata    = map(lambda x: x.readframes(x.getnframes()),ynsounds)
 
 # Opening Audio Stream
+print("tone  width " + str(sounds[0].getsampwidth()));
+print("yesno width " + str(ynsounds[0].getsampwidth()));
 stream = p.open(format=p.get_format_from_width(sounds[0].getsampwidth()),
             channels=sounds[0].getnchannels(),
             rate=sounds[0].getframerate(),
@@ -409,8 +413,8 @@ actions_key[K_e] = showeeg
 actions_key[K_i] = showInstructions
 actions_key[K_c] = lambda : doBCITraining(names,data,periods)
 actions_key[K_t] = lambda : bciTesting(names,data,periods)
-actions_key[K_y] = lambda : doBCITraining(ynnames,ynsounds,periods)
-actions_key[K_b] = lambda : bciTesting(ynnames,ynsounds,periods)
+actions_key[K_y] = lambda : doBCITraining(ynnames,yndata,periods)
+actions_key[K_b] = lambda : bciTesting(ynnames,yndata,periods)
 actions_key[K_ESCAPE] = close
 actions_key[K_s] = lambda: playSingleStimulus(0)
 actions_key[K_1] = lambda: playSingleStimulus(0)
