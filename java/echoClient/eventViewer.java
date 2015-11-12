@@ -6,7 +6,7 @@ class eventViewer {
 	 public static void main(String[] args) throws IOException,InterruptedException {
 		String hostname = "localhost";
 		int port = 1972;
-		int timeout = 5000;
+		int timeout = 500;
 	
 		if (args.length>=1) {
 			hostname = args[0];
@@ -28,7 +28,7 @@ class eventViewer {
 				port = Integer.parseInt(args[2]);
 			}
 			catch (NumberFormatException e) {
-				timeout = 5000;
+				timeout = 500;
 			}
 		}
 		
@@ -66,6 +66,7 @@ class eventViewer {
 		// Now do the event viewer
 		int nEvents=hdr.nEvents;
 		int nevt=0;
+		int printCount=0;
 		boolean endExpt=false;
 		while ( !endExpt ) {
 			 SamplesEventsCount sec = C.waitForEvents(nEvents,timeout); // Block until there are new events
@@ -80,7 +81,21 @@ class eventViewer {
 						nevt++;
 				  }
 			 } else { // timed out without new events
-				  System.out.println("Timeout waiting for events");
+				  printCount+=timeout;
+				  if (printCount>5000){// only print timeout message every 5s
+						System.out.println(sec.nSamples + "," + sec.nEvents + " (samp,evt) Press <ENTER> to send event.");
+						printCount=0;
+				  }
+			 }
+			 if ( System.in.available()>0 ) { // keys to read
+				  java.util.Scanner keyboard = new java.util.Scanner(System.in);
+				  keyboard.nextLine();
+				  // read the initial enter.
+				  System.out.print("Enter event type:");
+				  String type = keyboard.nextLine();
+				  System.out.print("Enter event value:");
+				  String value = keyboard.nextLine();
+				  C.putEvent(new BufferEvent(type,value,-1)); 
 			 }
 		}
 		C.disconnect();
