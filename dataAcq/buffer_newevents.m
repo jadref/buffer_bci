@@ -35,18 +35,21 @@ if ( nargin<5 || isempty(mval)  ) mval ='*'; end;
 if ( nargin<6 || isempty(timeOut_ms) ) timeOut_ms=5000; end;
 
 % get the set of possible events
+nevents=[]; nsamples=[]; status=[];
 if ( isstruct(state) ) nevents=state.nevents; 
 elseif ( numel(state)==3 ) nevents=state(2); 
 elseif ( numel(state)==1 ) nevents=state(1);
 else warning('Dont understand state format');
 end
 if ( isempty(nevents) || nevents<=0 ) % first call
-  status=buffer('wait_dat',[-1 -1 -1],host,port); nevents=status.nevents;
-end; 
+  status=buffer('wait_dat',[-1 -1 -1],host,port); 
+  nevents=status.nevents;
+  nsamples=status.nsamples;
+end;
 events=[];
 curTime =getTime();
 endTime =curTime+timeOut_ms/1000;
-while ( isempty(events) && endTime>curTime ) % until there are some matching events
+while ( isempty(events) && endTime>=curTime ) % until there are some matching events
   % wait for any new events, keeping track of elapsed time for time-based exits
   status=buffer('wait_dat',[inf nevents 1000*(endTime-curTime)],host,port);
   if( status.nevents>nevents )
@@ -58,10 +61,14 @@ while ( isempty(events) && endTime>curTime ) % until there are some matching eve
     events=events(mi);
   end
   nevents=status.nevents;
+  nsamples=status.nsamples;
   curTime=getTime();
 end
-state=status;
-nevents=state.nevents;nsamples=state.nsamples;
+if ( ~isempty(status) ) 
+  state=status; 
+  nevents=status.nevents;
+  nsamples=status.nsamples;
+end;
 return;
 
 function t=getTime()
