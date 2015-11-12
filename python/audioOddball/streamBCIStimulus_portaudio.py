@@ -147,8 +147,9 @@ def runBCITrainingEpoch(nEpoch,names,data,seqDur,isi,periods,audioIDs,tgtIdx):
     sendEvent("stimulus.targetID", names[audioIDs[tgtIdx]])
     
     # some constants for the max amount of audio to play for one inter-stimulus-interval's worth sound
-    isi_samp = stream._rate * isi# number of samples
-    isi_byte = int(isi_samp * stream._channels * p.get_sample_size(stream._format)) # number bytes
+    sec2samp = stream._rate # convert time to samples
+    samp2byte= stream._channels * p.get_sample_size(stream._format) # convert samples to bytes
+    isi_bytes= int(isi * sec2samp) * samp2byte # number bytes, N.B. always get integer #samples first
     cursori=[-1,-1] #current position in each of the stimulus streams, negative value means not started
 
     t0=time()
@@ -159,23 +160,28 @@ def runBCITrainingEpoch(nEpoch,names,data,seqDur,isi,periods,audioIDs,tgtIdx):
         audioID = filter(lambda(ai): ssei[ai]==1, range(len(ssei)))
         tgt = ssei[tgtIdx]==1  # target stimuli if played the target stimuli
 
-        # set any new audio to start playing
+        # set any new audio to start playing, restart if already playing
         for i in audioID: cursori[i]=0
         # get the list of audio fragements with something to play
         playID = filter(lambda(ai): cursori[ai]>=0, range(len(cursori)))
         audio=None
         if len(playID)>0: # if something to play
             #print(str(i) + ") cursor" + str(cursori) + " ssei " + str(ssei))
+            # only make enough audio to fill to the next isi time-point
+            ttg = (t0+st/1000.0)-time()
+            nbytes = isi_bytes
+            # lagging behind, make a shorter audio fragement
+            if ttg<0 : nbytes = max(0,int((isi+ttg)*sec2samp))*samp2byte;
             # mix the fragments to make the audio we play
             audio = array.array(audioArray[0].typecode);
-            for i in range(isi_byte): # loop over samples with max isi_samp bytes at a time
+            for i in range(nbytes): # loop over samples with max isi_samp bytes at a time
                 # stop building audio if nothing to play
                 # (so we have a chance to catch-up if we run behind the play schedule)
                 if len(playID)==0 : break; 
                 datai=0
                 for fragi in playID: # loop over fragements with something to play
-                    # add in the weighted audio
-                    datai += audioArray[fragi][cursori[fragi]]*ssei[fragi]
+                    # add in the activated audio
+                    datai += audioArray[fragi][cursori[fragi]]
                     # move on the playback cursor for this fragement
                     if cursori[fragi]+1<len(audioArray[fragi]) :
                         cursori[fragi]=cursori[fragi]+1
@@ -186,9 +192,9 @@ def runBCITrainingEpoch(nEpoch,names,data,seqDur,isi,periods,audioIDs,tgtIdx):
                 
         # play slience until we should play this sound
         ttg = (t0+st/1000.0)-time()
-        if ttg>0 : 
+        if ttg>0 :
             playSlience(ttg,stream)  # avoid clicks on windows by playing slience...
-        else: 
+        else: # if lagging behind then drop this frame!
             print(str(time()-t0) + ") Lagging behind! tn=" + str(st/1000) + " ttg=" + str(ttg));
 
         # send events as close in time as possible to when the actual stimulus starts
@@ -365,18 +371,16 @@ pygame.display.set_caption('BCI Audio OddBall Experiment')
 # Pre-Loading Music data
 names   = ['500', '505', '510', '515', '520', '525', '530', '535', '540', '545', '550']
 sounds  = map(lambda i: wave.open("stimuli/" + names[i] + ".wav"), range(0,len(names)))
-print(sounds[0])
 data    = map(lambda x: x.readframes(x.getnframes()),sounds)
 
 # Pre-loading yes/no data
-ynnames   = ['no_f', 'yes_m']
+ynnames   = ['no_f2', 'yes_m2']
 ynsounds  = map(lambda i: wave.open("stimuli_yesno/" + ynnames[i] + ".wav"), range(0,len(ynnames)))
-print(ynsounds[0])
 yndata    = map(lambda x: x.readframes(x.getnframes()),ynsounds)
 
 # Opening Audio Stream
-print("tone  width " + str(sounds[0].getsampwidth()));
-print("yesno width " + str(ynsounds[0].getsampwidth()));
+print("tone  width " + str(sounds[0].getsampwidth()) + " framerate " + str(sounds[0]._framerate) + " nch " + str(sounds[0].getnchannels()));
+print("yesno width " + str(ynsounds[0].getsampwidth()) + " framerate " + str(ynsounds[0]._framerate) + " nch " + str(ynsounds[0].getnchannels()));
 stream = p.open(format=p.get_format_from_width(sounds[0].getsampwidth()),
             channels=sounds[0].getnchannels(),
             rate=sounds[0].getframerate(),
