@@ -293,12 +293,8 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 	public void sendEvent(string eventType, string eventData)
 	{
-		#if UNITY_ANDROID && !UNITY_EDITOR
-		if (androidDevice) {
-			Debug.Log ("Event sent to buffer: " + eventType + ": " + eventData);
-			buffer.putEvent (eventType, eventData, buffer.getSampleNumberNow ());
-		}
-        #endif
+		Debug.Log ("Event sent to buffer: " + eventType + ": " + eventData);
+		buffer.putEvent (eventType, eventData, buffer.getSampleNumberNow ());
 	}
 
 
