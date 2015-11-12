@@ -1,5 +1,5 @@
-mfiledir=fileparts(mfilename('fullpath'));
-run(fullfile(mfiledir,'../../utilities/initPaths.m'));
+try; cd(fileparts(mfilename('fullpath')));catch; end;
+run ../../utilities/initPaths.m
 
 buffhost='localhost';buffport=1972;
 % wait for the buffer to return valid header information
