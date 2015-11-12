@@ -374,7 +374,7 @@ sounds  = map(lambda i: wave.open("stimuli/" + names[i] + ".wav"), range(0,len(n
 data    = map(lambda x: x.readframes(x.getnframes()),sounds)
 
 # Pre-loading yes/no data
-ynnames   = ['no_f2', 'yes_m2']
+ynnames   = ['no_f', 'yes_m']
 ynsounds  = map(lambda i: wave.open("stimuli_yesno/" + ynnames[i] + ".wav"), range(0,len(ynnames)))
 yndata    = map(lambda x: x.readframes(x.getnframes()),ynsounds)
 
