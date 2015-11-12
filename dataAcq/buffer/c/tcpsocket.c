@@ -165,7 +165,7 @@ void *tcpsocket(void *arg) {
 		if (swap) ft_swap_from_native(reqCommand, response);
 
 		/* we don't need the request anymore */
-		cleanup_message(&request);
+		cleanup_message((void**)&request);
 		request = NULL;
 		
 		/* merge response->def and response->buf if they are small, so we can send it in one go over TCP */
@@ -195,7 +195,7 @@ void *tcpsocket(void *arg) {
 			}
 		}
 
-		cleanup_message(&response);
+		cleanup_message((void**)&response);
         response = NULL;
 
 	} /* while (1) */
@@ -204,7 +204,7 @@ cleanup:
     printf(""); /* otherwise the pthread_cleanup_pop won't compile */
 
 	if (response!=NULL) 
-		cleanup_message(&response);
+		cleanup_message((void**)&response);
 	response = NULL;	/* SK: prevent double free in following pthread_cleanup_pop */
 
 	pthread_cleanup_pop(1);

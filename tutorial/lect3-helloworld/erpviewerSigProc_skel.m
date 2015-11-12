@@ -17,9 +17,8 @@ end;
 initgetwTime;
 initsleepSec;
 
-% get cap layout info
-di = addPosInfo(hdr.channel_names,'1010'); % get 3d-coords
-ch_pos=cat(2,di.extra.pos2d); ch_names=di.vals; iseeg=[di.extra.iseeg]; % extract pos and channels names
+% load the cap layout from file
+[ch_names latlong ch_pos ch_pos3d]=readCapInf('1010');
 
 trlen_samp = 50; % #samples per epoch
 nSymbols = 2;

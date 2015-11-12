@@ -1,4 +1,4 @@
-function []=eventViewer(host,port,mtype,mval)
+function []=eventViewer(host,port,mtype,mval,timeout_ms)
 % view the event stream from a fieldtrip buffer
 %
 % []=eventViewer(host,port,mType,mVal)
@@ -19,6 +19,7 @@ if ( nargin<1 || isempty(host) ); host='localhost'; end;
 if ( nargin<2 || isempty(port) ); port=1972; end;
 if ( nargin<3 ); mtype={};  end;
 if ( nargin<4 ); mval={}; end;
+if ( nargin<5 || isempty(timeout_ms) ) timeout_ms=1000; end;
 % wait for valid header
 hdr=[];
 while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
@@ -38,7 +39,7 @@ end
 
 state=[]; nSamples=0; tic;
 while ( true )
-  [events,state]=buffer_newevents([],[],state,mtype,mval);
+  [events,state]=buffer_newevents(host,port,state,mtype,mval,timeout_ms);
   if ( ~isempty(events) ) 
     fprintf('%d) %s\n',state.nsamples,ev2str(events));
   end

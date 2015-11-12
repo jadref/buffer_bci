@@ -54,5 +54,9 @@ else
 end
 drawnow;
   
-% wait for a key press
+% wait for a key press -- N.B. many alternative ways to do this, e.g.
+waitforbuttonpress;
+% OR
+kbhit
+% OR
 msg=msgbox({'Press OK to continue'},'Continue?');while ishandle(msg); pause(.2); end;

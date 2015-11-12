@@ -143,6 +143,11 @@ def processBufferEvents():
 			image = evt.value.split('/')[0]
 			sample = evt.sample
 			imageSampleMap[sample] = image
+			
+		# When a new feedback phase starts, clear probabilities and sample maps.
+		elif evt.type == 'startPhase.cmd' and evt.value == 'epochfeedback':
+			imageProbabilities = {}
+			imageSampleMap = {}
 
 		elif evt.type == 'classifier.prediction':
 			# Get image from map and delete entry.

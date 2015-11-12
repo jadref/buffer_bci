@@ -135,7 +135,7 @@ void *_buffer_socket_func(void *arg) {
 						fprintf(stderr, "Out of memory\n");
 						break;
 					}
-					curPtr = request.buf;
+					curPtr = (char *) request.buf;
 					bytesDone = 0;
 					bytesTotal = reqdef.bufsize;
 					state = 1;
@@ -264,8 +264,10 @@ void *_buffer_server_func(void *arg) {
 		fprintf(stderr, "FieldTrip buffer server thread started with invalid argument\n");
 		return NULL;
 	}
+#ifdef SIGPIPE
 	signal(SIGPIPE, SIG_IGN); /* send can raise SIGPIPE can crash buffer, so block this signal. */	
-	
+#endif
+
 	while (SC->keepRunning) {
 		SOCKET c;
 		fd_set readSet;
