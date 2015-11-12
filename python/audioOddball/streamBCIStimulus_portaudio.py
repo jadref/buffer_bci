@@ -173,7 +173,8 @@ def runBCITrainingEpoch(nEpoch,names,data,seqDur,isi,periods,audioIDs,tgtIdx):
             # lagging behind, make a shorter audio fragement
             if ttg<0 : nbytes = max(0,int((isi+ttg)*sec2samp))*samp2byte;
             # mix the fragments to make the audio we play
-            audio = array.array(audioArray[0].typecode);
+            audio = array.array(audioArray[0].typecode)
+            audioappend = audio.append
             for i in range(nbytes): # loop over samples with max isi_samp bytes at a time
                 # stop building audio if nothing to play
                 # (so we have a chance to catch-up if we run behind the play schedule)
@@ -183,12 +184,13 @@ def runBCITrainingEpoch(nEpoch,names,data,seqDur,isi,periods,audioIDs,tgtIdx):
                     # add in the activated audio
                     datai += audioArray[fragi][cursori[fragi]]
                     # move on the playback cursor for this fragement
-                    if cursori[fragi]+1<len(audioArray[fragi]) :
-                        cursori[fragi]=cursori[fragi]+1
-                    else: # turn off this fragement and update the list of fragements to play
+                    cursori[fragi] += 1
+                    # if past end of this fragement turn off this fragement and update the
+                    # list of fragements to play
+                    if cursori[fragi]>=len(audioArray[fragi]) :
                         cursori[fragi]=-1
                         playID = filter(lambda(ai): cursori[ai]>=0, range(len(cursori)))
-                audio.append(datai) # put the combined audio into the audio stream
+                audioappend(datai) # put the combined audio into the audio stream
                 
         # play slience until we should play this sound
         ttg = (t0+st/1000.0)-time()
