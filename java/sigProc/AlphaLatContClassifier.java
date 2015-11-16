@@ -24,12 +24,13 @@ import java.io.BufferedReader;
  */
 public class AlphaLatContClassifier extends ContinuousClassifier {
 
-    private static final String TAG = ContinuousClassifier.class.getSimpleName();
+    protected static final String TAG = AlphaLatContClassifier.class.getSimpleName();
 
-    private String baselineEnd = null;
+    private String baselineEnd = "end";
 	 private String baselineEventType = "stimulus.baseLine";
     private String baselineStart = "start";
     private int nBaselineStep = 5000;
+	 protected boolean normalizeLateralization=true;
 
 	 public static void main(String[] args) throws IOException,InterruptedException {	
 		  String hostname=null;
@@ -107,38 +108,41 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
         Matrix dvBaseline = null;
         Matrix dv2Baseline = null;
         Matrix dv = null;
-        boolean endExpected = false;
-        long t0 = 0;
+        boolean endEvent = false;
+        long t0 = System.currentTimeMillis();
+		  long t=t0;
+		  long pnext=t+printInterval_ms;
 
         // Run the code
         boolean run = true;
-        while (!endExpected && run) {
+        while (!endEvent && run) {
             // Getting data from buffer
             SamplesEventsCount status = null;
             // Block until there are new events
             try {
-                System.out.println( "Waiting for " + (nSamples + trialLength_samp + 1) + " samples");
+                System.out.println( TAG+" Waiting for " + (nSamples + trialLength_samp + 1) + " samples");
                 status = C.waitForSamples(nSamples + trialLength_samp + 1, this.timeout_ms);
             } catch (IOException e) {
                 e.printStackTrace();
             }
             if (status.nSamples < header.nSamples) {
-                System.out.println( "Buffer restart detected");
+                System.out.println(TAG+ "Buffer restart detected");
                 nSamples = status.nSamples;
                 dv = null;
                 continue;
             }
 
             // Logging stuff when nothing is happening
-            if (System.currentTimeMillis() - t0 > 5000) {
-                System.out.println( String.format("%5.3f seconds, %d samples, %d events", System.currentTimeMillis() / 1000.,
-                        status.nSamples, status.nEvents));
-                t0 = System.currentTimeMillis();
+				t = System.currentTimeMillis();
+            if ( t > pnext ) {
+					 System.out.println(TAG+ String.format("%d %d %5.3f (samp,event,sec)\r",
+																  status.nSamples,status.nEvents,(t-t0)/1000.0));
+                pnext = t+printInterval_ms;
             }
 
             // Process any new data
             int onSamples = nSamples;
-            int[] startIdx = Matrix.range(onSamples, status.nSamples - trialLength_samp - 1, step_samp);
+            int[] startIdx= Matrix.range(onSamples, status.nSamples - trialLength_samp - 1, step_samp);
             if (startIdx.length > 0) nSamples = startIdx[startIdx.length - 1] + step_samp;
 
             for (int fromId : startIdx) {
@@ -150,8 +154,9 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                System.out.println( String.format("Got data @ %d->%d samples", fromId, toId));
-
+					 if ( VERB>0 ) {
+						  System.out.println(TAG+ String.format("Got data @ %d->%d samples", fromId, toId));
+					 }
                 // Apply all classifiers and add results
                 Matrix f = new Matrix(classifiers.get(0).getOutputSize(), 1);
                 Matrix fraw = new Matrix(classifiers.get(0).getOutputSize(), 1);
@@ -162,19 +167,24 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
                     fraw = new Matrix(fraw.add(result.fraw));
                 }
 
-                // Postprocessing of alpha lat score
+                // convert from channel powers to lateralization score
                 double[] dvColumn = f.getColumn(0);
                 f = new Matrix(dvColumn.length - 1, 1);
                 f.setColumn(0, Arrays.copyOfRange(dvColumn, 1, dvColumn.length));
-                if (normalizeLatitude) f.setEntry(0, 0, (dvColumn[0] - dvColumn[1]) / (dvColumn[0] + dvColumn[1]));
-                else f.setEntry(0, 0, dvColumn[0] - dvColumn[1]);
-
+                if (normalizeLateralization){ // compute alphaLat score
+						  f.setEntry(0, 0, (dvColumn[0] - dvColumn[1]) / (dvColumn[0] + dvColumn[1]));
+					 } else {
+						  f.setEntry(0, 0, dvColumn[0] - dvColumn[1]);
+					 }
 
                 // Smooth the classifiers
-                if (dv == null || predictionFilter < 0) dv = f;
-                else {
-                    if (predictionFilter >= 0.) {
-                        dv = new Matrix(dv.scalarMultiply(1. - predictionFilter).add(f.scalarMultiply(predictionFilter)));
+                if (dv == null || predictionFilter < 0) {
+						  dv = f;
+                } else {
+                    if (predictionFilter >= 0.) {// exponiential smoothing of predictions
+								// dv = (1-alpha)*dv + alpha*f
+                        dv = new Matrix(dv.scalarMultiply(1. - predictionFilter)
+													 .add(f.scalarMultiply(predictionFilter)));
                     }
                 }
 
@@ -192,7 +202,7 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
                     }
                 }
 
-                // Compare to baseline
+                // Normalize to z-score w.r.t. the base-line values
                 dv = new Matrix(dv.subtract(baseLineVal)).divideElements(baseLineVar);
 
                 // Send prediction event
@@ -216,23 +226,27 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
                 for (BufferEvent event : events) {
                     String type = event.getType().toString();
                     String value = event.getValue().toString();
-                    System.out.println( "GET EVENT (" + event.sample + "): " + type + ", value: " + value);
+                    System.out.println( "got(" + event + ")");
                     if (type.equals(endType) && value.equals(endValue)) {
-                        System.out.println( "End expected");
-                        endExpected = true;
-                    } else if (type.equals(baselineEventType) && value.equals(baselineEnd)) {
-                        System.out.println( "Baseline end event received");
-                        baselinePhase = false;
-                        Tuple<Matrix, Matrix> ret = baselineValues(dvBaseline, dv2Baseline, nBaseline);
-                        baseLineVal = ret.x;
-                        baseLineVar = ret.y;
-                    } else if (type.equals(baselineEventType) && value.equals(baselineStart)) {
-                        System.out.println( "Baseline start event received");
-                        baselinePhase = true;
-                        nBaseline = 0;
-                        dvBaseline = Matrix.zeros(classifiers.get(0).getOutputSize() - 1, 1);
-                        dv2Baseline = Matrix.ones(classifiers.get(0).getOutputSize() - 1, 1);
-                    }
+                        System.out.println( "End Event. Exiting!");
+                        endEvent = true;
+                    } else if (type.equals(baselineEventType) ){
+								if ( value.equals(baselineEnd)) {
+									 System.out.println( "Baseline end event received");
+									 if ( baselinePhase ){
+										  baselinePhase = false;
+										  Tuple<Matrix, Matrix> ret=baselineValues(dvBaseline,dv2Baseline,nBaseline);
+										  baseLineVal = ret.x;
+										  baseLineVar = ret.y;
+									 }
+								} else if ( value.equals(baselineStart) ) {
+									 System.out.println( "Baseline start event received");
+									 baselinePhase = true;
+									 nBaseline = 0;
+									 dvBaseline = Matrix.zeros(classifiers.get(0).getOutputSize() - 1, 1);
+									 dv2Baseline = Matrix.ones(classifiers.get(0).getOutputSize() - 1, 1);
+								}
+						  }
 
                 }
                 nEvents = status.nEvents;

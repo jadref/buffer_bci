@@ -26,6 +26,7 @@ public class ContinuousClassifier {
 
     protected static final String TAG = ContinuousClassifier.class.getSimpleName();
 	 public static final int VERB = 1; // debugging verbosity level
+	 public long printInterval_ms=5000; // time between debug prints
 
     protected String hostname ="localhost";
     protected int port = 1972;
@@ -230,7 +231,7 @@ public class ContinuousClassifier {
 								System.out.println("ERSP size");
 								trialLength_samp = Math.max(trialLength_samp,c.welchWindow.length);
 						  } else {
-								System.err.println("ERROR: Unrecognized classifier type");
+								System.err.println(TAG+"ERROR: Unrecognized classifier type");
 						  }
 					 }
 				}
@@ -252,32 +253,37 @@ public class ContinuousClassifier {
         // Initialize initial variables. These are used later on to store the data.
 		  int nOut=classifiers.get(0).getOutputSize()-1; nOut=nOut>0?nOut:1;
         Matrix dv = null;
-        boolean endExpected = false;
-        long t0 = 0;
+        boolean endEvent = false;
+        long t0 = System.currentTimeMillis();
+		  long t=t0;
+		  long pnext=t+printInterval_ms;
 
         // Run the code
-        while (!endExpected && run) {//The run switch allows control of stopping the thread and getting out of the loop
+        while (!endEvent && run) {//The run switch allows control of stopping the thread and getting out of the loop
             // Getting data from buffer
             SamplesEventsCount status = null;
             // Block until there are new events
             try {
-                System.out.println( "Waiting for " + (nSamples + trialLength_samp + 1) + " samples");
+					 if ( VERB>0 ) {
+						  System.out.println(TAG+ " Waiting for " + (nSamples + trialLength_samp + 1) + " samples");
+					 }
                 status = C.waitForSamples(nSamples + trialLength_samp + 1, this.timeout_ms);
             } catch (IOException e) {
                 e.printStackTrace();
             }
             if (status.nSamples < header.nSamples) {
-                System.out.println( "Buffer restart detected");
+                System.out.println(TAG+  " Buffer restart detected");
                 nSamples = status.nSamples;
                 dv = null;
                 continue;
             }
 
             // Logging stuff when nothing is happening
-            if (System.currentTimeMillis() - t0 > 5000) {
-                System.out.println( String.format("%5.3f seconds, %d samples, %d events", System.currentTimeMillis() / 1000.,
-                        status.nSamples, status.nEvents));
-                t0 = System.currentTimeMillis();
+				t = System.currentTimeMillis();
+            if ( t > pnext ) {
+					 System.out.println( TAG+ String.format("%d %d %5.3f (samp,event,sec)\r",
+																		 status.nSamples,status.nEvents,(t-t0)/1000.0));
+                pnext = t+printInterval_ms;
             }
 
             // Process any new data
@@ -294,7 +300,9 @@ public class ContinuousClassifier {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                System.out.println( String.format("Got data @ %d->%d samples", fromId, toId));
+					 if ( VERB>0 ) {
+						  System.out.println(TAG+ String.format("Got data @ %d->%d samples", fromId, toId));
+					 }
 
                 // Apply all classifiers and add results
                 Matrix f = new Matrix(classifiers.get(0).getOutputSize(), 1);
@@ -311,7 +319,9 @@ public class ContinuousClassifier {
 						  dv = f;
                 } else {
                     if (predictionFilter >= 0.) { // exponiential smoothing of predictions
-                        dv = new Matrix(dv.scalarMultiply(1. - predictionFilter).add(f.scalarMultiply(predictionFilter)));
+								// dv = (1-alpha)*dv + alpha*f
+                        dv = new Matrix(dv.scalarMultiply(1. - predictionFilter)
+													 .add(f.scalarMultiply(predictionFilter)));
                     }
                 }
 
@@ -336,10 +346,10 @@ public class ContinuousClassifier {
                 for (BufferEvent event : events) {
                     String type = event.getType().toString();
                     String value = event.getValue().toString();
-                    System.out.println("got(t:" + type + " v:" + value + " s:" + event.sample +")");
+                    System.out.println(TAG+"got(" + event + ")");
                     if (type.equals(endType) && value.equals(endValue)) {
-                        System.out.println( "End expected");
-                        endExpected = true;
+                        System.out.println(TAG+ "Got end event. Exiting!");
+                        endEvent = true;
                     } 
                 }
                 nEvents = status.nEvents;

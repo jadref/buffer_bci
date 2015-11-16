@@ -42,6 +42,16 @@
             <attribute name="Main-Class" value="${ant.project.name}.signalprocessing.ContinuousClassifier"/>
           </manifest>
         </jar>
+
+        <jar destfile="${jar.dir}/AlphaLatContClassifier.jar">
+			 <fileset dir="${classes.dir}" includes="**/*.class" excludes="**/FilePlayback.class,**/SignalProxy.class"/>
+			 <fileset dir="${src.dir}" includes="**/*.java"/>
+			 <fileset dir="${lib.dir}" includes="**/*.jar"/>
+          <manifest>
+            <attribute name="Main-Class" value="${ant.project.name}.signalprocessing.AlphaLatContClassifier"/>
+          </manifest>
+        </jar>
+
         <jar destfile="${jar.dir}/FilePlayback.jar">
 			 <fileset dir="${classes.dir}" includes="**/FilePlayback.class"/>
 			 <fileset dir="${src.dir}" includes="FilePlayback.java"/>
@@ -50,6 +60,7 @@
             <attribute name="Main-Class" value="${ant.project.name}.FilePlayback"/>
           </manifest>
         </jar>
+
         <jar destfile="${jar.dir}/SignalProxy.jar">
 			 <fileset dir="${classes.dir}" includes="**/SignalProxy.class"/>
 			 <fileset dir="${src.dir}" includes="SignalProxy.java"/>

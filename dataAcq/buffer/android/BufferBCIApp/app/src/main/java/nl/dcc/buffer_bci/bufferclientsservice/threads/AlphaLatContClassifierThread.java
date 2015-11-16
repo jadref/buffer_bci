@@ -10,16 +10,12 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import nl.dcc.buffer_bci.bufferclientsservice.base.Argument;
-import nl.dcc.buffer_bci.signalprocessing.ContinuousClassifier;
+import nl.dcc.buffer_bci.signalprocessing.AlphaLatContClassifier;
 import nl.dcc.buffer_bci.bufferclientsservice.base.ThreadBase;
 
-/**
- * Created by Pieter on 23-2-2015.
- * Continuous classifying of data from the buffer and sending events back
- */
-public class ContinuousClassifierThread extends ThreadBase {
+public class AlphaLatContClassifierThread extends ThreadBase {
 
-    private static final String TAG = ContinuousClassifier.class.getSimpleName();
+    private static final String TAG = AlphaLatContClassifier.class.getSimpleName();
 
     protected String hostname ="localhost";
     protected int port = 1972;
@@ -62,7 +58,7 @@ public class ContinuousClassifierThread extends ThreadBase {
 
     @Override
     public String getName() {
-        return "ContinuousClassifier";
+        return TAG;
     }
 
     @Override
@@ -73,16 +69,11 @@ public class ContinuousClassifierThread extends ThreadBase {
             Log.e(TAG, "Aborting!" + clsfrFile);
 				return;
 		  }
-        clsfr = new ContinuousClassifier(hostname,port,timeout_ms);
-        clsfr.initialize(clsfrReader,trialLength_ms,step_ms);
+        clsfr = new AlphaLatContClassifier(hostname,port,timeout_ms);
+		  clsfr.initialize(clsfrReader,trialLength_ms,step_ms);				
         clsfr.mainloop();
         clsfr=null;
     }
-
-
-
-    @Override public void stop() { if ( clsfr != null ) clsfr.stop(); }
-    @Override public boolean isrunning(){ if ( clsfr!=null ) return clsfr.isrunning(); return false; }
 
 	 public InputStream openClsfrFile(clsfrFile){
         InputStream clsfrReader=null;
@@ -104,6 +95,10 @@ public class ContinuousClassifierThread extends ThreadBase {
         }
 		  return clsfrReader;
 	 }
+
+
+    @Override public void stop() { if ( clsfr != null ) clsfr.stop(); }
+    @Override public boolean isrunning(){ if ( clsfr!=null ) return clsfr.isrunning(); return false; }
 
     /* Checks if external storage is available for read and write */
     public boolean isExternalStorageWritable() {
