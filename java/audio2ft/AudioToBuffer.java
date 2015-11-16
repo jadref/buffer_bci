@@ -7,18 +7,44 @@
  * Simple demo of how to stream audio signals to a Fieldtrip buffer 
  *
  */
+package nl.dcc.buffer_bci;
 import java.io.*;
-import nl.fcdonders.fieldtrip.*;
+import nl.fcdonders.fieldtrip.bufferclient.*;
 import javax.sound.sampled.*;
 
-class AudioToBuffer {
+public class AudioToBuffer {
 	BufferClient ftClient;
 	TargetDataLine lineIn;
+	 String hostport="localhost:1972";
+	float fSample=44100.0f;
+	 int blockSize=-1; // neg size means compute default for 50Hz buffer packet rate
+	 int nByte  =0;
+	 int nSample=0;
+	 int nBlk   =0;
+	boolean run=true;
 
 	public AudioToBuffer() {
 		ftClient = new BufferClient();
 	}
-	
+	public AudioToBuffer(float fSample){
+		 if ( fSample>0 ) this.fSample=fSample;
+		 if ( blockSize<0 ) blockSize=(int)(this.fSample/50.0);
+		ftClient = new BufferClient();		  
+	}
+	 public AudioToBuffer(String hostport,float fSample){
+		  this.hostport=hostport;
+		 if ( fSample>0 ) this.fSample=fSample;
+		 if ( blockSize<0 ) blockSize=(int)(this.fSample/50.0);
+		ftClient = new BufferClient();		  
+	}
+	 public AudioToBuffer(String hostport,float fSample, int blockSize){
+		  this.hostport=hostport;
+		 if ( fSample>0 ) this.fSample=fSample;
+		 if ( blockSize>0 ) this.blockSize=blockSize;
+		 if ( this.blockSize<0 ) this.blockSize=(int)(this.fSample/50.0);
+		ftClient = new BufferClient();		  
+	}
+
 	public void disconnect() {
 		try {
 			ftClient.disconnect();
@@ -53,68 +79,119 @@ class AudioToBuffer {
 	}
 	
 	public boolean start() {
-		AudioFormat fmt = new AudioFormat(44100.0f, 16, 2, true, false);
+		AudioFormat fmt = new AudioFormat(fSample, 16, 2, true, false);
 		try {
 			lineIn = AudioSystem.getTargetDataLine(fmt);
 			lineIn.open(fmt);
 			lineIn.start();
 		}
 		catch (LineUnavailableException e) {
+			System.out.println("Open Audio failed");
 			System.out.println(e);
 			return false;
 		}
-		Header hdr = new Header(2, 44100.0f, DataType.INT16);
+		Header hdr = new Header(2, fSample, DataType.INT16);
 		try {
 			ftClient.putHeader(hdr);
 		}
 		catch (IOException e) {
+			 System.out.println("PutHeader failed");
+			 System.out.println(e);
 			return false;
 		}
 		return true;
 	}
-	
-	
-	public void tick() {
-		int na = lineIn.available();
-		if (na==0) {
-			try {
-				Thread.sleep(10);
-			}
-			catch (InterruptedException e) {}
-			return;
-		}
-		byte[] buf = new byte[na*4];
-		lineIn.read(buf, 0, na*4);
-		try {
-			ftClient.putRawData(na, 2, DataType.INT16, buf);
-		}
-		catch (IOException e) {
-			System.out.println(e);
-		}
-		System.out.println("Wrote "+na+" samples.");
-	}
-	
-	
+		
 	public void stop() {
+		System.out.println("Closing...");
+		run=false;
 		lineIn.stop();
 	}
 
 	public static void main(String[] args) {
-		AudioToBuffer a2b = new AudioToBuffer();
-		if (args.length > 0) {
-			if (a2b.connect(args[0])==false) return;
-		} else {
-			System.out.println("Usage:   java AudioToBuffer hostname:port");
+		String hostport="localhost:1972";
+		if (args.length > 0 && "--help".equals(args[0])) {
+			System.out.println("Usage:   java AudioToBuffer hostname:port fSample");
 			return;
 		}
-		a2b.listDevices();
-		System.out.println("Trying to open default AUDIO IN device...\n");
-		if (!a2b.start()) return;
+		if ( args.length>0 ) {
+			 hostport=args[0];
+		}
+		System.out.println("HostPort="+hostport);
+		float fSample=-1;
+		if ( args.length>=2 ) {
+			try {
+				fSample = Float.parseFloat(args[1]);
+			}
+			catch (NumberFormatException e) {
+			}			 
+		}
+		System.out.println("fSample ="+fSample);
+		int blockSize=-1;
+		if ( args.length>=3 ) {
+			try {
+				blockSize = Integer.parseInt(args[2]);
+			}
+			catch (NumberFormatException e) {
+			}			 
+		}
+		System.out.println("Blocksize ="+blockSize);
+		
+		AudioToBuffer a2b = new AudioToBuffer(hostport,fSample,blockSize);
+		a2b.mainloop();
+		a2b.stop();
+	}
+
+	 public void mainloop(){
+		  System.out.println("fSample="+fSample+" blockSize="+blockSize);
+		run = true;
+		if (connect(hostport)==false) return;
+		listDevices();
+		System.out.print("Trying to open default AUDIO IN device...");
+		if (!start()) return;
+		System.out.println("success..");
 		
 		System.out.println("Now streaming audio. Press q and <enter> to quit.\n");
-		while (true) {
-			a2b.tick();
-			try {
+		nByte   = 0;
+		nSample = 0;
+		nBlk    = 0;
+		long t0 = System.currentTimeMillis();
+		long printTime = 0;
+		long t  = t0;
+		while (run) {
+			 // read in the data from the audio
+			 int na = lineIn.available();// number samples available to read
+			 if ( na>0 ){
+				  byte[] buf = new byte[na*4];
+				  lineIn.read(buf, 0, na*4);
+				  // Send to the buffer
+				  try {
+						ftClient.putRawData(na, 2, DataType.INT16, buf);
+				  }
+				  catch (IOException e) {
+						System.out.println(e);
+				  }
+				  
+				  // Track how much we have sent
+				  nSample = nSample + na;
+				  nBlk    = nBlk+1;
+			 } else {
+				  // Sleep a block of samples should be ready
+				  try { 
+						Thread.sleep((long)(blockSize*1000.0/fSample));
+				  } catch (InterruptedException e){
+						System.out.println(e);
+				  }				  
+			 }
+
+			 t        = System.currentTimeMillis() - t0; // current time since start
+			 if (t >= printTime) {
+				  System.out.print(nBlk + " " + nSample + " 0 " + (t/1000) + " (blk,samp,event,sec)\r");
+				  printTime = t + 5000; // 5s between prints
+			 }				
+
+			 // Check for key-presses
+			 try {
 				if (System.in.available() > 0) {
 					int key = System.in.read();
 					if (key == 'q') break;
@@ -122,7 +199,5 @@ class AudioToBuffer {
 			}
 			catch (java.io.IOException e) {}
 		}
-		System.out.println("Closing...");
-		a2b.stop();
-	}
+	 }
 }
