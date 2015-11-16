@@ -166,9 +166,13 @@ while( true )
   if ( opts.keyboardEvents || opts.key2signal )
     if ( ~ishandle(fig) ) break; end;
     ev=get(fig,'userdata');
-    if ( ~isempty(ev) && isfield(ev,'Character') )
-		h=char(ev.Character); 
-		if ( any(strcmp('shift',ev.Modifier)) ) h=upper(ev.Character); end;
+    try; 
+      h=char(ev.Character); 
+	  if ( any(strcmp('shift',ev.Modifier)) ) h=upper(h); end;
+    catch; 
+      h=[];
+    end;
+    if ( ~isempty(h) )
       fprintf('\nkey=%s\n',h);
       if ( opts.keyboardEvents ) 
         keyevt.value=h; 
@@ -180,7 +184,7 @@ while( true )
        case 'E'; erpSamp(1)=nsamp;
        case 'T'; erpSamp(2)=nsamp;
        case 'G'; erpSamp(3)=nsamp;
-		 case 'N'; erpSamp(4)=nsamp;
+	   case 'N'; erpSamp(4)=nsamp;
        otherwise
         if ( opts.key2signal ) 
 			  if ( single(h)>=single('0') && single(h)<=single('9') ) % number key = noise strength
