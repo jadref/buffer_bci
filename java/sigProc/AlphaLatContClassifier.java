@@ -26,8 +26,8 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 
     protected static final String TAG = AlphaLatContClassifier.class.getSimpleName();
 
-    private String baselineEnd = "end";
 	 private String baselineEventType = "stimulus.baseLine";
+    private String baselineEnd = "end";
     private String baselineStart = "start";
     private int nBaselineStep = 5000;
 	 protected boolean normalizeLateralization=true;
@@ -182,6 +182,7 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
                     f = new Matrix(f.add(result.f));
                     fraw = new Matrix(fraw.add(result.fraw));
                 }
+					 if ( VERB>1 ) System.out.println(TAG+ " pred="+f);					 
 
                 // convert from channel powers to lateralization score
 					 if ( f.getRowDimension() > 1 ) {

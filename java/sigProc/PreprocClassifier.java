@@ -22,7 +22,7 @@ import java.io.IOException;
 public class PreprocClassifier {
 
     public static String TAG = PreprocClassifier.class.getSimpleName();
-	 public static final int VERB = 0; // debugging verbosity level
+	 public static int VERB = 0; // debugging verbosity level
 
 	 public final String type;
     public final double samplingFrequency;

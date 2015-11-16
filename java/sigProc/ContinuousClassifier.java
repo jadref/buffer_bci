@@ -25,7 +25,7 @@ import java.io.BufferedReader;
 public class ContinuousClassifier {
 
     protected static final String TAG = ContinuousClassifier.class.getSimpleName();
-	 public static final int VERB = 1; // debugging verbosity level
+	 public static int VERB = 0; // debugging verbosity level
 	 public long printInterval_ms=5000; // time between debug prints
 
     protected String hostname ="localhost";
@@ -181,7 +181,7 @@ public class ContinuousClassifier {
 	 }
 
 	 public void initialize(InputStream is, int trialLength_ms, int step_ms) {
-		  if ( VERB>0 ) System.out.println(TAG+"trlen="+trialLength_ms+" step="+step_ms);
+		  if ( VERB>0 ) System.out.println(TAG+"trlen_ms="+trialLength_ms+" step_ms="+step_ms);
 		  BufferedReader br = new BufferedReader(new InputStreamReader(is));
         classifiers = createClassifiers(br);
 		  // convert the classifier to the right type
@@ -316,6 +316,7 @@ public class ContinuousClassifier {
                     f      = new Matrix(f.add(result.f));    // accumulate predictions over classifiers
                     fraw   = new Matrix(fraw.add(result.fraw));
                 }
+					 if ( VERB>1 ) System.out.println(TAG+ " pred="+f);
 
                 // Smooth the classifiers
                 if (dv == null ) {
