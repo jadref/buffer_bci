@@ -6,6 +6,7 @@ public abstract class ThreadList {
 		  FilePlaybackThread.class,
 		  Toaster.class,
 		  ContinuousClassifierThread.class,
+		  AlphaLatContClassifierThread.class,
 		  MuseConnection.class,
     };
 }
