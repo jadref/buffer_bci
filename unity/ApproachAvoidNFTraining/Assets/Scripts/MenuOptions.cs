@@ -124,13 +124,13 @@ public class MenuOptions : MonoBehaviour {
 
 	public void LoadRestBaseline()
 	{
-		FTSInterface.sendEvent ("stimulus.startbaseline", "start");
+		FTSInterface.sendEvent ("stimulus.baseline", "start");
 		HideAllBut (restStage);
 	}
 
 	public void EndRestBaseline()
 	{
-		FTSInterface.sendEvent ("stimulus.startbaseline", "end");
+		FTSInterface.sendEvent ("stimulus.baseline", "end");
 		LoadRest ();
 	}
 

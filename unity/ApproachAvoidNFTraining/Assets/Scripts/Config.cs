@@ -23,4 +23,10 @@ public class Config : MonoBehaviour {
 
 	public static bool evaluation = true; 		//true
 
+	public static string baselineEventType = "stimulus.baseline";
+	public static string restEventType     = "stimulus.rest";
+	public static string approachEventType = "stimulus.approach";
+	public static string avoidEventType    = "stimulus.avoid";
+	public static string feedbackEventType = "classifier.prediction";
+
 }

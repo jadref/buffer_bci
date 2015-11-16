@@ -18,8 +18,10 @@ public class UnityBuffer : MonoBehaviour {
 	public int nChans;
 	public float fSample;
 	public bool newDataIn;
+	public bool storeData=false; // Flag if we store new data in our internal buffer?
 	public int dataPacketsLost;
 	public int bufferEventsMaxCapacity = 100;
+	public int MAXDATASAMPLES=100000;
 	public bool bufferIsConnected;
 	
 	private Header hdr;
@@ -35,10 +37,10 @@ public class UnityBuffer : MonoBehaviour {
 	
 	
 	//An event that notifies when new data have been captured in the buffer
-	public event BufferChangeEventHandler NewDataCaptured;
+	public event BufferChangeEventHandler NewDataCaptured=null;
 	
 	//An event that notifies when new events have been put in the buffer
-	public event BufferChangeEventHandler NewEventsAdded;
+	public event BufferChangeEventHandler NewEventsAdded=null;
 	
 	protected virtual void OnNewDataCaptured(EventArgs e){
 		if(NewDataCaptured!=null){
@@ -81,7 +83,7 @@ public class UnityBuffer : MonoBehaviour {
 			nSamples = hdr.nSamples;
 			nChans = hdr.nChans;
 			fSample = hdr.fSample;
-			initializeData();
+			if ( storeData ) { initializeData(); }
 			bufferIsConnected = true;
 			bufferTimer = new BufferTimer(fSample);
 			Debug.Log("Connection to "+hostname+":"+port+" succeeded");
@@ -94,41 +96,44 @@ public class UnityBuffer : MonoBehaviour {
 	
 	private void initializeData(){
 		int dataType = hdr.dataType;
+		int dataSamples = nSamples;
+		if (dataSamples > MAXDATASAMPLES)
+			dataSamples = MAXDATASAMPLES;
 		switch(dataType){
 			case DataType.CHAR:
-				data = new char[nSamples, nChans];
+				data = new char[dataSamples, nChans];
 			break;
 					
 			case DataType.INT8:
 				goto case DataType.UINT8;
 			case DataType.UINT8:
-				data = new byte[nSamples, nChans];
+				data = new byte[dataSamples, nChans];
 			break;
 					
 			case DataType.INT16:
 				goto case DataType.UINT16;
 			case DataType.UINT16:
-				data = new short[nSamples, nChans];
+				data = new short[dataSamples, nChans];
 			break;
 					
 			case DataType.INT32:
 			 goto case DataType.UINT32;
 			case DataType.UINT32:
-				data = new int[nSamples, nChans];
+				data = new int[dataSamples, nChans];
 			break;
 					
 			case DataType.INT64:
 				goto case DataType.UINT64;
 			case DataType.UINT64:
-				data = new long[nSamples, nChans];
+				data = new long[dataSamples, nChans];
 			break;
 					
 			case DataType.FLOAT32:
-				data = new float[nSamples, nChans];
+				data = new float[dataSamples, nChans];
 			break;
 					
 			case DataType.FLOAT64:
-				data = new double[nSamples, nChans];
+				data = new double[dataSamples, nChans];
 			break;
 					
 			default:
@@ -159,7 +164,7 @@ public class UnityBuffer : MonoBehaviour {
 			while(lastNumberOfEvents < latestNumebrOfEventsInBuffer){
 				bufferEvents.Add(bufferClient.getEvents(lastNumberOfEvents, lastNumberOfEvents)[0]);
 				lastNumberOfEvents +=1;
-				if(bufferEvents.Count > bufferEventsMaxCapacity){
+				if(bufferEvents.Count > bufferEventsMaxCapacity){// Implement a ring-buffer for the events we store...
 					bufferEvents.RemoveAt(0);
 				}
 				OnNewEventsAdded(EventArgs.Empty);//This notifies anyone who's listening that there had been an extra event added in the buffer
@@ -167,13 +172,17 @@ public class UnityBuffer : MonoBehaviour {
 			
 			if(latestBufferSample>latestCapturedSample){
 				nSamples = latestBufferSample - latestCapturedSample;
-				data = bufferClient.getFloatData(latestCapturedSample,latestBufferSample-1); //TO DO: The getFloat needs to change according to the buffers type of data
+				if ( storeData ) { // if we should track and store the data
+					data = bufferClient.getFloatData(latestCapturedSample,latestBufferSample-1); //TO DO: The getFloat needs to change according to the buffers type of data
+					OnNewDataCaptured(EventArgs.Empty); //That notifies anyone who's listening that data have been updated in the buffer
+					if(newDataIn){
+						dataPacketsLost+=1;
+					}else{
+						newDataIn = true;
+					}
+				}
 				bufferTimer.addSampleToRegression(latestBufferSample);//Updates the bufferTimer with the new samples.
 				latestCapturedSample = latestBufferSample;
-				OnNewDataCaptured(EventArgs.Empty); //That notifies anyone who's listening that data have been updated in the buffer
-				if(newDataIn)
-					dataPacketsLost+=1;
-				else newDataIn = true;
 			}
 		}
 	}

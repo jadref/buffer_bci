@@ -267,16 +267,16 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 
 	// Buffer
-
+	// TODO: This is a horrilble combination of service management and buffer/event tracking... should separate into different pieces.
 	private void eventsAdded(UnityBuffer _buffer, EventArgs e){
 		previousEvent = latestEvent;
 		latestEvent = _buffer.getLatestEvent();
-		if(bufferIsOn && latestEvent.getType().toString()=="alphaLat")
+		if(bufferIsOn && latestEvent.getType().toString()==Config.feedbackEventType)
 		{
 			clientIsConnected = true;
 			IList alphaLatObjects = latestEvent.getValue().array as IList;
 			currentAlphaLat = alphaLatObjects.Cast<double>().ToArray();
-			Debug.Log (currentAlphaLat[0].ToString()+" "+currentAlphaLat[1].ToString()+" "+currentAlphaLat[2].ToString()+" "+currentAlphaLat[3].ToString());
+			Debug.Log (alphaLatObjects);
 		}
 	}
 
@@ -284,7 +284,8 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 		buffer = gameObject.AddComponent<UnityBuffer>();
 		buffer.initializeBuffer();
 		if(buffer!=null && buffer.bufferIsConnected){
-			buffer.NewEventsAdded += new BufferChangeEventHandler(eventsAdded);//Attach the buffer's event handler to the eventsAdded function
+			//Attach the buffer's event handler to the eventsAdded function
+			buffer.NewEventsAdded += new BufferChangeEventHandler(eventsAdded);
 			bufferIsOn = true;
 		}else{
 			Debug.Log ("Failed to initialize Unity Buffer Client");
