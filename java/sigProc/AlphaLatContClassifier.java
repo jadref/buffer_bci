@@ -41,31 +41,16 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 
 		if (args.length>=1) {
 			hostname = args[0];
+			int sep = hostname.indexOf(':');
+			if ( sep>0 ) {
+				 port=Integer.parseInt(hostname.substring(sep+1,hostname.length()));
+				 hostname=hostname.substring(0,sep);
+			}			
 		}
-		if (args.length>=2) {
-			try {
-				port = Integer.parseInt(args[1]);
-			}
-			catch (NumberFormatException e) {
-				port = 0;
-			}
-			if (port <= 0) {
-				System.out.println("Second parameter ("+args[1]+") is not a valid port number.");
-				System.exit(1);
-			}
-		}
-		if (args.length>=3) {
-			try {
-				timeout = Integer.parseInt(args[2]);
-			}
-			catch (NumberFormatException e) {
-				 System.out.println("Couldnt understand your timeout spec....");
-				timeout = 5000;
-			}
-		}
+		System.out.println("Host: "+hostname+":"+port);
 		// Open the file from which to read the classifier parameters
-		if (args.length>=4) {
-			 String clsfrFile = args[3];
+		if (args.length>=2) {
+			 String clsfrFile = args[1];
 			 System.out.println("Clsfr file = " + clsfrFile);
 			 try { 
 				  clsfrStream = new FileInputStream(new File(clsfrFile));
@@ -80,11 +65,41 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 			 System.out.println(usage);
 			 System.exit(-1);
 		}
+
+		int trialLength_ms = -1;
+		if (args.length>=3) {
+			try {
+				 trialLength_ms = Integer.parseInt(args[2]);
+			}
+			catch (NumberFormatException e) {
+				 System.err.println("Couldnt understand your triallength spec.... using 1000ms");
+			}			 
+		}
+		System.out.println("trialLen: " + trialLength_ms);
+		int step_ms = -1;
+		if (args.length>=4) {
+			try {
+				 step_ms = Integer.parseInt(args[3]);
+			}
+			catch (NumberFormatException e) {
+				 System.err.println("Couldnt understand your step spec....");
+			}			 
+		}
+		System.out.println("step_ms: " + step_ms);
+		if (args.length>=4) {
+			try {
+				timeout = Integer.parseInt(args[3]);
+			}
+			catch (NumberFormatException e) {
+				 System.out.println("Couldnt understand your timeout spec....");
+				timeout = 5000;
+			}
+		}
 		
 		// make the cont classifier object
 		ContinuousClassifier cc=new AlphaLatContClassifier(hostname,port,timeout);
 		// load classifiers, make connection to buffer
-		cc.initialize(clsfrStream);
+		cc.initialize(clsfrStream,trialLength_ms,step_ms);
 		// run the classifier
 		cc.mainloop();
 	 }
@@ -120,7 +135,8 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
             SamplesEventsCount status = null;
             // Block until there are new events
             try {
-                System.out.println( TAG+" Waiting for " + (nSamples + trialLength_samp + 1) + " samples");
+					 if ( VERB>1 )
+						  System.out.println( TAG+" Waiting for " + (nSamples + trialLength_samp + 1) + " samples");
                 status = C.waitForSamples(nSamples + trialLength_samp + 1, this.timeout_ms);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -135,8 +151,8 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
             // Logging stuff when nothing is happening
 				t = System.currentTimeMillis();
             if ( t > pnext ) {
-					 System.out.println(TAG+ String.format("%d %d %5.3f (samp,event,sec)\r",
-																  status.nSamples,status.nEvents,(t-t0)/1000.0));
+					 System.out.println(String.format("%d %d %5.3f (samp,event,sec)\r",
+																 status.nSamples,status.nEvents,(t-t0)/1000.0));
                 pnext = t+printInterval_ms;
             }
 
@@ -154,7 +170,7 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-					 if ( VERB>0 ) {
+					 if ( VERB>1 ) {
 						  System.out.println(TAG+ String.format("Got data @ %d->%d samples", fromId, toId));
 					 }
                 // Apply all classifiers and add results
@@ -168,13 +184,15 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
                 }
 
                 // convert from channel powers to lateralization score
-                double[] dvColumn = f.getColumn(0);
-                f = new Matrix(dvColumn.length - 1, 1);
-                f.setColumn(0, Arrays.copyOfRange(dvColumn, 1, dvColumn.length));
-                if (normalizeLateralization){ // compute alphaLat score
-						  f.setEntry(0, 0, (dvColumn[0] - dvColumn[1]) / (dvColumn[0] + dvColumn[1]));
-					 } else {
-						  f.setEntry(0, 0, dvColumn[0] - dvColumn[1]);
+					 if ( f.getRowDimension() > 1 ) {
+						  double[] dvColumn = f.getColumn(0);
+						  f = new Matrix(dvColumn.length - 1, 1);
+						  f.setColumn(0, Arrays.copyOfRange(dvColumn, 1, dvColumn.length));
+						  if (normalizeLateralization){ // compute alphaLat score
+								f.setEntry(0, 0, (dvColumn[0] - dvColumn[1]) / (dvColumn[0] + dvColumn[1]));
+						  } else {
+								f.setEntry(0, 0, dvColumn[0] - dvColumn[1]);
+						  }
 					 }
 
                 // Smooth the classifiers
@@ -194,7 +212,7 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
                     dvBaseline = new Matrix(dvBaseline.add(dv));
                     dv2Baseline = new Matrix(dv2Baseline.add(dv.multiplyElements(dv)));
                     if (nBaselineStep > 0 && nBaseline > nBaselineStep) {
-                        System.out.println( "Baseline timeout\n");
+                        if(VERB>1) System.out.println( "Baseline timeout\n");
                         baselinePhase = false;
                         Tuple<Matrix, Matrix> ret = baselineValues(dvBaseline, dv2Baseline, nBaseline);
                         baseLineVal = ret.x;
@@ -226,13 +244,13 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
                 for (BufferEvent event : events) {
                     String type = event.getType().toString();
                     String value = event.getValue().toString();
-                    System.out.println( "got(" + event + ")");
+                    if(VERB>1) System.out.println(TAG+ "got(" + event + ")");
                     if (type.equals(endType) && value.equals(endValue)) {
-                        System.out.println( "End Event. Exiting!");
+                        if(VERB>1) System.out.println(TAG+ "End Event. Exiting!");
                         endEvent = true;
                     } else if (type.equals(baselineEventType) ){
 								if ( value.equals(baselineEnd)) {
-									 System.out.println( "Baseline end event received");
+									 if(VERB>1) System.out.println(TAG+ "Baseline end event received");
 									 if ( baselinePhase ){
 										  baselinePhase = false;
 										  Tuple<Matrix, Matrix> ret=baselineValues(dvBaseline,dv2Baseline,nBaseline);
@@ -240,7 +258,7 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 										  baseLineVar = ret.y;
 									 }
 								} else if ( value.equals(baselineStart) ) {
-									 System.out.println( "Baseline start event received");
+									 if(VERB>1)System.out.println(TAG+ "Baseline start event received");
 									 baselinePhase = true;
 									 nBaseline = 0;
 									 dvBaseline = Matrix.zeros(classifiers.get(0).getOutputSize() - 1, 1);

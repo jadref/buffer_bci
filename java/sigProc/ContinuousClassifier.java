@@ -65,6 +65,7 @@ public class ContinuousClassifier {
 				 hostname=hostname.substring(0,sep);
 			}			
 		}
+		System.out.println("Host: "+hostname+":"+port);		
 		// Open the file from which to read the classifier parameters
 		if (args.length>=2) {
 			 String clsfrFile = args[1];
@@ -92,6 +93,7 @@ public class ContinuousClassifier {
 				 System.err.println("Couldnt understand your triallength spec.... using 1000ms");
 			}			 
 		}
+		System.out.println("trialLen: " + trialLength_ms);
 		int step_ms = -1;
 		if (args.length>=4) {
 			try {
@@ -101,6 +103,7 @@ public class ContinuousClassifier {
 				 System.err.println("Couldnt understand your step spec....");
 			}			 
 		}
+		System.out.println("step_ms: " + step_ms);
 		if (args.length>=4) {
 			try {
 				timeout = Integer.parseInt(args[3]);
@@ -178,7 +181,7 @@ public class ContinuousClassifier {
 	 }
 
 	 public void initialize(InputStream is, int trialLength_ms, int step_ms) {
-		  if ( VERB>0 ) System.out.println("trlen="+trialLength_ms+" step="+step_ms);
+		  if ( VERB>0 ) System.out.println(TAG+"trlen="+trialLength_ms+" step="+step_ms);
 		  BufferedReader br = new BufferedReader(new InputStreamReader(is));
         classifiers = createClassifiers(br);
 		  // convert the classifier to the right type
@@ -186,13 +189,13 @@ public class ContinuousClassifier {
 		  for ( int i=0 ; i<classifiers.size(); i++){ // Note: need to use list.set to change inplace
 				PreprocClassifier c = classifiers.get(i);
 				if ( c.getType().equals("ERP") ) {
-					 if ( VERB>0 ) System.out.println("Making ERPClassifier");
+					 if ( VERB>0 ) System.out.println(TAG+"Making ERPClassifier");
 					 classifiers.set(i,new ERPClassifier(c));
 				}else if ( c.getType().equals("ERsP") ) {
-					 if ( VERB>0 ) System.out.println("Making ERSPClassifier");
+					 if ( VERB>0 ) System.out.println(TAG+"Making ERSPClassifier");
 					 classifiers.set(i,new ERSPClassifier(c));
 				} else {
-					 System.out.println("Huh? Unknown classifer type="+c.getType());
+					 System.out.println(TAG+"Huh? Unknown classifer type="+c.getType());
 				}
 		  }
         C = new BufferClientClock();
@@ -228,7 +231,7 @@ public class ContinuousClassifier {
 									 trialLength_samp = Math.max(trialLength_samp,c.clsfrW.get(0).getColumnDimension());
 								}
 						  } else if ( c.type.equals("ERSP") || c.type.equals("ERsP") ) {
-								System.out.println("ERSP size");
+								System.out.println(TAG+"ERSP size");
 								trialLength_samp = Math.max(trialLength_samp,c.welchWindow.length);
 						  } else {
 								System.err.println(TAG+"ERROR: Unrecognized classifier type");
@@ -264,7 +267,7 @@ public class ContinuousClassifier {
             SamplesEventsCount status = null;
             // Block until there are new events
             try {
-					 if ( VERB>0 ) {
+					 if ( VERB>1 ) {
 						  System.out.println(TAG+ " Waiting for " + (nSamples + trialLength_samp + 1) + " samples");
 					 }
                 status = C.waitForSamples(nSamples + trialLength_samp + 1, this.timeout_ms);
@@ -300,8 +303,8 @@ public class ContinuousClassifier {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-					 if ( VERB>0 ) {
-						  System.out.println(TAG+ String.format("Got data @ %d->%d samples", fromId, toId));
+					 if ( VERB>1 ) {
+						  System.out.println(TAG+ String.format(" Got data @ %d->%d samples", fromId, toId));
 					 }
 
                 // Apply all classifiers and add results
@@ -346,9 +349,9 @@ public class ContinuousClassifier {
                 for (BufferEvent event : events) {
                     String type = event.getType().toString();
                     String value = event.getValue().toString();
-                    System.out.println(TAG+"got(" + event + ")");
+                    if ( VERB>1 ) System.out.println(TAG+"got(" + event + ")");
                     if (type.equals(endType) && value.equals(endValue)) {
-                        System.out.println(TAG+ "Got end event. Exiting!");
+                        if ( VERB>1 ) System.out.println(TAG+ "Got end event. Exiting!");
                         endEvent = true;
                     } 
                 }

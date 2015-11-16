@@ -37,7 +37,7 @@ public class ERPClassifier extends PreprocClassifier {
 	 public Matrix preproc(Matrix data){
 		  if ( VERB>0 ) System.out.println("ERP preproc");
 		  // Common pre-processing
-		  super.preproc(data);
+		  data = super.preproc(data);
 
 		  // TODO: Add the spectral filter
 		  

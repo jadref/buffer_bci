@@ -80,10 +80,7 @@
     </target>
 
 	 <target name="dist" depends="jar">
-		<copy file="${jar.dir}/ContinuousClassifier.jar" todir="."/>
-		<copy file="${jar.dir}/FilePlayback.jar" todir="."/>
 		<copy file="${jar.dir}/FilePlayback.jar" todir="${bufferjava.dir}"/>
-		<copy file="${jar.dir}/SignalProxy.jar" todir="."/>
 		<copy file="${jar.dir}/SignalProxy.jar" todir="${bufferjava.dir}"/>
 		<copy file="${jar.dir}/SyncGenerator.jar" todir="${bufferjava.dir}"/>
 		<copy file="${jar.dir}/MatrixAlgebra.jar" todir="."/>

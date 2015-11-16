@@ -21,8 +21,8 @@ import java.io.IOException;
  */
 public class PreprocClassifier {
 
-    public static String TAG = PreprocClassifier.class.toString();
-	 public static final int VERB = 1; // debugging verbosity level
+    public static String TAG = PreprocClassifier.class.getSimpleName();
+	 public static final int VERB = 0; // debugging verbosity level
 
 	 public final String type;
     public final double samplingFrequency;
@@ -103,7 +103,7 @@ public class PreprocClassifier {
         this.clsfrb = clsfrb;
 
         if ( VERB>=0 ) 
-				System.out.println( "Just created PreprocClassifier with settings: \n" + this.toString());
+				System.out.println(TAG+ "Just created PreprocClassifier with settings: \n" + this.toString());
     }
 
 	 public String getType() { return type; }
@@ -112,40 +112,44 @@ public class PreprocClassifier {
 
         // Bad channel removal
         if ( isbadCh != null ) {
-            if ( VERB>0 ) System.out.println( "Do bad channel removal");
+            if ( VERB>1 ) System.out.println(TAG+ "Do bad channel removal");
             int[] columns = Matrix.range(0, data.getColumnDimension(), 1);
             int[] rows = new int[data.getRowDimension()];
 				if ( rows.length != isbadCh.length ) {
-					 System.err.println("Huh? isbad and data rows are not equal!");
+					 System.err.println(TAG+ "Huh? isbad and data rows are not equal!");
 				}
             int index = 0;
-            for (int i = 0; i < isbadCh.length && i<rows.length; i++){
-                if (isbadCh[i] == false) { // keep if *not* bad
+            for (int i = 0; i<rows.length && i < isbadCh.length; i++){
+                if (isbadCh[i] == false ) { // keep if *not* bad
                     rows[index] = i;
                     index++;
                 }
 				}
-            rows = Arrays.copyOf(rows, index);
+				// N.B. everthing outside the is-bad set is automatically ***BAD***
+				//for ( int i=isbadCh.length; i<rows.length; i++){rows[index]=i;index++;}
+				
+            rows = Arrays.copyOf(rows, index); // remove all the unused rows...
             data = new Matrix(data.getSubMatrix(rows, columns));
-            if ( VERB>0 ) System.out.println( "Data shape after bad channel removal: " + data.shapeString());
+            if ( VERB>1 ) System.out.println(TAG+ "New size: " + data.shapeString());
         }
 
         // Detrend the data
         if (detrend) {
-            if ( VERB>0 ) System.out.println( "Linearly detrending the data");
+            if ( VERB>1 ) System.out.println(TAG+  "Linearly detrending the data");
             data = data.detrend(1, "linear");
+            if ( VERB>1 ) System.out.println(TAG+  "New size: " + data.shapeString());
         }
 
         // Now adaptive bad-channel removal if needed
         List<Integer> badChannels = null;
         if (badChannelThreshold > 0 ) {
-            if ( VERB>0 ) System.out.println( "Adaptive bad-channel detection+removal.");
+            if ( VERB>1 ) System.out.println(TAG+  "Adaptive bad-channel detection+removal.");
             Matrix norm = new Matrix(data.multiply(data.transpose()).scalarMultiply(1. / data.getColumnDimension()));
             badChannels = new LinkedList<Integer>();
             // Detecting bad channels
             for (int r = 0; r < data.getRowDimension(); r++)
                 if (norm.getEntry(r, 0) > badChannelThreshold) {
-                    if ( VERB>0 ) System.out.println( "Removing channel " + r);
+                    if ( VERB>0 ) System.out.println(TAG+  "Removing channel " + r);
                     badChannels.add(r);
                 }
 
@@ -155,32 +159,35 @@ public class PreprocClassifier {
                 data.setRow(channel, car.getColumn(0));
             }
         }
+		  if ( VERB>1 ) System.out.println(TAG+  "New size: " + data.shapeString());
 
         // Select the time range
         if (windowTimeIdx != null) {
-            if ( VERB>0 ) System.out.println( "Selecting a time range");
+            if ( VERB>1 ) System.out.println(TAG+  "Selecting a time range");
             int[] rows = Matrix.range(0, data.getRowDimension(), 1);
             data = new Matrix(data.getSubMatrix(rows, windowTimeIdx));
-            if ( VERB>0 ) System.out.println( "New data shape after time range selection: " + data.shapeString());
+            if ( VERB>1 ) System.out.println(TAG+  "New size: " + data.shapeString());
         }
 
         // Spatial filtering
         if (spatialFilter != null) {
-            if ( VERB>0 ) System.out.println( "Spatial filtering the data");
+            if ( VERB>1 ) System.out.println(TAG+  "Spatial filtering the data");
 				data.multiply(spatialFilter);
+            if ( VERB>1 ) System.out.println(TAG+  "New size: " + data.shapeString());
         }
+		  if ( VERB>1 ) System.out.println(TAG+  "Final size: " + data.shapeString());
 		  return data;
 	 }
 
 	 public ClassifierResult apply(Matrix data){
-		  if ( VERB>0 ) System.out.println("Preproc preproc");
+		  if ( VERB>1 ) System.out.println(TAG+ " preproc");
 		  // Do the standard pre-processing
 		  data = preproc(data);
 		  
 		  // Linearly classifying the data
-		  if ( VERB>0 ) System.out.println( "Classifying with linear classifier");
+		  if ( VERB>1 ) System.out.println(TAG+  "Classifying with linear classifier");
 		  Matrix fraw = applyLinearClassifier(data, 0);
-		  if ( VERB>0 ) System.out.println( "Results from the classifier (fraw): " + fraw.toString());
+		  if ( VERB>1 ) System.out.println(TAG+  "Results from the classifier (fraw): " + fraw.toString());
 		  Matrix f = new Matrix(fraw.copy());
 		  Matrix p = new Matrix(f.copy());
 		  // map to probabilities using the logistic operator
@@ -189,15 +196,15 @@ public class PreprocClassifier {
                 return 1. / (1. + Math.exp(-value));
 					 }
 				});
-		  if ( VERB>=0 ) System.out.println( "Results from the classifier (p): " + p.toString());
+		  if ( VERB>=0 ) System.out.println(TAG+  "Results from the classifier (p): " + p.toString());
 		  return new ClassifierResult(f, fraw, p, data);		  
 	 }
 
     public Matrix applyLinearClassifier(Matrix data, int dim) {
         double[] results = new double[clsfrW.size()];
-		  if ( VERB>1 ) System.out.print("Data=" + data.toString());
+		  if ( VERB>2 ) System.out.print(TAG+ "Data=" + data.toString());
         for (int i = 0; i < clsfrW.size(); i++){
-				if ( VERB>1 ) System.out.print("clsfr{"+i+"}"+clsfrW.get(i).toString());
+				if ( VERB>2 ) System.out.print(TAG+ "clsfr{"+i+"}"+clsfrW.get(i).toString());
             results[i] = this.clsfrW.get(i).multiplyElements(data).sum() + clsfrb[i];
             //results[i] = this.clsfrW.get(i).multiplyAccumulateElements(data) + clsfrb[i];
 		  }
@@ -261,7 +268,7 @@ public class PreprocClassifier {
 
 		  // read detrend       [1 x 1 boolean]
 		  boolean detrend  = Boolean.valueOf(readNonCommentLine(is));
-		  if ( VERB>2 ) System.out.println("detrend = " + detrend);
+		  if ( VERB>2 ) System.out.println(TAG+ "detrend = " + detrend);
 
 
 		  // read isbadCh       [1 x nCh boolean]
@@ -271,14 +278,14 @@ public class PreprocClassifier {
 				isbadCh= new boolean[cols.length];
 				for ( int i=0; i<cols.length; i++ ) isbadCh[i]=Boolean.valueOf(cols[i]);
 		  } 
-		  if ( VERB>2 ) System.out.println("isbad = " + Arrays.toString(isbadCh));
+		  if ( VERB>2 ) System.out.println(TAG+ "isbad = " + Arrays.toString(isbadCh));
 		   
 		  // read spatialfilt   [d x d2 double]
 		  Matrix spatialFilter = Matrix.fromString(is);
 		  if ( VERB>2 ) if ( spatialFilter != null ) {
-				System.out.println("spatfilt = " + spatialFilter.toString());
+				System.out.println(TAG+ "spatfilt = " + spatialFilter.toString());
 		  } else { 
-				System.out.println("spatfilt = null"); 
+				System.out.println(TAG+ "spatfilt = null"); 
 		  }
 
 		  // read spectralfilt  [t/2 x 1 double]  // for the fftfilter method
@@ -288,7 +295,7 @@ public class PreprocClassifier {
 				spectralFilter = new double[cols.length];
 				for ( int i=0; i<cols.length; i++ ) spectralFilter[i]=Double.valueOf(cols[i]);
 		  }
-		  if ( VERB>2 ) System.out.println("spectFilt = " + Arrays.toString(spectralFilter));
+		  if ( VERB>2 ) System.out.println(TAG+ "spectFilt = " + Arrays.toString(spectralFilter));
 
 		  // read outsz         [2 x 1 int]      // for downsampling during filtering
 		  cols = readNonCommentLine(is).split("[ ,	]");
@@ -297,7 +304,7 @@ public class PreprocClassifier {
 				outSz=new int[2];
 				for ( int i=0; i<cols.length; i++ ) outSz[i]=Integer.valueOf(cols[i]);
 		  }
-		  if ( VERB>2 ) System.out.println("outsz = " + Arrays.toString(outSz));
+		  if ( VERB>2 ) System.out.println(TAG+ "outsz = " + Arrays.toString(outSz));
 
 		  // read timeIdx       [t2 x 1 int]
 		  cols = readNonCommentLine(is).split("[ ,	]");
@@ -306,7 +313,7 @@ public class PreprocClassifier {
 				timeIdx = new int[cols.length];
 				for ( int i=0; i<cols.length; i++ ) timeIdx[i]=Integer.valueOf(cols[i]);
 		  }
-		  if ( VERB>2 ) System.out.println("outsz = " + Arrays.toString(timeIdx));
+		  if ( VERB>2 ) System.out.println(TAG+ "outsz = " + Arrays.toString(timeIdx));
 
 		  // read welchWindowFn [t2 x 1 double]
 		  cols = readNonCommentLine(is).split("[ ,	]");
@@ -315,12 +322,12 @@ public class PreprocClassifier {
 				welchWindow = new double[cols.length];
 				for ( int i=0; i<cols.length; i++ ) welchWindow[i]=Double.valueOf(cols[i]);
 		  }
-		  if ( VERB>2 ) System.out.println("welchWindow = " + Arrays.toString(welchWindow));
+		  if ( VERB>2 ) System.out.println(TAG+ "welchWindow = " + Arrays.toString(welchWindow));
 
 		  // read welchAveType  [enum]
 		  line = readNonCommentLine(is);
 		  WelchOutputType welchAveType=WelchOutputType.AMPLITUDE;
-		  if ( VERB>2 ) System.out.println("welchAveType = " + welchAveType);
+		  if ( VERB>2 ) System.out.println(TAG+ "welchAveType = " + welchAveType);
 		  
 		  // read freqIdx       [f2 x 1 int]
 		  cols = readNonCommentLine(is).split("[ ,	]");
@@ -329,13 +336,13 @@ public class PreprocClassifier {
 				freqIdx = new int[cols.length];
 				for ( int i=0; i<cols.length; i++ ) freqIdx[i]=Integer.valueOf(cols[i]);
 		  }
-		  if ( VERB>2 ) System.out.println("freqIdx = " + Arrays.toString(freqIdx));
+		  if ( VERB>2 ) System.out.println(TAG+ "freqIdx = " + Arrays.toString(freqIdx));
 
 		  // read subProbDesc,  [nSp Strings]
 		  cols = readNonCommentLine(is).split("[ ,	]");
 		  String[] subProbDesc=cols;
 		  //      also tells us the number of classifier weight matrices to expect
-		  if ( VERB>2 ) System.out.println("subProbDesc = " + Arrays.toString(subProbDesc));
+		  if ( VERB>2 ) System.out.println(TAG+ "subProbDesc = " + Arrays.toString(subProbDesc));
 
 		  // read W             [ d2 x t2 x nSp ]
 		  List<Matrix> W=new LinkedList<Matrix>();
@@ -353,7 +360,7 @@ public class PreprocClassifier {
 				b=new double[subProbDesc.length];
 				for ( int i=0; i<subProbDesc.length; i++ ) b[i]=Double.valueOf(cols[i]);		  
 		  }
-		  if ( VERB>2 ) System.out.println("b = " + Arrays.toString(b));
+		  if ( VERB>2 ) System.out.println(TAG+ "b = " + Arrays.toString(b));
 
 		  return new PreprocClassifier(type,
 												 fs,
