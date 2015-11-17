@@ -206,7 +206,7 @@ while ( ~endTraining )
     pause(1);
     cursamp=status.nSamples;
     if ( ~ishandle(fig) ); break; else continue; end;
-  elseif ( status.nSamples > cursamp+update_samp*2 ) % missed a whole update window
+  elseif ( status.nSamples > cursamp+2*fs) % missed a 2 seconds of data
 	 fprintf('Warning: Cant keep up with the data!\n%d Dropped samples...\n',status.nSamples-update_samp-1-cursamp);
     cursamp=status.nSamples - update_samp-1; % jump to the current time
   end;
