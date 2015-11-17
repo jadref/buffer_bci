@@ -21,6 +21,7 @@ public class AudioToBuffer {
 	 int nByte  =0;
 	 int nSample=0;
 	 int nBlk   =0;
+	 int audioDevID=-1;
 	boolean run=true;
 
 	public AudioToBuffer() {
@@ -42,6 +43,14 @@ public class AudioToBuffer {
 		 if ( fSample>0 ) this.fSample=fSample;
 		 if ( blockSize>0 ) this.blockSize=blockSize;
 		 if ( this.blockSize<0 ) this.blockSize=(int)(this.fSample/50.0);
+		ftClient = new BufferClient();		  
+	}
+	 public AudioToBuffer(String hostport,float fSample, int blockSize, int audioDevID){
+		  this.hostport=hostport;
+		 if ( fSample>0 ) this.fSample=fSample;
+		 if ( blockSize>0 ) this.blockSize=blockSize;
+		 if ( this.blockSize<0 ) this.blockSize=(int)(this.fSample/50.0);
+		 this.audioDevID=audioDevID;
 		ftClient = new BufferClient();		  
 	}
 
@@ -81,7 +90,15 @@ public class AudioToBuffer {
 	public boolean start() {
 		AudioFormat fmt = new AudioFormat(fSample, 16, 2, true, false);
 		try {
-			lineIn = AudioSystem.getTargetDataLine(fmt);
+			 if ( audioDevID<0 ){ // use the default device
+				  System.out.print("Trying to open default AUDIO IN device...");
+				  lineIn = AudioSystem.getTargetDataLine(fmt);
+			 } else { // use the specified mixer
+				  Mixer.Info[] mixInfo = AudioSystem.getMixerInfo();
+				  System.out.println("Trying to open mixer: " + mixInfo[audioDevID-1]);
+				  Mixer mixer = AudioSystem.getMixer(mixInfo[audioDevID-1]);
+				  lineIn = (TargetDataLine)mixer.getLine(new DataLine.Info(TargetDataLine.class,fmt));
+			 }
 			lineIn.open(fmt);
 			lineIn.start();
 		}
@@ -93,8 +110,7 @@ public class AudioToBuffer {
 		Header hdr = new Header(2, fSample, DataType.INT16);
 		try {
 			ftClient.putHeader(hdr);
-		}
-		catch (IOException e) {
+		} catch (IOException e) {
 			 System.out.println("PutHeader failed");
 			 System.out.println(e);
 			return false;
@@ -111,13 +127,15 @@ public class AudioToBuffer {
 	public static void main(String[] args) {
 		String hostport="localhost:1972";
 		if (args.length > 0 && "--help".equals(args[0])) {
-			System.out.println("Usage:   java AudioToBuffer hostname:port fSample");
+			System.out.println("Usage:   java AudioToBuffer hostname:port fSample audioDevID blockSize");
 			return;
 		}
+
 		if ( args.length>0 ) {
 			 hostport=args[0];
 		}
 		System.out.println("HostPort="+hostport);
+
 		float fSample=-1;
 		if ( args.length>=2 ) {
 			try {
@@ -127,17 +145,28 @@ public class AudioToBuffer {
 			}			 
 		}
 		System.out.println("fSample ="+fSample);
-		int blockSize=-1;
+
+		int audioDevID=-1;
 		if ( args.length>=3 ) {
 			try {
-				blockSize = Integer.parseInt(args[2]);
+				audioDevID = Integer.parseInt(args[2]);
+			}
+			catch (NumberFormatException e) {
+			}			 
+		}
+		System.out.println("audioDevID ="+audioDevID);
+
+		int blockSize=-1;
+		if ( args.length>=4 ) {
+			try {
+				blockSize = Integer.parseInt(args[3]);
 			}
 			catch (NumberFormatException e) {
 			}			 
 		}
 		System.out.println("Blocksize ="+blockSize);
 		
-		AudioToBuffer a2b = new AudioToBuffer(hostport,fSample,blockSize);
+		AudioToBuffer a2b = new AudioToBuffer(hostport,fSample,blockSize,audioDevID);
 		a2b.mainloop();
 		a2b.stop();
 	}
@@ -147,7 +176,6 @@ public class AudioToBuffer {
 		run = true;
 		if (connect(hostport)==false) return;
 		listDevices();
-		System.out.print("Trying to open default AUDIO IN device...");
 		if (!start()) return;
 		System.out.println("success..");
 		

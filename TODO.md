@@ -6,6 +6,7 @@ Bugs
 Basic buffer integeration
 =========================
 [] - Add async put_dat, put_evt, and wait_dat, methods to the java buffer client
+[x] - audio2ft driver for testing
 
 Platform/Language support
 =========================
@@ -46,7 +47,7 @@ Signal Analysis
 [] - pre-proc apply methods
 [] - Rationalize the pre-proc, train, and apply methods to reduce code duplication
 [x] - AUC plots work with pre-specified sub-problems
-[] - c-based, java-based and python-based signal proxies
+[x] - c-based, java-based and python-based signal proxies
   [x] - fix the c-sig proxy so runs a the correct data rate
 [x] - universum-SVM classifier support
 [] - second order baseline adaptive sig-processing support in classifier
