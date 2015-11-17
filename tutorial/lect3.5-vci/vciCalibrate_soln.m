@@ -80,7 +80,7 @@ for si=1:nSeq;
 end % sequences
 
 % send event to say that calibration has finished
-sendEvent('stimulus.calibrate','end');
+sendEvent('calibrate','end');
 
 % tell user we're done
 msg=msgbox({'Thanks for taking part!'},'Continue?');while ishandle(msg); pause(.2); end;

@@ -16,6 +16,8 @@ function []=startSigProcBuffer(varargin)
 %                                        erp viewing
 %  (calibrate,end)             -- end calibration phase
 %  (startPhase.cmd,train)      -- train a classifier based on the saved calibration data
+%  (startPhase.cmd,trainerp)   -- train a classifier based on the saved calibration data - force ERP (time-domain) classifier
+%  (startPhase.cmd,trainersp)  -- train a classifier based on the saved calibration data - force ERsP (frequency-domain) classifier
 %  (startPhase.cmd,testing)    -- start test phase, i.e. on-line prediction generation
 %                                 This type of testing will generate 1 prediction event for each 
 %                                 epoch event.  
@@ -102,7 +104,7 @@ end
 if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
 if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4; end;
 
-if ( isempty(opts.epochEventType) && opts.useGUI )
+if ( isempty(opts.epochEventType) && opts.useGUI && ~exist('OCTAVE_VERSION','builtin') )
   optsFig=bufferSignalProcOpts(); 
   uiwait(optsFig); 
   info=guidata(optsFig);
@@ -118,6 +120,7 @@ if ( isempty(opts.epochEventType) && opts.useGUI )
     error('User cancelled the run');
   end
 end
+if ( isempty(opts.epochEventType) )     opts.epochEventType='stimulus.target'; end;
 if ( isempty(opts.testepochEventType) ) opts.testepochEventType=opts.epochEventType; end;
 if ( isempty(opts.erpEventType) )       opts.erpEventType=opts.epochEventType; end;
 
@@ -188,7 +191,7 @@ while ( true )
     capFitting('buffhost',opts.buffhost,'buffport',opts.buffport,'noiseThresholds',thresh,'badChThreshold',badchThresh,'verb',opts.verb,'showOffset',0,'capFile',capFile,'overridechnms',overridechnms);
 
     %---------------------------------------------------------------------------------
-   case 'eegviewer';
+   case {'eegviewer','sigViewer'};
     eegViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms);
     
     %---------------------------------------------------------------------------------
@@ -212,7 +215,7 @@ while ( true )
     trainSubj=subject;
 
     %---------------------------------------------------------------------------------
-   case {'train','training'};
+   case {'train','training','trainerp','trainersp'};
     try
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
         fname=[dname '_' subject '_' datestr];
@@ -225,15 +228,25 @@ while ( true )
         trainSubj=subject;
       end;
       if ( opts.verb>0 ) fprintf('%d epochs\n',numel(traindevents)); end;
+		
+		% get type of classifier to train.
+		clsfr_type=opts.clsfr_type;
+		% phase command name overrides option if given
+		if ( strcmp(phaseToRun,'trainerp') ) clsfr_type='erp';
+		elseif ( strcmp(phaseToRun,'trainersp') ) clsfr_type='ersp';
+		end
 
-      switch lower(opts.clsfr_type);
+      switch lower(clsfr_type);
        
        case {'erp','evoked'};
          [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car',...
-                    'freqband',opts.freqband,'badchrm',1,'badtrrm',1,'capFile',capFile,'overridechnms',overridechnms,'verb',opts.verb,varargin{:});
+                    'freqband',opts.freqband,'badchrm',1,'badtrrm',1,...
+						  'capFile',capFile,'overridechnms',overridechnms,'verb',opts.verb,varargin{:});
        
        case {'ersp','induced'};
-         [clsfr,res]=buffer_train_ersp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','freqband',opts.freqband,'badchrm',1,'badtrrm',1,'capFile',capFile,'overridechnms',overridechnms,'verb',opts.verb,varargin{:});
+         [clsfr,res]=buffer_train_ersp_clsfr(traindata,traindevents,hdr,'spatialfilter','car',...
+						   'freqband',opts.freqband,'badchrm',1,'badtrrm',1,...
+							'capFile',capFile,'overridechnms',overridechnms,'verb',opts.verb,varargin{:});
        
        otherwise;
         error('Unrecognised classifer type');
@@ -241,7 +254,7 @@ while ( true )
       clsSubj=subject;
       fname=[cname '_' subject '_' datestr];
       fprintf('Saving classifier to : %s\n',fname);save([fname '.mat'],'-struct','clsfr');
-    catch
+	catch
       msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
 	  fprintf('Error in : %s',phaseToRun);
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
