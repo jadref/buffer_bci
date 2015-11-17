@@ -49,6 +49,19 @@ baselineDuration=1;
 intertrialDuration=2;
 feedbackDuration=1;
 
+conditions={
+'Right Hand'
+'Right Hand + Tongue'
+'Tongue'
+'Left Hand + Tongue'
+'Left Hand'
+'Left Hand + Feet'
+'Feet'
+'Right Hand + Feet'
+'Left Hand + Right Hand'
+'Rest'
+};
+
 warpCursor= 1; % flag if in feedback BCI output sets cursor location or how the cursor moves
 moveScale = .1;
 
