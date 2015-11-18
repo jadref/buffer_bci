@@ -199,7 +199,7 @@ while ( true )
     erpViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix',opts.erpEventType,'endType',lower(phaseToRun),'trlen_ms',opts.trlen_ms,'freqbands',[.0 .3 45 47],'maxEvents',opts.erpMaxEvents,opts.erpOpts{:});
 
    %---------------------------------------------------------------------------------
-	case {'erpviewcalibrate'};
+   case {'erpviewcalibrate','erpviewercalibrate','calibrateerp'};
     [traindata,traindevents]=erpViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix',opts.erpEventType,'endType',{{lower(phaseToRun) 'calibrate'} 'end'},'trlen_ms',opts.trlen_ms,'freqbands',[.0 .3 45 47],'maxEvents',opts.erpMaxEvents,opts.erpOpts{:});
     mi=matchEvents(traindevents,{'calibrate' 'calibration'},'end'); traindevents(mi)=[]; traindata(mi)=[];%remove exit event
     fname=[dname '_' subject '_' datestr];

@@ -25,7 +25,7 @@ function []=sigViewer(buffhost,buffport,varargin);
 %  sigProcOptsGui -- [bool] show the on-line option changing gui             (1)
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ); run(fullfile(fileparts(mfilename('fullpath')),'../utilities/initPaths.m')); end;
 opts=struct('endType','end.training','verb',1,'timeOut_ms',1000,...
-				'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,...
+				'trlen_ms',5000,'trlen_samp',[],'updateFreq',3,...
 				'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',[],'spatfilt','car',...
 				'badchrm',0,'badchthresh',3,'capFile',[],'overridechnms',0,...
 				'welch_width_ms',1000,'spect_width_ms',500,'spectBaseline',1,...
@@ -206,7 +206,7 @@ while ( ~endTraining )
     pause(1);
     cursamp=status.nSamples;
     if ( ~ishandle(fig) ); break; else continue; end;
-  elseif ( status.nSamples > cursamp+2*fs) % missed a 2 seconds of data
+  elseif ( status.nSamples > cursamp+5*fs) % missed a 5 seconds of data
 	 fprintf('Warning: Cant keep up with the data!\n%d Dropped samples...\n',status.nSamples-update_samp-1-cursamp);
     cursamp=status.nSamples - update_samp-1; % jump to the current time
   end;
@@ -339,7 +339,7 @@ while ( ~endTraining )
    case 'time'; % time-domain, spectral filter -----------------------------------
     if ( ~isempty(filt) && ~all(abs(1-filt(1:end-1))<1e-6)); 
             ppdat=fftfilter(ppdat,filt,outsz,2);  % N.B. downsample at same time
-    elseif ( ~isempty(outsz) ); 
+    elseif ( ~isempty(outsz) && outsz(2)<size(ppdat,2) ); 
             ppdat=subsample(ppdat,outsz(2),2); % manual downsample
     end
     
