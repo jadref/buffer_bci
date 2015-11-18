@@ -40,7 +40,7 @@ public class AlphaLatContClassifierThread extends ThreadBase {
                 new Argument("Sample step ms", step_ms, true), //8
                 new Argument("Overlap", .5, true), //9
                 new Argument("Prediction filter", -1.0, true), //10
-                new Argument("Clsfr file","clsfr.txt") //11
+                new Argument("Clsfr file","clsfr_nf.txt") //11
         };
         return arguments;
     }
