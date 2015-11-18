@@ -6,6 +6,7 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 // TODO: Convert to a thread-based version so is compatiable with BufferBCIApp thread model
 
 public class SyncGenerator {
+	 static boolean run=true;
 	 public static void main(String[] args) throws IOException,InterruptedException {	
 		  int syncInterval_s=60;
 		  
@@ -71,7 +72,7 @@ public class SyncGenerator {
 		  long t0=java.lang.System.currentTimeMillis();
 		  int  t =0;
 		  try {
-				while ( true ) {
+				while ( run ) {
 					 t = (int)(java.lang.System.currentTimeMillis() - t0);
 					 syncEvt.setValue(t);
 					 for (BufferClientClock C : clients ) {
@@ -88,6 +89,8 @@ public class SyncGenerator {
 				for ( BufferClientClock C : clients ) { C.disconnect();  }
 		  }
 	 }
+
+	 public void stop() { run=false; }	 
 	 
 	 static void usage(){
 		  System.out.println("syncGenerator interval buffer1 buffer2 .... ");

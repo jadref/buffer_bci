@@ -110,7 +110,7 @@ public class FilePlayback {
 
 	 public void mainloop(){
 		
-		while( !client.isConnected() ) {
+		while( !client.isConnected() && run ) {
 			 try {
 				  System.out.println("Connecting to "+hostname+":"+port);
 				  client.connect(hostname, port);
@@ -195,6 +195,7 @@ public class FilePlayback {
             try {
                 n = dataReader.read(samples);
             } catch (IOException e) {
+					 n = -1;
                 e.printStackTrace();
             }
             if (n <= 0) {

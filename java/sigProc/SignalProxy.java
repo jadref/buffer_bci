@@ -103,7 +103,7 @@ public class SignalProxy {
 	public void mainloop() {
 		run = true;
 		try {
-			if (!client.isConnected()) {
+			if (!client.isConnected() && run) {
 				client.connect(hostname, port);
 			} else {
 				System.out.println("Could not connect to buffer.");
