@@ -209,8 +209,6 @@ def update_surfaces(images): # images = [(image, [probabilities])], sorted by av
 			
 			rank_surf = font.render("rank: " + str(idx+1), 1, (255,255,255), (0,0,0))
 			p_surf = font.render(str(sum(img_ps)/len(img_ps)), 1, (255, 255, 255), (0,0,0))
-			
-			print('added idx=' + str(idx+1) + ', cols=' + str(cols) + ', rows=' + str(rows) + ', x=' + str(x) + ', y=' + str(y))
 
 			# save.
 			surfaces.append((target_dst, surf, rank_surf, p_surf))
