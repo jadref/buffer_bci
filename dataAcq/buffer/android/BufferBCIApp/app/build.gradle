@@ -25,6 +25,7 @@ android {
     packagingOptions {
         exclude 'BufferClient.jar' // prevent double inclusion from FileProxy, SignalProxy etc..
         exclude 'MatrixAlgebra.jar'
+        exclude 'commons-math3-3.4.jar'
     }
 }
 

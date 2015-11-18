@@ -19,7 +19,7 @@ import nl.dcc.buffer_bci.bufferclientsservice.base.ThreadBase;
  */
 public class ContinuousClassifierThread extends ThreadBase {
 
-    private static final String TAG = ContinuousClassifier.class.getSimpleName();
+    private static final String TAG = ContinuousClassifierThread.class.getSimpleName();
 
     protected String hostname ="localhost";
     protected int port = 1972;
@@ -68,7 +68,7 @@ public class ContinuousClassifierThread extends ThreadBase {
     @Override
     public void mainloop() {// Initialize the classifier and connect to the buffer
         initialize();
-		  InputStream clsfrReader = loadClsfrFile(clsfrFile);
+		  InputStream clsfrReader = openClsfrFile(clsfrFile);
 		  if ( clsfrReader == null ) {
             Log.e(TAG, "Aborting!" + clsfrFile);
 				return;
@@ -84,7 +84,7 @@ public class ContinuousClassifierThread extends ThreadBase {
     @Override public void stop() { if ( clsfr != null ) clsfr.stop(); }
     @Override public boolean isrunning(){ if ( clsfr!=null ) return clsfr.isrunning(); return false; }
 
-	 public InputStream openClsfrFile(clsfrFile){
+	 public InputStream openClsfrFile(String clsfrFile){
         InputStream clsfrReader=null;
         if ( isExternalStorageReadable() ){
             try {

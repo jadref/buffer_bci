@@ -36,20 +36,10 @@
         </jar>
 		  
         <jar destfile="${jar.dir}/ContinuousClassifier.jar">
-			 <fileset dir="${classes.dir}" includes="**/*.class" excludes="**/FilePlayback.class,**/SignalProxy.class"/>
+			 <fileset dir="${classes.dir}" includes="**/*.class" excludes="**/FilePlayback.class,**/SignalProxy.class,**/SyncGenerator.class,**/matrixalgebra/**/**.class"/>
 			 <fileset dir="${src.dir}" includes="**/*.java"/>
-			 <fileset dir="${lib.dir}" includes="**/*.jar"/>
           <manifest>
             <attribute name="Main-Class" value="${ant.project.name}.signalprocessing.ContinuousClassifier"/>
-          </manifest>
-        </jar>
-
-        <jar destfile="${jar.dir}/AlphaLatContClassifier.jar">
-			 <fileset dir="${classes.dir}" includes="**/*.class" excludes="**/FilePlayback.class,**/SignalProxy.class"/>
-			 <fileset dir="${src.dir}" includes="**/*.java"/>
-			 <fileset dir="${lib.dir}" includes="**/*.jar"/>
-          <manifest>
-            <attribute name="Main-Class" value="${ant.project.name}.signalprocessing.AlphaLatContClassifier"/>
           </manifest>
         </jar>
 

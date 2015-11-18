@@ -11,11 +11,12 @@ import java.io.InputStream;
 
 import nl.dcc.buffer_bci.bufferclientsservice.base.Argument;
 import nl.dcc.buffer_bci.signalprocessing.AlphaLatContClassifier;
+import nl.dcc.buffer_bci.signalprocessing.ContinuousClassifier;
 import nl.dcc.buffer_bci.bufferclientsservice.base.ThreadBase;
 
 public class AlphaLatContClassifierThread extends ThreadBase {
 
-    private static final String TAG = AlphaLatContClassifier.class.getSimpleName();
+    private static final String TAG = AlphaLatContClassifierThread.class.getSimpleName();
 
     protected String hostname ="localhost";
     protected int port = 1972;
@@ -64,7 +65,7 @@ public class AlphaLatContClassifierThread extends ThreadBase {
     @Override
     public void mainloop() {// Initialize the classifier and connect to the buffer
         initialize();
-		  InputStream clsfrReader = loadClsfrFile(clsfrFile);
+		  InputStream clsfrReader = openClsfrFile(clsfrFile);
 		  if ( clsfrReader == null ) {
             Log.e(TAG, "Aborting!" + clsfrFile);
 				return;
@@ -75,7 +76,7 @@ public class AlphaLatContClassifierThread extends ThreadBase {
         clsfr=null;
     }
 
-	 public InputStream openClsfrFile(clsfrFile){
+	 public InputStream openClsfrFile(String clsfrFile){
         InputStream clsfrReader=null;
         if ( isExternalStorageReadable() ){
             try {
@@ -97,7 +98,9 @@ public class AlphaLatContClassifierThread extends ThreadBase {
 	 }
 
 
-    @Override public void stop() { if ( clsfr != null ) clsfr.stop(); }
+    @Override public void stop() {
+        if ( clsfr != null ) clsfr.stop();
+    }
     @Override public boolean isrunning(){ if ( clsfr!=null ) return clsfr.isrunning(); return false; }
 
     /* Checks if external storage is available for read and write */

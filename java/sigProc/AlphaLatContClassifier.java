@@ -104,7 +104,7 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 		cc.mainloop();
 	 }
 
-	 AlphaLatContClassifier(String host, int port, int timeout){
+	 public AlphaLatContClassifier(String host, int port, int timeout){
 		  super(host,port,timeout);
 	 }
 
@@ -129,7 +129,6 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 		  long pnext=t+printInterval_ms;
 
         // Run the code
-        boolean run = true;
         while (!endEvent && run) {
             // Getting data from buffer
             SamplesEventsCount status = null;
