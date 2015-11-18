@@ -14,7 +14,7 @@ port=1972
 width=800
 height=600
 
-cols = 3
+cols = 4
 rows = 3
 
 black = (0,0,0)
@@ -131,6 +131,7 @@ def processBufferEvents():
 	global surfaces, done
 	global imageSampleMap
 	global numPredictions
+	global imageProbabilities
 	events = buffer_newevents()
 
 	for evt in events:
@@ -145,9 +146,10 @@ def processBufferEvents():
 			imageSampleMap[sample] = image
 			
 		# When a new feedback phase starts, clear probabilities and sample maps.
-		elif evt.type == 'startPhase.cmd' and evt.value == 'epochfeedback':
+		elif (evt.type == 'startPhase.cmd' and evt.value == 'epochfeedback') or evt.type == 'stimulus.target.image':
 			imageProbabilities = {}
 			imageSampleMap = {}
+			print('Cleared probabilities')
 
 		elif evt.type == 'classifier.prediction':
 			# Get image from map and delete entry.
@@ -190,8 +192,8 @@ def update_surfaces(images): # images = [(image, [probabilities])], sorted by av
 	for x in range(0, cols):
 		for y in range(0, rows):
 			# Get some values.
-			idx = x * cols + y
-			if len(images) <= idx: print('len:' + str(len(images))); continue
+			idx = cols * y + x
+			if len(images) <= idx: continue # This means there are less images than cells, just pass.
 
 			img = images[idx]
 			img_name = img[0]
@@ -207,6 +209,8 @@ def update_surfaces(images): # images = [(image, [probabilities])], sorted by av
 			
 			rank_surf = font.render("rank: " + str(idx+1), 1, (255,255,255), (0,0,0))
 			p_surf = font.render(str(sum(img_ps)/len(img_ps)), 1, (255, 255, 255), (0,0,0))
+			
+			print('added idx=' + str(idx+1) + ', cols=' + str(cols) + ', rows=' + str(rows) + ', x=' + str(x) + ', y=' + str(y))
 
 			# save.
 			surfaces.append((target_dst, surf, rank_surf, p_surf))
