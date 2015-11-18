@@ -274,7 +274,7 @@ public class ContinuousClassifier {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if (status.nSamples < header.nSamples) {
+            if (status.nSamples < nSamples) {
                 System.out.println(TAG+  " Buffer restart detected");
                 nSamples = status.nSamples;
                 dv = null;

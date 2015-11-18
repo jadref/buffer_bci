@@ -26,7 +26,7 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 
     protected static final String TAG = AlphaLatContClassifier.class.getSimpleName();
 
-	 private String baselineEventType = "stimulus.baseLine";
+	 private String baselineEventType = "stimulus.startbaseline";
     private String baselineEnd = "end";
     private String baselineStart = "start";
     private int nBaselineStep = 5000;
@@ -110,6 +110,7 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 
 	 @Override
     public void mainloop() {
+		  VERB=1;
         // Get information of the buffer
         int nEvents = header.nEvents;
         int nSamples = header.nSamples;
@@ -140,7 +141,7 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if (status.nSamples < header.nSamples) {
+            if (status.nSamples < nSamples) {
                 System.out.println(TAG+ "Buffer restart detected");
                 nSamples = status.nSamples;
                 dv = null;
@@ -212,11 +213,16 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
                     dvBaseline = new Matrix(dvBaseline.add(dv));
                     dv2Baseline = new Matrix(dv2Baseline.add(dv.multiplyElements(dv)));
                     if (nBaselineStep > 0 && nBaseline > nBaselineStep) {
-                        if(VERB>1) System.out.println( "Baseline timeout\n");
+                        if(VERB>0) System.out.println( "Baseline timeout\n");
                         baselinePhase = false;
                         Tuple<Matrix, Matrix> ret = baselineValues(dvBaseline, dv2Baseline, nBaseline);
                         baseLineVal = ret.x;
                         baseLineVar = ret.y;
+								if ( VERB>0 ) {
+									 System.out.println(TAG+" samp="+nSamples);
+									 System.out.println(TAG+" baseMean=" + Arrays.toString(baseLineVal.getColumn(0)));
+									 System.out.println(TAG+" baselineVar=" + Arrays.toString(baseLineVar.getColumn(0)));
+								}
                     }
                 }
 
@@ -227,6 +233,7 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
                 try {
                     BufferEvent event = new BufferEvent(predictionEventType, dv.getColumn(0), fromId);
                     C.putEvent(event);
+						  if ( VERB>1 ) System.out.println(TAG+ " sent " + event);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -249,20 +256,25 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
                         if(VERB>1) System.out.println(TAG+ "End Event. Exiting!");
                         endEvent = true;
                     } else if (type.equals(baselineEventType) ){
-								if ( value.equals(baselineEnd)) {
-									 if(VERB>1) System.out.println(TAG+ "Baseline end event received");
+								if ( value.equals(baselineStart) ) {
+									 if(VERB>0)System.out.println(TAG+ "Baseline start event received");
+									 baselinePhase = true;
+									 nBaseline = 0;
+									 dvBaseline = Matrix.zeros(classifiers.get(0).getOutputSize() - 1, 1);
+									 dv2Baseline = Matrix.ones(classifiers.get(0).getOutputSize() - 1, 1);
+								} else if ( value.equals(baselineEnd)) {
+									 if(VERB>0) System.out.println(TAG+ "Baseline end event received");
 									 if ( baselinePhase ){
 										  baselinePhase = false;
 										  Tuple<Matrix, Matrix> ret=baselineValues(dvBaseline,dv2Baseline,nBaseline);
 										  baseLineVal = ret.x;
 										  baseLineVar = ret.y;
+										  if ( VERB>0 ) {
+												System.out.println(TAG+" samp="+nSamples);
+												System.out.println(TAG+" baseMean=" + Arrays.toString(baseLineVal.getColumn(0)));
+												System.out.println(TAG+" baselineVar=" + Arrays.toString(baseLineVar.getColumn(0)));
+										  }
 									 }
-								} else if ( value.equals(baselineStart) ) {
-									 if(VERB>1)System.out.println(TAG+ "Baseline start event received");
-									 baselinePhase = true;
-									 nBaseline = 0;
-									 dvBaseline = Matrix.zeros(classifiers.get(0).getOutputSize() - 1, 1);
-									 dv2Baseline = Matrix.ones(classifiers.get(0).getOutputSize() - 1, 1);
 								}
 						  }
 
@@ -290,8 +302,6 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
         Matrix baseLineVal = new Matrix(dvBaseline.scalarMultiply(scale));
         Matrix baseLineVar = new Matrix(new Matrix(dv2Baseline.subtract(dvBaseline.multiplyElements(dvBaseline)
                 .scalarMultiply(scale))).abs().scalarMultiply(scale)).sqrt();
-        System.out.println("New baseline value: " + Arrays.toString(baseLineVal.getColumn(0)));
-        System.out.println("New baseline variance: " + Arrays.toString(baseLineVar.getColumn(0)));
         return new Tuple<Matrix, Matrix>(baseLineVal, baseLineVar);
     }
 }

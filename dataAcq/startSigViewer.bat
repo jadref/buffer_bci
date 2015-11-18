@@ -1,1 +1,1 @@
-call ..\utilities\startSigViewer.bat
+call ..\utilities\startSigViewer.bat %*

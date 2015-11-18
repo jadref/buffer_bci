@@ -115,7 +115,7 @@ public class PreprocClassifier {
             if ( VERB>1 ) System.out.println(TAG+ "Do bad channel removal");
             int[] columns = Matrix.range(0, data.getColumnDimension(), 1);
             int[] rows = new int[data.getRowDimension()];
-				if ( rows.length != isbadCh.length ) {
+				if ( rows.length != isbadCh.length && VERB>0 ) {
 					 System.err.println(TAG+ "Huh? isbad and data rows are not equal!");
 				}
             int index = 0;
@@ -267,7 +267,7 @@ public class PreprocClassifier {
 		  if ( VERB>2 ) System.out.println("fs = " + fs);
 
 		  // read detrend       [1 x 1 boolean]
-		  boolean detrend  = Boolean.valueOf(readNonCommentLine(is));
+		  boolean detrend  = Integer.valueOf(readNonCommentLine(is))>0;
 		  if ( VERB>2 ) System.out.println(TAG+ "detrend = " + detrend);
 
 
@@ -276,7 +276,7 @@ public class PreprocClassifier {
 		  cols = readNonCommentLine(is).split("[ ,	]"); // split on , or white-space;
 		  if ( ! (cols[0].equals("null") || cols[0].equals("[]")) ){
 				isbadCh= new boolean[cols.length];
-				for ( int i=0; i<cols.length; i++ ) isbadCh[i]=Boolean.valueOf(cols[i]);
+				for ( int i=0; i<cols.length; i++ ) isbadCh[i]=Integer.valueOf(cols[i])>0;
 		  } 
 		  if ( VERB>2 ) System.out.println(TAG+ "isbad = " + Arrays.toString(isbadCh));
 		   
