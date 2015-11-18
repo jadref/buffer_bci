@@ -47,7 +47,8 @@ public class BufferThread extends Thread {
             try {
                 C.connect(host, port);
                 //C.setAutoReconnect(true);
-            } catch (IOException e) {
+            } catch (IOException e) { // connection failed, wait before trying again
+                try{Thread.sleep(200);}catch(InterruptedException ex){}
             }
         }
         return C.isConnected();
@@ -83,6 +84,8 @@ public class BufferThread extends Thread {
                     }
                     nSamples=count.nSamples;
                 } catch (IOException e) {
+                    // connection failed, wait before trying again
+                    try{Thread.sleep(200);}catch(InterruptedException ex){}
                     events = null;
                 }
 

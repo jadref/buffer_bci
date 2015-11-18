@@ -71,7 +71,7 @@ public class AlphaLatContClassifierThread extends ThreadBase {
 				return;
 		  }
         clsfr = new AlphaLatContClassifier(hostname,port,timeout_ms);
-		  clsfr.initialize(clsfrReader,trialLength_ms,step_ms);				
+        clsfr.initialize(clsfrReader,trialLength_ms,step_ms);
         clsfr.mainloop();
         clsfr=null;
     }
