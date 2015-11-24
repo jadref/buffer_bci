@@ -242,7 +242,7 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
             } catch (final InterruptedException e) {
                 Log.e(TAG, "Exception during Thread.sleep(). Very exceptional!");
             }
-            if (change) {
+            if (change && run) {
                 sendUpdate();
                 change = false;
             }

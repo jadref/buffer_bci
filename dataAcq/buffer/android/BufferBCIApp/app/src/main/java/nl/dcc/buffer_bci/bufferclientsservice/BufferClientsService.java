@@ -194,7 +194,7 @@ public class BufferClientsService extends Service {
      */
     @Override
     public void onDestroy() {
-        Log.i(TAG, "Stopping Thread Service.");
+        Log.i(TAG, "onDestroy: Stopping Thread Service.");
 
         if (wakeLock != null) {
             wakeLock.release();

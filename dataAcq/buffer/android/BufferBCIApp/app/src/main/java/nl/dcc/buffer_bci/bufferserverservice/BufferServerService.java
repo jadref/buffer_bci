@@ -71,7 +71,7 @@ public class BufferServerService extends Service {
      */
     @Override
     public void onDestroy() {
-        Log.i(TAG, "Stopping Buffer Service.");
+        Log.i(TAG, "Buffer Service : onDestroy. Stopping Buffer Service.");
         this.unregisterReceiver(mMessageReceiver);
         if (buffer != null) {
             buffer.stopBuffer();

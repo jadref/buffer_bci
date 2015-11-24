@@ -273,6 +273,9 @@ public class ContinuousClassifier {
                 status = C.waitForSamples(nSamples + trialLength_samp + 1, this.timeout_ms);
             } catch (IOException e) {
                 e.printStackTrace();
+					 // connection to buffer failed = quit
+					 run=false;
+					 continue;
             }
             if (status.nSamples < nSamples) {
                 System.out.println(TAG+  " Buffer restart detected");

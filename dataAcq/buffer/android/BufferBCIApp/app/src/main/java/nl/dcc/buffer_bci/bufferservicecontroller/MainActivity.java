@@ -27,13 +27,18 @@ public class MainActivity extends Activity {
     public ServerController serverController=null;
     public ClientsController clientsController=null;
 
-    private BroadcastReceiver mMessageReceiver;
+    private final BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(final Context context, Intent intent) {
+            updateServerController(intent);
+        }
+    };
 
     // Gui
     private TextView textView;
     private LinearLayout table; // table for the toggle switches controlling things
     private HashMap<Integer, Integer> threadToView; // mapping from threadID -> table Idx for the toggle view
-    private BubbleSurfaceView surfaceView;
+    private BubbleSurfaceView surfaceView=null;
     //private HeartBeatTimer heartBeatTimer;
 
     @Override
@@ -55,36 +60,48 @@ public class MainActivity extends Activity {
         if (clientsController.isThreadsServiceRunning()) {// check if already running
             clientsController.reloadAllThreads();
         }
-
-        if (savedInstanceState == null) {
-            IntentFilter intentFilter = new IntentFilter(C.SEND_UPDATE_INFO_TO_CONTROLLER_ACTION);
-            mMessageReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(final Context context, Intent intent) {
-                    updateServerController(intent);
-                }
-            };
-            this.registerReceiver(mMessageReceiver, intentFilter);
-        }
-
-        // initialize the GUI for the first time.
-        //updateServerGui();
-        //updateClientsGui();
-        //heartBeatTimer = new HeartBeatTimer();
-        //heartBeatTimer.start();
     }
 
     @Override
-    public void onStop() {
-        super.onStop();
+    public void onStart(){ // GUI is visible again
+        // register for messages again
+        this.registerReceiver(mMessageReceiver,
+                new IntentFilter(C.SEND_UPDATE_INFO_TO_CONTROLLER_ACTION));
+        // initialize the GUI for the first time.
+        updateServerGui();
+        updateClientsGui();
+        //heartBeatTimer = new HeartBeatTimer();
+        //heartBeatTimer.start();
+        //surfaceView.onStart();
+        super.onStart();
+    }
+
+    @Override
+    public void onResume(){ // we have foreground
+        super.onResume();
+    }
+
+    @Override
+    public void onPause(){ // another activity has foreground
+        super.onPause();
+    }
+
+    @Override
+    public void onStop() { // we are definitely in the background, may-be removed from memory
         this.unregisterReceiver(mMessageReceiver);
+        //surfaceView.onStop();
+        super.onStop();
         //if (heartBeatTimer != null) heartBeatTimer.stopTimer();
     }
 
     @Override
-    public void onDestroy() {
-        stopClients();
-        stopServer();
+    public void onDestroy() { // we are being killed
+        Log.i(TAG, "MainActivity::onDestroy");
+        if ( isFinishing() ) { // only try to kill the services if we're actually being killed..
+            stopClients();
+            stopServer();
+        }
+        //surfaceView.onDestroy();
         super.onDestroy();
     }
 

@@ -43,7 +43,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	private ColorBlock buttonColors = ColorBlock.defaultColorBlock;
 
 	void Start () {
-		#if UNITY_ANDROID && !UNITY_EDITOR
+		#if !NOSERVICECONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
 		FieldtripServicesControlerInterface.Initialize();
 		androidDevice = true;
 		#endif
@@ -58,7 +58,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	}
 
 	void Update(){
-		#if UNITY_ANDROID && !UNITY_EDITOR
+		#if !NOSERVICECONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
 		if (androidDevice && inMenu) {
 			if (updateServer){
 				string serverUptimeNew = FieldtripServicesControlerInterface.getBufferUptime ();
@@ -128,8 +128,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	// System Startup and Shutdown
 
 	public IEnumerator startServerAndAllClients(){
-		#if UNITY_ANDROID && !UNITY_EDITOR
-		if (androidDevice) {
+		#if !NOSERVICECONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
 			//Start Server
 			logStatus ("starting server...");
 			Debug.Log ("Started: " + FieldtripServicesControlerInterface.startServer ());
@@ -196,12 +195,6 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 				yield return new WaitForSeconds (2f);
 			}
 
-			//buffer.putEvent("stimulus.startbaseline", "start", buffer.getCurrentSampleNumber());
-
-		} else {
-			logStatus ("pretending to do something...");
-			yield return new WaitForSeconds(2);
-		}
 		#else
 			//Start Buffer
 			logStatus ("creating buffer...");
@@ -211,7 +204,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 			}
 			logStatus ("pretending to do something...");
 			yield return new WaitForSeconds(2);
-        #endif
+      #endif
 		buttonColors.normalColor = themeGreen;
 		buttonColors.highlightedColor = themeGreen;
 		StatusButton.colors = buttonColors;
@@ -222,7 +215,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 	public IEnumerator stopClientAndServer(){
 		systemIsReady = false;
-		#if UNITY_ANDROID && !UNITY_EDITOR
+		#if !NOSERVICECONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
 		if (androidDevice) {
 			//Stop Clients
 			clientIsConnected = false;
