@@ -75,7 +75,7 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 				 System.err.println("Couldnt understand your triallength spec.... using 1000ms");
 			}			 
 		}
-		System.out.println("trialLen: " + trialLength_ms);
+		System.out.println("trialLen_ms: " + trialLength_ms);
 		int step_ms = -1;
 		if (args.length>=4) {
 			try {
