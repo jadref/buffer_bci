@@ -88,7 +88,7 @@ opts=struct('phaseEventType','startPhase.cmd',...
             'epochPredFilt',[],'epochFeedbackOpts',{{}},...
 				'contPredFilt',[],'contFeedbackOpts',{{}},...
 				'capFile',[],...
-				'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1,'timeout_ms',1000);
+				'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1,'timeout_ms',500);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( ~iscell(opts.erpOpts) ) opts.erpOpts={opts.erpOpts}; end;
 if ( ~iscell(opts.trainOpts))opts.trainOpts={opts.trainOpts}; end;
@@ -130,6 +130,17 @@ cname='clsfr';
 testname='testing_data';
 subject=opts.subject;
 
+if ( opts.useGUI )
+  % create the control window and execute the phase selection loop
+  contFig=figure(99); % use figure window number no-one else will use...
+  clf;
+  set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
+  axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
+  set(contFig,'Units','pixel');wSize=get(contFig,'position');
+  fontSize = .05*wSize(4);
+  txth=text(.25,.5,{'Waiting for buffer server and data...'},'fontunits','pixel','fontsize',.05*wSize(4),...
+				'HorizontalAlignment','left','color',[1 1 1]);
+end
 
 % wait for the buffer to return valid header information
 hdr=[];
@@ -143,6 +154,27 @@ while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffe
   pause(1);
 end;
 
+
+if ( opts.useGUI )
+  %        Instruct String            Phase-name
+  menustr={'0) capfitting'             'capfitting';
+           '1) eegviewer'              'eegviewer';
+			  '2) Calibrate + ERP Viewer' 'erpviewcalibrate'; 
+           '4) Train ERP Classifier'   'trainerp';
+           '5) Train ERsP Classifier'  'trainersp';
+			  '6) Epoch Feedback'         'epochfeedback';
+			  '7) Continuous Feedback'    'contfeedback';
+			  'q) exit'                   'quit';
+          };
+  set(txth,'string',menustr(:,1));
+  % BODGE: point to move around to update the plot to force key processing in OCTAVE
+  ph=[]; if ( exist('OCTAVE_VERSION','builtin') ) ph=plot(1,0,'k'); end
+  % install listener for key-press mode change
+  set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
+  set(contFig,'userdata',[]);
+  drawnow; % make sure the figure is visible
+end
+
 % main loop waiting for commands and then executing them
 nevents=hdr.nEvents; nsamples=hdr.nsamples;
 state=struct('nevents',nevents,'nsamples',nsamples); 
@@ -150,8 +182,33 @@ phaseToRun=[]; clsSubj=[]; trainSubj=[];
 while ( true )
 
   if ( ~isempty(phaseToRun) ) state=[]; end
-  drawnow;
+
+  if ( opts.useGUI ) % update the key-control window
+    % BODGE: move point to force key-processing
+    if ( ~isempty(ph) ) fprintf('.');set(ph,'ydata',rand(1)*.01); end;
+	 if ( ~ishandle(contFig) ) break; end;
+    drawnow; pause(.1);
   
+	 % process any key-presses, and convert to phase-control events
+	 phaseToRun=[];
+	 modekey=get(contFig,'userdata'); 
+	 if ( ~isempty(modekey) ) 	 
+		fprintf('key=%s\n',modekey);
+		phaseToRun=[];
+		if ( ischar(modekey(1)) )
+		  ri = strmatch(modekey(1),menustr(:,1)); % get the row in the instructions
+		  if ( ~isempty(ri) ) 
+			 phaseToRun = menustr{ri,2};
+		  end
+		end
+		set(contFig,'userdata',[]);	 
+	 end
+										  % and convert to phase control events
+	 if ( ~isempty(phaseToRun) ) sendEvent(opts.phaseEventType,phaseToRun); phaseToRun=[]; end;
+  else
+	 drawnow;
+  end
+
   % wait for a phase control event
   if ( opts.verb>0 ) fprintf('%d) Waiting for phase command\n',nsamples); end;
   [devents,state,nevents,nsamples]=buffer_newevents(opts.buffhost,opts.buffport,state,...
@@ -165,7 +222,7 @@ while ( true )
   end
   if ( opts.verb>0 ) fprintf('Got Event: %s\n',ev2str(devents)); end;
   
-  % extract the subject info
+  % process any new buffer events
   phaseToRun=[];
   for di=1:numel(devents);
     % extract the subject info
@@ -183,6 +240,8 @@ while ( true )
   fprintf('%d) Starting phase : %s\n',devents(di).sample,phaseToRun);
   if ( opts.verb>0 ) ptime=getwTime(); end;
   sendEvent(lower(phaseToRun),'start'); % mark start/end testing
+  % hide controller window while the phase is actually running
+  if ( opts.useGUI && ishandle(contFig) ) set(contFig,'visible','off'); end;
   
   switch lower(phaseToRun);
     
@@ -316,7 +375,7 @@ while ( true )
       sendEvent('training','end');    
     end
       
-   case 'exit';
+   case {'quit','exit'};
     break;
     
    otherwise;
@@ -325,5 +384,7 @@ while ( true )
   end
   if ( opts.verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;
   sendEvent(lower(phaseToRun),'end');    
+  % show GUI again when phase has completed
+  if ( opts.useGUI && ishandle(contFig) ) set(contFig,'visible','on'); end;
   
 end
