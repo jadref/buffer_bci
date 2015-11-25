@@ -28,6 +28,9 @@ public class ContinuousClassifier {
 	 public static int VERB = 0; // debugging verbosity level
 	 public long printInterval_ms=5000; // time between debug prints
 
+	 protected String processName=TAG;
+	 public void setprocessName(String name){ this.processName=name; }
+
     protected String hostname ="localhost";
     protected int port = 1972;
     protected String endType = "stimulus.test";
@@ -122,8 +125,9 @@ public class ContinuousClassifier {
 		cc.mainloop();
 	 }
 
-	 public ContinuousClassifier(){}
+	 public ContinuousClassifier(){ this.processName=TAG;}
 	 public ContinuousClassifier(String host, int port, int timeout_ms){
+		  processName=TAG;
 		  if ( host !=null ) this.hostname=host;
 		  if ( port >0 )     this.port=port;
 		  if( timeout_ms>=0) this.timeout_ms=timeout_ms;
@@ -261,6 +265,10 @@ public class ContinuousClassifier {
         long t0 = System.currentTimeMillis();
 		  long t=t0;
 		  long pnext=t+printInterval_ms;
+		  
+		  try {
+				C.putEvent(new BufferEvent("process."+processName,"start",-1));  // Log that we are starting
+		  } catch ( IOException e ) { e.printStackTrace(); } 
 
         // Run the code
         while (!endEvent && run) {//The run switch allows control of stopping the thread and getting out of the loop
@@ -363,8 +371,10 @@ public class ContinuousClassifier {
                 nEvents = status.nEvents;
             }
         }
-        try {
-            C.disconnect();
+
+        try {				
+				C.putEvent(new BufferEvent("process."+processName,"end",-1));// Log that we are finishing
+            C.disconnect(); // close buffer connection
         } catch (IOException e) {
             e.printStackTrace();
         }

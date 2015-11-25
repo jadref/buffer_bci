@@ -10,6 +10,8 @@ public class Training : MonoBehaviour {
 	public GameObject tunnelContainer;
 	public float smoothTime = 0.3f;
 	public float turningRate = 100f;
+	public float MINZPOS = 1;
+	public float MAXZPOS = 25;
 
 	private float time = 0f;
 	private Vector3 velocity = Vector3.zero;
@@ -61,6 +63,8 @@ public class Training : MonoBehaviour {
 
 			float currentPosZ = ball.transform.position[2];
 			float targetPosZ = 11f + -a*10f;
+			// limit range of Z pos
+			targetPosZ=Math.min(Math.max(targetPosZ,MINZPOS),MAXZPOS);
 			float targetRotX = turningRate * (targetPosZ - currentPosZ) / (2f * Mathf.PI * 0.5f);
 
 			Vector3 targetPosition = new Vector3(0, 0, targetPosZ);
@@ -69,8 +73,10 @@ public class Training : MonoBehaviour {
 
 			// Badness to Ball Color
 			float b = (float)FTSInterface.getBadness();
+			float badColor = Math.max(0,b-.5f); // > .5 = bad
+			badColor = Math.min(badColor,3) / 3 * 255f; // 3 is max badness, linear between
 
-			ballRenderMan.material.SetFloat ("_Blend", b);
+			ballRenderMan.material.SetFloat ("_Blend", badColor);
 			//skinnedMeshRenderMan.SetBlendShapeWeight (0, value * 100f);
 
 			// Channel quality to tunnel Color

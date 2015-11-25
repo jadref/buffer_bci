@@ -18,6 +18,7 @@ public class AlphaLatContClassifierThread extends ThreadBase {
 
     private static final String TAG = AlphaLatContClassifierThread.class.getSimpleName();
 
+	 String processName = TAG;
     protected String hostname ="localhost";
     protected int port = 1972;
     protected int timeout_ms = 1000;
@@ -25,6 +26,8 @@ public class AlphaLatContClassifierThread extends ThreadBase {
     protected int step_ms  = 100;
     protected String clsfrFile;
     private ContinuousClassifier clsfr=null;
+	 protected boolean compLat=true;
+	 protected boolean normLat=true;
 
     @Override
     public Argument[] getArguments() {
@@ -40,7 +43,9 @@ public class AlphaLatContClassifierThread extends ThreadBase {
                 new Argument("Sample step ms", step_ms, true), //8
                 new Argument("Overlap", .5, true), //9
                 new Argument("Prediction filter", -1.0, true), //10
-                new Argument("Clsfr file","clsfr_nf.txt") //11
+                new Argument("Clsfr file","clsfr_nf.txt"), //11
+                new Argument("Compute Lateralizsation", compLat?1:0, true),//12
+                new Argument("Normalize Lat", normLat?1:0, true)//13
         };
         return arguments;
     }
@@ -55,6 +60,8 @@ public class AlphaLatContClassifierThread extends ThreadBase {
         this.trialLength_ms = arguments[7].getInteger();
         this.step_ms = arguments[8].getInteger();
         this.clsfrFile = arguments[11].getString();
+        this.compLat   = arguments[12].getInteger()>0;
+        this.normLat   = arguments[13].getInteger()>0;
     }
 
     @Override
@@ -72,6 +79,9 @@ public class AlphaLatContClassifierThread extends ThreadBase {
 		  }
         clsfr = new AlphaLatContClassifier(hostname,port,timeout_ms);
         clsfr.initialize(clsfrReader,trialLength_ms,step_ms);
+        ((AlphaLatContClassifier)clsfr).setcomputeLateralization(compLat);
+        ((AlphaLatContClassifier)clsfr).setnormalizeLateralization(normLat);
+        clsfr.setprocessName(processName);
         clsfr.mainloop();
         clsfr=null;
     }
@@ -91,10 +101,10 @@ public class AlphaLatContClassifierThread extends ThreadBase {
             clsfrReader=this.getClass().getClassLoader().getResourceAsStream("assets/"+clsfrFile);
         }
         if ( clsfrReader==null) {
-            Log.w(TAG, "Huh, couldn't open classifier file: " + clsfrFile);
-            Log.w(TAG, "Aborting!" + clsfrFile);
+            Log.e(TAG, "Huh, couldn't open classifier file: " + clsfrFile);
+            Log.e(TAG, "Aborting!" + clsfrFile);
         }
-		  return clsfrReader;
+         return clsfrReader;
 	 }
 
 

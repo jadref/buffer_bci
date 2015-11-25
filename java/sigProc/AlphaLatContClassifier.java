@@ -26,12 +26,13 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 
     protected static final String TAG = AlphaLatContClassifier.class.getSimpleName();
 
-	 private String baselineEventType = "stimulus.startbaseline";
+	 private String baselineEventType = "stimulus.baseline";
     private String baselineEnd = "end";
     private String baselineStart = "start";
     private int nBaselineStep = 5000;
-	 protected boolean normalizeLateralization=true;
-
+	 private boolean computeLateralization=true; // lateralization or total power
+	 private boolean normalizeLateralization=true; // normalize the lateralization score
+	 
 	 public static void main(String[] args) throws IOException,InterruptedException {	
 		  String hostname=null;
 		  int port=-1;
@@ -106,8 +107,12 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 
 	 public AlphaLatContClassifier(String host, int port, int timeout){
 		  super(host,port,timeout);
+		  processName=TAG;
 	 }
 
+	 public void setcomputeLateralization(boolean complat){computeLateralization=complat;}
+	 public void setnormalizeLateralization(boolean normlat){normalizeLateralization=normlat;}
+	 
 	 @Override
     public void mainloop() {
 		  VERB=1;
@@ -117,8 +122,8 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 
         // Initialize initial variables. These are used later on to store the data.
 		  int nOut=classifiers.get(0).getOutputSize()-1; nOut=nOut>0?nOut:1;
-        Matrix baseLineVal = Matrix.zeros(nOut, 1);
-        Matrix baseLineVar = Matrix.ones(nOut, 1);
+        Matrix baselineMean = Matrix.zeros(nOut, 1);
+        Matrix baselineVar = Matrix.ones(nOut, 1);
         boolean baselinePhase = false;
         int nBaseline = 0;
         Matrix dvBaseline = null;
@@ -128,6 +133,10 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
         long t0 = System.currentTimeMillis();
 		  long t=t0;
 		  long pnext=t+printInterval_ms;
+
+		  try {
+				C.putEvent(new BufferEvent("process."+processName,"start",-1));  // Log that we are starting
+		  } catch ( IOException e ) { e.printStackTrace(); } 
 
         // Run the code
         while (!endEvent && run) {
@@ -187,12 +196,17 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
                 // convert from channel powers to lateralization score
 					 if ( f.getRowDimension() > 1 ) {
 						  double[] dvColumn = f.getColumn(0);
+						  // return 1 less column
 						  f = new Matrix(dvColumn.length - 1, 1);
 						  f.setColumn(0, Arrays.copyOfRange(dvColumn, 1, dvColumn.length));
-						  if (normalizeLateralization){ // compute alphaLat score
-								f.setEntry(0, 0, (dvColumn[0] - dvColumn[1]) / (dvColumn[0] + dvColumn[1]));
-						  } else {
-								f.setEntry(0, 0, dvColumn[0] - dvColumn[1]);
+						  if ( computeLateralization ) { // compute difference in feature values
+								if (normalizeLateralization) { // normalized difference score
+									 f.setEntry(0, 0, (dvColumn[0] - dvColumn[1]) / (dvColumn[0] + dvColumn[1]));
+								} else {
+									 f.setEntry(0, 0, dvColumn[0] - dvColumn[1]);
+								}
+						  } else { // summed feature values
+								f.setEntry(0,0,dvColumn[0]+dvColumn[1]);
 						  }
 					 }
 
@@ -216,18 +230,14 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
                         if(VERB>0) System.out.println( "Baseline timeout\n");
                         baselinePhase = false;
                         Tuple<Matrix, Matrix> ret = baselineValues(dvBaseline, dv2Baseline, nBaseline);
-                        baseLineVal = ret.x;
-                        baseLineVar = ret.y;
-								if ( VERB>0 ) {
-									 System.out.println(TAG+" samp="+nSamples);
-									 System.out.println(TAG+" baseMean=" + Arrays.toString(baseLineVal.getColumn(0)));
-									 System.out.println(TAG+" baselineVar=" + Arrays.toString(baseLineVar.getColumn(0)));
-								}
+                        baselineMean = ret.x;
+                        baselineVar = ret.y;
+								if ( VERB>=0 ) logbaseline(baselineMean,baselineVar);
                     }
                 }
 
                 // Normalize to z-score w.r.t. the base-line values
-                dv = new Matrix(dv.subtract(baseLineVal)).divideElements(baseLineVar);
+                dv = new Matrix(dv.subtract(baselineMean)).divideElements(baselineVar);
 
                 // Send prediction event
                 try {
@@ -267,13 +277,9 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 									 if ( baselinePhase ){
 										  baselinePhase = false;
 										  Tuple<Matrix, Matrix> ret=baselineValues(dvBaseline,dv2Baseline,nBaseline);
-										  baseLineVal = ret.x;
-										  baseLineVar = ret.y;
-										  if ( VERB>0 ) {
-												System.out.println(TAG+" samp="+nSamples);
-												System.out.println(TAG+" baseMean=" + Arrays.toString(baseLineVal.getColumn(0)));
-												System.out.println(TAG+" baselineVar=" + Arrays.toString(baseLineVar.getColumn(0)));
-										  }
+										  baselineMean = ret.x;
+										  baselineVar = ret.y;
+										  if ( VERB>=0 ) logbaseline(baselineMean,baselineVar);
 									 }
 								}
 						  }
@@ -283,6 +289,7 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
             }
         }
         try {
+				C.putEvent(new BufferEvent("process."+processName,"end",-1));		  // Log that we are done
             C.disconnect();
         } catch (IOException e) {
             e.printStackTrace();
@@ -299,9 +306,20 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
      */
     public Tuple<Matrix, Matrix> baselineValues(Matrix dvBaseline, Matrix dv2Baseline, int nBaseline) {
         double scale = 1. / nBaseline;
-        Matrix baseLineVal = new Matrix(dvBaseline.scalarMultiply(scale));
-        Matrix baseLineVar = new Matrix(new Matrix(dv2Baseline.subtract(dvBaseline.multiplyElements(dvBaseline)
+        Matrix baselineMean = new Matrix(dvBaseline.scalarMultiply(scale));
+        Matrix baselineVar = new Matrix(new Matrix(dv2Baseline.subtract(dvBaseline.multiplyElements(dvBaseline)
                 .scalarMultiply(scale))).abs().scalarMultiply(scale)).sqrt();
-        return new Tuple<Matrix, Matrix>(baseLineVal, baseLineVar);
+        return new Tuple<Matrix, Matrix>(baselineMean, baselineVar);
     }
+
+	 void logbaseline(Matrix baselineMean, Matrix baselineVar){
+		  try { 
+				C.putEvent(new BufferEvent("classifier.baseline.mean",baselineMean.getColumn(0),-1));
+				C.putEvent(new BufferEvent("classifier.baseline.var",baselineVar.getColumn(0),-1));
+		  } catch ( IOException e ) {
+            e.printStackTrace();
+		  }
+		  System.out.println(TAG+" baseMean=" + Arrays.toString(baselineMean.getColumn(0)));
+		  System.out.println(TAG+" baselineVar=" + Arrays.toString(baselineVar.getColumn(0)));
+	 }
 }

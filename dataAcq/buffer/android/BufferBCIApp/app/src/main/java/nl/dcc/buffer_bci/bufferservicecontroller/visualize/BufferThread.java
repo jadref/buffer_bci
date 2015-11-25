@@ -66,29 +66,40 @@ public class BufferThread extends Thread {
     }
 
     public void run() {
+        SamplesEventsCount count;
+        BufferEvent[] events;
         int eventCount = 0;
         int nSamples=0;
         while (run) {
             if (connect()) {
-                BufferEvent[] events=null;
+                events=null;
+                count=null;
                 try {
                     // wait and block until an update event is received
-                    SamplesEventsCount count = C.waitForEvents(eventCount, timeout_ms);
-                    // get any new events
-                    if ( count.nEvents > eventCount ) {
-                        events = C.getEvents(eventCount, count.nEvents - 1);
-                        eventCount = count.nEvents;
-                    } if ( count.nSamples < nSamples) {
-                        Log.i(TAG,"Buffer restart detected!");
-                        eventCount=count.nEvents;
-                    }
-                    nSamples=count.nSamples;
+                    count = C.waitForEvents(eventCount, timeout_ms);
                 } catch (IOException e) {
                     // connection failed, wait before trying again
                     try{Thread.sleep(200);}catch(InterruptedException ex){}
-                    events = null;
                 }
-
+                if ( count != null ) {
+                    // get any new events
+                    if (count.nSamples < nSamples) {
+                        Log.i(TAG, "Buffer restart detected!");
+                        eventCount = count.nEvents;
+                    }
+                    // load any new events
+                    if (count.nEvents > eventCount) {
+                        try {
+                            events = C.getEvents(eventCount, count.nEvents - 1);
+                        } catch ( IOException ex ){
+                            Log.e(TAG, ex.toString());
+                        }
+                    }
+                    // update the cursor to the last data/events we have seen
+                    eventCount = count.nEvents;
+                    nSamples = count.nSamples;
+                }
+                // process any new events
                 if ( events != null && events.length > 0 ) {
                     // check which of these events we care about
                     for (int i = events.length - 1; i >= 0; i--) {
@@ -100,6 +111,9 @@ public class BufferThread extends Thread {
                         }
                     }
                 }
+            } else {
+                // not connected, wait before trying again
+                try{Thread.sleep(200);}catch(InterruptedException ex){}
             }
         }
     }

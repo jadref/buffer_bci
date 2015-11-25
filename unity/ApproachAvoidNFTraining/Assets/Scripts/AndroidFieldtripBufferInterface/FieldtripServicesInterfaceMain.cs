@@ -181,7 +181,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 				logStatus ("sending events to buffer...");
 				for (int i=0; i<result.Length; ++i) {
-					if (result [i].Split (':') [1].Contains ("Continuous")) {
+					if (result [i].Split (':') [1].Contains ("AlphaLat")) {
 						ccThreadID = int.Parse (result [i].Split (':') [0]);
 						Debug.Log ("Starting ContinuousClassifier @ thread: " + ccThreadID.ToString ());
 						FieldtripServicesControlerInterface.startThread (ccThreadID);
@@ -230,27 +230,26 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 			logStatus ("shutting down clients...");
 			Debug.Log ("Stopped Clients = " + FieldtripServicesControlerInterface.stopClients ());
 			yield return new WaitForSeconds (1);
+		#endif
 
-			//Stop buffer
-			logStatus ("removing buffer...");
-			bufferIsOn = false;
-			buffer.disconnect ();
-			yield return new WaitForSeconds (1);
+		//Stop buffer
+		logStatus ("removing buffer...");
+		bufferIsOn = false;
+		buffer.disconnect ();
+		yield return new WaitForSeconds (1);
 
+		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
 			//Stop Server
 			logStatus ("shutting down server...");
 			updateServer = false;
 			Debug.Log ("Stopped Server = " + FieldtripServicesControlerInterface.stopServer ());
 			yield return new WaitForSeconds (1);
 
-			//Update Status
-			clientIsConnected = false;
-			logStatus ("system offline");
-			resetStatus ();
-		#else
-		logStatus ("pretending to do something...");
-		yield return new WaitForSeconds(2);
-        #endif
+      #endif
+		//Update Status
+		clientIsConnected = false;
+		logStatus ("system offline");
+		resetStatus ();
 	}
 
 	public IEnumerator refreshClientAndServer(){
@@ -270,7 +269,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 			clientIsConnected = true;
 			IList alphaLatObjects = latestEvent.getValue().array as IList;
 			currentAlphaLat = alphaLatObjects.Cast<double>().ToArray();
-			Debug.Log (alphaLatObjects);
+			//Debug.Log (alphaLatObjects);
 		}
 	}
 
@@ -288,7 +287,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 	public void sendEvent(string eventType, string eventData)
 	{
-		Debug.Log ("Event sent to buffer: " + eventType + ": " + eventData);
+		//Debug.Log ("Event sent to buffer: " + eventType + ": " + eventData);
 		buffer.putEvent (eventType, eventData, buffer.getSampleNumberNow ());
 	}
 
