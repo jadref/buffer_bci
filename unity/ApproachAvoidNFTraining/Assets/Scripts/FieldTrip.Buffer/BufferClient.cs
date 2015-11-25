@@ -64,16 +64,15 @@ namespace FieldTrip.Buffer
 		
 		
 		public bool connect(string address) {
+			string hostname = address;
+			int port = 1972;
 			int colonPos = address.LastIndexOf(':');
 			if (colonPos != -1) {
-				string hostname = address.Substring(0,colonPos);
-				int port = int.Parse(address.Substring(colonPos+1));
-				
-				return sockChan.connect(hostname, port);
+				hostname = address.Substring(0,colonPos);
+				port = int.Parse(address.Substring(colonPos+1));				
 			}
-			throw new IOException("Address format not recognized / supported yet.");
 			// other addresses not recognised yet
-			return false;
+			return sockChan.connect(hostname, port);
 		}
 		
 		public void disconnect()  {
@@ -149,7 +148,6 @@ namespace FieldTrip.Buffer
 				break;
 				default:
 					throw new IOException("Not supported yet - returning zeros.");
-				break;	
 			}
 		
 			return data;
@@ -189,7 +187,6 @@ namespace FieldTrip.Buffer
 					break;
 				default:
 					throw new IOException("Not supported yet - returning zeros.");
-				break;
 			}
 		
 			return data;
@@ -236,7 +233,6 @@ namespace FieldTrip.Buffer
 					break;
 				default:
 					throw new IOException("Not supported yet - returning zeros.");
-				break;
 			}
 		
 			return data;
@@ -289,7 +285,6 @@ namespace FieldTrip.Buffer
 				break;
 				default:
 					throw new IOException("Not supported yet - returning zeros.");
-				break;
 			}
 		
 			return data;
@@ -351,7 +346,6 @@ namespace FieldTrip.Buffer
 					break;
 				default:
 					throw new IOException("Not supported yet - returning zeros.");
-				break;
 			}
 		
 			return data;

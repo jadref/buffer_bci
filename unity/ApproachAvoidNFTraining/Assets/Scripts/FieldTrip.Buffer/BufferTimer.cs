@@ -34,7 +34,11 @@ namespace FieldTrip.Buffer
 			Regression.LinearRegression(times.ToArray(), bufferSamples.ToArray().Select(i => (double)i).ToArray() ,0 , times.Count, out rsquared, out yintercept, out slope);
 		}
 		
-		
+		public void reset(){
+			bufferSamples.Clear ();
+			times.Clear ();
+		}
+
 		public int getSampleNow(){
 			DateTime now = DateTime.UtcNow;
 			int nowInMillis = (((now.Hour*60)+now.Minute)*60+now.Second)*1000+now.Millisecond;
