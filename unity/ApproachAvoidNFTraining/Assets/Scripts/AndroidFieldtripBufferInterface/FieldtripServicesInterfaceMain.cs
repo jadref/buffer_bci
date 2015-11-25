@@ -43,7 +43,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	private ColorBlock buttonColors = ColorBlock.defaultColorBlock;
 
 	void Start () {
-		#if !NOSERVICECONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
+		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
 		FieldtripServicesControlerInterface.Initialize();
 		androidDevice = true;
 		#endif
@@ -58,7 +58,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	}
 
 	void Update(){
-		#if !NOSERVICECONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
+		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
 		if (androidDevice && inMenu) {
 			if (updateServer){
 				string serverUptimeNew = FieldtripServicesControlerInterface.getBufferUptime ();
@@ -128,7 +128,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	// System Startup and Shutdown
 
 	public IEnumerator startServerAndAllClients(){
-		#if !NOSERVICECONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
+		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
 			//Start Server
 			logStatus ("starting server...");
 			Debug.Log ("Started: " + FieldtripServicesControlerInterface.startServer ());
@@ -193,16 +193,19 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 				logStatus ("check signal quality...");
 				yield return new WaitForSeconds (2f);
-			}
+			J
 
 		#else
 			//Start Buffer
-			logStatus ("creating buffer...");
+			logStatus ("Connecting to buffer...");
 			while ( ! bufferIsOn ){
 				initializeBuffer ();
-				yield return new WaitForSeconds(1);
+				if ( ! bufferIsOn ){
+					logStatus ("Couldnt connect, waiting");
+					yield return new WaitForSeconds(1);
+				}
 			}
-			logStatus ("pretending to do something...");
+			logStatus ("Waiting for a bit more.");
 			yield return new WaitForSeconds(2);
       #endif
 		buttonColors.normalColor = themeGreen;
@@ -215,8 +218,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 	public IEnumerator stopClientAndServer(){
 		systemIsReady = false;
-		#if !NOSERVICECONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
-		if (androidDevice) {
+		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
 			//Stop Clients
 			clientIsConnected = false;
 			logStatus ("stopping classifier...");
@@ -245,7 +247,6 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 			clientIsConnected = false;
 			logStatus ("system offline");
 			resetStatus ();
-		}
 		#else
 		logStatus ("pretending to do something...");
 		yield return new WaitForSeconds(2);

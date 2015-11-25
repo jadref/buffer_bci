@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 
 public static class FieldtripServicesControlerInterface {
 
-	#if !NOSERVICECONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
+	#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
 	private static AndroidJavaObject mainActivity;
 	private static AndroidJavaObject serverController;
 	private static AndroidJavaObject clientsController;
