@@ -124,25 +124,25 @@ public class MenuOptions : MonoBehaviour {
 
 	public void LoadRestBaseline()
 	{
-		FTSInterface.sendEvent ("stimulus.baseline", "start");
+		FTSInterface.sendEvent (Config.baselineEventType, "start");
 		HideAllBut (restStage);
 	}
 
 	public void EndRestBaseline()
 	{
-		FTSInterface.sendEvent ("stimulus.baseline", "end");
+		FTSInterface.sendEvent (Config.baselineEventType, "end");
 		LoadRest ();
 	}
 
 	public void LoadRest()
 	{
-		FTSInterface.sendEvent ("stimulus.rest", "start");
+		FTSInterface.sendEvent (Config.restEventType, "start");
 		HideAllBut (restStage);
 	}
 
 	public void EndRest()
 	{
-		FTSInterface.sendEvent ("stimulus.rest", "end");
+		FTSInterface.sendEvent (Config.restEventType, "end");
 	}
 
 	public void LoadTrainingIntro()
@@ -151,12 +151,12 @@ public class MenuOptions : MonoBehaviour {
 	}
 
 	public void LoadTraining() {
-		FTSInterface.sendEvent ("stimulus.approach", "start");
+		FTSInterface.sendEvent (Config.approachEventType, "start");
 		HideAllBut (trainingStage);
 	}
 
 	public void EndTraining() {
-		FTSInterface.sendEvent ("stimulus.approach", "end");
+		FTSInterface.sendEvent (Config.approachEventType, "end");
 	}
 
 	public void LoadQuestionPage(int page)
