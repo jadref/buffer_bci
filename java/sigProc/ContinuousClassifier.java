@@ -93,7 +93,7 @@ public class ContinuousClassifier {
 				 System.err.println("Couldnt understand your triallength spec.... using 1000ms");
 			}			 
 		}
-		System.out.println("trialLen: " + trialLength_ms);
+		System.out.println("trialLen_ms: " + trialLength_ms);
 		int step_ms = -1;
 		if (args.length>=4) {
 			try {
@@ -246,6 +246,7 @@ public class ContinuousClassifier {
         } else if ( overlap>0 ) {
             step_samp = Long.valueOf(Math.round(trialLength_samp * overlap)).intValue();
         }
+		  if ( VERB>0 ) System.out.println(TAG+"trlen_samp="+trialLength_samp+" step_samp="+step_samp);
     }
 
     public void mainloop() {

@@ -47,7 +47,7 @@ public class SignalProxy {
 		}
 		if (args.length>=2) {
 			try {
-				 fSample = Double.parseDouble(args[2]);
+				 fSample = Double.parseDouble(args[1]);
 			}
 			catch (NumberFormatException e) {
 				 System.err.println("Error: couldn't understand sample rate. "+fSample+"hz assumed");
