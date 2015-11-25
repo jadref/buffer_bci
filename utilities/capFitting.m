@@ -25,7 +25,7 @@ host=opts.buffhost; if ( isempty(host) ); host=opts.host; end
 port=opts.buffport; if ( isempty(port) ); port=opts.port; end;
 
 % create the plot
-fig=opts.fig; if ( isempty(fig) ); fig=gcf; end;
+fig=opts.fig; if ( isempty(fig) ); fig=figure(1); end;
 set(fig,'units','normalized','position',[0 0 1 1],'MenuBar','none','Name','capFitting', 'Color',[1 1 1],'NumberTitle','off','Visible','on');
 % use complete available figure area
 set(get(fig,'Children'),'Position',[0 0 .9 1]);
