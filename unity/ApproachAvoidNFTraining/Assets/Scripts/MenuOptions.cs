@@ -124,25 +124,27 @@ public class MenuOptions : MonoBehaviour {
 
 	public void LoadRestBaseline()
 	{
-		FTSInterface.sendEvent (Config.baselineEventType, "start");
+		FTSInterface.sendEvent (Config.restEventType, "start"); // first is pure rest, i.e. no baseline
 		HideAllBut (restStage);
 	}
 
 	public void EndRestBaseline()
 	{
-		FTSInterface.sendEvent (Config.baselineEventType, "end");
+		FTSInterface.sendEvent (Config.restEventType, "end"); 
 		LoadRest ();
 	}
 
 	public void LoadRest()
 	{
 		FTSInterface.sendEvent (Config.restEventType, "start");
+		FTSInterface.sendEvent (Config.baselineEventType, "start"); // rest is also baseline
 		HideAllBut (restStage);
 	}
 
 	public void EndRest()
 	{
 		FTSInterface.sendEvent (Config.restEventType, "end");
+		FTSInterface.sendEvent (Config.baselineEventType, "end");
 	}
 
 	public void LoadTrainingIntro()

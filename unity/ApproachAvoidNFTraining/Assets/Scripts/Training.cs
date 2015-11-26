@@ -10,8 +10,8 @@ public class Training : MonoBehaviour {
 	public GameObject tunnelContainer;
 	public float smoothTime = 0.3f;
 	public float turningRate = 100f;
-	public float MINZPOS = 1;
-	public float MAXZPOS = 25;
+	public float MINZPOS = 2; // closest allowed position
+	public float MAXZPOS = 15; //furthest allowed position
 
 	private float time = 0f;
 	private Vector3 velocity = Vector3.zero;
@@ -64,9 +64,11 @@ public class Training : MonoBehaviour {
 			alpha = (float)FTSInterface.getAlpha();
 
 			float currentPosZ = ball.transform.position[2];
-			float targetPosZ = 11f + -alpha*10f;
+			// Ensure 0=middle of the range and scale by alphaLIM
+			float targetPosZ = (MINZPOS+MAXZPOS)/2 + -alpha/Config.alphaLimit*(MAXZPOS-MINZPOS);
 			// limit range of Z pos
 			targetPosZ=Mathf.Min(Mathf.Max(targetPosZ,MINZPOS),MAXZPOS);
+
 			float targetRotX = turningRate * (targetPosZ - currentPosZ) / (2f * Mathf.PI * 0.5f);
 
 			Vector3 targetPosition = new Vector3(0, 0, targetPosZ);

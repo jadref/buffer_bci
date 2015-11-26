@@ -201,9 +201,9 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 						  f.setColumn(0, Arrays.copyOfRange(dvColumn, 1, dvColumn.length));
 						  if ( computeLateralization ) { // compute difference in feature values
 								if (normalizeLateralization) { // normalized difference score
-									 f.setEntry(0, 0, (dvColumn[0] - dvColumn[1]) / (dvColumn[0] + dvColumn[1]));
+									 f.setEntry(0, 0, (dvColumn[1] - dvColumn[0]) / (dvColumn[0] + dvColumn[1]));
 								} else {
-									 f.setEntry(0, 0, dvColumn[0] - dvColumn[1]);
+									 f.setEntry(0, 0, dvColumn[1] - dvColumn[0]);
 								}
 						  } else { // summed feature values
 								f.setEntry(0,0,dvColumn[0]+dvColumn[1]);
