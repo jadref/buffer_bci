@@ -277,12 +277,12 @@ public class RingDataStore extends DataModel {
 
 		if (request.end < eventBuffer.indexOfOldest()) {
 			throw new DataException(
-					"Requested samples that do not exist (end index < index of oldest sample in ring)");
+					"Requested events that do not exist (end index < index of oldest sample in ring)");
 		}
 
 		if (request.begin < eventBuffer.indexOfOldest()) {
 			throw new DataException(
-					"Requested samples that do not exist (begin index < index of oldest sample in ring)");
+					"Requested events that do not exist (begin index < index of oldest sample in ring)");
 		}
 
 		final int nEvents = request.end - request.begin + 1;

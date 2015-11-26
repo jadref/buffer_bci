@@ -8,6 +8,8 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
+import java.util.Arrays;
+
 /**
  * Created by pieter on 18-5-15.
  */
@@ -29,6 +31,10 @@ public class DrawThread extends Thread {
     private int color;
     private float size;
     private float[] max;
+    private float stringX;
+    private float stringY;
+    private float stringSize=40;
+    private String predString;
 
     float baddnessFilter=0.0f;
 
@@ -48,6 +54,8 @@ public class DrawThread extends Thread {
             // Start bubble in centre and create some random motion
             bubbleX = canvasWidth / 2;
             bubbleY = canvasHeight / 2;
+            stringX = canvasWidth *.05f;
+            stringY = canvasHeight *.8f;
         }
         updateModel();
     }
@@ -60,6 +68,7 @@ public class DrawThread extends Thread {
                 float[] values = bufferThread.getValues();
                 color = computeColor(values);
                 size = computeSize(values);
+                predString = computeString(values);
                 bufferThread.setDamage(false); // mark as processed
             }
         }
@@ -85,6 +94,11 @@ public class DrawThread extends Thread {
         float newSize = meanSize - values[0] * stdSize;
         newSize = Math.max(Math.min(newSize, Math.min(canvasHeight, canvasWidth)), 20.f);
         return (int) newSize;
+    }
+
+    private String computeString(float values[]){
+        String str = Arrays.toString(values);
+        return str;
     }
 
     public void run() {
@@ -125,12 +139,13 @@ public class DrawThread extends Thread {
     }
 
     private void doDraw(Canvas canvas) {
-        //String rgb = "(" + Color.red(color) + ", " + Color.green(color) + ", " + Color.blue(color) + ")";
-        //Log.v(TAG, "Draw circle at (" + bubbleX + ", " + bubbleY + " with size " + size + " and color " + rgb);
 //        canvas.save();
 //        canvas.restore();
         canvas.drawColor(Color.BLACK);
         paint.setColor(color);
         canvas.drawCircle(bubbleX, bubbleY, size, paint);
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(stringSize);
+        canvas.drawText(predString, stringX, stringY, paint);
     }
 }

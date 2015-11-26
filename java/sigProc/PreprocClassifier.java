@@ -107,7 +107,7 @@ public class PreprocClassifier {
     }
 
 	 public String getType() { return type; }
-
+	 
 	 public Matrix preproc(Matrix data){
 
         // Bad channel removal

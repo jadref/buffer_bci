@@ -45,6 +45,8 @@ public class SignalProxy {
 				 hostname=hostname.substring(0,sep);
 			}			
 		}
+		if ( VERB>0 ) System.out.println("Host: "+hostname+":"+port);		
+
 		if (args.length>=2) {
 			try {
 				 fSample = Double.parseDouble(args[1]);
@@ -53,6 +55,7 @@ public class SignalProxy {
 				 System.err.println("Error: couldn't understand sample rate. "+fSample+"hz assumed");
 			}			 
 		}
+		if ( VERB>0 ) System.out.println("fSample: "+fSample);
 
 		if ( args.length>=3 ) {
 			try {
@@ -62,6 +65,7 @@ public class SignalProxy {
 				System.err.println("Error: couldn't understand number of channels. "+nChannels+" assumed");
 			}			 
 		}
+		if ( VERB>0 ) System.out.println("nChannels: "+nChannels);
 
 		if ( args.length>=4 ) {
 			try {
@@ -71,6 +75,8 @@ public class SignalProxy {
 				System.err.println("Error: couldn't understand blockSize. "+blockSize+" assumed");
 			}			 
 		}		  
+		if ( VERB>0 ) System.out.println("blockSize: "+blockSize);
+
 		SignalProxy sp=new SignalProxy(hostname,port,nChannels,fSample,blockSize);
 		sp.mainloop();
 		sp.stop();

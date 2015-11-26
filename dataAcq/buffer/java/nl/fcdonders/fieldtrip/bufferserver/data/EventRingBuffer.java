@@ -50,16 +50,15 @@ public class EventRingBuffer {
 	 */
 	public synchronized Event get(int index) throws IndexOutOfBoundsException {
 		if (index < 0) {
-			throw new IndexOutOfBoundsException("Index < 0.");
+			throw new IndexOutOfBoundsException("Event Index < 0.");
 		}
 
 		if (index < eventCount - capacity) {
-			throw new IndexOutOfBoundsException(
-					"Index < index of oldest item in buffer.");
+			throw new IndexOutOfBoundsException("Event Index < index of oldest Event in buffer.");
 		}
 
 		if (index >= eventCount) {
-			throw new IndexOutOfBoundsException("Index >= size.");
+			throw new IndexOutOfBoundsException("Event Index >= index of newest event in buffer.");
 		}
 
 		if (eventCount < capacity) {
