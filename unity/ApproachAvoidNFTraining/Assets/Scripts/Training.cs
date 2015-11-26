@@ -18,6 +18,8 @@ public class Training : MonoBehaviour {
 	private bool isInitialized = false;
 
 	private static float duration;
+	private float alpha;
+	private float badness;
 
 	Renderer ballRenderMan;
 	SkinnedMeshRenderer skinnedMeshRenderMan;
@@ -59,12 +61,12 @@ public class Training : MonoBehaviour {
 			tunnelContainer.transform.Rotate (0, 0.02f, 0);
 
 			// AlphaLat to Movement
-			float a = (float)FTSInterface.getAlpha();
+			alpha = (float)FTSInterface.getAlpha();
 
 			float currentPosZ = ball.transform.position[2];
-			float targetPosZ = 11f + -a*10f;
+			float targetPosZ = 11f + -alpha*10f;
 			// limit range of Z pos
-			targetPosZ=Math.min(Math.max(targetPosZ,MINZPOS),MAXZPOS);
+			targetPosZ=Mathf.Min(Mathf.Max(targetPosZ,MINZPOS),MAXZPOS);
 			float targetRotX = turningRate * (targetPosZ - currentPosZ) / (2f * Mathf.PI * 0.5f);
 
 			Vector3 targetPosition = new Vector3(0, 0, targetPosZ);
@@ -73,20 +75,26 @@ public class Training : MonoBehaviour {
 
 			// Badness to Ball Color
 			float b = (float)FTSInterface.getBadness();
-			float badColor = Math.max(0,b-.5f); // > .5 = bad
-			badColor = Math.min(badColor,3) / 3 * 255f; // 3 is max badness, linear between
+			// smooth badness to make it visible for longer
+			if ( Config.badnessFilter>0 ) {
+				badness = Config.badnessFilter * b + (1-Config.badnessFilter)*badness;
+			} else {
+				badness = b;
+			}
+			float badColor = Mathf.Max(0,badness-Config.badnessThreshold); // > .5 = bad
+			badColor = Mathf.Min(badColor,Config.badnessLimit) / Config.badnessLimit; // 3 is max badness, linear between
 
 			ballRenderMan.material.SetFloat ("_Blend", badColor);
 			//skinnedMeshRenderMan.SetBlendShapeWeight (0, value * 100f);
 
 			// Channel quality to tunnel Color
-			float c1 = (float)FTSInterface.getQualityCh1();
-			float c2 = (float)FTSInterface.getQualityCh2();
+			float c1 = FTSInterface.getQualityCh1();
+			float c2 = FTSInterface.getQualityCh2();
 
-			float cmax = Mathf.Max (c1,c2);
+			float cmax = Mathf.Max (c1,c2) / Config.qualityLimit;
 
 			for (int i=0; i < tunnelRenderMen.Length; ++i) {
-				tunnelRenderMen[i].material.SetFloat ("_Blend", cmax);
+				tunnelRenderMen[i].material.SetFloat ("_Blend", badColor); // BODGE: channel quality doesn't go here.
 			}
 		}
 	}

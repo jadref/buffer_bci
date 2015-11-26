@@ -11,9 +11,11 @@ public class Config : MonoBehaviour {
 
 	public static int trainingBlocks = 4; 		//4
 
-	public static float badnessLimit = 256f;    //256
+	public static float badnessThreshold = .5f; // above this value is indicated as bad
+	public static float badnessLimit = 2.5f;   // max badness score allowed after threshold applied
+	public static float badnessFilter= .9f;   // exp smoothing threshold for badness
 
-	public static float qualityLimit = 256f;    //256
+	public static float qualityLimit = 150f;    //256
 
 	public static bool artefactVisual = true; 	//true
 

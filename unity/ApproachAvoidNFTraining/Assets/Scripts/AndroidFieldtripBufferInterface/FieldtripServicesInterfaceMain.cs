@@ -23,13 +23,11 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 	UnityBuffer buffer;
 	Boolean bufferIsOn = false;
-	BufferEvent latestEvent;
-	BufferEvent previousEvent;
 	double[] currentAlphaLat;
 
-	float badnessFilter;
-	float badnessLimit;
-	float qualityLimit;
+	//float badnessFilter;
+	//float badnessLimit;
+	//float qualityLimit;
 
 	public bool verbose;
 	public Image ServerStatusIcon;
@@ -47,17 +45,12 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 		FieldtripServicesControlerInterface.Initialize();
 		androidDevice = true;
 		#endif
-		badnessFilter = 0.0f;
-		badnessLimit = Config.badnessLimit;
-		qualityLimit = Config.qualityLimit;
 
-		latestEvent = new BufferEvent("",0.0f,0);
-		previousEvent = new BufferEvent("",0.0f,0);
 		currentAlphaLat = new double[] {0, 0, 0, 0};
 		resetStatus();
 	}
 
-	void Update(){
+	void Update(){ // Called every video frame
 		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
 		if (androidDevice && inMenu) {
 			if (updateServer){
@@ -74,22 +67,22 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 					}
 				}
 			}
-			if (clientIsConnected) {
-				float qch1 = getQualityCh1();
-				float qch2 = getQualityCh2();
-				if (qch1 >= 0.9f) {
-					SignalAStatusIcon.color = themeRed;
-				} else {
-					SignalAStatusIcon.color = themeGreen;
-				}
-				if (qch2 >= 0.9f) {
-					SignalBStatusIcon.color = themeRed;
-				} else {
-					SignalBStatusIcon.color = themeGreen;
-				}
-			}
 		}
        #endif
+	   if (clientIsConnected) {
+			float qch1 = getQualityCh1();
+			float qch2 = getQualityCh2();
+			if (qch1 >= Config.qualityLimit) {
+				SignalAStatusIcon.color = themeRed;
+			} else {
+				SignalAStatusIcon.color = themeGreen;
+			}
+			if (qch2 >= Config.qualityLimit) {
+				SignalBStatusIcon.color = themeRed;
+			} else {
+				SignalBStatusIcon.color = themeGreen;
+			}
+		}
 	}
 
 
@@ -262,8 +255,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	// Buffer
 	// TODO: This is a horrilble combination of service management and buffer/event tracking... should separate into different pieces.
 	private void eventsAdded(UnityBuffer _buffer, EventArgs e){
-		previousEvent = latestEvent;
-		latestEvent = _buffer.getLatestEvent();
+		BufferEvent latestEvent = _buffer.getLatestEvent();
 		if(bufferIsOn && latestEvent.getType().toString()==Config.feedbackEventType)
 		{
 			clientIsConnected = true;
@@ -306,19 +298,20 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 	public float getBadness()
 	{
-		float badness = normalize ((float)currentAlphaLat [1], badnessLimit);
-		badnessFilter = (float) (0.3 * badness + 0.7 * badnessFilter);
-		return badnessFilter;
+		//float badness = normalize ((float)currentAlphaLat [1], badnessLimit);
+		//badnessFilter = (float) (0.3 * badness + 0.7 * badnessFilter);
+		return (float)currentAlphaLat [1];//badnessFilter;
 	}
 
 	public float getQualityCh1()
 	{
-		return normalize ((float)currentAlphaLat [2], qualityLimit);
+		//return normalize ((float)currentAlphaLat [2], qualityLimit);
+		return (float)currentAlphaLat [2];
 	}
 
 	public float getQualityCh2()
 	{
-		return normalize ((float)currentAlphaLat [3], qualityLimit);
+		return (float)currentAlphaLat [3];
 	}
 
 	public void setMenu(bool value)
