@@ -48,7 +48,9 @@ elseif ( iscell(opts.endType) && numel(opts.endType)>0 && ~iscell(opts.endType{1
 end;
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ); run(fullfile(fileparts(mfilename('fullpath')),'../utilities/initPaths.m')); end;
 if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics facility
-  if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
+  if ( ~isempty(strmatch('qt',available_graphics_toolkits())) )
+	 graphics_toolkit('qt'); 
+  elseif ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
     graphics_toolkit('qthandles'); % use fast rendering library
   elseif ( ~isempty(strmatch('fltk',available_graphics_toolkits())) )
     graphics_toolkit('fltk'); % use fast rendering library
@@ -142,8 +144,7 @@ else
 end
 
 % make the figure window
-clf;
-fig=gcf;
+fig=figure(1);clf;
 set(fig,'Name','ER(s)P Viewer : t=time, f=freq, r=rest, q,close window=quit','menubar','none','toolbar','none','doublebuffer','on');
 plotPos=ch_pos; if ( ~isempty(plotPos) ) plotPos=plotPos(:,iseeg); end;
 hdls=image3d(erp,1,'plotPos',plotPos,'Xvals',ch_names(iseeg),'Yvals',times,'ylabel','time (s)','disptype','plot','ticklabs','sw','legend','se','plotPosOpts.plotsposition',[.05 .08 .91 .85],'lineWidth',opts.lineWidth);
