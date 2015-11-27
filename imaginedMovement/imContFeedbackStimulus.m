@@ -1,4 +1,5 @@
 configureIM;
+if ( ~exist(contFeedbackTrialDuration) || isempty(contFeedbackTrialDuration) ) contFeedbackTrialDuration=trialDuration; end;
 
 % make the target sequence
 tgtSeq=mkStimSeqRand(nSymbs,nSeq);
@@ -70,10 +71,10 @@ for si=1:nSeq;
   fixPos = stimPos(:,end);
   state  = [];
   trlStartTime=getwTime();
-  timetogo = trialDuration;
+  timetogo = contFeedbackTrialDuration;
   while (timetogo>0)
     timetogo = trialDuration - (getwTime()-trlStartTime); % time left to run in this trial
-    % wait for new prediction events to process *or* end of trial
+    % wait for new prediction events to process *or* end of trial time
     [events,state,nsamples,nevents] = buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],min(1000,timetogo*1000));
     if ( ~isempty(events) ) 
       [ans,si]=sort([events.sample],'ascend'); % proc in *temporal* order
@@ -111,9 +112,11 @@ for si=1:nSeq;
 	 end % if prediction events to process
 
     % feedback information... simply move in direction detected by the BCI
+    cursorPos=get(h(end),'position'); cursorPos=cursorPos(:);
+	 fixPos   =cursorPos(1:2);
     dx = stimPos(:,1:end-1)*prob(:); % change in position is weighted by class probs
 	 if ( warpCursor ) fixPos=dx; else fixPos=fixPos + dx*moveScale; end; % relative or absolute cursor movement
-    set(h(end),'position',[fixPos-stimRadius/2;stimRadius/2*[1;1]]);
+	 set(h(end),'position',[fixPos cursorPos(3:4)]);
     drawnow; % update the display after all events processed    
   end % while time to go
 

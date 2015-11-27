@@ -11,10 +11,11 @@ clf;
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
         'color',[0 0 0],'DrawMode','fast','nextplot','replacechildren',...
-        'xlim',[-1.5 1.5],'ylim',[-1.5 1.5],'Ydir','normal');
+        'xlim',axLim,'ylim',axLim,'Ydir','normal');
 
 stimPos=[]; h=[];
-stimRadius=.5;
+stimRadius=diff(axLim)/4;
+cursorSize=stimRadius/2;
 theta=linspace(0,pi,nSymbs); stimPos=[cos(theta);sin(theta)];
 for hi=1:nSymbs; 
   h(hi)=rectangle('curvature',[1 1],'position',[stimPos(:,hi)-stimRadius/2;stimRadius*[1;1]],...
@@ -22,7 +23,7 @@ for hi=1:nSymbs;
 end;
 % add symbol for the center of the screen
 stimPos(:,nSymbs+1)=[0 0];
-h(nSymbs+1)=rectangle('curvature',[1 1],'position',[stimPos(:,nSymbs+1)-stimRadius/4;stimRadius/2*[1;1]],...
+h(nSymbs+1)=rectangle('curvature',[1 1],'position',[stimPos(:,nSymbs+1)-cursorSize/2;cursorSize*[1;1]],...
                       'facecolor',bgColor); 
 set(gca,'visible','off');
 
