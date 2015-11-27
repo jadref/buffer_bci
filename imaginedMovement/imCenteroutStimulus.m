@@ -97,6 +97,9 @@ for si=1:nSeq;
 		  if ( verb>0 ) fprintf('dx=[%d %d]\n',dx(1:2));end
 	 end	 
 		
+	 if ( numel(dx)==size(stimPos,2)-1 ) % per-target decomposition
+		dx = stimPos(:,1:end-1)*dx(:); % convert into x,y change
+	 end
     if ( ~ishandle(fig) ) break; end; % exit cleanly if exit event
     cursorPos=get(h(end),'position'); cursorPos=cursorPos(:);
 	 fixPos   =cursorPos(1:2)+cursorPos(3:4)/2; % pos of the center of the ball

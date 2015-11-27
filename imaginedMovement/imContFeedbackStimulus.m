@@ -112,9 +112,15 @@ for si=1:nSeq;
 	 end % if prediction events to process
 
     % feedback information... simply move in direction detected by the BCI
+	 if ( numel(prob)==size(stimPos,2)-1 ) % per-target decomposition
+		dx = stimPos(:,1:end-1)*prob(:); % change in position is weighted by class probs
+	 elseif ( numel(prob)==2 ) % direct 2d decomposition
+		dx = prob;
+	 elseif ( numel(prob)==1 )
+		dx = [prob;0];
+	 end
     cursorPos=get(h(end),'position'); cursorPos=cursorPos(:);
 	 fixPos   =cursorPos(1:2);
-    dx = stimPos(:,1:end-1)*prob(:); % change in position is weighted by class probs
 	 if ( warpCursor ) fixPos=dx; else fixPos=fixPos + dx*moveScale; end; % relative or absolute cursor movement
 	 set(h(end),'position',[fixPos cursorPos(3:4)]);
     drawnow; % update the display after all events processed    
