@@ -16,7 +16,8 @@ ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','b
 stimPos=[]; h=[];
 stimRadius=diff(axLim)/4;
 cursorSize=stimRadius/2;
-theta=linspace(0,pi,nSymbs); stimPos=[cos(theta);sin(theta)];
+theta=linspace(0,2*pi,nSymbs+1); theta=theta(1:end-1);
+stimPos=[cos(theta);sin(theta)];
 for hi=1:nSymbs; 
   h(hi)=rectangle('curvature',[1 1],'position',[stimPos(:,hi)-stimRadius/2;stimRadius*[1;1]],...
                   'facecolor',bgColor); 

@@ -44,7 +44,7 @@ end
 verb=1;
 buffhost='localhost';
 buffport=1972;
-nSymbs=2;
+nSymbs=4; % E,N,S,W  for 2d control
 nSeq=20;
 trialDuration=3;
 baselineDuration=1;
@@ -63,6 +63,9 @@ bgColor =[.5 .5 .5];
 fixColor=[1 0 0];
 tgtColor=[0 1 0];
 fbColor =[0 0 1];
+
+% classifier training options
+trainOpts = {'spType',{{1 3} {2 4}}}; % train 2 classifiers, 1=N vs S, 2=E vs W
 
 % Epoch feedback opts
 trlen_ms=trialDuration*1000; % how often to run the classifier
