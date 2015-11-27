@@ -74,7 +74,7 @@ stopwatch=getwTime(); printtime=stopwatch; fstart=stopwatch;
 % key listener
 if ( opts.keyboardEvents || opts.key2signal ) 
   fig=figure(1);clf;
-  set(fig,'name','Press key here to generate events','menubar','none','toolbar','none');
+  set(fig,'name','SignalProxy: Press key here to generate events','menubar','none','toolbar','none');
   ax=axes('position',[0 0 1 1],'visible','off',...
 			 'xlim',[0 1],'XLimMode','manual','ylim',[0 1],'ylimmode','manual','nextplot','add');
   set(fig,'Units','pixel');wSize=get(fig,'position'); fontSize = .05*wSize(4);
