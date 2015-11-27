@@ -33,7 +33,7 @@ function [spMx]=mkspMx(classIDs,spType,compBinp,classNms)
 if ( nargin < 2 || isempty(spType) ) spType='1vR'; end;
 if ( nargin < 3 || isempty(compBinp) ) compBinp=true; end;
 if ( nargin < 4 ) classNms=[]; end;
-if ( isstr(spType) ) spType={spType}; end;
+if ( ischar(spType) ) spType={spType}; end;
 if ( iscell(classIDs) ) 
   if ( isempty(classNms) ) classNms=classIDs; classIDs=(1:numel(classIDs))'; 
   elseif ( numel(classIDs)==numel(classNms) ) 
@@ -46,7 +46,7 @@ end
 
 nsp=0; nClass=numel(classIDs);
 if ( nClass<= 1 ) warning('Only 1 class input!'); spMx=1; end
-if ( iscell(spType) && isstr(spType{1}) && ~isempty(strmatch(spType{1},{'1v1','1vR','Pv1','PvR','PvN'})) ) % cell array of type strings
+if ( iscell(spType) && ischar(spType{1}) && ~isempty(strmatch(spType{1},{'1v1','1vR','Pv1','PvR','PvN'})) ) % cell array of type strings
    for i=1:numel(classIDs);
       % Positive only, so skip negative classIDs
       if ( ~isempty(strmatch('P',spType)) && classIDs(i)<0 ) continue; end;
@@ -86,7 +86,7 @@ elseif( isnumeric(spType) )
 elseif( iscell(spType) ) %cell array of +ve/-ve class labels
   if( numel(spType)==2 && ...
       ((isnumeric(spType{1}) && isnumeric(spType{2})) ...
-       || (isstr(spType{1}) && isstr(spType{2})) ...
+       || (ischar(spType{1}) && ischar(spType{2})) ...
        || iscell(spType{1}) && iscell(spType{2}) && (numel(spType{1})~=2 || numel(spType{2})~=2) )  ) 
      spType={spType}; 
   end;
@@ -95,8 +95,8 @@ elseif( iscell(spType) ) %cell array of +ve/-ve class labels
   for spi=1:size(spMx,1);
     spIds = spType{spi};
     if ( isnumeric(spIds) && numel(spIds)==2 ) spIds   ={spIds{1} spIds{2}}; end; % single 2x1 array
-    if ( iscell(spIds{1}) || isstr(spIds{1}) ) spIds{1}=classIDs(matchClassNms(spIds{1},classNms)); end;
-    if ( iscell(spIds{2}) || isstr(spIds{2}) ) spIds{2}=classIDs(matchClassNms(spIds{2},classNms)); end;
+    if ( iscell(spIds{1}) || ischar(spIds{1}) ) spIds{1}=classIDs(matchClassNms(spIds{1},classNms)); end;
+    if ( iscell(spIds{2}) || ischar(spIds{2}) ) spIds{2}=classIDs(matchClassNms(spIds{2},classNms)); end;
     if ( isempty(spIds{2})) spIds{2} = classIDs(setdiff(1:nClass,spIds{1})); end; % empty 2nd set = Rest
     spMx(spi,any(repop(classIDs(:),'==',spIds{1}(:)'),2))=1;
     spMx(spi,any(repop(classIDs(:),'==',spIds{2}(:)'),2))=-1;
@@ -109,7 +109,7 @@ return;
 
 %---------------------------------------------------------------------------
 function [tmp]=matchClassNms(spNms,classNms)
-if ( isstr(spNms) ) spNms={spNms}; end;
+if ( ischar(spNms) ) spNms={spNms}; end;
 tmp=zeros(numel(spNms),1);
 for i=1:numel(spNms); 
   t=strmatch(spNms{i},classNms,'exact'); 
