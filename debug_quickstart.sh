@@ -1,19 +1,19 @@
 #!/bin/bash
 dataacq='java';
-if [ $# -gt 0 ]; then datacq=$1; fi
+if [ $# -gt 0 ]; then dataacq=$1; fi
 
 
 echo Starting the non-saving java buffer server \(background\)
 dataAcq/startJavaNoSaveBuffer.sh &
 bufferpid=$!
 echo buffpid=$bufferpid
-sleep 3
+sleep 1
 
 
-echo Starting the data acquisation device $datacq \(background\)
-if [ $datacq == 'audio' ]; then
+echo Starting the data acquisation device $dataacq \(background\)
+if [ $dataacq == 'audio' ]; then
   dataAcq/startJavaAudio.sh localhost 2 &
-elif [ $datacq == 'matlab' ]; then
+elif [ $dataacq == 'matlab' ]; then
   dataAcq/startMatlabSignalProxy.sh &
 else
   dataAcq/startJavaSignalproxy.sh &
