@@ -28,6 +28,7 @@ else
 end
 subject='test';
 
+sendEvent('experiment.im','start');
 while (ishandle(contFig))
   set(contFig,'visible','on');
   if ( ~ishandle(contFig) ) break; end;
