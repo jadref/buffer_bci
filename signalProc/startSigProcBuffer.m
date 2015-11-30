@@ -41,8 +41,7 @@ function []=startSigProcBuffer(varargin)
 %   phaseEventType -- 'str' event type which says start a new phase                 ('startPhase.cmd')
 %   epochEventType -- 'str' event type which indicates start of calibration epoch.  ('stimulus.target')
 %                     This event's value is used as the class label
-%   testepochEventType -- 'str' event type which start of data to generate a prediction for.  ([])
-%                      If empty the same as epochEventType.                    
+%   testepochEventType -- 'str' event type which start of data to generate a prediction for.  ('classifier.apply')
 %   clsfr_type     -- 'str' the type of classifier to train.  One of: 
 %                        'erp'  - train a time-locked response (evoked response) classifier
 %                        'ersp' - train a power change (induced response) classifier
@@ -128,7 +127,7 @@ if ( isempty(opts.epochEventType) && opts.useGUI )
   end
 end
 if ( isempty(opts.epochEventType) )     opts.epochEventType='stimulus.target'; end;
-if ( isempty(opts.testepochEventType) ) opts.testepochEventType=opts.epochEventType; end;
+if ( isempty(opts.testepochEventType) ) opts.testepochEventType='classifier.apply'; end;
 if ( isempty(opts.erpEventType) )       opts.erpEventType=opts.epochEventType; end;
 
 datestr = datevec(now); datestr = sprintf('%02d%02d%02d',datestr(1)-2000,datestr(2:3));
@@ -347,7 +346,7 @@ while ( true )
 							'predFilt',opts.epochPredFilt,...
 							'endType',{'testing','test','epochfeedback','eventfeedback'},'verb',opts.verb,...
 							opts.epochFeedbackOpts{:});
-    catch
+	 catch
       msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
       fprintf('Error in : %s',phaseToRun);
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
@@ -380,7 +379,7 @@ while ( true )
       msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
       fprintf('Error in : %s',phaseToRun);
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-	  if ( ~isempty(le.stack) ) fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
+		if(~isempty(le.stack))fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
       sendEvent('training','end');    
     end
       

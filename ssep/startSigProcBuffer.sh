@@ -3,6 +3,7 @@ cd `dirname ${BASH_SOURCE[0]}`
 source ../utilities/findMatlab.sh
 if [[ $matexe == *matlab ]]; then  args=-nodesktop; fi
 cat <<EOF | $matexe $args
-startSigProcBuffer;
+configureSSEP;
+startSigProcBuffer('clsfr_type','ersp','trlen_ms',trlen_ms,'freqband',[.0 .3 45 47],'useGUI',0);
 %quit;
 EOF
