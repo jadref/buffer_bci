@@ -10,7 +10,7 @@ import nl.fcdonders.fieldtrip.bufferserver.network.WaitRequest;
 
 public class RingDataStore extends DataModel {
     public final int MINNBUFFER=60*100;  // about 60s data @ 100hz
-    public final int MINEVENTS =100;     // about 100 events
+    public final int MINEVENTS =60*10;   // about 10s of events
 	protected final ArrayList<WaitRequest> requests = new ArrayList<WaitRequest>();
 	protected DataRingBuffer dataBuffer;
 	protected final EventRingBuffer eventBuffer;
