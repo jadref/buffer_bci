@@ -16,6 +16,7 @@ else
 			  '3) CalibratePTB'        'calibratePTB'; 
 			  '4) Train Classifier'    'trainersp';
 			  '5) Feedback'            'epochfeedback';
+			  'q) quit'                'quit';
           };
   txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
 				'HorizontalAlignment','left','color',[1 1 1]);
