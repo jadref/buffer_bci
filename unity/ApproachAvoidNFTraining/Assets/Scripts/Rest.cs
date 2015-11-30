@@ -9,10 +9,6 @@ public class Rest : MonoBehaviour {
 	public float amplitude = 0.5f;
 
 	private static float duration;
-	private static int sessions;
-
-	private bool preMeasure = true;
-	private bool firstSession = true;
 	private float t = 0f;
 	private Transform trans;
 
@@ -20,7 +16,6 @@ public class Rest : MonoBehaviour {
 	void Awake ()
 	{
 		duration = (float)Config.restInterval;
-		sessions = (int)Config.trainingBlocks;
 		frequency = 1f / frequency;
 	}
 
@@ -37,42 +32,7 @@ public class Rest : MonoBehaviour {
 			{
 				t = 0f;
 				gameObject.SetActive (false);
-
-				if (preMeasure)
-				{
-					preMeasure = false;
-					menu.EndRestBaseline();
-				}
-				else if (sessions > 0)
-				{
-					sessions -= 1;
-					menu.EndRest ();
-					if (firstSession)
-					{
-						firstSession = false;
-						menu.LoadTrainingIntro ();
-					}
-					else
-					{
-						menu.LoadTraining();
-					}
-				}
-				else {
-					menu.Disconnect(true);
-
-					if ((bool)Config.questionaire)
-					{
-						menu.LoadQuestionPage(1);
-					}
-					else if ((bool)Config.evaluation)
-					{
-						menu.LoadEvaluationPage();
-					}
-					else
-					{
-						menu.LoadStartMenu();
-					}
-				}
+				menu.nextStage();
 			}
 		}
 	}

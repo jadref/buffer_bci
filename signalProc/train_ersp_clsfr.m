@@ -268,15 +268,12 @@ if ( opts.visualize )
     end
    end
    % Actually plot the data and AUC scores
-   if ( ~isempty(di) ) xy=cat(2,di.extra.pos2d); % use the pre-comp ones if there
-   elseif (size(ch_pos,1)==3) xy = xyz2xy(ch_pos);
-   else   xy=[];
-   end
+	xy=ch_pos; if (size(xy,1)==3) xy = xyz2xy(xy); end
    erpfig=figure(1);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');
    yvals=freqs;
    try; 
 	  image3d(mu(:,:,:),1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels(:),'disptype','plot','ticklabs','sw','clabel',opts.aveType);
-     zoomplots; saveaspdf('ERSP'); 
+     saveaspdf('ERSP'); 
 	catch; 
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
 	end;
@@ -285,7 +282,7 @@ if ( opts.visualize )
     try; 
 		image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
 		colormap ikelvin; 
-		zoomplots; saveaspdf('AUC'); 
+		saveaspdf('AUC'); 
 	 catch; 
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
 	 end;

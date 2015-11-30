@@ -10,8 +10,8 @@ public class Training : MonoBehaviour {
 	public GameObject tunnelContainer;
 	public float smoothTime = 0.3f;
 	public float turningRate = 100f;
-	public float MINZPOS = 2; // closest allowed position
-	public float MAXZPOS = 15; //furthest allowed position
+	private float MINZPOS = 2f; // closest allowed position
+	private float MAXZPOS = 15f; //furthest allowed position
 
 	private float time = 0f;
 	private Vector3 velocity = Vector3.zero;
@@ -53,8 +53,7 @@ public class Training : MonoBehaviour {
 			{
 				time = 0f;
 				gameObject.SetActive (false);
-				menu.EndTraining();
-				menu.LoadRest();
+				menu.nextStage();
 			}
 
 			// Tunnel rotation

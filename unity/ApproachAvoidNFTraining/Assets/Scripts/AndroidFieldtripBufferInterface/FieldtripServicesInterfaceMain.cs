@@ -280,7 +280,9 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	public void sendEvent(string eventType, string eventData)
 	{
 		//Debug.Log ("Event sent to buffer: " + eventType + ": " + eventData);
-		buffer.putEvent (eventType, eventData, buffer.getSampleNumberNow ());
+		if (buffer != null) {
+			buffer.putEvent (eventType, eventData, buffer.getSampleNumberNow ());
+		}
 	}
 
 

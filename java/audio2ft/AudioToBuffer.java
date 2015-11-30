@@ -15,7 +15,8 @@ import javax.sound.sampled.*;
 public class AudioToBuffer {
 	BufferClient ftClient;
 	TargetDataLine lineIn;
-	 String hostport="localhost:1972";
+	 String host="localhost";
+	 int    port=1972;
 	float fSample=44100.0f;
 	 int blockSize=-1; // neg size means compute default for 50Hz buffer packet rate
 	 int nByte  =0;
@@ -32,41 +33,55 @@ public class AudioToBuffer {
 		 if ( blockSize<0 ) blockSize=(int)(this.fSample/50.0);
 		ftClient = new BufferClient();		  
 	}
-	 public AudioToBuffer(String hostport,float fSample){
-		  this.hostport=hostport;
+	 public AudioToBuffer(String hostport,float fSample){		  
+		  host=hostport;
 		 if ( fSample>0 ) this.fSample=fSample;
 		 if ( blockSize<0 ) blockSize=(int)(this.fSample/50.0);
 		ftClient = new BufferClient();		  
 	}
 	 public AudioToBuffer(String hostport,float fSample, int blockSize){
-		  this.hostport=hostport;
+		  host=hostport;
 		 if ( fSample>0 ) this.fSample=fSample;
 		 if ( blockSize>0 ) this.blockSize=blockSize;
 		 if ( this.blockSize<0 ) this.blockSize=(int)(this.fSample/50.0);
 		ftClient = new BufferClient();		  
 	}
 	 public AudioToBuffer(String hostport,float fSample, int blockSize, int audioDevID){
-		  this.hostport=hostport;
+		  host=hostport;
 		 if ( fSample>0 ) this.fSample=fSample;
 		 if ( blockSize>0 ) this.blockSize=blockSize;
 		 if ( this.blockSize<0 ) this.blockSize=(int)(this.fSample/50.0);
 		 this.audioDevID=audioDevID;
 		ftClient = new BufferClient();		  
 	}
-
-	public void disconnect() {
+	 
+	 void initHostport(String hostport){
+		  host = hostport;
+		  int sep = host.indexOf(':');
+		  if ( sep>0 ) {
+				port=Integer.parseInt(host.substring(sep+1,host.length()));
+				host=host.substring(0,sep);
+		  }					  
+	 }
+	 
+	 public void disconnect() {
 		try {
 			ftClient.disconnect();
 		}
 		catch (IOException e) {}
 	}
 	
-	public boolean connect(String address) {
+	 public boolean connect(String host, int port) {
+		int sep = host.indexOf(':');
+		if ( sep>0 ) { // override port with part of the host string
+				port=Integer.parseInt(host.substring(sep+1,host.length()));
+				host=host.substring(0,sep);
+		}					  
 		try {
-			ftClient.connect(address);
+			 ftClient.connect(host,port);
 		}
 		catch (IOException e) {
-			System.out.println("Cannot connect to FieldTrip buffer @ " + address);
+			System.out.println("Cannot connect to FieldTrip buffer @ " + host + ":" + port);
 			return false;
 		}
 		return true;
@@ -174,7 +189,7 @@ public class AudioToBuffer {
 	 public void mainloop(){
 		  System.out.println("fSample="+fSample+" blockSize="+blockSize);
 		run = true;
-		if (connect(hostport)==false) return;
+		if (connect(host,port)==false) return;
 		listDevices();
 		if (!start()) return;
 		System.out.println("success..");

@@ -159,7 +159,7 @@ public class UnityBuffer : MonoBehaviour {
 	// N.B. this function is called EVERY VIDEO FRAME!..... so should be as fast as possible...
 	// TODO: the buffer communication should really move to be in a seperate thread!!!
 	void Update () {
-		if(bufferClient.errorReturned != BufferClient.BUFFER_READ_ERROR && bufferIsConnected){
+		if(bufferIsConnected && bufferClient!=null && bufferClient.errorReturned != BufferClient.BUFFER_READ_ERROR ){
 			//int dataTrigger=-1;
 			//if ( storeData ) {
 			//	dataTrigger = latestCapturedSample+DATAUPDATEINTERVAL_SAMP;
@@ -222,11 +222,13 @@ public class UnityBuffer : MonoBehaviour {
 	}
 	
 	public int getSampleNumberNow(){
-		return bufferTimer.getSampleNow();	
+		if ( bufferTimer!=null ) return bufferTimer.getSampleNow();	
+		return -1;
 	}
 	
 	public int getSampleNumberAtTime(DateTime time){
-		return bufferTimer.getSampleAtTime(time);	
+		if (bufferTimer!=null) return bufferTimer.getSampleAtTime(time);
+		return -1;
 	}
 	
 	
@@ -243,72 +245,64 @@ public class UnityBuffer : MonoBehaviour {
 				string[] temp = (string[])(object)val;
 				BufferEvent ev = new BufferEvent(type, temp, sample);
 				bufferClient.putEvent(ev);
-			}
-			if(typeOfVal == "System.Byte[]"){
+			} else if(typeOfVal == "System.Byte[]"){
 				byte[] temp = (byte[])(object)val;
 				BufferEvent ev = new BufferEvent(type, temp, sample);
 				bufferClient.putEvent(ev);
-			}
-			if(typeOfVal == "System.Int16[]"){
+			} else if(typeOfVal == "System.Int16[]"){
 				short[] temp = (short[])(object)val;
 				BufferEvent ev = new BufferEvent(type, temp, sample);				
 				bufferClient.putEvent(ev);
-			}
-			if(typeOfVal == "System.Int32[]"){
+			} else if(typeOfVal == "System.Int32[]"){
 				int[] temp = (int[])(object)val;												
 				BufferEvent ev = new BufferEvent(type, temp, sample);		
 				bufferClient.putEvent(ev);	
-			}
-			if(typeOfVal == "System.Int64[]"){
+			} else if(typeOfVal == "System.Int64[]"){
 				long[] temp = (long[])(object)val;
 				BufferEvent ev = new BufferEvent(type, temp, sample);
 				bufferClient.putEvent(ev);
-			}
-			if(typeOfVal == "System.Single[]"){
+			} else if(typeOfVal == "System.Single[]"){
 				float[] temp = (float[])(object)val;
 				BufferEvent ev = new BufferEvent(type, temp, sample);			
 				bufferClient.putEvent(ev);	
-			}
-			if(typeOfVal == "System.Double[]"){
+			} else if(typeOfVal == "System.Double[]"){
 				double[] temp = (double[])(object)val;
 				BufferEvent ev = new BufferEvent(type, temp, sample);
 				bufferClient.putEvent(ev);
+			} else {
+				Debug.LogError("Unknown/Unsupported value type");
 			}
 		}else{
 			if(typeOfVal == "System.String"){
 				string temp = (string)(object)val;
 				BufferEvent ev = new BufferEvent(type, temp, sample);
 				bufferClient.putEvent(ev);
-			}
-			if(typeOfVal == "System.Byte"){
+			} else if(typeOfVal == "System.Byte"){
 				byte temp = (byte)(object)val;
 				BufferEvent ev = new BufferEvent(type, temp, sample);
 				bufferClient.putEvent(ev);
-			}
-			if(typeOfVal == "System.Int16"){
+			} else if(typeOfVal == "System.Int16"){
 				short temp = (short)(object)val;
 				BufferEvent ev = new BufferEvent(type, temp, sample);				
 				bufferClient.putEvent(ev);
-			}
-			if(typeOfVal == "System.Int32"){
+			} else if(typeOfVal == "System.Int32"){
 				int temp = (int)(object)val;												
 				BufferEvent ev = new BufferEvent(type, temp, sample);		
 				bufferClient.putEvent(ev);	
-			}
-			if(typeOfVal == "System.Int64"){
+			} else if(typeOfVal == "System.Int64"){
 				long temp = (long)(object)val;
 				BufferEvent ev = new BufferEvent(type, temp, sample);
 				bufferClient.putEvent(ev);
-			}
-			if(typeOfVal == "System.Single"){
+			} else if(typeOfVal == "System.Single"){
 				float temp = (float)(object)val;
 				BufferEvent ev = new BufferEvent(type, temp, sample);			
 				bufferClient.putEvent(ev);	
-			}
-			if(typeOfVal == "System.Double"){
+			} else if(typeOfVal == "System.Double"){
 				double temp = (double)(object)val;
 				BufferEvent ev = new BufferEvent(type, temp, sample);
 				bufferClient.putEvent(ev);
+			} else {
+				Debug.LogError("Unknown/unsupported value type");
 			}
 		}
 	}

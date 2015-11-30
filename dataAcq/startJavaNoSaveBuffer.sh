@@ -9,4 +9,4 @@ else
 fi
 
 echo Starting: ${buffdir}/buffer/java/BufferServer.jar $port $@
-java -jar ${buffdir}/buffer/java/BufferServer.jar $port $@
+exec java -jar ${buffdir}/buffer/java/BufferServer.jar $port $@

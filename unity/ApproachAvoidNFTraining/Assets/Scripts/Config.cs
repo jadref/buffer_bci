@@ -3,6 +3,7 @@ using System.Collections;
 
 public class Config : MonoBehaviour {
 
+	public static bool preMeasure = false; // pre-baseline before first trials baseline
 	public static bool awayTraining = false; 	//false (true not implemented yet)
 
 	public static int restInterval = 30; 		//60
@@ -26,6 +27,8 @@ public class Config : MonoBehaviour {
 
 	public static bool evaluation = true; 		//true
 
+	public static string userEventType     = "subject";
+	public static string sessionEventType  = "session";
 	public static string baselineEventType = "stimulus.baseline";
 	public static string restEventType     = "stimulus.rest";
 	public static string approachEventType = "stimulus.approach";

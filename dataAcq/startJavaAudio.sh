@@ -6,4 +6,4 @@ if [ $# -gt 0 ]; then
 	 shift;
 fi
 echo Starting: ${buffdir}/buffer/java/AudioToBuffer.jar $@
-java -cp ${buffdir}/buffer/java/BufferClient.jar:${buffdir}/buffer/java/AudioToBuffer.jar nl.dcc.buffer_bci.AudioToBuffer $buffinfo 441 $@
+exec java -cp ${buffdir}/buffer/java/BufferClient.jar:${buffdir}/buffer/java/AudioToBuffer.jar nl.dcc.buffer_bci.AudioToBuffer $buffinfo 441 $@

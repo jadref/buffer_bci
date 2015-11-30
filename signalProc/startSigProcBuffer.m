@@ -84,12 +84,13 @@ end;
 opts=struct('phaseEventType','startPhase.cmd',...
 				'epochEventType',[],'testepochEventType',[],...
             'erpEventType',[],'erpMaxEvents',[],'erpOpts',{{}},...
-				'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],'trainOpts',{{}},...
+				'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],...
+				'trainOpts',{{}},...
             'epochPredFilt',[],'epochFeedbackOpts',{{}},...
 				'contPredFilt',[],'contFeedbackOpts',{{}},...
 				'capFile',[],...
 				'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1,'timeout_ms',500);
-[opts,varargin]=parseOpts(opts,varargin);
+opts=parseOpts(opts,varargin);
 if ( ~iscell(opts.erpOpts) ) opts.erpOpts={opts.erpOpts}; end;
 if ( ~iscell(opts.trainOpts))opts.trainOpts={opts.trainOpts}; end;
 
@@ -104,20 +105,26 @@ end
 if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
 if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4; end;
 
-if ( isempty(opts.epochEventType) && opts.useGUI && ~exist('OCTAVE_VERSION','builtin') )
-  optsFig=bufferSignalProcOpts(); 
-  uiwait(optsFig); 
-  info=guidata(optsFig);
-  if ( info.ok )
-    % use the input for the options names
-    fn=fieldnames(info.opts); for fi=1:numel(fn); opts.(fn{fi})=info.opts.(fn{fi}); end;
-    % add additional information to the freqbands arguments
-    if ( opts.freqband(1)<0 ) opts.freqband(1)=max(0,opts.freqband(2)-1); end;
-    if ( opts.freqband(2)<0 ) opts.freqband(2)=max(8,opts.freqband(1)+1); end;
-    if ( opts.freqband(3)<0 ) opts.freqband(3)=max(28,opts.freqband(2)+10); end;
-    if ( opts.freqband(4)<0 ) opts.freqband(4)=min(inf,opts.freqband(3)+1); end;    
-  else
-    error('User cancelled the run');
+if ( isempty(opts.epochEventType) && opts.useGUI )
+  try
+	 optsFig=bufferSignalProcOpts();
+  catch
+	 optsFig=[];
+  end
+  if ( optsFig ) 
+	 uiwait(optsFig); 
+	 info=guidata(optsFig);
+	 if ( info.ok )
+		% use the input for the options names
+		fn=fieldnames(info.opts); for fi=1:numel(fn); opts.(fn{fi})=info.opts.(fn{fi}); end;
+		% add additional information to the freqbands arguments
+		if ( opts.freqband(1)<0 ) opts.freqband(1)=max(0,opts.freqband(2)-1); end;
+		if ( opts.freqband(2)<0 ) opts.freqband(2)=max(8,opts.freqband(1)+1); end;
+		if ( opts.freqband(3)<0 ) opts.freqband(3)=max(28,opts.freqband(2)+10); end;
+		if ( opts.freqband(4)<0 ) opts.freqband(4)=min(inf,opts.freqband(3)+1); end;    
+	 else
+		error('User cancelled the run');
+	 end
   end
 end
 if ( isempty(opts.epochEventType) )     opts.epochEventType='stimulus.target'; end;
@@ -134,7 +141,7 @@ if ( opts.useGUI )
   % create the control window and execute the phase selection loop
   contFig=figure(99); % use figure window number no-one else will use...
   clf;
-  set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
+  set(contFig,'name','Signal Processing Controller : close to quit','color',[.3 .1 .1]);
   axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
   set(contFig,'Units','pixel');wSize=get(contFig,'position');
   fontSize = .05*wSize(4);
@@ -204,7 +211,7 @@ while ( true )
 		set(contFig,'userdata',[]);	 
 	 end
 										  % and convert to phase control events
-	 if ( ~isempty(phaseToRun) ) sendEvent(opts.phaseEventType,phaseToRun); phaseToRun=[]; end;
+	 if ( ~isempty(phaseToRun) ) sendEvent(opts.phaseEventType,phaseToRun); phaseToRun=[]; drawnow; pause(1); end;
   else
 	 drawnow;
   end
@@ -300,12 +307,14 @@ while ( true )
        case {'erp','evoked'};
          [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car',...
                     'freqband',opts.freqband,'badchrm',1,'badtrrm',1,...
-						  'capFile',capFile,'overridechnms',overridechnms,'verb',opts.verb,varargin{:});
+						  'capFile',capFile,'overridechnms',overridechnms,'verb',opts.verb,...
+						  opts.trainOpts{:});
        
        case {'ersp','induced'};
          [clsfr,res]=buffer_train_ersp_clsfr(traindata,traindevents,hdr,'spatialfilter','car',...
 						   'freqband',opts.freqband,'badchrm',1,'badtrrm',1,...
-							'capFile',capFile,'overridechnms',overridechnms,'verb',opts.verb,varargin{:});
+							'capFile',capFile,'overridechnms',overridechnms,'verb',opts.verb,...
+							opts.trainOpts{:});
        
        otherwise;
         error('Unrecognised classifer type');

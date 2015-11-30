@@ -2,13 +2,19 @@ using UnityEngine;
 using System.Collections;
 
 public class MenuOptions : MonoBehaviour {
+	// This class contains the main controller for the whole experiment!
+
 
 	public FieldtripServicesInterfaceMain FTSInterface;
 
 	public GameObject mainPanel;
 	public GameObject connectionPanel;
+	public GameObject userInfoPanel;
+	public UnityEngine.UI.InputField userTxt;
+	public UnityEngine.UI.InputField sessionTxt;
 	public GameObject restIntroPanel;
 	public GameObject trainingIntroPanel;
+	public GameObject pausePanel;
 	public GameObject questionairePanel1;
 	public GameObject questionairePanel2;
 	public GameObject questionairePanel3;
@@ -19,6 +25,111 @@ public class MenuOptions : MonoBehaviour {
 	public GameObject trainingStage;
 
 	private GameObject[] menus;
+
+	private static int sessions;
+
+	private IEnumerator phaseMachine; // stateMachine for the experiment
+	private bool moveForward = true;
+	private bool endAll=false;
+
+
+	// game state controller to switch between stages of the experiment/game
+	// N.B. you should never call this directly, but via the nextStage function
+	private IEnumerable nextStageInner(){
+		while (!endAll) {
+				// Start screen
+			FTSInterface.setMenu (false);
+			HideAllBut (mainPanel);
+			yield return null; // wait to be called back when the stage has finished
+			if ( endAll ) break; // finish if quit from main-menu
+
+			HideAllBut (connectionPanel);
+			FTSInterface.setMenu (true);
+			Connect (); // connect to buffer
+			yield return null;
+
+			HideAllBut (userInfoPanel);  // ask user information
+			yield return null;
+			if ( userTxt.text != null ) FTSInterface.sendEvent (Config.userEventType,userTxt.text);
+			if ( sessionTxt.text != null ) FTSInterface.sendEvent (Config.sessionEventType,sessionTxt.text);
+
+			if (FTSInterface.getSystemIsReady()) {
+				FTSInterface.setMenu (false);
+				HideAllBut (restIntroPanel);
+			}
+			yield return null;
+
+			if (Config.preMeasure) {
+				FTSInterface.sendEvent (Config.restEventType, "start"); // first is pure rest, i.e. no baseline
+				HideAllBut (restStage);
+				yield return null;
+				FTSInterface.sendEvent (Config.restEventType, "end");
+			}
+
+			HideAllBut (trainingIntroPanel);
+			yield return 0;
+
+			for (int si=0; si<Config.trainingBlocks; si++) {
+				// run the rest stage
+				FTSInterface.sendEvent (Config.restEventType, "start");
+				FTSInterface.sendEvent (Config.baselineEventType, "start"); // rest is also baseline
+				HideAllBut (restStage);
+				yield return null;
+				FTSInterface.sendEvent (Config.restEventType, "end");
+				FTSInterface.sendEvent (Config.baselineEventType, "end");
+
+				// run the training stage
+				FTSInterface.sendEvent (Config.approachEventType, "start");
+				HideAllBut (trainingStage);
+				yield return null;
+				FTSInterface.sendEvent (Config.approachEventType, "end");
+
+				HideAllBut(pausePanel); // wait for user to continue
+				yield return null;
+			}
+
+			if ((bool)Config.questionaire) {
+				int questionaireStage = 0;
+				while (questionaireStage < 3) {
+					if (moveForward)
+						questionaireStage++;
+					else
+						questionaireStage--;
+
+					if (questionaireStage == 1)
+					{
+						HideAllBut (questionairePanel1);
+					}
+					else if (questionaireStage == 2)
+					{
+						HideAllBut (questionairePanel2);
+					}
+					else if (questionaireStage == 3)
+					{
+						HideAllBut (questionairePanel3);
+					}
+					yield return null;
+
+				}
+			}
+
+			if ((bool)Config.evaluation) {
+				LoadEvaluationPage ();
+				yield return null;
+			}
+		}
+		HideAllBut (loadingPanel);
+		Disconnect(true);
+	}
+
+	public void nextStage(){
+		moveForward = true;
+		phaseMachine.MoveNext ();
+	}
+	public void previousStage(){
+		moveForward = false;
+		phaseMachine.MoveNext ();
+	}
 
 	// Initialize
 	void Awake ()
@@ -32,8 +143,9 @@ public class MenuOptions : MonoBehaviour {
 		{
 			menus [i] = transform.GetChild (i).gameObject;
 		}
-		LoadStartMenu();
-
+		// start the first stage and get an iterator to the state-machine management
+		phaseMachine = nextStageInner ().GetEnumerator(); // get the state machine object 
+		nextStage (); // start the 1st stage
 	}
 
 	// Some shortcuts
@@ -61,17 +173,8 @@ public class MenuOptions : MonoBehaviour {
 
 
 	// Menu Options
-
-	public void LoadStartMenu()
-	{
-		FTSInterface.setMenu (false);
-		HideAllBut (mainPanel);
-	}
-
 	public void Connect()
 	{
-		HideAllBut (connectionPanel);
-		FTSInterface.setMenu (true);
 		StartCoroutine (FTSInterface.startServerAndAllClients());
 	}
 
@@ -98,8 +201,8 @@ public class MenuOptions : MonoBehaviour {
 
 	public void Quit()
 	{
-		HideAllBut (loadingPanel);
-		StartCoroutine (SafeShutdown());
+		endAll = true;
+		nextStage ();
 	}
 
 	public IEnumerator SafeShutdown()
@@ -108,75 +211,7 @@ public class MenuOptions : MonoBehaviour {
 		yield return SafeDisconnect ();
 		Application.Quit ();
 	}
-
-	public void StartTask()
-	{
-		if (FTSInterface.getSystemIsReady()) {
-			FTSInterface.setMenu (false);
-			HideAllBut (restIntroPanel);
-		}
-	}
-
-	public void LoadRestIntro()
-	{
-		Show (restIntroPanel);
-	}
-
-	public void LoadRestBaseline()
-	{
-		FTSInterface.sendEvent (Config.restEventType, "start"); // first is pure rest, i.e. no baseline
-		HideAllBut (restStage);
-	}
-
-	public void EndRestBaseline()
-	{
-		FTSInterface.sendEvent (Config.restEventType, "end"); 
-		LoadRest ();
-	}
-
-	public void LoadRest()
-	{
-		FTSInterface.sendEvent (Config.restEventType, "start");
-		FTSInterface.sendEvent (Config.baselineEventType, "start"); // rest is also baseline
-		HideAllBut (restStage);
-	}
-
-	public void EndRest()
-	{
-		FTSInterface.sendEvent (Config.restEventType, "end");
-		FTSInterface.sendEvent (Config.baselineEventType, "end");
-	}
-
-	public void LoadTrainingIntro()
-	{
-		HideAllBut (trainingIntroPanel);
-	}
-
-	public void LoadTraining() {
-		FTSInterface.sendEvent (Config.approachEventType, "start");
-		HideAllBut (trainingStage);
-	}
-
-	public void EndTraining() {
-		FTSInterface.sendEvent (Config.approachEventType, "end");
-	}
-
-	public void LoadQuestionPage(int page)
-	{
-		if (page == 1)
-		{
-			HideAllBut (questionairePanel1);
-		}
-		else if (page == 2)
-		{
-			HideAllBut (questionairePanel2);
-		}
-		else if (page == 3)
-		{
-			HideAllBut (questionairePanel3);
-		}
-	}
-
+	
 	public void LoadEvaluationPage()
 	{
 		HideAllBut (evaluationPanel);

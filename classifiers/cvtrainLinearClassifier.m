@@ -58,7 +58,7 @@ dim(dim<0)=dim(dim<0)+ndims(X)+1; % convert negative to positive indicies
 if( ndims(Y)==2 && size(Y,1)==1 && size(Y,2)>1 ) Y=Y'; end; % col vector only
 % build a multi-class decoding matrix
 spKey=opts.spKey; spMx =opts.spMx;
-if ( ~isempty(spKey) && ~isempty(spMx) ) % sub-prob decomp already done, so trust it
+if ( ~isempty(spKey) && ~isempty(spMx) && isnumeric(spMx) ) % sub-prob decomp already done, so trust it
   if ( ~all(Y(:)==-1 | Y(:)==0 | Y(:)==1) ) 
     error('spKey/spMx given but Y isnt an set of binary sub-problems');
   end

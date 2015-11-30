@@ -104,6 +104,13 @@ while (timetogo>0)
   end % if prediction events to process
   
   % feedback information... simply move to absolute location indicated by the BCI
+	 if ( numel(prob)==size(stimPos,2)-1 ) % per-target decomposition
+		dx = stimPos(:,1:end-1)*prob(:); % change in position is weighted by class probs
+	 elseif ( numel(prob)==2 ) % direct 2d decomposition
+		dx = prob;
+	 elseif ( numel(prob)==1 )
+		dx = [prob;0];
+	 end
   dx     = stimPos(:,1:end-1)*prob(:); % change in position is weighted by class probs
   if ( warpCursor ) fixPos=dx; else fixPos=fixPos + dx*moveScale; end; % relative or absolute cursor movement
   set(h(end),'position',[fixPos-stimRadius/4;(stimRadius/2).*[1;1]]);
