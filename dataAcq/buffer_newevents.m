@@ -55,7 +55,16 @@ while ( isempty(events) && endTime>=curTime ) % until there are some matching ev
   if( status.nevents>nevents )
     % N.B. event range is counted from start -> end-1!
     % N.B. event Id start from 0
-    events=buffer('get_evt',[max(nevents,status.nevents-50) status.nevents-1],host,port); 
+    if ( nevents>status.nevents-100 ) 
+       events=buffer('get_evt',[nevents status.nevents-1],host,port); 
+    else
+       fprintf('Long time between calls -- potentially missed %d events',status.nevents-100-nevents);
+       try
+          events=buffer('get_evt',[max(nevents,status.nevents-100) status.nevents-1],host,port); 
+       catch
+          events=buffer('get_evt',[max(nevents,status.nevents-50) status.nevents-1],host,port); 
+       end
+    end
     % filter for the event types we care about
     mi=matchEvents(events,mtype,mval);
     events=events(mi);
