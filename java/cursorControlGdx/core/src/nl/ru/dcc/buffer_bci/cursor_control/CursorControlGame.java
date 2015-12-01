@@ -14,11 +14,30 @@ public class CursorControlGame extends ApplicationAdapter {
 
 	@Override
 	public void create () {
-        input = new BufferBciInput(500);
-        input.connect("localhost", 1972);
+        input = new BufferBciInput(500, false);
+
+        while(!input.connect("localhost", 1972))
+            Gdx.app.log("CursorControlGame", "Could not connect to buffer!");
+
+        Gdx.app.log("CursorControlGame", "Connected to buffer!");
 	}
 
 	@Override
 	public void render () {
+        screen.render(Gdx.graphics.getDeltaTime());
 	}
+
+    private void setScreen(CursorControlScreen screen) {
+        this.screen = screen;
+    }
+
+    public void runScreen(CursorControlScreen screen) {
+        this.screen = screen;
+        this.screen.start();
+    }
+
+    public void runScreen() {
+        if(this.screen != null)
+            this.screen.start();
+    }
 }
