@@ -110,7 +110,7 @@ if ( isempty(opts.epochEventType) && opts.useGUI )
   catch
 	 optsFig=[];
   end
-  if ( optsFig ) 
+  if ( ~isempty(optsFig) && ishandle(optsFig) ) 
 	 uiwait(optsFig); 
 	 info=guidata(optsFig);
 	 if ( info.ok )
