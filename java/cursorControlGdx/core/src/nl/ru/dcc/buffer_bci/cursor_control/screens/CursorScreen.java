@@ -13,7 +13,7 @@ import nl.ru.dcc.buffer_bci.cursor_control.StimSeq;
 /**
  * Created by Lars on 1-12-2015.
  */
-class CursorScreen extends CursorControlScreen {
+public class CursorScreen extends CursorControlScreen {
     Color[] defaultColors={new Color(.5f,.5f,.5f, 1.0f), // bgColor
             new Color(1f,1f,1f, 1.0f),    // fgColor
             new Color(0f,1f,0f, 1.0f)};   // tgtColor
@@ -45,7 +45,7 @@ class CursorScreen extends CursorControlScreen {
 
     private BufferBciInput input;
 
-    CursorScreen(int nSymb, BufferBciInput input) { // Initialize variables
+    public CursorScreen(int nSymb, BufferBciInput input) { // Initialize variables
         nSymbs=nSymb;
         this.input = input;
     }
