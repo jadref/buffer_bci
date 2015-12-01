@@ -28,19 +28,15 @@ subject='test';
 sendEvent('experiment.ssep','start');
 while (ishandle(contFig))
   set(contFig,'visible','on');
-  if ( ~ishandle(contFig) ) break; end;
 
   phaseToRun=[];
-  if ( ~exist('OCTAVE_VERSION','builtin') ) 
-	 uiwait(contFig); % CPU hog on ver 7.4
-	 info=guidata(contFig); 
-	 subject=info.subject;
-	 phaseToRun=lower(info.phaseToRun);
-  else % give time to process the key presses
+  if ( exist('OCTAVE_VERSION','builtin') ) 
 	 % BODGE: move point to force key-processing
-	 fprintf('.');set(ph,'ydata',rand(1)*.01); drawnow;
-	 if ( ~ishandle(contFig) ) break; end;
+	 if ( ~isempty(ph) ) fprintf('.');set(ph,'ydata',rand(1)*.01); end
   end
+  drawnow;
+  pause(.1);
+  if ( ~ishandle(contFig) ) break; end;
 
   % process any key-presses
   modekey=get(contFig,'userdata'); 
@@ -132,8 +128,13 @@ while (ishandle(contFig))
       sendEvent('stimulus.test','end');
     %end
     sendEvent(phaseToRun,'end');
+    
+   %---------------------------------------------------------------------------
+    case {'quit','exit'};
+      break;
   end
 
+    
   %for i=1:numel(info.phasesCompleted); % set all run phases to have green text
   %    set(getfield(info,[info.phasesCompleted{i} 'But']),'ForegroundColor',[0 1 0]);
   %end

@@ -146,6 +146,9 @@ end % sequences
 sendEvent('stimulus.training','end');
 
 % thanks message
-set(txth,'string',thanksstr,'visible','on');
-drawnow;
-pause(3);
+if ( ishandle(fig))
+   set(txth,'string',thanksstr,'visible','on');
+   drawnow;
+   pause(3);
+   close(fig);
+end
