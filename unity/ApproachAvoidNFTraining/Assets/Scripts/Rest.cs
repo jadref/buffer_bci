@@ -9,7 +9,7 @@ public class Rest : MonoBehaviour {
 	public float amplitude = 0.5f;
 
 	private static float duration;
-	private float t = 0f;
+	private float startTime = 0f;
 	private Transform trans;
 
 	// Iinitialization
@@ -19,18 +19,21 @@ public class Rest : MonoBehaviour {
 		frequency = 1f / frequency;
 	}
 
+	// when made visible
+	void OnEnable(){
+		startTime = Time.time;
+	}
+
 	// Update is called once per frame
 	void Update ()
 	{
 		if (gameObject.activeSelf)
 		{
-			t += Time.deltaTime;
 			float pulse = 0.5f + amplitude * (Mathf.PingPong (Time.time, frequency) / frequency);
 			fixationCross.localScale = new Vector3(pulse, pulse, 0f);
 
-			if (t >= duration)
+			if ((Time.time - startTime) >= duration)
 			{
-				t = 0f;
 				gameObject.SetActive (false);
 				menu.nextStage();
 			}

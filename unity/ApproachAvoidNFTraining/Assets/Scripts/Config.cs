@@ -29,10 +29,15 @@ public class Config : MonoBehaviour {
 
 	public static string userEventType     = "subject";
 	public static string sessionEventType  = "session";
+	public static string agenticEventType  = "stimulus.agenticMode";
 	public static string baselineEventType = "stimulus.baseline";
 	public static string restEventType     = "stimulus.rest";
-	public static string approachEventType = "stimulus.approach";
-	public static string avoidEventType    = "stimulus.avoid";
+	public static string trialEventType    = "stimulus.trial";
+	public static string targetEventType   = "stimulus.target";
 	public static string feedbackEventType = "classifier.prediction";
+
+	public static string experimentInstructText = "Do what you are told!";
+	public static string approachCueText = "Approach\n Move the ball towards you!";
+	public static string avoidCueText    = "Avoid\n Move the ball away from you!";
 
 }
