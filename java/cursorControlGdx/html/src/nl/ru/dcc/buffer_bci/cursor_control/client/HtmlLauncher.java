@@ -3,7 +3,7 @@ package nl.ru.dcc.buffer_bci.cursor_control.client;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.backends.gwt.GwtApplication;
 import com.badlogic.gdx.backends.gwt.GwtApplicationConfiguration;
-import nl.ru.dcc.buffer_bci.cursor_control.CursorControl;
+import nl.ru.dcc.buffer_bci.cursor_control.CursorControlGame;
 
 public class HtmlLauncher extends GwtApplication {
 
@@ -14,6 +14,6 @@ public class HtmlLauncher extends GwtApplication {
 
         @Override
         public ApplicationListener getApplicationListener () {
-                return new CursorControl();
+                return new CursorControlGame();
         }
 }

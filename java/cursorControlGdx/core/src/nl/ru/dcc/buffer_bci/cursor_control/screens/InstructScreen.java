@@ -1,6 +1,7 @@
 package nl.ru.dcc.buffer_bci.cursor_control.screens;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -35,6 +36,9 @@ public class InstructScreen extends CursorControlScreen {
     public void draw() {
         int x = (int)(getWidth()* .1);
         int y = (int)(getHeight() - (getHeight() * .3)); // In GL, y is flipped.
+
+        Gdx.gl.glClearColor(0,0,0,0);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         batch.begin();
         font.draw(batch, layout, x, y);
