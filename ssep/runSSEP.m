@@ -1,31 +1,28 @@
 configureSSEP;
 
 % create the control window and execute the phase selection loop
-if ~( exist('OCTAVE_VERSION','builtin') ) 
-  contFig=controller(); info=guidata(contFig); 
-else
-  contFig=figure(1);
-  set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
-  axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
-  set(contFig,'Units','pixel');wSize=get(contFig,'position');
-  fontSize = .05*wSize(4);
-  %        Instruct String          Phase-name
-  menustr={'0) EEG'                 'eegviewer';
-           '1) Practice'            'practice';
-			  '2) Calibrate'           'calibrate'; 
-			  '3) CalibratePTB'        'calibratePTB'; 
-			  '4) Train Classifier'    'trainersp';
-			  '5) Feedback'            'epochfeedback';
-			  'q) quit'                'quit';
-          };
-  txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
-				'HorizontalAlignment','left','color',[1 1 1]);
-  ph=plot(1,0,'k'); % BODGE: point to move around to update the plot to force key processing
-  % install listener for key-press mode change
-  set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
-  set(contFig,'userdata',[]);
-  drawnow; % make sure the figure is visible
-end
+contFig=figure(1);
+set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
+axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
+set(contFig,'Units','pixel');wSize=get(contFig,'position');fontSize = .05*wSize(4);
+%        Instruct String          Phase-name
+menustr={'0) EEG'                 'eegviewer';
+         '1) Practice'            'practice';
+			'2) Calibrate'           'calibrate'; 
+         '3) Calibrate (Psychtoolbox)'        'calibratePTB'; 
+			'4) Train Classifier'    'trainersp';
+		   '5) Feedback'            'epochfeedback';
+			'6) Feedback (Psychtoolbox)'         'epochfeedbackPTB';
+			'q) quit'                'quit';
+};
+txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
+			  'HorizontalAlignment','left','color',[1 1 1]);
+	 % BODGE: point to move around to update the plot to force key processing
+ph=[];if ( exist('OCTAVE_VERSION') ) ph=plot(1,0,'k'); end
+										  % install listener for key-press mode change
+set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
+set(contFig,'userdata',[]);
+drawnow; % make sure the figure is visible
 subject='test';
 
 sendEvent('experiment.ssep','start');
@@ -95,25 +92,16 @@ while (ishandle(contFig))
     nRepetitions=onRepetitions;
     
    %---------------------------------------------------------------------------
-   case {'calibrate','calibration'};
+   case {'calibrate','calibration','calibrateptb','calibrationptb'};
     sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun);
     sendEvent(phaseToRun,'start');
-    %try
-      ssepCalibrateStimulus;
-    %catch
-      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-      sendEvent('stimulus.training','end');    
-    %end
-    sendEvent(phaseToRun,'end');
-
-   %---------------------------------------------------------------------------
-   case {'calibrateptb','calibrationptb'};
-    sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun);
-    sendEvent(phaseToRun,'start');
-    %try
-      ssepCalibrateStimulusPTB;
+	 %try
+	 if ( ~isempty(strfind(phaseToRun,'ptb') ) )
+		ssepCalibrateStimulusPTB; % PsychToolBox version
+	 else
+		ssepCalibrateStimulus;
+	 end
     %catch
       % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.training','end');    
@@ -128,13 +116,17 @@ while (ishandle(contFig))
     buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);  
        
    %---------------------------------------------------------------------------
-   case {'testing','test','epochfeedback'};
+   case {'testing','test','epochfeedback','epochfeedbackptb'};
     sendEvent('subject',subject);
     %sleepSec(.1);
     sendEvent(phaseToRun,'start');
     %try
-      sendEvent('startPhase.cmd','testing');
+    sendEvent('startPhase.cmd','testing');
+	 if ( ~isempty(strfind(phaseToRun,'ptb')) )
+		ssepFeedbackStimulusPTB; % PsychToolBox version
+	 else
       ssepFeedbackStimulus;
+	 end
     %catch
       % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.test','end');

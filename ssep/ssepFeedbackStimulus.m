@@ -95,7 +95,11 @@ for seqi=1:seqLen;
 		end
 
     end % while < endTime
-    if ( verb>0 ) % summary info
+
+	 % send all the stimulus events in one go
+    buffer('put_evt',stimEvts(1:evti));
+
+	 if ( verb>0 ) % summary info
       dt=frametime(:,3)-frametime(:,2);
       fprintf('Sum: %d dropped frametime=%g drawTime=[%g,%g,%g]\n',...
               ndropped,mean(diff(frametime(:,1))),min(dt),mean(dt),max(dt));
