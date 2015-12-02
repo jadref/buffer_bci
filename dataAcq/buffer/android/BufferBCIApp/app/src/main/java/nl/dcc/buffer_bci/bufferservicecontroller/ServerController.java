@@ -33,7 +33,7 @@ public class ServerController {
     Intent intent;
     private String serverServicePackageName = C.SERVER_SERVICE_PACKAGE_NAME;
     private String serverServiceClassName = C.SERVER_SERVICE_CLASS_NAME;
-    private Timer timer;
+    //private Timer timer;
     private Context context;
     private SparseArray<BufferConnectionInfo> bufferConnections = new SparseArray<BufferConnectionInfo>();
     private String address;
@@ -459,7 +459,7 @@ public class ServerController {
         bufferConnectionsArray.clear();
         boolean stopped = context.stopService(intent);
         if (stopped) {
-            if (timer != null) timer.running = false;
+            //if (timer != null) timer.running = false;
             initalUpdateCalled = false;
         }
         return stopped;
@@ -472,31 +472,31 @@ public class ServerController {
         context.sendOrderedBroadcast(intent, null);
     }
 
-    protected class Timer extends Thread {
-        public boolean running = true;
-
-        @Override
-        public void run() {
-            while (running) {
-                ((Activity) context).runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            uptime = minSec.format(new Date(System.currentTimeMillis() - buffer.startTime));
-                        } catch (final Exception e) {
-                        }
-                    }
-                });
-                try {
-                    Thread.sleep(1000);
-                } catch (final InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-        }
-
-    }
+//    protected class Timer extends Thread {
+//        public boolean running = true;
+//
+//        @Override
+//        public void run() {
+//            while (running) {
+//                ((Activity) context).runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        try {
+//                            uptime = minSec.format(new Date(System.currentTimeMillis() - buffer.startTime));
+//                        } catch (final Exception e) {
+//                        }
+//                    }
+//                });
+//                try {
+//                    Thread.sleep(1000);
+//                } catch (final InterruptedException e) {
+//                    // TODO Auto-generated catch block
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+//
+//    }
 
 
 }

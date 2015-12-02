@@ -451,6 +451,7 @@ public class BufferClientsService extends Service {
             try {
                 base.mainloop();
             } catch (Exception e) {
+                base.stop(); // ensure mark as not running
                 handleExceptionCrash(e, base);
             }
         }

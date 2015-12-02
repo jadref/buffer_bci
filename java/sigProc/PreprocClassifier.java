@@ -172,7 +172,7 @@ public class PreprocClassifier {
         // Spatial filtering
         if (spatialFilter != null) {
             if ( VERB>1 ) System.out.println(TAG+  "Spatial filtering the data");
-				data.multiply(spatialFilter);
+				data.preMultiply(spatialFilter);
             if ( VERB>1 ) System.out.println(TAG+  "New size: " + data.shapeString());
         }
 		  if ( VERB>1 ) System.out.println(TAG+  "Final size: " + data.shapeString());

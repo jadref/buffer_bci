@@ -24,7 +24,7 @@ public class AlphaLatContClassifierThread extends ThreadBase {
     protected int timeout_ms = 1000;
     protected int trialLength_ms  =-1;
     protected int step_ms  = 100;
-    protected String clsfrFile;
+    protected String clsfrFile="clsfr_nf.txt";
     private ContinuousClassifier clsfr=null;
 	 protected boolean compLat=true;
 	 protected boolean normLat=true;
@@ -43,7 +43,7 @@ public class AlphaLatContClassifierThread extends ThreadBase {
                 new Argument("Sample step ms", step_ms, true), //8
                 new Argument("Overlap", .5, true), //9
                 new Argument("Prediction filter", -1.0, true), //10
-                new Argument("Clsfr file","clsfr_nf.txt"), //11
+                new Argument("Clsfr file",new String(clsfrFile)), //11
                 new Argument("Compute Lateralizsation", compLat?1:0, true),//12
                 new Argument("Normalize Lat", normLat?1:0, true)//13
         };
