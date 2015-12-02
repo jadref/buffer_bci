@@ -1,4 +1,5 @@
-call ..\utilities\findJava.bat
+set batdir=%~dp0
+call %batdir%\..\utilities\findJava.bat
 rem TODO : auto search for the serial device?
 set usbPort=COM8
 %javaexe% -cp "buffer/java/BufferClient.jar;openBCI/lib/jssc.jar;openBCI/openBCI2ft.jar" openBCI2ft %usbPort% localhost:1972 1 0 1 %*
