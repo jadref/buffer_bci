@@ -9,10 +9,10 @@ set(contFig,'Units','pixel');wSize=get(contFig,'position');fontSize = .05*wSize(
 menustr={'0) EEG'                 'eegviewer';
          '1) Practice'            'practice';
 			'2) Calibrate'           'calibrate'; 
-         '3) Calibrate (Psychtoolbox)'        'calibratePTB'; 
+         '3) Calibrate (Psychtoolbox)'        'calibrateptb'; 
 			'4) Train Classifier'    'trainersp';
 		   '5) Feedback'            'epochfeedback';
-			'6) Feedback (Psychtoolbox)'         'epochfeedbackPTB';
+			'6) Feedback (Psychtoolbox)'         'epochfeedbackptb';
 			'q) quit'                'quit';
 };
 txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
@@ -31,16 +31,12 @@ while (ishandle(contFig))
   if ( ~ishandle(contFig) ) break; end;
 
   phaseToRun=[];
-  if ( ~exist('OCTAVE_VERSION','builtin') ) 
-	 uiwait(contFig); % CPU hog on ver 7.4
-	 info=guidata(contFig); 
-	 subject=info.subject;
-	 phaseToRun=lower(info.phaseToRun);
-  else % give time to process the key presses
-	 % BODGE: move point to force key-processing
-	 fprintf('.');set(ph,'ydata',rand(1)*.01); drawnow;
-	 if ( ~ishandle(contFig) ) break; end;
-  end
+  
+  fprintf('.');
+  % BODGE: move point to force key-processing in octave
+  if ( exist('OCTAVE_VERSION','builtin') )  set(ph,'ydata',rand(1)*.01); end
+  drawnow;
+  if ( ~ishandle(contFig) ) break; end;
 
   % process any key-presses
   modekey=get(contFig,'userdata'); 
@@ -97,7 +93,7 @@ while (ishandle(contFig))
     sendEvent('startPhase.cmd',phaseToRun);
     sendEvent(phaseToRun,'start');
 	 %try
-	 if ( ~isempty(strfind(phaseToRun,'ptb') ) )
+	 if ( ~isempty(strfind(lower(phaseToRun),'ptb') ) )
 		ssepCalibrateStimulusPTB; % PsychToolBox version
 	 else
 		ssepCalibrateStimulus;
@@ -122,7 +118,7 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'start');
     %try
     sendEvent('startPhase.cmd','testing');
-	 if ( ~isempty(strfind(phaseToRun,'ptb')) )
+	 if ( ~isempty(strfind(lower(phaseToRun),'ptb')) )
 		ssepFeedbackStimulusPTB; % PsychToolBox version
 	 else
       ssepFeedbackStimulus;
