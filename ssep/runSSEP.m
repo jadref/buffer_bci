@@ -9,10 +9,10 @@ set(contFig,'Units','pixel');wSize=get(contFig,'position');fontSize = .05*wSize(
 menustr={'0) EEG'                 'eegviewer';
          '1) Practice'            'practice';
 			'2) Calibrate'           'calibrate'; 
-         '3) Calibrate (Psychtoolbox)'        'calibratePTB'; 
+         '3) Calibrate (Psychtoolbox)'        'calibrateptb'; 
 			'4) Train Classifier'    'trainersp';
 		   '5) Feedback'            'epochfeedback';
-			'6) Feedback (Psychtoolbox)'         'epochfeedbackPTB';
+			'6) Feedback (Psychtoolbox)'         'epochfeedbackptb';
 			'q) quit'                'quit';
 };
 txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
@@ -93,7 +93,7 @@ while (ishandle(contFig))
     sendEvent('startPhase.cmd',phaseToRun);
     sendEvent(phaseToRun,'start');
 	 %try
-	 if ( ~isempty(strfind(phaseToRun,'ptb') ) )
+	 if ( ~isempty(strfind(lower(phaseToRun),'ptb') ) )
 		ssepCalibrateStimulusPTB; % PsychToolBox version
 	 else
 		ssepCalibrateStimulus;
@@ -118,7 +118,7 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'start');
     %try
     sendEvent('startPhase.cmd','testing');
-	 if ( ~isempty(strfind(phaseToRun,'ptb')) )
+	 if ( ~isempty(strfind(lower(phaseToRun),'ptb')) )
 		ssepFeedbackStimulusPTB; % PsychToolBox version
 	 else
       ssepFeedbackStimulus;

@@ -57,7 +57,7 @@ while ( true )
   if ( isempty(phaseToRun) ) continue; end;
 
   fprintf('%g) Starting phase : %s\n',getwTime(),phaseToRun);
-  if ( verb>0 ) fprintf('Starting : %s\n',phaseToRun); ptime=getwTime(); end;
+  if ( verb>=0 ) fprintf('Starting : %s\n',phaseToRun); ptime=getwTime(); end;
   sendEvent(lower(phaseToRun),'start'); % mark start/end testing
   
   switch lower(phaseToRun);

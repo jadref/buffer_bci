@@ -31,7 +31,7 @@ public class Training : MonoBehaviour {
 	// Initialization
 	void Start ()
 	{
-		duration = (float)Config.trainingInterval;
+		duration = (float)Config.trainingDuration;
 		ballRenderMan = ball.GetComponent<Renderer> ();
 		ballRenderMan.material.SetFloat ("_Blend", 0);
 
@@ -53,7 +53,6 @@ public class Training : MonoBehaviour {
 	{
 		if (gameObject.activeSelf)
 		{
-			startTime += Time.deltaTime;
 			if ((Time.time-startTime) >= duration)
 			{
 				gameObject.SetActive (false);

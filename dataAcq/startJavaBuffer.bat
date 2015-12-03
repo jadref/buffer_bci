@@ -1,6 +1,6 @@
 setlocal enabledelayedexpansion
-call ..\utilities\findJava.bat
 set batdir=%~dp0
+call %batdir%\..\utilities\findJava.bat
 
 set drive=%~d0
 set bciroot=output

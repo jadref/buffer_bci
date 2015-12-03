@@ -6,11 +6,11 @@ public class Config : MonoBehaviour {
 	public static bool preMeasure = false; // pre-baseline before first trials baseline
 	public static bool awayTraining = false; 	//false (true not implemented yet)
 
-	public static int restInterval = 30; 		//60
+	public static float restDuration = 30; 		//60
 
-	public static int trainingInterval = 180; 	//180
+	public static float trainingDuration = 180; 	//180
 
-	public static int trainingBlocks = 8; 		//4
+	public static int trainingBlocks = 12; 		//12=42min
 
 	public static float alphaLimit = 3;
 	public static float badnessThreshold = .5f; // above this value is indicated as bad

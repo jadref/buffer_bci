@@ -15,7 +15,7 @@ public class Rest : MonoBehaviour {
 	// Iinitialization
 	void Awake ()
 	{
-		duration = (float)Config.restInterval;
+		duration = (float)Config.restDuration;
 		frequency = 1f / frequency;
 	}
 
