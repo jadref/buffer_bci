@@ -137,11 +137,14 @@ for seqi=1:nSeq;
   end % epochs within a sequence
 
   if ( seqi<nSeq ) %wait for key press to continue
-    msg=msgbox({sprintf('End of sequence %d/%d.',seqi,nSeq) 'Press OK to continue.'},'Thanks','modal');
-    if ( ishandle(msg) ) 
-      uiwait(msg,10); % wait max of 10sec
-      if ( ishandle(msg) ) delete(msg); end;
-    end; 
+    Screen('FillRect',wPtr,[0 0 0]*255); % blank background
+    [ans,ans,instructSrcR]=DrawFormattedText(wPtr,sprintf('End of sequence %d/%d.',seqi,nSeq),0,0,[1 1 1]*255);
+    Screen('flip',wPtr);
+    try;  % wait for a key press *and release*, or until 10 sec has passed -- only in PTB>3.08       
+       KbWait([],2,GetSecs()+10);
+    catch ;
+       sleepSec(10);
+    end
   end
 
 end % sequences

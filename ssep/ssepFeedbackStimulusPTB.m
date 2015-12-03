@@ -34,8 +34,6 @@ state=buffer('poll'); % set initial config
 tgt=ones(4,1);
 sendEvent('stimulus.training','start'); 
 for seqi=1:nSeq;
-
-  if ( ~ishandle(fig) ) break; end;  
   
   sleepSec(intertrialDuration);
 

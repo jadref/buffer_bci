@@ -69,7 +69,6 @@ while (ishandle(contFig))
    case 'eegviewer';
     sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
-    % wait until capFitting is done
     buffer_newevents(buffhost,buffport,[],phaseToRun,'end'); % wait until finished
 	  
    %---------------------------------------------------------------------------
@@ -90,7 +89,7 @@ while (ishandle(contFig))
    %---------------------------------------------------------------------------
    case {'calibrate','calibration','calibrateptb','calibrationptb'};
     sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun);
+    sendEvent('startPhase.cmd','calibrate');
     sendEvent(phaseToRun,'start');
 	 %try
 	 if ( ~isempty(strfind(lower(phaseToRun),'ptb') ) )
@@ -100,8 +99,8 @@ while (ishandle(contFig))
 	 end
     %catch
       % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-      sendEvent('stimulus.training','end');    
     %end
+    sendEvent('calibrate','end');    
     sendEvent(phaseToRun,'end');
 
    %---------------------------------------------------------------------------
@@ -125,8 +124,8 @@ while (ishandle(contFig))
 	 end
     %catch
       % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-      sendEvent('stimulus.test','end');
     %end
+    sendEvent('testing','end');
     sendEvent(phaseToRun,'end');
     
    %---------------------------------------------------------------------------

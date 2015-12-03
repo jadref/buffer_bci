@@ -41,7 +41,7 @@ verb=0;
 nSeq=4;
 seqLen=12;
 cueDuration=2;
-feedbackDuration=5;
+feedbackDuration=3;
 stimRadius=.3;
 
 trialDuration=3;
@@ -70,4 +70,4 @@ feedbackinstructstr={'Look at your choosen box.' 'feedback given at sequence' 'e
 
 
 % PTB stuff
-windowPos=[];%[0 0 500 500];%[0 0 1024 1024];% % in sub-window set to [] for full screen
+windowPos=[0 0 500 500];%[];%[0 0 1024 1024];% % in sub-window set to [] for full screen
