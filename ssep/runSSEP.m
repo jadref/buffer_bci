@@ -28,14 +28,14 @@ subject='test';
 sendEvent('experiment.ssep','start');
 while (ishandle(contFig))
   set(contFig,'visible','on');
-  if ( ~ishandle(contFig) ) break; end;
 
   phaseToRun=[];
-  
-  fprintf('.');
-  % BODGE: move point to force key-processing in octave
-  if ( exist('OCTAVE_VERSION','builtin') )  set(ph,'ydata',rand(1)*.01); end
+  if ( exist('OCTAVE_VERSION','builtin') ) 
+	 % BODGE: move point to force key-processing
+	 if ( ~isempty(ph) ) fprintf('.');set(ph,'ydata',rand(1)*.01); end
+  end
   drawnow;
+  pause(.1);
   if ( ~ishandle(contFig) ) break; end;
 
   % process any key-presses
@@ -128,8 +128,13 @@ while (ishandle(contFig))
       sendEvent('stimulus.test','end');
     %end
     sendEvent(phaseToRun,'end');
+    
+   %---------------------------------------------------------------------------
+    case {'quit','exit'};
+      break;
   end
 
+    
   %for i=1:numel(info.phasesCompleted); % set all run phases to have green text
   %    set(getfield(info,[info.phasesCompleted{i} 'But']),'ForegroundColor',[0 1 0]);
   %end

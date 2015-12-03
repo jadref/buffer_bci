@@ -49,15 +49,15 @@ baselineDuration=1;
 rtbDuration=1;
 intertrialDuration=2;
 isi = 1/30;
-periods=[3 3 4 4;...  % periods, in frames
-         0 1 0 2]';   % phases, in frames
+periods=[3 4 5 6;...  % periods, in frames
+         0 1 0 2]';   % phases, in frames (N.B. not used in ERSP analysis!)
 periods= periods*isi; % convert from frames to seconds - as mkStimSeqSSEP wants
 classes={};
 for ci=1:size(periods,1);
   classes{ci} = sprintf('%gHz_%gdeg',1./(periods(ci,1)),periods(ci,2)/periods(ci,1)*360);
 end
 nSymbs=size(periods,1);
-bgColor=[.1 .1 .1]; % background color (grey)
+bgColor=[.3 .3 .3]; % background color (grey)
 tgtColor=[0 1 0]; % the target indication color (green)
 flashColor=[1 1 1]; % the 'flash' color (white)
 fixColor=[1 0 0];

@@ -7,7 +7,7 @@ echo Starting the non-saving java buffer server \(background\)
 dataAcq/startJavaNoSaveBuffer.sh &
 bufferpid=$!
 echo buffpid=$bufferpid
-sleep 1
+sleep 3
 
 
 echo Starting the data acquisation device $dataacq \(background\)

@@ -12,8 +12,10 @@ public class MenuOptions : MonoBehaviour {
 	public GameObject userInfoPanel;
 	public UnityEngine.UI.InputField userTxt;
 	public UnityEngine.UI.InputField sessionTxt;
+	public UnityEngine.UI.Toggle     agenticToggle;
+	public UnityEngine.UI.Text       cueText;
 	public GameObject restIntroPanel;
-	public GameObject trainingIntroPanel;
+	public GameObject cuePanel;
 	public GameObject pausePanel;
 	public GameObject questionairePanel1;
 	public GameObject questionairePanel2;
@@ -31,7 +33,7 @@ public class MenuOptions : MonoBehaviour {
 	private IEnumerator phaseMachine; // stateMachine for the experiment
 	private bool moveForward = true;
 	private bool endAll=false;
-
+	private bool agenticControl=false;
 
 	// game state controller to switch between stages of the experiment/game
 	// N.B. you should never call this directly, but via the nextStage function
@@ -52,6 +54,12 @@ public class MenuOptions : MonoBehaviour {
 			yield return null;
 			if ( userTxt.text != null ) FTSInterface.sendEvent (Config.userEventType,userTxt.text);
 			if ( sessionTxt.text != null ) FTSInterface.sendEvent (Config.sessionEventType,sessionTxt.text);
+			agenticControl = agenticToggle.isOn; 
+			if ( agenticControl ) {
+				FTSInterface.sendEvent (Config.agenticEventType,"agentic");
+			} else {
+				FTSInterface.sendEvent (Config.agenticEventType,"operant");
+			}
 
 			if (FTSInterface.getSystemIsReady()) {
 				FTSInterface.setMenu (false);
@@ -66,9 +74,11 @@ public class MenuOptions : MonoBehaviour {
 				FTSInterface.sendEvent (Config.restEventType, "end");
 			}
 
-			HideAllBut (trainingIntroPanel);
+			cueText.text = Config.experimentInstructText;
+			HideAllBut (cuePanel);
 			yield return 0;
 
+			string trialType="";
 			for (int si=0; si<Config.trainingBlocks; si++) {
 				// run the rest stage
 				FTSInterface.sendEvent (Config.restEventType, "start");
@@ -78,11 +88,22 @@ public class MenuOptions : MonoBehaviour {
 				FTSInterface.sendEvent (Config.restEventType, "end");
 				FTSInterface.sendEvent (Config.baselineEventType, "end");
 
+				// instructions before the control phase
+				if ( agenticControl && si/2==1 ) trialType="avoid"; else trialType="approach"; 
+				if ( trialType.Equals("avoid") ) {
+					cueText.text = Config.avoidCueText;
+				} else if ( trialType.Equals("approach") ){
+					cueText.text = Config.approachCueText;
+				}
+				HideAllBut (cuePanel);
+				yield return 0;
+
 				// run the training stage
-				FTSInterface.sendEvent (Config.approachEventType, "start");
+				FTSInterface.sendEvent (Config.trialEventType, "start");
+				FTSInterface.sendEvent (Config.targetEventType, trialType);
 				HideAllBut (trainingStage);
 				yield return null;
-				FTSInterface.sendEvent (Config.approachEventType, "end");
+				FTSInterface.sendEvent (Config.trialEventType, "end");
 
 				HideAllBut(pausePanel); // wait for user to continue
 				yield return null;

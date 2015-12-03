@@ -13,7 +13,7 @@ public class Training : MonoBehaviour {
 	private float MINZPOS = 2f; // closest allowed position
 	private float MAXZPOS = 15f; //furthest allowed position
 
-	private float time = 0f;
+	private float startTime = 0f;
 	private Vector3 velocity = Vector3.zero;
 	private bool isInitialized = false;
 
@@ -31,7 +31,7 @@ public class Training : MonoBehaviour {
 	// Initialization
 	void Start ()
 	{
-		duration = (float)Config.trainingInterval;
+		duration = (float)Config.trainingDuration;
 		ballRenderMan = ball.GetComponent<Renderer> ();
 		ballRenderMan.material.SetFloat ("_Blend", 0);
 
@@ -43,15 +43,18 @@ public class Training : MonoBehaviour {
 		//skinnedMesh = GetComponent<SkinnedMeshRenderer> ().sharedMesh;
 	}
 
+	// when made visible
+	void OnEnable(){
+		startTime = Time.time;
+	}
+
 	// Update is called once per frame
 	void Update ()
 	{
 		if (gameObject.activeSelf)
 		{
-			time += Time.deltaTime;
-			if (time >= duration)
+			if ((Time.time-startTime) >= duration)
 			{
-				time = 0f;
 				gameObject.SetActive (false);
 				menu.nextStage();
 			}
