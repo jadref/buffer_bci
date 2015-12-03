@@ -49,6 +49,19 @@ function []=startSigProcBuffer(varargin)
 %                     epochEvent saved to train the classifier
 %   freqband       -- [float 4x1] frequency band to use the the spectral filter during ([.1 .5 10 12])
 %                     pre-processing
+%
+%   erpOpts        -- {cell} cell array of additional options to pass the the erpViewer
+%                     SEE: erpViewer for a list of options available
+%   trainOpts      -- {cell} cell array of additional options to pass to the classifier trainer, e.g.
+%                       'trainOpts',{'width_ms',1000} % sets the welch-window-width to 1000ms
+%                     SEE: buffer_train_clsfr for a list of options available
+%   epochFeedbackOpts -- {cell} cell array of additional options to pass to the epoch feedback (i.e. 
+%                        event triggered) classifier
+%                        SEE: event_applyClsfr for a list of options available
+%   contFeedbackOpts  -- {cell} cell array of addition options to pass to the continuous feedback 
+%                        (i.e. every n-ms triggered) classifier
+%                        SEE: cont_applyClsfr for a list of options available   
+%
 %   capFile        -- [str] filename for the channel positions                         ('1010')
 %   verb           -- [int] verbosity level                                            (1)
 %   buffhost       -- str, host name on which ft-buffer is running                     ('localhost')

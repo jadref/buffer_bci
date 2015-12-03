@@ -4,6 +4,6 @@ source ../utilities/findMatlab.sh
 if [[ $matexe == *matlab ]]; then  args=-nodesktop; fi
 cat <<EOF | $matexe $args
 configureSSEP;
-startSigProcBuffer('clsfr_type','ersp','trlen_ms',trlen_ms,'freqband',[.0 .3 45 47],'useGUI',0);
+startSigProcBuffer('clsfr_type','ersp','trlen_ms',trlen_ms,'trainOpts',trainOpts,'useGUI',0);
 %quit;
 EOF

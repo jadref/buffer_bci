@@ -62,7 +62,10 @@ tgtColor=[0 1 0]; % the target indication color (green)
 flashColor=[1 1 1]; % the 'flash' color (white)
 fixColor=[1 0 0];
 feedbackColor=[0 0 1]; % feedback (blue)
+
+% classifier trianing system options
 trlen_ms=trialDuration*1000;
+trainOpts={'freqband',[0 1  45 47],'width_ms',1500}; % sig-proc/classifier training options
 
 instructstr={'Look at the box indicated' 'in green' '' 'click mouse to continue'};
 thanksstr  ={'That ends this phase.' '' 'click mouse to continue'};
