@@ -12,10 +12,11 @@ else
   menustr={'0) EEG'                 'eegviewer';
            '1) Practice'            'practice';
 			  '2) Calibrate'           'calibrate'; 
-			  '3) Train Classifier'    'train';
+			  '3) Train Classifier'    'trainersp';
 			  '4) Epoch Feedback'      'epochfeedback';
 			  '5) Continuous Feedback' 'contfeedback';
 			  '6) NeuroFeedback'       'neurofeedback'
+			  '7) Center out feedback' 'centerout'
           };
   txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
 				'HorizontalAlignment','left','color',[1 1 1]);
@@ -27,6 +28,7 @@ else
 end
 subject='test';
 
+sendEvent('experiment.im','start');
 while (ishandle(contFig))
   set(contFig,'visible','on');
   if ( ~ishandle(contFig) ) break; end;
@@ -66,18 +68,15 @@ while (ishandle(contFig))
    %---------------------------------------------------------------------------
    case 'capfitting';
     sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun);
-    % wait until capFitting is done
-    buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
-    %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);       
+    sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end'); % wait until finished
 
    %---------------------------------------------------------------------------
    case 'eegviewer';
     sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun);
+    sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
     % wait until capFitting is done
-    buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
-    %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);           
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end'); % wait until finished
     
    %---------------------------------------------------------------------------
    case 'practice';
@@ -106,12 +105,10 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'end');
 
    %---------------------------------------------------------------------------
-   case {'train','classifier'};
+   case {'train','trainersp'};
     sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun);
-    % wait until training is done
-    buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
-    %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);  
+    sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end'); % wait until finished
 
    %---------------------------------------------------------------------------
    case {'epochfeedback'};
@@ -156,7 +153,23 @@ while (ishandle(contFig))
     sendEvent('contfeedback','end');
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');
-        
+
+   %---------------------------------------------------------------------------
+   case {'centerout' 'centeroutfeedback'};
+    sendEvent('subject',subject);
+    %sleepSec(.1);
+    sendEvent(phaseToRun,'start');
+    try
+      sendEvent('startPhase.cmd','contfeedback');
+      imCenteroutStimulus;
+    catch
+       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+       sleepSec(.1);
+    end
+    sendEvent('contfeedback','end');
+    sendEvent('test','end');
+    sendEvent(phaseToRun,'end');
+
   end
 end
 uiwait(msgbox({'Thankyou for participating in our experiment.'},'Thanks','modal'),10);
