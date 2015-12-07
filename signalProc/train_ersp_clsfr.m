@@ -65,7 +65,7 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
 opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],...
             'width_ms',500,'windowType','hanning','aveType','amp',...
-            'detrend',1,'spatialfilter','slap',...
+            'detrend',1,'spatialfilter','slap','adaptspatialfilter',[],...
             'badchrm',1,'badchthresh',3.1,'badchscale',2,...
             'badtrrm',1,'badtrthresh',3,'badtrscale',2,...
             'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
@@ -183,7 +183,13 @@ if ( ~isempty(R) ) % apply the spatial filter
   X=tprod(X,[-1 2 3],R,[1 -1]); 
 end
 
-%3.5) Bad trial removal
+% adaptive spatial filtering
+if ( ~isempty(opts.adaptspatialfilter) )
+  warning('currently not used during training....');
+  clsfr.adaptspatialfilter=opts.adaptspatialfilter; % mark to use during on-line use
+end
+
+%3.75) Bad trial removal
 isbadtr=[]; trthresh=[];
 if ( opts.badtrrm ) 
   fprintf('2.5) bad trial removal');

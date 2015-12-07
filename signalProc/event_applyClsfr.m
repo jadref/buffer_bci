@@ -125,7 +125,7 @@ while ( ~endTest )
 
       % apply classification pipeline(s) to this events data      
       for ci=1:numel(clsfr);
-        [f(:,ci),fraw(:,ci),p(:,ci)]=buffer_apply_clsfr(data(ei).buf,clsfr(ci));
+        [f(:,ci),fraw(:,ci),p(:,ci),Xpp,clsfr(ci)]=buffer_apply_clsfr(data(ei).buf,clsfr(ci));
         if ( opts.verb>1 ) fprintf('clsfr%d pred=[%s]\n',ci,sprintf('%g ',f(:,ci))); end;
       end
       if ( numel(ci)>1 ) % combine individual classifier predictions

@@ -1,22 +1,24 @@
-function [f,fraw,p,X]=apply_ersp_clsfr(X,clsfr,verb)
+function [f,fraw,p,X,clsfr]=apply_ersp_clsfr(X,clsfr,verb)
 % apply a previously trained classifier to the input data
 % 
-%  [f,fraw,p]=apply_ersp_clsfr(X,clsfr,verb) 
+%  [f,fraw,p,X,clsfr]=apply_ersp_clsfr(X,clsfr,verb) 
 %
 % Inputs:
 %  X - [ ch x time x epoch ] data set
-%  clsfr - [struct] trained classifier structure as given by train_1bitswitch
+%  clsfr - [struct] trained classifier structure as given by train_ersp_clsfr
 %  verb - [int] verbosity level
 % Output:
 %  f    - [size(X,epoch) x nCls] the classifier's raw decision value
 %  fraw - [size(X,dim) x nSp] set of pre-binary sub-problem decision values
 %  p    - [size(X,dim) x nSp] the classifiers predictions as probabilities
 %  X    - [n-d] the pre-processed data
+%  clsfr- [struct] input classifier updated w.r.t. any adaptive changes over time
 if( nargin<3 || isempty(verb) ) verb=0; end;
 
 if( isfield(clsfr,'type') && ~strcmpi(clsfr.type,'ersp') )
   warning(sprintf('Wrong type of classifier given, expected ERSP got : %s',clsfr.type));
 end
+if ( isa(X,'single') ) eps=1e-6; else eps=1e-10; end;
 
 %0) convert to singles (for speed)
 X=single(X);
@@ -60,7 +62,40 @@ if ( isfield(clsfr,'spatialfilt') && ~isempty(clsfr.spatialfilt) )
   X=tprod(X,[-1 2 3 4],clsfr.spatialfilt,[1 -1]); % apply the SLAP
 end
 
-%3.5) check for bad trials
+%3.5) adaptive spatial filter
+if ( isfield(clsfr,'adaptspatialfilter') && ~isempty(clsfr.adaptspatialfilter) )
+  % single number = 1/2-life (in applications) for adaptive whitener
+  if ( isnumeric(clsfr.adaptspatialfilter) )
+	 % compute average spatial covariance for this trial
+	 chCov = tprod(X,[1 -2 -3],[],[1 -2 -3])./size(X,2)./size(X,3);
+	 % update the running average
+	 if( ~isfield(clsfr,'chCov') ) % initialize
+		clsfr.chCov=chCov;
+	 else % update
+		if ( clsfr.adaptspatialfilter>0 ) % exp-weighted moving average
+		  chCov = clsfr.adaptspatialfilter*chCov + (1-clsfr.adaptspatialfilter)*chCov
+		  clsfr.chCov = chCov;
+		else % ring buffer
+		  if ( clsfr.adaptspatialfilter==-1 ) % just use current entry
+			 clsfr.chCov=chCov;
+		  elseif ( clsfr.adaptspatialfilter==-2 ) % this and previous
+			 tmp  = ( clsfr.chCov + chCov) /2;
+			 clsfr.chCov = chCov; % record current info for next time
+			 chCov= tmp; % use average of now and previous
+		  end
+		  error('Ring buffer for cov-estimation not supported yet!');
+		end
+	 end
+	 % compute the whitener from the local adapative covariance estimate
+	 [U,s]=eig(double(chCov)); s=diag(s); % N.B. force double to ensure precision with poor condition
+	 % select non-zero entries - cope with rank deficiency, numerical issues
+	 si = s>eps & ~isnan(s) & ~isinf(s) & abs(imag(sx))<eps;
+	 W  = U(:,si)*diag(1./s(si))*U(:,si)'; % compute symetric whitener	 
+	 X  = tprod(X,[-1 2 3],W,[-1 1]); % apply it to the data
+  end
+end
+
+%3.75) check for bad trials
 isbadtr=false;
 if ( isfield(clsfr,'badtrthresh') && ~isempty(clsfr.badtrthresh) )
   X2 = sqrt(max(0,tprod(X,[-1 -2 1],[],[-1 -2 1])./size(X,1)./size(X,2)));
