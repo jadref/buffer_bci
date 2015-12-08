@@ -258,6 +258,7 @@ clsfr.fs          = fs;   % sample rate of training data
 clsfr.detrend     = opts.detrend; % detrend?
 clsfr.isbad       = isbadch;% bad channels to be removed
 clsfr.spatialfilt = R;    % spatial filter used for surface laplacian
+clsfr.adaptspatialfilt=[]; % no adaption
 clsfr.filt        = filt; % filter weights for spectral filtering
 clsfr.outsz       = outsz; % info on size after spectral filter for downsampling
 clsfr.timeIdx     = timeIdx; % time range to apply the classifer to

@@ -305,6 +305,7 @@ clsfr.fs          = fs;   % sample rate of training data
 clsfr.detrend     = opts.detrend; % detrend?
 clsfr.isbad       = isbadch;% bad channels to be removed
 clsfr.spatialfilt = R;    % spatial filter used for surface laplacian
+clsfr.adaptspatialfilt=[]; % no adaption
 
 clsfr.filt        = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
 clsfr.outsz       = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
