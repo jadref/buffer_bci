@@ -1,5 +1,10 @@
 configureIM;
-if ( ~exist(centerOutTrialDuration) || isempty(centerOutTrialDuration) ) centerOutTrialDuration=trialDuration; end;
+if ( ~exist('centerOutTrialDuration') || isempty(centerOutTrialDuration) ) 
+   centerOutTrialDuration=trialDuration; 
+end;
+% OVERRIDE number of symbols......
+nSymbs=4;
+
 % make the stimulus
 %figure;
 fig=figure(2);
@@ -24,6 +29,8 @@ h(2) =rectangle('curvature',[0 0],'position',[[-wdth/2*stimAngle;axLim(1)];[stim
 h(3) =rectangle('curvature',[0 0],'position',[[axLim(2)-stimRadius;-hght/2*stimAngle];[stimRadius;stimAngle*hght]],'facecolor',bgColor);
 % bottom block
 h(4) =rectangle('curvature',[0 0],'position',[[-wdth/2*stimAngle;axLim(2)-stimRadius];[stimAngle*wdth;stimRadius]],'facecolor',bgColor);  
+% get stimulus positions
+stimPos = get(h(1:4),'position'); stimPos=cat(1,stimPos{:})'; stimPos=stimPos(1:2,:);
 % cursor
 initCursorPos=[[0;0]-cursorSize/2;[1;1]*cursorSize]';
 h(5) =rectangle('curvature',[1 1],'position',initCursorPos,'facecolor',bgColor); 
