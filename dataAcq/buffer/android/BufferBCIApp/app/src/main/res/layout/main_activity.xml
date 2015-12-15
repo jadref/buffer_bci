@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="horizontal"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+
+    <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="@dimen/switch_bar_width"
+            android:layout_height="wrap_content">
+        <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content" android:focusableInTouchMode="false" android:id="@+id/switches"
+                >
+            <Switch
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Server"
+                    android:id="@+id/switch1"
+                    android:checked="false"
+                    android:onClick="onToggleServerSwitch"/>
+            <Switch
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Clients"
+                    android:id="@+id/switch2"
+                    android:checked="false"
+                    android:onClick="onToggleClientsSwitch"/>
+        </LinearLayout>
+        <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="New Text"
+                android:id="@+id/textView" android:autoText="false"/>
+    </LinearLayout>
+    <nl.dcc.buffer_bci.bufferservicecontroller.visualize.BubbleSurfaceView
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:id="@+id/surfaceView">
+    </nl.dcc.buffer_bci.bufferservicecontroller.visualize.BubbleSurfaceView>
+
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"></FrameLayout>
+
+</LinearLayout>

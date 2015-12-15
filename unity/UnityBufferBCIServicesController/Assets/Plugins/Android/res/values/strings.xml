@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">FieldtripBufferServiceController</string>
+    <string name="action_settings">Settings</string>
+    <string name="stopbufferbutton">Stop Buffer</string>
+    <string name="uptime">Uptime</string>
+
+    <string name="confirmation">Flush confirmation</string>
+    <string name="confirmationflushheader">Are you sure you wish to flush the header?</string>
+    <string name="confirmationflushsamples">Are you sure you wish to flush the samples?</string>
+    <string name="confirmationflushevents">Are you sure you wish to flush the events?</string>
+
+</resources>

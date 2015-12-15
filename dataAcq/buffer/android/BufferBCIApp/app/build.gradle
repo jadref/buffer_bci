@@ -1,0 +1,35 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 16
+    buildToolsVersion "21.1.2"
+    defaultConfig {
+        applicationId 'nl.dcc.buffer_bci'
+        minSdkVersion 14
+        targetSdkVersion 19
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-androidHandle.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            debuggable true
+            jniDebuggable true
+        }
+    }
+
+    packagingOptions {
+        exclude 'BufferClient.jar' // prevent double inclusion from FileProxy, SignalProxy etc..
+        exclude 'MatrixAlgebra.jar'
+        exclude 'commons-math3-3.4.jar'
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.android.support:support-v4:21.0.3'
+}
