@@ -35,33 +35,49 @@ if ( nargin<5 || isempty(mval)  ) mval ='*'; end;
 if ( nargin<6 || isempty(timeOut_ms) ) timeOut_ms=5000; end;
 
 % get the set of possible events
+nevents=[]; nsamples=[]; status=[];
 if ( isstruct(state) ) nevents=state.nevents; 
 elseif ( numel(state)==3 ) nevents=state(2); 
 elseif ( numel(state)==1 ) nevents=state(1);
 else warning('Dont understand state format');
 end
 if ( isempty(nevents) || nevents<=0 ) % first call
-  status=buffer('wait_dat',[-1 -1 -1],host,port); nevents=status.nevents;
-end; 
+  status=buffer('wait_dat',[-1 -1 -1],host,port); 
+  nevents=status.nevents;
+  nsamples=status.nsamples;
+end;
 events=[];
 curTime =getTime();
 endTime =curTime+timeOut_ms/1000;
-while ( isempty(events) && endTime>curTime ) % until there are some matching events
+while ( isempty(events) && endTime>=curTime ) % until there are some matching events
   % wait for any new events, keeping track of elapsed time for time-based exits
   status=buffer('wait_dat',[inf nevents 1000*(endTime-curTime)],host,port);
   if( status.nevents>nevents )
     % N.B. event range is counted from start -> end-1!
     % N.B. event Id start from 0
-    events=buffer('get_evt',[max(nevents,status.nevents-50) status.nevents-1],host,port); 
+    if ( nevents>status.nevents-100 ) 
+       events=buffer('get_evt',[nevents status.nevents-1],host,port); 
+    else
+       fprintf('Long time between calls -- potentially missed %d events',status.nevents-100-nevents);
+       try
+          events=buffer('get_evt',[max(nevents,status.nevents-100) status.nevents-1],host,port); 
+       catch
+          events=buffer('get_evt',[max(nevents,status.nevents-50) status.nevents-1],host,port); 
+       end
+    end
     % filter for the event types we care about
     mi=matchEvents(events,mtype,mval);
     events=events(mi);
   end
   nevents=status.nevents;
+  nsamples=status.nsamples;
   curTime=getTime();
 end
-state=status;
-nevents=state.nevents;nsamples=state.nsamples;
+if ( ~isempty(status) ) 
+  state=status; 
+  nevents=status.nevents;
+  nsamples=status.nsamples;
+end;
 return;
 
 function t=getTime()
