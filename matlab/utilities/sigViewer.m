@@ -25,8 +25,8 @@ function []=sigViewer(buffhost,buffport,varargin);
 %  sigProcOptsGui -- [bool] show the on-line option changing gui             (1)
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ); run(fullfile(fileparts(mfilename('fullpath')),'../utilities/initPaths.m')); end;
 opts=struct('endType','end.training','verb',1,'timeOut_ms',1000,...
-				'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,...
-				'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',128,'spatfilt','car',...
+				'trlen_ms',5000,'trlen_samp',[],'updateFreq',3,...
+				'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',[],'spatfilt','car',...
 				'badchrm',0,'badchthresh',3,'capFile',[],'overridechnms',0,...
 				'welch_width_ms',1000,'spect_width_ms',500,'spectBaseline',1,...
 				'noisebands',[45 47 53 55],'noiseBins',[0 1.75],...
@@ -37,12 +37,14 @@ if ( nargin<2 || isempty(buffport) ); buffport=1972; end;
 if ( isempty(opts.freqbands) && ~isempty(opts.fftfilter) ); opts.freqbands=opts.fftfilter; end;
 
 if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics facility
-  if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
+  if ( ~isempty(strmatch('qt',available_graphics_toolkits())) )
+	 graphics_toolkit('qt'); 
+  elseif ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
     graphics_toolkit('qthandles'); % use fast rendering library
   elseif ( ~isempty(strmatch('fltk',available_graphics_toolkits())) )
     graphics_toolkit('fltk'); % use fast rendering library
+	 opts.sigProcOptsGui=0;
   end
-  opts.sigProcOptsGui=0;
 end
 
 % get channel info for plotting
@@ -125,8 +127,7 @@ else
 end
 
 % make the figure window
-clf;
-fig=gcf;
+fig=figure(1);clf;
 set(fig,'Name','Sig-Viewer : t=time, f=freq, p=power, 5=50Hz power, s=spectrogram, close window=quit','menubar','none','toolbar','none','doublebuffer','on');
 axes('position',[0 0 1 1]); topohead();set(gca,'visible','off','nextplot','add');
 plotPos=ch_pos; if ( ~isempty(plotPos) ); plotPos=plotPos(:,iseeg); end;
@@ -146,9 +147,10 @@ drawnow; % make sure the figure is visible
 
 % make popup menu for selection of TD/FD
 modehdl=[]; vistype=0; curvistype='time';
-if ( ~exist('OCTAVE_VERSION','builtin') ) % in octave have to manually convert arrays..
+try
   modehdl=uicontrol(fig,'Style','popup','units','normalized','position',[.8 .9 .2 .1],'String','Time|Frequency|50Hz|Spect|Power');
   set(modehdl,'value',1);
+catch
 end
 colormap trafficlight; % red-green colormap for 50Hz pow
 
@@ -174,7 +176,9 @@ ppopts.preproctype='none';if(opts.detrend);ppopts.preproctype='detrend'; end;
 ppopts.spatfilttype=opts.spatfilt;
 ppopts.freqbands=opts.freqbands;
 optsFighandles=[];
+damage=false(4,1);	 
 if ( isequal(opts.sigProcOptsGui,1) )
+  try;
   optsFigh=sigProcOptsFig();
   optsFighandles=guihandles(optsFigh);
   set(optsFighandles.lowcutoff,'string',sprintf('%g',ppopts.freqbands(1)));
@@ -188,8 +192,8 @@ if ( isequal(opts.sigProcOptsGui,1) )
   set(optsFighandles.badchrm,'value',ppopts.badchrm);
   set(optsFighandles.badchthresh,'value',ppopts.badchthresh);  
   ppopts=getSigProcOpts(optsFighandles);
-else
-  damage=false(4,1);	 
+  catch;
+  end
 end
 
 oldPoint = get(fig,'currentpoint'); % initial mouse position
@@ -206,7 +210,7 @@ while ( ~endTraining )
     pause(1);
     cursamp=status.nSamples;
     if ( ~ishandle(fig) ); break; else continue; end;
-  elseif ( status.nSamples > cursamp+update_samp*2 ) % missed a whole update window
+  elseif ( status.nSamples > cursamp+5*fs) % missed a 5 seconds of data
 	 fprintf('Warning: Cant keep up with the data!\n%d Dropped samples...\n',status.nSamples-update_samp-1-cursamp);
     cursamp=status.nSamples - update_samp-1; % jump to the current time
   end;
@@ -251,7 +255,10 @@ while ( ~endTraining )
 
   % get updated sig-proc parameters if needed
   if ( ~isempty(optsFighandles) && ishandle(optsFighandles.figure1) )
-    [ppopts,damage]=getSigProcOpts(optsFighandles,ppopts);
+	 try
+		[ppopts,damage]=getSigProcOpts(optsFighandles,ppopts);
+	 catch;
+	 end;
     % compute updated spectral filter information, if needed
     if ( damage(4) ) % freq range changed
       filt=[];
@@ -339,7 +346,7 @@ while ( ~endTraining )
    case 'time'; % time-domain, spectral filter -----------------------------------
     if ( ~isempty(filt) && ~all(abs(1-filt(1:end-1))<1e-6)); 
             ppdat=fftfilter(ppdat,filt,outsz,2);  % N.B. downsample at same time
-    elseif ( ~isempty(outsz) ); 
+    elseif ( ~isempty(outsz) && outsz(2)<size(ppdat,2) ); 
             ppdat=subsample(ppdat,outsz(2),2); % manual downsample
     end
     

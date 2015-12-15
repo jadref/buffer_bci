@@ -1,3 +1,5 @@
+set batdir=%~dp0
+cd %batdir%
 call ..\utilities\findMatlab.bat
 cd ..\matlab\utilities
 if %ismatlab%==1 (

@@ -1,6 +1,6 @@
 setlocal enabledelayedexpansion
-call ..\utilities\findJava.bat
 set batdir=%~dp0
+call %batdir%\..\utilities\findJava.bat
 
 set drive=%~d0
 set bciroot=output
@@ -34,4 +34,4 @@ if exist "%folder%\raw_buffer" (
 )
 
 echo Starting: /buffer/java/BufferServer.jar %folder%\raw_buffer
-%javaexe% -jar "%batdir%/buffer/java/BufferServer.jar" %folder%\raw_buffer
+%javaexe% -jar "%batdir%/buffer/java/BufferServer.jar" %folder%\raw_buffer %*

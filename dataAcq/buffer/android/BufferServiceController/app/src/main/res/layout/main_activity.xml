@@ -40,4 +40,8 @@
             android:id="@+id/surfaceView">
     </nl.dcc.buffer_bci.bufferservicecontroller.visualize.BubbleSurfaceView>
 
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"></FrameLayout>
+
 </LinearLayout>

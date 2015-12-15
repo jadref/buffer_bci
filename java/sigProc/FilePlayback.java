@@ -4,6 +4,7 @@ import java.nio.*;
 import nl.fcdonders.fieldtrip.bufferclient.*;
 
 public class FilePlayback {
+    protected static final String TAG = FilePlayback.class.getSimpleName();
 	 final static int VERB=1;
     private static int BUFFERSIZE = 65500;
     private InputStream dataReader = null;
@@ -45,9 +46,11 @@ public class FilePlayback {
 				 hostname=hostname.substring(0,sep);
 			}			
 		}
+		System.out.println(TAG+" Host:port="+hostname+port);
 		if (args.length>=2) {
 			 dataDir=args[1];
 		}
+		System.out.println(TAG+" dataDir="+dataDir);
 
 		if ( args.length>=3 ) {
 			try {
@@ -57,6 +60,7 @@ public class FilePlayback {
 				 speedup = 1;
 			}			 
 		}
+		System.out.println(TAG+" speedup="+speedup);
 
 		if ( args.length>=4 ) {
 			try {
@@ -66,6 +70,7 @@ public class FilePlayback {
 				 blockSize = 1;
 			}			 
 		}
+		System.out.println(TAG+" blockSize="+blockSize);
 		FilePlayback sp=new FilePlayback(hostname,port,dataDir,speedup,blockSize);
 		sp.mainloop();
 		sp.stop();		
@@ -105,7 +110,7 @@ public class FilePlayback {
 
 	 public void mainloop(){
 		
-		while( !client.isConnected() ) {
+		while( !client.isConnected() && run ) {
 			 try {
 				  System.out.println("Connecting to "+hostname+":"+port);
 				  client.connect(hostname, port);
@@ -139,7 +144,7 @@ public class FilePlayback {
         hdrBuf.order(ByteOrder.nativeOrder());
         Header hdr = new Header(hdrBuf);
         if (VERB > 0) {
-            System.out.println("Sending header: " + hdr.toString());
+            System.out.println(TAG+" Sending header: " + hdr.toString());
         }
         hdr.nSamples = 0; // reset number of samples to 0
 
@@ -181,7 +186,7 @@ public class FilePlayback {
             // increment the cursor position
             if (VERB > 0 && elapsed_ms > print_ms + 500) {
                 print_ms = elapsed_ms;
-                System.out.println(nblk + " " + nsamp + " " + nevent + " " + (elapsed_ms / 1000)
+                System.out.println(TAG+ " " + nblk + " " + nsamp + " " + nevent + " " + (elapsed_ms / 1000)
 											  + " (blk,samp,event,sec)\r");
             }
 
@@ -190,6 +195,7 @@ public class FilePlayback {
             try {
                 n = dataReader.read(samples);
             } catch (IOException e) {
+					 n = -1;
                 e.printStackTrace();
             }
             if (n <= 0) {
@@ -245,7 +251,7 @@ public class FilePlayback {
                     ByteBuffer tmpev = ByteBuffer.wrap(evtRawBuf, 0, evtSz);
                     tmpev.order(evtBuf.order());
                     BufferEvent evt = new BufferEvent(tmpev);
-                    System.out.println("Read Event: " + evt);
+                    System.out.println(TAG+ " Read Event: " + evt);
                 }
             }
 
@@ -265,6 +271,7 @@ public class FilePlayback {
 	}
 	 
 	 public void stop() { run=false; }
+    public boolean isrunning(){ return run; }
 
 	 void initFiles(String fdir) throws FileNotFoundException {
 		  dataReader = new BufferedInputStream(new FileInputStream(fdir + File.separator + "samples"));

@@ -36,4 +36,4 @@ if exist "%batdir%buffer\bin\win32\recording.exe" (set buffexe="%batdir%buffer\b
 if exist "%batdir%buffer\win32\recording.exe" (set buffexe="%batdir%buffer\win32\recording.exe" )
 if exist "%batdir%buffer\bin\recording.exe" (set buffexe="%batdir%buffer\bin\recording.exe" )
 if exist "%batdir%recording.exe" ( set buffexe="%batdir%recording.exe" )
-start /b "buffer" %buffexe% %folder%\raw_buffer 1973
+start /b "buffer" %buffexe% %folder%\raw_buffer 1973 %*

@@ -25,7 +25,11 @@ import java.io.BufferedReader;
 public class ContinuousClassifier {
 
     protected static final String TAG = ContinuousClassifier.class.getSimpleName();
-	 public static final int VERB = 1; // debugging verbosity level
+	 public static int VERB = 0; // debugging verbosity level
+	 public long printInterval_ms=5000; // time between debug prints
+
+	 protected String processName=TAG;
+	 public void setprocessName(String name){ this.processName=name; }
 
     protected String hostname ="localhost";
     protected int port = 1972;
@@ -64,6 +68,7 @@ public class ContinuousClassifier {
 				 hostname=hostname.substring(0,sep);
 			}			
 		}
+		System.out.println("Host: "+hostname+":"+port);		
 		// Open the file from which to read the classifier parameters
 		if (args.length>=2) {
 			 String clsfrFile = args[1];
@@ -91,6 +96,7 @@ public class ContinuousClassifier {
 				 System.err.println("Couldnt understand your triallength spec.... using 1000ms");
 			}			 
 		}
+		System.out.println("trialLen_ms: " + trialLength_ms);
 		int step_ms = -1;
 		if (args.length>=4) {
 			try {
@@ -100,6 +106,7 @@ public class ContinuousClassifier {
 				 System.err.println("Couldnt understand your step spec....");
 			}			 
 		}
+		System.out.println("step_ms: " + step_ms);
 		if (args.length>=4) {
 			try {
 				timeout = Integer.parseInt(args[3]);
@@ -118,8 +125,9 @@ public class ContinuousClassifier {
 		cc.mainloop();
 	 }
 
-	 public ContinuousClassifier(){}
+	 public ContinuousClassifier(){ this.processName=TAG;}
 	 public ContinuousClassifier(String host, int port, int timeout_ms){
+		  processName=TAG;
 		  if ( host !=null ) this.hostname=host;
 		  if ( port >0 )     this.port=port;
 		  if( timeout_ms>=0) this.timeout_ms=timeout_ms;
@@ -177,7 +185,7 @@ public class ContinuousClassifier {
 	 }
 
 	 public void initialize(InputStream is, int trialLength_ms, int step_ms) {
-		  if ( VERB>0 ) System.out.println("trlen="+trialLength_ms+" step="+step_ms);
+		  if ( VERB>0 ) System.out.println(TAG+"trlen_ms="+trialLength_ms+" step_ms="+step_ms);
 		  BufferedReader br = new BufferedReader(new InputStreamReader(is));
         classifiers = createClassifiers(br);
 		  // convert the classifier to the right type
@@ -185,13 +193,13 @@ public class ContinuousClassifier {
 		  for ( int i=0 ; i<classifiers.size(); i++){ // Note: need to use list.set to change inplace
 				PreprocClassifier c = classifiers.get(i);
 				if ( c.getType().equals("ERP") ) {
-					 if ( VERB>0 ) System.out.println("Making ERPClassifier");
+					 if ( VERB>0 ) System.out.println(TAG+"Making ERPClassifier");
 					 classifiers.set(i,new ERPClassifier(c));
 				}else if ( c.getType().equals("ERsP") ) {
-					 if ( VERB>0 ) System.out.println("Making ERSPClassifier");
+					 if ( VERB>0 ) System.out.println(TAG+"Making ERSPClassifier");
 					 classifiers.set(i,new ERSPClassifier(c));
 				} else {
-					 System.out.println("Huh? Unknown classifer type="+c.getType());
+					 System.out.println(TAG+"Huh? Unknown classifer type="+c.getType());
 				}
 		  }
         C = new BufferClientClock();
@@ -227,10 +235,10 @@ public class ContinuousClassifier {
 									 trialLength_samp = Math.max(trialLength_samp,c.clsfrW.get(0).getColumnDimension());
 								}
 						  } else if ( c.type.equals("ERSP") || c.type.equals("ERsP") ) {
-								System.out.println("ERSP size");
+								System.out.println(TAG+"ERSP size");
 								trialLength_samp = Math.max(trialLength_samp,c.welchWindow.length);
 						  } else {
-								System.err.println("ERROR: Unrecognized classifier type");
+								System.err.println(TAG+"ERROR: Unrecognized classifier type");
 						  }
 					 }
 				}
@@ -242,6 +250,7 @@ public class ContinuousClassifier {
         } else if ( overlap>0 ) {
             step_samp = Long.valueOf(Math.round(trialLength_samp * overlap)).intValue();
         }
+		  if ( VERB>0 ) System.out.println(TAG+"trlen_samp="+trialLength_samp+" step_samp="+step_samp);
     }
 
     public void mainloop() {
@@ -252,32 +261,44 @@ public class ContinuousClassifier {
         // Initialize initial variables. These are used later on to store the data.
 		  int nOut=classifiers.get(0).getOutputSize()-1; nOut=nOut>0?nOut:1;
         Matrix dv = null;
-        boolean endExpected = false;
-        long t0 = 0;
+        boolean endEvent = false;
+        long t0 = System.currentTimeMillis();
+		  long t=t0;
+		  long pnext=t+printInterval_ms;
+		  
+		  try {
+				C.putEvent(new BufferEvent("process."+processName,"start",-1));  // Log that we are starting
+		  } catch ( IOException e ) { e.printStackTrace(); } 
 
         // Run the code
-        while (!endExpected && run) {//The run switch allows control of stopping the thread and getting out of the loop
+        while (!endEvent && run) {//The run switch allows control of stopping the thread and getting out of the loop
             // Getting data from buffer
             SamplesEventsCount status = null;
             // Block until there are new events
             try {
-                System.out.println( "Waiting for " + (nSamples + trialLength_samp + 1) + " samples");
+					 if ( VERB>1 ) {
+						  System.out.println(TAG+ " Waiting for " + (nSamples + trialLength_samp + 1) + " samples");
+					 }
                 status = C.waitForSamples(nSamples + trialLength_samp + 1, this.timeout_ms);
             } catch (IOException e) {
                 e.printStackTrace();
+					 // connection to buffer failed = quit
+					 run=false;
+					 continue;
             }
-            if (status.nSamples < header.nSamples) {
-                System.out.println( "Buffer restart detected");
+            if (status.nSamples < nSamples) {
+                System.out.println(TAG+  " Buffer restart detected");
                 nSamples = status.nSamples;
                 dv = null;
                 continue;
             }
 
             // Logging stuff when nothing is happening
-            if (System.currentTimeMillis() - t0 > 5000) {
-                System.out.println( String.format("%5.3f seconds, %d samples, %d events", System.currentTimeMillis() / 1000.,
-                        status.nSamples, status.nEvents));
-                t0 = System.currentTimeMillis();
+				t = System.currentTimeMillis();
+            if ( t > pnext ) {
+					 System.out.println( TAG+ String.format("%d %d %5.3f (samp,event,sec)\r",
+																		 status.nSamples,status.nEvents,(t-t0)/1000.0));
+                pnext = t+printInterval_ms;
             }
 
             // Process any new data
@@ -294,7 +315,9 @@ public class ContinuousClassifier {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                System.out.println( String.format("Got data @ %d->%d samples", fromId, toId));
+					 if ( VERB>1 ) {
+						  System.out.println(TAG+ String.format(" Got data @ %d->%d samples", fromId, toId));
+					 }
 
                 // Apply all classifiers and add results
                 Matrix f = new Matrix(classifiers.get(0).getOutputSize(), 1);
@@ -305,13 +328,16 @@ public class ContinuousClassifier {
                     f      = new Matrix(f.add(result.f));    // accumulate predictions over classifiers
                     fraw   = new Matrix(fraw.add(result.fraw));
                 }
+					 if ( VERB>1 ) System.out.println(TAG+ " pred="+f);
 
                 // Smooth the classifiers
                 if (dv == null ) {
 						  dv = f;
                 } else {
                     if (predictionFilter >= 0.) { // exponiential smoothing of predictions
-                        dv = new Matrix(dv.scalarMultiply(1. - predictionFilter).add(f.scalarMultiply(predictionFilter)));
+								// dv = (1-alpha)*dv + alpha*f
+                        dv = new Matrix(dv.scalarMultiply(1. - predictionFilter)
+													 .add(f.scalarMultiply(predictionFilter)));
                     }
                 }
 
@@ -336,22 +362,25 @@ public class ContinuousClassifier {
                 for (BufferEvent event : events) {
                     String type = event.getType().toString();
                     String value = event.getValue().toString();
-                    System.out.println("got(t:" + type + " v:" + value + " s:" + event.sample +")");
+                    if ( VERB>1 ) System.out.println(TAG+"got(" + event + ")");
                     if (type.equals(endType) && value.equals(endValue)) {
-                        System.out.println( "End expected");
-                        endExpected = true;
+                        if ( VERB>1 ) System.out.println(TAG+ "Got end event. Exiting!");
+                        endEvent = true;
                     } 
                 }
                 nEvents = status.nEvents;
             }
         }
-        try {
-            C.disconnect();
+
+        try {				
+				C.putEvent(new BufferEvent("process."+processName,"end",-1));// Log that we are finishing
+            C.disconnect(); // close buffer connection
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
     public void stop(){ run=false; }
+    public boolean isrunning(){ return run; }
 
     public String toString() {
         String str = "\nContinuousClassifier with parameters:\n" + 

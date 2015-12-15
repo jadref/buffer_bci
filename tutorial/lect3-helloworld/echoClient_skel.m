@@ -1,4 +1,5 @@
-run ../../utilities/initPaths.m;
+try; cd(fileparts(mfilename('fullpath')));catch; end;
+run ../../utilities/initPaths.m
 
 buffhost='localhost';buffport=1972;
 % wait for the buffer to return valid header information
@@ -33,5 +34,5 @@ fprintf('Msg: %s\n',ev2str(msgev));
 
 % for each ack event show it to the user
 for ei=1:numel(events);
-  fprintf('Resp: %s\n',evstr(events(ei));
+  fprintf('Resp: %s\n',evstr(events(ei)));
 end  

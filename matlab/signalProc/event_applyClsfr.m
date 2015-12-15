@@ -11,7 +11,7 @@ function [testdata,testevents]=event_applyClsfr(clsfr,varargin)
 % Options:
 %  buffhost, buffport, hdr
 %  startSet      -- {2 x 1} cell array of {event.type event.value} to match to start getting data to 
-%                   apply the classifier to.                                   ({'stimulus.target'})
+%                   apply the classifier to.                                   ({'classifier.apply'})
 %  endType, endValue  -- event type and value to match to stop giving feedback ('stimulus.test','end')
 %  sendPredEventType -- [str] send all predictions generated so far *only* after the event  ([])
 %                          type is recieved.  If empty then send all predictions immeadiately.
@@ -33,22 +33,22 @@ function [testdata,testevents]=event_applyClsfr(clsfr,varargin)
 %                        'predFilt',@(x,s) biasFilt(x,s,50)  % bias adaptation filter, length 50
 %                        'predFilt',@(x,s) stdFilt(x,s,100)  % normalising filter (0-mean,1-std-dev), l%
 % Examples:
-%  % 1) Default: apply clsfr on 'stimulus.target' events and 
+%  % 1) Default: apply clsfr on 'classifier.apply' events and 
 %  %    immeadiately send predictions as 'classifier.predicition'
 %  %    stop processing when get a 'stimulus.test','end' event.
 %   event_applyClsfr(clsfr)
-%  % 2) apply clsfr on 'stimulus.target' events
+%  % 2) apply clsfr on 'classifier.apply' events
 %  %    but accmulate predictions until recieve 'send.prediction' event
 %  %    then send all accumulated predictions as 'classifier.prediction' event
 %  %    stop processing when get a 'stimulus.test','end' event.
 %   event_applyClsfr(clsfr,'sendPredEvent','send.prediction')
 %  % 3) apply clsfr on 'stimulus.rowFlash' or 'stimulus.colFlash' events and 
-%  %    accumulate predictions until recieve 'send.prediction' event
+%  %    accumulate predictions until recieve 'classifier.sendprediction' event
 %  %    stop processing when get a 'stimulus.test','end' event.
-%   event_applyClsfr(clsfr,'startSet',{'stimulus.rowFlash','stimulus.colFlash},'sendPredEvent','send.prediction')
+%   event_applyClsfr(clsfr,'startSet',{'stimulus.rowFlash','stimulus.colFlash},'sendPredEvent','classifier.sendprediction')
 opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
-            'startSet',{'stimulus.target'},...
-            'endType','stimulus.test','endValue','end','verb',0,...
+            'startSet',{{'classifier.apply'}},...
+            'endType',{{'stimulus.test' 'stimulus.testing'}},'endValue','end','verb',0,...
             'sendPredEventType',[],...
             'predEventType','classifier.prediction',...
             'trlen_ms',[],'trlen_samp',[],...

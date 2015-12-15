@@ -27,8 +27,8 @@ import static org.apache.commons.math3.stat.StatUtils.max;
  */
 public class Matrix extends Array2DRowRealMatrix {
 
+	 public static final String TAG=Matrix.class.getSimpleName();
 	 public static final int VERB = 1; // debugging verbosity level
-
 
     /**
      * Uninitialized matrix
@@ -894,18 +894,18 @@ public class Matrix extends Array2DRowRealMatrix {
 
 		  // Compute fft width needed (nearest larger power of 2)
 		  // int width = 0; 
-		  // //System.out.println("taper.len=" + taper.length);
+		  // //System.out.println(TAG+"taper.len=" + taper.length);
 		  // while( (taper.length >> ++width) > 1) {
-		  // 		//System.out.println("width=" + width + " taper>>width= " + (taper.length>>width)); 
+		  // 		//System.out.println(TAG+"width=" + width + " taper>>width= " + (taper.length>>width)); 
 		  // }
 		  // width=1<<width;
 		  int width = 1 << (int)Math.ceil(Math.log(taper.length)/Math.log(2));
-		  if ( VERB>1 ) System.out.println("1<<width="+width);
+		  if ( VERB>1 ) System.out.println(TAG+"1<<width="+width);
 		  // Compute the updated taper if needed.		  
 		  // N.B. technically don't need this as can just zero-pad the sub-matrix...
 		  final double[] taper2;
 		  if ( width  > taper.length ) {
-				System.err.println("Matrix::welch Warning: taper is not power of 2, zero-padding: " + taper.length + " -> " + width);
+				System.err.println(TAG+"::welch Warning: taper is not power of 2, zero-padding: " + taper.length + " -> " + width);
 				taper2=new double[width];
 				for ( int i=0;            i<taper.length;  i++) taper2[i]=taper[i];
 				for ( int i=taper.length; i<taper2.length; i++) taper2[i]=0; // zero pad the end
@@ -918,7 +918,7 @@ public class Matrix extends Array2DRowRealMatrix {
 				start = Matrix.range(0,sizeDim-width+1,taper.length);				
 		  }
 		  if ( start.length==0 ) {
-				System.err.println("No start points?: sz="+sizeDim+" wdth="+width+" taper.len"+taper.length);
+				System.err.println(TAG+"No start points?: sz="+sizeDim+" wdth="+width+" taper.len="+taper.length);
 		  }
 
         // Create W
@@ -965,15 +965,15 @@ public class Matrix extends Array2DRowRealMatrix {
                 }
             });
 				
-				if ( VERB>1 ) System.out.println("Welch: data+taper="+wX.toString());
+				if ( VERB>1 ) System.out.println(TAG+"Welch: data+taper="+wX.toString());
 
             // squared Fourier
             wX = new Matrix(wX.fft2(dim).scalarMultiply(2.0));
-				if ( VERB>1 ) System.out.println("Welch: data+fft2="+wX.toString());
+				if ( VERB>1 ) System.out.println(TAG+"Welch: data+fft2="+wX.toString());
 
             // Positive frequency only
             wX = new Matrix(wX.getSubMatrix(wIdx.get(0), wIdx.get(1)));
-				if ( VERB>1 ) System.out.println("Welch: data+fft2+freqIdx="+wX.toString());
+				if ( VERB>1 ) System.out.println(TAG+"Welch: data+fft2+freqIdx="+wX.toString());
 
             switch (outType) {
 				case AMPLITUDE:
@@ -993,7 +993,7 @@ public class Matrix extends Array2DRowRealMatrix {
 
 	 public static Matrix fromString(BufferedReader bufferedReader) throws IOException {
 		  if ( bufferedReader == null ) {
-				System.out.println("could not allocate reader");
+				System.out.println(TAG+"could not allocate reader");
 				throw new IOException("Couldnt allocate a reader");
 		  }
 		  int width=-1;
@@ -1001,8 +1001,8 @@ public class Matrix extends Array2DRowRealMatrix {
 		  ArrayList<double[]> rows=new ArrayList<double[]>(10);
 		  String line;
 		  int nEmptyLines=0;
-		  if ( VERB>0 ) System.out.println("Starting new matrix");
-		  if ( VERB>0 ) if ( bufferedReader.ready() ) System.out.println("reader is ready");	else System.out.println("reader is *not* ready");
+		  if ( VERB>0 ) System.out.println(TAG+"Starting new matrix");
+		  if ( VERB>0 ) if ( bufferedReader.ready() ) System.out.println(TAG+"reader is ready");	else System.out.println(TAG+"reader is *not* ready");
 		  while ( (line = bufferedReader.readLine()) != null ) {
 				// skip comment lines
 				if ( line == null || line.startsWith("#") ){
@@ -1010,13 +1010,13 @@ public class Matrix extends Array2DRowRealMatrix {
 				} if ( line.length()==0 ) { // double empty line means end of this array
 					 nEmptyLines++;
 					 if ( nEmptyLines >1 && width>0 ) { // end of matrix by 2 empty lines
-						  if ( VERB>0 ) System.out.println("Got 2 empty lines");
+						  if ( VERB>0 ) System.out.println(TAG+"Got 2 empty lines");
 						  break;
 					 } else { // skip them
 						  continue;
 					 }
 				}
-				if ( VERB>0 ) System.out.println("Reading line " + rows.size());
+				if ( VERB>0 ) System.out.println(TAG+"Reading line " + rows.size());
 				
 				// split the line into entries on the split character
 				String[] values = line.split("[ ,	]"); // split on , or white-space
@@ -1024,7 +1024,7 @@ public class Matrix extends Array2DRowRealMatrix {
 					 throw new IOException("Row widths are not consistent!");
 				} else if ( width<0 ) {
 					 if ( values[0].equals("null") || values[0].equals("[]") ){
-						  if ( VERB>0 ) System.out.println("Got null value");
+						  if ( VERB>0 ) System.out.println(TAG+"Got null value");
 						  break;
 					 } else {
 						  width = values.length;
@@ -1042,7 +1042,7 @@ public class Matrix extends Array2DRowRealMatrix {
 				// add to the tempory store
 				rows.add(cols);
 		  }
-		  if ( line==null ) if ( VERB>0 ) System.out.println("line == null");
+		  if ( line==null ) if ( VERB>0 ) System.out.println(TAG+"line == null");
 		  
 		  if ( width<0 ) return null; // didn't load anything
 

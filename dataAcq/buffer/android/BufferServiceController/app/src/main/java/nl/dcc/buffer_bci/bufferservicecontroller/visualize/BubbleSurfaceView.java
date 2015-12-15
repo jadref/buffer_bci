@@ -56,22 +56,24 @@ public class BubbleSurfaceView extends SurfaceView implements SurfaceHolder.Call
     }
 
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        drawThread.setSurfaceSize(width, height);
+        if ( drawThread != null ) drawThread.setSurfaceSize(width, height);
     }
 
     public void surfaceDestroyed(SurfaceHolder holder) {
         boolean retry = true;
-        drawThread.setRunning(false);
-        bufferThread.setRunning(false);
-        while (retry) {
-            try {
-                synchronized (sh) {
-                    drawThread.join();
+        if ( drawThread != null ) {
+            drawThread.setRunning(false);
+            while (retry) {
+                try {
+                    synchronized (sh) {
+                        drawThread.join();
+                    }
+                    bufferThread.join();
+                    retry = false;
+                } catch (InterruptedException e) {
                 }
-                bufferThread.join();
-                retry = false;
-            } catch (InterruptedException e) {
             }
         }
+        if ( bufferThread != null ) bufferThread.setRunning(false);
     }
 }

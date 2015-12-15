@@ -5,4 +5,4 @@ if exist "%batdir%buffer\win32\demo_buffer.exe" ( set buffexe="%batdir%buffer\wi
 if exist "%batdir%buffer\bin\win32\demo_buffer_unix.exe" ( set buffexe="%batdir%buffer\bin\win32\demo_buffer_unix.exe" )
 if exist "%batdir%buffer\win32\demo_buffer_unix.exe" ( set buffexe="%batdir%buffer\win32\demo_buffer_unix.exe" )
 if exist "%batdir%demo_buffer_unix.exe" ( set buffexe="%batdir%demo_buffer_unix.exe" )
-start /b "buffer" %buffexe%
+start /b "buffer" %buffexe% %*

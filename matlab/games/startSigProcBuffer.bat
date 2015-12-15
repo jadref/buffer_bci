@@ -1,6 +1,6 @@
 call ..\..\utilities\findMatlab.bat
 if %ismatlab%==1 (
-  start "Matlab" /b %matexe% -r "startSigProcBuffer;quit;" %matopts%
+  start "Matlab" /b %matexe% -r "configureSSEP;startSigProcBuffer('clsfr_type','ersp','trlen_ms',trlen_ms,'trainOpts',trainOpts,'useGUI',0);" %matopts%
 ) else (
-  echo startSigProcBuffer;quit; | %matexe% %matopts%
+  echo configureSSEP;startSigProcBuffer^('clsfr_type','ersp','trlen_ms',trlen_ms,'trainOpts',trainOpts,'useGUI',0^);quit; | %matexe% %matopts%
 )

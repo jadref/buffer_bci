@@ -1,7 +1,15 @@
-% guard to prevent running multiple times
-%if ( exist('runConfig','var') && ~isempty(runConfig) ) return; end;
-runConfig=true;
-run ../matlab/utilities/initPaths.m;
+% guard to prevent running slow path-setup etc. multiple times
+if ( ~exist('configRun','var') || isempty(configRun) ) 
+
+% setup the paths
+% search for the location of the buffer_bci root
+mfiledir=fileparts(mfilename('fullpath'));
+bufferdir=mfiledir(1:strfind(mfiledir,'buffer_bci')+numel('buffer_dir'));
+if ( exist(fullfile(bufferdir,'utilities/initPaths.m')) ) % in utilities
+  run(fullfile(bufferdir,'utilities','initPaths.m'));
+else % or matlab/utilities?
+  run(fullfile(bufferdir,'matlab','utilities','initPaths.m'));
+end
 
 buffhost='localhost';buffport=1972;
 % wait for the buffer to return valid header information
@@ -27,6 +35,8 @@ if ( exist('OCTAVE_VERSION','builtin') )
   elseif ( ~isempty(strmatch('fltk',available_graphics_toolkits())) )
     graphics_toolkit('fltk'); % use fast rendering library
   end
+end
+configRun=true;
 end
 
 %capFile='cap_tmsi_mobita_black';%'1010'; %'emotiv';%cap_tmsi_mobita_im2'; N.B. use 1010 for emotiv so non-eeg are labelled correctly

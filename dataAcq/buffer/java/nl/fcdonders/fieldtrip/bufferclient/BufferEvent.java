@@ -20,41 +20,7 @@ public class BufferEvent {
 	}
 	
 	public BufferEvent(String type, String value, int sample) {
-		wType  = new WrappedObject(type);
-		wValue = new WrappedObject(value);
-		this.sample = sample;
-		offset = duration = 0;
-	}
-	
-	public BufferEvent(String type, long value, int sample) {
-		wType  = new WrappedObject(type);
-		wValue = new WrappedObject(value);
-		this.sample = sample;
-		offset = duration = 0;
-	}		
-	
-	public BufferEvent(String type, int value, int sample) {
-		wType  = new WrappedObject(type);
-		wValue = new WrappedObject(value);
-		this.sample = sample;
-		offset = duration = 0;
-	}	
-	
-	public BufferEvent(String type, short value, int sample) {
-		wType  = new WrappedObject(type);
-		wValue = new WrappedObject(value);
-		this.sample = sample;
-		offset = duration = 0;
-	}	
-	
-	public BufferEvent(String type, byte value, int sample) {
-		wType  = new WrappedObject(type);
-		wValue = new WrappedObject(value);
-		this.sample = sample;
-		offset = duration = 0;
-	}	
-
-	public BufferEvent(String type, boolean value, int sample) {
+		 //System.out.println("c,i");
 		wType  = new WrappedObject(type);
 		wValue = new WrappedObject(value);
 		this.sample = sample;
@@ -62,13 +28,15 @@ public class BufferEvent {
 	}
 	
 	public BufferEvent(String type, double value, int sample) {
+		 //System.out.println("d,i");
 		wType  = new WrappedObject(type);
 		wValue = new WrappedObject(value);
 		this.sample = sample;
 		offset = duration = 0;
 	}	
-	 // Special case for matlab/octave which uses double by default 
+	// Special case for matlab/octave which uses double by default 
 	public BufferEvent(String type, double value, double sample) {
+		 //System.out.println("d,d");
 		wType  = new WrappedObject(type);
 		wValue = new WrappedObject(value);
 		this.sample = (int)sample;
@@ -76,90 +44,95 @@ public class BufferEvent {
 	}	
 
 	public BufferEvent(String type, float value, int sample) {
+		 //System.out.println("f,i");
 		wType  = new WrappedObject(type);
 		wValue = new WrappedObject(value);
 		this.sample = sample;
 		offset = duration = 0;
 	}		
 
-	 public BufferEvent(String type, String[] value, int sample) {
-		  wType  = new WrappedObject(type);
-		  wValue = new WrappedObject(value);
-		  this.sample = sample;
-		  offset = duration = 0;
-	 }
-		
-	 public BufferEvent(String type, long[] value, int sample) {
-		  wType  = new WrappedObject(type);
-		  wValue = new WrappedObject(value);
-		  this.sample = sample;
-		  offset = duration = 0;
-	 }		
-		
-	 public BufferEvent(String type, int[] value, int sample) {
-		  wType  = new WrappedObject(type);
-		  wValue = new WrappedObject(value);
-		  this.sample = sample;
-		  offset = duration = 0;
-	 }	
+	 public BufferEvent(String type, long value, int sample) {
+		 //System.out.println("l,i");
+		wType  = new WrappedObject(type);
+		wValue = new WrappedObject(value);
+		this.sample = sample;
+		offset = duration = 0;
+	}		
+	
+	public BufferEvent(String type, int value, int sample) {
+		 //System.out.println("i,i");
+		wType  = new WrappedObject(type);
+		wValue = new WrappedObject(value);
+		this.sample = sample;
+		offset = duration = 0;
+	}	
+	
+	public BufferEvent(String type, short value, int sample) {
+		 //System.out.println("s,i");
+		wType  = new WrappedObject(type);
+		wValue = new WrappedObject(value);
+		this.sample = sample;
+		offset = duration = 0;
+	}	
+	
+	public BufferEvent(String type, byte value, int sample) {
+		 //System.out.println("D[],i");
+		wType  = new WrappedObject(type);
+		wValue = new WrappedObject(value);
+		this.sample = sample;
+		offset = duration = 0;
+	}	
 
-	 public BufferEvent(String type, Integer[] value, int sample) {
-		  wType  = new WrappedObject(type);
-		  wValue = new WrappedObject(value);
-		  this.sample = sample;
-		  offset = duration = 0;
-	 }	
-		
-	 public BufferEvent(String type, short[] value, int sample) {
-		  wType  = new WrappedObject(type);
-		  wValue = new WrappedObject(value);
-		  this.sample = sample;
-		  offset = duration = 0;
-	 }	
-	 
-	 public BufferEvent(String type, byte[] value, int sample) {
-		  wType  = new WrappedObject(type);
-		  wValue = new WrappedObject(value);
-		  this.sample = sample;
-		  offset = duration = 0;
-	 }	
+	public BufferEvent(String type, boolean value, int sample) {
+		 //System.out.println("D[],i");
+		wType  = new WrappedObject(type);
+		wValue = new WrappedObject(value);
+		this.sample = sample;
+		offset = duration = 0;
+	}
+	
 
-	 public BufferEvent(String type, Byte[] value, int sample) {
-		  wType  = new WrappedObject(type);
-		  wValue = new WrappedObject(value);
-		  this.sample = sample;
-		  offset = duration = 0;
-	 }	
-
-	 public BufferEvent(String type, boolean[] value, int sample) {
-		  wType  = new WrappedObject(type);
-		  wValue = new WrappedObject(value);
-		  this.sample = sample;
-		  offset = duration = 0;
-	 }	
-
-	 public BufferEvent(String type, Boolean[] value, int sample) {
-		  wType  = new WrappedObject(type);
-		  wValue = new WrappedObject(value);
-		  this.sample = sample;
-		  offset = duration = 0;
-	 }	
-		
 	 public BufferEvent(String type, double[] value, int sample) {
+		 //System.out.println("D[],i");
 		  wType  = new WrappedObject(type);
 		  wValue = new WrappedObject(value);
 		  this.sample = sample;
 		  offset = duration = 0;
 	 }	
-
+	// Special case for matlab/octave which uses double by default 
+	public BufferEvent(String type, double[] value, double sample) {
+		 //System.out.println("d[],d");
+		  wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = (int)sample;
+		  offset = duration = 0;
+	}
+		 
 	 public BufferEvent(String type, Double[] value, int sample) {
+		 //System.out.println("D[],i");
 		  wType  = new WrappedObject(type);
 		  wValue = new WrappedObject(value);
 		  this.sample = sample;
+		  offset = duration = 0;
+	 }	
+	// Special case for matlab/octave which uses double by default 
+	public BufferEvent(String type, Double[] value, double sample) {
+		 //System.out.println("D[],d");
+		 wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = (int)sample;
+		  offset = duration = 0;
+	 }	
+	public BufferEvent(String type, Double[] value, Double sample) {
+		 //System.out.println("D[],D");
+		  wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = (int)(sample.doubleValue());
 		  offset = duration = 0;
 	 }	
 	
 	 public BufferEvent(String type, float[] value, int sample) {
+		 //System.out.println("f[],i");
 		  wType  = new WrappedObject(type);
 		  wValue = new WrappedObject(value);
 		  this.sample = sample;
@@ -167,11 +140,92 @@ public class BufferEvent {
 	 }		
 
 	 public BufferEvent(String type, Float[] value, int sample) {
+		 //System.out.println("F[],i");
 		  wType  = new WrappedObject(type);
 		  wValue = new WrappedObject(value);
 		  this.sample = sample;
 		  offset = duration = 0;
 	 }		
+	 public BufferEvent(String type, Float[] value, double sample) {
+		 //System.out.println("F[],d");
+		  wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = (int)sample;
+		  offset = duration = 0;
+	 }		
+
+	 public BufferEvent(String type, String[] value, int sample) {
+		  //System.out.println("c[],i");
+		  wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = sample;
+		  offset = duration = 0;
+	 }
+		
+	 public BufferEvent(String type, long[] value, int sample) {
+		  //System.out.println("l[],i");
+		  wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = sample;
+		  offset = duration = 0;
+	 }		
+		
+	 public BufferEvent(String type, int[] value, int sample) {
+		 //System.out.println("i[],i");
+		  wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = sample;
+		  offset = duration = 0;
+	 }	
+
+	 public BufferEvent(String type, Integer[] value, int sample) {
+		 //System.out.println("I[],i");
+		  wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = sample;
+		  offset = duration = 0;
+	 }	
+		
+	 public BufferEvent(String type, short[] value, int sample) {
+		 //System.out.println("s[],i");
+		  wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = sample;
+		  offset = duration = 0;
+	 }	
+	 
+	 public BufferEvent(String type, byte[] value, int sample) {
+		 //System.out.println("b[],i");
+		  wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = sample;
+		  offset = duration = 0;
+	 }	
+
+	 public BufferEvent(String type, Byte[] value, int sample) {
+		 //System.out.println("B[],i");
+		  wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = sample;
+		  offset = duration = 0;
+	 }	
+
+	 public BufferEvent(String type, boolean[] value, int sample) {
+		 //System.out.println("b[],i");
+		  wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = sample;
+		  offset = duration = 0;
+	 }	
+
+	 public BufferEvent(String type, Boolean[] value, int sample) {
+		 //System.out.println("B[],i");
+		  wType  = new WrappedObject(type);
+		  wValue = new WrappedObject(value);
+		  this.sample = sample;
+		  offset = duration = 0;
+	 }	
+		
 	 
 	public BufferEvent(ByteBuffer buf) {
 		wType  = new WrappedObject();

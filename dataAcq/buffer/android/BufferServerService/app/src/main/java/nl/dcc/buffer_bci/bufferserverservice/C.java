@@ -44,14 +44,19 @@ public final class C {
     public static final String CLIENT_INFO_CHANGED = "c_changed";
     public static final String CLIENT_INFO_DIFF = "c_diff";
 
-
-    public static final int UPDATE_REQUEST = 0;
+    public static final int THREAD_INFO_TYPE = 0;
     public static final int UPDATE = 1;
     public static final int REQUEST_PUT_HEADER = 2;
     public static final int REQUEST_FLUSH_HEADER = 3;
     public static final int REQUEST_FLUSH_SAMPLES = 4;
     public static final int REQUEST_FLUSH_EVENTS = 5;
-    public static final int CLIENTS_INFO_BROADCAST=12;
+    public static final int THREAD_STOP = 6;
+    public static final int THREAD_PAUSE = 7;
+    public static final int THREAD_START = 8;
+    public static final int THREAD_UPDATE_ARGUMENTS = 9;
+    public static final int THREAD_UPDATE_ARG_FROM_STR = 10;
+    public static final int THREAD_INFO_BROADCAST=11;
+    public static final int BUFFER_INFO_BROADCAST=12;
 
     public static final int BUFFER_INFO_PARCEL = 0;
     public static final int CLIENT_INFO_PARCEL = 1;

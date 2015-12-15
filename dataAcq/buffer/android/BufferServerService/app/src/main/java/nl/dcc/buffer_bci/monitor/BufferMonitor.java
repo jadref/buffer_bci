@@ -16,15 +16,6 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     private final Context context;
     private final SparseArray<BufferConnectionInfo> clients = new SparseArray<BufferConnectionInfo>();
     private final BufferInfo info;
-    private final BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(final Context context, final Intent intent) {
-            if (intent.getIntExtra(C.MESSAGE_TYPE, -1) == C.UPDATE_REQUEST) {
-                Log.i(TAG, "Received update request.");
-                sendAllInfo();
-            }
-        }
-    };
     private boolean run = true;
     private boolean change = false;
 
@@ -247,7 +238,7 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     public void run() {
         while (run) {
             try {
-                Thread.sleep(500);
+                Thread.sleep(1000);
             } catch (final InterruptedException e) {
                 Log.e(TAG, "Exception during Thread.sleep(). Very exceptional!");
             }
@@ -259,16 +250,9 @@ public class BufferMonitor extends Thread implements FieldtripBufferMonitor {
     }
 
 
-    private void sendAllInfo() {
-        Log.i(TAG, "Sending All Buffer Info to Controller");
-        Intent intent = new Intent(C.SEND_UPDATEINFO_TO_CONTROLLER_ACTION);
-        intent.putExtra(C.MESSAGE_TYPE, C.UPDATE);
-        intent.putExtra(C.IS_BUFFER_INFO, true);
-        intent.putExtra(C.BUFFER_INFO, info);
-        context.sendOrderedBroadcast(intent, null);
-    }
-
-    private void sendUpdate() {
+    public void sendAllInfo(){ sendUpdate(true); } // force a complete send
+    private void sendUpdate(){ sendUpdate(false); } // only send if updated
+    private void sendUpdate(boolean forceSend) {
         Intent intent = new Intent(C.SEND_UPDATEINFO_TO_CONTROLLER_ACTION);
         intent.putExtra(C.MESSAGE_TYPE, C.UPDATE);
         if (info.changed) {

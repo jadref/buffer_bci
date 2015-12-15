@@ -667,7 +667,7 @@ int dmarequest(const message_t *request, message_t **response_ptr) {
 			} else {
 				int waiterr;
 				waitdef_t *wd = (waitdef_t *) request->buf;
-				samples_events_t *nret = malloc(sizeof(samples_events_t));
+				samples_events_t *nret = (samples_events_t *)malloc(sizeof(samples_events_t));
 				UINT32_T nsmp, nevt;
 				
 				if (nret == NULL) {

@@ -71,12 +71,12 @@ function [Z]=repopm(varargin)
 
 if ( nargin<3 ) error('Insufficient Arguments'); end;
 Z=[];
-if ( isstr(varargin{1}) || isa(varargin{1},'function_handle') )
+if ( ischar(varargin{1}) || isa(varargin{1},'function_handle') )
   op=varargin{1}; A=varargin{2}; B=varargin{3};
 else
   A =varargin{1}; op=varargin{2};B=varargin{3};
 end
-if ( isstr(op) ) 
+if ( ischar(op) ) 
    if ( any(strcmp(op,{'*','/','^'})) ) op=['.' op]; end; % ensure elementwise version is used
    op=str2func(op); 
 end;

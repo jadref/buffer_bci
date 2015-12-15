@@ -234,15 +234,16 @@ if ( opts.visualize )
     uY=unique(Y,'rows'); Yidx=-ones([size(Y,1),numel(uY)],'int8');    
     for ci=1:size(uY,1); 
       if(iscell(uY)) 
-        tmp=strmatch(uY(ci),Y); Yidx(tmp,ci)=1; 
+        tmp=strmatch(uY{ci},Y); Yidx(tmp,ci)=1; 
       else 
         for i=1:size(Y,1); Yidx(i,ci)=isequal(Y(i,:),uY(ci,:))*2-1; end
       end;
       if ( isempty(labels) || numel(labels)<ci || isempty(labels{ci}) ) 
         if ( iscell(uY) ) labels{1,ci}=uY{ci}; else labels{1,ci}=sprintf('%d',uY(ci,:)); end
+        auclabels{1,ci}=labels{1,ci};
+        labels{1,ci} = sprintf('%s (%d)',labels{1,ci},sum(Yidx(:,ci)>0));
       end
     end
-    auclabels=labels;
   else
     if ( isempty(labels) ) 
       for spi=1:size(Yidx,2); 
@@ -267,15 +268,12 @@ if ( opts.visualize )
     end
    end
    % Actually plot the data and AUC scores
-   if ( ~isempty(di) ) xy=cat(2,di.extra.pos2d); % use the pre-comp ones if there
-   elseif (size(ch_pos,1)==3) xy = xyz2xy(ch_pos);
-   else   xy=[];
-   end
+	xy=ch_pos; if (size(xy,1)==3) xy = xyz2xy(xy); end
    erpfig=figure(1);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');
    yvals=freqs;
    try; 
 	  image3d(mu(:,:,:),1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels(:),'disptype','plot','ticklabs','sw','clabel',opts.aveType);
-     zoomplots; saveaspdf('ERSP'); 
+     saveaspdf('ERSP'); 
 	catch; 
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
 	end;
@@ -284,7 +282,7 @@ if ( opts.visualize )
     try; 
 		image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
 		colormap ikelvin; 
-		zoomplots; saveaspdf('AUC'); 
+		saveaspdf('AUC'); 
 	 catch; 
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
 	 end;
@@ -307,6 +305,7 @@ clsfr.fs          = fs;   % sample rate of training data
 clsfr.detrend     = opts.detrend; % detrend?
 clsfr.isbad       = isbadch;% bad channels to be removed
 clsfr.spatialfilt = R;    % spatial filter used for surface laplacian
+clsfr.adaptspatialfilt=[]; % no adaption
 
 clsfr.filt        = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
 clsfr.outsz       = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
@@ -325,7 +324,7 @@ clsfr.dvstats.mu  = [mean(tstf(res.Y(:,1)>0)) mean(tstf(res.Y(:,1)<=0)) mean(tst
 clsfr.dvstats.std = [std(tstf(res.Y(:,1)>0))  std(tstf(res.Y(:,1)<=0))  std(tstf)];
 %  bins=[-inf -200:5:200 inf]; clf;plot([bins(1)-1 bins(2:end-1) bins(end)+1],[histc(tstf(Y>0),bins) histc(tstf(Y<=0),bins)]); 
 
-if ( opts.visualize > 1 ) 
+if ( opts.visualize >= 1 ) 
   summary = sprintf('%4.1f ',res.tstbin(:,:,res.opt.Ci)*100);
   if(size(res.tstbin,2)>1)
      summary=[summary sprintf(' = %4.1f <ave>',mean(res.tstbin(:,:,res.opt.Ci),2)*100)];

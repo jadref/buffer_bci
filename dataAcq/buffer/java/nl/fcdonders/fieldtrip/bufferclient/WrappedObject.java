@@ -85,16 +85,20 @@ public class WrappedObject {
 	
 		Class cls = obj.getClass();
 		String name = cls.getName();
-
+		//System.out.println("cls="+cls+" name=" + name);
+		
 		if (cls.isArray()) {
 			Class elc = cls.getComponentType();
 			
-			if        (name.equals("[D")) {
+         if ( name == null ) {
+             return; // keep as unknown
+
+         }else if   (name.equals("[D")) {
 				type = DataType.FLOAT64;
 				array = ((double[]) obj).clone();
 				numel = ((double[]) obj).length;
 
-			} else if  (name == "[Ljava.lang.Double") {
+			} else if  (name.equals("[Ljava.lang.Double") || name.equals("[Ljava.lang.Double;") ) {
 				type = DataType.FLOAT64;
 				double[] tmp = new double[((Double[])obj).length];
 				for ( int i=0; i<tmp.length; i++ ) tmp[i] = (double) ((Double[])obj)[i];
@@ -106,7 +110,7 @@ public class WrappedObject {
 				array = ((float[]) obj).clone();
 				numel = ((float[]) obj).length;
 
-			} else if  (name.equals("[Ljava.lang.Float")) {
+			} else if  (name.equals("[Ljava.lang.Float") || name.equals("[Ljava.lang.Float;")) {
 				type = DataType.FLOAT32;
 				float[] tmp = new float[((Float[])obj).length];
 				for ( int i=0; i<tmp.length; i++ ) tmp[i] = (float) ((Float[])obj)[i];
@@ -123,7 +127,7 @@ public class WrappedObject {
 				array = ((int[]) obj).clone();
 				numel = ((int[]) obj).length;
 			
-			} else if  (name == "[Ljava.lang.Integer") {
+			} else if  (name.equals("[Ljava.lang.Integer") || name.equals("[Ljava.lang.Integer;")) {
 				type = DataType.INT32;
 				int[] tmp = new int[((Integer[])obj).length];
 				for ( int i=0; i<tmp.length; i++ ) tmp[i] = (int) ((Integer[])obj)[i];
@@ -140,7 +144,7 @@ public class WrappedObject {
 				array = ((byte[]) obj).clone();
 				numel = ((byte[]) obj).length;
 			
-			} else if  (name == "[Ljava.lang.Byte") {
+			} else if  (name.equals("[Ljava.lang.Byte") || name.equals("[Ljava.lang.Byte;") ) {
 				type = DataType.INT8;
 				double[] tmp = new double[((Boolean[])obj).length];
 				for ( int i=0; i<tmp.length; i++ ) tmp[i] = (byte)((Byte[])obj)[i];
@@ -154,7 +158,7 @@ public class WrappedObject {
 				array = tmp;
 				numel = tmp.length;
 
-			} else if  (name == "[Ljava.lang.Boolean") {
+			} else if  (name.equals("[Ljava.lang.Boolean") || name.equals("[Ljava.lang.Boolean;") ) {
 				type = DataType.INT8;
 				double[] tmp = new double[((Boolean[])obj).length];
 				for ( int i=0; i<tmp.length; i++ ) tmp[i] = (byte)((((Boolean[])obj)[i])?1:0);

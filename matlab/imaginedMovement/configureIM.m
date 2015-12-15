@@ -25,8 +25,10 @@ if ( ~exist('configRun','var') || isempty(configRun) )
 
   if ( exist('OCTAVE_VERSION','builtin') ) 
 	 page_output_immediately(1); % prevent buffering output
-	 if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
-		graphics_toolkit('qthandles'); % use fast rendering library
+	 if ( ~isempty(strmatch('qt',available_graphics_toolkits())) )
+		graphics_toolkit('qt'); 
+	 elseif ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
+		graphics_toolkit('qthandles'); 
 	 elseif ( ~isempty(strmatch('fltk',available_graphics_toolkits())) )
 		graphics_toolkit('fltk'); % use fast rendering library
 	 end
@@ -42,20 +44,28 @@ end
 verb=1;
 buffhost='localhost';
 buffport=1972;
-nSymbs=2;
+nSymbs=4; % E,N,S,W  for 2d control
 nSeq=20;
 trialDuration=3;
 baselineDuration=1;
+cueDuration=1;
+startDelay =.5;
 intertrialDuration=2;
 feedbackDuration=1;
 
-warpCursor= 1; % flag if in feedback BCI output sets cursor location or how the cursor moves
+contFeedbackTrialDuration=10;
+neurofeedbackTrialDuration=30;
+warpCursor= 0; % flag if in feedback BCI output sets cursor location or how the cursor moves
 moveScale = .1;
 
+axLim   =[-1.5 1.5];
 bgColor =[.5 .5 .5];
 fixColor=[1 0 0];
 tgtColor=[0 1 0];
 fbColor =[0 0 1];
+
+% classifier training options
+trainOpts = {'spType',{{1 3} {2 4}}}; % train 2 classifiers, 1=N vs S, 2=E vs W
 
 % Epoch feedback opts
 trlen_ms=trialDuration*1000; % how often to run the classifier
@@ -75,3 +85,17 @@ stimSmoothFactor= 0; % additional smoothing on the stimulus, not needed with 3s 
 %%3) Classify every welch-window-width (default 500ms), 
 %contFeedbackOpts ={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/400)),'trlen_ms',[]}; % classify every window, bias adapt predictions
 %stimSmoothFactor= -(trlen_ms/500);% actual prediction is average of trail-length worth of predictions
+
+
+%% Center out feedback parameters
+centeroutinstruct={'Try to move the cursor to'
+						 'the box indicated by the'
+						 'green target using the'
+						 'calibration mental tasks'
+						 ''
+						 'Click mouse when ready'};
+stimAngle=.5; % percetage of each edge for target
+moveStep =.05; % step size for each screen re-draw
+%% feedback parameters
+centerOutTrialDuration=10;
+feedbackMoves=20;

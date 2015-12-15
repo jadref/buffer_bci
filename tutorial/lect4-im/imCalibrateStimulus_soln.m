@@ -85,7 +85,6 @@ for si=1:nSeq;
   drawnow;
   sendEvent('stimulus.trial','end');
   
-  ftime=getwTime();
   fprintf('\n');
 end % sequences
 % end training marker

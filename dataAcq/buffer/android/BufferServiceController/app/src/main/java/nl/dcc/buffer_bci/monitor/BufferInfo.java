@@ -2,7 +2,7 @@ package nl.dcc.buffer_bci.monitor;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import nl.dcc.buffer_bci.bufferservicecontroller.C;
+import nl.dcc.buffer_bci.C;
 
 public class BufferInfo implements Parcelable {
 

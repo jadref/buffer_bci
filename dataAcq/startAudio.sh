@@ -21,4 +21,5 @@ fi
 if [ -r $buffdir/buffer/${arch}/${execname} ]; then
 	 buffexe="$buffdir/buffer/${arch}/${execname}";
 fi
+# audio2ft deviceID host port
 $buffexe 0 localhost 1972

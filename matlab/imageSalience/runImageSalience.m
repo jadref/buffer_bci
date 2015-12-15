@@ -42,12 +42,10 @@ while (ishandle(contFig) && ~strcmp(phaseToRun,'quit') )
   if ( ~isempty(modekey) ) 	 
 	 fprintf('key=%s\n',modekey);
 	 phaseToRun=[];
-	 if ( isstr(modekey(1)) )
-		ri = int32(modekey(1)-'0')+1; % get the row in the instructions
-		if ( ri>0 & ri<size(menustr,1))
+	 if ( ischar(modekey(1)) )
+		ri = strmatch(modekey(1),menustr(:,1)); % get the row in the instructions
+		if ( ~isempty(ri) ) 
 		  phaseToRun = menustr{ri,2};
-		elseif ( any(strcmp(modekey(1),{'q','Q','esc'})) )
-		  phaseToRun  = 'quit';	  
 		end
 	 end
     set(contFig,'userdata',[]);

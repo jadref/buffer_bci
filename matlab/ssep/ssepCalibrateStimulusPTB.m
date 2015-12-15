@@ -29,6 +29,7 @@ destR(:,stimi)= round(rel2pixel(wPtr,[.5-stimRadius/8 .5+stimRadius/8 .5+stimRad
 srcR(:,stimi) = [0 destR(3,stimi)-destR(1,stimi) destR(2,stimi)-destR(4,stimi) 0];
 texels(stimi)  = Screen('MakeTexture',wPtr,ones(srcR([3 2],stimi)')*255);
 
+tgt=ones(4,1);
 endTraining=false;
 sendEvent('stimulus.training','start'); 
 for seqi=1:nSeq;
@@ -61,13 +62,17 @@ for seqi=1:nSeq;
     Screen('flip',wPtr);% re-draw the display
     
     % make the stim-seq for this trial
-    [stimSeq,stimTime,eventSeq,colors]=mkStimSeq_flicker(texels,trialDuration,isi,periods,false);
+    [stimSeq,stimTime,eventSeq,colors]=mkStimSeqSSEP(texels,trialDuration,isi,periods,false);
     % now play the sequence
     sendEvent('stimulus.stimSeq',stimSeq(tgtId,:)); % event is actual target stimulus sequence
-    seqStartTime=getwTime(); ei=0; ndropped=0; syncEvtTime=seqStartTime; frametime=zeros(numel(stimTime),4);
+
+	 evti=0; stimEvts=mkEvent('test'); % reset the total set of events info
+    seqStartTime=getwTime(); ei=0; ndropped=0; frametime=zeros(numel(stimTime),4);
     while ( true ) % frame-dropping version    
       ftime=getwTime()-seqStartTime();
       if ( ftime>=stimTime(end) ) break; end;
+
+	   % get the next frame to display -- dropping frames if we're running slow
       ei=min(numel(stimTime),ei+1);
       frametime(ei,1)=ftime;
       % find nearest stim-time, dropping frames is necessary to say on the time-line
@@ -77,6 +82,8 @@ for seqi=1:nSeq;
         if ( verb>=0 ) fprintf('%d) Dropped %d Frame(s)!!!\n',ei,ei-oei); end;
         ndropped=ndropped+(ei-oei);
       end
+
+		% update the display with the current frame's information
       ss=stimSeq(:,ei);
       if(any(ss>=0))
         Screen('Drawtextures',wPtr,texels(ss>=0),srcR(:,ss>=0),destR(:,ss>=0),[],[],[],bgColor*255); 
@@ -102,17 +109,20 @@ for seqi=1:nSeq;
                 frametime(ei,2),frametime(ei,3),...
                 sprintf('%d ',stimSeq(:,ei)),stimTime(ei)-(getwTime()-seqStartTime));
       end
-      % send event saying what the updated display was
-      if ( ~isempty(eventSeq{ei}) ) 
-        ev=sendEvent(eventSeq{ei}{:}); 
-        if (verb>0) fprintf('Event: %s\n',ev2str(ev)); end;
-      end
-      if ( frametime(ei,1)>syncEvtTime+1 ) % once per second a sync event
-        syncEvtTime=frametime(ei,1);
-        sendEvent('stimulus.frameNumber',ei);
-      end
+
+      % record event info about this stimulus to send later so don't delay stimulus
+	   if ( isempty(eventSeq) || (numel(eventSeq)>ei && eventSeq(ei)>0) )
+		  samp=buffer('get_samp'); % get sample at which display updated
+		  % event with information on the total stimulus state
+		  evti=evti+1; stimEvts(evti)=mkEvent('stimulus.stimState',ss,samp); 
+		end
+		
     end % while < endTime
-    if ( verb>0 ) % summary info
+
+    % send all the stimulus events in one go
+    buffer('put_evt',stimEvts(1:evti));
+
+	 if ( verb>0 ) % summary info
       dt=frametime(:,3)-frametime(:,2);
       fprintf('Sum: %d dropped frametime=%g drawTime=[%g,%g,%g]\n',...
               ndropped,mean(diff(frametime(:,1))),min(dt),mean(dt),max(dt));
@@ -127,11 +137,14 @@ for seqi=1:nSeq;
   end % epochs within a sequence
 
   if ( seqi<nSeq ) %wait for key press to continue
-    msg=msgbox({sprintf('End of sequence %d/%d.',seqi,nSeq) 'Press OK to continue.'},'Thanks','modal');
-    if ( ishandle(msg) ) 
-      uiwait(msg,10); % wait max of 10sec
-      if ( ishandle(msg) ) delete(msg); end;
-    end; 
+    Screen('FillRect',wPtr,[0 0 0]*255); % blank background
+    [ans,ans,instructSrcR]=DrawFormattedText(wPtr,sprintf('End of sequence %d/%d.',seqi,nSeq),0,0,[1 1 1]*255);
+    Screen('flip',wPtr);
+    try;  % wait for a key press *and release*, or until 10 sec has passed -- only in PTB>3.08       
+       KbWait([],2,GetSecs()+10);
+    catch ;
+       sleepSec(10);
+    end
   end
 
 end % sequences
