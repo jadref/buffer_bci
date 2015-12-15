@@ -152,13 +152,13 @@ while (ishandle(contFig))
     sendEvent('subject',subject);
     %sleepSec(.1);
     sendEvent(phaseToRun,'start');
-    try
+    %try
       sendEvent('startPhase.cmd','contfeedback');
       imCenteroutStimulus;
-    catch
-       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-       sleepSec(.1);
-    end
+      %catch
+      %le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+      % sleepSec(.1);
+      %end
     sendEvent('contfeedback','end');
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');
