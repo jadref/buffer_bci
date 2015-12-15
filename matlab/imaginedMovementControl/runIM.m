@@ -1,8 +1,5 @@
 configureIM;
 % create the control window and execute the phase selection loop
-if ~( exist('OCTAVE_VERSION','builtin') ) 
-  contFig=controller(); info=guidata(contFig); 
-else
   contFig=figure(1);
   set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
   axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
@@ -25,7 +22,6 @@ else
   set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
   set(contFig,'userdata',[]);
   drawnow; % make sure the figure is visible
-end
 subject='test';
 
 sendEvent('experiment.im','start');
@@ -34,16 +30,12 @@ while (ishandle(contFig))
   if ( ~ishandle(contFig) ) break; end;
 
   phaseToRun=[];
-  if ( ~exist('OCTAVE_VERSION','builtin') ) 
-	 uiwait(contFig); % CPU hog on ver 7.4
-	 info=guidata(contFig); 
-	 subject=info.subject;
-	 phaseToRun=lower(info.phaseToRun);
-  else % give time to process the key presses
+  if ( exist('OCTAVE_VERSION','builtin') ) 
 	 % BODGE: move point to force key-processing
 	 fprintf('.');set(ph,'ydata',rand(1)*.01); drawnow;
-	 if ( ~ishandle(contFig) ) break; end;
   end
+  pause(.1);
+  if ( ~ishandle(contFig) ) break; end;
 
   % process any key-presses
   modekey=get(contFig,'userdata'); 
@@ -96,12 +88,13 @@ while (ishandle(contFig))
     sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun)
     sendEvent(phaseToRun,'start');
-    try
+    %try
       imCalibrateStimulus;
-    catch
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+      %catch
+      %le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+      %if ( isfield(le,'stack') ) disp(le.stack(1)), end;
       sendEvent('training','end');    
-    end
+      %end
     sendEvent(phaseToRun,'end');
 
    %---------------------------------------------------------------------------
@@ -159,13 +152,13 @@ while (ishandle(contFig))
     sendEvent('subject',subject);
     %sleepSec(.1);
     sendEvent(phaseToRun,'start');
-    try
+    %try
       sendEvent('startPhase.cmd','contfeedback');
       imCenteroutStimulus;
-    catch
-       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-       sleepSec(.1);
-    end
+      %catch
+      %le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+      % sleepSec(.1);
+      %end
     sendEvent('contfeedback','end');
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');

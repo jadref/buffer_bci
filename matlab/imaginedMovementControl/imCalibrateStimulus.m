@@ -1,7 +1,7 @@
 configureIM;
 
 % make the target sequence
-tgtSeq=mkStimSeqRand(nSymbs+6,nSeq);
+tgtSeq=mkStimSeqRand(nSymbs+5,nSeq);
 tgtSeq(1,:) = tgtSeq(1,:) + tgtSeq(11,:);
 tgtSeq(3,:) = tgtSeq(3,:) + tgtSeq(12,:);
 tgtSeq(5,:) = tgtSeq(5,:) + tgtSeq(13,:);
