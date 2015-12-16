@@ -22,10 +22,10 @@ fraw = repop(fraw,'+',classifier.b);                % include the bias
 
 %fprintf('binDVs: %s\n',sprintf('%.2f\t',fraw));
 
-% apply the multi-class decoding procedure
+% apply the multi-class decoding procedure if wanted
 f=fraw;
-% treat pure binary as a special case..
-if( isfield(classifier,'spMx') && ~isempty(classifier.spMx) && ~isequal(classifier.spMx,[1 -1]) ) 
+if( isfield(classifier,'spMx') && ~isempty(classifier.spMx) && ~isequal(classifier.spMx,[1 -1]) && ...
+    ~(isfield(classifier,'rawdv') && isequal(classifier.rawdv,1)) ) 
    f = tprod(f,[1 -2],classifier.spMx,[-ndims(f) 2],'n');
    f = f./mean(sum(classifier.spMx~=0));
 end

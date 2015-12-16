@@ -30,7 +30,7 @@ h(3) =rectangle('curvature',[0 0],'position',[[axLim(2)-stimRadius;-hght/2*stimA
 % bottom block
 h(4) =rectangle('curvature',[0 0],'position',[[-wdth/2*stimAngle;axLim(2)-stimRadius];[stimAngle*wdth;stimRadius]],'facecolor',bgColor);  
 % get stimulus positions
-stimPos = get(h(1:4),'position'); stimPos=cat(1,stimPos{:})'; stimPos=stimPos(1:2,:);
+tmp = get(h(1:4),'position'); stimPos=[]; for i=1:numel(tmp); stimPos(:,i)=tmp{i}(1:2); end; 
 % cursor
 initCursorPos=[[0;0]-cursorSize/2;[1;1]*cursorSize]';
 h(5) =rectangle('curvature',[1 1],'position',initCursorPos,'facecolor',bgColor); 
@@ -104,8 +104,8 @@ for si=1:nSeq;
 		  if ( verb>0 ) fprintf('dx=[%d %d]\n',dx(1:2));end
 	 end	 
 		
-	 if ( numel(dx)==size(stimPos,2)-1 ) % per-target decomposition
-		dx = stimPos(:,1:end-1)*dx(:); % convert into x,y change
+	 if ( numel(dx)==size(stimPos,2) ) % per-target decomposition
+		dx = stimPos*dx(:); % convert into x,y change
 	 end
     if ( ~ishandle(fig) ) break; end; % exit cleanly if exit event
     cursorPos=get(h(end),'position'); cursorPos=cursorPos(:);
