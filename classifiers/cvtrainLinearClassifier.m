@@ -47,7 +47,7 @@ function [classifier,res,Y]=cvtrainLinearClassifier(X,Y,Cs,fIdxs,varargin)
 %
 % See also: cvtrainFn, cv2trainFn, lr_cg, klr_cg, l2svm_cg, rls_cg
 opts=struct('objFn','lr_cg','dim',-1,'spType','1vR','spKey',[],'spMx',[],'zeroLab',0,...
-            'balYs',0,'verb',0,'Cscale',[],'compKernel',0,'binsp',1,'cv2',0);
+            'balYs',0,'verb',0,'Cscale',[],'compKernel',0,'binsp',1,'rawdv',0,'cv2',0);
 [opts,varargin]=parseOpts(opts,varargin);
 if( nargin < 3 ) Cs=[]; end;
 if( nargin < 4 || isempty(fIdxs) ) fIdxs=10; end;
@@ -156,7 +156,7 @@ end
 
 % put all the parameters into 1 structure
 if ( iscell(spKey) ) spKey={spKey}; end; % BODGE: need double nest cell-arrays when making structs
-classifier = struct('W',W,'b',b,'dim',dim,'spMx',spMx,'spKey',spKey,'spDesc',{spDesc},'binsp',opts.binsp);
+classifier = struct('W',W,'b',b,'dim',dim,'spMx',spMx,'spKey',spKey,'spDesc',{spDesc},'binsp',opts.binsp,'rawdv',opts.rawdv);
 return;
 %-----------------------------------------------------------------------------
 function testCase()
