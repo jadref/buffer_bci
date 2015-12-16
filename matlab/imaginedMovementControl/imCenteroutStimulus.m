@@ -87,7 +87,7 @@ for si=1:nSeq;
   drawTime=trlStartTime;
   timetogo=centerOutTrialDuration;
   while ( timetogo > 0 ) 
-    timetogo = trialDuration - (getwTime()-trlStartTime); % time left to run in this trial
+    timetogo = centerOutTrialDuration - (getwTime()-trlStartTime); % time left to run in this trial
 
     dx = []; % start with no change
 	 % wait for new prediction events or out of time
