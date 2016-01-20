@@ -134,8 +134,8 @@ def waitnewevents(evtypes, timeout_ms=1000,verbose = True):
     global ftc, nEvents, nSamples, procnEvents
     start = time.time()
     update()
-	if procnEvents<=0:
-		procnEvents=nEvents
+    if procnEvents<=0:
+       procnEvents=nEvents
     elapsed_ms = 0
     
     if verbose:
@@ -146,16 +146,16 @@ def waitnewevents(evtypes, timeout_ms=1000,verbose = True):
         nSamples, nEvents2 = ftc.wait(-1,procnEvents, timeout_ms - elapsed_ms)     
 
         if nEvents2 > procnEvents : # new events to process
-			if procnEvents<nEvents2-50:
-				print("Warning: long delay means missed events")
-				procnEvents = nEvents2-50
+            if procnEvents<nEvents2-50:
+                print("Warning: long delay means missed events")
+                procnEvents = nEvents2-50
             evts = ftc.getEvents((procnEvents, nEvents2 -1))
-            evts = filter(lambda x: x.type in evtype, evts)
+            evts = filter(lambda x: x.type in evtypes, evts)
             if len(evts) > 0 :
                 evt=evts
         
         elapsed_ms = (time.time() - start)*1000
-		procnEvents=nEvents2
+        procnEvents=nEvents2
         nEvents = nEvents2            
     return evt
 
