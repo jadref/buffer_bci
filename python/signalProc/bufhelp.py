@@ -95,7 +95,7 @@ def update(verbose = True):
         print "Updated. nSamples = " + str(nSamples) + " at lastupdate " + str(lastupdate)
 
 
-def buffer_newevents(evtype=None,timeout=3000,verbose=False):
+def buffer_newevents(evttype=None,timeout_ms=500,verbose=False):
     '''
     Wait for and return any new events recieved from the buffer between
     calls to this function
@@ -107,22 +107,25 @@ def buffer_newevents(evtype=None,timeout=3000,verbose=False):
     	start, nEvents = ftc.poll()
 
     if verbose:
-        print "Waiting for event(s) " + str(evtypes) + " with timeout_ms " + str(timeout_ms)
+        print("Waiting for event(s) " + str(evtypes) + " with timeout_ms " + str(timeout_ms))
 
     start = time.time()
     elapsed_ms = 0
     events=[]
-    while len(events)==0 and elapsed_ms<timeout:
-        nSamples,curEvents=ftc.wait(-1,nEvents, timeout_ms - elapsed_ms)
-        if curEvents>nEvents:            
+    while len(events)==0 and elapsed_ms<timeout_ms:
+        nSamples,curEvents=ftc.wait(-1,nEvents, int(timeout_ms - elapsed_ms))
+        if curEvents>nEvents:
+			if nEvents<curEvents-50:
+				print("Warning: long delay means missed events")
+				nEvents = curEvents-50
             events = ftc.getEvents([nEvents,curEvents-1])            
-            if not evttype is None:
-                events = filter(lambda x: x.type in evtype, events)
+            if not evttype is None and not events is None:
+                events = filter(lambda x: x.type in evttype, events)
         nEvents = curEvents # update starting number events (allow for buffer restarts)
         elapsed_ms = (time.time() - start)*1000        
     return events
 
-procnEvents=0
+procnEvents=-1
 def waitnewevents(evtypes, timeout_ms=1000,verbose = True):      
     """Function that blocks until a certain type of event is recieved. 
     evttypes is a list of event type strings, recieving any of these event types termintes the block.  
@@ -131,6 +134,8 @@ def waitnewevents(evtypes, timeout_ms=1000,verbose = True):
     global ftc, nEvents, nSamples, procnEvents
     start = time.time()
     update()
+	if procnEvents<=0:
+		procnEvents=nEvents
     elapsed_ms = 0
     
     if verbose:
@@ -140,14 +145,17 @@ def waitnewevents(evtypes, timeout_ms=1000,verbose = True):
     while elapsed_ms < timeout_ms and evt is None:
         nSamples, nEvents2 = ftc.wait(-1,procnEvents, timeout_ms - elapsed_ms)     
 
-        if nEvents2 > nEvents : # new events to process
-            procnEvents = nEvents2
-            evts = ftc.getEvents((nEvents, nEvents2 -1))
+        if nEvents2 > procnEvents : # new events to process
+			if procnEvents<nEvents2-50:
+				print("Warning: long delay means missed events")
+				procnEvents = nEvents2-50
+            evts = ftc.getEvents((procnEvents, nEvents2 -1))
             evts = filter(lambda x: x.type in evtype, evts)
             if len(evts) > 0 :
                 evt=evts
         
         elapsed_ms = (time.time() - start)*1000
+		procnEvents=nEvents2
         nEvents = nEvents2            
     return evt
 

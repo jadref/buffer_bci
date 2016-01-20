@@ -1,5 +1,6 @@
 set batdir=%~dp0
-call %batdir%\..\utilities\findJava.bat
+cd %batdir%
+call ..\utilities\findJava.bat
 
 echo Starting: /buffer/java/SignalProxy.jar
-%javaexe% -cp "%batdir%buffer\java\BufferClient.jar;%batdir%buffer\java\SignalProxy.jar" nl.dcc.buffer_bci.SignalProxy localhost:1972 %*
+%javaexe% -cp "buffer\java\BufferClient.jar;buffer\java\SignalProxy.jar" nl.dcc.buffer_bci.SignalProxy localhost:1972 %*
