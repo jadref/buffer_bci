@@ -1,4 +1,5 @@
 set batdir=%~dp0
-call %batdir%\..\utilities\findJava.bat
-echo Starting: %javaexe% %batdir%/buffer/java/eventViewer.class
-%javaexe% -cp "%batdir%/buffer/java/BufferClient.jar;%batdir%/buffer/java" EventViewer %*
+cd %batdir%
+call ..\utilities\findJava.bat
+echo Starting: %javaexe% buffer/java/eventViewer.class
+%javaexe% -cp "buffer/java/BufferClient.jar;buffer/java" EventViewer %*
