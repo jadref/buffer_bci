@@ -1,6 +1,6 @@
 bufferpath = "../../dataAcq/buffer/python"
 
-import os, sys, random, math, time, socket
+import os, sys, random, math, time, socket, struct
 sys.path.append(os.path.dirname(__file__)+bufferpath)
 import FieldTrip
 
@@ -56,7 +56,7 @@ while hdr is None :
 
     if hdr is None:
         print('Invalid Header... waiting')
-        sleep(1)
+        time.sleep(1)
     else:
         print(hdr)
         print(hdr.labels)
