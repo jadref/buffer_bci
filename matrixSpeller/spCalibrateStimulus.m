@@ -8,7 +8,7 @@ ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','b
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
         'color',[0 0 0],'DrawMode','fast','nextplot','replacechildren',...
         'xlim',[-1.5 1.5],'ylim',[-1.5 1.5],'Ydir','normal');
-[h]=initGrid(symbols);
+[h]=initGrid(symbols,'relfontSize',symbSize);
 
 % make the target stimulus sequence
 [ans,ans,ans,ans,tgtSeq]=mkStimSeqRand(numel(symbols),nSeq);
