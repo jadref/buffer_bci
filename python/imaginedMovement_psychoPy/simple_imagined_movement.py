@@ -3,111 +3,18 @@
 from psychopy import visual, core, event, gui, sound, data, monitors
 from random import shuffle
 import numpy as np
-import struct, sys, time
-sys.path.append("../../dataAcq/buffer/python")
-import FieldTrip
+import struct, sys, time, os
+
+# use the buffer helper for seting up the connrection, sending/waiting for events
+bufhelppath="../signalProc";
+sys.path.append(os.path.dirname(__file__) + "/" + bufhelppath)
+from bufhelp import *
 
 # ************** Set up buffer connection **************
 # set hostname and port of the computer running the fieldtrip buffer.
 hostname='localhost'
 port=1972
-
-# function to send events to data buffer
-# use as: sendEvent("markername", markernumber, offset)
-def sendEvent(event_type, event_value, offset=0):
-    e = FieldTrip.Event()
-    e.type = event_type
-    e.value = event_value
-    if offset>0 : 
-        sample, bla = ftc.poll()
-        e.sample = sample + offset + 1
-    ftc.putEvents(e)
-
-def buffer_newevents(evttype=None,timeout_ms=500,verbose=False):
-    '''
-    Wait for and return any new events recieved from the buffer between
-    calls to this function
-    
-    timeout    = maximum time to wait in milliseconds before returning
-    '''
-    global ftc,nEvents # use to store number events processed accross function calls
-    if not 'nEvents' in globals(): # first time initialize to events up to now
-    	start, nEvents = ftc.poll()
-
-    if verbose:
-        print("Waiting for event(s) " + str(evtypes) + " with timeout_ms " + str(timeout_ms))
-
-    start = time.time()
-    elapsed_ms = 0
-    events=[]
-    while len(events)==0 and elapsed_ms<timeout_ms:
-        nSamples,curEvents=ftc.wait(-1,nEvents, int(timeout_ms - elapsed_ms))
-        if curEvents>nEvents:
-			if nEvents<curEvents-50:
-				print("Warning: long delay means missed events")
-				nEvents = curEvents-50
-            events = ftc.getEvents([nEvents,curEvents-1])            
-            if not evttype is None and not events is None:
-                events = filter(lambda x: x.type in evttype, events)
-        nEvents = curEvents # update starting number events (allow for buffer restarts)
-        elapsed_ms = (time.time() - start)*1000        
-    return events
-
-procnEvents=-1
-def waitnewevents(evtypes, timeout_ms=1000,verbose = True):      
-    """Function that blocks until a certain type of event is recieved. 
-    evttypes is a list of event type strings, recieving any of these event types termintes the block.  
-    All such matching events are returned
-    """    
-    global ftc, nEvents, nSamples, procnEvents
-    start = time.time()
-    update()
-    if procnEvents<=0:
-       procnEvents=nEvents
-    elapsed_ms = 0
-    
-    if verbose:
-        print "Waiting for event(s) " + str(evtypes) + " with timeout_ms " + str(timeout_ms)
-    
-    evt=None
-    while elapsed_ms < timeout_ms and evt is None:
-        nSamples, nEvents2 = ftc.wait(-1,procnEvents, timeout_ms - elapsed_ms)     
-
-        if nEvents2 > procnEvents : # new events to process
-            if procnEvents<nEvents2-50:
-                print("Warning: long delay means missed events")
-                procnEvents = nEvents2-50
-            evts = ftc.getEvents((procnEvents, nEvents2 -1))
-            evts = filter(lambda x: x.type in evtypes, evts)
-            if len(evts) > 0 :
-                evt=evts
-        
-        elapsed_ms = (time.time() - start)*1000
-        procnEvents=nEvents2
-        nEvents = nEvents2            
-    return evt
-
-#Connecting to Buffer
-timeout=5000
-ftc = FieldTrip.Client()
-# Wait until the buffer connects correctly and returns a valid header
-hdr = None;
-while hdr is None :
-    print 'Trying to connect to buffer on %s:%i ...'%(hostname,port)
-    try:
-        ftc.connect(hostname, port)
-        print '\nConnected - trying to read header...'
-        hdr = ftc.getHeader()
-    except IOError:
-        pass
-    if hdr is None:
-        print 'Invalid Header... waiting'
-        core.wait(1)
-    else:
-        print hdr
-        print hdr.labels
-
-fSample = hdr.fSample
+ftc,hdr=connect(hostname,port)
 
 getFeedbackCounter = 0
 current_block = 1
@@ -153,11 +60,11 @@ def run_exp(nr_blocks,stimulus_conditions, stimulus_instructions,maxTime,feedbac
             sendEvent("experiment.trial",stimulus_instructions[stimulus_conditions[trial-1]-1])
             core.wait(4)
             if feedback is True:
-                feedbackEvt = waitnewevents("feedback",1000)
-                if feedbackEvt is None:
+                feedbackEvt = buffer_newevents("feedback",1000)
+                if feedbackEvt is None or len(feedbackEvt)==0:
                     feedbackTxt='None'
                 else:
-                    feedbackTxt=str(feedbackEvt.value)
+                    feedbackTxt=str(feedbackEvt[-1].value)
                 getFeedbackCounter = getFeedbackCounter + 1
                 visual.TextStim(mywin,text="Feedback = " + feedbackTxt,color=(1,1,1),height=50).draw()
                 mywin.flip()
@@ -181,7 +88,7 @@ if dlg.OK==False:
     core.quit() #the user hit cancel so exit
 
 # Setup the stimulus window
-mywin = visual.Window(size=(1920, 1080), fullscr=True, screen=0, allowGUI=False, allowStencil=False,
+mywin = visual.Window(size=(800, 600), fullscr=False, screen=0, allowGUI=False, allowStencil=False,
     monitor='testMonitor', units="pix",color=[0,0,0], colorSpace='rgb',blendMode='avg', useFBO=True)
 
 #create some stimuli
