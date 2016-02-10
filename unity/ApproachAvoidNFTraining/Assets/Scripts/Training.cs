@@ -32,12 +32,6 @@ public class Training : MonoBehaviour {
 	void Start ()
 	{
 		duration = (float)Config.trainingDuration;
-		ballRenderMan = ball.GetComponent<Renderer> ();
-		ballRenderMan.material.SetFloat ("_Blend", 0);
-
-		if (!isInitialized) {
-			Initialize();
-		}
 
 		//skinnedMeshRenderMan = GetComponent<SkinnedMeshRenderer> ();
 		//skinnedMesh = GetComponent<SkinnedMeshRenderer> ().sharedMesh;
@@ -46,6 +40,12 @@ public class Training : MonoBehaviour {
 	// when made visible
 	void OnEnable(){
 		startTime = Time.time;
+		ballRenderMan = ball.GetComponent<Renderer> ();
+		ballRenderMan.material.SetFloat ("_Blend", 0);
+
+		if (!isInitialized) {
+			Initialize();
+		}
 	}
 
 	// Update is called once per frame

@@ -50,6 +50,15 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 		resetStatus();
 	}
 
+	// called when the app is made invisible..
+	void OnDisable() {
+		Debug.Log ("disable");
+	}
+
+	// called when frame is made visible
+	void OnEnable() {
+	}
+		
 	void Update(){ // Called every video frame
 		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
 		if (androidDevice && inMenu) {
@@ -90,11 +99,15 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 	private void logStatus(string status)
 	{
-		if (inMenu) {
-			StatusButton.GetComponentInChildren<Text> ().text = status;
-		}
 		if (verbose) {
 			Debug.Log ("Status: "+status);
+		}
+		if (inMenu) {
+			if (StatusButton!=null && StatusButton.IsActive() ) {
+				Text tag = StatusButton.GetComponentInChildren<Text> ();
+				if (tag)
+					tag.text = status;
+			}
 		}
 	}
 
@@ -194,17 +207,17 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 			while ( ! bufferIsOn ){
 				initializeBuffer ();
 				if ( ! bufferIsOn ){
-					logStatus ("Couldnt connect, waiting");
+					//logStatus ("Couldnt connect, waiting");
 					yield return new WaitForSeconds(1);
 				}
 			}
-			logStatus ("Waiting for a bit more.");
-			yield return new WaitForSeconds(2);
+			logStatus ("Connected!");
+			yield return new WaitForSeconds(1);
       #endif
 		buttonColors.normalColor = themeGreen;
 		buttonColors.highlightedColor = themeGreen;
 		StatusButton.colors = buttonColors;
-		logStatus ("start");
+		logStatus ("beginnen");
 		systemIsReady = true;
 	}
 
@@ -227,8 +240,10 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 		//Stop buffer
 		logStatus ("removing buffer...");
-		bufferIsOn = false;
-		buffer.disconnect ();
+		if ( bufferIsOn ){
+			buffer.disconnect ();
+			bufferIsOn = false;
+		}
 		yield return new WaitForSeconds (1);
 
 		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
@@ -266,7 +281,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	}
 
 	public void initializeBuffer(){
-		buffer = gameObject.AddComponent<UnityBuffer>();
+		if( buffer == null ) buffer = gameObject.AddComponent<UnityBuffer>();
 		buffer.initializeBuffer();
 		if(buffer!=null && buffer.bufferIsConnected){
 			//Attach the buffer's event handler to the eventsAdded function
@@ -316,8 +331,12 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 		return (float)currentAlphaLat [3];
 	}
 
+	// Called m*manually* when this interface is visible!
 	public void setMenu(bool value)
 	{
 		inMenu = value;
+		if (value) {
+			StartCoroutine (startServerAndAllClients ());
+		}
 	}
 }
