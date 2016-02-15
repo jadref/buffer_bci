@@ -15,13 +15,13 @@ public class Rest : MonoBehaviour {
 	// Iinitialization
 	void Awake ()
 	{
-		duration = (float)Config.restDuration;
 		frequency = 1f / frequency;
 	}
 
 	// when made visible
 	void OnEnable(){
 		startTime = Time.time;
+		duration = (float)Config.fixationDuration;
 	}
 
 	// called when the app is made invisible..

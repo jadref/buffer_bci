@@ -51,29 +51,33 @@ public class MenuOptions : MonoBehaviour {
 			yield return null;
 			if ( endAll ) break; // finish if quit from main-menu
 
-			HideAllBut (userInfoPanel);  // ask user information
-			yield return null;
-			if ( userTxt.text != null ) FTSInterface.sendEvent (Config.userEventType,userTxt.text);
-			if ( sessionTxt.text != null ) FTSInterface.sendEvent (Config.sessionEventType,sessionTxt.text);
-			agenticControl = agenticToggle.isOn; 
-			if ( agenticControl ) {
-				FTSInterface.sendEvent (Config.agenticEventType,"agentic");
-			} else {
-				FTSInterface.sendEvent (Config.agenticEventType,"operant");
+			if (Config.askUserInfo) {
+				HideAllBut (userInfoPanel);  // ask user information
+				yield return null;
 			}
-
+			if (userTxt.text != null)
+				FTSInterface.sendEvent (Config.userEventType, userTxt.text);
+			if (sessionTxt.text != null)
+					FTSInterface.sendEvent (Config.sessionEventType, sessionTxt.text);
+			agenticControl = agenticToggle.isOn; 
+			if (agenticControl) {
+				FTSInterface.sendEvent (Config.agenticEventType, "agentic");
+			} else {
+				FTSInterface.sendEvent (Config.agenticEventType, "operant");
+			}
 			if (FTSInterface.getSystemIsReady()) {
 				FTSInterface.setMenu (false);
 			}
 
 
 			if (Config.preMeasure) {
-			cueText.text = Config.premeasureText;
-			HideAllBut (cuePanel);
-			yield return null;
-			if (endAll)
-				break; // finish if quit from main-menu
+				cueText.text = Config.premeasureText;
+				HideAllBut (cuePanel);
+				yield return null;
+				if (endAll)
+					break; // finish if quit from main-menu
 
+				Config.fixationDuration = Config.baselineDuration;
 				HideAllBut (restStage);
 				FTSInterface.sendEvent (Config.restEventType, "start"); // first is pure rest, i.e. no baseline
 				yield return null;
@@ -87,6 +91,7 @@ public class MenuOptions : MonoBehaviour {
 					break; // finish if quit from main-menu
 
 				restCueText.text = Config.baselineCueText;
+				Config.fixationDuration = Config.eyesOpenDuration;
 				HideAllBut (restStage);
 				FTSInterface.sendEvent (Config.eyesOpenEventType, "start"); // first is pure rest, i.e. no baseline
 				yield return null;
@@ -100,6 +105,7 @@ public class MenuOptions : MonoBehaviour {
 					break; // finish if quit from main-menu
 
 				restCueText.text = Config.eyesClosedCue;
+				Config.fixationDuration = Config.eyesClosedDuration;
 				HideAllBut (restStage);
 				FTSInterface.sendEvent (Config.eyesClosedEventType, "start"); // first is pure rest, i.e. no baseline
 				yield return null;
@@ -107,10 +113,10 @@ public class MenuOptions : MonoBehaviour {
 				audio.Play ();
 			}
 
-			cueText.text = Config.experimentInstructText;
-			HideAllBut (cuePanel);
-			yield return 0;
-			if ( endAll ) break; // finish if quit from main-menu
+//			cueText.text = Config.experimentInstructText;
+//			HideAllBut (cuePanel);
+//			yield return 0;
+//			if ( endAll ) break; // finish if quit from main-menu
 
 			string trialType="";
 			for (int si=0; si<Config.trainingBlocks; si++) {
@@ -118,6 +124,7 @@ public class MenuOptions : MonoBehaviour {
 				cueText.text = Config.baselineText;
 				HideAllBut (cuePanel);
 				yield return null;
+				Config.fixationDuration = Config.baselineDuration;
 				restCueText.text = Config.baselineCueText;
 				HideAllBut (restStage);
 				FTSInterface.sendEvent (Config.baselineEventType, "start"); // rest is also baseline
