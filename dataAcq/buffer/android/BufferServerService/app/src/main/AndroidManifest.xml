@@ -25,14 +25,6 @@
             </intent-filter>
         </service>
 
-        <receiver
-            android:name=".FBServiceBroadcastReceiver"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="nl.dcc.buffer_bci.bufferserverservice.action.FLUSH"/>
-            </intent-filter>
-        </receiver>
     </application>
 
 </manifest>

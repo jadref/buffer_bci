@@ -35,6 +35,9 @@ if ( exist(psychpath,'dir') )
   end
 end
 if ( isempty(which('Screen')) ) % error if PTB not found
-  uiwait(msgbox({'Error couldnt find Psychtoolbox on your path!' 'Aborting'},'Error','modal'),10);
-  error('Couldnt find Psychtoolbox on your path!');
+  try;
+	 uiwait(msgbox({'Error couldnt find Psychtoolbox on your path!' 'Ignoring.'},'Error','modal'),10);
+  catch;
+  end;
+  warning('Couldnt find Psychtoolbox on your path!');
 end

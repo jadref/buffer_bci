@@ -48,7 +48,7 @@ function [foldIdxs]=gennFold(Y,nFold,varargin)
 % documents are distributed without any warranty, express or
 % implied
 if ( nargin < 2 ); nFold=10; 
-elseif ( isstr(nFold) && ~strcmp(nFold,'loo') ); varargin={nFold varargin{:}}; nFold=[];
+elseif ( ischar(nFold) && ~strcmp(nFold,'loo') ); varargin={nFold varargin{:}}; nFold=[];
 end;
 opts=struct('indepSP',0,'perm',0,'foldSize',[],'regress',0,'randseed',{[]},'repeats',1,'dim',[],'zeroLab',0,'nFold',[]);
 opts=parseOpts(opts,varargin);

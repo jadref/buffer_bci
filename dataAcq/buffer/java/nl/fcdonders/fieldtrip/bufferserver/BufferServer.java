@@ -143,11 +143,13 @@ public class BufferServer extends Thread {
 		setName("Fieldtrip Buffer Server");
 	}
 
-	public void addMonitor(final FieldtripBufferMonitor monitor) {
+	public synchronized void addMonitor(final FieldtripBufferMonitor monitor) {
 		this.monitor = monitor;
-		for (final ConnectionThread thread : threads) {
-			thread.addMonitor(monitor);
-		}
+		 synchronized ( threads ) {
+			  for (final ConnectionThread thread : threads) {
+					thread.addMonitor(monitor);
+			  }
+		 }
 	}
 
 	/**
@@ -234,8 +236,10 @@ public class BufferServer extends Thread {
 	 *
 	 * @param connection
 	 */
-	public synchronized void removeConnection(final ConnectionThread connection) {
-		threads.remove(connection);
+	public void removeConnection(final ConnectionThread connection) {
+		 synchronized ( threads ) {
+			  threads.remove(connection);
+		 }
 	}
 
 	/**
@@ -272,9 +276,11 @@ public class BufferServer extends Thread {
 				System.err.println("Server socket disconnected " + portNumber);
 				System.err.println(e);
 			} else {
-				for (final ConnectionThread thread : threads) {
-					thread.disconnect();
-				}
+				 synchronized ( threads ) {
+					  for (final ConnectionThread thread : threads) {
+							thread.disconnect();
+					  }
+				 }
 			}
 		}
 	}
@@ -284,14 +290,16 @@ public class BufferServer extends Thread {
 	 */
 	public void stopBuffer() {
       run=false;
-		try {
-			for (final ConnectionThread thread : threads) {
-				thread.disconnect();
+		synchronized ( threads ) {
+			try {
+				 for (final ConnectionThread thread : threads) {
+					  thread.disconnect();
+				 }
+				 closeConnection();
+				 disconnectedOnPurpose = true;
+			} catch (final IOException e) {
 			}
-			serverSocket.close();
-			disconnectedOnPurpose = true;
-		} catch (final IOException e) {
-		}		
+		}
 	}
 
 	 public void cleanup(){

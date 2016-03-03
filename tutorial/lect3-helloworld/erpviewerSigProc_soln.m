@@ -1,4 +1,5 @@
-run ../../utilities/initPaths;
+try; cd(fileparts(mfilename('fullpath')));catch; end;
+run ../../utilities/initPaths.m
   
 buffhost='localhost';buffport=1972;
 % wait for the buffer to return valid header information
@@ -17,9 +18,8 @@ end;
 initgetwTime;
 initsleepSec;
 
-% get cap layout info
-di = addPosInfo(hdr.channel_names,'1010'); % get 3d-coords
-ch_pos=cat(2,di.extra.pos2d); ch_names=di.vals; iseeg=[di.extra.iseeg]; % extract pos and channels names
+% load the cap layout from file
+[ch_names latlong ch_pos ch_pos3d]=readCapInf('1010');
 
 trlen_samp = 50; % #samples per epoch
 nSymbols = 2;
@@ -46,7 +46,7 @@ while( ~endTest )
     end;
 
     % update the ERPs info
-    class=devents(ei).value;
+    class=devents(ei).value; % WARNING: here we assume event value is integer class ID
     erp(:,:,class) = (erp(:,:,class)*nTarget(class) + data.buf(iseeg,:))/(nTarget(class)+1);
     nTarget(class) = nTarget(class)+1;        
     

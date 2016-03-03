@@ -11,6 +11,8 @@ import android.content.res.Resources;
 import android.util.Log;
 import android.util.SparseArray;
 
+import nl.dcc.buffer_bci.C;
+import nl.dcc.buffer_bci.R;
 import nl.dcc.buffer_bci.monitor.BufferConnectionInfo;
 import nl.dcc.buffer_bci.monitor.BufferInfo;
 
@@ -56,8 +58,11 @@ public class ServerController {
         String ret = "ServerController:{address=" + address + ", port=" + port + ", nSamples=" + nSamples + ", " +
                 "nEvent=" +
                 nEvents + ", datatype=" + dataType + ", nChannels=" + nChannels + ", fSample=" + fSample + "} with \n";
-        for (BufferConnectionInfo bufferConnectionInfo : bufferConnectionsArray)
-            ret += "\t" + bufferConnectionInfo + "\n";
+        for (BufferConnectionInfo bufferConnectionInfo : bufferConnectionsArray) {
+            if ( bufferConnectionInfo.connected ) { // only connected clients
+                ret += "\t" + bufferConnectionInfo + "\n";
+            }
+        }
         return ret;
     }
 
@@ -104,8 +109,8 @@ public class ServerController {
     protected void initialUpdate() {
         //Log.i(TAG, "Initially Updated Buffer Info.");
         address = buffer.address;
-        timer = new Timer();
-        timer.start();
+        //timer = new Timer();
+        //timer.start();
         startTime = buffer.startTime;
         initalUpdateCalled = true;
     }
@@ -129,14 +134,14 @@ public class ServerController {
 
     protected void updateBufferConnections(final BufferConnectionInfo[] connectionInfos) {
         for (final BufferConnectionInfo bufferconnection : connectionInfos) {
-            if (bufferConnections.get(bufferconnection.connectionID) == null) {
-                bufferConnections.put(bufferconnection.connectionID, bufferconnection);
+            if (bufferConnections.get(bufferconnection.getConnectionID()) == null) {
+                bufferConnections.put(bufferconnection.getConnectionID(), bufferconnection);
                 bufferConnectionsArray.add(bufferconnection);
             } else {
-                bufferConnections.get(bufferconnection.connectionID).update(bufferconnection);
+                bufferConnections.get(bufferconnection.getConnectionID()).update(bufferconnection);
                 ArrayList<BufferConnectionInfo> tempInfo = new ArrayList<BufferConnectionInfo>(bufferConnectionsArray);
                 for (BufferConnectionInfo oldConnection : tempInfo) {
-                    if (oldConnection.connectionID == bufferconnection.connectionID) { //Removing duplicates of BufferConnectionInfo with same connectionID
+                    if (oldConnection.getConnectionID() == bufferconnection.getConnectionID()) { //Removing duplicates of BufferConnectionInfo with same connectionID
                         int index = tempInfo.indexOf(oldConnection);
                         bufferConnectionsArray.remove(index);
                         bufferConnectionsArray.add(bufferconnection);
@@ -233,7 +238,7 @@ public class ServerController {
         int length = bufferConnections.size();
         int[] ids = new int[length];
         for (int i = 0; i < length; ++i) {
-            ids[i] = bufferConnections.valueAt(i).connectionID;
+            ids[i] = bufferConnections.valueAt(i).getConnectionID();
         }
         return ids;
     }
@@ -241,8 +246,8 @@ public class ServerController {
     public String getConnectionAddress(int connectionID) {
         synchronized (bufferConnectionsArray) {
             for (BufferConnectionInfo Connection : bufferConnectionsArray) {
-                if (Connection.connectionID == connectionID) {
-                    return Connection.address;
+                if (Connection.getConnectionID() == connectionID) {
+                    return Connection.getAddress();
                 }
             }
         }
@@ -252,7 +257,7 @@ public class ServerController {
     public int getConnectionSamplesGotten(int connectionID) {
         synchronized (bufferConnectionsArray) {
             for (BufferConnectionInfo Connection : bufferConnectionsArray) {
-                if (Connection.connectionID == connectionID) {
+                if (Connection.getConnectionID() == connectionID) {
                     return Connection.samplesGotten;
                 }
             }
@@ -263,7 +268,7 @@ public class ServerController {
     public int getConnectionSamplesPut(int connectionID) {
         synchronized (bufferConnectionsArray) {
             for (BufferConnectionInfo Connection : bufferConnectionsArray) {
-                if (Connection.connectionID == connectionID) {
+                if (Connection.getConnectionID() == connectionID) {
                     return Connection.samplesPut;
                 }
             }
@@ -274,7 +279,7 @@ public class ServerController {
     public int getConnectionEventsGotten(int connectionID) {
         synchronized (bufferConnectionsArray) {
             for (BufferConnectionInfo Connection : bufferConnectionsArray) {
-                if (Connection.connectionID == connectionID) {
+                if (Connection.getConnectionID() == connectionID) {
                     return Connection.eventsGotten;
                 }
             }
@@ -285,7 +290,7 @@ public class ServerController {
     public int getConnectionEventsPut(int connectionID) {
         synchronized (bufferConnectionsArray) {
             for (BufferConnectionInfo Connection : bufferConnectionsArray) {
-                if (Connection.connectionID == connectionID) {
+                if (Connection.getConnectionID() == connectionID) {
                     return Connection.eventsPut;
                 }
             }
@@ -296,7 +301,7 @@ public class ServerController {
     public int getConnectionLastActivity(int connectionID) {
         synchronized (bufferConnectionsArray) {
             for (BufferConnectionInfo Connection : bufferConnectionsArray) {
-                if (Connection.connectionID == connectionID) {
+                if (Connection.getConnectionID() == connectionID) {
                     return Connection.lastActivity;
                 }
             }
@@ -307,7 +312,7 @@ public class ServerController {
     public int getConnectionWaitEvents(int connectionID) {
         synchronized (bufferConnectionsArray) {
             for (BufferConnectionInfo Connection : bufferConnectionsArray) {
-                if (Connection.connectionID == connectionID) {
+                if (Connection.getConnectionID() == connectionID) {
                     return Connection.waitEvents;
                 }
             }
@@ -318,7 +323,7 @@ public class ServerController {
     public int getConnectionWaitSamples(int connectionID) {
         synchronized (bufferConnectionsArray) {
             for (BufferConnectionInfo Connection : bufferConnectionsArray) {
-                if (Connection.connectionID == connectionID) {
+                if (Connection.getConnectionID() == connectionID) {
                     return Connection.waitSamples;
                 }
             }
@@ -329,7 +334,7 @@ public class ServerController {
     public int getConnectionError(int connectionID) {
         synchronized (bufferConnectionsArray) {
             for (BufferConnectionInfo Connection : bufferConnectionsArray) {
-                if (Connection.connectionID == connectionID) {
+                if (Connection.getConnectionID() == connectionID) {
                     return Connection.error;
                 }
             }
@@ -340,7 +345,7 @@ public class ServerController {
     public long getConnectionTimeLastActivity(int connectionID) {
         synchronized (bufferConnectionsArray) {
             for (BufferConnectionInfo Connection : bufferConnectionsArray) {
-                if (Connection.connectionID == connectionID) {
+                if (Connection.getConnectionID() == connectionID) {
                     return Connection.timeLastActivity;
                 }
             }
@@ -351,7 +356,7 @@ public class ServerController {
     public long getConnectionTime(int connectionID) {
         synchronized (bufferConnectionsArray) {
             for (BufferConnectionInfo Connection : bufferConnectionsArray) {
-                if (Connection.connectionID == connectionID) {
+                if (Connection.getConnectionID() == connectionID) {
                     return Connection.time;
                 }
             }
@@ -362,7 +367,7 @@ public class ServerController {
     public long getConnectionWaitTimeout(int connectionID) {
         synchronized (bufferConnectionsArray) {
             for (BufferConnectionInfo Connection : bufferConnectionsArray) {
-                if (Connection.connectionID == connectionID) {
+                if (Connection.getConnectionID() == connectionID) {
                     return Connection.waitTimeout;
                 }
             }
@@ -373,7 +378,7 @@ public class ServerController {
     public boolean getConnectionConnected(int connectionID) {
         synchronized (bufferConnectionsArray) {
             for (BufferConnectionInfo Connection : bufferConnectionsArray) {
-                if (Connection.connectionID == connectionID) {
+                if (Connection.getConnectionID() == connectionID) {
                     return Connection.connected;
                 }
             }
@@ -384,7 +389,7 @@ public class ServerController {
     public boolean getConnectionChanged(int connectionID) {
         synchronized (bufferConnectionsArray) {
             for (BufferConnectionInfo Connection : bufferConnectionsArray) {
-                if (Connection.connectionID == connectionID) {
+                if (Connection.getConnectionID() == connectionID) {
                     return Connection.changed;
                 }
             }
@@ -395,7 +400,7 @@ public class ServerController {
     public int getConnectionDiff(int connectionID) {
         synchronized (bufferConnectionsArray) {
             for (BufferConnectionInfo Connection : bufferConnectionsArray) {
-                if (Connection.connectionID == connectionID) {
+                if (Connection.getConnectionID() == connectionID) {
                     return Connection.diff;
                 }
             }
@@ -461,8 +466,8 @@ public class ServerController {
     }
 
     public void reloadConnections() {
-        Intent intent = new Intent(C.FILTER_FROM_SERVER);
-        intent.putExtra(C.MESSAGE_TYPE, C.UPDATE);
+        Intent intent = new Intent(C.FILTER_FR0M_SERVER);
+        intent.putExtra(C.MESSAGE_TYPE, C.BUFFER_INFO_BROADCAST);
         Log.i(TAG, "Refreshing all server bufferConnections info.");
         context.sendOrderedBroadcast(intent, null);
     }

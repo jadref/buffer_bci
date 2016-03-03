@@ -31,7 +31,7 @@ set(h(:),'facecolor',bgColor);
 sendEvent('stimulus.testing','start');
 drawnow; pause(5); % N.B. pause so fig redraws
 % initialize the state so don't miss classifier prediction events
-status=buffer('wait_dat',[-1 -1 -1],buffhost,buffport); state =[status.nsamples status.nevents 0];
+state=buffer('poll'); % get the start time of the stimulus
 endTesting=false; dvs=[];
 for si=1:nSeq;
 
@@ -52,8 +52,9 @@ for si=1:nSeq;
   set(h(tgtSeq(:,si)<=0),'facecolor',bgColor);
   set(h(end),'facecolor',tgtColor); % green fixation indicates trial running
   drawnow;% expose; % N.B. needs a full drawnow for some reason
-  sendEvent('stimulus.target',find(tgtSeq(:,si)>0));
-  sendEvent('stimulus.trial','start');
+  ev=sendEvent('stimulus.target',find(tgtSeq(:,si)>0));
+  sendEvent('classifier.apply','now',ev.sample); % tell the classifier to apply from now
+  sendEvent('stimulus.trial','start',ev.sample);
   sleepSec(trialDuration); 
   
   % wait for classifier prediction event

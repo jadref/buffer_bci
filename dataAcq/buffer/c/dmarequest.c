@@ -316,7 +316,7 @@ int dmarequest(const message_t *request, message_t **response_ptr) {
 					/* automatically convert event->def->sample to current sample number
 						(thus this event "belongs" to the first sample of the next block from PUT_DAT)
 					*/
-					if (event[thisevent].def->sample == EVENT_AUTO_SAMPLE) {
+					if (event[thisevent].def->sample <= EVENT_AUTO_SAMPLE) {
 						event[thisevent].def->sample = header->def->nsamples;
 					}
 					
@@ -667,7 +667,7 @@ int dmarequest(const message_t *request, message_t **response_ptr) {
 			} else {
 				int waiterr;
 				waitdef_t *wd = (waitdef_t *) request->buf;
-				samples_events_t *nret = malloc(sizeof(samples_events_t));
+				samples_events_t *nret = (samples_events_t *)malloc(sizeof(samples_events_t));
 				UINT32_T nsmp, nevt;
 				
 				if (nret == NULL) {

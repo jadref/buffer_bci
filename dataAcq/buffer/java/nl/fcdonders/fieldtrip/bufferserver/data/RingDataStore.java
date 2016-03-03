@@ -10,7 +10,7 @@ import nl.fcdonders.fieldtrip.bufferserver.network.WaitRequest;
 
 public class RingDataStore extends DataModel {
     public final int MINNBUFFER=60*100;  // about 60s data @ 100hz
-    public final int MINEVENTS =100;     // about 100 events
+    public final int MINEVENTS =60*10;   // about 10s of events
 	protected final ArrayList<WaitRequest> requests = new ArrayList<WaitRequest>();
 	protected DataRingBuffer dataBuffer;
 	protected final EventRingBuffer eventBuffer;
@@ -277,12 +277,12 @@ public class RingDataStore extends DataModel {
 
 		if (request.end < eventBuffer.indexOfOldest()) {
 			throw new DataException(
-					"Requested samples that do not exist (end index < index of oldest sample in ring)");
+					"Requested events that do not exist (end index < index of oldest sample in ring)");
 		}
 
 		if (request.begin < eventBuffer.indexOfOldest()) {
 			throw new DataException(
-					"Requested samples that do not exist (begin index < index of oldest sample in ring)");
+					"Requested events that do not exist (begin index < index of oldest sample in ring)");
 		}
 
 		final int nEvents = request.end - request.begin + 1;

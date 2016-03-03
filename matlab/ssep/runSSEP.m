@@ -1,48 +1,79 @@
 configureSSEP;
 
-% get the cap information.... 2X
-%N.B. use 1010 for emotiv so non-eeg are labelled correctly
-if( ~exist('capFile','var') || isempty(capFile) ) 
-  [fn,pth]=uigetfile('../utilities/*.txt','Pick cap-file'); capFile=fullfile(pth,fn);
-  if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
-end
-if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
-thresh=[.5 3];  badchThresh=.5;
-if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4; end;
-fprintf('Capfile: %s\n',capFile);
+% create the control window and execute the phase selection loop
+contFig=figure(1);
+set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
+axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
+set(contFig,'Units','pixel');wSize=get(contFig,'position');fontSize = .05*wSize(4);
+%        Instruct String          Phase-name
+menustr={'0) EEG'                 'eegviewer';
+         '1) Practice'            'practice';
+			'2) Calibrate'           'calibrate'; 
+         '3) Calibrate (Psychtoolbox)'        'calibrateptb'; 
+			'4) Train Classifier'    'trainersp';
+		   '5) Feedback'            'epochfeedback';
+			'6) Feedback (Psychtoolbox)'         'epochfeedbackptb';
+			'q) quit'                'quit';
+};
+txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
+			  'HorizontalAlignment','left','color',[1 1 1]);
+	 % BODGE: point to move around to update the plot to force key processing
+ph=[];if ( exist('OCTAVE_VERSION') ) ph=plot(1,0,'k'); end
+										  % install listener for key-press mode change
+set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
+set(contFig,'userdata',[]);
+drawnow; % make sure the figure is visible
+subject='test';
 
 sendEvent('experiment.ssep','start');
-% create the control window and execute the phase selection loop
-contFig=controller(); info=guidata(contFig); 
 while (ishandle(contFig))
   set(contFig,'visible','on');
-  uiwait(contFig); % CPU hog on ver 7.4
+
+  phaseToRun=[];
+  if ( exist('OCTAVE_VERSION','builtin') ) 
+	 % BODGE: move point to force key-processing
+	 if ( ~isempty(ph) ) fprintf('.');set(ph,'ydata',rand(1)*.01); end
+  end
+  drawnow;
+  pause(.1);
   if ( ~ishandle(contFig) ) break; end;
-  set(contFig,'visible','off');
-  info=guidata(contFig); 
-  subject=info.subject;
-  phaseToRun=lower(info.phaseToRun);
+
+  % process any key-presses
+  modekey=get(contFig,'userdata'); 
+  if ( ~isempty(modekey) ) 	 
+	 fprintf('key=%s\n',modekey);
+	 phaseToRun=[];
+	 if ( ischar(modekey(1)) )
+		ri = strmatch(modekey(1),menustr(:,1)); % get the row in the instructions
+		if ( ~isempty(ri) ) 
+		  phaseToRun = menustr{ri,2};
+		end
+	 end
+    set(contFig,'userdata',[]);
+  end
+
+  if ( isempty(phaseToRun) ) pause(.3); continue; end;
+
   fprintf('Start phase : %s\n',phaseToRun);
+  set(contFig,'visible','off');
   
   switch phaseToRun;
     
    %---------------------------------------------------------------------------
    case 'capfitting';
-    % run the code directly
-    fig=figure(2);clf; % new figure
-    capFitting('noiseThresholds',thresh,'badChThreshold',badchThresh,'verb',verb,'showOffset',0,'capFile',capFile,'overridechnms',overridechnms);
-    if ( ishandle(fig) ) close(fig); end;
-    
+    sendEvent('subject',subject);
+    sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end'); % wait until finished	  
+     
    %---------------------------------------------------------------------------
    case 'eegviewer';
-    % run the code directly
-    fig=figure(2);clf; % new figure
-    eegViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms);
-    if ( ishandle(fig) ) close(fig); end;
-
+    sendEvent('subject',subject);
+    sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end'); % wait until finished
+	  
    %---------------------------------------------------------------------------
    case 'practice';
-    sendEvent('subject',info.subject);
+    sendEvent('subject',subject);
     sendEvent(phaseToRun,'start');
     onSeq=nSeq; nSeq=4; % override sequence number
     onRepetitions=nRepetitions; nRepetitions=3;
@@ -56,64 +87,53 @@ while (ishandle(contFig))
     nRepetitions=onRepetitions;
     
    %---------------------------------------------------------------------------
-   case {'calibrate','calibration'};
-    sendEvent('subject',info.subject);
-    sendEvent('startPhase.cmd',phaseToRun);
+   case {'calibrate','calibration','calibrateptb','calibrationptb'};
+    sendEvent('subject',subject);
+    sendEvent('startPhase.cmd','calibrate');
     sendEvent(phaseToRun,'start');
-    %try
-      ssepCalibrateStimulus;
+	 %try
+	 if ( ~isempty(strfind(lower(phaseToRun),'ptb') ) )
+		ssepCalibrateStimulusPTB; % PsychToolBox version
+	 else
+		ssepCalibrateStimulus;
+	 end
     %catch
       % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-      sendEvent('stimulus.training','end');    
     %end
+    sendEvent('calibrate','end');    
     sendEvent(phaseToRun,'end');
 
    %---------------------------------------------------------------------------
-   case {'calibrateptb','calibrationptb'};
-    sendEvent('subject',info.subject);
-    sendEvent('startPhase.cmd',phaseToRun);
-    sendEvent(phaseToRun,'start');
-    %try
-      ssepCalibrateStimulusPTB;
-    %catch
-      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-      sendEvent('stimulus.training','end');    
-    %end
-    sendEvent(phaseToRun,'end');
-
-   %---------------------------------------------------------------------------
-   case {'train','classifier'};
-    sendEvent('subject',info.subject);
+   case {'train','classifier','trainerp','trainersp'};
+    sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until training is done
     buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);  
        
    %---------------------------------------------------------------------------
-   case {'testing','test'};
-    sendEvent('subject',info.subject);
+   case {'testing','test','epochfeedback','epochfeedbackptb'};
+    sendEvent('subject',subject);
     %sleepSec(.1);
     sendEvent(phaseToRun,'start');
     %try
-      sendEvent('startPhase.cmd','testing');
+    sendEvent('startPhase.cmd','testing');
+	 if ( ~isempty(strfind(lower(phaseToRun),'ptb')) )
+		ssepFeedbackStimulusPTB; % PsychToolBox version
+	 else
       ssepFeedbackStimulus;
+	 end
     %catch
       % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-      sendEvent('stimulus.test','end');
     %end
+    sendEvent('testing','end');
     sendEvent(phaseToRun,'end');
+    
+   %---------------------------------------------------------------------------
+    case {'quit','exit'};
+      break;
   end
 
-  info.phasesCompleted={info.phasesCompleted{:} info.phaseToRun};
-  if ( ~ishandle(contFig) ) 
-    oinfo=info; % store old info
-    contFig=controller(); % make new figure
-    info=guidata(contFig); % get new info
-                           % re-place old info
-    info.phasesCompleted=oinfo.phasesCompleted;
-    info.phaseToRun=oinfo.phaseToRun;
-    info.subject=oinfo.subject; set(info.subjectName,'String',info.subject);
-    guidata(contFig,info);
-  end;
+    
   %for i=1:numel(info.phasesCompleted); % set all run phases to have green text
   %    set(getfield(info,[info.phasesCompleted{i} 'But']),'ForegroundColor',[0 1 0]);
   %end

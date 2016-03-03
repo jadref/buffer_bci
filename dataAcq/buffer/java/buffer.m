@@ -112,12 +112,15 @@ switch cmd;
     if ( isfield(detail,'fs') ) fs=detail.fs; else fs=detail.fsample; end;
     hdr=javaObject('nl.fcdonders.fieldtrip.bufferclient.Header',detail.nchans,fs,detail.data_type);    
   end
-  if ( isfield(detail,'labels') )
-    hdr.labels=detail.labels; % N.B. inconsistent names btw java and mex versions    
-  elseif ( isfield(detail,'channel_names') )
-    hdr.labels=detail.channel_names; % N.B. inconsistent names btw java and mex versions
-  elseif ( isfield(detail,'label') )
-    hdr.labels=detail.label;
+  try
+	 if ( isfield(detail,'labels') )
+		hdr.labels=detail.labels; % N.B. inconsistent names btw java and mex versions    
+	 elseif ( isfield(detail,'channel_names') )
+		hdr.labels=detail.channel_names; % N.B. inconsistent names btw java and mex versions
+	 elseif ( isfield(detail,'label') )
+		hdr.labels=detail.label;
+	 end
+  catch
   end
   bufClient.putHeader(hdr);
  
@@ -173,12 +176,12 @@ switch cmd;
  case 'put_evt';
   if ( numel(detail)==1 ) 
 	 if ( islogical(detail.value) ) detail.value=single(detail.value); end; % BODGE: convert to single float
-    e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.bufferclient.BufferEvent',detail.type,detail.value,int32(detail.sample)));
+    e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.bufferclient.BufferEvent',detail.type,detail.value,detail.sample));
   else
     for ei=1:numel(detail);
       evt=detail(ei);
 		if ( islogical(evt.value) ) evt.value=single(evt.value); end; % BODGE: convert to single float
-      e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.bufferclient.BufferEvent',evt.type,evt.value,int32(evt.sample)));
+      e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.bufferclient.BufferEvent',evt.type,evt.value,evt.sample));
     end
   end
   if ( nargout>0 ) % convert to matlab (quickly, getArray is v.slow)

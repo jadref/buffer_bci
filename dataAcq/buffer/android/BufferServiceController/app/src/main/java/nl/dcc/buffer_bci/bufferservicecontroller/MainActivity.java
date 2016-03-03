@@ -6,8 +6,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.*;
+
+import nl.dcc.buffer_bci.C;
+import nl.dcc.buffer_bci.R;
 import nl.dcc.buffer_bci.bufferservicecontroller.visualize.BubbleSurfaceView;
 import nl.dcc.buffer_bci.bufferclientsservice.ThreadInfo;
 import nl.dcc.buffer_bci.bufferclientsservice.base.Argument;
@@ -20,24 +24,26 @@ public class MainActivity extends Activity {
 
     public static String TAG = MainActivity.class.getSimpleName();
 
-    public ServerController serverController;
-    public ClientsController clientsController;
+    public ServerController serverController=null;
+    public ClientsController clientsController=null;
 
     private BroadcastReceiver mMessageReceiver;
 
     // Gui
     private TextView textView;
-    private LinearLayout table;
-    private HashMap<Integer, Integer> threadToView;
+    private LinearLayout table; // table for the toggle switches controlling things
+    private HashMap<Integer, Integer> threadToView; // mapping from threadID -> table Idx for the toggle view
     private BubbleSurfaceView surfaceView;
+    //private HeartBeatTimer heartBeatTimer;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        //android.os.Debug.waitForDebugger();
         setContentView(R.layout.main_activity);
         textView = (TextView) findViewById(R.id.textView);
-        table = (LinearLayout) findViewById(R.id.switches);
+        table = (LinearLayout) findViewById(R.id.switches); // N.B. the switches for server/client defined in the resources...
         threadToView = new HashMap<Integer, Integer>();
         surfaceView = (BubbleSurfaceView) findViewById(R.id.surfaceView);
 
@@ -51,7 +57,7 @@ public class MainActivity extends Activity {
         }
 
         if (savedInstanceState == null) {
-            IntentFilter intentFilter = new IntentFilter(C.FILTER_FROM_SERVER);
+            IntentFilter intentFilter = new IntentFilter(C.SEND_UPDATE_INFO_TO_CONTROLLER_ACTION);
             mMessageReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(final Context context, Intent intent) {
@@ -60,12 +66,19 @@ public class MainActivity extends Activity {
             };
             this.registerReceiver(mMessageReceiver, intentFilter);
         }
+
+        // initialize the GUI for the first time.
+        //updateServerGui();
+        //updateClientsGui();
+        //heartBeatTimer = new HeartBeatTimer();
+        //heartBeatTimer.start();
     }
 
     @Override
     public void onStop() {
         super.onStop();
         this.unregisterReceiver(mMessageReceiver);
+        //if (heartBeatTimer != null) heartBeatTimer.stopTimer();
     }
 
     @Override
@@ -93,7 +106,23 @@ public class MainActivity extends Activity {
             serverController.initialUpdate();
         }
         serverController.updateBufferInfo();
-        this.updateConnectionsGui();
+        this.updateServerGui();
+    }
+
+    private void updateServerStatus() {
+        boolean running=false;
+        if (serverController != null) {
+            running = serverController.isBufferServerServiceRunning();
+        }
+        ((Switch) table.getChildAt(0)).setChecked(running);
+    }
+
+    private void updateClientsStatus() {
+        boolean running=false;
+        if (clientsController != null) {
+            running = clientsController.isThreadsServiceRunning();
+        }
+        ((Switch) table.getChildAt(1)).setChecked(running);
     }
 
     private void updateBufferConnectionInfo(Intent intent) {
@@ -103,11 +132,19 @@ public class MainActivity extends Activity {
             bufferConnectionInfo[k] = intent.getParcelableExtra(C.BUFFER_CONNECTION_INFO + k);
         }
         serverController.updateBufferConnections(bufferConnectionInfo);
-        this.updateConnectionsGui();
+        this.updateServerGui();
     }
 
     private void updateThreadsInfo(Intent intent) {
-        ThreadInfo threadInfo = intent.getParcelableExtra(C.THREAD_INFO);
+        ThreadInfo threadInfo=null;
+        if ( intent.hasExtra(C.THREAD_INFO)) {
+            try {
+                threadInfo = intent.getParcelableExtra(C.THREAD_INFO);
+            } catch ( Exception ex) {
+                Log.d(TAG, "Couldn't unparcel the thread info......");
+                return;
+            }
+        }
         int nArgs = intent.getIntExtra(C.THREAD_N_ARGUMENTS, 0);
         Argument[] arguments = new Argument[nArgs];
         for (int i = 0; i < nArgs; i++) {
@@ -118,13 +155,19 @@ public class MainActivity extends Activity {
     }
 
     // Gui
-    private void updateConnectionsGui(){
-        textView.setText(serverController.toString());
+    private void updateServerGui() {
+        if ( serverController != null ) {
+            updateServerStatus();
+            textView.setText(serverController.toString());
+        }
     }
 
     private void updateClientsGui() {
+        if ( clientsController==null ) return;
+        updateClientsStatus();
+        // TODO: This is all a bit of a mess with info spread over different locations and potentially mis-aligned...
         int[] threadIDs = clientsController.getAllThreadIDs();
-        if (threadIDs.length < 1) {
+        if (threadIDs.length != threadToView.size()) {
             table.removeViews(2, threadToView.size());
             threadToView.clear();
         }
@@ -138,6 +181,11 @@ public class MainActivity extends Activity {
                 table.addView(newSwitch, newIndex);
                 threadToView.put(threadID, newIndex);
                 newIndex++;
+            } else { // update the switch state based on the thread state
+                int threadViewIdx = threadToView.get(threadID);
+                boolean running = clientsController.getThreadRunning(threadID);
+                Switch threadSwitch = ((Switch) table.getChildAt(threadViewIdx));
+                threadSwitch.setChecked(running);
             }
         }
     }
@@ -163,6 +211,7 @@ public class MainActivity extends Activity {
         } else {
             serverController.reloadConnections();
         }
+        updateServerGui();
     }
 
     public void startClients() {
@@ -180,7 +229,7 @@ public class MainActivity extends Activity {
         if (serverController.isBufferServerServiceRunning()) {
             result = serverController.stopServerService();
         }
-        updateConnectionsGui();
+        updateServerGui();
     }
 
     public void stopClients() {
@@ -206,5 +255,33 @@ public class MainActivity extends Activity {
         else
             stopClients();
     }
+
+
+//    protected class HeartBeatTimer extends Thread {
+//        // Thread to monitor the status of the clients/server services
+//        public boolean running = true;
+//
+//        @Override
+//        public void run() {
+////            while (running) {
+////                runOnUiThread(new Runnable() {
+////                    @Override
+////                    public void run() {
+////                        updateServerGui();
+////                        updateClientsGui();
+////                    }
+////                });
+////                try {
+////                    Thread.sleep(1000);
+////                } catch (final InterruptedException e) {
+////                    // TODO Auto-generated catch block
+////                    e.printStackTrace();
+////                }
+////            }
+//        }
+//        public void stopTimer() {
+//            running = false;
+//        }
+//    }
 }
 

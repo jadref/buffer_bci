@@ -74,7 +74,7 @@ stopwatch=getwTime(); printtime=stopwatch; fstart=stopwatch;
 % key listener
 if ( opts.keyboardEvents || opts.key2signal ) 
   fig=figure(1);clf;
-  set(fig,'name','Press key here to generate events','menubar','none','toolbar','none');
+  set(fig,'name','SignalProxy: Press key here to generate events','menubar','none','toolbar','none');
   ax=axes('position',[0 0 1 1],'visible','off',...
 			 'xlim',[0 1],'XLimMode','manual','ylim',[0 1],'ylimmode','manual','nextplot','add');
   set(fig,'Units','pixel');wSize=get(fig,'position'); fontSize = .05*wSize(4);
@@ -166,9 +166,13 @@ while( true )
   if ( opts.keyboardEvents || opts.key2signal )
     if ( ~ishandle(fig) ) break; end;
     ev=get(fig,'userdata');
-    if ( ~isempty(ev) && isfield(ev,'Character') )
-		h=char(ev.Character); 
-		if ( any(strcmp('shift',ev.Modifier)) ) h=upper(ev.Character); end;
+    try; 
+      h=char(ev.Character); 
+	  if ( any(strcmp('shift',ev.Modifier)) ) h=upper(h); end;
+    catch; 
+      h=[];
+    end;
+    if ( ~isempty(h) )
       fprintf('\nkey=%s\n',h);
       if ( opts.keyboardEvents ) 
         keyevt.value=h; 
@@ -180,7 +184,7 @@ while( true )
        case 'E'; erpSamp(1)=nsamp;
        case 'T'; erpSamp(2)=nsamp;
        case 'G'; erpSamp(3)=nsamp;
-		 case 'N'; erpSamp(4)=nsamp;
+	   case 'N'; erpSamp(4)=nsamp;
        otherwise
         if ( opts.key2signal ) 
 			  if ( single(h)>=single('0') && single(h)<=single('9') ) % number key = noise strength

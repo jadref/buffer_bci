@@ -6,4 +6,4 @@ if [ $# -gt 0 ]; then
 	 shift;
 fi
 echo Starting: ${buffdir}/buffer/java/SignalProxy.jar $@
-java -cp ${buffdir}/buffer/java/BufferClient.jar:${buffdir}/buffer/java/SignalProxy.jar nl.dcc.buffer_bci.SignalProxy $buffinfo $@
+exec java -cp ${buffdir}/buffer/java/BufferClient.jar:${buffdir}/buffer/java/SignalProxy.jar nl.dcc.buffer_bci.SignalProxy $buffinfo $@

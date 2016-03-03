@@ -10,13 +10,15 @@ MACHINE = $(shell uname -m)
 # defaults, might be overwritten further down
 CC = gcc
 INCPATH = -I.
-LIBPATH = -L.
-LIBS = -lbuffer -lm -lpthread
+LDPATH = -L.
+LDLIBS = -static -lbuffer -lm -lpthread  # static link to minimise dependencies at run-time?
+LDFLAGS= 
 
 ifneq (,$(findstring mingw, $(PLATFORM)))
-	INCPATH	+= -I../pthreads-win32/include
-	LIBPATH += -L../pthreads-win32/lib
-	LIBS += -lpthreadGC2
+	BINDIR  = ../win32
+	INCPATH += -I../pthreads-win32/include
+	LDPATH += -L../pthreads-win32/lib
+	LDLIBS += -lpthreadGC2
 	RM = del
 endif
 ifneq (,$(findstring cygwin, $(PLATFORM)))
@@ -24,8 +26,9 @@ ifneq (,$(findstring cygwin, $(PLATFORM)))
 endif
 
 ifeq "$(PLATFORM)" "x86_64-w64-mingw32"
+	BINDIR  = ../win64
 	INCPATH	+= -I../pthreads-win64/include
-	LIBPATH += -L../pthreads-win64/lib
+	LDPATH += -L../pthreads-win64/lib
 	RM = del
 endif
 
@@ -36,11 +39,13 @@ ifeq "$(UNAME)" "Darwin"
     # compile objects, libraries and applications for 32 and 64 bit.
     ifeq "$(MACHINE)" "i386"
         # compile for 32 bit
+	     BINDIR  = ../maci
         CFLAGS += -m32
         CXXFLAGS += -m32
         LDFLAGS += -m32
     endif
     ifeq "$(MACHINE)" "x86_64"
+	     BINDIR  = ../maci64
         # compile for 64 bit
         CFLAGS += -m64
         CXXFLAGS += -m64
@@ -48,14 +53,21 @@ ifeq "$(UNAME)" "Darwin"
     endif
 endif
 ifeq "$(PLATFORM)" "i686-linux-gnu"
-	CFLAGS	 += -DDISABLE_NAGLE
+	BINDIR  = ../glnx86
+	CFLAGS  += -DDISABLE_NAGLE
+endif
+ifneq (,$(findstring i686-64, $(PLATFORM)))
+	BINDIR  = ../glnx86_64
+	CFLAGS  += -DDISABLE_NAGLE
 endif
 
 CFLAGS += $(INCPATH) -Wunused -Wall -pedantic -O0 -fPIC -g
 CXXFLAGS += $(INCPATH) -Wunused -Wall -pedantic -O0 -fPIC -g
 
+TARGETS = libbuffer.a libclient.a demo_buffer_unix$(SUFFIX) demo_buffer$(SUFFIX) 
+
 ##############################################################################
-all: libbuffer.a libclient.a
+all: $(TARGETS)
 
 libbuffer.a: tcpserver.o tcpsocket.o tcprequest.o clientrequest.o dmarequest.o cleanup.o util.o printstruct.o swapbytes.o extern.o endianutil.o socketserver.o
 	 ar rv $@ $^
@@ -65,6 +77,15 @@ libclient.a: tcprequest.o util.o
 
 %.o: %.c buffer.h message.h extern.h swapbytes.h socket_includes.h unix_includes.h
 	$(CC) $(CFLAGS) -c $*.c
+
+demo_buffer$(SUFFIX) : demo_buffer$(SUFFIX).o
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDPATH) $(LDLIBS)
+	cp $@ $(BINDIR)
+
+# direct include the .o files to make a static link
+demo_buffer_unix$(SUFFIX) : demo_buffer_unix$(SUFFIX).o util.o tcpserver.o tcpsocket.o cleanup.o clientrequest.o tcprequest.o socketserver.o endianutil.o cleanup.o extern.o printstruct.o dmarequest.o
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDPATH) $(LDLIBS) 
+	cp $@ $(BINDIR)
 
 clean:
 	$(RM) *.o *.a *.obj core

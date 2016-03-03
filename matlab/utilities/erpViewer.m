@@ -37,18 +37,20 @@ opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,...
 				'capFile',[],'overridechnms',0,'welch_width_ms',500,...
 				'redraw_ms',250,'lineWidth',1,'sigProcOptsGui',1,...
             'dataStd',2.5,...
-				'incrementalDraw',1,'closeFig',1);
+				'incrementalDraw',1,'closeFig',0);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
 if ( isempty(opts.freqbands) && ~isempty(opts.fftfilter) ) opts.freqbands=opts.fftfilter; end;
-if ( isstr(opts.endType) ) opts.endType={opts.endType}; 
+if ( ischar(opts.endType) ) opts.endType={opts.endType}; 
 elseif ( iscell(opts.endType) && numel(opts.endType)>0 && ~iscell(opts.endType{1}) )
   opts.endType={opts.endType}; % ensure correct nesting so opts.endType{:} expands to type,value pair
 end;
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ); run(fullfile(fileparts(mfilename('fullpath')),'../utilities/initPaths.m')); end;
 if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics facility
-  if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
+  if ( ~isempty(strmatch('qt',available_graphics_toolkits())) )
+	 graphics_toolkit('qt'); 
+  elseif ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
     graphics_toolkit('qthandles'); % use fast rendering library
   elseif ( ~isempty(strmatch('fltk',available_graphics_toolkits())) )
     graphics_toolkit('fltk'); % use fast rendering library
@@ -142,8 +144,7 @@ else
 end
 
 % make the figure window
-clf;
-fig=gcf;
+fig=figure(1);clf;
 set(fig,'Name','ER(s)P Viewer : t=time, f=freq, r=rest, q,close window=quit','menubar','none','toolbar','none','doublebuffer','on');
 plotPos=ch_pos; if ( ~isempty(plotPos) ) plotPos=plotPos(:,iseeg); end;
 hdls=image3d(erp,1,'plotPos',plotPos,'Xvals',ch_names(iseeg),'Yvals',times,'ylabel','time (s)','disptype','plot','ticklabs','sw','legend','se','plotPosOpts.plotsposition',[.05 .08 .91 .85],'lineWidth',opts.lineWidth);

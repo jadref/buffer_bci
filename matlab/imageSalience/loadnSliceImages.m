@@ -13,6 +13,7 @@ for fi=1:numel(files);
 			 fprintf('Failed!\n',filei.name);
 			 continue;
 		  end
+		  if (size(img,3)==1 ) img=repmat(img,[1 1 3]); end; % make RGB to enforce color display
 		  [ans,imageDB(nTargets).name] = fileparts(filei.name);
 		  imageDB(nTargets).image      = img;
 		  % cut into pieces and store the bits

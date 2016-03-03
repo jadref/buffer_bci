@@ -36,19 +36,21 @@ public class ERSPClassifier extends PreprocClassifier {
 	 @Override
 	 public Matrix preproc(Matrix data){
 		  // Common pre-processing
-		  super.preproc(data);
+		  data = super.preproc(data);
 
 		  // Welch frequency estimation
-		  System.out.println( "Spectral transformation with welch method");
+		  if ( VERB>1 ) System.out.println(TAG+ "Data shape after preproc: " + data.shapeString());
+		  if ( VERB>1 ) System.out.println( "Spectral transformation with welch method");
 		  // TODO: Make welch more intelligent....
 		  data = data.welch(1, welchWindow, welchAveType, null, 0);
-		  System.out.println( "Data shape after welch frequency estimation: " + data.shapeString());
+		  if ( VERB>1 ) System.out.println(TAG+  "New size: " + data.shapeString());
 
 		  // Selecting frequencies
 		  if (windowFrequencyIdx != null) {
+				if ( VERB>1 ) System.out.println(TAG+"Frequency selection");
 				int[] allRows = Matrix.range(0, data.getRowDimension(), 1);
 				data = new Matrix(data.getSubMatrix(allRows, windowFrequencyIdx));
-				System.out.println( "Data shape after frequency selection: " + data.shapeString());
+            if ( VERB>1 ) System.out.println(TAG+  "New size: " + data.shapeString());
 		  }
 		  return data;
 	 }
@@ -60,9 +62,9 @@ public class ERSPClassifier extends PreprocClassifier {
 		  data = preproc(data);
 		  
 		  // Linearly classifying the data
-		  System.out.println( "Classifying with linear classifier");
+		  if( VERB>1 ) System.out.println(TAG+ "Classifying with linear classifier");
 		  Matrix fraw = applyLinearClassifier(data, 0);
-		  System.out.println( "Results from the classifier (fraw): " + fraw.toString());
+		  if( VERB>1 ) System.out.println(TAG+ "Results from the classifier (fraw): " + fraw.toString());
 		  Matrix f = new Matrix(fraw.copy());
 		  Matrix p = new Matrix(f.copy());
 		  p.walkInOptimizedOrder(new DefaultRealMatrixChangingVisitor() {
@@ -70,7 +72,7 @@ public class ERSPClassifier extends PreprocClassifier {
                 return 1. / (1. + Math.exp(-value));
 					 }
 				});
-		  System.out.println( "Results from the classifier (p): " + p.toString());
+		  if ( VERB>1 ) System.out.println(TAG+ "Results from the classifier (p): " + p.toString());
 		  return new ClassifierResult(f, fraw, p, data);
 	 }
 }

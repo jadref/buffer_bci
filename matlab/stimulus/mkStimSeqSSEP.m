@@ -37,7 +37,7 @@ nStim = duration/isi;
 stimTime=(1:nStim)*isi(1);
 eventSeq=[]; 
 stimSeq =zeros(nSymbs,nStim); % make stimSeq where everything is in background state
-for stimi=1:nSymbs;
+for stimi=1:size(periods,1);
   % N.B. include slight phase offset to prevent value being exactly==0
   stimSeq(stimi,:) = cos((stimTime+.0001+periods(stimi,2))/periods(stimi,1)*2*pi); 
 end

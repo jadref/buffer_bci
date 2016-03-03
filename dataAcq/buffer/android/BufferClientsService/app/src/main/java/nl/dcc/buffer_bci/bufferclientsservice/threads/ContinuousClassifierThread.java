@@ -93,6 +93,7 @@ public class ContinuousClassifierThread extends ThreadBase {
     }
 
     @Override public void stop() { if ( clsfr != null ) clsfr.stop(); }
+    @Override public boolean isrunning(){ if ( clsfr!=null ) return clsfr.isrunning(); return false; }
 
     /* Checks if external storage is available for read and write */
     public boolean isExternalStorageWritable() {
