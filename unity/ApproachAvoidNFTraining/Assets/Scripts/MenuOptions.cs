@@ -162,13 +162,8 @@ public class MenuOptions : MonoBehaviour {
 				yield return null;
 				if ( endAll ) break; // finish if quit from main-menu
 
-				int questionaireStage = 0;
-				while (questionaireStage < 3) {
-					if (moveForward)
-						questionaireStage++;
-					else
-						questionaireStage--;
-
+				int questionaireStage = 1;
+				while (questionaireStage <= 3) {
 					if (questionaireStage == 1)
 					{
 						HideAllBut (questionairePanel1);
@@ -184,6 +179,10 @@ public class MenuOptions : MonoBehaviour {
 					yield return null;
 					if ( endAll ) break; // finish if quit from main-menu
 
+					if (moveForward)
+						questionaireStage++;
+					else
+						questionaireStage--;
 				}
 			}
 

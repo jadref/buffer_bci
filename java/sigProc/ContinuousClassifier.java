@@ -314,6 +314,7 @@ public class ContinuousClassifier {
                     data = new Matrix(new Matrix(C.getDoubleData(fromId, toId)).transpose());
                 } catch (IOException e) {
                     e.printStackTrace();
+                    continue;
                 }
 					 if ( VERB>1 ) {
 						  System.out.println(TAG+ String.format(" Got data @ %d->%d samples", fromId, toId));

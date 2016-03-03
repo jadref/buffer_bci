@@ -316,7 +316,7 @@ int dmarequest(const message_t *request, message_t **response_ptr) {
 					/* automatically convert event->def->sample to current sample number
 						(thus this event "belongs" to the first sample of the next block from PUT_DAT)
 					*/
-					if (event[thisevent].def->sample == EVENT_AUTO_SAMPLE) {
+					if (event[thisevent].def->sample <= EVENT_AUTO_SAMPLE) {
 						event[thisevent].def->sample = header->def->nsamples;
 					}
 					
