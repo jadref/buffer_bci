@@ -8,7 +8,7 @@ ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','b
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
         'color',[0 0 0],'DrawMode','fast','nextplot','replacechildren',...
         'xlim',[-1.5 1.5],'ylim',[-1.5 1.5],'Ydir','normal');
-[h,symbs]=initGrid(symbols);
+[h,symbs]=initGrid(symbols,'relfontSize',symbSize);
 
 % make the row/col flash sequence for each sequence
 [stimSeqRow,stimTimeRow]=mkStimSeqRand(vnRows,nRepetitions*vnRows,stimDuration);
@@ -20,6 +20,8 @@ stimSeqCol(size(symbols,2)+1:end,:)=[];  % remove the extra symbol
 % reset the cue and fixation point to indicate trial has finished  
 set(h(:),'color',bgColor);
 sendEvent('stimulus.feedback','start');
+% init the state so ignore predictions before this time
+[ans,state]=buffer_newevents(buffhost,buffport,[],'classifier.prediction',[],0);
 for si=1:nSeq;
 
   if ( ~ishandle(fig) ) break; end;
@@ -65,7 +67,7 @@ for si=1:nSeq;
   % combine the classifier predictions with the stimulus used
   % wait for the signal processing pipeline to return the sequence of epoch predictions
   if( verb>0 ) fprintf(1,'Waiting for predictions\n'); end;
-  [data,devents,state]=buffer_waitData(buffhost,buffport,[],'exitSet',{1000 'classifier.prediction'});
+  [devents,state]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],1000);
   if ( 0 && isempty(devents) ) devents=mkEvent('prediction',randn(nFlash,1)); end; % testing code ONLY
   if ( ~isempty(devents) ) 
     % correlate the stimulus sequence with the classifier predictions to identify the most likely
