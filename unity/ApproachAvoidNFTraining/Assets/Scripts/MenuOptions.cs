@@ -14,9 +14,10 @@ public class MenuOptions : MonoBehaviour {
 	public UnityEngine.UI.InputField sessionTxt;
 	public UnityEngine.UI.Toggle     agenticToggle;
 	public UnityEngine.UI.Text       cueText;
-	public GameObject restIntroPanel;
+	public UnityEngine.UI.Text       splashText;
+	public UnityEngine.UI.Text       restCueText;
+	public AudioSource audio;
 	public GameObject cuePanel;
-	public GameObject pausePanel;
 	public GameObject questionairePanel1;
 	public GameObject questionairePanel2;
 	public GameObject questionairePanel3;
@@ -25,8 +26,6 @@ public class MenuOptions : MonoBehaviour {
 
 	public GameObject restStage;
 	public GameObject trainingStage;
-
-	private GameObject[] menus;
 
 	private static int sessions;
 
@@ -45,10 +44,12 @@ public class MenuOptions : MonoBehaviour {
 			yield return null; // wait to be called back when the stage has finished
 			if ( endAll ) break; // finish if quit from main-menu
 
+			// show the connection panel, start trying to connect to the buffer, wait for continue to be pressed
 			HideAllBut (connectionPanel);
-			FTSInterface.setMenu (true);
-			Connect (); // connect to buffer
+			FTSInterface.setMenu (true);// BODGE: manually tell the FTS interface that it's visible.....
+			//Connect (); // connect to Buffer
 			yield return null;
+			if ( endAll ) break; // finish if quit from main-menu
 
 			HideAllBut (userInfoPanel);  // ask user information
 			yield return null;
@@ -63,33 +64,72 @@ public class MenuOptions : MonoBehaviour {
 
 			if (FTSInterface.getSystemIsReady()) {
 				FTSInterface.setMenu (false);
-				HideAllBut (restIntroPanel);
 			}
-			yield return null;
+
 
 			if (Config.preMeasure) {
-				FTSInterface.sendEvent (Config.restEventType, "start"); // first is pure rest, i.e. no baseline
+			cueText.text = Config.premeasureText;
+			HideAllBut (cuePanel);
+			yield return null;
+			if (endAll)
+				break; // finish if quit from main-menu
+
 				HideAllBut (restStage);
+				FTSInterface.sendEvent (Config.restEventType, "start"); // first is pure rest, i.e. no baseline
 				yield return null;
 				FTSInterface.sendEvent (Config.restEventType, "end");
+			}
+			if (Config.eyesOpenTest) {
+				cueText.text = Config.eyesOpenText;
+				HideAllBut (cuePanel);
+				yield return null;
+				if (endAll)
+					break; // finish if quit from main-menu
+
+				restCueText.text = Config.baselineCueText;
+				HideAllBut (restStage);
+				FTSInterface.sendEvent (Config.eyesOpenEventType, "start"); // first is pure rest, i.e. no baseline
+				yield return null;
+				FTSInterface.sendEvent (Config.eyesOpenEventType, "end");
+			}
+			if (Config.eyesClosedTest) {
+				cueText.text = Config.eyesClosedText;
+				HideAllBut (cuePanel);
+				yield return null;
+				if (endAll)
+					break; // finish if quit from main-menu
+
+				restCueText.text = Config.eyesClosedCue;
+				HideAllBut (restStage);
+				FTSInterface.sendEvent (Config.eyesClosedEventType, "start"); // first is pure rest, i.e. no baseline
+				yield return null;
+				FTSInterface.sendEvent (Config.eyesClosedEventType, "end");
+				audio.Play ();
 			}
 
 			cueText.text = Config.experimentInstructText;
 			HideAllBut (cuePanel);
 			yield return 0;
+			if ( endAll ) break; // finish if quit from main-menu
 
 			string trialType="";
 			for (int si=0; si<Config.trainingBlocks; si++) {
-				// run the rest stage
-				FTSInterface.sendEvent (Config.restEventType, "start");
-				FTSInterface.sendEvent (Config.baselineEventType, "start"); // rest is also baseline
-				HideAllBut (restStage);
+				// run the baseline stage
+				cueText.text = Config.baselineText;
+				HideAllBut (cuePanel);
 				yield return null;
-				FTSInterface.sendEvent (Config.restEventType, "end");
+				restCueText.text = Config.baselineCueText;
+				HideAllBut (restStage);
+				FTSInterface.sendEvent (Config.baselineEventType, "start"); // rest is also baseline
+				yield return null;
+				if ( endAll ) break; // finish if quit from main-menu
 				FTSInterface.sendEvent (Config.baselineEventType, "end");
 
 				// instructions before the control phase
-				if ( agenticControl && si/2==1 ) trialType="avoid"; else trialType="approach"; 
+				if ( agenticControl && si%2==1 ) 
+					trialType="avoid"; 
+				else 
+					trialType="approach";
 				if ( trialType.Equals("avoid") ) {
 					cueText.text = Config.avoidCueText;
 				} else if ( trialType.Equals("approach") ){
@@ -97,6 +137,7 @@ public class MenuOptions : MonoBehaviour {
 				}
 				HideAllBut (cuePanel);
 				yield return 0;
+				if ( endAll ) break; // finish if quit from main-menu
 
 				// run the training stage
 				FTSInterface.sendEvent (Config.trialEventType, "start");
@@ -104,12 +145,16 @@ public class MenuOptions : MonoBehaviour {
 				HideAllBut (trainingStage);
 				yield return null;
 				FTSInterface.sendEvent (Config.trialEventType, "end");
-
-				HideAllBut(pausePanel); // wait for user to continue
-				yield return null;
+				if ( endAll ) break; // finish if quit from main-menu
 			}
 
 			if ((bool)Config.questionaire) {
+
+				cueText.text = Config.questionaireText;
+				HideAllBut (cuePanel);
+				yield return null;
+				if ( endAll ) break; // finish if quit from main-menu
+
 				int questionaireStage = 0;
 				while (questionaireStage < 3) {
 					if (moveForward)
@@ -130,6 +175,7 @@ public class MenuOptions : MonoBehaviour {
 						HideAllBut (questionairePanel3);
 					}
 					yield return null;
+					if ( endAll ) break; // finish if quit from main-menu
 
 				}
 			}
@@ -137,10 +183,14 @@ public class MenuOptions : MonoBehaviour {
 			if ((bool)Config.evaluation) {
 				LoadEvaluationPage ();
 				yield return null;
+				if ( endAll ) break; // finish if quit from main-menu
 			}
 		}
+
+		splashText.text = Config.farwellText;
 		HideAllBut (loadingPanel);
 		Disconnect(true);
+		Application.Quit ();
 	}
 
 	public void nextStage(){
@@ -151,19 +201,13 @@ public class MenuOptions : MonoBehaviour {
 		moveForward = false;
 		phaseMachine.MoveNext ();
 	}
-
 	// Initialize
 	void Awake ()
 	{
-		Screen.sleepTimeout = SleepTimeout.NeverSleep;
+		Screen.sleepTimeout = (int)(Config.trainingDuration * 2.0); //SleepTimeout.NeverSleep;
 
-		trainingStage.GetComponent<Training> ().Initialize ();
-
-		menus = new GameObject[transform.childCount];
-		for (int i = 0; i < transform.childCount; i++)
-		{
-			menus [i] = transform.GetChild (i).gameObject;
-		}
+		//trainingStage.GetComponent<Training> ().Initialize ();
+		HideAll();
 		// start the first stage and get an iterator to the state-machine management
 		phaseMachine = nextStageInner ().GetEnumerator(); // get the state machine object 
 		nextStage (); // start the 1st stage
@@ -180,25 +224,22 @@ public class MenuOptions : MonoBehaviour {
 		obj.SetActive (true);
 	}
 
-	public void HideAllBut (GameObject obj)
+	public void HideAll ()
 	{
-		for (int i = 0; i < menus.Length; i++)
-		{
-			Hide (menus [i]);
-		}
 		Hide (trainingStage);
 		Hide (restStage);
+		for (int i = 0; i < transform.childCount; i++) {
+			GameObject menu = transform.GetChild (i).gameObject;
+			Hide (menu);
+		}
+	}
 
+	public void HideAllBut (GameObject obj)
+	{
+		HideAll ();
 		Show (obj);
 	}
-
-
-	// Menu Options
-	public void Connect()
-	{
-		StartCoroutine (FTSInterface.startServerAndAllClients());
-	}
-
+		
 	public void Refresh()
 	{
 		StartCoroutine (FTSInterface.refreshClientAndServer ());

@@ -55,10 +55,17 @@ public class UnityBuffer : MonoBehaviour {
 	}
 	
 	
-	
+	// when made visible
+	void OnEnable(){
+		
+	}
+	// called when the app is made invisible..
+	void OnDisable() {
+		Debug.Log ("disabling unity buffer");
+	}
 	
 	void Awake () {
-	
+		Debug.Log ("Awoke UnityBuffer");
 		bufferClient = new BufferClient();
 		bufferEvents = new List<BufferEvent>();
 		

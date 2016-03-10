@@ -24,6 +24,10 @@ public class Rest : MonoBehaviour {
 		startTime = Time.time;
 	}
 
+	// called when the app is made invisible..
+	void OnDisable() {
+	}
+
 	// Update is called once per frame
 	void Update ()
 	{

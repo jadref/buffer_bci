@@ -6,7 +6,7 @@ function [hdls,symbols,opts]=initGrid(symbols,varargin)
 % Inputs:
 %  symbols - {cell nRow x nCols} cell array of strings to layout
 % Options:
-%  fontSize
+%  relfontSize - font size as fraction of screen size
 %  fig - [1 x 1] handle to the figure to draw in
 % Outputs:
 %  hdls -- [nRow x nCols] set of handles to the text elements

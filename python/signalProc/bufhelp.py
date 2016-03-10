@@ -1,66 +1,127 @@
-import sys
-sys.path.append("../../dataAcq/buffer/python")
-from FieldTrip import Client, Event
-from time import time, sleep
+import sys, os
+sys.path.append(os.path.dirname(__file__) + "/../../dataAcq/buffer/python")
+import FieldTrip
+import time
 from math import ceil
 import socket
 
-def connect(header=True, verbose = True):
-    """Connects to the buffer. And waits for a header (unless otherwise
+MAXEVENTHISTORY=50
+
+def askaddress():
+    port=1972
+    adress = raw_input("Buffer adress (default is \"localhost:1972\"):")    
+    if adress == "":
+        adress = "localhost"
+    else:
+        try:
+            split = adress.split(":")
+            adress = split[0]
+            port = int(split(1))
+        except ValueError:
+            print "Invalid port formatting " + split[1]
+        except IndexError:
+            print "Invalid adress formatting " + adress
+    return (address,port)
+    
+def connect(address="localhost", port=1972, header=True, verbose = True):
+    """Connects to the buffer at given address. And waits for a header (unless otherwise
     specified). The ftc variable contains the client connection."""
     
-    global ftc, event
-    ftc = Client()
-    event = Event()
-
-    adress = "localhost"
-    port = 1972
-
-    if verbose:
-        adress = raw_input("Buffer adress (default is \"localhost:1972\"):")    
-        if adress == "":
-            adress = "localhost"
-        else:
-            try:
-                split = adress.split(":")
-                adress = split[0]
-                port = int(split(1))
-            except ValueError:
-                print "Invalid port formatting " + split[1]
-            except IndexError:
-                print "Invalid adress formatting " + adress
-    
+    global ftc
+    ftc = FieldTrip.Client()
     while not ftc.isConnected:
         try:
-            ftc.connect(adress, port)
+            ftc.connect(address, port)
         except socket.error:
-            print "Failed to connect at " + adress + ":" + str(port)
-            sleep(1)
+            print "Failed to connect at " + address + ":" + str(port)
+            time.sleep(1)
                    
     if header:
+        global hdr
         hdr = waitforheader(verbose)
         return ftc,hdr
     
     return ftc
-    
+
 def waitforheader(verbose = True):
     """Waits for a header to be added to the buffer."""
-    global fSample, nSamples, lastupdate
+    global fSample, nSamples, lastupdate, hdr
     
     hdr = ftc.getHeader()
     while hdr is None:
         if verbose:
             print "Waiting for header"
-        sleep(1)
+        time.sleep(1)
         hdr = ftc.getHeader()
         
     nSamples = hdr.nSamples
     fSample = hdr.fSample
-    lastupdate = time()
+    lastupdate = time.time()
     
     return hdr
         
-def sendevent(type, value, duration = 0, sample=-1, offset=-1, verbose = True):
+# function to send events to data buffer
+# use as: sendEvent("markername", markernumber, offset)
+def sendEvent(event_type, event_value, offset=0):
+    global ftc
+    e = FieldTrip.Event()
+    e.type = event_type
+    e.value = event_value
+    if offset>0 : 
+        sample, bla = ftc.poll()
+        e.sample = sample + offset + 1
+    ftc.putEvents(e)
+
+globalstate=None
+def buffer_newevents(evttype=None,timeout_ms=500,state=True,verbose=False):
+    '''
+    Wait for and return any new events recieved from the buffer between
+    calls to this function
+    
+    timeout    = maximum time to wait in milliseconds before returning
+    state      = internal state recording events processed so far
+                 use state=None to reset all history
+    '''
+    global ftc,nEvents,globalstate # use to store number events processed accross function calls
+    useglobal=False
+    if state is None :
+        state = ftc.poll();
+    elif state==True : # use single global state
+        useglobal=True
+        if globalstate is None:
+            globalstate = ftc.poll();
+        state = globalstate
+
+    if verbose:
+        print("Waiting for event(s) " + str(evtypes) + " with timeout_ms " + str(timeout_ms))
+
+    start = time.time()
+    elapsed_ms = 0
+    nEvents = state[1]
+    events=[]
+    while len(events)==0 and elapsed_ms<timeout_ms:
+        nSamples,curEvents=ftc.wait(-1,nEvents, int(timeout_ms - elapsed_ms))
+        if curEvents>nEvents:
+	    if nEvents<curEvents-MAXEVENTHISTORY:
+		print("Warning: long delay means missed events")
+		nEvents = curEvents-MAXEVENTHISTORY
+            events = ftc.getEvents([nEvents,curEvents-1])
+            if not evttype is None and not events is None:
+                events = filter(lambda x: x.type in evttype, events)
+        nEvents = curEvents # update starting number events (allow for buffer restarts)
+        elapsed_ms = (time.time() - start)*1000
+
+    # update record of which events we have processed so far
+    state=(nSamples,nEvents)
+    globalstate=state
+
+    if useglobal: # return just the events
+        return events
+    else: # return events plus internal tracking state
+        return (events,state)
+
+
+def sendEventAuto(type, value, duration = 0, sample=-1, offset=-1, verbose = True):
     """Sends an event to the buffer with type type and value value. Unless 
     otherwise specified duration will be 0. Sample and offset will be estimated
     based on the global variables (unless specified)."""
@@ -70,7 +131,7 @@ def sendevent(type, value, duration = 0, sample=-1, offset=-1, verbose = True):
     event.value = value
     event.duration = duration
     if sample == -1 or offset == -1:
-        diffSamples = (time() - lastupdate) * fSample
+        diffSamples = (time.time() - lastupdate) * fSample
         if sample == -1:
             event.sample = int(nSamples + diffSamples)
         if offset == -1:
@@ -90,76 +151,11 @@ def update(verbose = True):
     global nSamples, lastupdate, nEvents
     nSamples = nsamp
     nEvents  = nevent
-    lastupdate = time()
+    lastupdate = time.time()
     if verbose:
         print "Updated. nSamples = " + str(nSamples) + " at lastupdate " + str(lastupdate)
+    return (nsamp,nevent)
 
-
-def buffer_newevents(evttype=None,timeout_ms=500,verbose=False):
-    '''
-    Wait for and return any new events recieved from the buffer between
-    calls to this function
-    
-    timeout    = maximum time to wait in milliseconds before returning
-    '''
-    global ftc,nEvents # use to store number events processed accross function calls
-    if not 'nEvents' in globals(): # first time initialize to events up to now
-    	start, nEvents = ftc.poll()
-
-    if verbose:
-        print("Waiting for event(s) " + str(evtypes) + " with timeout_ms " + str(timeout_ms))
-
-    start = time.time()
-    elapsed_ms = 0
-    events=[]
-    while len(events)==0 and elapsed_ms<timeout_ms:
-        nSamples,curEvents=ftc.wait(-1,nEvents, int(timeout_ms - elapsed_ms))
-        if curEvents>nEvents:
-			if nEvents<curEvents-50:
-				print("Warning: long delay means missed events")
-				nEvents = curEvents-50
-            events = ftc.getEvents([nEvents,curEvents-1])            
-            if not evttype is None and not events is None:
-                events = filter(lambda x: x.type in evttype, events)
-        nEvents = curEvents # update starting number events (allow for buffer restarts)
-        elapsed_ms = (time.time() - start)*1000        
-    return events
-
-procnEvents=-1
-def waitnewevents(evtypes, timeout_ms=1000,verbose = True):      
-    """Function that blocks until a certain type of event is recieved. 
-    evttypes is a list of event type strings, recieving any of these event types termintes the block.  
-    All such matching events are returned
-    """    
-    global ftc, nEvents, nSamples, procnEvents
-    start = time.time()
-    update()
-    if procnEvents<=0:
-       procnEvents=nEvents
-    elapsed_ms = 0
-    
-    if verbose:
-        print "Waiting for event(s) " + str(evtypes) + " with timeout_ms " + str(timeout_ms)
-    
-    evt=None
-    while elapsed_ms < timeout_ms and evt is None:
-        nSamples, nEvents2 = ftc.wait(-1,procnEvents, timeout_ms - elapsed_ms)     
-
-        if nEvents2 > procnEvents : # new events to process
-            if procnEvents<nEvents2-50:
-                print("Warning: long delay means missed events")
-                procnEvents = nEvents2-50
-            evts = ftc.getEvents((procnEvents, nEvents2 -1))
-            evts = filter(lambda x: x.type in evtypes, evts)
-            if len(evts) > 0 :
-                evt=evts
-        
-        elapsed_ms = (time.time() - start)*1000
-        procnEvents=nEvents2
-        nEvents = nEvents2            
-    return evt
-
-    
 def waitforevent(trigger, timeout=1000,verbose = True):
     """Function that blocks until a certain event is sent. Trigger defines what
     event the function is waiting for based on createeventfilter
@@ -171,9 +167,9 @@ def waitforevent(trigger, timeout=1000,verbose = True):
     func = createeventfilter(trigger)
 
     global ftc
-    start = time()
+    start = time.time()
     nSamples, nEvents = ftc.poll()
-    elapsed = time()*1000 - start*1000
+    elapsed = time.time()*1000 - start*1000
     
     if verbose:
         print "Waiting for event " + str(trigger) + " with timeout " + str(timeout)
@@ -181,7 +177,11 @@ def waitforevent(trigger, timeout=1000,verbose = True):
     while elapsed < timeout:
         nSamples, nEvents2 = ftc.wait(-1,nEvents, timeout - elapsed)     
         
-        if nEvents != nEvents2:
+        if nEvents < nEvents2:
+            if nEvents<nEvents2-MAXEVENTHISTORY:
+                print("Warning: long delay means missed events")
+                nEvents = nEvents2-MAXEVENTHISTORY
+            
             e = func(ftc.getEvents((nEvents, nEvents2 -1)))
                 
             if len(e) == 1:
@@ -189,7 +189,7 @@ def waitforevent(trigger, timeout=1000,verbose = True):
             elif len(e) > 1:
                 return e
         
-        elapsed = time()*1000 - start*1000
+        elapsed = time.time()*1000 - start*1000
         nEvents = nEvents2
             
     return None
