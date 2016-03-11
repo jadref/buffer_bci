@@ -9,7 +9,6 @@ import nl.fcdonders.fieldtrip.bufferserver.data.DataModel;
 import nl.fcdonders.fieldtrip.bufferserver.data.Header;
 import nl.fcdonders.fieldtrip.bufferserver.data.RingDataStore;
 import nl.fcdonders.fieldtrip.bufferserver.data.SavingRingDataStore;
-import nl.fcdonders.fieldtrip.bufferserver.data.SimpleDataStore;
 import nl.fcdonders.fieldtrip.bufferserver.exceptions.DataException;
 import nl.fcdonders.fieldtrip.bufferserver.network.ConnectionThread;
 
@@ -20,290 +19,312 @@ import nl.fcdonders.fieldtrip.bufferserver.network.ConnectionThread;
  * @author wieke, jadref
  *
  */
-public class BufferServer extends Thread {
+public class BufferServer {
 
-	 static final int serverPort  =1972;    // default server port
-	 static final int dataBufSize =1024*60; // default save samples = 60s @ 1024Hz
-	 static final int eventBufSize=10*60;   // default save events  = 60s @ 10Hz
-    boolean run=false;
+    // maintains list of started FieldTrip buffer servers by this class    
+    static ArrayList<ServerSocket> serverSockets = new ArrayList<ServerSocket>();
+    static final int serverPort = 1972;    // default server port
+    static final int dataBufSize = 1024 * 60; // default save samples = 60s @ 1024Hz
+    static final int eventBufSize = 10 * 60;   // default save events  = 60s @ 10Hz
+    static final String savePath = ""; // default not saving data
+    
+    boolean run = false;
 
-	/**
-	 * Main method, starts running a server thread in the current thread.
-	 * Handles arguments.
-	 *
-	 * @param args
-	 *            <port> or <port> <nSamplesAndEvents> or <port> <nSamples>
-	 *            <nEvents>
-	 */
-	public static void main(final String[] args) {
-		 int logging=0;
-		BufferServer buffer=null;
-		if (args.length == 0 ){
-			 usage();
-			 System.exit(1);
-		} else if (args.length == 1) {
-			 try { 
-				  buffer = new BufferServer(Integer.parseInt(args[0]));
-			 } catch ( NumberFormatException e ){ // not a number, assume it's the save location
-				  buffer = new BufferServer(serverPort, dataBufSize, eventBufSize, args[0]);
-			 }
-		} else if (args.length == 2) {
-			buffer = new BufferServer(Integer.parseInt(args[0]),
-					Integer.parseInt(args[1]));
-		} else if (args.length == 3) {
-			buffer = new BufferServer(Integer.parseInt(args[0]),
-					Integer.parseInt(args[1]), Integer.parseInt(args[2]));
-		} else if (args.length == 4 ) { // 4rd arg is save location
-			 buffer = new BufferServer(Integer.parseInt(args[0]),
-												Integer.parseInt(args[1]), Integer.parseInt(args[2]),
-												args[3]);
-		} else if (args.length == 5 ) { // 5th arg is save location
-			 buffer = new BufferServer(Integer.parseInt(args[0]),
-												Integer.parseInt(args[1]), Integer.parseInt(args[2]),
-												args[3]);
-			 logging = Integer.parseInt(args[4]);
-		} else {
-			 buffer = new BufferServer(serverPort, dataBufSize, eventBufSize);
-		}
-		buffer.addMonitor(new SystemOutMonitor(logging));
-		buffer.run();
-		buffer.cleanup();
-	}
+    private DataModel dataStore;
+    private int portNumber;
 
-	 public static void usage(){
-		  System.err.println("java -jar BufferServer.jar PORT sampLen eventLen SaveLocation verbosityLevel");
-	 }
+    //
+    // Main method Start(), starts running a server thread in the current thread.
+    // Handles arguments.
+    //
+    // @param args <port> or <port> <nSamplesAndEvents> or <port> <nSamples>
+    // <nEvents>
+    //
+    public BufferServer() {
+        this.dataStore = null;
+    }
 
+    public void Start() {
+        BufferServerStart(serverPort, dataBufSize, eventBufSize, savePath, 0);
+    }
 
-	private final DataModel dataStore;
+    public void Start(int serverPort) {
+        BufferServerStart(serverPort, dataBufSize, eventBufSize, savePath, 0);
+    }
 
-	private final int portNumber;
-	private ServerSocket serverSocket;
-	private boolean disconnectedOnPurpose = false;
-	private final ArrayList<ConnectionThread> threads = new ArrayList<ConnectionThread>();
-	private FieldtripBufferMonitor monitor = null;
-	private int nextClientID = 0;
+    public void Start(int serverPort, int dataBufSize) {
+        BufferServerStart(serverPort, dataBufSize, eventBufSize, savePath, 0);
+    }
 
-	/**
-	 * Constructor, creates a simple datastore.
-	 *
-	 * @param portNumber
-	 */
-	public BufferServer(final int portNumber) {
-		this.portNumber = portNumber;
-		dataStore = new RingDataStore(dataBufSize,eventBufSize);
-		setName("Fieldtrip Buffer Server");
-	}
+    public void Start(int serverPort, int dataBufSize, int eventBufSize) {
+        BufferServerStart(serverPort, dataBufSize, eventBufSize, savePath, 0);
+    }
 
-	 public BufferServer(final String path, final int portNumber) {
-		this.portNumber = portNumber;
-		dataStore = new SavingRingDataStore(dataBufSize,eventBufSize,path);
-		System.err.println("Saving to : " + path);
-		setName("Fieldtrip Buffer Server");
-	}
+    public void Start(int serverPort, int dataBufSize, int eventBufSize, java.io.File file) {
+        BufferServerStart(serverPort, dataBufSize, eventBufSize, file.getPath(), 0);
+    }
 
-	/**
-	 * Constructor, creates a ringbuffer that stores nSamplesEvents number of
-	 * samples and events.
-	 *
-	 * @param portNumber
-	 * @param nSamplesEvents
-	 */
-	public BufferServer(final int portNumber, final int nSamplesEvents) {
-		this.portNumber = portNumber;
-		dataStore = new RingDataStore(nSamplesEvents);
-		setName("Fieldtrip Buffer Server");
-	}
+    public void Start(int serverPort, int dataBufSize, int eventBufSize, String path) {
+        BufferServerStart(serverPort, dataBufSize, eventBufSize, path, 0);
+    }
 
-	/**
-	 * Constructor, creates a ringbuffer that stores nSamples of samples and
-	 * nEvents of events.
-	 *
-	 * @param portNumber
-	 * @param nSamples
-	 * @param nEvents
-	 */
-	public BufferServer(final int portNumber, final int nSamples, final int nEvents) {
-		this.portNumber = portNumber;
-		dataStore = new RingDataStore(nSamples, nEvents);
-		setName("Fieldtrip Buffer Server");
-	}
+    private void BufferServerStart(int serverPort, int dataBufSize, int eventBufSize, String path, int verbosityLevel) {
 
-	public BufferServer(final int portNumber, final int nSamples, final int nEvents, final java.io.File file) {
-		this.portNumber = portNumber;
-		System.err.println("Saving to : " + file.getPath());
-		dataStore = new SavingRingDataStore(nSamples, nEvents, file);
-		setName("Fieldtrip Buffer Server");
-	}
+        if (!path.isEmpty()) {
+            this.dataStore = new SavingRingDataStore(dataBufSize, eventBufSize, path);
+        } else {
+            System.err.println("Not saving data!");
+            this.dataStore = new RingDataStore(dataBufSize, eventBufSize);
+        }
 
-	public BufferServer(final int portNumber, final int nSamples, final int nEvents, final String path) {
-		this.portNumber = portNumber;
-		System.err.println("Saving to : " + path);
-		dataStore = new SavingRingDataStore(nSamples, nEvents, path);
-		setName("Fieldtrip Buffer Server");
-	}
+        if (this.portNumber == serverPort) {
+            // First close previously opened server on this port
+        }
+        this.portNumber = serverPort;
 
-	public synchronized void addMonitor(final FieldtripBufferMonitor monitor) {
-		this.monitor = monitor;
-		 synchronized ( threads ) {
-			  for (final ConnectionThread thread : threads) {
-					thread.addMonitor(monitor);
-			  }
-		 }
-	}
+        Thread runner;
 
-	/**
-	 * Attempts to close the current serverSocket.
-	 *
-	 * @throws IOException
-	 */
-	public void closeConnection() throws IOException {
-		serverSocket.close();
-	}
+        BufferServerThread bufferServerThread;
+        bufferServerThread = new BufferServerThread(this, serverPort, dataBufSize, eventBufSize, verbosityLevel);
 
-	/**
-	 * Flushes the events from the datastore.
-	 */
-	public void flushEvents() {
-		try {
-			dataStore.flushEvents();
-			if (monitor != null) {
-				monitor.clientFlushedEvents(-1, System.currentTimeMillis());
-			}
-		} catch (final DataException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
+        runner = new Thread(bufferServerThread, "FieldTrip Buffer"); // (1) Create a new thread.       
+        System.err.println("Start: " + runner.getName());
+        runner.start(); // (2) Start the thread.        
+    }
 
-	/**
-	 * Flushes the header, data and samples from the dataStore.
-	 */
-	public void flushHeader() {
-		try {
-			dataStore.flushHeader();
-			if (monitor != null) {
-				monitor.clientFlushedHeader(-1, System.currentTimeMillis());
-			}
-		} catch (final DataException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
+    public static void usage() {
+        System.err.println("JAVA:   mybuffer = new BufferServer(); mybuffer.Start(PORT, sampLen, eventLen, savePath, verbosityLevel");
+        System.err.println("MATLAB: mybuffer = nl.fcdonders.fieldtrip.bufferserver.BufferServer(); mybuffer.Start(PORT, samplen, eventlen, savePath, verbosityLevel)");
+    }
 
-	/**
-	 * Flushes the samples from the datastore.
-	 */
-	public void flushSamples() {
-		try {
-			dataStore.flushData();
-			if (monitor != null) {
-				monitor.clientFlushedData(-1, System.currentTimeMillis());
-			}
-		} catch (final DataException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
+    public ServerSocket serverSocket;
+    private boolean disconnectedOnPurpose = false;
+    private final ArrayList<ConnectionThread> threads = new ArrayList<ConnectionThread>();
+    private FieldtripBufferMonitor monitor = null;
+    private int nextClientID = 0;
 
-	/**
-	 * Puts a header into the dataStore.
-	 *
-	 * @param nChans
-	 * @param fSample
-	 * @param dataType
-	 * @return
-	 */
-	public boolean putHeader(final int nChans, final float fSample,
-			final int dataType) {
-		final Header hdr = new Header(nChans, fSample, dataType,
-				ByteOrder.nativeOrder());
-		try {
-			dataStore.putHeader(hdr);
-			if (monitor != null) {
-				monitor.clientPutHeader(dataType, fSample, nChans, -1,
-						System.currentTimeMillis());
-			}
-			return true;
-		} catch (final DataException e) {
-			 System.err.println("Error : " + e);
-			return false;
-		}
-	}
+    public void addMonitor(final FieldtripBufferMonitor monitor) {
+        this.monitor = monitor;
+        for (final ConnectionThread thread : threads) {
+            thread.addMonitor(monitor);
+        }
+    }
 
-	/**
-	 * Removes the connection from the list of threads.
-	 *
-	 * @param connection
-	 */
-	public void removeConnection(final ConnectionThread connection) {
-		 synchronized ( threads ) {
-			  threads.remove(connection);
-		 }
-	}
+    /**
+     * Attempts to close the current serverSocket.
+     *
+     * @throws IOException
+     */
+    public void closeConnection() throws IOException {
+        serverSocket.close();
+    }
 
-	/**
-	 * Opens a serverSocket and starts listening for connections.
-	 */
-	@Override
-	public void run() {
-       run=true;
-		 //final Thread mainThread = Thread.currentThread();
-		 // Add shutdown hook to force close and flush to disk of open files if interrupted/aborted
-		 Runtime.getRuntime().addShutdownHook(new Thread() { public void run() { cleanup(); } });		
-		 try {
-			serverSocket = new ServerSocket(portNumber);
-		} catch (final IOException e) {
-			 System.err.println("Could not listen on port " + portNumber);
-			 System.err.println(e);
-			 e.printStackTrace();
-		}
-		try {
-			 while (run) {
-				final ConnectionThread connection = new ConnectionThread(
-						nextClientID++, serverSocket.accept(), dataStore, this);
-				connection.setName("Fieldtrip Client Thread "
-						+ connection.clientAdress);
-				connection.addMonitor(monitor);
+    /**
+     * Flushes the events from the datastore.
+     */
+    public void flushEvents() {
+        try {
+            dataStore.flushEvents();
+            if (monitor != null) {
+                monitor.clientFlushedEvents(-1, System.currentTimeMillis());
+            }
+        } catch (final DataException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
 
-				synchronized (threads) {
-					threads.add(connection);
-				}
-				connection.start();
-			}
-		} catch (final IOException e) {
-			if (!disconnectedOnPurpose) {
-				System.err.println("Server socket disconnected " + portNumber);
-				System.err.println(e);
-			} else {
-				 synchronized ( threads ) {
-					  for (final ConnectionThread thread : threads) {
-							thread.disconnect();
-					  }
-				 }
-			}
-		}
-	}
+    /**
+     * Flushes the header, data and samples from the dataStore.
+     */
+    public void flushHeader() {
+        try {
+            dataStore.flushHeader();
+            if (monitor != null) {
+                monitor.clientFlushedHeader(-1, System.currentTimeMillis());
+            }
+        } catch (final DataException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
 
-	/**
-	 * Stops the buffer thread and closes all existing client connections.
-	 */
-	public void stopBuffer() {
-      run=false;
-		synchronized ( threads ) {
-			try {
-				 for (final ConnectionThread thread : threads) {
-					  thread.disconnect();
-				 }
-				 closeConnection();
-				 disconnectedOnPurpose = true;
-			} catch (final IOException e) {
-			}
-		}
-	}
+    /**
+     * Flushes the samples from the datastore.
+     */
+    public void flushSamples() {
+        try {
+            dataStore.flushData();
+            if (monitor != null) {
+                monitor.clientFlushedData(-1, System.currentTimeMillis());
+            }
+        } catch (final DataException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
 
-	 public void cleanup(){
-		  System.err.println("Running cleanup code");
-		  dataStore.cleanup();
-	 }
+    /**
+     * Puts a header into the dataStore.
+     *
+     * @param nChans
+     * @param fSample
+     * @param dataType
+     * @return
+     */
+    public boolean putHeader(final int nChans, final float fSample,
+            final int dataType) {
+        final Header hdr = new Header(nChans, fSample, dataType,
+                ByteOrder.nativeOrder());
+        try {
+            dataStore.putHeader(hdr);
+            if (monitor != null) {
+                monitor.clientPutHeader(dataType, fSample, nChans, -1,
+                        System.currentTimeMillis());
+            }
+            return true;
+        } catch (final DataException e) {
+            System.err.println("Error : " + e);
+            return false;
+        }
+    }
+
+    /**
+     * Removes the connection from the list of threads.
+     *
+     * @param connection
+     */
+    public synchronized void removeConnection(final ConnectionThread connection) {
+        threads.remove(connection);
+    }
+
+    public void listAllServerSockets() {
+        // list all selectable sockets (clients/buffers)
+        for (int i = 0; i < BufferServer.serverSockets.size(); i++) {
+            System.out.printf("server socket: %s\n", BufferServer.serverSockets.get(i).toString());
+        }
+    }
+
+    public void removeAllServerSockets() throws IOException {
+        // remove all selectable sockets (clients/buffers)
+        ServerSocket s;
+        while (BufferServer.serverSockets.size() > 0) {
+            s = BufferServer.serverSockets.get(0);
+            if (s != null) {
+                s.close();
+            }
+            BufferServer.serverSockets.remove(0);
+        }
+    }
+
+    /**
+     * Opens a serverSocket and starts listening for connections.
+     *
+     * @throws java.io.IOException
+     */
+    public void run() throws IOException {
+        run = true;
+
+        System.out.printf("Start listening for incoming client connections\n");
+        //final Thread mainThread = Thread.currentThread();
+        // Add shutdown hook to force close and flush to disk of open files if interrupted/aborted
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                cleanup();
+            }
+        });
+        try {
+            serverSocket = new ServerSocket(portNumber);
+            BufferServer.serverSockets.add(serverSocket);
+            System.out.printf("Server socket opened on port: %d\n", portNumber);
+        } catch (final IOException e) {
+            System.err.println("Could not listen on port " + portNumber);
+            System.out.printf("Could not listen on port: %d\n", portNumber);
+            System.err.println(e);
+        }
+        try {
+            while (run) {
+                final ConnectionThread connection = new ConnectionThread(
+                        nextClientID++, serverSocket.accept(), dataStore, this);
+                connection.setName("Fieldtrip Client Thread "
+                        + connection.clientAdress);
+                connection.addMonitor(monitor);
+
+                synchronized (threads) {
+                    threads.add(connection);
+                }
+                connection.start();
+            }
+        } catch (final IOException e) {
+            this.closeConnection();
+            if (!disconnectedOnPurpose) {
+                System.out.printf("Server socket disconnected, port: %d\n", portNumber);
+                System.err.println(e);
+            } else {
+                for (final ConnectionThread thread : threads) {
+                    thread.disconnect();
+                }
+            }
+        }
+    }
+
+    /**
+     * Stops the buffer thread and closes all existing client connections.
+     */
+    public void stopBuffer() {
+        run = false; // stop listening for new clients
+        try {
+            if (serverSocket != null) {
+                serverSocket.close();
+            }
+            for (final ConnectionThread thread : threads) {
+                thread.disconnect();
+            }
+            disconnectedOnPurpose = true;
+        } catch (final IOException e) {
+            System.out.printf("%s\n", e.getMessage().toString());
+            System.err.println(e);
+        }
+    }
+
+    public void cleanup() {
+        System.out.println("BufferServer:cleanup");
+        dataStore.cleanup();
+    }
+}
+
+class BufferServerThread implements Runnable {
+
+    int serverPort;
+    int dataBufSize;
+    int eventBufSize;
+    int logging;
+    BufferServer buffer;
+
+    public BufferServerThread() {
+    }
+
+    public BufferServerThread(BufferServer buf, int port, int bufsize, int eventsize, int verbositylevel) {
+        serverPort = port;
+        dataBufSize = bufsize;
+        eventBufSize = eventsize;
+        logging = verbositylevel;
+        buffer = buf;
+    }
+
+    @Override
+    public void run() {
+        //Display info about this particular thread
+        System.out.println(Thread.currentThread());
+        try {
+            buffer.addMonitor(new SystemOutMonitor(logging));
+            buffer.run();
+            buffer.cleanup(); // only gets here after stopBuffer() method was called
+            BufferServer.serverSockets.remove(buffer.serverSocket);
+
+        } catch (Exception e) {
+            System.err.println(e);
+        }
+    }
 }
