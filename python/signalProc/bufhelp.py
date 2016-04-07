@@ -81,8 +81,14 @@ def buffer_newevents(evttype=None,timeout_ms=500,state=True,verbose=False):
     timeout    = maximum time to wait in milliseconds before returning
     state      = internal state recording events processed so far
                  use state=None to reset all history
+                 use state=True to use a single shared global state over all calls
+
+    Output:
+      events - [list] of matching events if using the global state
+        OR
+      (events,state) - [tuple] with list of matching events, and updated internal state for later calls
     '''
-    global ftc,nEvents,globalstate # use to store number events processed accross function calls
+    global ftc,globalstate # use to store number events processed accross function calls
     useglobal=False
     if state is None :
         state = ftc.poll();
@@ -93,10 +99,11 @@ def buffer_newevents(evttype=None,timeout_ms=500,state=True,verbose=False):
         state = globalstate
 
     if verbose:
-        print("Waiting for event(s) " + str(evtypes) + " with timeout_ms " + str(timeout_ms))
+        print("Waiting for event(s) " + str(evttype) + " with timeout_ms " + str(timeout_ms))
 
     start = time.time()
-    elapsed_ms = 0
+    elapsed_ms = -1 # ensure checks at least once even with 0-timeout
+    nSamples= state[0]
     nEvents = state[1]
     events=[]
     while len(events)==0 and elapsed_ms<timeout_ms:
