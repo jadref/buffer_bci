@@ -19,7 +19,7 @@ import java.util.List;
  */
 public class MuseConnection extends ThreadBase {
 
-    public final String TAG = MuseConnection.class.toString();
+    public final String TAG = MuseConnection.class.getSimpleName();
     private Muse muse = null;
     private ConnectionListener connectionListener = null;
     private DataListener dataListener = null;
@@ -59,7 +59,7 @@ public class MuseConnection extends ThreadBase {
 
     @Override
     public String getName() {
-        return "MuseConnection";
+        return TAG;
     }
 
     /**

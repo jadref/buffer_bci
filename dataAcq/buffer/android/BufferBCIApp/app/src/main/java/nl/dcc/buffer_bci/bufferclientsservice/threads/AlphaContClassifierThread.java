@@ -12,7 +12,5 @@ public class AlphaContClassifierThread extends AlphaLatContClassifierThread {
 	 }
 	 
     @Override
-    public String getName() {
-        return TAG;
-    }
+    public String getName() { return TAG; }
 }
