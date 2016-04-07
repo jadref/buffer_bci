@@ -1,9 +1,7 @@
-<<<<<<< HEAD
 % guard to prevent running multiple times
 %if ( exist('runConfig','var') && ~isempty(runConfig) ) return; end;
 runConfig=true;
 run ../matlab/utilities/initPaths.m;
-=======
 % guard to prevent running slow path-setup etc. multiple times
 if ( ~exist('configRun','var') || isempty(configRun) ) 
 
@@ -16,7 +14,6 @@ if ( exist(fullfile(bufferdir,'utilities/initPaths.m')) ) % in utilities
 else % or matlab/utilities?
   run(fullfile(bufferdir,'matlab','utilities','initPaths.m'));
 end
->>>>>>> master
 
 buffhost='localhost';buffport=1972;
 % wait for the buffer to return valid header information

@@ -59,3 +59,7 @@ if ( isempty(which('parseOpts')) )
   addpath(exGenPath(fullfile(bcicodedir,'toolboxes','utilities')));
   addpath(exGenPath(fullfile(bcicodedir,'toolboxes','numerical_tools')));
 end
+<<<<<<< HEAD
+=======
+%>>>>>>> master:utilities/initPaths.m
+>>>>>>> 2d6321c29b3c4d2a68b54c35ac5ae5334538833e

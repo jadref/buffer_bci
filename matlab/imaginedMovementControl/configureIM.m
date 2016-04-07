@@ -68,6 +68,7 @@ feedbackDuration=1;
 
 contFeedbackTrialDuration=10;
 neurofeedbackTrialDuration=30;
+centerOutTrialDuration=10;
 warpCursor= 1; % flag if in feedback BCI output sets cursor location or how the cursor moves
 moveScale = .1;
 
@@ -78,7 +79,8 @@ tgtColor=[0 1 0];
 fbColor =[0 0 1];
 
 % classifier training options
-trainOpts = {'spType',{{1 5} {3 7}}}; % train 2 directional, 1=LH vs RH, 2=TG vs FT
+% train 2 directional, 1=LH vs RH, 2=TG vs FT.  Predictions are raw classifier output
+trainOpts = {'spType',{{1 5} {3 7}},'rawdv',1}; 
 
 % Epoch feedback opts
 trlen_ms=trialDuration*1000; % how often to run the classifier
