@@ -133,7 +133,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	// System Startup and Shutdown
 
 	public IEnumerator startServerAndAllClients(){
-		#if UNITY_ANDROID && !UNITY_EDITOR
+		//#if UNITY_ANDROID && !UNITY_EDITOR
 			//Start Server
 			logStatus ("starting server...");
 			//Debug.Log ("Started: " + FieldtripServicesControlerInterface.startServerApp ());
@@ -141,25 +141,23 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 			Debug.Log ("Started: " + FieldtripServicesControlerInterface.startServer ());
 		    ServerStatusIcon.color = themeRed;
-			yield return new WaitForSeconds (4);//These waits are for the Services to have time to pass around their intents. Used to be 10.
+			yield return new WaitForSeconds (2);//These waits are for the Services to have time to pass around their intents. Used to be 10.
 		    updateServer = true;
 
 			//Start Clients
 			logStatus ("starting clients...");
 			Debug.Log ("Started: " + FieldtripServicesControlerInterface.startClients ());
-			yield return new WaitForSeconds (4);
+			yield return new WaitForSeconds (2);
 
 
-			//start some random clients
-		for ( int i=0; i<4; i++){
-			logStatus( "starting something = " + i);
-			FieldtripServicesControlerInterface.startThread(0);
-			yield return new WaitForSeconds (4);//These waits are for the Services to have time to pass around their intents. Used to be 10.
+			//start the required clients
+		for ( int i =0 ; i < Config.bufferClientThreadList.Length; i++ ) {
+		string clientname=Config.bufferClientThreadList[i];
+			logStatus( "starting = " + clientname);
+			FieldtripServicesControlerInterface.startThread(clientname);
+			yield return new WaitForSeconds (1);//These waits are for the Services to have time to pass around their intents. Used to be 10.
 		}
-		// and another
-		FieldtripServicesControlerInterface.startThread(1);
-		yield return new WaitForSeconds (4);//These waits are for the Services to have time to pass around their intents. Used to be 10.
-		#endif
+		//#endif
 			
 
 		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
