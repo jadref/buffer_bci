@@ -3,6 +3,10 @@ using System.Collections;
 
 public class Config : MonoBehaviour {
 
+	public static string bufferServerAppPackageName = "nl.dcc.buffer_bci";
+	public static string bufferServerPackageName = "nl.dcc.buffer_bci.bufferserverservice.BufferServerService";
+	public static string bufferClientsPackageName = "nl.dcc.buffer_bci.bufferclientsservice.BufferClientsService";
+
 	public static bool preMeasure = false; // pre-baseline before first trials baseline
 	public static bool awayTraining = false; 	//false (true not implemented yet)
 

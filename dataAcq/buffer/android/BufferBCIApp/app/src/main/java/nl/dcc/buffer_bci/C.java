@@ -42,6 +42,7 @@ public final class C {
 
     public static final String THREAD_INDEX = "t_index";
     public static final String THREAD_ID = "t_id";
+    public static final String THREAD_NAME = "t_name";
     public static final String THREAD_ARGUMENTS = "t_args";
     public static final String THREAD_STRING_FOR_ARG = "t_arg_str";
     public static final String THREAD_N_ARGUMENTS = "t_nArgs";

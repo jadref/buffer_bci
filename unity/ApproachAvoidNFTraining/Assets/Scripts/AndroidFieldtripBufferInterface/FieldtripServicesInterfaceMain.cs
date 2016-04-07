@@ -41,8 +41,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	private ColorBlock buttonColors = ColorBlock.defaultColorBlock;
 
 	void Start () {
-		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
-		FieldtripServicesControlerInterface.Initialize();
+		#if UNITY_ANDROID && !UNITY_EDITOR
 		androidDevice = true;
 		#endif
 
@@ -134,20 +133,36 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	// System Startup and Shutdown
 
 	public IEnumerator startServerAndAllClients(){
-		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
+		#if UNITY_ANDROID && !UNITY_EDITOR
 			//Start Server
 			logStatus ("starting server...");
-			Debug.Log ("Started: " + FieldtripServicesControlerInterface.startServer ());
-			ServerStatusIcon.color = themeRed;
+			//Debug.Log ("Started: " + FieldtripServicesControlerInterface.startServerApp ());
 			yield return new WaitForSeconds (4);//These waits are for the Services to have time to pass around their intents. Used to be 10.
-			updateServer = true;
 
+			Debug.Log ("Started: " + FieldtripServicesControlerInterface.startServer ());
+		    ServerStatusIcon.color = themeRed;
+			yield return new WaitForSeconds (4);//These waits are for the Services to have time to pass around their intents. Used to be 10.
+		    updateServer = true;
 
 			//Start Clients
-			logStatus ("starting client...");
+			logStatus ("starting clients...");
 			Debug.Log ("Started: " + FieldtripServicesControlerInterface.startClients ());
-			yield return new WaitForSeconds (1);
+			yield return new WaitForSeconds (4);
 
+
+			//start some random clients
+		for ( int i=0; i<4; i++){
+			logStatus( "starting something = " + i);
+			FieldtripServicesControlerInterface.startThread(0);
+			yield return new WaitForSeconds (4);//These waits are for the Services to have time to pass around their intents. Used to be 10.
+		}
+		// and another
+		FieldtripServicesControlerInterface.startThread(1);
+		yield return new WaitForSeconds (4);//These waits are for the Services to have time to pass around their intents. Used to be 10.
+		#endif
+			
+
+		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
 			//Start Threads
 			logStatus ("loading threads...");
 			bool museIsAvailable = false;
@@ -168,7 +183,9 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 					FieldtripServicesControlerInterface.startThread (museThreadID);
 				}
 			}
+		#endif
 
+		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
 			if (museIsAvailable) {
 				//Start Buffer
 				logStatus ("creating buffer...");
@@ -201,7 +218,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 				yield return new WaitForSeconds (2f);
 			J
 
-		#else
+		#endif
 			//Start Buffer
 			logStatus ("Connecting to buffer...");
 			while ( ! bufferIsOn ){
@@ -213,7 +230,6 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 			}
 			logStatus ("Connected!");
 			yield return new WaitForSeconds(1);
-      #endif
 		buttonColors.normalColor = themeGreen;
 		buttonColors.highlightedColor = themeGreen;
 		StatusButton.colors = buttonColors;

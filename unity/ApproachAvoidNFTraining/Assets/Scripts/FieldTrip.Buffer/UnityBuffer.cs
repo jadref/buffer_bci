@@ -10,7 +10,7 @@ public  delegate void BufferChangeEventHandler(UnityBuffer buffer, EventArgs e);
 
 public class UnityBuffer : MonoBehaviour {
 
-	public string hostname = "localhost";
+	public string hostname = null;
 	public int port = 1972;
 	public int storedSamples;
 	public int nChans;
@@ -76,13 +76,38 @@ public class UnityBuffer : MonoBehaviour {
 		latestNumberOfEventsInBuffer =-1;
 	}
 	
-	
+	public static string GetLocalIPAddress()
+	{
+		System.Net.IPHostEntry host;
+		string localIP = "";
+		host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+
+		foreach (System.Net.IPAddress ip in host.AddressList)
+		{
+			localIP = ip.ToString();
+
+			if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+			{
+				break;
+			}
+			else
+			{
+				localIP = null;
+			}
+		}
+
+		return localIP;
+	}
+
 	public void initializeBuffer(){
+		if (hostname == null) {
+			hostname = GetLocalIPAddress ();
+		}
 		Debug.Log("Connecting to "+hostname+":"+port);
 		if(bufferClient.connect(hostname, port)){
 			hdr = bufferClient.getHeader();
 			if(bufferClient.errorReturned == BufferClient.BUFFER_READ_ERROR){
-				Debug.Log("Connection to "+hostname+":"+port+" failed");
+				Debug.Log("No header on "+hostname+":"+port+" failed");
 				bufferIsConnected = false;
 				return;
 			}
