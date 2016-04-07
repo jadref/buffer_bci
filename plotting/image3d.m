@@ -110,6 +110,12 @@ if ( ~isempty(opts.plotPos) && size(opts.plotPos,2)==2 ) % ensure right shape
    opts.plotPos=opts.plotPos';
 end
 if ( ~iscell(opts.plotopts) ) opts.plotopts={opts.plotopts}; end;
+if ( exist('OCTAVE_VERSION','builtin') ) % octave doesn't handle parent option well
+	if ( any(strcmp(opts.disptype,{'plot','plott','mcplot','mcplott'})) )
+		opts.plotopts={'linewidth' 1 opts.plotopts{:}};
+	end
+end
+
 % BODGE: keep the legacy names working
 if( ~isempty(opts.X) && isempty(opts.Xvals) ) opts.Xvals=opts.X; end
 if( ~isempty(opts.Y) && isempty(opts.Yvals) ) opts.Yvals=opts.Y; end
@@ -353,13 +359,13 @@ for pi=1:N;
         axsettings={axsettings{:} 'XTickLabelMode' 'auto'};
      end
      if(~tickAxes(pi)) axsettings={axsettings{:} 'YTickLabel',[],'XTickLabel',[]};end;
-     axsettings={axsettings{:} 'Ylim',clim};
+     axsettings={axsettings{:} 'Ylim',single(clim)};
      set(hdls(pi),axsettings{:}); 
      axsettings={axsettings{:} 'YTickLabelMode','auto'};
      set(hdls(pi),'userdata',axsettings);
      if ( ~tickAxes(pi) ) labvis='off'; else labvis='on'; end;
-     if ( ~isempty(axlab{1}) ) xlabel(hdls(pi),axlab{1},'Visible',labvis); end;
-     if ( ~isempty(opts.clabel) ) ylabel(hdls(pi),opts.clabel,'Visible',labvis); end;
+     if ( ~isempty(axlab{1}) && tickAxes(pi) ) xlabel(hdls(pi),axlab{1},'Visible',labvis); end;
+     if ( ~isempty(opts.clabel) &&tickAxes(pi) ) ylabel(hdls(pi),opts.clabel,'Visible',labvis); end;
      for j=1:numel(p); % setup the label for each line
         if(iscell(axmark{2})) ll=axmark{2}{j}; 
         else ll=num2str(axmark{2}(j));
@@ -376,7 +382,8 @@ for pi=1:N;
      end
      if ( ~isempty(varargin)) set(hdls(pi),varargin{:}); end;
      if ( ~isnumeric(axmark{1}) || any(sign(diff(axmark{1}))<0) ) 
-        tickIdx=unique(max(1,floor(get(hdls(pi),'YTick')))); 
+        tickIdx=unique(max(1,floor(get(hdls(pi),'YTick'))));
+        tickIdx(tickIdx<1)=[]; tickIdx(tickIdx>numel(axmark{1}))=[];
         axsettings={'YTick',tickIdx,'YTickLabel',axmark{1}(tickIdx),...
                     'YTickMode','manual','YTickLabelMode','manual'};
      else
@@ -387,7 +394,8 @@ for pi=1:N;
         axsettings={'YLim' ylim 'YTickLabelMode' 'auto'};        
      end
      if ( ~isnumeric(axmark{2}) ) 
-        tickIdx=unique(max(1,floor(get(hdls(pi),'XTick')))); 
+        tickIdx=unique(max(1,floor(get(hdls(pi),'XTick'))));
+        tickIdx(tickIdx<1)=[]; tickIdx(tickIdx>numel(axmark{2}))=[];
         axsettings={axsettings{:} 'XTick',tickIdx,'XTickLabel',axmark{2}(tickIdx),...
                     'XTickMode','manual','XTickLabelMode','manual'};
      elseif( any(abs(diff(diff(axmark{2})))>1e-6) ) % non-uniform scaling
@@ -404,12 +412,12 @@ for pi=1:N;
         axsettings={axsettings{:} 'XLim' xlim 'XTickLabelMode' 'auto'};
      end
      if(~tickAxes(pi)) axsettings={axsettings{:} 'YTickLabel',[],'XTickLabel',[]};end;
-     axsettings={axsettings{:} 'clim' clim};
+     axsettings={axsettings{:} 'clim' single(clim)};
      set(hdls(pi),axsettings{:}); 
      set(hdls(pi),'userdata',axsettings);
      if ( ~tickAxes(pi) ) labvis='off'; else labvis='on'; end;
-     if ( ~isempty(axlab{1}) ) ylabel(hdls(pi),axlab{1},'Visible',labvis); end
-     if ( ~isempty(axlab{2}) ) xlabel(hdls(pi),axlab{2},'Visible',labvis); end;
+     if ( ~isempty(axlab{1}) && tickAxes(pi) ) ylabel(hdls(pi),axlab{1},'Visible',labvis); end
+     if ( ~isempty(axlab{2}) && tickAxes(pi) ) xlabel(hdls(pi),axlab{2},'Visible',labvis); end;
 
      
     case {'mcplot','mcplott'}; %---------------------------------------------
@@ -469,10 +477,10 @@ for pi=1:N;
    tickIdx=get(hdls(pi),'xtick'); ticks=get(hdls(pi),'xticklabel');
    % overlapping ticks
    if ( numel(ticks)*fontsize*.5   > pos(3) ) 
-     if ( isnumeric(ticks) )
+     if ( isnumeric(ticks) || (iscell(ticks) && isnumeric(ticks{1})) )
        % count number of leading/trailing 0's
-       for i=1:numel(ticks);
-         xl=ticks(i); 
+       for i=1:size(ticks,1);
+			xl=ticks(i); if ( iscell(xl) ) xl=xl{1}; end;
          if ( max(xlim)<1 )
            for n0=0:-1:floor(log10(min(xlim))); if ( fix(xl*10)==0 ) xl=xl*10; else break; end; end;
            num0(i)=n0;
@@ -486,11 +494,12 @@ for pi=1:N;
          set(hdls(pi),'xlabel',[get(hdls(pi),'xlabel') ' *' sprintf('%f',10.^num0)]);
          set(hdls(pi),'xtick',ticks*10.^-num0);
        else
-         set(hdls(pi),'xtick',tickIdx([1,end]),'xticklabel',ticks([1,end]));  set(hdls(pi),'xminortick','on');
+         set(hdls(pi),'xtick',tickIdx([1,end]),'xticklabel',ticks([1,end],:));  set(hdls(pi),'xminortick','on');
        end
      else
        keep = round(linspace(1,numel(tickIdx),pos(3)./(size(ticks,2)*fontsize*.5)));
-       set(hdls(pi),'xtick',tickIdx(keep),'xticklabel',ticks(keep));  set(hdls(pi),'xminortick','on');
+		 if (iscell(ticks) ) ticks=ticks(keep); else ticks=ticks(keep,:); end;
+       set(hdls(pi),'xtick',tickIdx(keep),'xticklabel',ticks);  set(hdls(pi),'xminortick','on');
      end
    end
    tickIdx=get(hdls(pi),'ytick'); ticks=get(hdls(pi),'yticklabel');
