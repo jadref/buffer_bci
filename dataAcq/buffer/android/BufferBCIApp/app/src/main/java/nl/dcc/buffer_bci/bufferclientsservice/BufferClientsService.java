@@ -78,15 +78,15 @@ public class BufferClientsService extends Service {
 							String name = intent.getStringExtra(C.THREAD_NAME);
 							id = getThreadID(name);
 							Log.i(TAG,"Starting Thread with name : " + name + " = " + id);
-					  }
+						  }
                     if (id>=0){
-			if ( wrappers.get(id).started) {
-                        Log.i(TAG, "Restarting Thread with ID: " + id);
-                        wrappers.setValueAt(id, new WrapperThread(wrappers.get(id).base));
-                    } else
-                        Log.i(TAG, "Starting Thread with ID: " + id);
+								if ( wrappers.get(id).started) {
+									 Log.i(TAG, "Restarting Thread with ID: " + id);
+									 wrappers.setValueAt(id, new WrapperThread(wrappers.get(id).base));
+								} else
+									 Log.i(TAG, "Starting Thread with ID: " + id);
                         wrappers.get(id).start();
-		}
+						  }
                     break;
                 case C.THREAD_UPDATE_ARGUMENTS:
                     id = intent.getIntExtra(C.THREAD_ID, -1);

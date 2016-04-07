@@ -20,6 +20,9 @@ import java.util.List;
 public class MuseConnection extends ThreadBase {
 
     public final String TAG = MuseConnection.class.getSimpleName();
+    @Override
+    public String getName() {return TAG; }
+
     private Muse muse = null;
     private ConnectionListener connectionListener = null;
     private DataListener dataListener = null;
@@ -55,11 +58,6 @@ public class MuseConnection extends ThreadBase {
         blockSize = arguments[5].getInteger();
         androidHandle.updateStatus("Address: " + address + ":" + String.valueOf(port));
         Log.d(TAG, this.toString());
-    }
-
-    @Override
-    public String getName() {
-        return TAG;
     }
 
     /**
