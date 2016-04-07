@@ -7,153 +7,103 @@ using System.Runtime.InteropServices;
 
 public static class FieldtripServicesControlerInterface {
 
-	#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
+
 	private static AndroidJavaObject mainActivity;
 	private static AndroidJavaObject serverController;
 	private static AndroidJavaObject clientsController;
 
+	public static void StartPackage(string package){
+		// wrapper script to start an android package
+		AndroidJavaClass activityClass;
+		AndroidJavaObject packageManager;
+		AndroidJavaObject launch;
+
+		#if UNITY_ANDROID && !UNITY_EDITOR
+		Debug.Log("getting the info to make the start activity ");
+		activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+		mainActivity = activityClass.GetStatic<AndroidJavaObject>("currentActivity");
+		packageManager = mainActivity.Call<AndroidJavaObject>("getPackageManager");
+		launch = packageManager.Call<AndroidJavaObject>("getLaunchIntentForPackage",package);
+		Debug.Log("start inttent = " + launch);
+		mainActivity.Call("startActivity",launch);
+		#endif
+	}
+
+	public static void StartService(string package,string service){
+		// wrapper script to start an android package
+		AndroidJavaClass activityClass;
+		AndroidJavaObject packageManager;
+		AndroidJavaObject launch;
+
+		#if UNITY_ANDROID && !UNITY_EDITOR
+		Debug.Log("getting the info to make the start activity ");
+		activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+		mainActivity = activityClass.GetStatic<AndroidJavaObject>("currentActivity");
+		AndroidJavaObject intent = new AndroidJavaObject("android.content.Intent");
+		intent = intent.Call<AndroidJavaObject>("setClassName",package,service);
+		Debug.Log("service intent = " + intent);
+		//intent.Call<AndroidJavaObject>("setAction",package);
+		AndroidJavaObject cname = mainActivity.Call<AndroidJavaObject>("startService",intent);
+		#endif
+	}
+
+
+	public static void StopService(string package, string service){
+		// wrapper script to start an android package
+		AndroidJavaClass activityClass;
+		AndroidJavaObject packageManager;
+		AndroidJavaObject launch;
+
+		#if UNITY_ANDROID && !UNITY_EDITOR
+		Debug.Log("getting the info to make the start activity ");
+		activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+		mainActivity = activityClass.GetStatic<AndroidJavaObject>("currentActivity");
+		AndroidJavaObject intent = new AndroidJavaObject("android.content.Intent");
+		intent.Call<AndroidJavaObject>("setAction",package);
+		mainActivity.Call<AndroidJavaObject>("stopService",intent);
+		#endif
+	}
+
 	public static void Initialize () {
+		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
 		AndroidJavaClass jc = new AndroidJavaClass ("com.unity3d.player.UnityPlayer");
 		mainActivity = jc.GetStatic<AndroidJavaObject> ("currentActivity");
 		serverController = mainActivity.Get<AndroidJavaObject>("serverController");
 		clientsController = mainActivity.Get<AndroidJavaObject>("clientsController");
+		#endif
 	}
 
 
 	//Server Interface
+	public static string startServerApp(){
+		Debug.Log ("Starting the main app:");
+		StartPackage (Config.bufferServerAppPackageName);
+		return "";
+	}
+
 	public static string startServer(){
-		return mainActivity.Call<string>("startServer");
+		Debug.Log ("Starting the server service");
+		StartService(Config.bufferServerAppPackageName,Config.bufferServerPackageName);
+		return "";
 	}
 
 	public static bool stopServer(){
-		return mainActivity.Call<bool>("stopServer");
+		StopService(Config.bufferServerAppPackageName,Config.bufferServerPackageName);
+		return true; //mainActivity.Call<bool>("stopServer");
 	}
-
-	public static void PutHeader(){
-		serverController.Call("PutHeader");
-	}
-
-	public static void FlushHeader(){
-		serverController.Call("FlushHeader");
-	}
-
-	public static void FlushSamples(){
-		serverController.Call("FlushSamples");
-	}
-
-	public static void FlushEvents(){
-		serverController.Call("FlushEvents");
-	}
-
-	public static string getBufferUptime(){
-		return serverController.Call<String>("getBufferUptime");
-	}
-
-	public static int getBufferPort(){
-		return serverController.Call<int>("getBufferPort");
-	}
-
-	public static int getBuffernSamples(){
-		return serverController.Call<int>("getBuffernSamples");
-	}
-
-	public static int getBuffernEvents(){
-		return serverController.Call<int>("getBuffernEvents");
-	}
-
-	public static int getBuffernChannels(){
-		return serverController.Call<int>("getBuffernChannels");
-	}
-
-	public static int getBuffernDataType(){
-		return serverController.Call<int>("getBuffernDataType");
-	}
-
-	public static float getBufferfSample(){
-		return serverController.Call<float>("getBufferfSample");
-	}
-
-	public static void setBufferPort(int port){
-		serverController.Call("setBufferPort", port);
-	}
-
-	public static void setnBufferSamples(int port){
-		serverController.Call("setnBufferSamples", port);
-	}
-
-	public static void setBuffernEvents(int port){
-		serverController.Call("setBuffernEvents", port);
-	}
-
-	public static void setBuffernChannels(int port){
-		serverController.Call("setBuffernChannels", port);
-	}
-
-
-
+		
 	//Clients in Buffer Interface
 	public static string startClients(){
-		return mainActivity.Call<string>("startClients");
+		Debug.Log ("Starting the clients");
+		StartService(Config.bufferServerAppPackageName,Config.bufferClientsPackageName);
+		//return mainActivity.Call<string>("startClients");
+		return "";
 	}
 
 	public static bool stopClients(){
-		return mainActivity.Call<bool>("stopClients");
-	}
-
-	public static int getClientSamplesPut(int id){
-		return serverController.Call<int>("getClientSamplesPut",id);
-	}
-
-	public static int getClientSamplesGotten(int id){
-		return serverController.Call<int>("getClientSamplesGotten",id);
-	}
-
-	public static int getClientEventsPut(int id){
-		return serverController.Call<int>("getClientEventsPut",id);
-	}
-
-	public static int getClientEventsGotten(int id){
-		return serverController.Call<int>("getClientEventsGotten",id);
-	}
-
-	public static int getClientLastActivity(int id){
-		return serverController.Call<int>("getClientLastActivity",id);
-	}
-
-	public static int getClientWaitSamples(int id){
-		return serverController.Call<int>("getClientWaitSamples",id);
-	}
-
-	public static int getClientError(int id){
-		return serverController.Call<int>("getClientError",id);
-	}
-
-	public static long getClientTimeLastActivity(int id){
-		return serverController.Call<long>("getClientTimeLastActivity",id);
-	}
-
-	public static long getClientTime(int id){
-		return serverController.Call<long>("getClientTime",id);
-	}
-
-	public static long getClientWaitTimeout(int id){
-		return serverController.Call<long>("getClientWaitTimeout",id);
-	}
-
-	public static bool getClientConnected(int id){
-		return serverController.Call<bool>("getClientConnected",id);
-	}
-
-	public static bool getClientChanged(int id){
-		return serverController.Call<bool>("getClientChanged",id);
-	}
-
-	public static int getClientDiff(int id){
-		return serverController.Call<int>("getClientDiff",id);
-	}
-
-	public static string getClientAddress (int id){
-		return serverController.Call<string>("getClientAddress", id);
+		StopService(Config.bufferServerAppPackageName,Config.bufferClientsPackageName);
+		//return mainActivity.Call<bool>("stopClients");
+		return true;
 	}
 
 	public static int[] getClientIDs(){
@@ -172,21 +122,29 @@ public static class FieldtripServicesControlerInterface {
 		}
 	}
 
-
-
-
-
 	//Threads (Clients) Interface
 	public static void startThread(int threadID){
-		clientsController.Call("startThread", threadID);
+		// wrapper script to start an android package
+		AndroidJavaClass activityClass;
+		AndroidJavaObject packageManager;
+		AndroidJavaObject launch;
+
+		#if UNITY_ANDROID && !UNITY_EDITOR
+		Debug.Log("getting the info to make the start activity ");
+		activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+		mainActivity = activityClass.GetStatic<AndroidJavaObject>("currentActivity");
+		AndroidJavaObject intent = new AndroidJavaObject("android.content.Intent","nl.dcc.buffer_bci.bufferclientsservice.clientsfilter");
+		intent = intent.Call<AndroidJavaObject>("putExtra","a",8);
+		intent = intent.Call<AndroidJavaObject>("putExtra","t_id",4);
+		Debug.Log("service intent = " + intent);
+		//intent.Call<AndroidJavaObject>("setAction",package);
+		mainActivity.Call("sendBroadcast",intent);
+		#endif
+		//clientsController.Call("startThread", threadID);
 	}
 
 	public static void stopThread(int threadID){
 		clientsController.Call("stopThread", threadID);
-	}
-
-	public static string getThreadStatus (int threadID){
-		return clientsController.Call<string>("getThreadStatus", threadID);
 	}
 
 	public static string[] getAllThreadsNamesAndIDs(){
@@ -207,5 +165,4 @@ public static class FieldtripServicesControlerInterface {
 			return emptyResult;
 		}
 	}
-	#endif
 }
