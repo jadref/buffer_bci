@@ -1,7 +1,3 @@
-% guard to prevent running multiple times
-%if ( exist('runConfig','var') && ~isempty(runConfig) ) return; end;
-runConfig=true;
-run ../matlab/utilities/initPaths.m;
 % guard to prevent running slow path-setup etc. multiple times
 if ( ~exist('configRun','var') || isempty(configRun) ) 
 
