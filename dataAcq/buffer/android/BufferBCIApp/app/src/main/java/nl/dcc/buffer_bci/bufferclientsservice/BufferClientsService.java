@@ -50,6 +50,11 @@ public class BufferClientsService extends Service {
             switch (intent.getIntExtra(C.MESSAGE_TYPE, -1)) {
                 case C.THREAD_STOP:
                     id = intent.getIntExtra(C.THREAD_ID, -1);
+						  if ( id==-1 ){
+								String name = intent.getStringExtra(C.THREAD_NAME);
+								id = getThreadID(name);
+							Log.i(TAG,"Stopping Thread with name : " + name + " = " + id);
+						  }
                     Log.i(TAG, "Stopping Thread with ID: " + id);
                     if (id != -1) {
                         threads.get(id).stop();
@@ -57,17 +62,31 @@ public class BufferClientsService extends Service {
                     break;
                 case C.THREAD_PAUSE:
                     id = intent.getIntExtra(C.THREAD_ID, -1);
+						  if ( id==-1 ){
+								String name = intent.getStringExtra(C.THREAD_NAME);
+								id = getThreadID(name);
+							Log.i(TAG,"Stopping Thread with name : " + name + " = " + id);
+						  }
                     Log.i(TAG, "Stopping Thread with ID: " + id);
-                    threads.get(id).stop();
+						  if ( id!=-1 ) {
+								threads.get(id).stop();
+						  }
                     break;
                 case C.THREAD_START:
                     id = intent.getIntExtra(C.THREAD_ID, -1);
-                    if (wrappers.get(id).started) {
-                        Log.i(TAG, "Restarting Thread with ID: " + id);
-                        wrappers.setValueAt(id, new WrapperThread(wrappers.get(id).base));
-                    } else
-                        Log.i(TAG, "Starting Thread with ID: " + id);
-                    wrappers.get(id).start();
+                    if ( id==-1 ){
+							String name = intent.getStringExtra(C.THREAD_NAME);
+							id = getThreadID(name);
+							Log.i(TAG,"Starting Thread with name : " + name + " = " + id);
+						  }
+                    if (id>=0){
+								if ( wrappers.get(id).started) {
+									 Log.i(TAG, "Restarting Thread with ID: " + id);
+									 wrappers.setValueAt(id, new WrapperThread(wrappers.get(id).base));
+								} else
+									 Log.i(TAG, "Starting Thread with ID: " + id);
+                        wrappers.get(id).start();
+						  }
                     break;
                 case C.THREAD_UPDATE_ARGUMENTS:
                     id = intent.getIntExtra(C.THREAD_ID, -1);
@@ -117,7 +136,17 @@ public class BufferClientsService extends Service {
         }
     };
 
-    public void handleExceptionClose(final Exception e, final ThreadBase base) {
+	 public int getThreadID(String name){
+		  for ( int i=0; i<threads.size(); i++) {
+				if ( threads.get(i).getName().equalsIgnoreCase(name) ) {
+					 return i;
+				}
+		  }
+		  return -1;
+	 }
+	 
+
+	 public void handleExceptionClose(final Exception e, final ThreadBase base) {
         Log.e(TAG, Log.getStackTraceString(e));
         makeToast(base.getName() + " closed", Toast.LENGTH_SHORT);
         try {

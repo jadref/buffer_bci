@@ -43,9 +43,7 @@ public class FilePlaybackThread extends ThreadBase {
     }
 
     @Override
-    public String getName() {
-        return TAG;
-    }
+    public String getName() { return TAG; }
 
     @Override
     public void validateArguments(Argument[] arguments) {
