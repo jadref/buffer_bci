@@ -100,9 +100,10 @@ public class Toaster extends ThreadBase {
     /**
      * Is used by the androidHandle app to determine the name of the Class.
      */
+    public static final String TAG = Toaster.class.getSimpleName();
     @Override
     public String getName() {
-        return "Toaster";
+        return TAG;
     }
 
     /**

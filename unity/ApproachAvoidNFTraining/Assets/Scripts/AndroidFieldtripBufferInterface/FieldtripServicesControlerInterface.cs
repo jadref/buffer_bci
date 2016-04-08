@@ -6,74 +6,6 @@ using System.Runtime.InteropServices;
 
 
 public static class FieldtripServicesControlerInterface {
-
-
-	private static AndroidJavaObject mainActivity;
-	private static AndroidJavaObject serverController;
-	private static AndroidJavaObject clientsController;
-
-	public static void StartPackage(string package){
-		// wrapper script to start an android package
-		AndroidJavaClass activityClass;
-		AndroidJavaObject packageManager;
-		AndroidJavaObject launch;
-
-		#if UNITY_ANDROID && !UNITY_EDITOR
-		Debug.Log("getting the info to make the start activity ");
-		activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-		mainActivity = activityClass.GetStatic<AndroidJavaObject>("currentActivity");
-		packageManager = mainActivity.Call<AndroidJavaObject>("getPackageManager");
-		launch = packageManager.Call<AndroidJavaObject>("getLaunchIntentForPackage",package);
-		Debug.Log("start inttent = " + launch);
-		mainActivity.Call("startActivity",launch);
-		#endif
-	}
-
-	public static void StartService(string package,string service){
-		// wrapper script to start an android package
-		AndroidJavaClass activityClass;
-		AndroidJavaObject packageManager;
-		AndroidJavaObject launch;
-
-		#if UNITY_ANDROID && !UNITY_EDITOR
-		Debug.Log("getting the info to make the start activity ");
-		activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-		mainActivity = activityClass.GetStatic<AndroidJavaObject>("currentActivity");
-		AndroidJavaObject intent = new AndroidJavaObject("android.content.Intent");
-		intent = intent.Call<AndroidJavaObject>("setClassName",package,service);
-		Debug.Log("service intent = " + intent);
-		//intent.Call<AndroidJavaObject>("setAction",package);
-		AndroidJavaObject cname = mainActivity.Call<AndroidJavaObject>("startService",intent);
-		#endif
-	}
-
-
-	public static void StopService(string package, string service){
-		// wrapper script to start an android package
-		AndroidJavaClass activityClass;
-		AndroidJavaObject packageManager;
-		AndroidJavaObject launch;
-
-		#if UNITY_ANDROID && !UNITY_EDITOR
-		Debug.Log("getting the info to make the start activity ");
-		activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-		mainActivity = activityClass.GetStatic<AndroidJavaObject>("currentActivity");
-		AndroidJavaObject intent = new AndroidJavaObject("android.content.Intent");
-		intent.Call<AndroidJavaObject>("setAction",package);
-		mainActivity.Call<AndroidJavaObject>("stopService",intent);
-		#endif
-	}
-
-	public static void Initialize () {
-		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
-		AndroidJavaClass jc = new AndroidJavaClass ("com.unity3d.player.UnityPlayer");
-		mainActivity = jc.GetStatic<AndroidJavaObject> ("currentActivity");
-		serverController = mainActivity.Get<AndroidJavaObject>("serverController");
-		clientsController = mainActivity.Get<AndroidJavaObject>("clientsController");
-		#endif
-	}
-
-
 	//Server Interface
 	public static string startServerApp(){
 		Debug.Log ("Starting the main app:");
@@ -106,63 +38,90 @@ public static class FieldtripServicesControlerInterface {
 		return true;
 	}
 
-	public static int[] getClientIDs(){
-		AndroidJavaObject obj = serverController.Call<AndroidJavaObject>("getClientIDs");
-		int[] emptyResult = new int[0];
-		if (obj.GetRawObject().ToInt32() != 0)
-		{
-			int[] result = AndroidJNIHelper.ConvertFromJNIArray<int[]>(obj.GetRawObject());
-			obj.Dispose();
-			return result;
-		}
-		else{
-			Debug.Log ("Got null getClientIDs array");
-			obj.Dispose();
-			return emptyResult;
-		}
+	public static void StartPackage(string package){
+		#if UNITY_ANDROID && !UNITY_EDITOR
+		AndroidJavaClass activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+		AndroidJavaObject mainActivity = activityClass.GetStatic<AndroidJavaObject>("currentActivity");
+		AndroidJavaObject packageManager = mainActivity.Call<AndroidJavaObject>("getPackageManager");
+		AndroidJavaObject launch = packageManager.Call<AndroidJavaObject>("getLaunchIntentForPackage",package);
+		Debug.Log("start inttent = " + launch);
+		mainActivity.Call("startActivity",launch);
+		#endif
+	}
+
+	public static void StartService(string package,string service){
+	   #if UNITY_ANDROID && !UNITY_EDITOR
+		AndroidJavaClass activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+		AndroidJavaObject mainActivity = activityClass.GetStatic<AndroidJavaObject>("currentActivity");
+		AndroidJavaObject intent = new AndroidJavaObject("android.content.Intent");
+		intent = intent.Call<AndroidJavaObject>("setClassName",package,service);
+		Debug.Log("service intent = " + intent);
+		//intent.Call<AndroidJavaObject>("setAction",package);
+		AndroidJavaObject cname = mainActivity.Call<AndroidJavaObject>("startService",intent);
+		#endif
+	}
+	public static void StopService(string package, string service){
+		#if UNITY_ANDROID && !UNITY_EDITOR
+		AndroidJavaClass activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+		AndroidJavaObject mainActivity = activityClass.GetStatic<AndroidJavaObject>("currentActivity");
+		AndroidJavaObject intent = new AndroidJavaObject("android.content.Intent");
+		intent.Call<AndroidJavaObject>("setAction",package);
+		mainActivity.Call<AndroidJavaObject>("stopService",intent);
+		#endif
+	}
+
+	public static void Initialize () {
 	}
 
 	//Threads (Clients) Interface
 	public static void startThread(int threadID){
-		// wrapper script to start an android package
-		AndroidJavaClass activityClass;
-		AndroidJavaObject packageManager;
-		AndroidJavaObject launch;
-
 		#if UNITY_ANDROID && !UNITY_EDITOR
 		Debug.Log("getting the info to make the start activity ");
-		activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-		mainActivity = activityClass.GetStatic<AndroidJavaObject>("currentActivity");
+		AndroidJavaClass activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+		AndroidJavaObject mainActivity = activityClass.GetStatic<AndroidJavaObject>("currentActivity");
 		AndroidJavaObject intent = new AndroidJavaObject("android.content.Intent","nl.dcc.buffer_bci.bufferclientsservice.clientsfilter");
-		intent = intent.Call<AndroidJavaObject>("putExtra","a",8);
-		intent = intent.Call<AndroidJavaObject>("putExtra","t_id",4);
+		intent = intent.Call<AndroidJavaObject>("putExtra","a",Config.bufferThreadStartActionID);
+		intent = intent.Call<AndroidJavaObject>("putExtra","t_id",threadID);
 		Debug.Log("service intent = " + intent);
-		//intent.Call<AndroidJavaObject>("setAction",package);
 		mainActivity.Call("sendBroadcast",intent);
 		#endif
-		//clientsController.Call("startThread", threadID);
+	}
+	//Threads (Clients) Interface
+	public static void startThread(String threadName){
+		#if UNITY_ANDROID && !UNITY_EDITOR
+		Debug.Log("getting the info to make the start activity ");
+		AndroidJavaClass activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+		AndroidJavaObject mainActivity = activityClass.GetStatic<AndroidJavaObject>("currentActivity");
+		AndroidJavaObject intent = new AndroidJavaObject("android.content.Intent","nl.dcc.buffer_bci.bufferclientsservice.clientsfilter");
+		intent = intent.Call<AndroidJavaObject>("putExtra","a",Config.bufferThreadStartActionID);
+		intent = intent.Call<AndroidJavaObject>("putExtra","t_name",threadName);
+		Debug.Log("service intent = " + intent);
+		mainActivity.Call("sendBroadcast",intent);
+		#endif
 	}
 
 	public static void stopThread(int threadID){
-		clientsController.Call("stopThread", threadID);
+		#if UNITY_ANDROID && !UNITY_EDITOR
+		Debug.Log("getting the info to make the start activity ");
+		AndroidJavaClass activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+		AndroidJavaObject mainActivity = activityClass.GetStatic<AndroidJavaObject>("currentActivity");
+		AndroidJavaObject intent = new AndroidJavaObject("android.content.Intent","nl.dcc.buffer_bci.bufferclientsservice.clientsfilter");
+		intent = intent.Call<AndroidJavaObject>("putExtra","a",Config.bufferThreadStopActionID);
+		intent = intent.Call<AndroidJavaObject>("putExtra","t_id",threadID);
+		Debug.Log("service intent = " + intent);
+		mainActivity.Call("sendBroadcast",intent);
+		#endif
 	}
-
-	public static string[] getAllThreadsNamesAndIDs(){
-		Debug.Log ("Trying to get thread names and IDs");
-		string[] emptyResult = new string[0];
-		AndroidJavaObject obj = clientsController.Call<AndroidJavaObject>("getAllThreadNamesAndIDs");
-		if (obj.GetRawObject().ToInt32() != 0)
-		{
-			string[] result = AndroidJNIHelper.ConvertFromJNIArray<string[]>(obj.GetRawObject());
-			Debug.Log ("Length of returned array: "+result.Length.ToString());
-			obj.Dispose();
-			return result;
-		}
-		else
-		{
-			obj.Dispose();
-			Debug.Log ("Got null getAllThreadNamesAndIDs array");
-			return emptyResult;
-		}
+	public static void stopThread(String threadName){
+		#if UNITY_ANDROID && !UNITY_EDITOR
+		Debug.Log("getting the info to make the start activity ");
+		AndroidJavaClass activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+		AndroidJavaObject mainActivity = activityClass.GetStatic<AndroidJavaObject>("currentActivity");
+		AndroidJavaObject intent = new AndroidJavaObject("android.content.Intent","nl.dcc.buffer_bci.bufferclientsservice.clientsfilter");
+		intent = intent.Call<AndroidJavaObject>("putExtra","a",Config.bufferThreadStopActionID);
+		intent = intent.Call<AndroidJavaObject>("putExtra","t_id",threadName);
+		Debug.Log("service intent = " + intent);
+		mainActivity.Call("sendBroadcast",intent);
+		#endif
 	}
 }
