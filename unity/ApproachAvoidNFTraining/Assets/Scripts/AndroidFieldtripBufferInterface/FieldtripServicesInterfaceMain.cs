@@ -133,7 +133,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	// System Startup and Shutdown
 
 	public IEnumerator startServerAndAllClients(){
-		//#if UNITY_ANDROID && !UNITY_EDITOR
+		#if UNITY_ANDROID && !UNITY_EDITOR
 			//Start Server
 			logStatus ("starting server...");
 			//Debug.Log ("Started: " + FieldtripServicesControlerInterface.startServerApp ());
@@ -157,7 +157,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 			FieldtripServicesControlerInterface.startThread(clientname);
 			yield return new WaitForSeconds (1);//These waits are for the Services to have time to pass around their intents. Used to be 10.
 		}
-		//#endif
+		#endif
 			
 
 		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR

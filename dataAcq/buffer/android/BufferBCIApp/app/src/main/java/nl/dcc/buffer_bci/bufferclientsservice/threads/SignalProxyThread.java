@@ -8,7 +8,7 @@ import java.io.IOException;
 
 public class SignalProxyThread extends ThreadBase {
 
-    public static final String TAG = SignalProxyThread.class.toString();
+    public static final String TAG = SignalProxyThread.class.getSimpleName();
 
     private int VERB = 1; // global verbosity level
     private String hostname;
@@ -31,7 +31,7 @@ public class SignalProxyThread extends ThreadBase {
 
     @Override
     public String getName() {
-        return "Signal Proxy";
+        return TAG;
     }
 
 

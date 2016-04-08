@@ -62,7 +62,7 @@ public class ContinuousClassifierThread extends ThreadBase {
 
     @Override
     public String getName() {
-        return "ContinuousClassifier";
+        return TAG;
     }
 
     @Override
