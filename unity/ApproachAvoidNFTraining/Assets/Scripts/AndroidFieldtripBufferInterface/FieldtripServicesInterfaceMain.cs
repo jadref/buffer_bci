@@ -322,6 +322,11 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 		return systemIsReady;
 	}
 
+
+	public double[] getFeedback (){
+		return currentAlphaLat;
+	}
+
 	public float getAlpha()
 	{
 		return (float)currentAlphaLat[0];
@@ -337,12 +342,12 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	public float getQualityCh1()
 	{
 		//return normalize ((float)currentAlphaLat [2], qualityLimit);
-		return (float)currentAlphaLat [2];
+		return (float)currentAlphaLat [currentAlphaLat.Length-2];
 	}
 
 	public float getQualityCh2()
 	{
-		return (float)currentAlphaLat [3];
+		return (float)currentAlphaLat [currentAlphaLat.Length-1];
 	}
 
 	// Called m*manually* when this interface is visible!

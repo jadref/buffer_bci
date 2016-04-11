@@ -5,6 +5,7 @@ import nl.dcc.buffer_bci.matrixalgebra.linalg.WelchOutputType;
 import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.ArrayFunctions;
 import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.Tuple;
 import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.Windows;
+import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.MedianFilter;
 import nl.fcdonders.fieldtrip.bufferclient.BufferClientClock;
 import nl.fcdonders.fieldtrip.bufferclient.BufferEvent;
 import nl.fcdonders.fieldtrip.bufferclient.Header;
@@ -32,7 +33,9 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
     private int nBaselineStep = 5000;
 	 private boolean computeLateralization=true; // lateralization or total power
 	 private boolean normalizeLateralization=true; // normalize the lateralization score
-	 
+    private boolean medianFilter=true;   // median filter the lateralization score
+    private MedianFilter medFilt=null;    
+    
 	 public static void main(String[] args) throws IOException,InterruptedException {	
 		  String hostname=null;
 		  int port=-1;
@@ -112,7 +115,8 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 
 	 public void setcomputeLateralization(boolean complat){computeLateralization=complat;}
 	 public void setnormalizeLateralization(boolean normlat){normalizeLateralization=normlat;}
-	 
+    public void setMedianFilter(boolean medFilt){medianFilter=medFilt;}
+    
 	 @Override
     public void mainloop() {
 		  VERB=1;
@@ -133,7 +137,8 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
         long t0 = System.currentTimeMillis();
 		  long t=t0;
 		  long pnext=t+printInterval_ms;
-
+        medFilt = new MedianFilter();
+        
 		  try {
 				C.putEvent(new BufferEvent("process."+processName,"start",-1));  // Log that we are starting
 		  } catch ( IOException e ) { e.printStackTrace(); } 
@@ -209,6 +214,9 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 						  } else { // summed feature values
 								f.setEntry(0,0,dvColumn[0]+dvColumn[1]);
 						  }
+                    if ( medianFilter ) { // report median filtered values -- to suppress artifacts
+                        f.setEntry(0,0, medFilt.apply(f.getEntry(0,0))); 
+                    }
 					 }
 
                 // Smooth the classifiers
