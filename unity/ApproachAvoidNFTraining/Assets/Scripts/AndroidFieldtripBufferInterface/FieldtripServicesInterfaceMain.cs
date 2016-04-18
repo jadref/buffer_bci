@@ -41,8 +41,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	private ColorBlock buttonColors = ColorBlock.defaultColorBlock;
 
 	void Start () {
-		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
-		FieldtripServicesControlerInterface.Initialize();
+		#if UNITY_ANDROID && !UNITY_EDITOR
 		androidDevice = true;
 		#endif
 
@@ -134,20 +133,34 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	// System Startup and Shutdown
 
 	public IEnumerator startServerAndAllClients(){
-		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
+		#if UNITY_ANDROID && !UNITY_EDITOR
 			//Start Server
 			logStatus ("starting server...");
-			Debug.Log ("Started: " + FieldtripServicesControlerInterface.startServer ());
-			ServerStatusIcon.color = themeRed;
+			//Debug.Log ("Started: " + FieldtripServicesControlerInterface.startServerApp ());
 			yield return new WaitForSeconds (4);//These waits are for the Services to have time to pass around their intents. Used to be 10.
-			updateServer = true;
 
+			Debug.Log ("Started: " + FieldtripServicesControlerInterface.startServer ());
+		    ServerStatusIcon.color = themeRed;
+			yield return new WaitForSeconds (2);//These waits are for the Services to have time to pass around their intents. Used to be 10.
+		    updateServer = true;
 
 			//Start Clients
-			logStatus ("starting client...");
+			logStatus ("starting clients...");
 			Debug.Log ("Started: " + FieldtripServicesControlerInterface.startClients ());
-			yield return new WaitForSeconds (1);
+			yield return new WaitForSeconds (2);
 
+
+			//start the required clients
+		for ( int i =0 ; i < Config.bufferClientThreadList.Length; i++ ) {
+		string clientname=Config.bufferClientThreadList[i];
+			logStatus( "starting = " + clientname);
+			FieldtripServicesControlerInterface.startThread(clientname);
+			yield return new WaitForSeconds (1);//These waits are for the Services to have time to pass around their intents. Used to be 10.
+		}
+		#endif
+			
+
+		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
 			//Start Threads
 			logStatus ("loading threads...");
 			bool museIsAvailable = false;
@@ -168,7 +181,9 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 					FieldtripServicesControlerInterface.startThread (museThreadID);
 				}
 			}
+		#endif
 
+		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
 			if (museIsAvailable) {
 				//Start Buffer
 				logStatus ("creating buffer...");
@@ -201,7 +216,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 				yield return new WaitForSeconds (2f);
 			J
 
-		#else
+		#endif
 			//Start Buffer
 			logStatus ("Connecting to buffer...");
 			while ( ! bufferIsOn ){
@@ -213,7 +228,6 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 			}
 			logStatus ("Connected!");
 			yield return new WaitForSeconds(1);
-      #endif
 		buttonColors.normalColor = themeGreen;
 		buttonColors.highlightedColor = themeGreen;
 		StatusButton.colors = buttonColors;
@@ -308,6 +322,11 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 		return systemIsReady;
 	}
 
+
+	public double[] getFeedback (){
+		return currentAlphaLat;
+	}
+
 	public float getAlpha()
 	{
 		return (float)currentAlphaLat[0];
@@ -323,12 +342,12 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	public float getQualityCh1()
 	{
 		//return normalize ((float)currentAlphaLat [2], qualityLimit);
-		return (float)currentAlphaLat [2];
+		return (float)currentAlphaLat [currentAlphaLat.Length-2];
 	}
 
 	public float getQualityCh2()
 	{
-		return (float)currentAlphaLat [3];
+		return (float)currentAlphaLat [currentAlphaLat.Length-1];
 	}
 
 	// Called m*manually* when this interface is visible!

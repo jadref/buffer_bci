@@ -61,9 +61,7 @@ public class ContinuousClassifierThread extends ThreadBase {
     }
 
     @Override
-    public String getName() {
-        return "ContinuousClassifier";
-    }
+    public String getName() { return TAG; }
 
     @Override
     public void mainloop() {// Initialize the classifier and connect to the buffer

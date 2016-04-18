@@ -82,14 +82,15 @@ def buffer_newevents(evttype=None,timeout_ms=500,verbose=False):
     events=[]
     while len(events)==0 and elapsed_ms<timeout_ms:
         nSamples,curEvents=ftc.wait(-1,nEvents, int(timeout_ms - elapsed_ms))
-        if curEvents>nEvents:            
+        if curEvents>nEvents:
+            if curEvents>nEvents-50: #guard for very long waits..
+                curEvents=nEvents-50
             events = ftc.getEvents([nEvents,curEvents-1])            
             if not evttype is None:
                 events = filter(lambda x: x.type in evttype, events)
         nEvents = curEvents # update starting number events (allow for buffer restarts)
         elapsed_ms = (time.time() - start)*1000        
     return events
-
 
 
 # Receive events from the buffer and process them.
@@ -116,3 +117,4 @@ def processBufferEvents():
 running = True
 while running:
 	processBufferEvents()
+

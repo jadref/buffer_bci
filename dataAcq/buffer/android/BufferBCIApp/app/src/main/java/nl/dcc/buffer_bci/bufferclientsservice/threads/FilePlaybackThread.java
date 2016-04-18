@@ -18,7 +18,7 @@ import java.io.InputStream;
 
 public class FilePlaybackThread extends ThreadBase {
 
-    public static final String TAG = FilePlaybackThread.class.toString();
+    public static final String TAG = FilePlaybackThread.class.getSimpleName();
 
     private int VERB = 1; // global verbosity level
     private String hostname;
@@ -43,9 +43,7 @@ public class FilePlaybackThread extends ThreadBase {
     }
 
     @Override
-    public String getName() {
-        return "File Playback";
-    }
+    public String getName() { return TAG; }
 
     @Override
     public void validateArguments(Argument[] arguments) {

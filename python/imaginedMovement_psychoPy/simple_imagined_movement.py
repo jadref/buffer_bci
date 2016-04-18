@@ -6,8 +6,8 @@ import numpy as np
 import struct, sys, time, os
 
 # use the buffer helper for seting up the connrection, sending/waiting for events
-bufhelppath="../signalProc";
-sys.path.append(os.path.dirname(__file__) + "/" + bufhelppath)
+bufhelppath=os.path.join("..","signalProc");
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),bufhelppath))
 from bufhelp import *
 
 # ************** Set up buffer connection **************

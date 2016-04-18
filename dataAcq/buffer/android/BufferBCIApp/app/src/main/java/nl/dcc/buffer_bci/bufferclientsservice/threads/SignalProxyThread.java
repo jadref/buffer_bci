@@ -8,7 +8,9 @@ import java.io.IOException;
 
 public class SignalProxyThread extends ThreadBase {
 
-    public static final String TAG = SignalProxyThread.class.toString();
+    public static final String TAG = SignalProxyThread.class.getSimpleName();
+    @Override
+    public String getName() { return TAG; }
 
     private int VERB = 1; // global verbosity level
     private String hostname;
@@ -28,12 +30,6 @@ public class SignalProxyThread extends ThreadBase {
         arguments[3] = new Argument("Blocksize", 5, false);
         return arguments;
     }
-
-    @Override
-    public String getName() {
-        return "Signal Proxy";
-    }
-
 
     @Override
     public void validateArguments(Argument[] arguments) {
