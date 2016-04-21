@@ -1,4 +1,4 @@
-run ../utilities/initPTBPaths.m;
+run ../matlab/utilities/initPTBPaths.m;
 initgetwTime;
 initsleepSec;
 

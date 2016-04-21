@@ -1,7 +1,7 @@
 set matexe="" 
 set ismatlab=1
 set matopts=""
-FOR /d %%f in ("C:\Program Files\MATLAB\*" "C:\Program Files (x86)\MATLAB\*") DO (
+FOR /d %%f in ("C:\Program Files\MATLAB\*" "C:\Program Files (x86)\MATLAB\*" "D:\Program Files\MATLAB\*") DO (
 	 if exist "%%f\bin\matlab.exe" ( 
 	 set matexe="%%f\bin\matlab.exe"
      set matopts="-nodesktop"

@@ -35,7 +35,7 @@ function []=buffer_signalproxy(host,port,varargin);
 %  verb           - [int] verbosity level.  If <0 then rate in samples to print status info (0)
 if ( nargin<2 || isempty(port) ) port=1972; end;
 if ( nargin<1 || isempty(host) ) host='localhost'; end;
-wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../utilities/initPaths.m'); end;
+wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../matlab/utilities/initPaths.m'); end;
 
 opts=struct('fsample',100,'nCh',4,'blockSize',5,'Cnames',[],...
 				'stimEventRate',100,'queueEventRate',500,'keyboardEvents',true,'verb',-2,...
