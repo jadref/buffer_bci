@@ -45,7 +45,6 @@ public class SavingRingDataStore extends RingDataStore {
         initFiles(theDir);
     }
 
-
     /**
      * Constructor
      *
@@ -71,7 +70,7 @@ public class SavingRingDataStore extends RingDataStore {
         initFiles(theDir);
     }
 
-    void initFiles(String path) {
+    void initFiles(String path) throws IOException {
 		  // When using a string we automatically use sub-directories numbered from 000
         if (path == null) path = ".";
         // add the reset number prefix to the path
@@ -80,36 +79,31 @@ public class SavingRingDataStore extends RingDataStore {
 		  initFiles(theDir); // call the version which actually makes directory and opens the save files
     }
 
-    void initFiles(File file) {
+    void initFiles(File file) throws IOException {
 		  // this function actually does the creation and opening of the save files
-        try {
-            // if the directory does not exist, create it
-            if (!file.exists()) {
-                try {
-                    file.mkdirs();
-                } catch (SecurityException se) {
-                    //handle it
-                }
+        // if the directory does not exist, create it
+        if (!file.exists()) {
+            try {
+                file.mkdirs();
+            } catch (SecurityException se) {
+                throw new IOException("Could not make saving directories"); 
             }
-            // record the save path used
-            String savePath = file.getPath();
-            dataWriter = new BufferedOutputStream(new FileOutputStream(savePath + File.separator + "samples"),
-                    dataBufSize);
-            eventWriter = new BufferedOutputStream(new FileOutputStream(savePath + File.separator + "events"),
-                    eventBufSize);
-            headerWriter = new BufferedOutputStream(new FileOutputStream(savePath + File.separator + "header"));
-            // Write everything in BIG_ENDIAN
-            writeBuf = ByteBuffer.allocate(eventBufSize);
-            writeBuf.order(ByteOrder.nativeOrder());
-				// Some debug info about what we're doing
-				System.err.println("Saving to : " + savePath);
-        } catch (IOException x) {
-				System.err.println("Error making save file");
-            System.err.println(x);
         }
+        // record the save path used
+        String savePath = file.getPath();
+        dataWriter = new BufferedOutputStream(new FileOutputStream(savePath + File.separator + "samples"),
+                                              dataBufSize);
+        eventWriter = new BufferedOutputStream(new FileOutputStream(savePath + File.separator + "events"),
+                                               eventBufSize);
+        headerWriter = new BufferedOutputStream(new FileOutputStream(savePath + File.separator + "header"));
+        // Write everything in BIG_ENDIAN
+        writeBuf = ByteBuffer.allocate(eventBufSize);
+        writeBuf.order(ByteOrder.nativeOrder());
+        // Some debug info about what we're doing
+        System.err.println("Saving to : " + savePath);
     }
 
-    void resetFiles() {
+    void resetFiles() throws IOException {
         cleanup();
 		  numReset++;
         initFiles(savePathRoot);
@@ -123,7 +117,11 @@ public class SavingRingDataStore extends RingDataStore {
     @Override
     public synchronized void flushData() throws DataException {
         super.flushData();
-        resetFiles(); // resets the sample counter, so need start new save file
+        try {
+            resetFiles(); // resets the sample counter, so need start new save file
+        } catch (IOException e) {
+            throw new DataException("IO error starting new save file");
+        }
     }
 
     /**
@@ -134,7 +132,11 @@ public class SavingRingDataStore extends RingDataStore {
     @Override
     public synchronized void flushHeader() throws DataException {
         super.flushHeader();
-        resetFiles(); // resets the sample counter, so need start new save file
+        try {
+            resetFiles(); // resets the sample counter, so need start new save file
+        } catch (IOException e) {
+            throw new DataException("IO error starting new save file");
+        }
     }
 
 
@@ -168,7 +170,7 @@ public class SavingRingDataStore extends RingDataStore {
                 try {
                     dataWriterwrite(sample);
                 } catch (IOException e) {
-                    System.err.println("IOException writing data");
+                    throw new DataException("IOException writing data");
                 }
             }
         } else {
@@ -177,7 +179,7 @@ public class SavingRingDataStore extends RingDataStore {
                 try {
                     dataWriterwrite(data.data[i]);
                 } catch (IOException e) {
-                    System.err.println("IOException writing data");
+                    throw new DataException("IOException writing data");
                 }
             }
         }
@@ -222,14 +224,14 @@ public class SavingRingDataStore extends RingDataStore {
                 try {
                     eventWriterwrite(evt);
                 } catch (IOException e) {
-                    System.err.println("IOException writing events");
+                    throw new DataException("IOException writing events");
                 }
             } else {
                 eventBuffer.add(event);
                 try {
                     eventWriterwrite(event);
                 } catch (IOException e) {
-                    System.err.println("IOException writing events");
+                    throw new DataException("IOException writing events");
                 }
             }
         }
@@ -292,7 +294,7 @@ public class SavingRingDataStore extends RingDataStore {
         try {
             headerWriterwrite(header);
         } catch (IOException e) {
-            System.err.println("IOException writing header");
+            throw new DataException("IOException writing header");
         }
     }
 
