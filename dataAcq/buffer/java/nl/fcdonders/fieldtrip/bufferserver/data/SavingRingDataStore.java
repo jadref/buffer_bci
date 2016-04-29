@@ -28,21 +28,33 @@ public class SavingRingDataStore extends RingDataStore {
     public SavingRingDataStore(final int nBuffer) {
         super(nBuffer);
 		  savePathRoot = "."; // record the root of the save path
-        initFiles(savePathRoot); 
+		  try { 
+				initFiles(savePathRoot);
+		  } catch ( IOException ex ) {
+				throw new IllegalStateException(ex.toString());
+		  }
     }
 
 
     public SavingRingDataStore(final int nBuffer, final String path) {
         super(nBuffer);
 		  savePathRoot = path; // record the root of the save path
-        initFiles(savePathRoot); 
+		  try { 
+				initFiles(savePathRoot);
+		  } catch ( IOException ex ) {
+				throw new IllegalStateException(ex.toString());
+		  }
     }
 
     public SavingRingDataStore(final int nBuffer, final File theDir) {
         super(nBuffer);
 		  // record the root of the save path
 		  savePathRoot = theDir.getPath();
-        initFiles(theDir);
+		  try { 
+				initFiles(savePathRoot);
+		  } catch ( IOException ex ) {
+				throw new IllegalStateException(ex.toString());
+		  }
     }
 
     /**
@@ -54,20 +66,32 @@ public class SavingRingDataStore extends RingDataStore {
     public SavingRingDataStore(final int nSamples, final int nEvents) {
         super(nSamples, nEvents);
 		  savePathRoot = "."; // record the root of the save path
-        initFiles(savePathRoot); 
+		  try { 
+				initFiles(savePathRoot);
+		  } catch ( IOException ex ) {
+				throw new IllegalStateException(ex.toString());
+		  }
     }
 
     public SavingRingDataStore(final int nSamples, final int nEvents, String path) {
         super(nSamples, nEvents);
 		  savePathRoot = path; // record the root of the save path
-        initFiles(savePathRoot);
+		  try { 
+				initFiles(savePathRoot);
+		  } catch ( IOException ex ) {
+				throw new IllegalStateException(ex.toString());
+		  }
     }
 
     public SavingRingDataStore(final int nSamples, final int nEvents, File theDir) {
         super(nSamples, nEvents);
 		  // record the root of the save path
 		  savePathRoot = theDir.getPath();
-        initFiles(theDir);
+		  try { 
+				initFiles(savePathRoot);
+		  } catch ( IOException ex ) {
+				throw new IllegalStateException(ex.toString());
+		  }
     }
 
     void initFiles(String path) throws IOException {
@@ -282,7 +306,11 @@ public class SavingRingDataStore extends RingDataStore {
             if (dataType != header.dataType) {
                 throw new DataException("Replacing header has different data type");
             }				
-				resetFiles(); // reset the save directory
+				try {
+					 resetFiles(); // resets the sample counter, so need start new save file
+				} catch (IOException e) {
+					 throw new DataException("IO error starting new save file");
+				}
         } else {
             nChans = header.nChans;
             dataType = header.dataType;
