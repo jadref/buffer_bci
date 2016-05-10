@@ -27,7 +27,7 @@ rem dataacqpid=$!
 
 echo dataacqpid=$dataacqpid
 echo Starting the default signal processing function \(background\)
-start  .\signalProc\startSigProcBuffer.bat
+start  .\matlab\signalProc\startSigProcBuffer.bat
 rem sigprocpid=$!
 
 
