@@ -97,11 +97,11 @@ If this command is successful you should see a new console open with some some t
 **Image3 here**
 
 
-3. Start the stimulus generation software by running: `EEGBCITutorial\runEEGBCITutorial.bat` or  `EEGBCITutorial\runEEGBCITutorial.sh`
+3. Start the stimulus generation software by running: `tutorial\EEGBCITutorial\runEEGBCITutorial.bat` or  `tutorial/EEGBCITutorial/runEEGBCITutorial.sh`
 
 You should see Matlab start up, and (eventually) a window like this titled " **BCI Controller**".
 
-4. Finally, start the signal analysis software, by running: `EEGBCITutorial/startSigProcBuffer.bat` or `EEGBCITutorial/startSigProcBuffer.sh`
+4. Finally, start the signal analysis software, by running: `tutorial\EEGBCITutorial\startSigProcBuffer.bat` or `tutorial/EEGBCITutorial/startSigProcBuffer.sh`
 
  You should see Matlab startup.  You will then be asked to pick a **cap-file** for this experiment which says for the connected eeg hardware where each electrode is positioned in 10-20 notation.  For the EEG systems listed above the appropriate cap-files are:
   - **No-EEG hardware** : `1010.txt`    
