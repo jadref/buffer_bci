@@ -1,7 +1,10 @@
 Bugs
 ====
 [] Fix layout of channel plots when capfile is invalid...
-[] Refactor matlab code into the matlab sub-directory
+
+[X] Refactor matlab code into the matlab sub-directory
+
+[] refactor the caps-files into the resources/caps directory 
 
 Basic buffer integeration
 =========================
@@ -14,11 +17,13 @@ Platform/Language support
   [X] - Pyschopy Examples
   [X] - Python based signal processing code  (partial implementation)
   [] - Python based signal viewer
+  
 [] - Android support
   [X] - Buffers server/clients applications
   [X] - Java based signal analysis routines
   [X] - Unity examples
   [X] - Raw-android examples
+
 [] - Open Sound Control
   [X] - OSC2ft, osc messages to data
   [] - osc2evt, osc messages into buffer events
