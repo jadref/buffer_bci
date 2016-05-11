@@ -96,7 +96,7 @@ An overview of the included directories is:
 
 ## Main example BCI systems
 
-* [`tutorial\EEGBCITutorial`](tutorial\EEGBCITutorial) -- Tutorial on how to use an EEG BCI, including general experience on EEG signals, and two simple BCIs; imagined-movements, and a visual-p300 speller.
+* [`tutorial/EEGBCITutorial`](tutorial/EEGBCITutorial) -- Tutorial on how to use an EEG BCI, including general experience on EEG signals, and two simple BCIs; imagined-movements, and a visual-p300 speller.
 				 
 *  [`matlab/imaginedMovement`](matlab/imaginedMovement) -- Example BCI system for controlling a cursor using an imagined movement (ERSP) type BCI
 
