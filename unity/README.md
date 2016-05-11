@@ -1,9 +1,6 @@
 # README #
 
-There is on BufferBCIApp which runs the buffer, hardware drivers, and signal-analysis clients
+ * Desktop: Start a background buffer+acquisation-driver+signal_processer as use for BCIs, e.g. by running [`debug_quickstart.bat`](../debug_quickstart.bat).
+ * Android: Install the [BufferBCIApp](../../dataAcq/java/BufferBCIApp), this will auto-start all the bits you need (buffer, hardware drivers, signal-analysis clients etc.) when requested at run-time.
 
 There is then a unity application which runs the User interface and communicates with the BufferBCIApp to start the various components
-
-### How do I set it up? ###
-
-The BufferBCIApp is a separate application which both provides the BufferServerService and BufferClientsService and a simple gui for controlling these services. This should be installed to the developing Android device. Services don't provide a GUI (but do give a notification) so don't expect a application to pop up, they will run in the background once they are started by the Unity project (through the BufferServicesController).  
