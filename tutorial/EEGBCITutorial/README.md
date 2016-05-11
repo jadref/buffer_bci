@@ -7,4 +7,4 @@ This tutorial teach you:
    4. How to run an evoked response (matrix speller) BCI
    5. How to run an induced response (imagined movement) BCI
 
-The tutorial worksheet in the file `EEGBCI_worksheet.pdf` gives detailed illustrated instructions to walk you through this tutorial.
+The tutorial worksheet in the file `EEGBCI_worksheet.pdf` or ['EEGBCI_worksheet.md`](EEGBCI_worksheet.md) give detailed illustrated instructions to walk you through this tutorial.
