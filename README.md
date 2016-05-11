@@ -29,7 +29,7 @@ Further different clients may be written in different programming languages and 
 
 Copy these directories somewhere on your local drive.
 
-Note: If using MATLAB/Octave and the .bat/.sh files do not work because the MATLAB/Octave executable is not found automatically then modify the path in the file `utilities\findMatlab.bat` (windows) or `utilities/findMatlab.sh` (Linux/MacOSX) to point to the executable location.
+Note: If using MATLAB/Octave and the .bat/.sh files do not work because the MATLAB/Octave executable is not found automatically then modify the path in the file [`utilities\findMatlab.bat`](utilities\findMatlab.bat) (windows) or [`utilities/findMatlab.sh`](utilities\findMatlab.sh) (Linux/MacOSX) to point to the executable location.
 
 Note2: For Linux there is a [Docker image]( https://github.com/dokterbob/docker-bci) which can be used to simply install buffer_bci and all it's dependencies directly 
 
@@ -47,14 +47,17 @@ To run the games demo:
 
  If you have *no* EEG hardware, but just want to test:
 
-  1.2) start a buffer by running: `dataAcq/startJavaBuffer.bat` or `dataAcq/startJavaBuffer.sh`  
-  1.2) start a *simulated* data source by running: `dataAcq/startJavaSignalProxy.bat` or .sh
+  1.2. start a buffer by running: [`dataAcq/startJavaBuffer.bat`](dataAcq/startJavaBuffer.bat) or [`dataAcq/startJavaBuffer.sh`](dataAcq/startJavaBuffer.sh)  
+  1.2. start a *simulated* data source by running: [`dataAcq/startJavaSignalProxy.bat`](dataAcq\startJavaSignalProxy.bat) or [.sh](dataAcq/startJavaSignalProxy.sh)
+
+OR
+  Start a complete simulated EEG system in one step using [`debug_quickstart.bat`](debug_quickstart.bat) or [`debug_quickstart.sh`](debug_quickstart.sh)
 
  If you have EEG hardware connected then depending on the hardware:
 
-  1.1) start a buffer by running: `dataAcq/startJavaBuffer.bat` or `buffer/startJavaBuffer.sh`  
+  1.1) start a buffer by running: [`dataAcq/startJavaBuffer.bat`](dataAcq/startJavaBuffer.bat) or [`dataAcq/startJavaBuffer.sh`](dataAcq/startJavaBuffer.bat)  
   1.2) start appropriate acquisition driver for your device:  
-  		 TMSi Mobita([mobita]):       `dataAcq/startMobita.bat`  or  `dataAcq/startMobita.sh`  
+  		 TMSi Mobita([mobita]):       [`dataAcq/startMobita.bat`](dataAcq\startMobita.bat)  or  `dataAcq/startMobita.sh`  
        Emotiv Epoc:        `dataAcq/startEmotiv.bat`  or  `dataAcq/startEmotiv.sh`  
        Biosemi Active 2:   `dataAcq/startBiosemi.bat` or  `dataAcq/startBiosemi.sh`  
 		 Interaxon Muse:     `dataAcq/startMuse.bat`    or  `dataAcq/startMuse.sh`  
@@ -64,9 +67,9 @@ Note: By default raw data is saved to:
 *  *Windows*: `C:\output\test\_YYMMDD_\_HHMM_\raw_buffer\0001`  
    where `_YYMMDD_` is the date in year/month/day format, `_HHMM_` is start time hour and minutes
 
-2. Start the Matlab/Octave based signal processing process by running: `matlab/games/startSigProcBuffer.bat` or .sh
+2. Start the Matlab/Octave based signal processing process by running: [`matlab/games/startSigProcBuffer.bat`](matlab\games\startSigProcBuffer.bat) or [`.sh`](matlab\games\startSigProcBuffer.sh)
 
-3. Start the Matlab/Octave based experiment control & stimulus presentation system by running : `matlab/games/runGame.bat` or runGame.sh
+3. Start the Matlab/Octave based experiment control & stimulus presentation system by running : [`matlab/games/runGame.bat`](matlab\games\runGame.bat) or [`runGame.sh`](matlab/games/runGame.sh)
 
 4. Type in the subject name to the experiment control window, and then run through each of the experiment phases: 
 
@@ -81,66 +84,25 @@ Note: By default raw data is saved to:
 ## Folder Structure
 
 An overview of the included directories is:
-*  `dataAcq` -- code for data acquisition, i.e. interfacing to recording hardware, based on the [field-trip buffer specification](http://fieldtrip.fcdonders.nl/development/realtime).
+*  [`dataAcq`](dataAcq) -- code for data acquisition, i.e. interfacing to recording hardware, based on the [field-trip buffer specification](http://fieldtrip.fcdonders.nl/development/realtime).
 				 Also scripts (.bat for windows, .sh for Linux/Mac) for starting the executables
-*  `dataAcq/buffer` -- binary and source files for the fieldtrip buffer implementation
-*  `dataAcq/buffer/glnx86` -- linux executable binaries for hardware access
-*  `dataAcq/buffer/glnxa86` -- 64-bit linux executable binaries for hardware access
-*  `dataAcq/buffer/maci`   -- (intel) Mac OS executable binaries for hardware access
-*  `dataAcq/buffer/maci64` -- 64-bit (intel) Mac OS executable binaries for hardware access
-*  `dataAcq/buffer/win32`  -- windows executable binaries for hardware access
-*  `dataAcq/buffer/c`      -- buffer client driver code in C
-*  `dataAcq/buffer/csharp` -- buffer client driver code in C#
-*  `dataAcq/buffer/python` -- buffer client driver code in Python
-*  `dataAcq/buffer/java`   -- buffer client driver code in java
+*  [`matlab`](matlab)  -- example BCIs written in the [MATLAB](www.mathworks.com) language also compatiable with the free+open-source [OCTAVE](www.gnu.org/software/octave) system.
+*  [`c`](c) -- example BCIs written the raw c
+*  [`python`](python) -- example BCIs written in the [Python](www.python.org) programming language
+*  [`java`](java) -- example BCI writen in the [java](www.oracle.com/java) programming language
+*  [`csharp`](csharp) -- example BCIs written in the [C#](https://msdn.microsoft.com/en-us/library/67ef8sbd.aspx) programming language
+*  [`unity`](unity) -- example BCIs writtin in the [unity](unity3d.com) game development environment
+*  [`tutorial`](tutorial) -- Tutorial on BCI and how to use buffer_bci arranged in lectures 1 through 5 about how BCIs work, the structure and components of a BCI and how to build a standard BCI with the buffer_bci framework
 
-*  `matlab/signalProc` -- code for pre-processing EEG data, training classifiers, and applying the trained classifiers on-line for the ERP and ERSP based BCIs
+## Main example BCI systems
 
-*  matlab/`stimulus` -- utility functions for generating correctly randomised stimulus sequences
-
-*  `matlab/utilties` -- various utility functions for BCI use, in particular for loading cap position layout files, setting up paths, option parsing etc.
-
-*  `matlab/classifiers` -- code for the linear logistic regression classifier, and associated utility functions for e.g. cross-validation, performance estimation etc.
-
-*  `matlab/plotting` -- various plotting utility functions, e.g. plotting topographic head outlines, plotting 3-d data (multi-plots), zooming multi-plots
-  
-*  `matlab/games` -- Example BCI system for playing 3 simple games (Snake, Sokoban and Pacman) using and visual evoked response (ERP) type BCI
-
-*  `matlab/offline` -- Example scripts for process saved BCI data offline, i.e. analysing data loaded from file
-
-*  `matlab/example` -- Example clients for the major supported programming languages; Matlab, java, Python, C#, C
-
-*  `tutorial` -- Tutorial arranged in lectures 1 through 5 about how BCIs work, 
-              the structure and components of a BCI and how to build a standard BCI with the buffer_bci framework
+* [`tutorial\EEGBCITutorial`](tutorial\EEGBCITutorial) -- Tutorial on how to use an EEG BCI, including general experience on EEG signals, and two simple BCIs; imagined-movements, and a visual-p300 speller.
 				 
-*  `matlab/imaginedMovement` -- Example BCI system for controlling a cursor using an imagined movement (ERSP) type BCI
+*  [`matlab/imaginedMovement`](matlab/imaginedMovement) -- Example BCI system for controlling a cursor using an imagined movement (ERSP) type BCI
 
-*  `matlab/matrixSpeller` -- Example BCI system for spelling characters using a visual matrix-speller (p300) type BCI
+*  [`matlab/matrixSpeller`](matlab/matrixSpeller) -- Example BCI system for spelling characters using a visual matrix-speller (p300) type BCI
 
-*  `matlab/matrixSpellerPTB` -- Example BCI system for spelling characters using a visual matrix-speller (p300) type BCI.  This version uses PsychToolBox to improve the timing of the visual stimulus rendering.  
+*  [`matlab/matrixSpellerPTB`](matlab/matrixSpellerPTB) -- Example BCI system for spelling characters using a visual matrix-speller (p300) type BCI.  This version uses PsychToolBox to improve the timing of the visual stimulus rendering.  
     N.B. to use this you will need to set the PTB path correctly in `utilities/initPTBPaths.m`
 
-*  `matlab/cursorControl` -- Example BCI system for controlling a cursor in 2-d using
-                             visual evoked response (ERP) type BCI
-
-###Notes: TMSi mobita {mobita}
-This device uses wifi to connect between the computer and the amplifier.  When recording data this connection *cannot* be disconnected.  Unfortunately, most OSs currently have a wifi auto-scan system which will periodically scan for 'better' wifi networks.  This scanning will interrupt data sending and cause the connection to be temporally lost for 1-3seconds.   To prevent this you need to prevent wifi auto-scanning, how this is done differs depending on OS.
-* Linux: on most current linux wifi is managed by NetworkManager.  By stopping this process from running you can prevent wifi auto-scanning.  Do this by: `killall -STOP NetworkManager`.  To resume auto-scanning use: `killall -CONT NetworkManager`
-* Windows: to stop network scanning follow the instructions [here](http://answers.microsoft.com/en-us/windows/forum/windows_7-networking/how-to-disable-automatic-scanning-for-wifi/4c8253ec-40c6-42c8-a9f7-00d78fce966c).
-
-
-###Notes: Linux 64-bit
-Currently this system comes only with 32-bit linux binary executables in the
-`dataAcq\buffer\glnx86` directory.  These depend on the 32-bit version of the
-standard libraries and thus will not work on 64-bit systems which do not have
-these libaries installed.   Fortunately these libaries are easy to install on
-modern linux systems.  Exactly how will vary depending on the distribution,
-however on Ubuntu you should take the following steps:
-
-1) *Do not* install `ia32-libs` as this is no longer uspported.   Instead
-install the 3 packages: `lib32z1` `lib32ncurses5` `lib32bz2-1.0`
-
-2) Add all the additional information for the 32-bit architecture using:
-`sudo dpkg --add-architecture i386`
-
-3) (Optional) For Emotiv Epoc support using *emokit* reinstall `mcrypt` as `mcrypt:i386`
+*  [`matlab/cursorControl`](matlab/cursorControl) -- Example BCI system for controlling a cursor in 2-d using visual evoked response (ERP) type BCI
