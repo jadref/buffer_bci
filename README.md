@@ -86,12 +86,12 @@ Note: By default raw data is saved to:
 An overview of the included directories is:
 *  [`dataAcq`](dataAcq) -- code for data acquisition, i.e. interfacing to recording hardware, based on the [field-trip buffer specification](http://fieldtrip.fcdonders.nl/development/realtime).
 				 Also scripts (.bat for windows, .sh for Linux/Mac) for starting the executables
-*  [`matlab`](matlab)  -- example BCIs written in the [MATLAB](www.mathworks.com) language also compatiable with the free+open-source [OCTAVE](www.gnu.org/software/octave) system.
+*  [`matlab`](matlab)  -- example BCIs written in the [MATLAB](http://www.mathworks.com) language also compatiable with the free+open-source [OCTAVE](http://www.gnu.org/software/octave) system.
 *  [`c`](c) -- example BCIs written the raw c
-*  [`python`](python) -- example BCIs written in the [Python](www.python.org) programming language
-*  [`java`](java) -- example BCI writen in the [java](www.oracle.com/java) programming language
+*  [`python`](python) -- example BCIs written in the [Python](http://www.python.org) programming language
+*  [`java`](java) -- example BCI writen in the [java](http://www.oracle.com/java) programming language
 *  [`csharp`](csharp) -- example BCIs written in the [C#](https://msdn.microsoft.com/en-us/library/67ef8sbd.aspx) programming language
-*  [`unity`](unity) -- example BCIs writtin in the [unity](unity3d.com) game development environment
+*  [`unity`](unity) -- example BCIs writtin in the [unity](http://unity3d.com) game development environment
 *  [`tutorial`](tutorial) -- Tutorial on BCI and how to use buffer_bci arranged in lectures 1 through 5 about how BCIs work, the structure and components of a BCI and how to build a standard BCI with the buffer_bci framework
 
 ## Main example BCI systems
