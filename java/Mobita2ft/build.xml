@@ -8,6 +8,7 @@
     <property name="build.dir"   value="build"/>
     <property name="classes.dir" value="${build.dir}/classes"/>
     <property name="jar.dir"     value="${build.dir}/jar"/>
+    <property name="main-class"  value="Mobita2ft.${ant.project.name}"/>
 
 	 <!-- Any library jar's we depend on? -->
 	 <property name="lib.dir"     value="lib"/>
@@ -34,7 +35,7 @@
 			 <fileset dir="${classes.dir}" includes="**//*.class"/>
 			 <fileset dir="${src.dir}" includes="*.java"/>
           <manifest>
-            <attribute name="Main-Class" value="${ant.project.name}"/>
+            <attribute name="Main-Class" value="${main-class}"/>
           </manifest>			 
         </jar>		  
     </target>
@@ -44,10 +45,11 @@
 	 </target>
 
     <target name="run" depends="jar">
-      <java fork="true" classname="${ant.project.name}">
+      <java fork="true" classname="${main-class}">
         <classpath>
 			 <path refid="classpath"/>
-			 <path location="${jar.dir}/osc2ft.jar"/>
+			 <path location="${jar.dir}/Mobti2ft.jar"/>
+			 <path location="${buffer.jar}"/>
         </classpath>
       </java>
     </target>

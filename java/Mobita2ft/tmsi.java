@@ -2110,26 +2110,17 @@ public class tmsi {
             System.err.println("Bluetooth not supported!");
             System.exit(1);
         } else { // this is a network socket connection
-            System.err.println("Opening TCP/IP device\n");
+            System.err.println("Opening TCP/IP device :" + fname);
             /* N.B. Type: TCP, Port: 4242 */
             /* split the name into host:port parts */
 //            hostent server;
-            String hostname = new String(new char[MNCN]);
-            int portno = DEFAULTPORT;
-            /* find the which splits the host and port info */
-            for (ci = 0; fname.charAt(ci) != 0; ci++) {
-                if (fname.charAt(ci) == ':') { // parse the port info
-                    portno = Integer.parseInt("" + (fname.charAt(ci + 1)));
-                    break;
-                }
-            }
-
-            StringBuilder myName = new StringBuilder(hostname);
-            myName.setCharAt(4, 'x');
-            for (int i = 0; i < ci; i++) {
-                myName.setCharAt(i, fname.charAt(i));
-            }
-            replace(hostname, ci, (char) 0); // copy hostname out and null-terminate
+            String host = fname;
+            int port = DEFAULTPORT;
+				int sep = host.indexOf(':');
+				if ( sep>0 ) {
+					 port=Integer.parseInt(host.substring(sep+1,host.length()));
+					 host=host.substring(0,sep);
+				}
 
             /* socket: create the socket */
 //            s = socket(AF_INET, SOCK_STREAM, 0);
@@ -2191,27 +2182,28 @@ public class tmsi {
                 System.err.format("setsockopt error NODELAY: %d\n", status);
             }
 
-//            server = gethostbyname(hostname);
+//            server = gethostbyname(host);
             InetAddress server = null;
             try {
-                server = InetAddress.getByName(hostname);
+                server = InetAddress.getByName(host);
             } catch (UnknownHostException ex) {
-                System.err.format("ERROR, no such host as %s\n", hostname);
+                System.err.println("ERROR, no such host as :"+ host);
                 System.exit(0);
             }
-            System.err.format("host resovled\n");
+            System.err.println("host resovled : " + server);
 
-            InetSocketAddress serveraddr = new InetSocketAddress(server, portno);
+            InetSocketAddress serveraddr = new InetSocketAddress(server, port);
             /* build the server's Internet address */
             try {
                 /* open connection to TMSi hardware */
                 /* connect: create a connection with the server */
+					 System.err.println("Connecting to: " + serveraddr);
                 s.connect(serveraddr);
             } catch (IOException ex) {
-                System.err.format("ERROR, connecting to %s:%d\n", hostname, portno);
+                System.err.println("ERROR, connecting to " + host + ":" + port);
                 System.exit(0);
             }
-            System.err.format("connection made\n");
+            System.err.println("connection made");
         }
 
         /* return socket */

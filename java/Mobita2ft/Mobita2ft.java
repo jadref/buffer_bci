@@ -5,8 +5,6 @@
 package Mobita2ft;
 import java.io.*;
 import nl.fcdonders.fieldtrip.bufferclient.*;
-import Mobita2ft.*;
-
 
 public class Mobita2ft {
 	 BufferClient ftClient;
