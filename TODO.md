@@ -4,7 +4,7 @@ Bugs
 
 [X] Refactor matlab code into the matlab sub-directory
 
-[] refactor the caps-files into the resources/caps directory 
+[X] refactor the caps-files into the resources/caps directory 
 
 Basic buffer integeration
 =========================
@@ -18,7 +18,7 @@ Platform/Language support
   [X] - Python based signal processing code  (partial implementation)
   [] - Python based signal viewer
   
-[] - Android support
+[X] - Android support
   [X] - Buffers server/clients applications
   [X] - Java based signal analysis routines
   [X] - Unity examples
