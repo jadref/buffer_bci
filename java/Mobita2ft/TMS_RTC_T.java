@@ -1,3 +1,5 @@
+package Mobita2ft;
+
 public class TMS_RTC_T
 {
   public short seconds;

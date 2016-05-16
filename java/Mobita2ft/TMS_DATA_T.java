@@ -1,3 +1,5 @@
+package Mobita2ft;
+
 public class TMS_DATA_T
 {
   public float sample; //*< real sample value

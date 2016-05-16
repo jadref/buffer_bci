@@ -1,3 +1,8 @@
+package Mobita2ft;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+
 /** TMS config struct */
 public class TMS_CONFIG_T
 {
@@ -14,8 +19,8 @@ public class TMS_CONFIG_T
   public short sampleRateDiv; //*< Sample Rate Divider
   public short mindecimation; //*< Minimum Decimantion of all channels
 //C++ TO JAVA CONVERTER TODO TASK: The typedef 'tms_storage_t' was defined in multiple preprocessor conditionals and cannot be replaced in-line:
-  public tms_storage_t[] storageType = new tms_storage_t[64]; //*< Storage Type
-  public byte[] fileName = new byte[12]; //*< Measurement file name
-  public time_t alarmTime = new time_t(); //*< alarm time
-  public byte[] info = new byte[700]; //*< patient of measurement info
+  public TMS_STORAGE_T[] storageType = new TMS_STORAGE_T[64]; //*< Storage Type
+  public Byte[] fileName = new Byte[12]; //*< Measurement file name
+  public LocalDateTime alarmTime = LocalDateTime.now(); //*< alarm time
+  public Byte[] info = new Byte[700]; //*< patient of measurement info
 }

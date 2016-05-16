@@ -1,7 +1,9 @@
+package Mobita2ft;
+
 public class TMS_TYPE_DESC_T
 {
   public short Size; // Size in words of this structure
-  public short java.lang.Class; // Channel type id code
+  public short Type; // Channel type id code
   public short SubType; // Channel subtype
   public short Format; // Format id
   public float a; // Information for converting bits to units:

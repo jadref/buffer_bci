@@ -1,3 +1,5 @@
+package Mobita2ft;
+
 /** Frontend system info struct */
 public class TMS_FRONTENDINFO_T
 {

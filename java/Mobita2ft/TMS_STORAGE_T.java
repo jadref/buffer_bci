@@ -1,3 +1,5 @@
+package Mobita2ft;
+
 /** TMS storage type struct */
 public class TMS_STORAGE_T
 {
