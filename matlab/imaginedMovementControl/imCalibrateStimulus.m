@@ -85,14 +85,14 @@ for si=1:nSeq;
   %set(h(end),'color',[0 1 0],'visible','on'); % green fixation indicates trial running
   sendEvent('stimulus.target',conditions{tgtId});
   drawnow;% expose; % N.B. needs a full drawnow for some reason
-  sendEvent('stimulus.trial','start');
+  sendEvent('stimulus.trial.cued','start');
   % wait for trial end
   sleepSec(trialDuration);
   
   % reset the cue and fixation point to indicate trial has finished  
   set(txthdl ,'color',bgColor,'visible','off');
   drawnow;
-  sendEvent('stimulus.trial','end');
+  sendEvent('stimulus.trial.cued','end');
   
   ftime=getwTime();
   fprintf('\n');
