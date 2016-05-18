@@ -119,7 +119,7 @@ public class tmsi {
      * @note n<=4 to avoid bit loss @note on return s tart position 's' is
      * incremented with 'n'. @return integer value.
      */
-    public int TMS_GET_INT(Byte[] msg, RefObject<Integer> s, int n) {
+    public int TMS_GET_INT(byte[] msg, RefObject<Integer> s, int n) {
 
         int i; //*< general index
         int b = 0; //*< temp result
@@ -143,7 +143,7 @@ public class tmsi {
      * @note n<=4. @ note start location is incremented at return. @return
      * number of bytes put.
      */
-    public int TMS_PUT_INT(int a, RefObject<Byte[]> msg, RefObject<Integer> s, int n) {
+    public int TMS_PUT_INT(int a, byte[] msg, RefObject<Integer> s, int n) {
 
         int i = 0;
 
@@ -152,9 +152,11 @@ public class tmsi {
         }
 
         for (i = 0; i < n; i++) {
-            msg.argValue[s.argValue + i] = (byte) (a & 0xFF);
+				//System.out.format("byte %d = %02x\n",i,(byte) (a & 0x00FF));
+            msg[s.argValue + i] = (byte) (a & 0x00FF);
 //C++ TO JAVA CONVERTER WARNING: The right shift operator was not replaced by Java's logical right shift operator since the left operand was not confirmed to be of an unsigned type, but you should review whether the logical right shift operator (>>>) is more appropriate:
-            a = (a >> 8);
+            a = (a >>> 8);
+				//System.out.format("%04x ",i,msg[s.argValue+i]);
         }
         /* increment start location */
         s.argValue += n;
@@ -214,7 +216,7 @@ public class tmsi {
      * @note least significant byte first.
      * @return 'n' bits signed integer
      */
-    public int get_lsbf_int32_t(Byte[] buf, RefObject<Integer> bip, int n) {
+    public int get_lsbf_int32_t(byte[] buf, RefObject<Integer> bip, int n) {
 
         int i = bip.argValue; //*< start location
         int a = 0; //*< wanted integer value
@@ -251,10 +253,10 @@ public class tmsi {
      * @note least significant byte first.
      * @return 'n' bits signed integer
      */
-    public int get_lsbf_int32_t_sign_ext(RefObject<Byte[]> buf, RefObject<Integer> bip, int n) {
+    public int get_lsbf_int32_t_sign_ext(byte[] buf, RefObject<Integer> bip, int n) {
         int a;
 
-        a = get_lsbf_int32_t(buf.argValue, bip, n);
+        a = get_lsbf_int32_t(buf, bip, n);
         /* check MSB-1 bits */
         if ((1 << (n - 1) & a) == 0) {
             /* add heading one bits for negative numbers */
@@ -268,7 +270,7 @@ public class tmsi {
      *
      * @return float
      */
-    public float tms_get_float(Byte[] msg, RefObject<Integer> sb) {
+    public float tms_get_float(byte[] msg, RefObject<Integer> sb) {
 
         float sign;
         int expi;
@@ -313,7 +315,7 @@ public class tmsi {
          00)<<16) | (((h&0x7c00)+0x1C000)<<13) | ((h&0x03FF)<<13). */
 
         //a=sign*mant*pow(2.0,(float)(expo-23-127));
-        a = (float) Math.pow(sign * mant, expi - 23 - 127); // ldexp should be much faster than pow...
+        a = sign*mant*((float)Math.pow(2.0F, expi - 23 - 127));
 
         /* 4 bytes float */
         sb.argValue += 4;
@@ -327,11 +329,11 @@ public class tmsi {
      * @note will malloc storage space for the null terminated string.
      * @return pointer to string or NULL on no success.
      */
-    public String tms_get_string(Byte[] msg, int n, int start) {
+    public String tms_get_string(byte[] msg, int n, int start) {
 
         int size; //*< string size [byte]
         RefObject<Integer> i = new RefObject(start); //*< general index
-        String str = null; //*< string pointer
+        String str=null; //*< string pointer
 
         size = 2 * (TMS_GET_INT(msg, i, 2) - 1);
         if (i.argValue + size > n) {
@@ -354,15 +356,23 @@ public class tmsi {
      *
      * @return checksum.
      */
-    public short tms_cal_chksum(Byte[] msg, int n) {
+    public short tms_cal_chksum(byte[] msg, int n) {
 
         int i; //*< general index
-        short sum = 0x0000; //*< checksum
+		  int tmp=0;
+        int sum = 0; //*< checksum
 
-        for (i = 0; i < (n / 2); i++) {
-            sum += (msg[2 * i + 1] << 8) + msg[2 * i];
+		  //System.out.format("chksum 0 = %08x\n",sum);
+		  // Argh! all primitive types in java are signed!!! including byte... thus byte>a0 -> neg number
+        for (i = 0; i < n; i+=2) {
+				tmp= ((int)msg[i]) & 0x00ff;                         //LSByte
+            sum += tmp;
+				//System.out.format("chksum %d.l : + %02x(%04x) = %08x\n",i,msg[i],tmp,sum);
+				tmp= ( ((int)msg[i + 1]) & 0x00ff) << 8;             //MSByte
+				sum += tmp;   //MSByte
+				//System.out.format("chksum %d.m : + %02x(%04x) = %08x\n",i,msg[i + 1],tmp,sum);
         }
-        return (sum);
+        return (short)(sum & 0xFFFF);
     }
 
     /**
@@ -370,7 +380,7 @@ public class tmsi {
      *
      * @return packet type.
      */
-    public short tms_get_type(Byte[] msg, int n) {
+    public short tms_get_type(byte[] msg, int n) {
 
         short rv = (short) msg[3]; //*< packet type
 
@@ -383,15 +393,15 @@ public class tmsi {
      * @note 'i' will return start byte address of payload.
      * @return payload size.
      */
-    public int TMS_MSG_SIZE(RefObject<Byte[]> msg, int n, RefObject<Integer> i) {
+    public int TMS_MSG_SIZE(byte[] msg, int n, RefObject<Integer> i) {
 
         int size = 0; //*< payload size
 
         i.argValue = 2; // address location
-        size = TMS_GET_INT(msg.argValue, i, 1);
+        size = TMS_GET_INT(msg, i, 1);
         i.argValue = 4;
         if (size == 0xFF) {
-            size = TMS_GET_INT(msg.argValue, i, 4);
+            size = TMS_GET_INT(msg, i, 4);
         }
         return (size);
     }
@@ -401,11 +411,11 @@ public class tmsi {
      *
      * @return file pointer.
      */
-    public PrintStream tms_open_log(RefObject<String> fname, RefObject<String> md) {
+    public PrintStream tms_open_log(String fname, RefObject<String> md) {
 
         try {
-            fpl = new PrintStream(fname.argValue);
-            filename = fname.argValue;
+            fpl = new PrintStream(fname);
+            filename = fname;
         } catch (FileNotFoundException ex) {
             System.err.println("Error on opening log file");
         }
@@ -433,7 +443,7 @@ public class tmsi {
      *
      * @return return number of printed characters.
      */
-    public int TMS_WRITE_LOG_MSG(Byte[] msg, int n, String comment) {
+    public int TMS_WRITE_LOG_MSG(byte[] msg, int n, String comment) {
 
 //C++ TO JAVA CONVERTER NOTE: This static local variable declaration (not allowed in Java) has been moved just prior to the method:
 //  static int nr=0; //*< message counter
@@ -450,11 +460,7 @@ public class tmsi {
         RefObject<Integer> i = new RefObject<Integer>(0);
         sync = TMS_GET_INT(msg, i, 2);
         type = tms_get_type(msg, n);
-        RefObject<Byte[]> tempRef_msg = new RefObject<Byte[]>(msg);
-        RefObject<Integer> tempRef_pls = pls;
-        size = TMS_MSG_SIZE(tempRef_msg, n, tempRef_pls);
-        msg = tempRef_msg.argValue;
-        pls.argValue = tempRef_pls.argValue;
+        size = TMS_MSG_SIZE(msg, n, pls);
         calsum = tms_cal_chksum(msg, n);
         fpl = fpl.format("# %s sync 0x%04X type 0x%02X size 0x%02X checksum 0x%04X\n", comment, sync, type, size, calsum);
         fpl = fpl.format("#%3s %4s %2s %2s %2s\n", "nr", "ba", "wa", "d1", "d0");
@@ -567,7 +573,7 @@ public class tmsi {
      * @return 0 on success, -1 on failure.
      */
 //C++ TO JAVA CONVERTER TODO TASK: Pointer arithmetic is detected on the parameter 't', so pointers on this parameter are left unchanged:
-    public int tms_get_date(RefObject<Byte[]> msg, RefObject<Integer> i, LocalDateTime t) {
+    public int tms_get_date(byte[] msg, RefObject<Integer> i, LocalDateTime t) {
 
         int j; //*< general index
         int[] wrd = new int[8]; //*< TMS date format
@@ -577,7 +583,7 @@ public class tmsi {
         int ffcnt = 0; //*< no value counter
 
         for (j = 0; j < 8; j++) {
-            wrd[j] = TMS_GET_INT(msg.argValue, i, 2);
+            wrd[j] = TMS_GET_INT(msg, i, 2);
             if (wrd[j] == 0) {
                 zeros++;
             }
@@ -626,7 +632,7 @@ public class tmsi {
      * @note position after parsing in returned in 'i'.
      * @return 0 always.
      */
-    public int tms_put_date(LocalDateTime t, RefObject<Byte[]> msg, RefObject<Integer> i) {
+    public int tms_put_date(LocalDateTime t, byte[] msg, RefObject<Integer> i) {
 
         int j; //*< general index
         int[] wrd = new int[8]; //*< TMS date format
@@ -671,35 +677,35 @@ public class tmsi {
      * @note new position byte will be return in 'i'
      * @return number of bytes parsed
      */
-    public int tms_get_cfg(RefObject<Byte[]> msg, RefObject<Integer> i, TMS_CONFIG_T cfg) {
+    public int tms_get_cfg(byte[] msg, RefObject<Integer> i, TMS_CONFIG_T cfg) {
 
         int i0 = i.argValue; //*< start index
         int j; //*< general index
 
-        cfg.version = (short) TMS_GET_INT(msg.argValue, i, 2); //*< PC Card protocol version number 0x0314
-        cfg.hdrSize = (short) TMS_GET_INT(msg.argValue, i, 2); //*< size of measurement header 0x0200
-        cfg.fileType = (short) TMS_GET_INT(msg.argValue, i, 2); //*< Stream Type (0: .ini 1: .smp 2:evt)
+        cfg.version = (short) TMS_GET_INT(msg, i, 2); //*< PC Card protocol version number 0x0314
+        cfg.hdrSize = (short) TMS_GET_INT(msg, i, 2); //*< size of measurement header 0x0200
+        cfg.fileType = (short) TMS_GET_INT(msg, i, 2); //*< Stream Type (0: .ini 1: .smp 2:evt)
         i.argValue += 2; //*< skip 2 reserved bytes
-        cfg.cfgSize = TMS_GET_INT(msg.argValue, i, 4); //*< size of config.ini  0x400
+        cfg.cfgSize = TMS_GET_INT(msg, i, 4); //*< size of config.ini  0x400
         i.argValue += 4; //*< skip 4 reserved bytes
-        cfg.sampleRate = (short) TMS_GET_INT(msg.argValue, i, 2); //*< sample frequency [Hz]
-        cfg.nrOfChannels = (short) TMS_GET_INT(msg.argValue, i, 2); //*< number of channels
-        cfg.startCtl = (short) TMS_GET_INT(msg.argValue, i, 4); //*< start control
-        cfg.endCtl = TMS_GET_INT(msg.argValue, i, 4); //*< end control
-        cfg.cardStatus = (short) TMS_GET_INT(msg.argValue, i, 2); //*< card status
-        cfg.initId = TMS_GET_INT(msg.argValue, i, 4); //*< Initialisation Identifier
-        cfg.sampleRateDiv = (short) TMS_GET_INT(msg.argValue, i, 2); //*< Sample Rate Divider
+        cfg.sampleRate = (short) TMS_GET_INT(msg, i, 2); //*< sample frequency [Hz]
+        cfg.nrOfChannels = (short) TMS_GET_INT(msg, i, 2); //*< number of channels
+        cfg.startCtl = (short) TMS_GET_INT(msg, i, 4); //*< start control
+        cfg.endCtl = TMS_GET_INT(msg, i, 4); //*< end control
+        cfg.cardStatus = (short) TMS_GET_INT(msg, i, 2); //*< card status
+        cfg.initId = TMS_GET_INT(msg, i, 4); //*< Initialisation Identifier
+        cfg.sampleRateDiv = (short) TMS_GET_INT(msg, i, 2); //*< Sample Rate Divider
         i.argValue += 2; //*< skip 2 reserved bytes
         for (j = 0; j < 64; j++) {
-            cfg.storageType[j].shift = (byte) TMS_GET_INT(msg.argValue, i, 1); //*< shift
-            cfg.storageType[j].delta = (byte) TMS_GET_INT(msg.argValue, i, 1); //*< delta
-            cfg.storageType[j].deci = (byte) TMS_GET_INT(msg.argValue, i, 1); //*< decimation
-            cfg.storageType[j].ref = (byte) TMS_GET_INT(msg.argValue, i, 1); //*< ref
+            cfg.storageType[j].shift = (byte) TMS_GET_INT(msg, i, 1); //*< shift
+            cfg.storageType[j].delta = (byte) TMS_GET_INT(msg, i, 1); //*< delta
+            cfg.storageType[j].deci = (byte) TMS_GET_INT(msg, i, 1); //*< decimation
+            cfg.storageType[j].ref = (byte) TMS_GET_INT(msg, i, 1); //*< ref
             cfg.storageType[j].period = 0; //*< sample period
             cfg.storageType[j].overflow = (0xFFFFFF80) << (8 * (cfg.storageType[j].delta - 1)); //*< overflow
         }
         for (j = 0; j < 12; j++) {
-            cfg.fileName[j] = (byte) TMS_GET_INT(msg.argValue, i, 1); //*< Measurement file name
+            cfg.fileName[j] = (byte) TMS_GET_INT(msg, i, 1); //*< Measurement file name
         }
         /**
          * < alarm time
@@ -708,7 +714,7 @@ public class tmsi {
         i.argValue += 2; //*< skip 2 or 4 reserved bytes !!! check it
 //C++ TO JAVA CONVERTER TODO TASK: There is no Java equivalent to 'sizeof':
         for (j = 0; j < cfg.info.length; j++) {
-            cfg.info[j] = (byte) TMS_GET_INT(msg.argValue, i, 1);
+            cfg.info[j] = (byte) TMS_GET_INT(msg, i, 1);
         }
 
         /* find minimum decimation */
@@ -734,7 +740,7 @@ public class tmsi {
      * @note new position byte will be return in 'i'
      * @return number of bytes put
      */
-    public int tms_put_cfg(RefObject<Byte[]> msg, RefObject<Integer> i, TMS_CONFIG_T cfg) {
+    public int tms_put_cfg(byte[] msg, RefObject<Integer> i, TMS_CONFIG_T cfg) {
 
         int i0 = i.argValue; //*< start index
         int j; //*< general index
@@ -1113,13 +1119,13 @@ public class tmsi {
      * @note new position byte will be return in 'i'
      * @return number of bytes parsed
      */
-    public int tms_get_measurement_hdr(RefObject<Byte[]> msg, RefObject<Integer> i, TMS_MEASUREMENT_HDR_T hdr) {
+    public int tms_get_measurement_hdr(byte[] msg, RefObject<Integer> i, TMS_MEASUREMENT_HDR_T hdr) {
 
         int i0 = i.argValue; //*< start byte index
         int err = 0; //*< error status of tms_get_date
 
         i.argValue += 4; //*< skip 4 reserved bytes
-        hdr.nsamples = TMS_GET_INT(msg.argValue, i, 4); //*< number of samples in this recording
+        hdr.nsamples = TMS_GET_INT(msg, i, 4); //*< number of samples in this recording
         err = tms_get_date(msg, i, hdr.startTime);
         if (err != 0) {
             System.err.println("# Warning: start time incorrect!!!\n");
@@ -1128,9 +1134,9 @@ public class tmsi {
         if (err != 0) {
             System.err.println("# Warning: end time incorrect, unexpected end of recording!!!\n");
         }
-        hdr.frontendSerialNr = TMS_GET_INT(msg.argValue, i, 4); //*< frontendSerial Number
-        hdr.frontendHWNr = (short) TMS_GET_INT(msg.argValue, i, 2); //*< frontend Hardware version Number
-        hdr.frontendSWNr = (short) TMS_GET_INT(msg.argValue, i, 2); //*< frontend Software version Number
+        hdr.frontendSerialNr = TMS_GET_INT(msg, i, 4); //*< frontendSerial Number
+        hdr.frontendHWNr = (short) TMS_GET_INT(msg, i, 2); //*< frontend Hardware version Number
+        hdr.frontendSWNr = (short) TMS_GET_INT(msg, i, 2); //*< frontend Software version Number
         return (i.argValue - i0);
     }
 
@@ -1167,15 +1173,15 @@ public class tmsi {
      *
      * @return 0 on correct checksum, 1 on failure.
      */
-    public int tms_chk_msg(RefObject<Byte[]> msg, int n) {
+    public int tms_chk_msg(byte[] msg, int n) {
 
         int sync; //*< TMS block sync
         int size; //*< TMS block size
-        int calsum; //*< calculate checksum of TMS block
+        short calsum; //*< calculate checksum of TMS block
 
         /* check sync */
         RefObject<Integer> i = new RefObject<Integer>(0);
-        sync = TMS_GET_INT(msg.argValue, i, 2);
+        sync = TMS_GET_INT(msg, i, 2);
         if (sync != TMSBLOCKSYNC) {
             System.err.format("# Warning: found sync %04X != %04X\n", sync, TMSBLOCKSYNC);
             return (-1);
@@ -1186,7 +1192,7 @@ public class tmsi {
             System.err.format("# Warning: found size %d != expected size %d\n", size, (n - i.argValue - 2) / 2);
         }
         /* check checksum and get type */
-        calsum = tms_cal_chksum(msg.argValue, n);
+        calsum = tms_cal_chksum(msg, n);
         if (calsum != 0x0000) {
             System.err.format("# Warning: checksum 0x%04X != 0x0000\n", calsum);
             return (1);
@@ -1200,34 +1206,48 @@ public class tmsi {
      *
      * @return total size of 'msg' including checksum.
      */
-    public short TMS_PUT_CHKSUM(RefObject<Byte[]> msg, int n) {
+    public short TMS_PUT_CHKSUM(byte[] msg, int n) {
 
-        RefObject<Integer> i = new RefObject<Integer>(0); //*< general index
-        short sum = 0x0000; //*< checksum
-
+        int sum = 0; //*< checksum
         if (n % 2 == 1) {
             System.err.format("Warning: TMS_PUT_CHKSUM: odd packet length %d\n", n);
         }
+		  // TODO: call cal_sum
         /* calculate checksum */
-        for (i.argValue = 0; i.argValue < (n / 2); i.argValue++) {
-            sum += (msg.argValue[2 * i.argValue + 1] << 8) + msg.argValue[2 * i.argValue];
+		  //System.out.format("put_chksum 0 = %08x\n",sum);
+		  // Argh! all primitive types in java are signed!!! including byte... thus byte>a0 -> neg number
+		  int tmp=0;
+        for (int i = 0; i < n; i+=2) {
+				tmp= ((int)msg[i]) & 0x00ff;                         //LSByte
+            sum += tmp;
+				//System.out.format("put_chksum %d.l : + %02x(%04x) = %08x\n",i,msg[i],tmp,sum);
+				tmp= ( ((int)msg[i + 1]) & 0x00ff) << 8;             //MSByte
+				sum += tmp;   //MSByte
+				//System.out.format("put_chksum %d.m : + %02x(%04x) = %08x\n",i,msg[i + 1],tmp,sum);
         }
         /* checksum should add up to 0x0000 */
-        sum = (short) -sum;
+        sum = -sum;
+		  //System.out.format("put_chksum sum : %08x\n",sum);
         /* put it */
-        i.argValue = n;
-        TMS_PUT_INT(sum, msg, i, 2);
+        TMS_PUT_INT(sum, msg, new RefObject<Integer>(n), 2);
         /* return total size of 'msg' including checksum */
-        return (short) ((int) i.argValue);
+        return (short) (n+2);
     }
 
+
+	 void dumpMsg(byte[] msg, int n, int start){
+		  for ( int iii=start; iii<n; iii++)
+				System.err.format("%02x ",msg[iii]);
+		  System.err.println();
+	 }
+	 
     /**
      * Read at max 'n' bytes of TMS message 'msg' for socket device descriptor
      * 'fd'.
      *
      * @return number of bytes read.
      */
-    public int tms_rcv_msg(Socket fd, RefObject<Byte[]> msg, int n) {
+    public int tms_rcv_msg(Socket fd, byte[] msg, int n) {
 
         RefObject<Integer> i = new RefObject<Integer>(0); //*< byte index
         RefObject<Integer> ii = new RefObject<Integer>(0); //*< tempory byte index
@@ -1241,59 +1261,76 @@ public class tmsi {
         /* clear recieve buffer */
 //C++ TO JAVA CONVERTER TODO TASK: The memory management function 'memset' has no equivalent in Java:
         for (int in = 0; in < n; in++) {
-            msg.argValue[in] = 0x00;
+            msg[in] = 0x00;
         }
         byte[] bytes = new byte[n];
         /* wait (not too long) for 2-byte sync block, 
          and discard any data which isn't sync information. */
         br = 0;
+		  //System.err.println("Wait for sync");
         while ((rtc < 1000) && (sync != TMSBLOCKSYNC)) {
             if (br > 0) { // discard non-sync data
-                msg.argValue[0] = msg.argValue[1]; // shift bit back
+                msg[0] = msg[1]; // shift bit back
                 if (tbr > 1) {
                     System.err.println("discarded non-sync data\n");
                 }
             }
-//            br = recv(fd, msg.argValue[1], 1, 0);
 
+				//            br = recv(fd, msg[1], 1, 0);
             try {
                 br = fd.getInputStream().read(bytes, 0, 1);
             } catch (IOException ex) {
+					 System.err.println(ex);
             }
-            msg.argValue[1] = bytes[0];
+            msg[1] = bytes[0];
             tbr += br; // Blocking call, may wait forever!
             if ((br > 0) && (tbr > 1)) {
                 i.argValue = 0;
-                sync = TMS_GET_INT(msg.argValue, i, 2);
+                sync = TMS_GET_INT(msg, i, 2);
             }
             rtc++;
+				//System.err.print('.');
         }
         if (rtc >= 1000) {
             System.err.println("# Error: timeout on waiting for block sync\n");
             return (-1);
         }
+		  //System.err.println("Waiting for message description");
         try {
             /* read 2 byte description */
-//        br = recv(fd, msg.argValue[i.argValue], 2, 0);
-            br = fd.getInputStream().read(bytes, 0, 2);
-            msg.argValue[i.argValue] = bytes[0];
-            msg.argValue[i.argValue + 1] = bytes[1];
+//        br = recv(fd, msg[i.argValue], 2, 0);
+            br = fd.getInputStream().read(msg,i.argValue,2);
+				i.argValue += br;
         } catch (IOException ex) {
             Logger.getLogger(tmsi.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        i.argValue += br;
         tbr += br;
+        try {
+            /* read 2 byte size */
         /* while ((rtc<1000) && (i<4)) { */
         /* br=recv(fd,&msg[i],1,0); i+=br; tbr+=br; */
         /*   rtc++; */
         /* } */
+				while ( i.argValue < 4 ) {
+					 br = fd.getInputStream().read(msg, i.argValue, 1);
+					 i.argValue += br;
+				}
+        } catch (IOException ex) {
+            Logger.getLogger(tmsi.class.getName()).log(Level.SEVERE, null, ex);
+        }
         if (rtc >= 1000) {
             System.err.println("# Error: timeout on waiting description\n");
             return (-2);
         }
+		  // System.err.println("message so far:\n");
+		  // for ( int iii=0; iii<i.argValue; iii++)
+		  // 		System.err.format("%02x ",msg[iii]);
+		  // System.err.println();
+				
         ii.argValue = 2;
-        size = TMS_GET_INT(msg.argValue, ii, 1);
+        size = TMS_GET_INT(msg, ii, 1);
+		  //System.err.format("Message size : %d\n",size);
         //size=msg[2]; /* size is 1 byte = measured in 16-bit words! so max message size is 256*2? */
         if (size == 0xFF) {
             System.err.println("multibyte msg size\n");
@@ -1304,37 +1341,32 @@ public class tmsi {
         if (size8 > n) {
             System.err.format("# Warning: message buffer size %d too small %d. Extra discarded !\n", n, size8);
         }
+		  //System.err.println("Waiting for message payload");
         while (rtc < 1000 && i.argValue < size8) {
             if (size8 < n) {
-//                br = recv(fd, msg.argValue[i.argValue], size8 - i.argValue, 0); // read the whole message in 1 call
+//                br = recv(fd, msg[i], size8 - i, 0); // read the whole message in 1 call
                 try {
-                    br = fd.getInputStream().read(bytes, 0, size8 - i.argValue);
+                    br = fd.getInputStream().read(msg, i.argValue, size8 - i.argValue);
                 } catch (IOException ex) {
                     System.err.println("Error on first if-statement");
-                }
-                for (int j = 0; j < size8 - i.argValue; j++) {
-                    msg.argValue[i.argValue + j] = bytes[j];
+						  System.err.println(ex);
                 }
             } else if (i.argValue < n) { // read until the buffer is full
-//                br = recv(fd, msg.argValue[i.argValue], 1, 0);
-                try {
-                    br = fd.getInputStream().read(bytes, 0, 1);
-                } catch (IOException ex) {
-                    System.err.println("Error on first if-statement");
-                }
-                for (int j = 0; j < 1; j++) {
-                    msg.argValue[i.argValue + j] = bytes[j];
-                }
+//                br = recv(fd, msg[i.argValue], 1, 0);
                 //br=recv(fd,&msg[i],n-i,0); 
-            } else { // read and discard rest of message
-//                br = recv(fd, msg.argValue[n], 1, 0);
                 try {
-                    br = fd.getInputStream().read(bytes, 0, 1);
+                    br = fd.getInputStream().read(msg, i.argValue, n-i.argValue);
                 } catch (IOException ex) {
                     System.err.println("Error on first if-statement");
+						  System.err.println(ex);
                 }
-                for (int j = 0; j < n; j++) {
-                    msg.argValue[i.argValue + j] = bytes[j];
+            } else { // read and discard rest of message
+//                br = recv(fd, msg[n], 1, 0);
+                try {
+                    br = fd.getInputStream().read(msg, i.argValue, 1);
+                } catch (IOException ex) {
+                    System.err.println("Error on first if-statement");
+						  System.err.println(ex);
                 }
             }
             i.argValue += br;
@@ -1347,8 +1379,10 @@ public class tmsi {
         }
         if ((vb & 0x01) != 0) {
             /* log response */
-            TMS_WRITE_LOG_MSG(msg.argValue, tbr, "receive message");
+            TMS_WRITE_LOG_MSG(msg, tbr, "received message");
         }
+
+		  //System.err.println("Final recieved message:\n");dumpMsg(msg,0,i.argValue);
 
         return (tbr);
     }
@@ -1358,22 +1392,22 @@ public class tmsi {
      *
      * @return >0 on failure and 0 on success
      */
-    public int tms_get_ack(RefObject<Byte[]> msg, int n, TMS_ACKNOWLEDGE_T ack) {
+    public int tms_get_ack(byte[] msg, int n, TMS_ACKNOWLEDGE_T ack) {
 
         RefObject<Integer> i = new RefObject<Integer>(0); //*< general index
         int type; //*< message type
         int size; //*< payload size
 
         /* get message type */
-        type = tms_get_type(msg.argValue, n);
+        type = tms_get_type(msg, n);
         if (type != TMSACKNOWLEDGE) {
             System.err.format("# Warning: type %02X != %02X\n", type, TMSFRONTENDINFO);
             return (-1);
         }
         /* get payload size and payload pointer 'i' */
         size = TMS_MSG_SIZE(msg, n, i);
-        ack.descriptor = (short) TMS_GET_INT(msg.argValue, i, 2);
-        ack.errorcode = (short) TMS_GET_INT(msg.argValue, i, 2);
+        ack.descriptor = (short) TMS_GET_INT(msg, i, 2);
+        ack.errorcode = (short) TMS_GET_INT(msg, i, 2);
         /* number of found Frontend system info structs */
         return (ack.errorcode);
     }
@@ -1455,27 +1489,31 @@ public class tmsi {
      * @return bytes send.
      */
     public int tms_snd_FrontendInfoReq(Socket fd) {
-        RefObject<Byte[]> msg = new RefObject<Byte[]>(new Byte[6]); //*< message buffer
+        byte[] msg = new byte[6]; //*< message buffer
         int bw; //*< byte written
 
-        RefObject<Integer> i = new RefObject<Integer>(0);
+        RefObject<Integer> i = new RefObject<Integer>(0); //*< general index
         /* construct frontendinfo req message */
         /* block sync */
         TMS_PUT_INT(TMSBLOCKSYNC, msg, i, 2);
         /* length 0, no data */
-        msg.argValue[2] = 0x00;
+        msg[2] = 0x00;
         /* FrontendInfoReq type */
-        msg.argValue[3] = TMSFRONTENDINFOREQ;
+        msg[3] = TMSFRONTENDINFOREQ;
         /* add checksum */
         bw = TMS_PUT_CHKSUM(msg, 4);
 
         if ((vb & 0x01) != 0) {
-            TMS_WRITE_LOG_MSG(msg.argValue, bw, "send frontendinfo request");
+            TMS_WRITE_LOG_MSG(msg, bw, "send frontendinfo request");
         }
         try {
             /* send request */
 //        bw = send(fd, msg, bw, 0);
-            fd.getOutputStream().write(toPrimitive(msg.argValue));
+				//System.err.print("Writing message : ");dumpMsg(msg,0,bw);
+				OutputStream fdout = fd.getOutputStream();
+            fdout.write(msg,0,bw);
+				fdout.flush();
+				
         } catch (IOException ex) {
             System.err.println("Error writing output...");
             return 0;
@@ -1492,26 +1530,28 @@ public class tmsi {
     public int tms_snd_keepalive(Socket fd) {
 
         RefObject<Integer> i = new RefObject<Integer>(0); //*< general index
-        RefObject<Byte[]> msg = new RefObject<Byte[]>(new Byte[6]); //*< message buffer
+        byte[] msg = new byte[6]; //*< message buffer
         int bw; //*< byte written
 
         /* construct frontendinfo req message */
         /* block sync */
         TMS_PUT_INT(TMSBLOCKSYNC, msg, i, 2);
         /* length 0, no data */
-        msg.argValue[2] = 0x00;
+        msg[2] = 0x00;
         /* FrontendInfoReq type */
-        msg.argValue[3] = TMSKEEPALIVEREQ;
+        msg[3] = TMSKEEPALIVEREQ;
         /* add checksum */
         bw = TMS_PUT_CHKSUM(msg, 4);
 
         if ((vb & 0x01) != 0) {
-            TMS_WRITE_LOG_MSG(msg.argValue, bw, "send keepalive");
+            TMS_WRITE_LOG_MSG(msg, bw, "send keepalive");
         }
         try {
             /* send request */
 //        bw = send(fd, msg, bw, 0);
-            fd.getOutputStream().write(toPrimitive(msg.argValue));
+				OutputStream fdout = fd.getOutputStream();
+            fdout.write(msg,0,bw);
+				fdout.flush();
         } catch (IOException ex) {
             System.err.println("Error writing output...");
             return 0;
@@ -1525,7 +1565,7 @@ public class tmsi {
      * @note 'b' needs size of TMSFRONTENDINFOSIZE
      * @return -1 on failure and on succes number of frontendinfo structs
      */
-    public int tms_get_frontendinfo(RefObject<Byte[]> msg, int n, TMS_FRONTENDINFO_T fei) {
+    public int tms_get_frontendinfo(byte[] msg, int n, TMS_FRONTENDINFO_T fei) {
 
         RefObject<Integer> i = new RefObject<Integer>(0); //*< general index
         int type; //*< message type
@@ -1533,7 +1573,7 @@ public class tmsi {
         int nfei; //*< number of frontendinfo_t structs
 
         /* get message type */
-        type = tms_get_type(msg.argValue, n);
+        type = tms_get_type(msg, n);
         if (type != TMSFRONTENDINFO) {
             System.err.format("# Warning: tms_get_frontendinfo type %02X != %02X\n", type, TMSFRONTENDINFO);
             return (-3);
@@ -1545,21 +1585,21 @@ public class tmsi {
         if (nfei > 1) {
             System.err.format("# Error: tms_get_frontendinfo found %d struct > 1\n", nfei);
         }
-        fei.nrofuserchannels = (short) TMS_GET_INT(msg.argValue, i, 2);
-        fei.currentsampleratesetting = (short) TMS_GET_INT(msg.argValue, i, 2);
-        fei.mode = (short) TMS_GET_INT(msg.argValue, i, 2);
-        fei.maxRS232 = (short) TMS_GET_INT(msg.argValue, i, 2);
-        fei.serialnumber = TMS_GET_INT(msg.argValue, i, 4);
-        fei.nrEXG = (short) TMS_GET_INT(msg.argValue, i, 2);
-        fei.nrAUX = (short) TMS_GET_INT(msg.argValue, i, 2);
-        fei.hwversion = (short) TMS_GET_INT(msg.argValue, i, 2);
-        fei.swversion = (short) TMS_GET_INT(msg.argValue, i, 2);
-        fei.cmdbufsize = (short) TMS_GET_INT(msg.argValue, i, 2);
-        fei.sendbufsize = (short) TMS_GET_INT(msg.argValue, i, 2);
-        fei.nrofswchannels = (short) TMS_GET_INT(msg.argValue, i, 2);
-        fei.basesamplerate = (short) TMS_GET_INT(msg.argValue, i, 2);
-        fei.power = (short) TMS_GET_INT(msg.argValue, i, 2);
-        fei.hardwarecheck = (short) TMS_GET_INT(msg.argValue, i, 2);
+        fei.nrofuserchannels = (short) TMS_GET_INT(msg, i, 2);
+        fei.currentsampleratesetting = (short) TMS_GET_INT(msg, i, 2);
+        fei.mode = (short) TMS_GET_INT(msg, i, 2);
+        fei.maxRS232 = (short) TMS_GET_INT(msg, i, 2);
+        fei.serialnumber = TMS_GET_INT(msg, i, 4);
+        fei.nrEXG = (short) TMS_GET_INT(msg, i, 2);
+        fei.nrAUX = (short) TMS_GET_INT(msg, i, 2);
+        fei.hwversion = (short) TMS_GET_INT(msg, i, 2);
+        fei.swversion = (short) TMS_GET_INT(msg, i, 2);
+        fei.cmdbufsize = (short) TMS_GET_INT(msg, i, 2);
+        fei.sendbufsize = (short) TMS_GET_INT(msg, i, 2);
+        fei.nrofswchannels = (short) TMS_GET_INT(msg, i, 2);
+        fei.basesamplerate = (short) TMS_GET_INT(msg, i, 2);
+        fei.power = (short) TMS_GET_INT(msg, i, 2);
+        fei.hardwarecheck = (short) TMS_GET_INT(msg, i, 2);
         /* number of found Frontend system info structs */
         return (nfei);
     }
@@ -1576,7 +1616,7 @@ public class tmsi {
     public int tms_write_frontendinfo(Socket fd, TMS_FRONTENDINFO_T fei) {
 
         RefObject<Integer> i = new RefObject<Integer>(0); //*< general index
-        RefObject<Byte[]> msg = new RefObject<Byte[]>(new Byte[0x40]); //*< message buffer
+        byte[] msg = new byte[0x40]; //*< message buffer
         int bw; //*< byte written
 
         /* construct frontendinfo req message */
@@ -1611,13 +1651,15 @@ public class tmsi {
         bw = TMS_PUT_CHKSUM(msg, i.argValue);
 
         if ((vb & 0x01) != 0) {
-            TMS_WRITE_LOG_MSG(msg.argValue, bw, "write frontendinfo");
+            TMS_WRITE_LOG_MSG(msg, bw, "write frontendinfo");
         }
         /* send request */
         try {
             /* send request */
 //        bw = send(fd, msg, bw, 0);
-            fd.getOutputStream().write(toPrimitive(msg.argValue));
+				OutputStream fdout = fd.getOutputStream();
+            fdout.write(msg,0,bw);
+				fdout.flush();
         } catch (IOException ex) {
             System.err.println("Error writing output...");
             return 0;
@@ -1649,7 +1691,7 @@ public class tmsi {
      * Send IDData request to file descriptor 'fd'
      */
     public int tms_send_iddata_request(Socket fd, int adr, int len) {
-        RefObject<Byte[]> req = new RefObject<Byte[]>(new Byte[10]); //*< id request message
+        byte[] req = new byte[10]; //*< id request message
         RefObject<Integer> i = new RefObject<Integer>(0);
         int bw; //*< byte written
 
@@ -1667,12 +1709,15 @@ public class tmsi {
         bw = TMS_PUT_CHKSUM(req, i.argValue);
 
         if ((vb & 0x01) != 0) {
-            TMS_WRITE_LOG_MSG(req.argValue, bw, "send IDData request");
+            TMS_WRITE_LOG_MSG(req, bw, "send IDData request");
         }
         try {
             /* send request */
-//        bw = send(fd, msg, bw, 0);
-            fd.getOutputStream().write(toPrimitive(req.argValue));
+//        bw = send(fd, req, bw, 0);
+				//System.err.print("Sending iddata req:");dumpMsg(req,0,bw);
+				OutputStream fdout = fd.getOutputStream();
+            fdout.write(req,0,bw);
+				fdout.flush();
         } catch (IOException ex) {
             System.err.println("Error writing output...");
             return 0;
@@ -1692,7 +1737,7 @@ public class tmsi {
      *
      * @return bytes in 'msg'.
      */
-    public int tms_fetch_iddata(Socket fd, RefObject<Byte[]> msg, int n) {
+    public int tms_fetch_iddata(Socket fd, byte[] msg, int n) {
 
         RefObject<Integer> i = new RefObject<Integer>(0); //*< general index
         int j;
@@ -1700,7 +1745,7 @@ public class tmsi {
         short len = 0x80; //*< amount of words requested
         int br = 0; //*< bytes read
         RefObject<Integer> tbw = new RefObject<Integer>(0); //*< total bytes written in 'msg'
-        RefObject<Byte[]> rcv = new RefObject<Byte[]>(new Byte[512]); //*< recieve buffer
+        byte[] rcv = new byte[512]; //*< recieve buffer
         int type; //*< received IDData type
         int size; //*< received IDData size
         int tsize = 0; //*< total received IDData size
@@ -1724,16 +1769,19 @@ public class tmsi {
 
         rtc = 0;
         /* keep on requesting id data until all data is read */
+		  System.err.format("Requesting ID data, of up to %d bytes\n",n);
         while ((rtc < 10) && (len > 0) && (tbw.argValue < n)) {
             rtc++;
             if (tms_send_iddata_request(fd, adr, len) < 0) {
+					 System.err.println("IDData Request failed");
                 continue;
             }
             /* get response */
-            br = tms_rcv_msg(fd, rcv, Byte.SIZE);
-
+            br = tms_rcv_msg(fd, rcv, rcv.length);
+				//System.err.println("IDdata req, resp-size : " +br);
+				
             /* check checksum and get type of response */
-            type = tms_get_type(rcv.argValue, br);
+            type = tms_get_type(rcv, br);
             if (type != TMSIDDATA) {
                 System.err.format("# Warning: tms_get_iddata: unexpected type 0x%02X\n", type);
                 continue;
@@ -1741,15 +1789,15 @@ public class tmsi {
                 /* get payload of 'rcv' */
                 size = TMS_MSG_SIZE(rcv, Byte.SIZE, i);
                 /* get start address */
-                start = TMS_GET_INT(rcv.argValue, i, 2);
+                start = TMS_GET_INT(rcv, i, 2);
                 /* get length */
-                length = TMS_GET_INT(rcv.argValue, i, 2);
+                length = TMS_GET_INT(rcv, i, 2);
                 /* copy response to final result */
                 if (tbw.argValue + 2 * length > n) {
                     System.err.format("# Error: tms_get_iddata: msg too small %d\n", tbw.argValue + 2 * length);
                 } else {
                     for (j = 0; j < 2 * length; j++) {
-                        msg.argValue[tbw.argValue + j] = rcv.argValue[i.argValue + j];
+                        msg[tbw.argValue + j] = rcv[i.argValue + j];
                     }
                     tbw.argValue += 2 * length;
                     tsize += length;
@@ -1757,7 +1805,8 @@ public class tmsi {
                 /* update address admin */
                 adr += length;
                 /* if block ends with 0xFFFF, then this one was the last one */
-                if ((rcv.argValue[2 * size - 2] == 0xFF) && (rcv.argValue[2 * size - 1] == 0xFF)) {
+                if ((rcv[2 * size - 2] == 0xFF) && (rcv[2 * size - 1] == 0xFF)) {
+						  //System.err.println("IDData - got end block");
                     len = 0;
                 }
             }
@@ -1767,7 +1816,7 @@ public class tmsi {
         TMS_PUT_INT(tsize, msg, i, 4);
         /* add checksum */
         tbw.argValue = (int) TMS_PUT_CHKSUM(msg, tbw.argValue);
-
+		  
         /* return number of byte actualy written */
         return (tbw.argValue);
     }
@@ -1777,18 +1826,18 @@ public class tmsi {
      *
      * @return 0 on success, -1 on failure
      */
-    public int tms_get_type_desc(RefObject<Byte[]> msg, int n, int start, TMS_TYPE_DESC_T td) {
+    public int tms_get_type_desc(byte[] msg, int n, int start, TMS_TYPE_DESC_T td) {
 
         RefObject<Integer> i = new RefObject<Integer>(start); //*< general index
 
-        td.Size = (short) TMS_GET_INT(msg.argValue, i, 2);
-        td.Type = (short) TMS_GET_INT(msg.argValue, i, 2);
-        td.SubType = (short) TMS_GET_INT(msg.argValue, i, 2);
-        td.Format = (short) TMS_GET_INT(msg.argValue, i, 2);
-        td.a = tms_get_float(msg.argValue, i);
-        td.b = tms_get_float(msg.argValue, i);
-        td.UnitId = (byte) TMS_GET_INT(msg.argValue, i, 1);
-        td.Exp = (byte) TMS_GET_INT(msg.argValue, i, 1);
+        td.Size = (short) TMS_GET_INT(msg, i, 2);
+        td.Type = (short) TMS_GET_INT(msg, i, 2);
+        td.SubType = (short) TMS_GET_INT(msg, i, 2);
+        td.Format = (short) TMS_GET_INT(msg, i, 2);
+        td.a = tms_get_float(msg, i);
+        td.b = tms_get_float(msg, i);
+        td.UnitId = (byte) TMS_GET_INT(msg, i, 1);
+        td.Exp = (byte) TMS_GET_INT(msg, i, 1);
         if (i.argValue <= n) {
             return (0);
         } else {
@@ -1802,7 +1851,7 @@ public class tmsi {
      *
      * @return always on success, -1 on failure
      */
-    public int tms_get_input_device(RefObject<Byte[]> msg, int n, int start, TMS_INPUT_DEVICE_T inpdev) {
+    public int tms_get_input_device(byte[] msg, int n, int start, TMS_INPUT_DEVICE_T inpdev) {
 
         RefObject<Integer> i = new RefObject<Integer>(start); //*< general index
         int j;
@@ -1811,30 +1860,35 @@ public class tmsi {
         int nb; //*< number of bits
         int tnb; //*< total number of bits
 
-        inpdev.Size = (short) TMS_GET_INT(msg.argValue, i, 2);
-        inpdev.Totalsize = (short) TMS_GET_INT(msg.argValue, i, 2);
-        inpdev.SerialNumber = TMS_GET_INT(msg.argValue, i, 4);
-        inpdev.Id = (short) TMS_GET_INT(msg.argValue, i, 2);
-        idx = 2 * TMS_GET_INT(msg.argValue, i, 2) + start;
-        inpdev.DeviceDescription = tms_get_string(msg.argValue, n, idx);
-        inpdev.NrOfChannels = (short) TMS_GET_INT(msg.argValue, i, 2);
-        ChannelDescriptionSize = TMS_GET_INT(msg.argValue, i, 2);
+		  //System.err.println("tms_get_input_dev");dumpMsg(msg,n,start);		  
+		  
+        inpdev.Size = (short) TMS_GET_INT(msg, i, 2);
+        inpdev.Totalsize = (short) TMS_GET_INT(msg, i, 2);
+        inpdev.SerialNumber = TMS_GET_INT(msg, i, 4);
+        inpdev.Id = (short) TMS_GET_INT(msg, i, 2);
+        idx = 2 * TMS_GET_INT(msg, i, 2) + start;
+        inpdev.DeviceDescription = tms_get_string(msg, n, idx);
+		  System.err.println("tms_get_input_dev: devdescript= " + inpdev.DeviceDescription);
+        inpdev.NrOfChannels = (short) TMS_GET_INT(msg, i, 2);
+		  System.err.println("tms_get_input_dev: nrCh= " + inpdev.NrOfChannels);
+        ChannelDescriptionSize = TMS_GET_INT(msg, i, 2);
         /* allocate space for all channel descriptions */
 //C++ TO JAVA CONVERTER TODO TASK: The memory management function 'calloc' has no equivalent in Java:
 //C++ TO JAVA CONVERTER TODO TASK: There is no Java equivalent to 'sizeof':
         inpdev.Channel = new TMS_CHANNEL_DESC_T[inpdev.NrOfChannels];
+		  for ( int iii=0; iii<inpdev.Channel.length; iii++) inpdev.Channel[iii]=new TMS_CHANNEL_DESC_T();
         /* get pointer to first channel description */
-        idx = 2 * TMS_GET_INT(msg.argValue, i, 2) + start;
+        idx = 2 * TMS_GET_INT(msg, i, 2) + start;
         /* goto first channel descriptor */
         i.argValue = idx;
         /* get all channel descriptions */
         for (j = 0; j < inpdev.NrOfChannels; j++) {
-            idx = 2 * TMS_GET_INT(msg.argValue, i, 2) + start;
+            idx = 2 * TMS_GET_INT(msg, i, 2) + start;
             tms_get_type_desc(msg, n, idx, inpdev.Channel[j].Type);
-            idx = 2 * TMS_GET_INT(msg.argValue, i, 2) + start;
-            inpdev.Channel[j].ChannelDescription = tms_get_string(msg.argValue, n, idx);
-            inpdev.Channel[j].GainCorrection = tms_get_float(msg.argValue, i);
-            inpdev.Channel[j].OffsetCorrection = tms_get_float(msg.argValue, i);
+            idx = 2 * TMS_GET_INT(msg, i, 2) + start;
+            inpdev.Channel[j].ChannelDescription = tms_get_string(msg, n, idx);
+            inpdev.Channel[j].GainCorrection = tms_get_float(msg, i);
+            inpdev.Channel[j].OffsetCorrection = tms_get_float(msg, i);
         }
         /* count total number of bits needed */
         tnb = 0;
@@ -1867,14 +1921,14 @@ public class tmsi {
      *
      * @return always on success, -1 on failure
      */
-    public int tms_get_iddata(RefObject<Byte[]> msg, int n, TMS_INPUT_DEVICE_T inpdev) {
+    public int tms_get_iddata(byte[] msg, int n, TMS_INPUT_DEVICE_T inpdev) {
 
         int type; //*< message type
         RefObject<Integer> i = new RefObject<Integer>(0); //*< general index
         int size; //*< payload size
 
         /* get message type */
-        type = tms_get_type(msg.argValue, n);
+        type = tms_get_type(msg, n);
         if (type != TMSIDDATA) {
             System.err.format("# Warning: type %02X != %02X\n", type, TMSIDDATA);
             return (-1);
@@ -2201,6 +2255,7 @@ public class tmsi {
                 s.connect(serveraddr);
             } catch (IOException ex) {
                 System.err.println("ERROR, connecting to " + host + ":" + port);
+					 System.err.println(ex);
                 System.exit(0);
             }
             System.err.println("connection made");
@@ -2254,7 +2309,7 @@ public class tmsi {
     }
 
     /* Print bit string of 'msg' */
-    public int tms_prt_bits(PrintStream fp, Byte[] msg, int n, int idx) {
+    public int tms_prt_bits(PrintStream fp, byte[] msg, int n, int idx) {
         int nc = 0;
         int i;
         int j;
@@ -2287,9 +2342,9 @@ public class tmsi {
      * @return number of samples.
      */
 //C++ TO JAVA CONVERTER NOTE: This was formerly a static local variable declaration (not allowed in Java):
-    public static Integer[] tms_get_data_srp = null;
+    public static int[] tms_get_data_srp = null;
 //C++ TO JAVA CONVERTER NOTE: This was formerly a static local variable declaration (not allowed in Java):
-    public static Integer[] tms_get_data_sample_cnt = null;
+    public static int[] tms_get_data_sample_cnt = null;
 
     /**
      * Get TMS data from message 'msg' of 'n' bytes into floats 'val'.
@@ -2298,7 +2353,7 @@ public class tmsi {
      */
 //C++ TO JAVA CONVERTER TODO TASK: Java does not have an equivalent for pointers to value types:
 //ORIGINAL LINE: int *srp=null;
-    public int tms_get_data(RefObject<Byte[]> msg, int n, TMS_INPUT_DEVICE_T dev, TMS_CHANNEL_DATA_T[] chd) {
+    public int tms_get_data(byte[] msg, int n, TMS_INPUT_DEVICE_T dev, TMS_CHANNEL_DATA_T[] chd) {
         int nbps; //*< number of bytes per sample
         int type; //*< TMS type and packet size
         int size;
@@ -2322,7 +2377,7 @@ public class tmsi {
         }
 
         /* get message type */
-        type = tms_get_type(msg.argValue, n);
+        type = tms_get_type(msg, n);
         /* parse packet data */
         size = TMS_MSG_SIZE(msg, n, i);
 
@@ -2331,7 +2386,7 @@ public class tmsi {
             nbps = (dev.Channel[j].Type.Format & 0xFF) / 8;
             /* get integer sample values */
 
-            chd[j].data[0].isample = TMS_GET_INT(msg.argValue, i, nbps);
+            chd[j].data[0].isample = TMS_GET_INT(msg, i, nbps);
             /* sign extension for signed samples */
             if ((dev.Channel[j].Type.Format & 0x0100) != 0) {
 //C++ TO JAVA CONVERTER WARNING: The right shift operator was not replaced by Java's logical right shift operator since the left operand was not confirmed to be of an unsigned type, but you should review whether the logical right shift operator (>>>) is more appropriate:
@@ -2348,7 +2403,7 @@ public class tmsi {
 
         if (tms_get_data_sample_cnt == null) {
 //C++ TO JAVA CONVERTER TODO TASK: The memory management function 'calloc' has no equivalent in Java:
-            tms_get_data_sample_cnt = new Integer[dev.NrOfChannels];
+            tms_get_data_sample_cnt = new int[dev.NrOfChannels];
             for (j = 0; j < dev.NrOfChannels; j++) {
                 tms_get_data_sample_cnt[j] = 0;
             }
@@ -2359,7 +2414,7 @@ public class tmsi {
             /* allocate space once for sample receive period */
             if (tms_get_data_srp == null) {
 //C++ TO JAVA CONVERTER TODO TASK: The memory management function 'calloc' has no equivalent in Java:
-                tms_get_data_srp = new Integer[dev.NrOfChannels];
+                tms_get_data_srp = new int[dev.NrOfChannels];
             }
             /* find maximum period and count total number of samples */
             maxns = 0;
@@ -2381,7 +2436,7 @@ public class tmsi {
             if ((vb & 0x04) != 0) {
                 /* print delta block */
                 System.err.format("\nDelta block of %d bytes totns %d\n", n - 2 - i.argValue, totns);
-                tms_prt_bits(System.err, msg.argValue, n - 2, i.argValue);
+                tms_prt_bits(System.err, msg, n - 2, i.argValue);
                 /* Delta block */
                 System.err.println("Delta block:");
             }
@@ -2390,9 +2445,9 @@ public class tmsi {
             j = 0;
             pc = 1;
             while ((cnt < totns) && (bip.argValue < 8 * n - 16)) {
-                len = get_lsbf_int32_t(msg.argValue, bip, 4);
+                len = get_lsbf_int32_t(msg, bip, 4);
                 if (len == 0) {
-                    dv = get_lsbf_int32_t(msg.argValue, bip, 2);
+                    dv = get_lsbf_int32_t(msg, bip, 2);
                     overflow = 0;
                     switch (dv) {
                         case 0:
@@ -2525,6 +2580,7 @@ public class tmsi {
 //C++ TO JAVA CONVERTER TODO TASK: The memory management function 'calloc' has no equivalent in Java:
 //C++ TO JAVA CONVERTER TODO TASK: There is no Java equivalent to 'sizeof':
             tms_prt_samples_prt = new TMS_DATA_T[tms_prt_samples_maxns * tms_get_number_of_channels()];
+				for ( int iii=0; iii<tms_prt_samples_prt.length; iii++) tms_prt_samples_prt[iii]=new TMS_DATA_T();
         }
 
         /* search for channel 'jm' with maximum number of samples over all wanted channels */
@@ -2595,7 +2651,7 @@ public class tmsi {
      * Send VLDeltaInfo request to file descriptor 'fd'
      */
     public int tms_snd_vldelta_info_request(OutputStream fd) {
-        RefObject<Byte[]> req = new RefObject<Byte[]>(new Byte[10]); //*< id request message
+        byte[] req = new byte[10]; //*< id request message
         RefObject<Integer> i = new RefObject<Integer>(0);
         int bw; //*< byte written
 
@@ -2609,24 +2665,17 @@ public class tmsi {
         bw = TMS_PUT_CHKSUM(req, i.argValue);
 
         if ((vb & 0x01) != 0) {
-            TMS_WRITE_LOG_MSG(req.argValue, bw, "send VLDeltaInfo request");
+            TMS_WRITE_LOG_MSG(req, bw, "send VLDeltaInfo request");
         }
         try {
             /* send request */
 //        bw = send(fd, req, bw, 0);
-            fd.write(toPrimitive(req.argValue));
+            fd.write(req,0,bw);
+				fd.flush();
         } catch (IOException ex) {
             System.err.println("# Warning: tms_send_vl_delta_info_request write problem");
         }
         return 1;
-    }
-
-    public static byte[] toPrimitive(Byte[] in) {
-        byte[] out = new byte[in.length];
-        for (int i = 1; i < in.length; i++) {
-            out[i] = (byte) in[i];
-        }
-        return out;
     }
 
     /**
@@ -2635,7 +2684,7 @@ public class tmsi {
      *
      * @return number of bytes processed.
      */
-    public int tms_get_vldelta_info(RefObject<Byte[]> msg, int n, int nch, TMS_VLDELTA_INFO_T vld) {
+    public int tms_get_vldelta_info(byte[] msg, int n, int nch, TMS_VLDELTA_INFO_T vld) {
 
         RefObject<Integer> i = new RefObject<Integer>(0); //*< general index
         int j;
@@ -2643,21 +2692,21 @@ public class tmsi {
         int size; //*< payload size
 
         /* get message type */
-        type = tms_get_type(msg.argValue, n);
+        type = tms_get_type(msg, n);
         if (type != TMSVLDELTAINFO) {
             System.err.format("# Warning: tms_get_vldelta_info type %02X != %02X\n", type, TMSVLDELTAINFO);
             return (-1);
         }
         /* get payload size and payload pointer 'i' */
         size = TMS_MSG_SIZE(msg, n, i);
-        vld.Config = (short) TMS_GET_INT(msg.argValue, i, 2);
-        vld.Length = (short) TMS_GET_INT(msg.argValue, i, 2);
-        vld.TransFreqDiv = (short) TMS_GET_INT(msg.argValue, i, 2);
+        vld.Config = (short) TMS_GET_INT(msg, i, 2);
+        vld.Length = (short) TMS_GET_INT(msg, i, 2);
+        vld.TransFreqDiv = (short) TMS_GET_INT(msg, i, 2);
         vld.NrOfChannels = (short) nch;
 //C++ TO JAVA CONVERTER TODO TASK: The memory management function 'calloc' has no equivalent in Java:
         vld.SampDiv = new short[nch];
         for (j = 0; j < nch; j++) {
-            vld.SampDiv[j] = (short) TMS_GET_INT(msg.argValue, i, 2);
+            vld.SampDiv[j] = (short) TMS_GET_INT(msg, i, 2);
         }
         /* number of found Frontend system info structs */
         return (i.argValue);
@@ -2694,7 +2743,7 @@ public class tmsi {
      * @return number of bytes send.
      */
     public int tms_send_rtc_time_read_req(FileOutputStream fd) {
-        RefObject<Byte[]> req = new RefObject<Byte[]>(new Byte[10]); //*< id request message
+        byte[] req = new byte[10]; //*< id request message
         RefObject<Integer> i = new RefObject<Integer>(0);
         int bw; //*< byte written
 
@@ -2708,12 +2757,13 @@ public class tmsi {
         bw = TMS_PUT_CHKSUM(req, i.argValue);
 
         if ((vb & 0x01) != 0) {
-            TMS_WRITE_LOG_MSG(req.argValue, bw, "send rtc read request");
+            TMS_WRITE_LOG_MSG(req, bw, "send rtc read request");
         }
         try {
             /* send request */
 //        bw = send(fd, req, bw, 0);
-            fd.write(toPrimitive(req.argValue));
+            fd.write(req,0,bw);
+				fd.flush();
         } catch (IOException ex) {
             System.err.println("# Warning: TMS_RTC_Time_read_request write problem");
         }
@@ -2726,14 +2776,14 @@ public class tmsi {
      *
      * @return 0 on failure and number of bytes processed
      */
-    public int tms_get_rtc(RefObject<Byte[]> msg, int n, TMS_RTC_T rtc) {
+    public int tms_get_rtc(byte[] msg, int n, TMS_RTC_T rtc) {
 
         RefObject<Integer> i = new RefObject<Integer>(0); //*< general index
         int type; //*< message type
         int size; //*< payload size
 
         /* get message type */
-        type = tms_get_type(msg.argValue, n);
+        type = tms_get_type(msg, n);
         if (type != TMSRTCTIMEDATA) {
             System.err.format("# Warning: type %02X != %02X\n", type, TMSRTCTIMEDATA);
             return (-3);
@@ -2744,14 +2794,14 @@ public class tmsi {
             System.err.format("# Warning: tms_get_rtc: unexpected size %d iso %d\n", size, 8);
         }
         /* parse message 'msg' */
-        rtc.seconds = (short) TMS_GET_INT(msg.argValue, i, 2);
-        rtc.minutes = (short) TMS_GET_INT(msg.argValue, i, 2);
-        rtc.hours = (short) TMS_GET_INT(msg.argValue, i, 2);
-        rtc.day = (short) TMS_GET_INT(msg.argValue, i, 2);
-        rtc.month = (short) TMS_GET_INT(msg.argValue, i, 2);
-        rtc.year = (short) TMS_GET_INT(msg.argValue, i, 2);
-        rtc.century = (short) TMS_GET_INT(msg.argValue, i, 2);
-        rtc.weekday = (short) TMS_GET_INT(msg.argValue, i, 2);
+        rtc.seconds = (short) TMS_GET_INT(msg, i, 2);
+        rtc.minutes = (short) TMS_GET_INT(msg, i, 2);
+        rtc.hours = (short) TMS_GET_INT(msg, i, 2);
+        rtc.day = (short) TMS_GET_INT(msg, i, 2);
+        rtc.month = (short) TMS_GET_INT(msg, i, 2);
+        rtc.year = (short) TMS_GET_INT(msg, i, 2);
+        rtc.century = (short) TMS_GET_INT(msg, i, 2);
+        rtc.weekday = (short) TMS_GET_INT(msg, i, 2);
         return (i.argValue);
     }
 //C++ TO JAVA CONVERTER NOTE: This was formerly a static local variable declaration (not allowed in Java):
@@ -2838,6 +2888,7 @@ public class tmsi {
         /* allocate storage space for all channels */
         chd = new TMS_CHANNEL_DATA_T[in_dev.NrOfChannels];
         for (i = 0; i < in_dev.NrOfChannels; i++) {
+				chd[i] = new TMS_CHANNEL_DATA_T();
             if (vld == null) {
                 chd[i].ns = 1;
             } else {
@@ -2851,6 +2902,7 @@ public class tmsi {
 //C++ TO JAVA CONVERTER TODO TASK: The memory management function 'calloc' has no equivalent in Java:
 //C++ TO JAVA CONVERTER TODO TASK: There is no Java equivalent to 'sizeof':
             chd[i].data = new TMS_DATA_T[chd[i].ns];
+				for (int ii=0; ii<chd[i].data.length; ii++) chd[i].data[ii]=new TMS_DATA_T();
         }
         for (i = 0; i < in_dev.NrOfChannels; i++) {
             chd[i].td = ns_max / (chd[i].ns * tms_get_sample_freq());
@@ -2885,7 +2937,7 @@ public class tmsi {
         int bw = 0; //*< bytes written
         int br = 0; //*< bytes read
         int fs = 0; //*< sample frequency
-        RefObject<Byte[]> resp = new RefObject<Byte[]>(new Byte[RESPSIZE]); //*< TMS response to challenge
+        byte[] resp = new byte[RESPSIZE]; //*< TMS response to challenge
         int type; //*< TMS message type
 
         TMS_ACKNOWLEDGE_T ack = new TMS_ACKNOWLEDGE_T(); //*< TMS acknowlegde
@@ -2895,17 +2947,21 @@ public class tmsi {
         in_dev = new TMS_INPUT_DEVICE_T();
 
         fd = tms_open_port(fname);
-        System.out.printf("Opened socket %d\n", fd);
+        System.out.println("Opened socket " + fd);
 
         while (state < 4) {
             switch (state) {
                 case 0:
+						  System.err.println("State=0");
                     /* send frontend Info request */
                     bw = tms_snd_FrontendInfoReq(fd);
+						  System.err.println("Sent FrontInfoReq");
                     /* receive response to frontend Info request */
-                    br = tms_rcv_msg(fd, resp, Byte.SIZE);
+                    br = tms_rcv_msg(fd, resp, resp.length);
+						  //System.err.println("FrontInfoReqResp message so far:\n");dumpMsg(resp,br,0);
                     break;
                 case 1:
+						  System.err.println("State=1");
                     /* switch off data capture when it is on */
                     /* stop capture */
                     fei.mode |= 0x01;
@@ -2917,13 +2973,15 @@ public class tmsi {
                     /* send it */
                     tms_write_frontendinfo(fd, fei);
                     /* receive ack */
-                    br = tms_rcv_msg(fd, resp, Byte.SIZE);
+                    br = tms_rcv_msg(fd, resp, resp.length);
                     break;
                 case 2:
+						  System.err.println("State=2");
                     /* receive ID Data */
-                    br = tms_fetch_iddata(fd, resp, Byte.SIZE);
+                    br = tms_fetch_iddata(fd, resp, resp.length);
                     break;
                 case 3: {
+						  System.err.println("State=3");						  
                     try {
                         /* send vldelta info request */
                         bw = tms_snd_vldelta_info_request(fd.getOutputStream());
@@ -2932,7 +2990,7 @@ public class tmsi {
                     }
                 }
                 /* receive response to vldelta info request */
-                br = tms_rcv_msg(fd, resp, Byte.SIZE);
+                br = tms_rcv_msg(fd, resp, resp.length);
                 break;
             }
 
@@ -2950,7 +3008,7 @@ public class tmsi {
                 System.err.println("# checksum error !!!\n");
             } else {
 
-                type = tms_get_type(resp.argValue, br);
+                type = tms_get_type(resp, br);
 
                 switch (type) {
 
@@ -2959,7 +3017,7 @@ public class tmsi {
                     case TMSRTCTIMEDATA:
                         break;
                     case TMSVLDELTAINFO:
-                        RefObject<Byte[]> tempRef_resp = new RefObject<Byte[]>(resp.argValue);
+                        byte[] tempRef_resp = resp;
                         tms_get_vldelta_info(tempRef_resp, br, in_dev.NrOfChannels, vld);
                         resp = tempRef_resp;
                         if ((vb & 0x02) != 0) {
@@ -3033,7 +3091,7 @@ public class tmsi {
      */
     public int tms_get_samples(TMS_CHANNEL_DATA_T[] channel) {
         int br = 0; //*< bytes read
-        RefObject<Byte[]> resp = new RefObject<Byte[]>(new Byte[RESPSIZE]); //*< TMS response to challenge
+        byte[] resp = new byte[RESPSIZE]; //*< TMS response to challenge
         int type; //*< TMS message type
         //C++ TO JAVA CONVERTER NOTE: This static local variable declaration (not allowed in Java) has been moved just prior to the method:
         //  static int dpc=0; //*< data packet counter
@@ -3066,8 +3124,8 @@ public class tmsi {
 			/* start data capturing */
             tms_write_frontendinfo(fd, fei);
             /* receive ack */
-            br = tms_rcv_msg(fd, resp, Byte.SIZE);
-            type = tms_get_type(resp.argValue, br);
+            br = tms_rcv_msg(fd, resp, resp.length);
+            type = tms_get_type(resp, br);
             if (type != TMSACKNOWLEDGE) {
                 return -1;
             } else {
@@ -3079,12 +3137,12 @@ public class tmsi {
             }
         }
         if (state == 5) {
-            br = tms_rcv_msg(fd, resp, Byte.SIZE);
+            br = tms_rcv_msg(fd, resp, resp.length);
             if (tms_chk_msg(resp, br) != 0) {
                 System.err.println("# checksum error !!!\n");
             } else {
 
-                type = tms_get_type(resp.argValue, br);
+                type = tms_get_type(resp, br);
 
                 switch (type) {
 
@@ -3099,7 +3157,7 @@ public class tmsi {
                             tms_get_samples_datastarttime = t;
                         }
                         /* convert channel data to float's */
-                        RefObject<Byte[]> tempRef_resp = new RefObject<Byte[]>(resp.argValue);
+                        byte[] tempRef_resp = resp;
                         cnt = tms_get_data(tempRef_resp, br, in_dev, channel);
                         resp = tempRef_resp;
                         if ((vb & 0x04) != 0) {
@@ -3151,7 +3209,7 @@ public class tmsi {
      */
     public int tms_shutdown() {
         int br = 0; //*< bytes read
-        RefObject<Byte[]> resp = new RefObject<Byte[]>(new Byte[RESPSIZE]); //*< TMS response to challenge
+        byte[] resp = new byte[RESPSIZE]; //*< TMS response to challenge
         int type; //*< TMS message type
         int got_ack = 0;
         int rtc = 0;
@@ -3169,16 +3227,16 @@ public class tmsi {
         /* wait for ack is received OR until 10s timeout */
         System.err.println("Wait ACK:");
         do {
-            br = tms_rcv_msg(fd, resp, Byte.SIZE);
+            br = tms_rcv_msg(fd, resp, resp.length);
             if (tms_chk_msg(resp, br) != 0) {
                 System.err.println("# checksum error !!!\n");
             } else {
-                type = tms_get_type(resp.argValue, br);
+                type = tms_get_type(resp, br);
                 if (type == TMSACKNOWLEDGE) {
                     got_ack = 1;
                 }
             }
-            System.err.println(".");
+            //System.err.println(".");
             rtc++;
         } while (got_ack == 0 && rtc < 1000);
 
