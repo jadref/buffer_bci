@@ -61,6 +61,8 @@ cueDuration=1;
 startDelay =.5;
 intertrialDuration=2;
 feedbackDuration=1;
+eyesDuration=30;
+artifactDuration=15;
 
 contFeedbackTrialDuration=10;
 neurofeedbackTrialDuration=30;
