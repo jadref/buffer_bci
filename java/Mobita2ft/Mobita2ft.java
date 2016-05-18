@@ -110,6 +110,7 @@ public class Mobita2ft {
 		  }
 		  // send the header information to the buffer
 		  try {
+				System.out.println("Sending header: " + hdr.toString());
 				ftClient.putHeader(hdr);
 		  } catch (IOException e) {
 				System.out.println("PutHeader failed");
@@ -187,7 +188,7 @@ public class Mobita2ft {
 		  int nchans = tms.tms_get_number_of_channels();
 		  int tmssamp = 0 ;
 		  int nbad=0;
-		  float[][] samples = new float[nchans][blockSize];
+		  float[][] samples = new float[blockSize][nchans];
 		  long t0 = System.currentTimeMillis();
 		  long printTime = 0;
 		  long t  = t0;
@@ -232,11 +233,11 @@ public class Mobita2ft {
                 if (BUFFERSUBSAMPLESIZE > 1) { // accumulate over BUFFERSUBSAMPLESIZE device samples
                     int buffsi = si / BUFFERSUBSAMPLESIZE; // sample index in the buffer data packet
                     for (int chi = 0; chi < nchans; chi++) {
-                        samples[chi][buffsi] += channel[chi].data[channel[chi].rs - 1].sample;
+                        samples[buffsi][chi] += channel[chi].data[channel[chi].rs - 1].sample;
                     }
                 } else { // 1 amp sample per buffer sample
                     for (int chi = 0; chi < nchans; chi++) {
-                        samples[chi][si] = channel[chi].data[channel[chi].rs - 1].sample;
+                        samples[si][chi] = channel[chi].data[channel[chi].rs - 1].sample;
                     }
                 }
                 nSample += 1; //nSample;
@@ -244,7 +245,7 @@ public class Mobita2ft {
             if (BUFFERSUBSAMPLESIZE > 1) { // convert multi-samples sums into means
                 for (int i = 0; i < samples.length; i++) {						  
 						  for (int j = 0; j < samples[i].length; j++) {
-								samples[i][j] /= BUFFERSUBSAMPLESIZE;
+								samples[i][j] /= BUFFERSUBSAMPLESIZE; // samp = [time][ch]
 						  }
                 }
             }
@@ -259,6 +260,7 @@ public class Mobita2ft {
 					 ftClient.putData(samples);
 				}
 				catch (IOException e) {
+					 System.out.println("putData error!");
 					 System.out.println(e);
 				}
 				  
