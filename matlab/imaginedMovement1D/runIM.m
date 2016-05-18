@@ -7,7 +7,7 @@ configureIM;
   fontSize = .05*wSize(4);
   %        Instruct String          Phase-name
   menustr={'0) EEG'                 'eegviewer';
-           '1) Practice'            'practice';
+           '1) Calibrate Noise'     'noise';
            '2) Calibrate Stimulus'  'calibrate'; 
            '3) Calibrate Volition'  'calibrateVolition'
 			 % '4) Train Classifier'    'trainersp';
@@ -103,6 +103,14 @@ while (ishandle(contFig))
     sendEvent('startPhase.cmd',phaseToRun)
     sendEvent(phaseToRun,'start');
         imCalibrateVolition;
+    sendEvent(phaseToRun,'end');
+    
+   %---------------------------------------------------------------------------
+   case 'noise';
+    sendEvent('subject',subject);
+    sendEvent('startPhase.cmd',phaseToRun)
+    sendEvent(phaseToRun,'start');
+        imCalibrateNoise;
     sendEvent(phaseToRun,'end');
    %---------------------------------------------------------------------------
    case {'train','trainersp'};
