@@ -4,12 +4,13 @@ Bugs
 
 [X] Refactor matlab code into the matlab sub-directory
 
-[] refactor the caps-files into the resources/caps directory 
+[x] refactor the caps-files into the resources/caps directory 
 
 Basic buffer integeration
 =========================
 [] - Add async put_dat, put_evt, and wait_dat, methods to the java buffer client
 [x] - audio2ft driver for testing
+[] - Refactor dataAcq directory so different languages are in language specific sub-directories
 
 Platform/Language support
 =========================
@@ -57,7 +58,7 @@ Signal Analysis
 [x] - universum-SVM classifier support
 [] - second order baseline adaptive sig-processing support in classifier
 [] - convert demos to use string event values when possible to improve readability
-[] - OSC2FT add the channel names when sending the header
+[x] - OSC2FT add the channel names when sending the header
 [x] - Validate the 50Hz power as a bad-channel indicator.  
   [] - Add channel offset mode to sigViewer
 

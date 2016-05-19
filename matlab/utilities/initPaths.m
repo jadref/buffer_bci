@@ -8,6 +8,7 @@ dataAcq_dir=fullfile(buffer_bcidir,'dataAcq');
 if ( ~exist(dataAcq_dir,'dir') )
   dataAcq_dir=fullfile(fileparts(buffer_bcidir),'dataAcq');
 end
+fprintf('Adding paths from dataAcq dir = %s\n',dataAcq_dir);
 if ( exist(dataAcq_dir,'dir') ) 
   addpath(dataAcq_dir); 
   if ( exist(fullfile(dataAcq_dir,'buffer'),'dir') ) 
@@ -35,27 +36,3 @@ if ( exist(fullfile(buffer_bcidir,'classifiers'),'dir') ) addpath(fullfile(buffe
 if ( exist(fullfile(buffer_bcidir,'plotting'),'dir') ) addpath(fullfile(buffer_bcidir,'plotting')); end;
 if ( exist(fullfile(buffer_bcidir,'signalProc'),'dir') ) addpath(fullfile(buffer_bcidir,'signalProc')); end;
 if ( exist(fullfile(buffer_bcidir,'offline'),'dir') ) addpath(fullfile(buffer_bcidir,'offline')); end;
-
-
-% general functions -- if needed, i.e. not already available in the above paths
-bcicodeDirNames={'BCI_Code','BCI_code','Code',fullfile('source','mmmcode','BCI_code')};
-if ( isempty(which('parseOpts')) )
-  sdir=buffer_bcidir;
-  while ( ~isempty(sdir) )
-    for di=1:numel(bcicodeDirNames);
-      bcicodedir=fullfile(sdir,bcicodeDirNames{di});
-      if ( exist(bcicodedir,'dir') ) break; end;
-    end
-    if ( exist(bcicodedir,'dir') ) break; end;
-    osdir=sdir;
-    sdir=fileparts(sdir);
-    if ( isequal(osdir,sdir) ) break; end; % guard against infinite loop
-  end
-  addpath(fullfile(bcicodedir,'toolboxes','utilities','general'));
-  addpath(exGenPath(fullfile(bcicodedir,'toolboxes','classification')));
-  addpath(exGenPath(fullfile(bcicodedir,'toolboxes','eeg_analysis')));
-  addpath(exGenPath(fullfile(bcicodedir,'toolboxes','plotting')));
-  addpath(exGenPath(fullfile(bcicodedir,'toolboxes','signal_processing')));
-  addpath(exGenPath(fullfile(bcicodedir,'toolboxes','utilities')));
-  addpath(exGenPath(fullfile(bcicodedir,'toolboxes','numerical_tools')));
-end
