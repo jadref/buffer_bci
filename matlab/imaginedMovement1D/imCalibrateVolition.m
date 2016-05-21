@@ -10,6 +10,8 @@ ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','b
         'color',[0 0 0],'DrawMode','fast','nextplot','replacechildren',...
         'xlim',[-1.5 1.5],'ylim',[-1.5 1.5],'Ydir','normal');
     
+    
+    
 % add symbol for the center of the screen
 set(gca,'visible','off');
 

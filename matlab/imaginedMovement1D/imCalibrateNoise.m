@@ -54,6 +54,14 @@ set(txthdl,'string', 'Click mouse when ready', 'visible', 'on'); drawnow;
 waitforbuttonpress;
 set(txthdl,'visible', 'off'); drawnow;
 
+% 30 sec of fixation
+set(h(1,6),'visible','on');
+set(h(2,6),'visible','on');drawnow;
+sendEvent('stimulus.baseline.eyesopen','start');
+sleepSec(eyesDuration);
+sendEvent('stimulus.baseline.eyesopen','end');
+set(h(:),'visible','off');
+
 % 30 sec of eyes closed
 set(h(1,5),'visible','on'); drawnow;
 sendEvent('stimulus.baseline.eyesclosed','start');
@@ -92,6 +100,14 @@ set(h(2,4),'visible','on');drawnow;
 sendEvent('artifact.jaw','start');
 sleepSec(artifactDuration);
 sendEvent('artifact.jaw','end');
+set(h(:),'visible','off');
+
+% 30 sec of fixation
+set(h(1,6),'visible','on');
+set(h(2,6),'visible','on');drawnow;
+sendEvent('stimulus.baseline.eyesopen','start');
+sleepSec(eyesDuration);
+sendEvent('stimulus.baseline.eyesopen','end');
 set(h(:),'visible','off');
 
 if ( ishandle(fig) ) % thanks message
