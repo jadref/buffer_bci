@@ -48,9 +48,9 @@ public class BufferBciInput {
         this.timeout = timeout;
         this.haveRecvThread = recvTread;
 
-        events = new ArrayList<>();
+        events = new ArrayList<BufferEvent>();
         client = new BufferClientClock();
-        listeners = new ArrayList<>();
+        listeners = new ArrayList<ArrivedEventsListener>();
     }
 
     /**
