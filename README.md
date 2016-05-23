@@ -19,9 +19,9 @@ provided.  A summary of the language feature support is:
 ## Important Note:
 
 This is a *client-server architecture*.  Thus to use any of the demos or run time you need at least:
-1) a server running (the 'buffer') and two clients: 
-2) a data-acquisation client which interfaces with the hardware to send data to the server, 
-3) an application client which does something with the received data, like showing it on the screen.
+1. a server running (the 'buffer') and two clients: 
+2. a data-acquisation client which interfaces with the hardware to send data to the server, 
+3. an application client which does something with the received data, like showing it on the screen.
 
 Further different clients may be written in different programming languages and hence have different dependences.  As a minimum many of the clients interfacing with signal measurement hardware are written in java (specificially: the MUSE and openBCI clients) hence you will need a working java run-time to use these devices.  Further, most of the demonstration systems are written in Matlab/Octave, so you will need to install these systems to run these demos – though check the java, python and csharp directories for demonstrations written in those languages.
 
@@ -29,7 +29,7 @@ Further different clients may be written in different programming languages and 
 
 Copy these directories somewhere on your local drive.
 
-Note: If using MATLAB/Octave and the .bat/.sh files do not work because the MATLAB/Octave executable is not found automatically then modify the path in the file [`utilities\findMatlab.bat`](utilities\findMatlab.bat) (windows) or [`utilities/findMatlab.sh`](utilities\findMatlab.sh) (Linux/MacOSX) to point to the executable location.
+Note: If using MATLAB/Octave and the .bat/.sh files do not work because the MATLAB/Octave executable is not found automatically then modify the path in the file [`utilities\findMatlab.bat`](utilities/findMatlab.bat) (windows) or [`utilities/findMatlab.sh`](utilities/findMatlab.sh) (Linux/MacOSX) to point to the executable location.
 
 Note2: For Linux there is a [Docker image]( https://github.com/dokterbob/docker-bci) which can be used to simply install buffer_bci and all it's dependencies directly 
 
@@ -37,39 +37,39 @@ Note3: *MacOS* to run the *.sh files from the finder you need to set them to ope
 
 ## QuickStart
 
-Read the readme.txt file in either of the games, EEGBCITutorial, imaginedMovement, matrixSpeller directories for instructions on how to startup and run
+Read the `README` file in either of the [`games`](matlab/games), [`EEGBCITutorial`](tutorial/EEGBCITutorial), [`imaginedMovement`](matlab/imaginedMovement), [`matrixSpeller`](matlab/matrixSpeller) directories for instructions on how to startup and run
 those demos.  (Note: all demos require Matlab/Octave_java+QtHandles to
 run correctly!)
 
-To run the games demo:
+To run the [games](matlab/games) demo:
 
 1. Start the data Acquisation system.
 
  If you have *no* EEG hardware, but just want to test:
 
-  1.2. start a buffer by running: [`dataAcq/startJavaBuffer.bat`](dataAcq/startJavaBuffer.bat) or [`dataAcq/startJavaBuffer.sh`](dataAcq/startJavaBuffer.sh)  
-  1.2. start a *simulated* data source by running: [`dataAcq/startJavaSignalProxy.bat`](dataAcq\startJavaSignalProxy.bat) or [.sh](dataAcq/startJavaSignalProxy.sh)
+  1. start a buffer by running: [`dataAcq/startJavaBuffer.bat`](dataAcq/startJavaBuffer.bat) or [`dataAcq/startJavaBuffer.sh`](dataAcq/startJavaBuffer.sh)  
+  2. start a *simulated* data source by running: [`dataAcq/startJavaSignalProxy.bat`](dataAcq\startJavaSignalProxy.bat) or [.sh](dataAcq/startJavaSignalProxy.sh)
 
 OR
   Start a complete simulated EEG system in one step using [`debug_quickstart.bat`](debug_quickstart.bat) or [`debug_quickstart.sh`](debug_quickstart.sh)
 
  If you have EEG hardware connected then depending on the hardware:
 
-  1.1) start a buffer by running: [`dataAcq/startJavaBuffer.bat`](dataAcq/startJavaBuffer.bat) or [`dataAcq/startJavaBuffer.sh`](dataAcq/startJavaBuffer.bat)  
-  1.2) start appropriate acquisition driver for your device:  
-  		 TMSi Mobita([mobita]):       [`dataAcq/startMobita.bat`](dataAcq\startMobita.bat)  or  `dataAcq/startMobita.sh`  
-       Emotiv Epoc:        `dataAcq/startEmotiv.bat`  or  `dataAcq/startEmotiv.sh`  
-       Biosemi Active 2:   `dataAcq/startBiosemi.bat` or  `dataAcq/startBiosemi.sh`  
-		 Interaxon Muse:     `dataAcq/startMuse.bat`    or  `dataAcq/startMuse.sh`  
+  1. start a buffer by running: [`dataAcq/startJavaBuffer.bat`](dataAcq/startJavaBuffer.bat) or [`dataAcq/startJavaBuffer.sh`](dataAcq/startJavaBuffer.bat)  
+  2. start appropriate acquisition driver for your device:
+    * TMSi Mobita:       [`dataAcq/startMobita.bat`](dataAcq\startMobita.bat)  or  `dataAcq/startMobita.sh`  
+    * Emotiv Epoc:        `dataAcq/startEmotiv.bat`  or  `dataAcq/startEmotiv.sh`  
+    * Biosemi Active 2:   `dataAcq/startBiosemi.bat` or  `dataAcq/startBiosemi.sh`
+    * Interaxon Muse:     `dataAcq/startMuse.bat`    or  `dataAcq/startMuse.sh`  
 
 Note: By default raw data is saved to:  
 *  *MacOS/Linux*: `~/output/test/_YYMMDD_/_HHMM_/raw_buffer/0001`  
 *  *Windows*: `C:\output\test\_YYMMDD_\_HHMM_\raw_buffer\0001`  
    where `_YYMMDD_` is the date in year/month/day format, `_HHMM_` is start time hour and minutes
 
-2. Start the Matlab/Octave based signal processing process by running: [`matlab/games/startSigProcBuffer.bat`](matlab\games\startSigProcBuffer.bat) or [`.sh`](matlab\games\startSigProcBuffer.sh)
+2. Start the Matlab/Octave based signal processing process by running: [`matlab/games/startSigProcBuffer.bat`](matlab/games/startSigProcBuffer.bat) or [`.sh`](matlab/games/startSigProcBuffer.sh)
 
-3. Start the Matlab/Octave based experiment control & stimulus presentation system by running : [`matlab/games/runGame.bat`](matlab\games\runGame.bat) or [`runGame.sh`](matlab/games/runGame.sh)
+3. Start the Matlab/Octave based experiment control & stimulus presentation system by running : [`matlab/games/runGame.bat`](matlab/games/runGame.bat) or [`runGame.sh`](matlab/games/runGame.sh)
 
 4. Type in the subject name to the experiment control window, and then run through each of the experiment phases: 
 
@@ -96,7 +96,7 @@ An overview of the included directories is:
 
 ## Main example BCI systems
 
-* [`tutorial\EEGBCITutorial`](tutorial\EEGBCITutorial) -- Tutorial on how to use an EEG BCI, including general experience on EEG signals, and two simple BCIs; imagined-movements, and a visual-p300 speller.
+* [`tutorial/EEGBCITutorial`](tutorial/EEGBCITutorial) -- Tutorial on how to use an EEG BCI, including general experience on EEG signals, and two simple BCIs; imagined-movements, and a visual-p300 speller.
 				 
 *  [`matlab/imaginedMovement`](matlab/imaginedMovement) -- Example BCI system for controlling a cursor using an imagined movement (ERSP) type BCI
 
