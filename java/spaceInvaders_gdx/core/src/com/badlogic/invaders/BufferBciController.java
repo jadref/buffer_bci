@@ -32,10 +32,10 @@ public class BufferBciController implements Controller, BufferBciInput.ArrivedEv
      * Initializes the BufferBciController instance.
      */
     public BufferBciController() {
-        this.buttons = new ArrayList<>();
-        this.axes = new ArrayList<>();
-        this.controllerListeners = new ArrayList<>();
-        this.unprocessedEvents = new ArrayList<>();
+        this.buttons = new ArrayList<BufferBciButton>();
+        this.axes = new ArrayList<BufferBciAxis>();
+        this.controllerListeners = new ArrayList<ControllerListener>();
+        this.unprocessedEvents = new ArrayList<BufferEvent>();
     }
 
     /**
