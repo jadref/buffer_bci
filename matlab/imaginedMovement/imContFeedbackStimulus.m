@@ -102,7 +102,7 @@ for si=1:nSeq;
 			 if ( stimSmoothFactor>=0 ) % exp weighted moving average
 				dv=dv*stimSmoothFactor + (1-stimSmoothFactor)*pred(:);
 			 else % store predictions in a ring buffer
-				fbuff(:,mod(nEpochs-1,abs(stimSmoothFactor))+1)=pred(:); % store predictions in a ring buffer
+				fbuff(:,mod(nEpochs-1,abs(stimSmoothFactor))+1)=pred(:);% store predictions in a ring buffer
 				dv=mean(fbuff,2);
 			 end
 		  end

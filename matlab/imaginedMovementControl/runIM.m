@@ -167,7 +167,7 @@ while (ishandle(contFig))
 
   end
 end
-uiwait(msgbox({'Thankyou for participating in our experiment.'},'Thanks','modal'),10);
-pause(1);
 % shut down signal proc
 sendEvent('startPhase.cmd','exit');
+% give thanks
+uiwait(msgbox({'Thankyou for participating in our experiment.'},'Thanks','modal'),10);
