@@ -13,8 +13,12 @@ ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','b
         'xlim',[-1.5 1.5],'ylim',[-1.5 1.5],'Ydir','normal');
 
 stimPos=[]; h=[];
-stimRadius=.5;
-theta=linspace(0,pi,nSymbs); stimPos=[cos(theta);sin(theta)];
+stimRadius=diff(axLim)/4;
+cursorSize=stimRadius/2;
+theta=linspace(0,2*pi,nSymbs+1);
+if ( mod(nSymbs,2)==1 ) theta=theta+pi/2; end; % ensure left-right symetric by making odd 0=up
+theta=theta(1:end-1);
+stimPos=[cos(theta);sin(theta)];
 for hi=1:nSymbs; 
   h(hi)=rectangle('curvature',[1 1],'position',[stimPos(:,hi)-stimRadius/2;stimRadius*[1;1]],...
                   'facecolor',bgColor); 
@@ -31,7 +35,7 @@ set(h(:),'facecolor',bgColor);
 sendEvent('stimulus.testing','start');
 drawnow; pause(5); % N.B. pause so fig redraws
 % initialize the state so don't miss classifier prediction events
-state=buffer('poll'); % get the start time of the stimulus
+state=[]; 
 endTesting=false; dvs=[];
 for si=1:nSeq;
 
@@ -55,11 +59,12 @@ for si=1:nSeq;
   ev=sendEvent('stimulus.target',find(tgtSeq(:,si)>0));
   sendEvent('classifier.apply','now',ev.sample); % tell the classifier to apply from now
   sendEvent('stimulus.trial','start',ev.sample);
+  state=buffer('poll'); % Ensure we ignore any predictions before the trial start
   sleepSec(trialDuration); 
   
   % wait for classifier prediction event
   if( verb>0 ) fprintf(1,'Waiting for predictions\n'); end;
-  [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],500);  
+  [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],750);  
 
   % do something with the prediction (if there is one), i.e. give feedback
   if( isempty(devents) ) % extract the decision value

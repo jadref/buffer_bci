@@ -46,6 +46,8 @@ while (ishandle(contFig))
 		ri = strmatch(modekey(1),menustr(:,1)); % get the row in the instructions
 		if ( ~isempty(ri) ) 
 		  phaseToRun = menustr{ri,2};
+		elseif ( any(strcmp(modekey(1),{'q','Q'})) )
+		  break;
 		end
 	 end
     set(contFig,'userdata',[]);

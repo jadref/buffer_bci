@@ -1,5 +1,5 @@
 configureIM;
-if ( ~exist(contFeedbackTrialDuration) || isempty(contFeedbackTrialDuration) ) contFeedbackTrialDuration=trialDuration; end;
+if ( ~exist('contFeedbackTrialDuration') || isempty(contFeedbackTrialDuration) ) contFeedbackTrialDuration=trialDuration; end;
 
 % make the target sequence
 tgtSeq=mkStimSeqRand(nSymbs,nSeq);
@@ -13,8 +13,12 @@ ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','b
         'xlim',[-1.5 1.5],'ylim',[-1.5 1.5],'Ydir','normal');
 
 stimPos=[]; h=[];
-stimRadius=.5;
-theta=linspace(0,pi,nSymbs); stimPos=[cos(theta);sin(theta)];
+stimRadius=diff(axLim)/4;
+cursorSize=stimRadius/2;
+theta=linspace(0,2*pi,nSymbs+1);
+if ( mod(nSymbs,2)==1 ) theta=theta+pi/2; end; % ensure left-right symetric by making odd 0=up
+theta=theta(1:end-1);
+stimPos=[cos(theta);sin(theta)];
 for hi=1:nSymbs; 
   h(hi)=rectangle('curvature',[1 1],'position',[stimPos(:,hi)-stimRadius/2;stimRadius*[1;1]],...
                   'facecolor',bgColor); 
@@ -70,6 +74,8 @@ for si=1:nSeq;
   % initial fixation point position
   fixPos = stimPos(:,end);
   state  = [];
+  dv     = zeros(nSymbs,1);
+  prob   = ones(nSymbs,1)./nSymbs; % start with equal prob over everything
   trlStartTime=getwTime();
   timetogo = contFeedbackTrialDuration;
   while (timetogo>0)

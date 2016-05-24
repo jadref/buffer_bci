@@ -44,7 +44,7 @@ end
 verb=1;
 buffhost='localhost';
 buffport=1972;
-nSymbs=4; % E,N,S,W  for 2d control
+nSymbs=3; % E,N,W  for 3 outputs
 nSeq=20;
 trialDuration=3;
 baselineDuration=1;
@@ -65,11 +65,14 @@ tgtColor=[0 1 0];
 fbColor =[0 0 1];
 
 % classifier training options
-trainOpts = {'spType',{{1 3} {2 4}}}; % train 2 classifiers, 1=N vs S, 2=E vs W
+trainOpts={}; % one-vs-rest classifier if not over-ridden here
+%trainOpts = {'spType',{{1 3} {2 4}}}; % train 2 classifiers, 1=N vs S, 2=E vs W
 
 % Epoch feedback opts
+%%0) Use exactly the same classification window for feedback as for training, but
+%%   but also include a bias adaption system to cope with train->test transfer
 trlen_ms=trialDuration*1000; % how often to run the classifier
-epochFeedbackOpts={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/50))};
+epochFeedbackOpts={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/50))}; % bias-apaption
 
 % different feedback configs (should all give similar results)
 
@@ -82,20 +85,6 @@ stimSmoothFactor= 0; % additional smoothing on the stimulus, not needed with 3s 
 %contFeedbackOpts ={'predFilt',-(trlen_ms/500),'trlen_ms',[]}; % classify every window, prediction is average of last 3s windows
 %stimSmoothFactor= 0;% additional smoothing on the stimulus, not needed with equivalent of 3s trlen
 
-%%3) Classify every welch-window-width (default 500ms), 
-%contFeedbackOpts ={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/400)),'trlen_ms',[]}; % classify every window, bias adapt predictions
+%%3) Classify every welch-window-width (default 500ms), with bias-adaptation
+%contFeedbackOpts ={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/400)),'trlen_ms',[]}; 
 %stimSmoothFactor= -(trlen_ms/500);% actual prediction is average of trail-length worth of predictions
-
-
-%% Center out feedback parameters
-centeroutinstruct={'Try to move the cursor to'
-						 'the box indicated by the'
-						 'green target using the'
-						 'calibration mental tasks'
-						 ''
-						 'Click mouse when ready'};
-stimAngle=.5; % percetage of each edge for target
-moveStep =.05; % step size for each screen re-draw
-%% feedback parameters
-centerOutTrialDuration=10;
-feedbackMoves=20;

@@ -358,12 +358,16 @@ while ( true )
     event_applyClsfr(clsfr,'startSet',opts.testepochEventType,...
 							'predFilt',opts.epochPredFilt,...
 							'endType',{'testing','test','epochfeedback','eventfeedback'},'verb',opts.verb,...
-							opts.epochFeedbackOpts{:});
+							'trlen_ms',opts.trlen_ms,...%default to trlen_ms data per prediction
+							opts.epochFeedbackOpts{:}); % allow override with epochFeedbackOpts
 	 catch
       msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
       fprintf('Error in : %s',phaseToRun);
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-	  if ( ~isempty(le.stack) ) fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
+		if ( ~isempty(le.stack) )
+		  for i=1:numel(le.stack);fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line); end;
+		end
+		keyboard
       sendEvent('training','end');    
     end
 
@@ -384,10 +388,11 @@ while ( true )
       warning('Trying to use an ERP classifier in continuous application mode.\nAre you sure?');
     end
 	 % generate prediction every trlen_ms/2 seconds using trlen_ms data
-    cont_applyClsfr(clsfr,'trlen_ms',opts.trlen_ms,'overlap',.5,...
+    cont_applyClsfr(clsfr,...
 						  'endType',{'testing','test','contfeedback'},...
 						  'predFilt',opts.contPredFilt,'verb',opts.verb,...
-						  opts.contFeedbackOpts{:});
+						  'trlen_ms',opts.trlen_ms,'overlap',.5,... %default to prediction every trlen_ms/2 ms
+						  opts.contFeedbackOpts{:}); % but override with contFeedbackOpts
     catch
       msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
       fprintf('Error in : %s',phaseToRun);
