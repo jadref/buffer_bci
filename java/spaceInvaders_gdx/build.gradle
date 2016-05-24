@@ -13,6 +13,9 @@ buildscript {
         gdxVersion = json.libgdxSnapshot
         roboVMVersion = json.robovmVersion
         roboVMGradleVersion = json.robovmPluginVersion
+        androidToolsVersion = json.androidBuildtoolsVersion
+        androidSDKVersion = json.androidSDKVersion
+        androidGradleToolsVersion = json.androidGradleToolVersion
         gwtVersion = json.gwtVersion
         gwtGradleVersion = json.gwtPluginVersion
     }
@@ -20,14 +23,13 @@ buildscript {
     repositories {
         jcenter()
         mavenCentral()
-	mavenLocal()
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
     }
 
     dependencies {
-	classpath "com.android.tools.build:gradle:0.10+"
         classpath "de.richsource.gradle.plugins:gwt-gradle-plugin:$gwtGradleVersion"
-	//classpath "org.robovm:robovm-gradle-plugin:$roboVMGradleVersion"
+        classpath "com.android.tools.build:gradle:$androidGradleToolsVersion"
+        classpath "com.mobidevelop.robovm:robovm-gradle-plugin:$roboVMGradleVersion"
     }
 }
 
@@ -57,30 +59,40 @@ project(":desktop") {
         compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
         compile "com.badlogicgames.gdx:gdx-controllers-desktop:$gdxVersion"
         compile "com.badlogicgames.gdx:gdx-controllers-platform:$gdxVersion:natives-desktop"
-        compile "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
     }
 }
 
-//project(":android") {
-//    apply plugin: "android"
+project(":android") {
+    apply plugin: "android"
+
+    configurations { natives }
+
+    dependencies {
+        compile project(":core")
+        compile "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
+        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi"
+        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
+        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86"
+        compile "com.badlogicgames.gdx:gdx-controllers:$gdxVersion"
+        compile "com.badlogicgames.gdx:gdx-controllers-android:$gdxVersion"
+    }
+}
+
+//project(":html") {
+//    apply plugin: "gwt"
+//    apply plugin: "war"
 //
-//    configurations { natives }
 //
 //    dependencies {
 //        compile project(":core")
-//        compile "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
-//        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi"
-//        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
-//        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86"
-//        compile "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
-//        natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-armeabi"
-//        natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-armeabi-v7a"
-//        natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86"
+//        compile "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion"
+//        compile "com.badlogicgames.gdx:gdx:$gdxVersion:sources"
+//        compile "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion:sources"
+//        compile "com.badlogicgames.gdx:gdx-controllers:$gdxVersion:sources"
+//        compile "com.badlogicgames.gdx:gdx-controllers-gwt:$gdxVersion"
+//        compile "com.badlogicgames.gdx:gdx-controllers-gwt:$gdxVersion:sources"
 //    }
 //}
-
-
-
 
 project(":core") {
     apply plugin: "java"
