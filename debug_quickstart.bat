@@ -1,5 +1,6 @@
 setlocal enabledelayedexpansion
 set batdir=%~dp0
+cd %batdir%
 
 set dataacq=%1
 if "%dataacq%"=="" ( 
