@@ -36,7 +36,8 @@ while (ishandle(contFig))
 
   phaseToRun=[];
   if ( ~exist('OCTAVE_VERSION','builtin') ) 
-	 uiwait(contFig); % CPU hog on ver 7.4
+	 uiwait(contFig);
+    if ( ~ishandle(contFig) ) break; end;
 	 info=guidata(contFig); 
 	 subject=info.subject;
 	 phaseToRun=lower(info.phaseToRun);

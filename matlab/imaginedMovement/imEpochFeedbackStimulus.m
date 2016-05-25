@@ -29,11 +29,20 @@ h(nSymbs+1)=rectangle('curvature',[1 1],'position',[stimPos(:,end)-stimRadius/4;
                       'facecolor',bgColor); 
 set(gca,'visible','off');
 
+%Create a text object with no text in it, center it, set font and color
+set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
+txthdl = text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),' ',...
+				  'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle',...
+				  'fontunits','pixel','fontsize',.05*wSize(4),...
+				  'color',[0.75 0.75 0.75],'visible','off');
+
+set(txthdl,'string', 'Click mouse when ready', 'visible', 'on'); drawnow;
+waitforbuttonpress;
+set(txthdl,'visible', 'off'); drawnow;
 
 % play the stimulus
 set(h(:),'facecolor',bgColor);
 sendEvent('stimulus.testing','start');
-drawnow; pause(5); % N.B. pause so fig redraws
 % initialize the state so don't miss classifier prediction events
 state=[]; 
 endTesting=false; dvs=[];
@@ -100,8 +109,8 @@ for si=1:nSeq;
 end % loop over sequences in the experiment
 % end training marker
 sendEvent('stimulus.testing','end');
+
 if ( ishandle(fig) ) % thanks message
-set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
-text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the testing phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','pixel','FontSize',.1*wSize(4));
+set(txthdl,'string',{'That ends the testing phase.','Thanks for your patience'}, 'visible', 'on', 'color',[0 1 0]);
 pause(3);
 end
