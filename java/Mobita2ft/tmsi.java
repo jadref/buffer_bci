@@ -180,6 +180,8 @@ public class tmsi {
      *
      * @note most significant byte first.
      * @return 'n' bits signed integer
+	  *
+	  * TODO: Validate this extraction works with out roundoff issues
      */
     public int get_int32_t(byte[] buf, RefObject<Integer> bip, int n) {
 
@@ -199,7 +201,7 @@ public class tmsi {
             }
             /* grep 'wb' bits out of byte 'buf[i/8]' */
 //C++ TO JAVA CONVERTER WARNING: The right shift operator was not replaced by Java's logical right shift operator since the left operand was not confirmed to be of an unsigned type, but you should review whether the logical right shift operator (>>>) is more appropriate:
-            a = (a << wb) | ((buf[i / 8] >> (mb - wb)) & ((1 << wb) - 1));
+            a = (a << wb) | ((buf[i / 8] >>> (mb - wb)) & ((1 << wb) - 1));
             /* decrement number of needed bits, and increment bit index */
             n -= wb;
             i += wb;

@@ -23,7 +23,7 @@ dataacqpid=$!
 
 echo dataacqpid=$dataacqpid
 echo Starting the default signal processing function \(background\)
-signalProc/startSigProcBuffer.sh &
+matlab/signalProc/startSigProcBuffer.sh &
 sigprocpid=$!
 
 

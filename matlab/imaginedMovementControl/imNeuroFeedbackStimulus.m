@@ -8,8 +8,10 @@ ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','b
         'color',[0 0 0],'DrawMode','fast','nextplot','replacechildren',...
         'xlim',[-1.5 1.5],'ylim',[-1.5 1.5],'Ydir','normal');
 stimPos=[]; h=[];
-stimRadius=.5;
-theta=linspace(0,pi,nSymbs); stimPos=[cos(theta);sin(theta)];
+stimRadius=diff(axLim)/4;
+cursorSize=stimRadius/2;
+theta=linspace(0,2*pi,nSymbs+1); theta=theta(1:end-1);
+stimPos=[cos(theta);sin(theta)];
 for hi=1:nSymbs; 
   h(hi)=rectangle('curvature',[1 1],'position',[stimPos(:,hi)-stimRadius/2;stimRadius*[1;1]],...
                   'facecolor',bgColor); 

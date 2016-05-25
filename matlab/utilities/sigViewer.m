@@ -23,7 +23,11 @@ function []=sigViewer(buffhost,buffport,varargin);
 %  freqbands  -- [2x1] frequency bands to display in the freq-domain plot    (opts.fftfilter)
 %  noisebands -- [2x1] frequency bands to display for the 50 Hz noise plot   ([45 47 53 55])
 %  sigProcOptsGui -- [bool] show the on-line option changing gui             (1)
-wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ); run(fullfile(fileparts(mfilename('fullpath')),'../utilities/initPaths.m')); end;
+wb=which('buffer'); 
+if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ); 
+    fprintf('Running %s\n',fullfile(fileparts(mfilename('fullpath')),'../utilities/initPaths.m')); 
+    run(fullfile(fileparts(mfilename('fullpath')),'../utilities/initPaths.m')); 
+end;
 opts=struct('endType','end.training','verb',1,'timeOut_ms',1000,...
 				'trlen_ms',5000,'trlen_samp',[],'updateFreq',3,...
 				'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',[],'spatfilt','car',...
@@ -46,9 +50,11 @@ if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics fac
 	 opts.sigProcOptsGui=0;
   end
 end
-
+if ( ischar(buffport) ) buffport=atoi(buffport); end;
+fprintf('Connection to buffer on %s : %d\n',buffhost,buffport);
 % get channel info for plotting
 hdr=[];
+    hdr=buffer('get_hdr',[],buffhost,buffport); 
 while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
   try 
     hdr=buffer('get_hdr',[],buffhost,buffport); 
@@ -128,7 +134,7 @@ end
 
 % make the figure window
 fig=figure(1);clf;
-set(fig,'Name','Sig-Viewer : t=time, f=freq, p=power, 5=50Hz power, s=spectrogram, close window=quit','menubar','none','toolbar','none','doublebuffer','on');
+set(fig,'Name','Sig-Viewer : t=time, f=freq, p=power, 5=50Hz power, s=spectrogram, o=offset, close window=quit','menubar','none','toolbar','none','doublebuffer','on');
 axes('position',[0 0 1 1]); topohead();set(gca,'visible','off','nextplot','add');
 plotPos=ch_pos; if ( ~isempty(plotPos) ); plotPos=plotPos(:,iseeg); end;
 hdls=image3d(ppspect,1,'plotPos',plotPos,'Xvals',ch_names,'yvals',spectFreqs(spectFreqIdx(1):spectFreqIdx(2)),'ylabel','freq (hz)','zvals',start_s,'zlabel','time (s)','disptype','imaget','colorbar',1,'ticklabs','sw','legend',0,'plotPosOpts.plotsposition',[.05 .08 .91 .85]);
@@ -148,7 +154,7 @@ drawnow; % make sure the figure is visible
 % make popup menu for selection of TD/FD
 modehdl=[]; vistype=0; curvistype='time';
 try
-  modehdl=uicontrol(fig,'Style','popup','units','normalized','position',[.8 .9 .2 .1],'String','Time|Frequency|50Hz|Spect|Power');
+  modehdl=uicontrol(fig,'Style','popup','units','normalized','position',[.8 .9 .2 .1],'String','Time|Frequency|50Hz|Spect|Power|Offset');
   set(modehdl,'value',1);
 catch
 end
@@ -196,7 +202,7 @@ if ( isequal(opts.sigProcOptsGui,1) )
   end
 end
 
-oldPoint = get(fig,'currentpoint'); % initial mouse position
+%oldPoint = get(fig,'currentpoint'); % initial mouse position
 endTraining=false; state=[]; 
 status=buffer('wait_dat',[-1 -1 -1],buffhost,buffport); cursamp=status.nSamples;
 while ( ~endTraining )  
@@ -237,6 +243,7 @@ while ( ~endTraining )
      case {3,'5'}; modekey=3;curvistype='50hz';
      case {4,'s'}; modekey=4;curvistype='spect';
 	  case {5,'p'}; modekey=5;curvistype='power';
+	  case {6,'o'}; modekey=6;curvistype='offset';
      case 'q';     break;
      otherwise;    modekey=1;
     end;
@@ -244,14 +251,14 @@ while ( ~endTraining )
     if ( ~isempty(modehdl) ); set(modehdl,'value',modekey); end;
   end
   % process mouse clicks
-  if ( ~isequal(get(fig,'currentpoint'),oldPoint) )
-	  oldPoint = get(fig,'currentpoint');
-	  fprintf('Click at [%d,%d]',oldPoint);
-	  % find any axes we are within
-	  for hi=1:numel(hdls);
-		 apos=get(hdls(hi),'position')
-	  end
-  end
+  %if ( ~isequal(get(fig,'currentpoint'),oldPoint) )
+%	  oldPoint = get(fig,'currentpoint');
+%	  fprintf('Click at [%d,%d]',oldPoint);
+%	  % find any axes we are within
+%	  for hi=1:numel(hdls);
+%		 apos=get(hdls(hi),'position')
+%	  end
+%  end
 
   % get updated sig-proc parameters if needed
   if ( ~isempty(optsFighandles) && ishandle(optsFighandles.figure1) )
@@ -349,6 +356,9 @@ while ( ~endTraining )
     elseif ( ~isempty(outsz) && outsz(2)<size(ppdat,2) ); 
             ppdat=subsample(ppdat,outsz(2),2); % manual downsample
     end
+
+   case 'offset'; % time-domain, spectral filter -----------------------------------
+	  ppdat = mean(ppdat,2); ppdat=ppdat - mean(ppdat,1); % ave deviation between channels
     
    case {'freq','power'}; % freq-domain  -----------------------------------
     ppdat = welchpsd(ppdat,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'aveType','db');
@@ -380,8 +390,8 @@ while ( ~endTraining )
   if ( ~isequal(vistype,curvistype) || any(damage(4)) ) % reset the axes
     datlim=datrange;
     if ( datlim(1)>=datlim(2) || any(isnan(datlim)) ); datlim=[-1 1]; end;
-    switch ( vistype ) % do pre-work dependent on current mode
-     case {'50hz','power'}; % 50hz power
+    switch ( vistype ) % do pre-work dependent on current mode, i.e. mode we're switching from
+     case {'50hz','power','offset'}; % 50hz, power
       for hi=1:size(ppdat,1); % turn the tickmarks and label visible again
         if ( ~isempty(get(hdls(hi),'Xlabel')) && isequal(get(get(hdls(hi),'xlabel'),'visible'),'on') ) 
           set(hdls(hi),'xticklabelmode','auto','yticklabelmode','auto');
@@ -414,11 +424,11 @@ while ( ~endTraining )
       set(img_hdls,'visible','off'); % make the colors invisible        
       set(line_hdls,'xdata',freqs(freqIdx(1):freqIdx(2)),'visible','on');
       
-     case {'50hz','power'}; % 50Hz Power all the same axes -----------------------------------
+     case {'50hz','power','offset'}; % 50Hz Power all the same axes -----------------------------------
       if ( strcmp(curvistype,'50hz') ) datlim=[opts.noiseBins(1) opts.noiseBins(end)]; end;
       set(hdls,'xlim',[.5 1.5],'ylim',[.5 1.5],'clim',datlim);
       set(line_hdls,'visible','off');
-      set(img_hdls,'cdata',1,'xdata',[1 1],'ydata',[1 1],'visible','on'); % make the color images visible
+      set(img_hdls,'cdata',1,'xdata',[1 1],'ydata',[1 1],'visible','on'); %make the color images visible
       for hi=1:size(ppdat,1); % make the tickmarks and axes label invisible
         if ( ~isempty(get(hdls(hi),'Xlabel')) && isequal(get(get(hdls(hi),'xlabel'),'visible'),'on') ) 
           set(hdls(hi),'xticklabel',[],'yticklabel',[]);
@@ -466,7 +476,7 @@ while ( ~endTraining )
 			 datrange(2) = datrange(1)+1;
 		  end;         
 		  % spectrogram, power - datalim is color range
-        if ( any(strcmp(curvistype,{'spect','power'})) )
+        if ( any(strcmp(curvistype,{'spect','power','offset'})) )
           datlim=datrange; set(hdls(1:size(ppdat,1)),'clim',datlim);
           % update the colorbar info
           if ( ~isempty(cbarhdl) ); set(get(cbarhdl,'children'),'ydata',datlim);set(cbarhdl,'ylim',datlim); end;
@@ -485,7 +495,7 @@ while ( ~endTraining )
       set(line_hdls(hi),'ydata',ppdat(hi,:));
     end
     
-   case {'50hz','spect','power'}; % 50Hz/spectrogram -- update the image data
+   case {'50hz','spect','power','offset'}; % 50Hz/spectrogram -- update the image data
     % map from raw power into the colormap we're using, not needed as we use the auto-scaling function
     %ppdat=max(opts.noiseBins(1),min(ppdat,opts.noiseBins(end)))./(opts.noiseBins(end)-opts.noiseBins(1))*size(colormap,1);
     for hi=1:size(ppdat,1);
