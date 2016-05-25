@@ -122,6 +122,7 @@ if ( nargin<4 )
 end
 if ( isempty(ydimspec) ) ydimspec=xdimspec; end;
 if ( isempty(Y) ) Y=X; end;
+xdimspec=xdimspec(:)'; ydimspec=ydimspec(:)'; % ensure both row vectors
 
 % process the dim-spec to identify the bits we need.
 szX=size(X); szX(end+1:numel(xdimspec))=1;
@@ -155,8 +156,8 @@ opIdxX(matchX)=[]; opIdxY(matchY)=[];
 % permute so dim order is: [OP IP Match]
 % N.B. permute uses [order] where order(i) = oldDimension number moved to i'th new dimension
 xperm = [opIdxX(:); ipIdxX(:); mIdxX(:)];
-tmp = true(1,max(2,max(xperm))); tmp(xperm)=false; % find unused dims
-xperm = [xperm(:)' find(tmp)]; % make a valid permutation, by adding unused
+tmp   = true(max([ndims(X);xperm]),1); tmp(xperm)=false; % find unused dims
+xperm = [xperm(:); find(tmp)]; % make a valid permutation, by adding unused
 X=permute(X,xperm); 
 % now reshape to be 3d
 X=reshape(X,[prod(szX(opIdxX)) prod(szX(ipIdxX)) prod(szX(mIdxX))]);
@@ -164,8 +165,8 @@ X=reshape(X,[prod(szX(opIdxX)) prod(szX(ipIdxX)) prod(szX(mIdxX))]);
 % Y
 % permute to be: [IP OP Match]
 yperm = [ipIdxY(:); opIdxY(:); mIdxY(:)];
-tmp = true(1,max(2,max(yperm))); tmp(yperm)=false; % find unused dims
-yperm = [yperm(:)' find(tmp)]; % make a valid permutation by adding unused dims
+tmp   = true(max([ndims(X);yperm]),1); tmp(yperm)=false; % find unused dims
+yperm = [yperm(:); find(tmp)]; % make a valid permutation by adding unused dims
 Y=permute(Y,yperm); 
 % now reshape to be 2d
 Y=reshape(Y,[prod(szY(ipIdxY)) prod(szY(opIdxY)) prod(szY(mIdxY))]);
@@ -173,7 +174,7 @@ Y=reshape(Y,[prod(szY(ipIdxY)) prod(szY(opIdxY)) prod(szY(mIdxY))]);
 % compute the output
 Z=zeros(size(X,1),size(Y,2),size(X,3));
 for mi=1:size(X,3);
-  Z(:,:,mi) = X(:,:,mi)*Y(:,:,mi);
+  Z(:,:,mi) = double(X(:,:,mi))*double(Y(:,:,mi)); % N.B. force up to double to avoid rounding errors
 end
 
 % make to the desired output size

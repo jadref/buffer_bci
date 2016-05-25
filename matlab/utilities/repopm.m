@@ -83,10 +83,12 @@ end;
 
 % use the matlab based builtin equivalent if available
 if ( numel(A)==1 || numel(B)==1 ) % scalar case
-  Z=feval(op,A,B);
-elseif ( exist('bsxfun','builtin') && ~exist('OCTAVE_VERSION','builtin') ) % matlab R2008 or later
+  Z=op(A,B);
+elseif ( exist('OCTAVE_VERSION','builtin') ) % OCTAVE automatically distributs agruments
+  Z=op(A,B);
+elseif ( exist('bsxfun','builtin') ) % matlab R2008 or later
   Z=bsxfun(op,A,B);
-else % older matlabs
+else % older matlabs / octave
   szA=size(A);
   szB=size(B);
   nd =max(numel(szA),numel(szB));
