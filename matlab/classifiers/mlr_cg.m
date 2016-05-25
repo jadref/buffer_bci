@@ -59,8 +59,8 @@ if( numel(varargin)==1 && isstruct(varargin{1}) ) % shortcut eval option procesi
   opts=varargin{1};
 else
   opts=struct('wb',[],'alphab',[],'dim',[],'rdim',[],'mu',0,'Jconst',0,...
-              'maxIter',inf,'maxEval',[],'tol',0,'tol0',0,'lstol0',1e-5,'objTol',0,'objTol0',1e-4,...            
-              'verb',0,'step',0,'wght',[],'X',[],'maxLineSrch',50,...
+              'maxIter',inf,'maxEval',[],'tol',0,'tol0',0,'lstol0',1e-4,'objTol',0,'objTol0',1e-3,...            
+              'verb',1,'step',0,'wght',[],'X',[],'maxLineSrch',50,...
               'maxStep',3,'minStep',5e-2,'marate',.95,'bPC',[],'wPC',[],'incThresh',.66,'optBias',0,'maxTr',inf,...
               'compBinp',1,'getOpts',0);
   [opts,varargin]=parseOpts(opts,varargin{:});
@@ -88,7 +88,7 @@ if( size(Y,1)==1 )
   if( all(Y(:)==-1 | Y(:)==0 | Y(:)==1) ) % binary problem
     binp=true;
     Y=[Y>0; Y<0]; % convert to indicator
-  elseif ( all(Y(:)>0 & Y(:)==ceil(Y(:))) ) % class labels input, convert to indicator matrix
+  elseif ( all(Y(:)>=0 & Y(:)==ceil(Y(:))) ) % class labels input, convert to indicator matrix
 	 Yl=Y;key=unique(Y);key(key==0)=[];
 	 Y=zeros(numel(key),N);for l=1:numel(key); Y(l,:)=Yl==key(l); end;	 
   end
@@ -135,7 +135,7 @@ end
 Y(Y<0)=0; % remove negative indicators
 sY    =sum(Y,1); % pre-comp scaling factor
 % BODGE/TODO : This is silly as if onetrue the only need to learn L-1 weight vectors.......
-onetrue=all(sY==1)&all(sum(Y>0,1)==1);
+onetrue=all((sY==1 & sum(Y>0,1)==1) | (sY==0 & sum(Y>0,1)==0));
 
 Rw   = R*w;
 wRw  = w(:)'*Rw(:);

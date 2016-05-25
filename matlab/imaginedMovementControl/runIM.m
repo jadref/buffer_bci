@@ -14,6 +14,7 @@ configureIM;
 			  '5) Continuous Feedback' 'contfeedback';
 			  '6) NeuroFeedback'       'neurofeedback'
 			  '7) Center out feedback' 'centerout'
+			  'q) exit'                'quit';
           };
   txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
 				'HorizontalAlignment','left','color',[1 1 1]);
@@ -165,6 +166,9 @@ while (ishandle(contFig))
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');
 
+   %---------------------------------------------------------------------------
+   case {'quit','exit'};
+    break;
   end
 end
 % shut down signal proc

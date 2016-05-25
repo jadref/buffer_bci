@@ -294,7 +294,7 @@ while ( true )
 
     %---------------------------------------------------------------------------------
    case {'train','training','trainerp','trainersp'};
-    try
+     %try
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
         fname=[dname '_' subject '_' datestr];
         fprintf('Loading training data from : %s\n',fname);
@@ -334,13 +334,17 @@ while ( true )
       clsSubj=subject;
       fname=[cname '_' subject '_' datestr];
       fprintf('Saving classifier to : %s\n',fname);save([fname '.mat'],'-struct','clsfr');
-	catch
-      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
-	  fprintf('Error in : %s',phaseToRun);
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-	  if ( ~isempty(le.stack) ) fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
-      sendEvent('training','end');    
-    end
+	%catch
+	  ## fprintf('Error in : %s',phaseToRun);
+     ##  le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  ## 	if ( ~isempty(le.stack) )
+	  ## 	  for i=1:numel(le.stack);
+	  ## 		 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  ## 	  end;
+	  ## 	end
+	  ## 	msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+     ##  sendEvent('training','end');    
+    %end
 
     %---------------------------------------------------------------------------------
    case {'test','testing','epochfeedback','eventfeedback'};
@@ -361,14 +365,15 @@ while ( true )
 							'trlen_ms',opts.trlen_ms,...%default to trlen_ms data per prediction
 							opts.epochFeedbackOpts{:}); % allow override with epochFeedbackOpts
 	 catch
-      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
       fprintf('Error in : %s',phaseToRun);
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
 		if ( ~isempty(le.stack) )
-		  for i=1:numel(le.stack);fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line); end;
+		  for i=1:numel(le.stack);
+			 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+		  end;
 		end
-		keyboard
-      sendEvent('training','end');    
+      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+      sendEvent('testing','end');    
     end
 
    %---------------------------------------------------------------------------------
@@ -394,11 +399,15 @@ while ( true )
 						  'trlen_ms',opts.trlen_ms,'overlap',.5,... %default to prediction every trlen_ms/2 ms
 						  opts.contFeedbackOpts{:}); % but override with contFeedbackOpts
     catch
-      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
       fprintf('Error in : %s',phaseToRun);
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-		if(~isempty(le.stack))fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
-      sendEvent('training','end');    
+		if ( ~isempty(le.stack) )
+		  for i=1:numel(le.stack);
+			 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+		  end;
+		end
+      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+      sendEvent('testing','end');    
     end
       
    case {'quit','exit'};
