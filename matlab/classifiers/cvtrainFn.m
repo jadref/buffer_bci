@@ -159,6 +159,7 @@ for spi=1:nSubProbs; % loop over sub-problems
       end
       if ( isstruct(seed) && isfield(seed,'soln') ) sol=seed.soln; else sol=seed; end;
       if ( opts.binsp ) res.soln{spi,ci}=sol; else res.soln{ci}=sol; end;
+		if ( size(f,1)==size(Ytrn,2) && size(f,2) == size(Ytrn,1) ) f=f'; end; % ensure same size as Y
       res.f(:,spi,ci)=f;      
       if( opts.verb > -1 ) 
         if( numel(spi)>1 ) fprintf('['); end;
@@ -184,9 +185,10 @@ for foldi=1:size(fIdxs,ndims(fIdxs));
       if ( ~opts.binsp ) spi=1:size(Y,2); end; % set spi to set sub-probs if not binary
 
       % get the training test split (possibly sub-prob specific)
-      trnInd=fIdxs(:,min(end,spi),foldi)<0;  % training points
-      tstInd=fIdxs(:,min(end,spi),foldi)>0;  % testing points
-      exInd =fIdxs(:,min(end,spi),foldi)==0; % excluded points
+		% BODGE: labelling for train/test ignores sub-prob specific info
+      trnInd=any(fIdxs(:,min(end,spi),foldi)<0,2);  % training points
+      tstInd=any(fIdxs(:,min(end,spi),foldi)>0,2);  % testing points
+      exInd =any(fIdxs(:,min(end,spi),foldi)==0,2); % excluded points
       
       Ytrn  =Y(:,spi); Ytrn(tstInd,:)=0; Ytrn(exInd,:)=0;
       Ytst  =Y(:,spi); Ytst(trnInd,:)=0; Ytst(exInd,:)=0;
@@ -219,7 +221,7 @@ for foldi=1:size(fIdxs,ndims(fIdxs));
          res.fold.f(:,spi,ci,foldi)=f;
          if ( opts.verb>-1 && numel(spi)>1 ) fprintf('['); end;
          for spii=1:numel(spi); % N.B. we need to loop as dv2conf etc. only work on 1 sub-prob at a time
-           tstIndi = tstInd(:,spii)| exInd(:,spii) ;
+           tstIndi = tstInd(:,min(end,spii))| exInd(:,min(end,spii)) ;
            res.tstf(tstIndi,spi(spii),ci)=f(tstIndi); % accumulate test prediction decision values
            res.fold.trnconf(:,spi(spii),ci,foldi)=dv2conf(Ytrn(:,spii),f(:,spii));
            res.fold.tstconf(:,spi(spii),ci,foldi)=dv2conf(Ytst(:,spii),f(:,spii));
@@ -303,15 +305,17 @@ elseif( opts.outerSoln<0 ) % re-train with the optimal parameters found
       if ( nSubProbs>1 ) fprintf('(opt/%2d)\t',spi); else; fprintf('(opt)\t'); end;
     end
     Ytrn = Y(:,spi);
-    exInd = all(fIdxs(:,min(end,spi),:)==0,3) | Ytrn==0; Ytrn(exInd,:)=0; % excluded points    
+    exInd = all(fIdxs(:,min(end,spi),:)==0,3) | Ytrn==0;
+	 Ytrn(any(exInd,2),:)=0; % excluded points    
     [seed,f,J]=feval(objFn,X,Ytrn,res.opt.C,'verb',opts.verb-1,...
                      'dim',opts.dim,varargin{:});
+	 if ( size(f,1)==size(Ytrn,2) && size(f,2) == size(Ytrn,1) ) f=f'; end; % ensure same size as Y
     if ( isstruct(seed) && isfield(seed,'soln') ) sol=seed.soln; else sol=seed; end;
     if ( opts.binsp ) res.opt.soln{spi}=sol; else res.opt.soln{1}=sol; end;
     res.opt.f(:,spi)=f;      
     % override tstf information for non-training data examples with those trained on all the data
     % now tstf contains val fold predictions in training set, and opt predictions for the rest
-    res.opt.tstf(exInd,spi)=f(exInd);
+    res.opt.tstf(exInd,spi)=f(exInd,:);
     if( opts.verb > -1 ) 
       if( numel(spi)>1 ) fprintf('['); end;
       for spii=1:numel(spi); % N.B. we need to loop as dv2conf etc. only work on 1 sub-prob at a time
@@ -355,7 +359,7 @@ elseif( opts.outerSoln==0 ) % estimate from per fold solutions
   end
 end
 exInd = all(fIdxs<=0,3); % tst points
-if ( ~all(exInd) && ~isempty(opts.calibrate) && ~isequal(opts.calibrate,0) ) % N.B. only for linear classifiers!
+if ( ~all(exInd) && ~isempty(opts.calibrate) && ~isequal(opts.calibrate,0) && opts.binsp ) % N.B. only for linear classifiers!
   cr=res.tstbin(:,:,optCi); % cv-estimated probability of being correct - target for calibration
   %if ( strcmp(opts.calibrate,'bal') ) cr = cr([1 1],:,:); end; % balanced calibration
   % correct the targets to prevent overfitting

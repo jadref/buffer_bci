@@ -7,7 +7,7 @@ function [Cname latlong xy xyz capFile]=readCapInf(cap,capRoots)
 %  cap     -- file name of the cap-file
 %  capRoot -- directory(s) to look for caps in ({'.',mfiledir'/positions'})
 if ( nargin<2 || isempty(capRoots) ) 
-   capRoots = {'.',fileparts(mfilename('fullpath')),fullfile(fileparts(mfilename('fullpath')),'./positions'),fullfile(fileparts(mfilename('fullpath')),'./caps'),''};
+   capRoots = {'.',fileparts(mfilename('fullpath')),fullfile(fileparts(mfilename('fullpath')),'./positions'),fullfile(fileparts(mfilename('fullpath')),'./caps'),fullfile(fileparts(mfilename('fullpath')),'..','..','resources','./caps'),''};
  end
  if ( ischar(capRoots) ); capRoots={capRoots}; end;
 [capDir capFn capExt]=fileparts(cap);

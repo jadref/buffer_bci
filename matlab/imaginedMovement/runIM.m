@@ -16,7 +16,7 @@ else
 			  '4) Epoch Feedback'      'epochfeedback';
 			  '5) Continuous Feedback' 'contfeedback';
 			  '6) NeuroFeedback'       'neurofeedback'
-			  '7) Center out feedback' 'centerout'
+			  'q) quit'                'quit';
           };
   txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
 				'HorizontalAlignment','left','color',[1 1 1]);
@@ -54,6 +54,8 @@ while (ishandle(contFig))
 		ri = strmatch(modekey(1),menustr(:,1)); % get the row in the instructions
 		if ( ~isempty(ri) ) 
 		  phaseToRun = menustr{ri,2};
+		elseif ( any(strcmp(modekey(1),{'q','Q'})) )
+		  break;
 		end
 	 end
     set(contFig,'userdata',[]);
@@ -170,9 +172,13 @@ while (ishandle(contFig))
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');
 
+   %---------------------------------------------------------------------------
+   case {'quit','exit'};
+    break;
+    
   end
 end
-uiwait(msgbox({'Thankyou for participating in our experiment.'},'Thanks','modal'),10);
-pause(1);
 % shut down signal proc
 sendEvent('startPhase.cmd','exit');
+% give thanks
+uiwait(msgbox({'Thankyou for participating in our experiment.'},'Thanks','modal'),10);
