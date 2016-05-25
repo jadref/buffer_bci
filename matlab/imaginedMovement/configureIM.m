@@ -45,12 +45,12 @@ verb=1;
 buffhost='localhost';
 buffport=1972;
 nSymbs=3; % E,N,W  for 3 outputs
-nSeq  =10*nSymbs; % 10 examples of each target
+nSeq  =20*nSymbs; % 15 examples of each target
 trialDuration=3;
 baselineDuration=1;
 cueDuration=1;
 startDelay =.5;
-intertrialDuration=2;
+intertrialDuration=3.5;
 feedbackDuration=1;
 
 contFeedbackTrialDuration=10;
