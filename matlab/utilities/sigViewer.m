@@ -34,7 +34,7 @@ opts=struct('endType','end.training','verb',1,'timeOut_ms',1000,...
 				'badchrm',0,'badchthresh',3,'capFile',[],'overridechnms',0,...
 				'welch_width_ms',1000,'spect_width_ms',500,'spectBaseline',1,...
 				'noisebands',[45 47 53 55],'noiseBins',[0 1.75],...
-				'sigProcOptsGui',1,'dataStd',2.5,'covhalflife',20);
+				'sigProcOptsGui',1,'dataStd',2.5,'covhalflife',600);
 opts=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ); buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ); buffport=1972; end;
@@ -203,7 +203,7 @@ if ( isequal(opts.sigProcOptsGui,1) )
 end
 
 %oldPoint = get(fig,'currentpoint'); % initial mouse position
-endTraining=false; state=[]; 
+endTraining=false; state=[]; nUpdate=0;
 status=buffer('wait_dat',[-1 -1 -1],buffhost,buffport); cursamp=status.nSamples;
 while ( ~endTraining )  
 
@@ -222,10 +222,11 @@ while ( ~endTraining )
   end;
   dat    =buffer('get_dat',[cursamp cursamp+update_samp-1],buffhost,buffport);
   cursamp=cursamp+update_samp;
+  nUpdate=nUpdate+1;
   
   % shift and insert into the data buffer
-  rawdat(:,1:blkIdx)=rawdat(:,update_samp+1:end);
-  rawdat(:,blkIdx+1:end)=dat.buf(iseeg,:);
+  rawdat(:,  1      : blkIdx) =rawdat(:,update_samp+1:end);
+  rawdat(:,blkIdx+1 : end)    =dat.buf(iseeg,:);
 
   %if ( cursamp-hdr.nSamples > hdr.fSample*30 ) keyboard; end;
   if ( opts.verb>0 ); fprintf('.'); end;
@@ -288,7 +289,9 @@ while ( ~endTraining )
   end
 
   % track the covariance properties of the data
-  chCov = chCov*covAlpha + (1-covAlpha)*(ppdat(:,blkIdx+1:end)*ppdat(:,blkIdx+1:end)'./(size(ppdat,2)-blkIdx));
+  % N.B. total weight up to step n = 1-(covAlpha)^n
+  chCov = (covAlpha) * chCov ...
+			 + (1-covAlpha)*(ppdat(:,blkIdx+1:end)*ppdat(:,blkIdx+1:end)'./(size(ppdat,2)-blkIdx));
   
   %-------------------------------------------------------------------------------------
   % bad-channel removal + spatial filtering
@@ -338,10 +341,12 @@ while ( ~endTraining )
         ppdat(~isbadch,:,:)=tprod(ppdat(~isbadch,:,:),[-1 2 3],slapfilt(~isbadch,~isbadch),[-1 1]); 
       end;
      case 'whiten'; % use the current data-cov to estimate the whitener
-      [U,s]=eig(chCov(~isbadch,~isbadch)); s=diag(s); % eig-decomp
-      si=s>0 & ~isinf(s) & ~isnan(s);
-      W    = U(:,si) * diag(1./s(si)) * U(:,si)';
-      ppdat(~isbadch,:,:)=tprod(ppdat(~isbadch,:,:),[-1 2 3],W,[-1 1]);      
+       [U,s]=eig(chCov(~isbadch,~isbadch)); s=diag(s); % eig-decomp
+       % re-scale to correct for startup effects, N.B. total weight up to step n = 1-(covAlpha)^n
+		 s=s./(1-covAlpha.^nUpdate);
+       si=s>0 & ~isinf(s) & ~isnan(s);
+       W    = U(:,si) * diag(1./s(si)) * U(:,si)'; % symetric whitener
+       ppdat(~isbadch,:,:)=tprod(ppdat(~isbadch,:,:),[-1 2 3],W,[-1 1]);      
      otherwise; warning(sprintf('Unrecognised spatial filter type : %s',ppopts.spatfilttype));
     end
   end
