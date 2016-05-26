@@ -19,13 +19,8 @@ CMD_JUMP = 2
 CMD_ROLL = 3
 
 # Command configuration
-PRED_IDX_1_CMD = CMD_SPEED
-PRED_IDX_2_CMD = CMD_JUMP
-PRED_IDX_3_CMD = CMD_ROLL
-
-PRED_IDX_1_THRESHOLD = 0
-PRED_IDX_2_THRESHOLD = 0
-PRED_IDX_3_THRESHOLD = 0
+CMDS      = [CMD_SPEED, CMD_JUMP, CMD_ROLL]
+THRESHOLDS= [.1,        .1,       .1      ]
 
 # Sends a command to BrainRacer.
 def send_command(command):
@@ -44,6 +39,20 @@ br_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM);
 print("Connected to " + buffer_hostname + ":" + str(buffer_port))
 print(hdr)
 
+
+def max2(numbers):
+    i1 = i2 = None
+    m1 = m2 = float('-inf')
+    for i,v in enumerate(numbers):
+        if v > m2:
+            if v >= m1:
+                m1, m2 = v, m1
+                i1, i2 = i, i1
+            else:
+                m2 = v
+                i2 = i
+    return ([m1,m2],[i1,i2])
+
 # Receive events from the buffer and process them.
 def processBufferEvents():
 	global running
@@ -54,14 +63,13 @@ def processBufferEvents():
 
 		if evt.type == 'classifier.prediction':
 			pred = evt.value
-			if pred[0] > PRED_IDX_1_THRESHOLD: send_command(PRED_IDX_1_CMD)
-			if pred[1] > PRED_IDX_2_THRESHOLD: send_command(PRED_IDX_2_CMD)
-			if pred[2] > PRED_IDX_3_THRESHOLD: send_command(PRED_IDX_3_CMD)
+                        (m12,i12) = max2(pred) # find max value
+			if m12[0]-m12[1] > THRESHOLDS[i12[0]] : send_command(CMDS[i12[0]]); # if above threshold send
 
 		elif evt.type == 'keyboard':
-	                if   evt.value == 'q' :  send_command(PRED_IDX_1_CMD)
-                        elif evt.value == 'w' :  send_command(PRED_IDX_2_CMD)
-                        elif evt.value == 'e' :  send_command(PRED_IDX_3_CMD)
+	                if   evt.value == 'q' :  send_command(CMD_SPEED)
+                        elif evt.value == 'w' :  send_command(CMD_JUMP)
+                        elif evt.value == 'e' :  send_command(CMD_ROLL)
                         elif evt.value == 'esc': running=false
 
 		elif evt.type == 'startPhase.cmd':
