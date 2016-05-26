@@ -65,28 +65,31 @@ tgtColor=[0 1 0];
 fbColor =[0 0 1];
 
 % classifier training options
-trainOpts={}; % default: stack of independent one-vs-rest classifiers
-trainOpts={'objFn','mlr_cg','binsp',0,'spMx','1vR'}; % direct multi-class training
+trlen_ms      =trialDuration*1000; % how often to run the classifier
+welch_width_ms=250; % width of welch window => spectral resolution
+trainOpts={'width_ms',welch_width_ms,'badtrrm',0}; % default: 4hz res, stack of independent one-vs-rest classifiers
+trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','wht','objFn','mlr_cg','binsp',0,'spMx','1vR'}; % whiten + direct multi-class training
 %trainOpts = {'spType',{{1 3} {2 4}}}; % train 2 classifiers, 1=N vs S, 2=E vs W
 
 % Epoch feedback opts
 %%0) Use exactly the same classification window for feedback as for training, but
 %%   but also include a bias adaption system to cope with train->test transfer
-trlen_ms=trialDuration*1000; % how often to run the classifier
 epochFeedbackOpts={}; % raw output
 %epochFeedbackOpts={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/50))}; % bias-apaption
 
 % different feedback configs (should all give similar results)
 
 %%1) Use exactly the same classification window for feedback as for training, but apply more often
-contFeedbackOpts ={'step_ms',250}; % apply classifier more often
+%contFeedbackOpts ={'step_ms',welch_width_ms}; % apply classifier more often
 %%   but also include a bias adaption system to cope with train->test transfer
 %contFeedbackOpts ={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/100)),'step_ms',250};
 stimSmoothFactor= 0; % additional smoothing on the stimulus, not needed with 3s trlen
 
-%%2) Classify every welch-window-width (default 500ms), prediction is average of full trials worth of data, no-bias adaptation
-%contFeedbackOpts ={'predFilt',-(trlen_ms/500),'trlen_ms',[]}; % classify every window, prediction is average of last 3s windows
-%stimSmoothFactor= 0;% additional smoothing on the stimulus, not needed with equivalent of 3s trlen
+%%2) Classify every welch-window-width (default 250ms), prediction is average of full trials worth of data, no-bias adaptation
+%% N.B. this is numerically identical to option 1) above, but computationally *much* cheaper 
+step_ms=welch_width_ms/2;% N.B. welch defaults=.5 window overlap, use step=width/2 to simulate
+contFeedbackOpts ={'predFilt',-(trlen_ms/step_ms),'trlen_ms',welch_width_ms};
+
 
 %%3) Classify every welch-window-width (default 500ms), with bias-adaptation
 %contFeedbackOpts ={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/400)),'trlen_ms',[]}; 
