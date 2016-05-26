@@ -37,7 +37,7 @@ chnm={}; matchedCh=false(numel(Cnames),1);
 for i=1:numel(vals);
    ti=0;
    if ( iscell(vals) ); chnm{i}=vals{i};  else; chnm{i}=vals(i); end;
-   if ( isstr(chnm{i}) )
+   if ( ischar(chnm{i}) )
       for j=1:numel(Cnames);  
         % case insenstive match
         if ( ~matchedCh(j) && strcmp(lower(chnm{i}),lower(Cnames{j})) ) 
