@@ -127,10 +127,15 @@ switch cmd;
  case 'get_dat'; 
   bufj=bufClient.getDoubleData(detail(1),detail(2));
   buf=bufj; 
-  % N.B. matlab is col-major, java is row-major.  Need to transpose results
   if ( exist('OCTAVE_VERSION') ) % in octave have to manually convert arrays..
-    tic,[w,h]=size(bufj); buf=zeros(h,w); for i=1:w; tmp=bufj(i); for j=1:h; buf(j,i)=tmp(j);end; end;toc
-  else
+	 % this is tediously slow.....
+    %tic,
+	 [w,h]=size(bufj); buf=zeros(h,w,'single');
+	 for i=1:w;
+		buf(:,i)=bufj(i); % auto-unboxing works for java vectors
+	 end;
+	 %toc
+  else  % N.B. matlab is col-major, java is row-major.  Need to transpose results
     buf=buf'; 
   end
   varargout{1}=struct('buf',buf);
