@@ -101,7 +101,8 @@ opts=struct('phaseEventType','startPhase.cmd',...
             'epochPredFilt',[],'epochFeedbackOpts',{{}},...
 				'contPredFilt',[],'contFeedbackOpts',{{}},...
 				'capFile',[],...
-				'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1,'timeout_ms',500);
+				'subject','test','verb',1,'buffhost',[],'buffport',[],'timeout_ms',500,...
+				'useGUI',1,'cancelError',0);
 opts=parseOpts(opts,varargin);
 if ( ~iscell(opts.erpOpts) ) opts.erpOpts={opts.erpOpts}; end;
 if ( ~iscell(opts.trainOpts))opts.trainOpts={opts.trainOpts}; end;
@@ -135,7 +136,11 @@ if ( isempty(opts.epochEventType) && opts.useGUI )
 		if ( opts.freqband(3)<0 ) opts.freqband(3)=max(28,opts.freqband(2)+10); end;
 		if ( opts.freqband(4)<0 ) opts.freqband(4)=min(inf,opts.freqband(3)+1); end;    
 	 else
-		error('User cancelled the run');
+		if ( opts.cancelError ) 
+		  error('User cancelled the run');
+		else
+		  warning('User cancelled the run');
+		end
 	 end
   end
 end
