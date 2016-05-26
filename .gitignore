@@ -7,6 +7,7 @@
 *.mat
 *.mex*
 *.o
+*.pyc
 *.tar.gz
 *.tgz
 *.class
