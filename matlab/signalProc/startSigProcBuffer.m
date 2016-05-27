@@ -210,8 +210,8 @@ while ( true )
   if ( opts.useGUI ) % update the key-control window
     % BODGE: move point to force key-processing
     if ( ~isempty(ph) ) fprintf('.');set(ph,'ydata',rand(1)*.01); end;
-	 if ( ~ishandle(contFig) ) break; end;
     drawnow; pause(.1);
+	 if ( ~ishandle(contFig) ) break; end;
   
 	 % process any key-presses, and convert to phase-control events
 	 phaseToRun=[];

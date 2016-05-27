@@ -6,14 +6,14 @@ tgtSeq=mkStimSeqRand(nSymbs,nSeq);
 % make the stimulus
 %figure;
 fig=figure(2);
-set(fig,'Name','Imagined Movement','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
+set(fig,'Name','Imagined Movement','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
 clf;
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
-        'color',[0 0 0],'DrawMode','fast','nextplot','replacechildren',...
+        'color',winColor,'DrawMode','fast','nextplot','replacechildren',...
         'xlim',axLim,'ylim',axLim,'Ydir','normal');
 
-stimPos=[]; h=[];
+stimPos=[]; h=[]; htxt=[];
 stimRadius=diff(axLim)/4;
 cursorSize=stimRadius/2;
 theta=linspace(0,2*pi,nSymbs+1);
@@ -23,6 +23,10 @@ stimPos=[cos(theta);sin(theta)];
 for hi=1:nSymbs; 
   h(hi)=rectangle('curvature',[1 1],'position',[stimPos(:,hi)-stimRadius/2;stimRadius*[1;1]],...
                   'facecolor',bgColor); 
+  %if ( ~isempty(symbCue) ) % cue-text
+	% htxt(hi)=text(stimPos(1,hi),stimPos(2,hi),symbCue{hi},...
+	%					'HorizontalAlignment','center','color',[.1 .1 .1],'visible','on');
+  %end  
 end;
 % add symbol for the center of the screen
 stimPos(:,nSymbs+1)=[0 0];
@@ -63,6 +67,9 @@ for si=1:nSeq;
   fprintf('%d) tgt=%d : ',si,find(tgtSeq(:,si)>0));
   set(h(tgtSeq(:,si)>0),'facecolor',tgtColor);
   set(h(tgtSeq(:,si)<=0),'facecolor',bgColor);
+  if ( ~isempty(symbCue) )
+	 set(txthdl,'string',sprintf('%s ',symbCue{tgtSeq(:,si)>0}),'color',[.1 .1 .1],'visible','on');
+  end
   set(h(end),'facecolor',[0 1 0]); % green fixation indicates trial running
   sendEvent('stimulus.target',find(tgtSeq(:,si)>0));
   drawnow;% expose; % N.B. needs a full drawnow for some reason
@@ -72,6 +79,7 @@ for si=1:nSeq;
   
   % reset the cue and fixation point to indicate trial has finished  
   set(h(:),'facecolor',bgColor);
+  if ( ~isempty(symbCue) ) set(txthdl,'visible','off'); end
   drawnow;
   sendEvent('stimulus.trial','end');
   
