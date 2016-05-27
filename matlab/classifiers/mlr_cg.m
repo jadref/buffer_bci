@@ -59,10 +59,11 @@ if( numel(varargin)==1 && isstruct(varargin{1}) ) % shortcut eval option procesi
   opts=varargin{1};
 else
   opts=struct('wb',[],'alphab',[],'dim',[],'rdim',[],'mu',0,'Jconst',0,...
-              'maxIter',inf,'maxEval',[],'tol',0,'tol0',0,'lstol0',1e-4,'objTol',0,'objTol0',1e-3,...            
-              'verb',1,'step',0,'wght',[],'X',[],'maxLineSrch',50,...
-              'maxStep',3,'minStep',5e-2,'marate',.95,'bPC',[],'wPC',[],'incThresh',.66,'optBias',0,'maxTr',inf,...
-              'compBinp',1,'getOpts',0);
+              'maxIter',inf,'maxEval',[],'tol',0,'tol0',0,'lstol0',1e-1,'objTol',0,'objTol0',1e-4,...
+              'verb',0,'step',0,'wght',[],'X',[],'maxLineSrch',50,...
+              'maxStep',3,'minStep',5e-2,'marate',.95,'bPC',[],'wPC',1,...
+				  'incThresh',.66,'optBias',0,'maxTr',inf,...
+              'compBinp',1,'rescaledv',0,'getOpts',0);
   [opts,varargin]=parseOpts(opts,varargin{:});
   if ( opts.getOpts ) wb=opts; return; end;
 end
@@ -139,9 +140,8 @@ onetrue=all((sY==1 & sum(Y>0,1)==1) | (sY==0 & sum(Y>0,1)==0));
 
 Rw   = R*w;
 wRw  = w(:)'*Rw(:);
-wX   = w'*X; % [L x N]
-dv   = repop(wX,'+',b');
-dv   = repop(dv,'-',max(dv,[],1)); % re-scale for numerical stability
+f    = repop(w'*X,'+',b');% [L x N]
+dv   = repop(f,'-',max(f,[],1)); % re-scale for numerical stability
 p    = exp(dv);
 p    = repop(p,'/',sum(p,1)); % [L x N] =Pr(x|y_i) = exp(w_ix+b)./sum_y(exp(w_yx+b));
 if ( onetrue ) % fast-path common case
@@ -205,7 +205,7 @@ step=abs(opts.step);
 if( step<=0 ) step=min(sqrt(abs(J/max(dtdJ,eps))),1); end %init step assuming opt is at 0
 tstep=step;
 
-neval=1; lend='\n';
+neval=1; lend='\r';
 if(opts.verb>0)   % debug code      
    if ( opts.verb>1 ) lend='\n'; else fprintf('\n'); end;
    fprintf(['%3d) %3d x=[%5f,%5f,.] J=%5f (%5f+%5f) |dJ|=%8g\n'],0,neval,w(1),w(2),J,Ew,Ed,r2);
@@ -217,7 +217,7 @@ madJ=abs(J); % init-grad est is init val
 w0=w; b0=b;
 for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about index too big
 
-   oJ= J; oMr  = Mr; or2=r2; ow=w; ob=b; % record info about prev result we need
+  oJ= J; oMr  = Mr; or2=r2; ow=w; ob=b;% record info about prev result we need
 
    %---------------------------------------------------------------------
    % Secant method for the root search.
@@ -231,9 +231,9 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
    ostep=inf;step=tstep;%max(tstep,abs(1e-6/dtdJ)); % prev step size is first guess!
    odtdJ=dtdJ; % one step before is same as current
    % pre-compute for speed later
-   wX0 = wX;
+   f0  = f;
    dw  = d(1:end-1,:); db=d(end,:);
-   dX  = dw'*X;
+   df  = repop(dw'*X,'+',db');
    if( ~isequal(mu,0) ) dmu = dw'*mu; else dmu=0; end;
    Rw=R*w;       dRw=dw(:)'*Rw(:);  % scalar or full matrix
    Rd=R*dw;      dRd=dw(:)'*Rd(:);
@@ -242,9 +242,8 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
       neval=neval+1;
       oodtdJ=odtdJ; odtdJ=dtdJ; % prev and 1 before grad values
       
-      wX   = wX0+tstep*dX;%w'*X;
-		dv   = repop(wX,'+',(b+tstep*db)');
-		dv   = repop(dv,'-',max(dv,[],1)); % re-scale for numerical stability
+		f    = f0  + tstep*df;
+		dv   = f; if(opts.rescaledv) dv=repop(f,'-',max(f,[],1)); end;% re-scale for numerical stability
 		p    = exp(dv);
 		p    = repop(p,'/',sum(p,1)); % [L x N] =Pr(x|y_i) = exp(w_ix+b)./sum_y(exp(w_yx+b));
 		if ( onetrue ) 
@@ -253,7 +252,7 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
 		  dLdf = Y-repop(p,'*',sY);  % [LxN] = dln(p_y), i.e. gradient of the log prob true class
 		end
 		dLdf(:,exInd)=0;% ensure excluded are ignored
-      dtdJ  = -(2*(dRw+tstep*dRd) + dmu - dX(:)'*dLdf(:) - db(:)'*sum(dLdf,2));
+      dtdJ  = -(2*(dRw+tstep*dRd) + dmu - df(:)'*dLdf(:));
       %fprintf('.%d step=%g ddR=%g ddgdw=%g ddgdb=%g  sum=%g\n',j,tstep,2*(dRw+tstep*dRd),-dX*dLdf',-db*sum(dLdf),-dtdJ);
       if ( 0 ) 
         %sw  = w + tstep*dw; 
@@ -264,7 +263,13 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
                             - sum(dLdf,2)'];
         dtdJ   =-d(:)'*dJ(:);  % gradient along the line @ new position
       end
-      
+
+		if ( ~opts.rescaledv && isnan(dtdJ) ) % numerical issues detected, restart
+		  fprintf('Numerical issues falling back on re-scaled dv');
+		  oodtdJ=odtdJ; dtdJ=odtdJ;%reset obj info
+		  opts.rescaledv=true; continue;
+		end;
+		
       if ( opts.verb > 2 )
 		  Ed  = -log(p(:))'*Y(:); % -ln P(D|w,b,fp)
 		  Ew   = w(:)'*Rw(:);     % -ln P(w,b|R);
@@ -313,7 +318,7 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
 	MdJ= dJ;    if ( ~isempty(PC) ) MdJ  = repop(PC,'*',dJ); end; 
    Mr = -MdJ;
    r2 = abs(Mr(:)'*dJ(:)); 
-   
+	
    % compute the function evaluation
 	Ed  = -log(max(p(:),eps))'*Y(:); % -ln P(D|w,b,fp)
 	Ew = w(:)'*Rw(:);             % -ln P(w,b|R);
@@ -326,8 +331,8 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
 
    if ( J > oJ*(1.001) || isnan(J) ) % check for stuckness
       if ( opts.verb>=1 ) warning('Line-search Non-reduction - aborted'); end;
-      J=oJ; w=ow; b=ob; 
-      wX   = w'*X;
+      J=oJ; w=ow; b=ob;
+		f    = repop(w'*X,'+',b');% [L x N]
       break;
    end;
    
@@ -366,7 +371,7 @@ end;
 
 % compute the final performance with untransformed input and solutions
 Rw   = R*w;
-dv   = repop(wX,'+',b');
+dv   = f; if(opts.rescaledv) dv=repop(f,'-',max(f,[],1)); end;% re-scale for numerical stability
 dv   = repop(dv,'-',max(dv,[],1));  % re-scale for numerical stability
 p    = exp(dv);
 p    = repop(p,'/',sum(p,1));       % [1xN] = Pr(y_true)
@@ -380,7 +385,7 @@ if ( opts.verb >= 0 )
 end
 
 % compute final decision values.
-if ( all(size(X)==size(oX)) ) f=dv; else f   = repop(w'*oX,'+',b'); end;
+if ( ~all(size(X)==size(oX)) ) f   = repop(w'*oX,'+',b'); end;
 f = reshape(f,size(oY));
 if ( binp && opts.compBinp ) f=f(1,:); end;
 obj = [J Ew Ed];

@@ -1,7 +1,7 @@
 function [wb,f,J,obj]=l2svm_cg(K,Y,C,varargin);
 % [alphab,f,J]=l2svm(K,Y,C,varargin)
-% Quadratic Loss Support Vector machine using a pre-conditioned conjugate
-% gradient solver so extends to large input kernels.
+% Quadratic Loss Support Vector machine using a kernel pre-conditioned conjugate
+% gradient solver to speed up convergence
 %
 % J = C(1) w' K w + sum_i max(0 , 1 - y_i ( w'*K_i + b ) ).^2 
 % 
@@ -55,11 +55,13 @@ opts=struct('alphab',[],'dim',[],...
 opts.ridge=opts.ridge(:);
 if ( isempty(opts.maxEval) ) opts.maxEval=5*sum(Y(:)~=0); end
 % Ensure all inputs have a consistent precision
-if(isa(K,'double') & isa(Y,'single') ) Y=double(Y); end;
+if(isa(K,'double') && isa(Y,'single') ) Y=double(Y); end;
 if(isa(K,'single')) eps=1e-7; else eps=1e-16; end;
 opts.tol=max(opts.tol,eps); % gradient magnitude tolerence
 
-[dim,N]=size(K); Y=Y(:); % ensure Y is col vector
+[dim,N]=size(K);
+Y=Y(:); % ensure Y is col vector
+Y(isnan(Y))=0; % convert NaN's to 0 so are ignored
 
 % check for degenerate inputs
 if ( all(Y>=0) || all(Y<=0) )
@@ -131,8 +133,9 @@ if ( isempty(bPC) ) % bias pre-condn with the diagonal of the hessian
 end
 
 % include ridge and re-scale by muEig for numerical stability
-wK   = (wb(1:end-1)'*K + ridge'.*wb(1:end-1)')./muEig; % include ridge
-err  = 1-Y.*(wK'+wb(end)); svs=err>0 & Y~=0;
+wK   = (wb(1:end-1)'*K + ridge'.*wb(1:end-1)')./muEig;
+f    = wK + wb(end); % 
+err  = 1-Y.*f'; svs=err>0 & Y~=0;
 Yerr = wghtY.*err;  % weighted error
 % pre-condinationed gradient, 
 % K^-1*dJdw = K^-1(2 C(1)Kw - 2 K I_sv(Y-f)) = 2*(C(1)w - Isv (Y-f) )
@@ -148,7 +151,8 @@ r2   = dtdJ;
 r02  = r2;
 
 Ed   = (wght.*err(svs))'*err(svs);  
-Ew   = wK*wb(1:end-1);
+%Ew   = (wb(1:end-1)'*K)*wb(1:end-1); % N.B. faster
+Ew = f*wb(1:end-1) - wb(end)*sum(wb(1:end-1)); % faster to avoid w*K comp
 J    = Ed + C(1)*Ew; % SVM objective
 
 % Set the initial line-search step size
@@ -180,9 +184,9 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
    end;
    ostep=inf;step=tstep;%max(tstep,abs(1e-6/dtdJ)); % prev step size is first guess!
    odtdJ=dtdJ; % one step before is same as current
-   wK0 = wK;
+	f0  = f;
    dK  = (d(1:end-1)'*K+d(1:end-1)'.*ridge')./muEig; % N.B. v'*M is 50% faster than M*v'!!!
-   db  = d(end);
+	df  = dK + d(end);
    dKw = dK*wb(1:end-1); dKd=dK*d(1:end-1);
    % wb = wb + step*d;
    % Kd(1:end-1) = (d(1:end-1)'*K+d(1:end-1)'.*ridge')./muEig; % N.B. v'*M is 50% faster than M*v'!!!
@@ -195,18 +199,18 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
       
       % Eval the gradient at this point.  N.B. only gradient needed for secant
       %wK   = (wb(1:end-1)'*K + ridge'.*wb(1:end-1)')./muEig; % include ridge
-      wK    = wK0    + tstep*dK; 
-      err  = 1-Y.*(wK'+wb(end)+tstep*d(end)); svs=err>0 & Y~=0;
+		f    = f0 + tstep*df;
+      err  = 1-Y.*f'; svs=err>0 & Y~=0;
       Yerr = wghtY.*err; 
       % MdJ  = [(2*C(1)*wb(1:end-1) - 2*(Yerr.*svs)); ...
       %         -2*sum(Yerr(svs))./bPC];
       % if ( opts.nobias ) MdJ(end)=0; end;
       % dtdJ  =-Kd'*MdJ;  % gradient along the line @ new position
-      dtdJ   =-(2*C(1)*(dKw+tstep*dKd) - 2*dK*(Yerr.*svs) + -2*db*sum(Yerr(svs))); % gradient along the line @ new position
+      dtdJ   =-(2*C(1)*(dKw+tstep*dKd) - 2*df*(Yerr.*svs)); % gradient along the line @ new position
       
       if ( opts.verb > 2 )
          Ed     = (wght.*err(svs))*err(svs)';  
-         Ew     = wK*wb(1:end-1);
+         Ew     = (wb(1:end-1)'*K)*wb(1:end-1);
          J      = Ed + C(1)*Ew; % SVM objective
          fprintf('.%d %g=%g @ %g (%g+%g)\n',j,tstep,dtdJ,J,Ed,Ew./muEig); 
          if ( opts.verb > 3 ) 
@@ -215,8 +219,8 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
       end;
 
       % convergence test, and numerical res test
-      if(iter>1|j>3) % Ensure we do decent line search for 1st step size!
-         if ( abs(dtdJ) < opts.lstol0*abs(dtdJ0) | ... % Wolfe 2, gradient enough smaller
+      if(iter>1||j>3) % Ensure we do decent line search for 1st step size!
+         if ( abs(dtdJ) < opts.lstol0*abs(dtdJ0) || ... % Wolfe 2, gradient enough smaller
               abs(dtdJ*step) <= opts.tol )              % numerical resolution
             break;
          end
@@ -224,8 +228,8 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
             
       % now compute the new step size
       % backeting check, so it always decreases
-      if ( oodtdJ*odtdJ < 0 & odtdJ*dtdJ > 0 ...      % oodtdJ still brackets
-           & abs(step*dtdJ) > abs(odtdJ-dtdJ)*(abs(ostep+step)) ) % would jump outside 
+      if ( oodtdJ*odtdJ < 0 && odtdJ*dtdJ > 0 ...      % oodtdJ still brackets
+           && abs(step*dtdJ) > abs(odtdJ-dtdJ)*(abs(ostep+step)) ) % would jump outside 
          step = ostep + step; % make as if we jumped here directly.
          % but prev points gradient, this is necessary stop very steep orginal gradient preventing decent step sizes
          odtdJ = -sign(odtdJ)*sqrt(abs(odtdJ))*sqrt(abs(oodtdJ)); % geometric mean
@@ -258,7 +262,8 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
    
    % compute the function evaluation
    Ed  = (wght.*err(svs))'*err(svs);  
-   Ew  = wK*wb(1:end-1);
+   %Ew  = (wb(1:end-1)'*K)*wb(1:end-1); 
+	Ew  = f*wb(1:end-1) - wb(end)*sum(wb(1:end-1)); % faster to avoid w*K again
    J   = Ed + C(1)*Ew; % SVM objective
    if(opts.verb>0)   % debug code      
       fprintf(['%3d) %3d x=[%8f,%8f,.] J=%5f (%5f+%5f) |dJ|=%8g' lend],...
