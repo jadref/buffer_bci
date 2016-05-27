@@ -14,13 +14,14 @@ br_port=5555
 br_player=1
 
 # Command offsets, do not change.
-CMD_SPEED = 1
+CMD_SPEED= 1
 CMD_JUMP = 2
 CMD_ROLL = 3
+CMD_RST  = 99
 
 # Command configuration
-CMDS      = [CMD_SPEED, CMD_JUMP, CMD_ROLL]
-THRESHOLDS= [.1,        .1,       .1      ]
+CMDS      = [CMD_ROLL, CMD_RST, CMD_JUMP, CMD_SPEED]
+THRESHOLDS= [.1,        .1,       .1,     .1      ]
 
 # Sends a command to BrainRacer.
 def send_command(command):
