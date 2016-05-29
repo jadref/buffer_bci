@@ -1,5 +1,8 @@
 configureIM;
 
+% make the target sequence
+noiseSeq=mkStimSeqRand(4,8);
+
 % make the stimulus
 %figure;
 fig=figure(2);
@@ -9,7 +12,7 @@ ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','b
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
         'color',[0 0 0],'DrawMode','fast','nextplot','replacechildren',...
         'xlim',[-1.5 1.5],'ylim',[-1.5 1.5],'Ydir','normal');
-    
+
     
 h=[];
 % draw stimulus: MI task arrow (left)
@@ -39,6 +42,17 @@ h(1,7) = annotation(gcf,'arrow',[0.35 0.25],[0.5 0.5],'HeadLength',30,'HeadWidth
 % draw stimulus: MI feedback arrow (right)
 h(2,7) = annotation(gcf,'arrow',[0.65 0.75],[0.5 0.5],'HeadLength',30,'HeadWidth',40,...
     'HeadStyle','plain','LineWidth',4,'Color',[0 0 1]);
+% draw stimulus: fixate dots
+% Middle
+h(5,8) = annotation(gcf,'ellipse',[0.49 0.49 0.02 0.02],'LineWidth',4,'FaceColor',[0.8 0.1 0],'Color',[0.8 0.1 0]);
+% Left Bottom
+h(1,8) = annotation(gcf,'ellipse',[0.09 0.09 0.02 0.02],'LineWidth',4,'FaceColor',[0.8 0.1 0],'Color',[0.8 0.1 0]);
+% Left Up
+h(2,8) = annotation(gcf,'ellipse',[0.09 0.89 0.02 0.02],'LineWidth',4,'FaceColor',[0.8 0.1 0],'Color',[0.8 0.1 0]);
+% Right Bottom
+h(3,8) = annotation(gcf,'ellipse',[0.89 0.09 0.02 0.02],'LineWidth',4,'FaceColor',[0.8 0.1 0],'Color',[0.8 0.1 0]);
+% Right Up
+h(4,8) = annotation(gcf,'ellipse',[0.89 0.89 0.02 0.02],'LineWidth',4,'FaceColor',[0.8 0.1 0],'Color',[0.8 0.1 0]);
 
 set(gca,'visible','off');
 %Create a text object with no text in it, center it, set font and color
@@ -48,8 +62,33 @@ txthdl = text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),' ',...
 				  'fontunits','pixel','fontsize',.05*wSize(4),...
 				  'color',[0.75 0.75 0.75],'visible','off');
               
-set(h(:),'visible','off');              
+set(h(:),'visible','off');               
+set(txthdl,'string', 'Click mouse when ready', 'visible', 'on'); drawnow;
+waitforbuttonpress;
+set(txthdl,'visible', 'off'); drawnow;              
+
+set(h(5,8),'visible','on');drawnow;
+sendEvent('stimulus.baseline.eyesmove','start');
+sleepSec(trialDuration);
+sendEvent('stimulus.baseline.eyesmove','end');
+set(h(:),'visible','off');drawnow;
+
+for si=1:8;
+    set(h((noiseSeq(:,si)>0),8),'visible','on');drawnow;
+    sendEvent('stimulus.baseline.eyesmove','start');
+    sleepSec(trialDuration);
+    sendEvent('stimulus.baseline.eyesmove','end');
+    set(h(:),'visible','off'); drawnow;
+end
+
+set(h(5,8),'visible','on');drawnow;
+sendEvent('stimulus.baseline.eyesmove','start');
+sleepSec(trialDuration);
+sendEvent('stimulus.baseline.eyesmove','end');
+set(h(:),'visible','off');drawnow;
+
               
+set(h(:),'visible','off');              
 set(txthdl,'string', 'Click mouse when ready', 'visible', 'on'); drawnow;
 waitforbuttonpress;
 set(txthdl,'visible', 'off'); drawnow;
