@@ -10,11 +10,12 @@ configureIM;
            '1) Calibrate Noise'     'noise';
            '2) Calibrate Stimulus'  'calibrate'; 
            '3) Calibrate Volition'  'calibrateVolition'
-			 % '4) Train Classifier'    'trainersp';
-			 % '5) Epoch Feedback'      'epochfeedback';
-			 % '6) Continuous Feedback' 'contfeedback';
-			 % '7) NeuroFeedback'       'neurofeedback'
-			 % '8) Center out feedback' 'centerout'
+           '4) Calibrate 9 Stimulus' 'calibrate9';
+			 % '5) Train Classifier'    'trainersp';
+			 % '6) Epoch Feedback'      'epochfeedback';
+			 % '7) Continuous Feedback' 'contfeedback';
+			 % '8) NeuroFeedback'       'neurofeedback'
+			 % '9) Center out feedback' 'centerout'
           };
   txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
 				'HorizontalAlignment','left','color',[1 1 1]);
@@ -91,6 +92,19 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'start');
     %try
       imCalibrateStimulus;
+      %catch
+      %le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+      %if ( isfield(le,'stack') ) disp(le.stack(1)), end;
+      sendEvent('training','end');    
+      %end
+    sendEvent(phaseToRun,'end');
+     %---------------------------------------------------------------------------
+   case {'calibrate9'};
+    sendEvent('subject',subject);
+    sendEvent('startPhase.cmd',phaseToRun)
+    sendEvent(phaseToRun,'start');
+    %try
+      imCalibrateStimulus9;
       %catch
       %le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       %if ( isfield(le,'stack') ) disp(le.stack(1)), end;

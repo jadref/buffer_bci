@@ -101,6 +101,11 @@ sleepSec(eyesDuration);
 sendEvent('stimulus.baseline.eyesopen','end');
 set(h(:),'visible','off');
 
+set(h(:),'visible','off');               
+set(txthdl,'string', 'Click mouse when ready', 'visible', 'on'); drawnow;
+waitforbuttonpress;
+set(txthdl,'visible', 'off'); drawnow; 
+
 % 30 sec of eyes closed
 set(h(1,5),'visible','on'); drawnow;
 sendEvent('stimulus.baseline.eyesclosed','start');
@@ -108,6 +113,11 @@ sleepSec(eyesDuration);
 sendEvent('stimulus.baseline.eyesclosed','end');
 sound(1);
 set(h(:),'visible','off');
+
+set(h(:),'visible','off');               
+set(txthdl,'string', 'Click mouse when ready', 'visible', 'on'); drawnow;
+waitforbuttonpress;
+set(txthdl,'visible', 'off'); drawnow; 
 
 % eye blinking 15 sec
 set(h(1,3),'visible','on');
@@ -140,6 +150,11 @@ sendEvent('artifact.jaw','start');
 sleepSec(artifactDuration);
 sendEvent('artifact.jaw','end');
 set(h(:),'visible','off');
+
+set(h(:),'visible','off');               
+set(txthdl,'string', 'Click mouse when ready', 'visible', 'on'); drawnow;
+waitforbuttonpress;
+set(txthdl,'visible', 'off'); drawnow; 
 
 % 30 sec of fixation
 set(h(1,6),'visible','on');
