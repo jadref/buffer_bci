@@ -41,10 +41,14 @@ function [data,devents,hdr,events]=sliceraw(fname,varargin)
 %               {str} [function_handle] handle to a function which takes in all events and returns
 %                   a logical or index expression saying which should be sliced.  e.g.
 %                    [matchedEvents] = myMatchEvents(events); % events is struct array of all events
+%             OR
+%               (struct) struct array of event's already selected/filtered to slice on
 %  trlen_ms/trlen_samp - [1x1] length of data to get for each epoch in milliseconds or samples (3000ms)
 %  offset_ms/offset_samp - [2x1] offset from event start/end to get data from in milli-sec or samples  ([])
 %                that is: data_range= event.sample+offset_samp(1) : event.sample+trlen_samp+offset_samp(2)
 %  subsample -- [1x1] sub-sample recorded data to max of this frequency if needed       (256)
+%  hdr       -- [struct] header file
+%  events    -- [struct] all events from the datafile
 %
 % Examples:
 %  % 1: Simple example of slicing a whole file
@@ -62,7 +66,7 @@ function [data,devents,hdr,events]=sliceraw(fname,varargin)
 % See Also: buffer_waitData, buffer_train_erp_clsfr, buffer_train_ersp_clsfr, buffer_apply_erp_clsfr, buffer_apply_ersp_clsfr
 
 % set and parse the input options
-opts=struct('startSet',[],'trlen_ms',3000,'trlen_samp',[],'offset_ms',[],'offset_samp',[],'verb',0,'subsample',256);
+opts=struct('startSet',[],'trlen_ms',3000,'trlen_samp',[],'offset_ms',[],'offset_samp',[],'verb',0,'subsample',256,'hdr',[],'events',[]);
 opts=parseOpts(opts,varargin);
 
 % get the directory which contains the files
@@ -76,9 +80,11 @@ hdrfname=fullfile(fdir,'header');
 eventfname=fullfile(fdir,'events');
 datafname =fullfile(fdir,'samples');
 
-% read the header and the events
-hdr=read_buffer_offline_header(hdrfname);
-events=read_buffer_offline_events(eventfname,hdr);
+										  % read the header and the events
+hdr=opts.hdr;
+if ( isempty(hdr) )    hdr   =read_buffer_offline_header(hdrfname); end;
+events=opts.events;
+if ( isempty(events) ) events=read_buffer_offline_events(eventfname,hdr); end;
 
 % extract sample-rate from the header and convert from ms->samples if needed
 if ( isfield(hdr,'SampleRate') ) fs=hdr.SampleRate; 
