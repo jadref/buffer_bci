@@ -116,6 +116,7 @@ public class GameLoop extends InvadersScreen implements SimulationListener {
 
 		// shoot
 		if(buttonsPressed > 0) {
+			System.out.println("SHOOTING!");
 			simulation.shot();
 		}
 	}

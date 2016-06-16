@@ -7,7 +7,7 @@ buildscript {
     def json
     if (versionFile.exists()) {
         json = new JsonSlurper().parseText(versionFile.text)
-    } else throw new GradleException("Unable to retrieve latest versions, please check your internet connection")
+    } else throw new Exception("Unable to retrieve latest versions, please check your internet connection")
 
     ext {
         gdxVersion = json.libgdxSnapshot
@@ -62,21 +62,21 @@ project(":desktop") {
     }
 }
 
-project(":android") {
-    apply plugin: "android"
-
-    configurations { natives }
-
-    dependencies {
-        compile project(":core")
-        compile "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
-        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi"
-        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
-        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86"
-        compile "com.badlogicgames.gdx:gdx-controllers:$gdxVersion"
-        compile "com.badlogicgames.gdx:gdx-controllers-android:$gdxVersion"
-    }
-}
+//project(":android") {
+//    apply plugin: "android"
+//
+//    configurations { natives }
+//
+//    dependencies {
+//        compile project(":core")
+//        compile "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
+//        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi"
+//        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
+//        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86"
+//        compile "com.badlogicgames.gdx:gdx-controllers:$gdxVersion"
+//        compile "com.badlogicgames.gdx:gdx-controllers-android:$gdxVersion"
+//    }
+//}
 
 //project(":html") {
 //    apply plugin: "gwt"

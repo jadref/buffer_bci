@@ -33,6 +33,7 @@ namespace FakeController
                 }
             }
             Console.WriteLine("Connected, press ESC to quit.");
+            Console.WriteLine( hdr );
 
             float axis = 0;
 
@@ -62,6 +63,7 @@ namespace FakeController
                     lock (client)
                     {
                         client.putEvent(new BufferEvent("BTN_FIRE", "down", -1));
+                        Console.WriteLine( "Pressed down");
                     }
                 }
                 else if (key.Key == ConsoleKey.W)
@@ -69,15 +71,18 @@ namespace FakeController
                     lock (client)
                     {
                         client.putEvent(new BufferEvent("BTN_FIRE", "up", -1));
+                        Console.WriteLine( "Pressed up" );
                     }
                 }
                 else if (key.Key == ConsoleKey.E)
                 {
                     axis -= 0.2f;
+                    Console.WriteLine( "Pressed left" );
                 }
                 else if (key.Key == ConsoleKey.R)
                 {
                     axis += 0.2f;
+                    Console.WriteLine( "Pressed right" );
                 }
             }
 

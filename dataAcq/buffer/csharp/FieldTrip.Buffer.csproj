@@ -38,7 +38,6 @@
     <Compile Include="BigEndianBitConverter.cs" />
     <Compile Include="BufferClient.cs" />
     <Compile Include="BufferClientClock.cs" />
-    <Compile Include="BufferComm.cs" />
     <Compile Include="BufferEvent.cs" />
     <Compile Include="ByteBuffer.cs" />
     <Compile Include="ClockSync.cs" />
