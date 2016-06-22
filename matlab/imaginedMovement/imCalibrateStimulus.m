@@ -64,14 +64,22 @@ for si=1:nSeq;
   
   
   % show the target
-  fprintf('%d) tgt=%d : ',si,find(tgtSeq(:,si)>0));
+  tgtIdx=find(tgtSeq(:,si)>0);
   set(h(tgtSeq(:,si)>0),'facecolor',tgtColor);
   set(h(tgtSeq(:,si)<=0),'facecolor',bgColor);
   if ( ~isempty(symbCue) )
-	 set(txthdl,'string',sprintf('%s ',symbCue{tgtSeq(:,si)>0}),'color',[.1 .1 .1],'visible','on');
+	 set(txthdl,'string',sprintf('%s ',symbCue{tgtIdx}),'color',[.1 .1 .1],'visible','on');
+	 tgtNm = '';
+	 for ti=1:numel(tgtIdx);
+		if(ti>1) tgtNm=[tgtNm ' + ']; end;
+		tgtNm=sprintf('%s%d %s ',tgtNm,tgtIdx,symbCue{tgtIdx});
+	 end
+  else
+	 tgtNm = tgtIdx; % human-name is position number
   end
   set(h(end),'facecolor',[0 1 0]); % green fixation indicates trial running
-  sendEvent('stimulus.target',find(tgtSeq(:,si)>0));
+  fprintf('%d) tgt=%10s : ',si,tgtNm);
+  sendEvent('stimulus.target',tgtNm);
   drawnow;% expose; % N.B. needs a full drawnow for some reason
   sendEvent('stimulus.trial','start');
   % wait for trial end
