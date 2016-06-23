@@ -41,7 +41,7 @@ if ( nargin<2 || isempty(buffport) ); buffport=1972; end;
 if ( isempty(opts.freqbands) && ~isempty(opts.fftfilter) ); opts.freqbands=opts.fftfilter; end;
 
 if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics facility
-  if ( ~isempty(strmatch('qt',available_graphics_toolkits())) )
+  if ( 0 & ~isempty(strmatch('qt',available_graphics_toolkits())) )
 	 graphics_toolkit('qt'); 
   elseif ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
     graphics_toolkit('qthandles'); % use fast rendering library
