@@ -48,6 +48,10 @@ else
   si=(varx(si)<=median(varx(si))+varThresh*stdvarx+eps); % outlier detection
   var = sum(varx(si))./max(1,sum(si)); % var is ave var, guard for no valid dims
 end
+if ( any(var<0) )
+   warning('Negative variance found!!!');
+   var=abs(var); % BODGE: ensure is positive.....
+end
 return;
 %--------
 function testCase()

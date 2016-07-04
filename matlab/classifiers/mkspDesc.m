@@ -38,7 +38,7 @@ for isp=1:size(spMx,1);
             desc=[desc ivec2str(',',spKey{nCls(1)})]; 
             for j=2:(numel(pCls)); desc=[desc ivec2str(',',spKey{nCls(j)})]; end;
          end
-      elseif ( isstr(spKey{1}) )
+      elseif ( ischar(spKey{1}) )
          desc=sprintf('%s',spKey{pCls(1)}); 
          if(numel(pCls)>1) desc=[desc sprintf('+%s',spKey{pCls(2:end)})]; end;
          desc=[desc ' v '];

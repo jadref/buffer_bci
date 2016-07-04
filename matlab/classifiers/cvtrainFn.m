@@ -53,6 +53,7 @@ function [res,Cs,fIdxs]=cvtrainFn(objFn,X,Y,Cs,fIdxs,varargin)
 %               'bal' -- balanced classification rate, so each class has same error rate
 %  aucWght  - [float] weighting on the AUC score to use to determine the  (.1)
 %              optimal hyperparameter
+%  dispType - one of: 'bin' ,'auc' - performance information summary to print
 %  varargin - any additional parameters are passed to objFn
 % Outputs:
 % res       - results structure with fields
@@ -87,10 +88,10 @@ function [res,Cs,fIdxs]=cvtrainFn(objFn,X,Y,Cs,fIdxs,varargin)
 % Cs - the ordering of the hyper-parameters used 
 %       (may be different than input, as we prefer high->low order for efficiency!)
 % fIdxs -- the fold structure used. (may be different from input if input is scalar)
-opts = struct('binsp',1,'aucNoise',0,'recSoln',0,'dim',[],...
-              'reuseParms',1,'seed',[],'seedNm','alphab','verb',0,'reorderC',1,...
-              'spDesc',[],'outerSoln',-1,'calibrate','bal','lossType','bal','dispType','bin',...
-              'subIdx',[],'aucWght',.1);
+opts = struct('binsp',1,'aucNoise',0,'recSoln',0,'dim',[], 'reuseParms',1,...
+              'seed',[],'seedNm','alphab','verb',0,'reorderC',1, ...
+              'spDesc',[],'outerSoln',-1,'calibrate','bal',...
+				  'lossType',[],'lossFn','bal','dispType','bin', 'subIdx',[],'aucWght',.1);
 [opts,varargin]=parseOpts(opts,varargin);
 
 if ( ndims(Y)>2 || ~any(size(Y,1)==size(X)) ) 
@@ -181,17 +182,19 @@ szX=size(X);
 res.tstf=zeros([prod(szX(dim)) size(Y,2) size(Cs,2)],class(X));
 % Next compute the per-fold values
 for foldi=1:size(fIdxs,ndims(fIdxs));
-   for spi=1:nSubProbs; % loop over sub-problems
-      if ( ~opts.binsp ) spi=1:size(Y,2); end; % set spi to set sub-probs if not binary
-
-      % get the training test split (possibly sub-prob specific)
-		% BODGE: labelling for train/test ignores sub-prob specific info
-      trnInd=any(fIdxs(:,min(end,spi),foldi)<0,2);  % training points
-      tstInd=any(fIdxs(:,min(end,spi),foldi)>0,2);  % testing points
-      exInd =any(fIdxs(:,min(end,spi),foldi)==0,2); % excluded points
+   for spi=1:nSubProbs; % loop over sub-problems get train/test split (possibly sub-prob specific)
+      trnInd=fIdxs(:,min(end,spi),foldi)<0;  % training points
+      tstInd=fIdxs(:,min(end,spi),foldi)>0;  % testing points
+      exInd =fIdxs(:,min(end,spi),foldi)==0; % excluded points
       
-      Ytrn  =Y(:,spi); Ytrn(tstInd,:)=0; Ytrn(exInd,:)=0;
-      Ytst  =Y(:,spi); Ytst(trnInd,:)=0; Ytst(exInd,:)=0;
+      if ( opts.binsp ) % treat each col of Y as a different sub-problem
+         Ytrn  =Y(:,spi);  Ytst  =Y(:,spi); 
+		else % treat columns of Y as feature values for multiple outputs
+         Ytrn  =Y(:,:,spi);Ytst  =Y(:,:,spi); 
+		end; % set spi to set sub-probs if not binary
+      % remove label information from trials which should be excluded
+		Ytrn(tstInd,:)=0; Ytst(trnInd,:)=0; 
+		Ytrn(exInd,:)=0;  Ytst(exInd,:)=0;
 
       if ( opts.verb > -1 )
         if ( size(fIdxs,ndims(fIdxs))>1 ) 
@@ -204,7 +207,6 @@ for foldi=1:size(fIdxs,ndims(fIdxs));
       seed=opts.seed; % seed
       for ci=1:size(Cs,2);%siCs; % proc in sorted order
          if( ~opts.reuseParms ) seed=opts.seed; end;
-         rt=cputime();
          if( ~isempty(seed) ) 
             [seed,f,J]=feval(objFn,X,Ytrn,Cs(:,ci),'verb',opts.verb-1,...
                              opts.seedNm,seed,'dim',opts.dim,varargin{:});
@@ -212,68 +214,77 @@ for foldi=1:size(fIdxs,ndims(fIdxs));
             [seed,f,J]=feval(objFn,X,Ytrn,Cs(:,ci),'verb',opts.verb-1,...
                              'dim',opts.dim,varargin{:});
          end
-         rt=cputime()-rt;
          
-			if ( size(f,1)==size(Ytrn,2) && size(f,2) == size(Ytrn,1) ) f=f'; end; % ensure same size as Y
          if ( isstruct(seed) && isfield(seed,'soln') ) sol=seed.soln; else sol=seed; end;
          if ( opts.binsp ) soln{spi,ci,foldi}=sol; else soln{ci,foldi}=sol; end;
-         %res.fold.rt(:,ci,foldi,spi)=rt;
-         res.fold.f(:,spi,ci,foldi)=f;
-         if ( opts.verb>-1 && numel(spi)>1 ) fprintf('['); end;
-         for spii=1:numel(spi); % N.B. we need to loop as dv2conf etc. only work on 1 sub-prob at a time
-           tstIndi = tstInd(:,min(end,spii))| exInd(:,min(end,spii)) ;
-           res.tstf(tstIndi,spi(spii),ci)=f(tstIndi); % accumulate test prediction decision values
-           res.fold.trnconf(:,spi(spii),ci,foldi)=dv2conf(Ytrn(:,spii),f(:,spii));
-           res.fold.tstconf(:,spi(spii),ci,foldi)=dv2conf(Ytst(:,spii),f(:,spii));
-           res.fold.trnbin (:,spi(spii),ci,foldi)=conf2loss(res.fold.trnconf(:,spi(spii),ci,foldi),1,opts.lossType);
-           res.fold.tstbin (:,spi(spii),ci,foldi)=conf2loss(res.fold.tstconf(:,spi(spii),ci,foldi),1,opts.lossType);
-            % add some noise to p to ensure dv2auc is real
-            %if ( opts.aucNoise )  f(:,spii) = f(:,spii) + rand(size(f(:,spii)))*max(1,f(:,spii))*1e-4; end;
-            if ( opts.binsp )
-              res.fold.trnauc(:,spi(spii),ci,foldi) =dv2auc(Ytrn(:,spii),f(:,spii));
-              res.fold.tstauc(:,spi(spii),ci,foldi) =dv2auc(Ytst(:,spii),f(:,spii));
-            end
-            % log the performance
-            if ( opts.verb > -1 )
-               if ( strcmp(opts.dispType,'bin') )
-                  fprintf('%0.2f/%0.2f',res.fold.trnbin(:,spi(spii),ci,foldi),...
-                          res.fold.tstbin(:,spi(spii),ci,foldi));
-               elseif ( strcmp(opts.dispType,'auc') )
-                  fprintf('%0.2f/%0.2f',res.fold.trnauc(:,spi(spii),ci,foldi),...
-                          res.fold.tstauc(:,spi(spii),ci,foldi));
-                end
-                if ( spii<numel(spi) ) fprintf('|'); end;
-            end
+         f=shiftdim(f); if ( size(f,1)==size(Ytrn,2) ) f=f'; end; % ensure [N x nSubprob]
+			if ( opts.binsp ) spis=spi; else spis=1:size(f,2); end;
+			% Initialize the storage for the per-fold predictions
+			if(~isfield(res,'fold') || ~isfield(res.fold,'f') || isempty(res.fold.f))
+			  res.fold.f=zeros([size(f,1) size(Y,2) size(Cs,2) size(fIdxs,ndims(fIdxs))],class(f));
+			end
+         res.fold.f(:,spis,ci,foldi)=f;
+			% accumulate test prediction decision values
+         for spii=1:numel(spis);
+			  tstIndi = tstInd | exInd; 
+           res.tstf(tstIndi,spis(spii),ci)=f(tstIndi,spii); 
+			end;
+         res.fold.trnconf(:,1,ci,foldi)=dv2conf(Ytrn,f);
+         res.fold.tstconf(:,1,ci,foldi)=dv2conf(Ytst,f);
+         res.fold.trn(:,1,ci,foldi)=conf2loss(res.fold.trnconf(:,1,ci,foldi),1,opts.lossFn);
+         res.fold.tst(:,1,ci,foldi)=conf2loss(res.fold.tstconf(:,1,ci,foldi),1,opts.lossFn);
+         for spii=1:numel(spis);% N.B. we need to loop as dv2conf
+           % etc. only work on 1 sub-prob at a time               
+           res.fold.trnbin (:,spis(spii),ci,foldi)=...
+			        conf2loss(dv2conf(Ytrn(:,spii),f(:,spii)),1,opts.lossFn);
+           res.fold.tstbin (:,spis(spii),ci,foldi)= ...
+                 conf2loss(dv2conf(Ytst(:,spii),f(:,spii)),1,opts.lossFn);
+           % add some noise to p to ensure dv2auc is real if ( opts.aucNoise )
+           %f(:,spii) = f(:,spii) +
+           %rand(size(f(:,spii)))*max(1,f(:,spii))*1e-4; end;
+           res.fold.trnauc(:,spis(spii),ci,foldi) =dv2auc(Ytrn(:,spii),f(:,spii));
+           res.fold.tstauc(:,spis(spii),ci,foldi) =dv2auc(Ytst(:,spii),f(:,spii));
          end % sub-probs
-         if ( opts.verb>-1 )
-           if( numel(spi)>1 ) fprintf(']'); if ( numel(spi)<5 ) fprintf(' '); else fprintf('\n'); end;
-           elseif( size(Cs,2)>1 ) fprintf('\t'); end;
+         if ( opts.verb>-1 ) % log the performance
+            trn=res.fold.trn; tst=res.fold.tst; 
+            if ( size(trn,2)>1 ) fprintf('['); end;
+            for spii=1:size(trn,2);
+               fprintf('%0.2f/%0.2f',trn(:,spii,ci,foldi),tst(:,spii,ci,foldi));
+               if ( spii<size(trn,2)) fprintf(' '); end;
+            end
+            if( size(trn,2)>1 ) fprintf(']'); 
+              if ( size(trn,2)<5 ) fprintf(' '); else fprintf('\n'); end;
+            elseif( size(Cs,2)>1 ) fprintf('\t'); 
+            end;
          end
       end % Cs
       if ( opts.verb > -1 && size(Cs,2)>1 ) fprintf('\n'); end;
-    end % loop over sub-problems
-    if (opts.verb>-1 )
+   end % loop over sub-problems
+   if (opts.verb>-1 )
       if ( size(fIdxs,ndims(fIdxs))==1 ) fprintf('\t'); 
       elseif ( size(Cs,2)==1 ) fprintf('\n');
       end
-    end
+   end
 end
 szRes=size(res.fold.trnbin); 
-res.fold.di=mkDimInfo(szRes,'perf',[],[],'subProb',[],opts.spDesc,'C',[],Cs,'fold',[],[],'dv');
+res.fold.di=mkDimInfo(szRes,'perf',[],[],'subProb',[],opts.spDesc,'C',[], ...
+                      Cs,'fold',[],[],'dv');
 foldD=4;
 res.fold.di(foldD).info.fIdxs=fIdxs;
 if ( opts.recSoln ) res.fold.soln=soln; end; % record the solution for this fold
 res.di     = res.fold.di(setdiff(1:end,foldD)); % same as fold info but without fold dim
 res.trnconf= sum(res.fold.trnconf,foldD);
 res.tstconf= sum(res.fold.tstconf,foldD);
-res.trnbin = conf2loss(res.trnconf,1,opts.lossType);%mean(res.fold.trnbin,foldD);
+res.trnbin = conf2loss(res.trnconf,1,opts.lossFn);%mean(res.fold.trnbin,foldD);
+res.trn    = res.trnbin;
 res.trnbin_se=sqrt(abs(sum(res.fold.trnbin.^2,foldD)/nFolds-(res.trnbin.^2))/nFolds);
-res.tstbin = conf2loss(res.tstconf,1,opts.lossType);%mean(res.fold.tstbin,foldD);
+res.tstbin = conf2loss(res.tstconf,1,opts.lossFn);%mean(res.fold.tstbin,foldD);
+res.tst    = res.tstbin;
 res.tstbin_se=sqrt(abs(sum(res.fold.tstbin.^2,foldD)/nFolds-(res.tstbin.^2))/nFolds);
 if ( opts.binsp )
-  res.trnauc = mean(res.fold.trnauc,foldD);
+  res.trnauc = sum(res.fold.trnauc,foldD)./size(res.fold.trnauc,foldD);
   res.trnauc_se=sqrt(abs(sum(res.fold.trnauc.^2,foldD)/nFolds-(res.trnauc.^2))/nFolds);
-  res.tstauc = mean(res.fold.tstauc,foldD);
+  res.tstauc = sum(res.fold.tstauc,foldD)./size(res.fold.tstauc,foldD);
   res.tstauc_se=sqrt(abs(sum(res.fold.tstauc.^2,foldD)/nFolds-(res.tstauc.^2))/nFolds);
 end
 res.fIdxs  = fIdxs;
@@ -281,15 +292,43 @@ res.Y      = Y;
 
 % record the optimal solution and it's parameters
 if ( opts.binsp ) 
-[opttstbin,optCi]=max(mean(res.tstbin,2)+opts.aucWght*mean(res.tstauc,2)); % best hyper-parameter for all sub-probs
+  % best hyper-parameter for all sub-probs
+  [opttstbin,optCi]=max(mean(res.tst,2)+opts.aucWght*mean(res.tstauc,2)); 
 else
-[opttstbin,optCi]=max(mean(res.tstbin,2)); % best hyper-parameter for all sub-probs
+  [opttstbin,optCi]=max(mean(res.tst,2)); % best hyper-parameter for all sub-probs
 end
 res.opt.Ci  =optCi;
 res.opt.C   =Cs(optCi);
 res.opt.tstbin=res.tstbin(:,:,optCi); 
 res.opt.trnbin=res.trnbin(:,:,optCi); 
 res.opt.tstf  =res.tstf(:,:,optCi);
+
+% print summary of the results
+if ( opts.verb > -2 && size(fIdxs,ndims(fIdxs))>1)
+   if ( ~opts.binsp || strcmp(opts.dispType,'bin') )  
+      lab='ave'; trn=res.trnbin; tst=res.tstbin; 
+   else
+      lab='auc';trn=res.trnauc; tst=res.tstauc;
+   end
+   if ( opts.verb > -1 ) fprintf('-------------------------\n'); end;
+   for spi=1:size(trn,2); % loop over sub-problems
+      if ( size(trn,2)>1 ) fprintf('(%3s/%2d)\t',lab,spi); else; fprintf('(%3s)\t',lab); end;
+      for ci=1:size(Cs,2);
+         fprintf('%0.2f/%0.2f',trn(:,spi,ci),tst(:,spi,ci));
+         if( ci==optCi ) fprintf('*\t'); else fprintf(' \t'); end;
+      end
+      fprintf('\n');
+   end
+   if ( size(trn,2)>1 ) % cross problem average performance
+      fprintf('(%3s/av)\t',lab); 
+      for ci=1:size(Cs,2);
+         fprintf('%0.2f/%0.2f\t',mean(trn(:,:,ci),2),mean(tst(:,:,ci),2));
+      end
+      fprintf('\n');
+   end
+end
+
+% Compute the outer-solution properties
 if ( opts.outerSoln>0 ) % use classifier trained on all the data
    res.opt.soln=res.soln(:,optCi);
    % override tstf information for non-training data examples with those trained on all the data
@@ -299,120 +338,102 @@ if ( opts.outerSoln>0 ) % use classifier trained on all the data
      res.opt.tstf(exInd,spi)=res.opt.f(exInd);
    end
 elseif( opts.outerSoln<0 ) % re-train with the optimal parameters found
-  for spi=1:nSubProbs; % loop over sub-problems
-    if ( ~opts.binsp ) spi=1:size(Y,2); end; % set spi to set sub-probs if not binary
-    if ( opts.verb > -1 ) 
-      if ( nSubProbs>1 ) fprintf('(opt/%2d)\t',spi); else; fprintf('(opt)\t'); end;
-    end
-    Ytrn = Y(:,spi);
-    exInd = all(fIdxs(:,min(end,spi),:)==0,3) | Ytrn==0;
-	 Ytrn(any(exInd,2),:)=0; % excluded points    
-    [seed,f,J]=feval(objFn,X,Ytrn,res.opt.C,'verb',opts.verb-1,...
-                     'dim',opts.dim,varargin{:});
-	 if ( size(f,1)==size(Ytrn,2) && size(f,2) == size(Ytrn,1) ) f=f'; end; % ensure same size as Y
-    if ( isstruct(seed) && isfield(seed,'soln') ) sol=seed.soln; else sol=seed; end;
-    if ( opts.binsp ) res.opt.soln{spi}=sol; else res.opt.soln{1}=sol; end;
-    res.opt.f(:,spi)=f;      
-    % override tstf information for non-training data examples with those trained on all the data
-    % now tstf contains val fold predictions in training set, and opt predictions for the rest
-    res.opt.tstf(exInd,spi)=f(exInd,:);
-    if( opts.verb > -1 ) 
-      if( numel(spi)>1 ) fprintf('['); end;
-      for spii=1:numel(spi); % N.B. we need to loop as dv2conf etc. only work on 1 sub-prob at a time
-        fprintf('%0.2f/NA  ',conf2loss(dv2conf(Ytrn(:,spii),f(:,spii)),1,opts.lossType)); 
-        if( spii<numel(spi) ) fprintf('|'); end;
+   for spi=1:nSubProbs; % loop over sub-problems
+      if ( opts.verb > -1 ) 
+         if ( nSubProbs>1 ) fprintf('(opt/%2d)\t',spi); else; fprintf('(opt)\t'); end;
       end
-      if(numel(spi)>1) fprintf(']'); if(numel(spi)<5) fprintf(' '); else fprintf('\n');end;
-      elseif ( numel(spi)==1 ) fprintf('\n'); end;
-    end
-  end % spi
-elseif( opts.outerSoln==0 ) % estimate from per fold solutions
-  
-  if ( opts.binsp ) opt=soln(:,optCi,:); else opt=soln(optCi,:); end; % spi x 1 x fold
-  if ( isnumeric(soln{1}) || (iscell(soln{1}) && isnumeric(soln{1}{1})) ) % use average over all folds solutions
-    if ( opts.binsp ) res.opt.soln = opt(:,1,1); else res.opt.soln=opt(1,1); end;
-    for fi=2:size(opt,3);
-      for spi=1:size(opt,1);
-        if ( isnumeric(opt{1}) )
-          res.opt.soln{spi}=res.opt.soln{spi}+opt{spi,1,fi};
-        else
-          for bi=1:numel(opt{spi,1,fi})
-            res.opt.soln{spi}{bi}=res.opt.soln{spi}{bi}+opt{spi,1,fi}{bi};
-          end
-        end
+      if ( opts.binsp ) % treat each col of Y as a different sub-problem
+         Ytrn  =Y(:,spi);  Ytst  =Y(:,spi); 
+		else % treat columns of Y as feature values for multiple outputs
+         Ytrn  =Y(:,:,spi);Ytst  =Y(:,:,spi); 
+		end; % set spi to set sub-probs if not binary
+      exInd = all(fIdxs(:,min(end,spi),:)==0,3) | all(Ytrn==0,2); Ytrn(exInd,:)=0; % excluded points    
+
+      [seed,f,J]=feval(objFn,X,Ytrn,res.opt.C,'verb',opts.verb-1,...
+                       'dim',opts.dim,varargin{:});
+
+      if ( isstruct(seed) && isfield(seed,'soln') ) sol=seed.soln; else sol=seed; end;
+      if ( opts.binsp ) res.opt.soln{spi}=sol; else res.opt.soln=sol; end;
+      f=shiftdim(f); if ( size(f,1)==size(Ytrn,2) ) f=f'; end;
+      if ( opts.binsp ) res.opt.f(:,spi)=f; else res.opt.f=f; end;      
+      % override tstf information for non-training data examples with those trained on all the data
+      % now tstf contains val fold predictions in training set, and opt predictions for the rest
+      res.opt.tstf(exInd,spi)=f(exInd);
+      if( opts.verb > -1 ) 
+         if( size(f,2)>1 ) fprintf('['); end;
+         for spii=1:size(f,2); % N.B. we need to loop as dv2conf etc. only work on 1 sub-prob at a time
+            fprintf('%0.2f/NA  ',conf2loss(dv2conf(Ytrn(:,spii),f(:,spii)),1,opts.lossFn)); 
+            if( spii<size(f,2) ) fprintf('|'); end;
+         end
+         if(size(f,2)>1) fprintf(']'); if(size(f,2)<5) fprintf(' '); else fprintf('\n');end;
+         elseif ( size(f,2)==1 ) fprintf('\n'); end;
       end
-    end
-    for spi=1:size(opt,1); % average the result
-        if ( isnumeric(opt{1}) )
-          res.opt.soln{spi}=res.opt.soln{spi}./size(opt,3);
-        else
-          for bi=1:numel(opt{spi,1,1})
-            res.opt.soln{spi}{bi}=res.opt.soln{spi}{bi}./size(opt,3);
-          end
-        end
-    end
-    res.opt.f    = mean(res.fold.f(:,:,optCi,:),4);
-  else % use classifier trained on 1 single fold of the data
-    optFold=1;
-    res.opt.soln=soln(:,optCi,optFold);
-    res.opt.f   =res.fold.f(:,:,optCi,optFold);
-  end
-end
-exInd = all(fIdxs<=0,3); % tst points
-if ( ~all(exInd) && ~isempty(opts.calibrate) && ~isequal(opts.calibrate,0) && opts.binsp ) % N.B. only for linear classifiers!
-  cr=res.tstbin(:,:,optCi); % cv-estimated probability of being correct - target for calibration
-  %if ( strcmp(opts.calibrate,'bal') ) cr = cr([1 1],:,:); end; % balanced calibration
-  % correct the targets to prevent overfitting
-  cwght=[];
-  if ( strcmp(opts.calibrate,'bal') ) % balanced calibration, so equal class weights
-    cwght(1,:)=sum(Y(~exInd,:)~=0,1)./sum(Y(~exInd,:)<0)/2; cwght(2,:)=sum(Y(~exInd,:)~=0,1)./sum(Y(~exInd,:)>0)./2;
-  end
-  [Ab]=dvCalibrate(Y(~exInd,:),res.tstf(~exInd,:,res.opt.Ci),cr,cwght);
-  for i=1:numel(res.opt.soln);
-    if ( iscell(res.opt.soln{i}) ) % cell, assume W is full and b is separate!
-      res.opt.soln{i}{1}  =res.opt.soln{i}{1}*Ab(1,i);
-      res.opt.soln{i}{end}=res.opt.soln{i}{end}*Ab(1,i)+Ab(2,i);
-    else  % non-cell, assume is wb format
-      res.opt.soln{i}(1:end-1)=res.opt.soln{i}(1:end-1)*Ab(1,i);
-      res.opt.soln{i}(end)    =res.opt.soln{i}(end)*Ab(1,i)+Ab(2,i);
-    end
-    % update the predictions also
-    res.opt.f(:,i)    = res.opt.f(:,i)*Ab(1,i)+Ab(2,i);
-    res.opt.tstf(:,i) = res.tstf(:,i,res.opt.Ci)*Ab(1,i)+Ab(2,i);
-  end  
-  res.opt.cal.scale=Ab(1,:); res.opt.cal.offset=Ab(2,:);
+   end % spi
+
+elseif( opts.outerSoln==0 ) % estimate from per fold solutions  
+   if ( opts.binsp ) opt=soln(:,optCi,:); else opt=soln(optCi,:); end; % spi x 1 x fold
+   if ( isnumeric(soln{1}) || (iscell(soln{1}) && isnumeric(soln{1}{1})) ) % use average over all folds solutions
+      if ( opts.binsp ) res.opt.soln = opt(:,1,1); else res.opt.soln=opt(1,1); end;
+      for fi=2:size(opt,3);
+         for spi=1:size(opt,1);
+            if ( isnumeric(opt{1}) )
+               res.opt.soln{spi}=res.opt.soln{spi}+opt{spi,1,fi};
+            else
+               for bi=1:numel(opt{spi,1,fi})
+                  res.opt.soln{spi}{bi}=res.opt.soln{spi}{bi}+opt{spi,1,fi}{bi};
+               end
+            end
+         end
+      end
+      for spi=1:size(opt,1); % average the result
+         if ( isnumeric(opt{1}) )
+            res.opt.soln{spi}=res.opt.soln{spi}./size(opt,3);
+         else
+            for bi=1:numel(opt{spi,1,1})
+               res.opt.soln{spi}{bi}=res.opt.soln{spi}{bi}./size(opt,3);
+            end
+         end
+      end
+      res.opt.f    = sum(res.fold.f(:,:,optCi,:),4)./size(res.fold.f,4);
+   else % use classifier trained on 1 single fold of the data
+      optFold=1;
+      res.opt.soln=soln(:,optCi,optFold);
+      res.opt.f   =res.fold.f(:,:,optCi,optFold);
+   end
 end
 
-if ( opts.verb > -2 && size(fIdxs,ndims(fIdxs))>1)
-   if ( opts.verb > -1 ) fprintf('-------------------------\n'); end;
-   for spi=1:size(res.trnbin,2); % loop over sub-problems
-      if ( size(res.trnbin,2)>1 ) fprintf('(ave/%2d)\t',spi); else; fprintf('(ave)\t'); end;
-      for ci=1:size(Cs,2);
-         if ( ~opts.binsp || strcmp(opts.dispType,'bin') )
-            fprintf('%0.2f/%0.2f',res.trnbin(:,spi,ci),res.tstbin(:,spi,ci));
-         else
-            fprintf('%0.2f/%0.2f',res.trnauc(:,spi,ci),res.tstauc(:,spi,ci));
-         end
-         if( ci==optCi ) fprintf('*\t'); else fprintf(' \t'); end;
-      end
-      fprintf('\n');
+% Calibrate the optimal classifier output probabilities
+% N.B. only for linear classifiers!
+exInd = all(fIdxs<=0,3); % tst points
+if ( ~all(exInd) && opts.binsp && ~isempty(opts.calibrate) && ~isequal(opts.calibrate,0) ) 
+   cr=res.tstbin(:,:,optCi); % cv-estimated probability of being correct - target for calibration
+   %if ( strcmp(opts.calibrate,'bal') ) cr = cr([1 1],:,:); end; % balanced calibration
+   % correct the targets to prevent overfitting
+   cwght=[];
+   if ( strcmp(opts.calibrate,'bal') ) % balanced calibration, so equal class weights
+      cwght(1,:)=sum(Y(~exInd,:)~=0,1)./sum(Y(~exInd,:)<0)./2; 
+      cwght(2,:)=sum(Y(~exInd,:)~=0,1)./sum(Y(~exInd,:)>0)./2;
    end
-   if ( size(res.trnbin,2)>1 ) % cross problem average performance
-      fprintf('(ave/av)\t',spi); 
-      for ci=1:size(Cs,2);
-         if ( ~opts.binsp || strcmp(opts.dispType,'bin') )
-            fprintf('%0.2f/%0.2f\t',mean(res.trnbin(:,:,ci),2),mean(res.tstbin(:,:,ci),2));
-         else
-            fprintf('%0.2f/%0.2f\t',mean(res.trnauc(:,spi,ci),2),mean(res.tstauc(:,spi,ci),2));
-         end
+   [Ab]=dvCalibrate(Y(~exInd,:),res.tstf(~exInd,:,res.opt.Ci),cr,cwght);
+   for i=1:numel(res.opt.soln);
+      if ( iscell(res.opt.soln{i}) ) % cell, assume W is full and b is separate!
+         res.opt.soln{i}{1}  =res.opt.soln{i}{1}*Ab(1,i);
+         res.opt.soln{i}{end}=res.opt.soln{i}{end}*Ab(1,i)+Ab(2,i);
+      else  % non-cell, assume is wb format
+         res.opt.soln{i}(1:end-1)=res.opt.soln{i}(1:end-1)*Ab(1,i);
+         res.opt.soln{i}(end)    =res.opt.soln{i}(end)*Ab(1,i)+Ab(2,i);
       end
-      fprintf('\n');
-   end
+      % update the predictions also
+      res.opt.f(:,i)    = res.opt.f(:,i)*Ab(1,i)+Ab(2,i);
+      res.opt.tstf(:,i) = res.tstf(:,i,res.opt.Ci)*Ab(1,i)+Ab(2,i);
+   end  
+   res.opt.cal.scale=Ab(1,:); res.opt.cal.offset=Ab(2,:);
 end
+
 return;
 
 %----------------------------------------------------------------------------
-function testCase()
+function []=testCase()
 
 % test binary performance
 [X,Y]=mkMultiClassTst([-.5 0; .5 0; .2 .5],[400 400 50],[.3 .3; .3 .3; .2 .2],[],[-1 1 1]);

@@ -104,17 +104,21 @@ end
 if ( isempty(Cs) ) Cs=[5.^(3:-1:-3)]; end;
 
 % compute the kernel if needed for kernel methods
-if ( opts.compKernel ) 
+if ( ~isempty(opts.compKernel) && ~isequal(opts.compKernel,0) ) 
    % compute kernel
    if ( opts.verb>0 ) fprintf('CompKernel..');  end;
-   X = compKernel(X,[],'linear','dim',dim);
+   if ( iscell(opts.compKernel) ) % use the provided kernel parameters
+	  X = compKernel(X,[],opts.compKernel{:},'dim',dim);
+	else % use the defaults, i.e. linear
+	  X = compKernel(X,[],'linear','dim',dim);
+	end
    if ( opts.verb>0 ) fprintf('..done\n'); end;
    % call cvtrain to do the actual work
    % N.B. note we use dim 2 because of the kernel transformation
    if ( opts.cv2 ) 
      res=cv2trainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',2,'verb',opts.verb,'binsp',opts.binsp,varargin{:}); 
    else
-     res=cvtrainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',dim,'verb',opts.verb,'binsp',opts.binsp,varargin{:}); 
+     res=cvtrainFn(opts.objFn,X,Y,Cscale*Cs,fIdxs,'dim',2,'verb',opts.verb,'binsp',opts.binsp,varargin{:}); 
    end   
 else
    % call cvtrain to do the actual work
@@ -153,7 +157,7 @@ else
     W(:,isp) = soln(1:end-1); b(isp)=soln(end);      
   end
 end
-if ( ~opts.compKernel ) % input space classifier, just extract
+if ( isempty(opts.compKernel) || isequal(opts.compKernel,0) ) % input space classifier, just extract
    W=reshape(W,[szX(1:min(odim)-1) size(W,2)]);
 else % kernel method. extract the weights
    if ( numel(odim)>1 ) W=reshape(W,[szX(odim) size(W,2)]); end;
