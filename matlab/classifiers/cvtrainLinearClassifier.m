@@ -139,7 +139,7 @@ if ( isfield(res,'opt') && isfield(res.opt,'soln') ) % optimal calibrated soluti
 		W(:,isp) = soln(1:end-1); b(isp)=soln(end);
 	 end
   else
-	 soln  = res.opt.soln{1};
+	 if ( iscell(res.opt.soln) ) soln  = res.opt.soln{1}; else soln=res.opt.soln; end;
     W     = soln(1:end-1,:); b=soln(end,:);
   end
 else
