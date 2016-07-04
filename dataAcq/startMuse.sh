@@ -40,7 +40,7 @@ else
 fi
 
 oscport=1234
-java -cp buffer/java/BufferClient.jar:osc/JavaOSC.jar:osc osc2ft /muse/eeg:${oscport} ${bufferhost} 4 220 1 10 &
+java -cp ${buffdir}/buffer/java/BufferClient.jar:${buffdir}/buffer/java/JavaOSC.jar:${buffdir}/buffer/java osc2ft /muse/eeg:${oscport} ${bufferhost} 4 220 1 10 &
 # catch ctrl-c and kill the java too
 trap 'kill %1' SIGTERM SIGINT SIGHUP
 
