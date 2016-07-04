@@ -22,12 +22,12 @@ function [classifier,res,Y]=cvtrainLinearClassifier(X,Y,Cs,fIdxs,varargin)
 %              N.B. see mkspMx for how to make a sub-problem matrix
 % Options:
 %  dim    - [int] the dimension(s) of X which contain the trials            (ndims(X))
-%  objFn  - [str] which objetive function to optimise,                      ('klr_cg')
+%  objFn  - [str] which objetive function to optimise,                      ('lr_cg')
 %  Cscale - [float] scaling parameter for the penalties                     (.1*var(X))
 %             N.B. usually auto computed from the data, set to 1 to force input Cs  
 %  balYs  - [bool] balance the labels of sets                               (0)
-%  binsp  - [bool] do we break multi-class problems into sets of binary problems (1)
-%  spType - [str] sub-problem decomposition to use for multi-class. one-of '1v1' '1vR' ('1v1')
+%  binsp  - [bool] do we break multi-class problems into sets of independently trained binary problems (1)
+%  spType - [str] sub-problem decomposition to use for multi-class. one-of '1v1' '1vR' ('1vR')
 %  spKey  - [Nx1] set of all possible label values                          ([])
 %  spMx   - [nSp x nClass] encoding/decoding matrix to map from class labels to/from binary 
 %           subProblems                                                     ([])
@@ -69,9 +69,11 @@ elseif ( isnumeric(Y) &&  all(Y(:)==-1 | Y(:)==0 | Y(:)==1) && ~(size(Y,2)==1 &&
   else                spKey=[1:size(Y,2)]; spMx=spKey; end;
 elseif ( opts.binsp ) % decompose into set of binary problems
   if ( isempty(spMx) ) spMx=opts.spType; end;
-  [Y,spKey,spMx]=lab2ind(Y,spKey,spMx,opts.zeroLab); % convert to binary sub-problems
 end
-spDesc=[];
+if ( ~isempty(spMx) ) % convert to new problem representation
+  [Y,spKey,spMx]=lab2ind(Y,spKey,spMx,opts.zeroLab); 
+end
+spDesc=[]; % make a human-readable problem description
 if ( ~isempty(spMx) && ~isempty(spKey) )
   spDesc=mkspDesc(spMx,spKey);
 end
@@ -127,9 +129,14 @@ end
 % Extract the classifier weight vector(s)
 % best hyper-parameter for all sub-probs, N.B. use the same C for all sub-probs to ensure multi-class is OK
 if ( isfield(res,'opt') && isfield(res.opt,'soln') ) % optimal calibrated solution trained on all data
-  for isp=1:numel(res.opt.soln); % get soln for each subproblem
-    soln  = res.opt.soln{isp};
-    W(:,isp) = soln(1:end-1); b(isp)=soln(end);
+  if ( opts.binsp ) 
+	 for isp=1:numel(res.opt.soln); % get soln for each subproblem
+		soln  = res.opt.soln{isp};
+		W(:,isp) = soln(1:end-1); b(isp)=soln(end);
+	 end
+  else
+	 soln  = res.opt.soln{1};
+    W     = soln(1:end-1,:); b=soln(end,:);
   end
 else
   if ( opts.binsp ) 

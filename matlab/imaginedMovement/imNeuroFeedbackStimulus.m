@@ -1,18 +1,26 @@
 configureIM;
 
 fig=figure(2);
-set(fig,'Name','Imagined Movement -- close window to stop.','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
+set(fig,'Name','Imagined Movement -- close window to stop.','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
 clf;
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
-        'color',[0 0 0],'DrawMode','fast','nextplot','replacechildren',...
+        'color',winColor,'DrawMode','fast','nextplot','replacechildren',...
         'xlim',[-1.5 1.5],'ylim',[-1.5 1.5],'Ydir','normal');
-stimPos=[]; h=[];
-stimRadius=.5;
-theta=linspace(0,pi,nSymbs); stimPos=[cos(theta);sin(theta)];
+stimPos=[]; h=[]; htxt=[];
+stimRadius=diff(axLim)/4;
+cursorSize=stimRadius/2;
+theta=linspace(0,2*pi,nSymbs+1);
+if ( mod(nSymbs,2)==1 ) theta=theta+pi/2; end; % ensure left-right symetric by making odd 0=up
+theta=theta(1:end-1);
+stimPos=[cos(theta);sin(theta)];
 for hi=1:nSymbs; 
   h(hi)=rectangle('curvature',[1 1],'position',[stimPos(:,hi)-stimRadius/2;stimRadius*[1;1]],...
-                  'facecolor',bgColor); 
+                  'facecolor',bgColor);
+  if ( ~isempty(symbCue) ) % cue-text
+	 htxt(hi)=text(stimPos(1,hi),stimPos(2,hi),symbCue{hi},...
+						'HorizontalAlignment','center','color',[.1 .1 .1],'visible','on');
+  end  
 end;
 % add symbol for the center of the screen
 stimPos(:,nSymbs+1)=[0 0];

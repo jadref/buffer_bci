@@ -6,21 +6,27 @@ tgtSeq=mkStimSeqRand(nSymbs,nSeq);
 % make the stimulus
 %figure;
 fig=figure(2);
-set(fig,'Name','Imagined Movement','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
+set(fig,'Name','Imagined Movement','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
 clf;
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
-        'color',[0 0 0],'DrawMode','fast','nextplot','replacechildren',...
+        'color',winColor,'DrawMode','fast','nextplot','replacechildren',...
         'xlim',axLim,'ylim',axLim,'Ydir','normal');
 
-stimPos=[]; h=[];
+stimPos=[]; h=[]; htxt=[];
 stimRadius=diff(axLim)/4;
 cursorSize=stimRadius/2;
-theta=linspace(0,2*pi,nSymbs+1); theta=theta(1:end-1);
+theta=linspace(0,2*pi,nSymbs+1);
+if ( mod(nSymbs,2)==1 ) theta=theta+pi/2; end; % ensure left-right symetric by making odd 0=up
+theta=theta(1:end-1);
 stimPos=[cos(theta);sin(theta)];
 for hi=1:nSymbs; 
   h(hi)=rectangle('curvature',[1 1],'position',[stimPos(:,hi)-stimRadius/2;stimRadius*[1;1]],...
                   'facecolor',bgColor); 
+  %if ( ~isempty(symbCue) ) % cue-text
+	% htxt(hi)=text(stimPos(1,hi),stimPos(2,hi),symbCue{hi},...
+	%					'HorizontalAlignment','center','color',[.1 .1 .1],'visible','on');
+  %end  
 end;
 % add symbol for the center of the screen
 stimPos(:,nSymbs+1)=[0 0];
@@ -58,11 +64,22 @@ for si=1:nSeq;
   
   
   % show the target
-  fprintf('%d) tgt=%d : ',si,find(tgtSeq(:,si)>0));
+  tgtIdx=find(tgtSeq(:,si)>0);
   set(h(tgtSeq(:,si)>0),'facecolor',tgtColor);
   set(h(tgtSeq(:,si)<=0),'facecolor',bgColor);
+  if ( ~isempty(symbCue) )
+	 set(txthdl,'string',sprintf('%s ',symbCue{tgtIdx}),'color',[.1 .1 .1],'visible','on');
+	 tgtNm = '';
+	 for ti=1:numel(tgtIdx);
+		if(ti>1) tgtNm=[tgtNm ' + ']; end;
+		tgtNm=sprintf('%s%d %s ',tgtNm,tgtIdx,symbCue{tgtIdx});
+	 end
+  else
+	 tgtNm = tgtIdx; % human-name is position number
+  end
   set(h(end),'facecolor',[0 1 0]); % green fixation indicates trial running
-  sendEvent('stimulus.target',find(tgtSeq(:,si)>0));
+  fprintf('%d) tgt=%10s : ',si,tgtNm);
+  sendEvent('stimulus.target',tgtNm);
   drawnow;% expose; % N.B. needs a full drawnow for some reason
   sendEvent('stimulus.trial.cued','start');
   % wait for trial end
@@ -70,6 +87,7 @@ for si=1:nSeq;
   
   % reset the cue and fixation point to indicate trial has finished  
   set(h(:),'facecolor',bgColor);
+  if ( ~isempty(symbCue) ) set(txthdl,'visible','off'); end
   drawnow;
   sendEvent('stimulus.trial.cued','end');
   

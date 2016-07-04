@@ -1,6 +1,9 @@
 /*
  * Wrapper for the TMSI eeg device to send data to the ft buffer
  * 
+ *
+ * TODO: Channel names
+ *       Noise in the LSBs for float data?
  */
 package Mobita2ft;
 import java.io.*;

@@ -101,7 +101,8 @@ opts=struct('phaseEventType','startPhase.cmd',...
             'epochPredFilt',[],'epochFeedbackOpts',{{}},...
 				'contPredFilt',[],'contFeedbackOpts',{{}},...
 				'capFile',[],...
-				'subject','test','verb',1,'buffhost',[],'buffport',[],'useGUI',1,'timeout_ms',500);
+				'subject','test','verb',1,'buffhost',[],'buffport',[],'timeout_ms',500,...
+				'useGUI',1,'cancelError',0);
 opts=parseOpts(opts,varargin);
 if ( ~iscell(opts.erpOpts) ) opts.erpOpts={opts.erpOpts}; end;
 if ( ~iscell(opts.trainOpts))opts.trainOpts={opts.trainOpts}; end;
@@ -135,7 +136,11 @@ if ( isempty(opts.epochEventType) && opts.useGUI )
 		if ( opts.freqband(3)<0 ) opts.freqband(3)=max(28,opts.freqband(2)+10); end;
 		if ( opts.freqband(4)<0 ) opts.freqband(4)=min(inf,opts.freqband(3)+1); end;    
 	 else
-		error('User cancelled the run');
+		if ( opts.cancelError ) 
+		  error('User cancelled the run');
+		else
+		  warning('User cancelled the run');
+		end
 	 end
   end
 end
@@ -205,8 +210,8 @@ while ( true )
   if ( opts.useGUI ) % update the key-control window
     % BODGE: move point to force key-processing
     if ( ~isempty(ph) ) fprintf('.');set(ph,'ydata',rand(1)*.01); end;
-	 if ( ~ishandle(contFig) ) break; end;
     drawnow; pause(.1);
+	 if ( ~ishandle(contFig) ) break; end;
   
 	 % process any key-presses, and convert to phase-control events
 	 phaseToRun=[];
@@ -294,7 +299,7 @@ while ( true )
 
     %---------------------------------------------------------------------------------
    case {'train','training','trainerp','trainersp'};
-    try
+     %try
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
         fname=[dname '_' subject '_' datestr];
         fprintf('Loading training data from : %s\n',fname);
@@ -334,13 +339,17 @@ while ( true )
       clsSubj=subject;
       fname=[cname '_' subject '_' datestr];
       fprintf('Saving classifier to : %s\n',fname);save([fname '.mat'],'-struct','clsfr');
-	catch
-      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
-	  fprintf('Error in : %s',phaseToRun);
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-	  if ( ~isempty(le.stack) ) fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
-      sendEvent('training','end');    
-    end
+	%catch
+      % fprintf('Error in : %s',phaseToRun);
+      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	% if ( ~isempty(le.stack) )
+	  	%   for i=1:numel(le.stack);
+	  	% 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	%   end;
+	  	% end
+	  	% msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+      % sendEvent('training','end');    
+    %end
 
     %---------------------------------------------------------------------------------
    case {'test','testing','epochfeedback','eventfeedback'};
@@ -358,13 +367,18 @@ while ( true )
     event_applyClsfr(clsfr,'startSet',opts.testepochEventType,...
 							'predFilt',opts.epochPredFilt,...
 							'endType',{'testing','test','epochfeedback','eventfeedback'},'verb',opts.verb,...
-							opts.epochFeedbackOpts{:});
+							'trlen_ms',opts.trlen_ms,...%default to trlen_ms data per prediction
+							opts.epochFeedbackOpts{:}); % allow override with epochFeedbackOpts
 	 catch
-      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
       fprintf('Error in : %s',phaseToRun);
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-	  if ( ~isempty(le.stack) ) fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
-      sendEvent('training','end');    
+		if ( ~isempty(le.stack) )
+		  for i=1:numel(le.stack);
+			 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+		  end;
+		end
+      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+      sendEvent('testing','end');    
     end
 
    %---------------------------------------------------------------------------------
@@ -384,16 +398,21 @@ while ( true )
       warning('Trying to use an ERP classifier in continuous application mode.\nAre you sure?');
     end
 	 % generate prediction every trlen_ms/2 seconds using trlen_ms data
-    cont_applyClsfr(clsfr,'trlen_ms',opts.trlen_ms,'overlap',.5,...
+    cont_applyClsfr(clsfr,...
 						  'endType',{'testing','test','contfeedback'},...
 						  'predFilt',opts.contPredFilt,'verb',opts.verb,...
-						  opts.contFeedbackOpts{:});
+						  'trlen_ms',opts.trlen_ms,'overlap',.5,... %default to prediction every trlen_ms/2 ms
+						  opts.contFeedbackOpts{:}); % but override with contFeedbackOpts
     catch
-      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
       fprintf('Error in : %s',phaseToRun);
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-		if(~isempty(le.stack))fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
-      sendEvent('training','end');    
+		if ( ~isempty(le.stack) )
+		  for i=1:numel(le.stack);
+			 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+		  end;
+		end
+      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+      sendEvent('testing','end');    
     end
       
    case {'quit','exit'};

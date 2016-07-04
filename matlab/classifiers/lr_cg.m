@@ -65,10 +65,10 @@ if( numel(varargin)==1 && isstruct(varargin{1}) ) % shortcut eval option procesi
   opts=varargin{1};
 else
   opts=struct('wb',[],'alphab',[],'dim',[],'rdim',[],'mu',0,'Jconst',0,...
-              'maxIter',inf,'maxEval',[],'tol',0,'tol0',0,'lstol0',1e-5,'objTol',1e-5,'objTol0',1e-4,...
+              'maxIter',inf,'maxEval',[],'tol',0,'tol0',0,'lstol0',1e-1,'objTol',1e-5,'objTol0',1e-4,...
               'verb',0,'step',0,'wght',[],'X',[],'maxLineSrch',50,...
               'maxStep',3,'minStep',5e-2,'marate',.95,...
-				  'bPC',[],'wPC',[],'PCmethod','zero',...
+				  'CGmethod','PR','bPC',[],'wPC',[],'PCmethod','zero',...
 				  'incThresh',.66,'optBias',0,'maxTr',inf,...
               'getOpts',0);
   [opts,varargin]=parseOpts(opts,varargin{:});
@@ -194,8 +194,8 @@ switch ( RType ) % diff types regularisor
  case 5; Rw=tprod(w,rdimIdx,R,[-(1:numel(szRw)) 1:numel(szRw)]); % middle dims
 end
 wX   = w'*X;
-dv   = wX+b;
-p    = 1./(1+exp(-dv(:))); % =Pr(x|y+)
+f   = wX+b;
+p    = 1./(1+exp(-f(:))); % =Pr(x|y+)
 Yerr = Y1-p.*sY;
 
 % set the pre-conditioner
@@ -208,11 +208,12 @@ Yerr = Y1-p.*sY;
 % So approx assuming average wght(:)=.25/2; (i.e. about 1/2 points are on the margin)
 %     diag(H) = [sum(X.*X,2)*.25/2+2*diag(R);N*.25/2];
 wPC=opts.wPC; bPC=opts.bPC;
+if ( strcmp(opts.PCmethod,'none') ) wPC=1; bPC=1; end;
 if ( isempty(wPC) ) 
   switch lower(opts.PCmethod)
 	 case 'wb0'; wPC=(sum(X.*X,2))*.25/2; % H=X'*diag(wght)*X -> diag(H)=wght.*sum(X.^2,2)~= sum(X.^2,2)
 	 case {'wb','adapt'};  
-		g=1./(1+exp(-Y(:).*dv(:)));wght = g.*(1-g); wght(Y==0)=0;%ensure excluded points not in pre-cond
+		g=1./(1+exp(-Y(:).*f(:)));wght = g.*(1-g); wght(Y==0)=0;%ensure excluded points not in pre-cond
 		wPC=sum(X.*repop(wght(:)','*',X),2);
   end
   % include the effect of the regularisor
@@ -268,7 +269,8 @@ dtdJ =-(d'*dJ);
 r2   = dtdJ;
 
 % expected loss = -P(+)*ln P(D|w,b,+) -P(-)*ln(P(D|w,b,-)
-Ed   = -(log(max(p,eps))'*Yi(:,1)+log(max(1-p,eps))'*Yi(:,2)); 
+p(p==0)=eps; p(p==1)=1-eps; % guard for log of 0
+Ed   = -(log(p)'*Yi(:,1)+log(1-p)'*Yi(:,2)); 
 Ew   = w'*Rw(:);     % -ln P(w,b|R);
 if( ~isequal(mu,0) ) Emu=w'*mu; else Emu=0; end;
 J    = Ed + Ew + Emu + opts.Jconst;       % J=neg log posterior
@@ -292,7 +294,7 @@ w0=w; b0=b;
 nStuck=0;
 for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about index too big
 
-   oJ= J; oMr  = Mr; or2=r2; ow=w; ob=b; % record info about prev result we need
+  oJ= J; oMr  = Mr; or2=r2; ow=w; ob=b; of=f;% record info about prev result we need
 
    %---------------------------------------------------------------------
    % Secant method for the root search.
@@ -307,9 +309,9 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
    odtdJ=dtdJ; % one step before is same as current
    % pre-compute for speed later
 	w0  = w; b0=b;
-   wX0 = wX;
+   f0  = f;
    dw  = d(1:end-1); db=d(end);
-   dX  = dw'*X;
+   df  = dw'*X+db; % [ 1 x N ]
    if( ~isequal(mu,0) ) dmu = dw'*mu; else dmu=0; end;
    switch ( RType ) % diff types regularisor
     case 1; Rw=R*w;       dRw=dw'*Rw;  % scalar or full matrix
@@ -330,39 +332,25 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
       
 		if ( 0 ) % Direct computation
 		  w    = w0+tstep*dw;
-		  wX   = w'*X;
+		  f    = w'*X + (b+tstep*db); % [ 1 x N ]
 		else % incremental computation
-		  wX   = wX0+tstep*dX;
+		  f    = f0 + tstep*df;
 		end
-		p    = 1./(1+exp(-(wX(:)+(b+tstep*db)))); % =Pr(x|y+)
-		Yerr = Y1-p.*sY;
-      dtdJ = -(2*(dRw+tstep*dRd) + dmu - dX*Yerr - db*sum(Yerr));
+		p    = 1./(1+exp(-f')); % =Pr(x|y+) [1 x N] % WARNING: transposed
+		Yerr = Y1-p.*sY; % WARNING: transposed, [N x 1]
+      dtdJ = -(2*(dRw+tstep*dRd) + dmu - df*Yerr);
       %fprintf('.%d step=%g ddR=%g ddgdw=%g ddgdb=%g  sum=%g\n',j,tstep,2*(dRw+tstep*dRd),-dX*Yerr',-db*sum(Yerr),-dtdJ);
-      if ( 0 ) % debug code to validate if the incremental gradient computation is valid
-        swX  = (w0+tstep*dw)'*X;
-		  p    = 1./(1+exp(-(swX(:)+(b+tstep*db)))); % =Pr(x|y+)
-        %sw  = w + tstep*dw; 
-        %sb  = b + tstep*db;
-        sRw = R.*(w0+tstep*dw);%Rw+ tstep*Rd;
-        % N.B. don't bother to compute the real gradient... we don't actually use it in the line search
-        sdJ    = [2*sRw + mu - X*Yerr;...
-                 -sum(Yerr)];
-        sdtdJ   =-d'*sdJ;  % gradient along the line @ new position
-		  Ed   = -(log(max(p,eps))'*Yi(:,1)+log(max(1-p,eps))'*Yi(:,2)); % P(D|w,b,fp)
-		  Ew   = w(:)'*sRw(:);
-        J    = Ed + Ew + opts.Jconst;              % J=neg log posterior
-		  fprintf('.%da %g=%g @ %g (%g+%g)\n',j,tstep,sdtdJ,J,Ed,Ew); 
-      end
             
       if ( opts.verb > 2 )
         %Ew   = w(:)'*Rw(:)+tstep*2*dRw+tstep.^2*dRd;  % w'*(R*reshape(w,szR));       % P(w,b|R);
         sw   = w0 + tstep*dw; 
         sb   = b  + tstep*db;
-		  swX  = sw'*X;
-		  p    = 1./(1+exp(-(swX(:)+(sb)))); % =Pr(x|y+)
+		  sf   = sw'*X+sb;
+		  sp   = 1./(1+exp(-f')); % =Pr(x|y+) Warning transposed: [ N x 1]
         sRw  = R.*sw;
 		  Ew   = sw(:)'*sRw(:);
-		  Ed   = -(log(max(p,eps))'*Yi(:,1)+log(max(1-p,eps))'*Yi(:,2)); % P(D|w,b,fp)
+		  sp(sp==0)=eps; sp(sp==1)=1-eps; % guard for log of 0
+		  Ed   = -(log(p)'*Yi(:,1)+log(1-p)'*Yi(:,2)); % P(D|w,b,fp)
         J    = Ed + Ew + opts.Jconst;              % J=neg log posterior
         if( ~isequal(mu,0) ) Emu=(w+tstep*d(1:end-1))'*mu; J=J+Emu; end;
         fprintf('.%d %g=%g @ %g (%g+%g)\n',j,tstep,dtdJ,J,Ed,Ew); 
@@ -411,8 +399,8 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
 		 case 4; Rw=reshape(w,szRw)*R; % matrix weighting - trailing dims
 		 case 5; Rw=tprod(w,rdimIdx,R,[-(1:numel(szRw)) 1:numel(szRw)]); % middle dims
 	  end
-	  wX   = w'*X;
-	  p    = 1./(1+exp(-(wX(:)+b))); % =Pr(x|y+)
+	  f    = w'*X+b;
+	  p    = 1./(1+exp(-f')); % =Pr(x|y+) % WARNING: transposed [ N x 1 ]
 	end
    % compute the other bits needed for CG iteration
    dJ = [2*Rw(:) + mu - X*Yerr;...
@@ -434,7 +422,8 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
    r2 =abs(Mr'*dJ); 
    
    % compute the function evaluation
-	Ed   = -(log(max(p,eps))'*Yi(:,1)+log(max(1-p,eps))'*Yi(:,2)); % P(D|w,b,fp)
+	p(p==0)=eps; p(p==1)=1-eps; % guard for log of 0
+	Ed   = -(log(p)'*Yi(:,1)+log(1-p)'*Yi(:,2)); % P(D|w,b,fp)
    Ew   = w'*Rw(:);% P(w,b|R);
    J    = Ed + Ew + opts.Jconst;       % J=neg log posterior
    if( ~isequal(mu,0) ) Emu=w'*mu; J=J+Emu; end;
@@ -468,9 +457,20 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
    % conjugate direction selection
    % N.B. According to wikipedia <http://en.wikipedia.org/wiki/Conjugate_gradient_method>
    %     PR is much better when have adaptive pre-conditioner so more robust in non-linear optimisation
-   delta = max((Mr-oMr)'*(-dJ)/or2,0); % Polak-Ribier
-   %delta = max(r2/or2,0); % Fletcher-Reeves
-   d     = Mr+delta*d;     % conj grad direction
+	beta=0;theta=0;
+	switch opts.CGmethod;
+	  case 'PR';		 
+		 beta = max((Mr-oMr)'*(-dJ)/or2,0); % Polak-Ribier
+	  case 'MPRP';
+		 beta = max((Mr-oMr)'*(-dJ)/or2,0); % Polak-Ribier
+		 theta = Mr'*dJ / or2; % modification which makes independent of the quality of the line-search
+	  case 'FR';
+		 beta = max(r2/or2,0); % Fletcher-Reeves
+	  case 'GD'; beta=0; % Gradient Descent
+	  case 'HS'; beta=Mr(:)'*(Mr(:)-oMr(:))/(-d(:)'*(Mr(:)-oMr(:)));  % use Hestenes-Stiefel update
+	end
+   d     = Mr+beta*d;     % conj grad direction
+	if ( theta~=0 ) d = d - theta*(Mr-oMr); end; % include the modification factor
    dtdJ  = -d'*dJ;         % new search dir grad.
    if( dtdJ <= 0 )         % non-descent dir switch to steepest
       if ( opts.verb >= 2 ) fprintf('non-descent dir\n'); end;      
@@ -492,8 +492,7 @@ switch ( RType ) % diff types regularisor
  case 4; Rw=reshape(w,szRw)*R; % matrix weighting - trailing dims
  case 5; Rw=tprod(w,rdimIdx,R,[-(1:numel(szRw)) 1:numel(szRw)]); % middle dims
 end
-dv  = wX+b;
-p   = 1./(1+exp(-dv(:)));         % [L x N] =Pr(x|y_+) = exp(w_ix+b)./sum_y(exp(w_yx+b));
+p   = 1./(1+exp(-f'));         % [L x N] =Pr(x|y_+) = exp(w_ix+b)./sum_y(exp(w_yx+b));
 Ed  = -(log(max(p,eps))'*Yi(:,1)+log(max(1-p,eps))'*Yi(:,2)); % expected loss
 Ew   = w'*Rw(:);     % -ln P(w,b|R);
 J    = Ed + Ew + opts.Jconst;       % J=neg log posterior
@@ -504,7 +503,7 @@ if ( opts.verb >= 0 )
 end
 
 % compute final decision values.
-if ( all(size(X)==size(oX)) ) f=dv; else f   = w'*oX + b; end;
+if ( all(size(X)~=size(oX)) ) f   = w'*oX + b; end;
 f = reshape(f,[size(oY,1) 1]);
 obj = [J Ew Ed];
 wb=[w(:);b];
@@ -533,7 +532,7 @@ return;
 function []=testCase()
 %Make a Gaussian balls + outliers test case
 nd=100; nClass=800;
-[X,Y]=mkMultiClassTst([zeros(1,nd) -1 0 zeros(1,nd); zeros(1,nd) 1 0 zeros(1,nd); zeros(1,nd) .2 .5 zeros(1,nd)],[nClass nClass 50],[.3 .3; .3 .3; .2 .2],[],[-1 1 1]);[dim,N]=size(X);
+[X,Y]=mkMultiClassTst([zeros(1,nd-1) -1 0 zeros(1,nd-1); zeros(1,nd-1) 1 0 zeros(1,nd-1); zeros(1,nd-1) .2 .5 zeros(1,nd-1)],[nClass nClass 50],[.3 .3; .3 .3; .2 .2],[],[-1 1 1]);[dim,N]=size(X);
 
 wb0=randn(size(X,1)+1,1);
 tic,lr_cg(X,Y,0,'verb',1,'objTol0',1e-10,'wb',wb0);toc

@@ -24,7 +24,7 @@ function varargout = controller(varargin)
 
 % Edit the above text to modify the response to help controller
 
-% Last Modified by GUIDE v2.5 17-Nov-2013 23:18:24
+% Last Modified by GUIDE v2.5 22-Jun-2016 15:38:20
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -216,3 +216,13 @@ guidata(hObject,handles);
 uiresume;
 
 
+
+
+% --- Executes on button press in artifact.
+function artifact_Callback(hObject, eventdata, handles)
+% hObject    handle to artifact (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.phaseToRun=get(hObject,'Tag');
+guidata(hObject,handles);
+uiresume;

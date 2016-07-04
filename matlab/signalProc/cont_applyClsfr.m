@@ -154,8 +154,10 @@ while( ~endTest )
       
     % Send prediction event
     sendEvent(opts.predEventType,dv,fin(si)-trlen_samp); %N.B. event sample is window-start!
-    if ( opts.verb>0 ) fprintf('%d) Clsfr Pred: [%s]\n',fin(si),sprintf('%g ',dv)); 
-	 elseif ( opts.verb>-1 ) fprintf('.'); 
+    if ( opts.verb>0 )
+		fprintf('%d) Clsfr Pred: s:%d->%d v:[%s]\n',fin(si),fin(si)-trlen_samp,fin(si),sprintf('%g ',dv));
+	 elseif ( opts.verb>-1 )
+		fprintf('.'); 
 	 end;
   end
       

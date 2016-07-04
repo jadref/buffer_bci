@@ -10,7 +10,12 @@ function [x,s]=biasFilt(x,s,alpha,verb)
 %                   all [1x1] or each [ndx1] input feature
 %           fx(t) = (\sum_0^inf x(t-i)*alpha^i)/(\sum_0^inf alpha^i)
 %           fx(t) = (1-alpha) x(t) + alpha fx(t)
-%           N.B. alpha = exp(log(.5)./(half-life))
+% Note:
+%   alpha = exp(log(.5)./(half-life))
+%  for any geometric series: s(n)=\sum_1:n a*1 + r*s(n-1)= a + a*r + ... + a*r^{n-1} = a*(1-r^n)/(1-r)
+%   -> here: r=alpha, a=(1-alpha) so :
+%         total weight after n-steps = (1-alpha)*(1-alpha^n)/(1-alpha) = 1-alpha^n
+%  
 % Outputs:
 %   x - [nd x 1] filtered data,  x(t) = x(t) - fx(t)
 %   s - [struct] updated filter state, s.N = total weight, s.sx = smoothed estimate of x

@@ -1,18 +1,75 @@
 configureSpeller;
-
 % create the control window and execute the phase selection loop
-contFig=controller(); info=guidata(contFig); 
+if ~( exist('OCTAVE_VERSION','builtin') ) 
+  contFig=controller(); info=guidata(contFig); 
+else
+  contFig=figure(1);
+  set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
+  axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
+  set(contFig,'Units','pixel');wSize=get(contFig,'position');
+  fontSize = .05*wSize(4);
+  %        Instruct String          Phase-name
+  menustr={'0) EEG'                 'eegviewer';
+           '1) Practice'            'practice';
+			  '2) Calibrate'           'calibrate'; 
+			  '3) Train Classifier'    'trainersp';
+			  '4) copyspelling1'       'copyspell1';
+			  '5) copyspelling2'       'copyspell2';
+			  '6) freespelling'        'freespell'
+			  'q) quit'                'quit';
+          };
+  txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
+				'HorizontalAlignment','left','color',[1 1 1]);
+  ph=plot(1,0,'k'); % BODGE: point to move around to update the plot to force key processing
+  % install listener for key-press mode change
+  set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
+  set(contFig,'userdata',[]);
+  drawnow; % make sure the figure is visible
+end
+subject='test';
+
+% execute the phase selection loop
+sendEvent('experiment.matrixSpeller','start');
 while (ishandle(contFig))
   set(contFig,'visible','on');
-  uiwait(contFig); % CPU hog on ver 7.4
   if ( ~ishandle(contFig) ) break; end;
-  set(contFig,'visible','off');
-  info=guidata(contFig); 
-  subject=info.subject;
-  phaseToRun=lower(info.phaseToRun);
+
+  phaseToRun=[];
+  if ( ~exist('OCTAVE_VERSION','builtin') ) 
+	 uiwait(contFig);
+    if ( ~ishandle(contFig) ) break; end;
+	 info=guidata(contFig); 
+	 subject=info.subject;
+	 phaseToRun=lower(info.phaseToRun);
+  else % give time to process the key presses
+	 % BODGE: move point to force key-processing
+	 fprintf('.');set(ph,'ydata',rand(1)*.01); drawnow;
+	 if ( ~ishandle(contFig) ) break; end;
+  end
+
+    % process any key-presses
+  modekey=get(contFig,'userdata'); 
+  if ( ~isempty(modekey) ) 	 
+	 fprintf('key=%s\n',modekey);
+	 phaseToRun=[];
+	 if ( ischar(modekey(1)) )
+		ri = strmatch(modekey(1),menustr(:,1)); % get the row in the instructions
+		if ( ~isempty(ri) ) 
+		  phaseToRun = menustr{ri,2};
+		elseif ( any(strcmp(modekey(1),{'q','Q'})) )
+		  break;
+		end
+	 end
+    set(contFig,'userdata',[]);
+  end
+
+  if ( isempty(phaseToRun) ) pause(.3); continue; end;
+
   fprintf('Starting Phase: %s\n',phaseToRun);
+  set(contFig,'visible','off');
   switch phaseToRun;
     
+   %---------------------------------------------------------------------------
    case 'capfitting';
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
@@ -20,6 +77,7 @@ while (ishandle(contFig))
     buffer_newevents(buffhost,buffport,[],phaseToRun,'end');    
     %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);       
 
+   %---------------------------------------------------------------------------
    case 'eegviewer';
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
@@ -27,6 +85,7 @@ while (ishandle(contFig))
     buffer_newevents(buffhost,buffport,[],phaseToRun,'end');    
     %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);           
     
+   %---------------------------------------------------------------------------
    case 'practice';
     sendEvent('subject',info.subject);
     sendEvent(phaseToRun,'start');
@@ -41,6 +100,7 @@ while (ishandle(contFig))
     nSeq=onSeq;
     nRepetitions=onRepetitions;
     
+   %---------------------------------------------------------------------------
    case {'calibrate','calibration'};
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun)
@@ -53,6 +113,7 @@ while (ishandle(contFig))
     %end
     sendEvent(phaseToRun,'end');
 
+   %---------------------------------------------------------------------------
    case {'train','classifier'};
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
@@ -60,6 +121,7 @@ while (ishandle(contFig))
     buffer_newevents(buffhost,buffport,[],phaseToRun,'end');    
     %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);  
     
+   %---------------------------------------------------------------------------
    case 'copyspell1';
     sendEvent('subject',info.subject);
     %sleepSec(.1);
@@ -74,6 +136,7 @@ while (ishandle(contFig))
     sendEvent('stimulus.test','end');
     sendEvent(phaseToRun,'end');
     
+   %---------------------------------------------------------------------------
    case 'copyspell2';
     sendEvent('subject',info.subject);
     %sleepSec(.1);
@@ -88,6 +151,7 @@ while (ishandle(contFig))
     sendEvent('stimulus.test','end');
     sendEvent(phaseToRun,'end');
     
+   %---------------------------------------------------------------------------
    case 'freespell';
     sendEvent('subject',info.subject);
     %sleepSec(.1);
@@ -132,7 +196,7 @@ while (ishandle(contFig))
   %    set(getfield(info,[info.phasesCompleted{i} 'But']),'ForegroundColor',[0 1 0]);
   %end
 end
-uiwait(msgbox({'Thankyou for participating in our experiment.'},'Thanks','modal'),10);
-pause(1);
 % shut down signal proc
 sendEvent('startPhase.cmd','exit');
+% thank subject
+uiwait(msgbox({'Thankyou for participating in our experiment.'},'Thanks','modal'),10);

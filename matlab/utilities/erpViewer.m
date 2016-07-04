@@ -29,7 +29,7 @@ function [data,devents]=erpViewer(buffhost,buffport,varargin);
 %  closeFig  - [bool] do we close the figure when we finish         (1)
 
 %if ( exist('OCTAVE_VERSION','builtin') ) debug_on_error(1); else dbstop if error; end;
-opts=struct('cuePrefix','stimulus','endType','end.training','verb',1,...
+opts=struct('cuePrefix','stimulus.target','endType','end.training','verb',1,...
 				'nSymbols',0,'maxEvents',[],...
 				'trlen_ms',1000,'trlen_samp',[],'offset_ms',[],'offset_samp',[],...
 				'detrend',1,'fftfilter',[],'freqbands',[],'downsample',128,'spatfilt','car',...
@@ -82,8 +82,9 @@ if(isempty(opts.capFile))
   drawnow;
   if ( ~isequal(fn,0) ) capFile=fullfile(pth,fn); end;
 end
-if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
 if ( ~isempty(capFile) ) 
+  % force default override
+  if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; 
   di = addPosInfo(ch_names,capFile,overridechnms); % get 3d-coords
   ch_pos=cat(2,di.extra.pos2d); % extract pos and channels names
   ch_pos3d=cat(2,di.extra.pos3d);
@@ -252,6 +253,7 @@ while ( ~endTraining )
         fprintf('Discarding all subsequent events: exit\n');
         break;
       else
+		  if ( opts.verb>0 ) fprintf('.'); end; % indicate we've updated
         val = event.value;      
         mi=[]; 
         if ( ~isempty(key) ) % match if we've seen this key before 

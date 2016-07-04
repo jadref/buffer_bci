@@ -10,13 +10,14 @@ else
   fontSize = .05*wSize(4);
   %        Instruct String          Phase-name
   menustr={'0) EEG'                 'eegviewer';
+			  'a) Artifacts'           'artifact';
            '1) Practice'            'practice';
 			  '2) Calibrate'           'calibrate'; 
 			  '3) Train Classifier'    'trainersp';
 			  '4) Epoch Feedback'      'epochfeedback';
 			  '5) Continuous Feedback' 'contfeedback';
 			  '6) NeuroFeedback'       'neurofeedback'
-			  '7) Center out feedback' 'centerout'
+			  'q) quit'                'quit';
           };
   txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
 				'HorizontalAlignment','left','color',[1 1 1]);
@@ -35,7 +36,8 @@ while (ishandle(contFig))
 
   phaseToRun=[];
   if ( ~exist('OCTAVE_VERSION','builtin') ) 
-	 uiwait(contFig); % CPU hog on ver 7.4
+	 uiwait(contFig);
+    if ( ~ishandle(contFig) ) break; end;    
 	 info=guidata(contFig); 
 	 subject=info.subject;
 	 phaseToRun=lower(info.phaseToRun);
@@ -54,6 +56,8 @@ while (ishandle(contFig))
 		ri = strmatch(modekey(1),menustr(:,1)); % get the row in the instructions
 		if ( ~isempty(ri) ) 
 		  phaseToRun = menustr{ri,2};
+		elseif ( any(strcmp(modekey(1),{'q','Q'})) )
+		  break;
 		end
 	 end
     set(contFig,'userdata',[]);
@@ -78,6 +82,25 @@ while (ishandle(contFig))
     % wait until capFitting is done
     buffer_newevents(buffhost,buffport,[],phaseToRun,'end'); % wait until finished
     
+   %---------------------------------------------------------------------------
+   case 'artifact';
+    sendEvent('subject',subject);
+    sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
+														  % wait until capFitting is done
+	 %try;
+		artifactCalibrationStimulus;
+	%catch
+      % fprintf('Error in : %s',phaseToRun);
+      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	% if ( ~isempty(le.stack) )
+	  	%   for i=1:numel(le.stack);
+	  	% 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	%   end;
+	  	% end
+	  	% msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+      % sendEvent(phaseToRun,'end');    
+    %end
+
    %---------------------------------------------------------------------------
    case 'practice';
     sendEvent('subject',subject);
@@ -170,9 +193,13 @@ while (ishandle(contFig))
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');
 
+   %---------------------------------------------------------------------------
+   case {'quit','exit'};
+    break;
+    
   end
 end
-uiwait(msgbox({'Thankyou for participating in our experiment.'},'Thanks','modal'),10);
-pause(1);
 % shut down signal proc
 sendEvent('startPhase.cmd','exit');
+% give thanks
+uiwait(msgbox({'Thankyou for participating in our experiment.'},'Thanks','modal'),10);

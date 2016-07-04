@@ -1,4 +1,7 @@
 #!/bin/bash
+cd `dirname ${BASH_SOURCE[0]}`
+buffdir=`dirname $0`
+
 dataacq='java';
 if [ $# -gt 0 ]; then dataacq=$1; fi
 
@@ -23,7 +26,7 @@ dataacqpid=$!
 
 echo dataacqpid=$dataacqpid
 echo Starting the default signal processing function \(background\)
-signalProc/startSigProcBuffer.sh &
+matlab/signalProc/startSigProcBuffer.sh &
 sigprocpid=$!
 
 

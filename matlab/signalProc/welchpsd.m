@@ -90,9 +90,9 @@ if ( opts.verb>=0 && nchnks>1) fprintf('done\n'); end;
 return;
 
 %-------------------------------------------------------------------------------
-function [W]=welch(X,taper,dim,start,width,centerp,detrendp,outType)
+function [W]=welch(X,taper,dim,start,width,centerp,detrendp,aveType)
 % Inner loop code to do the actual welch computation
-if ( isempty(outType) ) outType='amp'; end;
+if ( isempty(aveType) ) aveType='amp'; end;
 sz=size(X);
 W = zeros([sz(1:dim-1) ceil((width-1)/2)+1 sz(dim+1:end)],class(X));
 idx={}; for di=1:ndims(X); idx{di}=1:size(X,di); wIdx{di}=1:size(W,di); end;
@@ -105,13 +105,19 @@ for wi=1:numel(start);
    wX       = fft(wX,[],dim);              % fourier
    wX       = wX(wIdx{:});                 % positive freq only
    wX       = 2*(real(wX).^2 + imag(wX).^2); % map to power
-   switch(lower(outType));
+   switch(lower(aveType));
     case 'db';     wX(wX==0)=eps; W = W + 10*log10(wX); % map to db
     case 'power';  W = W + wX;                          % map to power
     case 'amp';    W = W + sqrt(wX);                    % map to amplitudes
-    otherwise;     warning('Unrecognised welch output type: %s',outType);
+	 case 'medianamp';   if(wi==1) W=wX; else W=cat(numel(sz)+1,W,sqrt(wX)); end; % accumulate for median
+	 case 'medianpower'; if(wi==1) W=wX; else W=cat(numel(sz)+1,W,wX); end; % accumulate res for median
+    otherwise;     error(sprintf('Unrecognised welch output type: %s',aveType));
    end
- end
+end
+% compute the median value if needed
+if ( strcmp(lower(aveType(1:min(6,end))),'median') )
+  W=median(W,numel(sz)+1).*numel(start); % N.B. inc rescaling to equivalent sum of medians
+end
 % total sample weighting, taking account of overlap of weighting functions
 W=W./(numel(start)*sum(taper));
 return;

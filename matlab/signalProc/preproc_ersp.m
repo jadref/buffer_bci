@@ -1,4 +1,4 @@
-function [X,pipeline,info,opts]=preproc_erp(X,varargin)
+function [X,pipeline,info,opts]=preproc_ersp(X,varargin)
 % simple pre-processing function
 % 
 % [X,pipeline,info,opts]=preproc_ersp(X,...)
@@ -45,7 +45,8 @@ function [X,pipeline,info,opts]=preproc_erp(X,varargin)
 %  info    -- [struct] structure with other information about what has been done to the data.  
 %              Specificially:
 %               .ch_names-- {str nCh x 1} names of each channel as from cap-file
-%               .ch_pos  -  [3 x nCh] position of each channel as from capfile
+%               .ch_pos  -- [3 x nCh] position of each channel as from capfile
+%               .freqs   -- [int nFreq x 1] frequencies of each of the frequency bins
 %               .badch   -- [bool nCh x 1] logical indicating which channels were found bad
 %               .badtr   -- [bool N x 1] logical indicating which trials were found bad
 %  opts    -- [struct] the options used for in this call
@@ -330,5 +331,6 @@ info.ch_names=ch_names;
 info.ch_pos  =ch_pos;
 info.badch   =isbadch;
 info.badtr   =isbadtr;
+info.freqs   =freqs;
 
 return;

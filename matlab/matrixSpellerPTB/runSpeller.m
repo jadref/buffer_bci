@@ -89,7 +89,7 @@ while (ishandle(contFig))
   %    set(getfield(info,[info.phasesCompleted{i} 'But']),'ForegroundColor',[0 1 0]);
   %end
 end
-uiwait(msgbox({'Thankyou for participating in our experiment.'},'Thanks','modal'),10);
-pause(1);
 % shut down signal proc
 sendEvent('startPhase.cmd','exit');
+% thank subject
+uiwait(msgbox({'Thankyou for participating in our experiment.'},'Thanks','modal'),10);

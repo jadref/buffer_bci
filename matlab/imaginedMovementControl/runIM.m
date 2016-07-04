@@ -1,12 +1,13 @@
 configureIM;
+
 % create the control window and execute the phase selection loop
-  contFig=figure(1);
-  set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
-  axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
-  set(contFig,'Units','pixel');wSize=get(contFig,'position');
-  fontSize = .05*wSize(4);
-  %        Instruct String          Phase-name
-  menustr={'0) EEG'                 'eegviewer';
+contFig=figure(1);
+set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
+axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
+set(contFig,'Units','pixel');wSize=get(contFig,'position');
+fontSize = .05*wSize(4);
+%        Instruct String          Phase-name
+menustr={'0) EEG'                 'eegviewer';
            '1) Practice'            'practice';
 			  '2) Calibrate'           'calibrate'; 
 			  '3) Train Classifier'    'trainersp';
@@ -14,14 +15,15 @@ configureIM;
 			  '5) Continuous Feedback' 'contfeedback';
 			  '6) NeuroFeedback'       'neurofeedback'
 			  '7) Center out feedback' 'centerout'
-          };
-  txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
-				'HorizontalAlignment','left','color',[1 1 1]);
-  ph=plot(1,0,'k'); % BODGE: point to move around to update the plot to force key processing
-  % install listener for key-press mode change
-  set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
-  set(contFig,'userdata',[]);
-  drawnow; % make sure the figure is visible
+			  'q) exit'                'quit';
+        };
+txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
+          'HorizontalAlignment','left','color',[1 1 1]);
+ph=plot(1,0,'k'); % BODGE: point to move around to update the plot to force key processing
+                  % install listener for key-press mode change
+set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
+set(contFig,'userdata',[]);
+drawnow; % make sure the figure is visible
 subject='test';
 
 sendEvent('experiment.im','start');
@@ -46,6 +48,8 @@ while (ishandle(contFig))
 		ri = strmatch(modekey(1),menustr(:,1)); % get the row in the instructions
 		if ( ~isempty(ri) ) 
 		  phaseToRun = menustr{ri,2};
+		elseif ( any(strcmp(modekey(1),{'q','Q'})) )
+		  break;
 		end
 	 end
     set(contFig,'userdata',[]);
@@ -163,9 +167,12 @@ while (ishandle(contFig))
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');
 
+   %---------------------------------------------------------------------------
+   case {'quit','exit'};
+    break;
   end
 end
-uiwait(msgbox({'Thankyou for participating in our experiment.'},'Thanks','modal'),10);
-pause(1);
 % shut down signal proc
 sendEvent('startPhase.cmd','exit');
+% give thanks
+uiwait(msgbox({'Thankyou for participating in our experiment.'},'Thanks','modal'),10);
