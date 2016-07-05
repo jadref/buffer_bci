@@ -95,7 +95,7 @@ end
 
 %2) Bad channel identification & removal
 isbadch=[]; chthresh=[];
-if ( opts.badchrm || ~isempty(opts.badCh) )
+if ( opts.badchrm || (~isempty(opts.badCh) && sum(opts.badCh)>0) )
   fprintf('2) bad channel removal, ');
   isbadch = false(size(X,1),1);
   if ( ~isempty(ch_pos) ) isbadch(numel(ch_pos)+1:end)=true; end;
@@ -151,7 +151,7 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
   fprintf('4) filter\n');
   len=size(X,2);
   filt=mkFilter(opts.freqband,floor(len/2),opts.fs/len);
-  X   =fftfilter(X,filt,outsz,2,1);
+  X   =fftfilter(X,filt,outsz,2,2);
 elseif( ~isempty(opts.downsample) ) % manual downsample without filtering
   X   =subsample(X,outsz(2));   
 end
