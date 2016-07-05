@@ -54,7 +54,7 @@ trialDuration=3;
 baselineDuration=1;
 cueDuration  =1;
 startDelay   =.5;
-intertrialDuration=3.5;
+intertrialDuration=0;%3.5
 feedbackDuration=1;
 
 contFeedbackTrialDuration =10;

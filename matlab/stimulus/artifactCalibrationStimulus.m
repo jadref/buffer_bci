@@ -62,14 +62,16 @@ txthdl = text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),' ',...
 				  'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle',...
 				  'fontunits','pixel','fontsize',.05*wSize(4),...
 				  'color',[0.75 0.75 0.75],'visible','off');
-              
+
+sendEvent('stimulus.artifactcalibration','start');
+
+%------------------------------------------------------------------------
+% Start with eyes moving to different fixatation locations
 set(h(:),'visible','off');               
 set(txthdl,'string', {'Eyemovements.  Look at the highlighted point' 'as it moves round the screen' '' 'Click mouse when ready'}, 'visible', 'on'); drawnow;
 waitforbuttonpress;
 set(txthdl,'visible', 'off'); drawnow;              
 
-%------------------------------------------------------------------------
-% Start with eyes moving to different fixatation locations
 
 fixateSeq=mkStimSeqRand(4,8); % make the fixatation location sequence
 
@@ -178,6 +180,9 @@ sendEvent('stimulus.baseline.eyesopen','start');
 sleepSec(eyesDuration);
 sendEvent('stimulus.baseline.eyesopen','end');
 set(h(:),'visible','off');
+
+%------------------------------------------------------------------------
+sendEvent('stimulus.artifactcalibration','end');
 
 if ( ishandle(fig) ) % thanks message
 set(txthdl,'string',{'That ends the training phase.','Thanks for your patience'}, 'visible', 'on', 'color',[0 1 0]);
