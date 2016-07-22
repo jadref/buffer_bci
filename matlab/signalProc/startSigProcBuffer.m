@@ -60,7 +60,13 @@ function []=startSigProcBuffer(varargin)
 %                        SEE: event_applyClsfr for a list of options available
 %   contFeedbackOpts  -- {cell} cell array of addition options to pass to the continuous feedback 
 %                        (i.e. every n-ms triggered) classifier
-%                        SEE: cont_applyClsfr for a list of options available   
+%                        SEE: cont_applyClsfr for a list of options available
+%   userFeedbackTable -- {3 x L} table of phase names and feedback method and options to use for user-triggered
+%                                feedback options.  Format is:
+%                          {'PhaseName' 'FeedbackType' feedbackOptions}
+%                         where 'phaseName' is the phase name as found in the value of 'startPhase.cmd'
+%                               FeedbackType is the type of feedback function to call, i.e. one-of 'epoch' or 'cont'
+%                               feedbackOptions is a cell array of options to pass to the feedback-type function
 %
 %   capFile        -- [str] filename for the channel positions                         ('1010')
 %   verb           -- [int] verbosity level                                            (1)
@@ -100,6 +106,7 @@ opts=struct('phaseEventType','startPhase.cmd',...
 				'trainOpts',{{}},...
             'epochPredFilt',[],'epochFeedbackOpts',{{}},...
 				'contPredFilt',[],'contFeedbackOpts',{{}},...
+				'userFeedbackTable',{{}},...
 				'capFile',[],...
 				'subject','test','verb',1,'buffhost',[],'buffport',[],'timeout_ms',500,...
 				'useGUI',1,'cancelError',0);
@@ -147,6 +154,8 @@ end
 if ( isempty(opts.epochEventType) )     opts.epochEventType='stimulus.target'; end;
 if ( isempty(opts.testepochEventType) ) opts.testepochEventType='classifier.apply'; end;
 if ( isempty(opts.erpEventType) )       opts.erpEventType=opts.epochEventType; end;
+userPhaseNames={}; if ( ~isempty(opts.userFeedbackTable) ) userPhaseNames=opts.userFeedbackTable(:,1); end;
+
 
 datestr = datevec(now); datestr = sprintf('%02d%02d%02d',datestr(1)-2000,datestr(2:3));
 dname='training_data';
@@ -414,11 +423,55 @@ while ( true )
       msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
       sendEvent('testing','end');    
     end
-      
+
+
+   %---------------------------------------------------------------------------------
+   case userPhaseNames;
+	  phasei = find(strcmp(lower(phaseToRun),userPhaseNames));
+     try
+		 if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
+			clsfrfile = [cname '_' subject '_' datestr];
+			if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
+			  clsfrfile=[cname '_' subject]; 
+			end;
+			if(opts.verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
+			clsfr=load(clsfrfile);
+			clsSubj = subject;
+		 end;
+
+		 if( any(strcmp(opts.userFeedbackTable{phasei,2},{'event','epoch'})) )		 
+			event_applyClsfr(clsfr,'startSet',opts.testepochEventType,...
+								  'endType',{'testing','test','epochfeedback','eventfeedback',lower(phaseToRun)},'verb',opts.verb,...
+								  'trlen_ms',opts.trlen_ms,...
+								  opts.userFeedbackTable{phasei,3}{:});
+		 elseif ( any(strcmp(opts.userFeedbackTable{phasei,2},'cont')) )
+			cont_applyClsfr(clsfr,...
+								 'endType',{'testing','test','contfeedback',lower(phaseToRun)},'verb',opts.verb,...
+								 'trlen_ms',opts.trlen_ms,'overlap',.5,... %default to prediction every trlen_ms/2 ms
+								 opts.userFeedbackTable{phasei,3}{:}); 			
+		 else
+			error('UserFeedback apply-method type is unrecognised');
+		 end
+		 
+	  catch
+		 fprintf('Error in : %s',phaseToRun);
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+		if ( ~isempty(le.stack) )
+		  for i=1:numel(le.stack);
+			 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+		  end;
+		end
+      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+      sendEvent('testing','end');    
+    end
+	 
    case {'quit','exit'};
     break;
     
    otherwise;
+
+
+	  
     warning(sprintf('Unrecognised experiment phase ignored! : %s',phaseToRun));
     
   end

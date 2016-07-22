@@ -121,6 +121,13 @@ if ( opts.badchrm || ~isempty(opts.badCh) )
   fprintf('%d ch removed\n',sum(isbadch));
 end
 
+%3.a) Spatial filter/re-reference (data-dependent-unsupervised)
+R=[];
+if ( size(X,1)> 5 && any(strcmpi(opts.spatialfilter,{'wht','whiten'})) ) 
+  fprintf('3) whiten\n');
+  R=whiten(X,1,1,0,0,1); % symetric whiten	 
+end
+
 %2.2) time range selection
 timeIdx=[];
 if ( ~isempty(opts.timeband) ) 
@@ -130,8 +137,7 @@ if ( ~isempty(opts.timeband) )
   X    = X(:,timeIdx,:);
 end
 
-%3) Spatial filter/re-reference
-R=[];
+%3.b) Spatial filter/re-reference (data-independent / supervised)
 if ( size(X,1)> 5 ) % only spatial filter if enough channels
   sftype=lower(opts.spatialfilter);
   switch ( sftype )
@@ -146,8 +152,7 @@ if ( size(X,1)> 5 ) % only spatial filter if enough channels
     fprintf('3) CAR\n');
     R=eye(size(X,1))-(1./size(X,1));
    case {'whiten','wht'};
-    fprintf('3) whiten\n');
-    R=whiten(X,1,1,0,0,1); % symetric whiten
+	  % N.B. done before time-range selection so has access to artifact information
    case {'csp','csp1','csp2','csp3'};
     fprintf('3) csp\n');
     nf=str2num(sftype(end)); if ( isempty(nf) ) nf=3; end;

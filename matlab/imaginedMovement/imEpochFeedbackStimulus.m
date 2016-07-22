@@ -69,14 +69,25 @@ for si=1:nSeq;
   set(h(end),'facecolor',tgtColor); % green fixation indicates trial running
   drawnow;% expose; % N.B. needs a full drawnow for some reason
   ev=sendEvent('stimulus.target',find(tgtSeq(:,si)>0));
-  sendEvent('classifier.apply','now',ev.sample); % tell the classifier to apply from now
+  if ( earlyStopping )
+	 % cont-classifier, so tell it to clear the prediction filter for start new trial
+	 sendEvent('classifier.reset','now',ev.sample); 
+  else
+	 % event-classifier, so send the event which triggers to classify this data-block
+	 sendEvent('classifier.apply','now',ev.sample); % tell the classifier to apply from now
+  end
   sendEvent('stimulus.trial','start',ev.sample);
   state=buffer('poll'); % Ensure we ignore any predictions before the trial start
-  sleepSec(trialDuration); 
   
-  % wait for classifier prediction event
-  if( verb>0 ) fprintf(1,'Waiting for predictions\n'); end;
-  [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],750);  
+  if ( earlyStopping )
+	 % wait for new prediction events to process *or* end of trial time
+	 [events,state,nsamples,nevents] = buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],trialDuration*1000+750);
+  else
+    sleepSec(trialDuration); 
+	 % wait for classifier prediction event
+	 if( verb>0 ) fprintf(1,'Waiting for predictions\n'); end;
+	 [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],750);
+  end
 
   % do something with the prediction (if there is one), i.e. give feedback
   if( isempty(devents) ) % extract the decision value

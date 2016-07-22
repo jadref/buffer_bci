@@ -85,8 +85,7 @@ while (ishandle(contFig))
    %---------------------------------------------------------------------------
    case 'artifact';
     sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
-														  % wait until capFitting is done
+    sendEvent(phaseToRun,'start');
 	 %try;
 		artifactCalibrationStimulus;
 	%catch
@@ -100,6 +99,7 @@ while (ishandle(contFig))
 	  	% msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
       % sendEvent(phaseToRun,'end');    
     %end
+	 sendEvent(phaseToRun,'end');
 
    %---------------------------------------------------------------------------
    case 'practice';
@@ -123,7 +123,7 @@ while (ishandle(contFig))
       imCalibrateStimulus;
     catch
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-      sendEvent('training','end');    
+      sendEvent('stimulus.training','end');    
     end
     sendEvent(phaseToRun,'end');
 
@@ -139,7 +139,11 @@ while (ishandle(contFig))
     %sleepSec(.1);
     sendEvent(phaseToRun,'start');
     try
-      sendEvent('startPhase.cmd','epochfeedback');
+		if ( earlyStopping ) % use the user-defined command
+		  sendEvent('startPhase.cmd',userFeedbackTable{1}{1});
+		else
+        sendEvent('startPhase.cmd','epochfeedback');
+		end
       imEpochFeedbackStimulus;
     catch
        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);

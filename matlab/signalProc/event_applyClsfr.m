@@ -25,13 +25,18 @@ function [testdata,testevents]=event_applyClsfr(clsfr,varargin)
 %                     predFilt<0  - #components to average                    f=mean(f(:,end-predFilt:end),2)
 %                  OR
 %                   {str} {function_handle}  a function to 'filter' the predictions through
-%                             before sending prediction event. This function should have the signature:
-%                         [f,state]=func(f,state)
+%                             before sending prediction event.
+%                         N.B. If used, prediction events are only sent if f is non-empty
+%                         This function should have the signature:
+%                         [f,state]=func(f,state,evt)
 %                             where state is the internal state of the filter, e.g. the history of past values
 %                      Examples: 
-%                        'predFilt',@(x,s) avefilt(x,s,10)   % moving average filter, length 10
-%                        'predFilt',@(x,s) biasFilt(x,s,50)  % bias adaptation filter, length 50
-%                        'predFilt',@(x,s) stdFilt(x,s,100)  % normalising filter (0-mean,1-std-dev), l%
+%                        'predFilt',@(x,s,e) avefilt(x,s,10)   % moving average filter, length 10
+%                        'predFilt',@(x,s,e) biasFilt(x,s,50)  % bias adaptation filter, length 50
+%                        'predFilt',@(x,s,e) stdFilt(x,s,100)  % normalising filter (0-mean,1-std-dev), l%
+%                        'predFilt',@(x,s,e) stdFilt(x,s,100)  % normalising filter (0-mean,1-std-dev), l%
+%                        'predFilt',@(x,s,e) avenFilt(x,s,10)  % send average f every 10 predictions
+%  resetType     -- event type to match to reset the filter states   ('classifier.reset')
 % Examples:
 %  % 1) Default: apply clsfr on 'classifier.apply' events and 
 %  %    immeadiately send predictions as 'classifier.predicition'
@@ -49,6 +54,7 @@ function [testdata,testevents]=event_applyClsfr(clsfr,varargin)
 opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
             'startSet',{{'classifier.apply'}},...
             'endType',{{'stimulus.test' 'stimulus.testing'}},'endValue','end','verb',0,...
+				'resetType','classifier.reset',...				
             'sendPredEventType',[],...
             'predEventType','classifier.prediction',...
             'trlen_ms',[],'trlen_samp',[],...
@@ -117,6 +123,10 @@ while ( ~endTest )
       if ( opts.verb>0 ) fprintf('Got send predictions event\n'); end;
       sendPred=true;
     
+	 elseif ( matchEvents(devents(ei),opts.resetType) ) % reset prediction filters 
+		fprintf('Got reset event. Prediction filters reset');
+		filtstate=[]; fbuff(:)=0; dv(:)=0;
+
     elseif ( matchEvents(devents(ei),opts.startSet) ) % apply the classifier event
       if ( opts.verb>0 ) fprintf('Processing event: %s',ev2str(devents(ei))); end;      
 
@@ -146,12 +156,12 @@ while ( ~endTest )
 				dv=mean(fbuff,2);
 			 end
         elseif ( ischar(opts.predFilt) || isa(opts.predFilt,'function_handle') )
-			 [dv,filtstate]=feval(opts.predFilt,f,filtstate);
+			 [dv,filtstate]=feval(opts.predFilt,f,filtstate,devents(ei));
         end
 		end
       
       % Send prediction event
-      if ( isempty(opts.sendPredEventType) ) % send predictions immeadiately
+      if ( ~isempty(dv) && isempty(opts.sendPredEventType) ) % send predictions immeadiately
         sendEvent(opts.predEventType,dv,devents(ei).sample);
       else % accumulate predictions
         nPred=nPred+1;

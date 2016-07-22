@@ -5,7 +5,8 @@ function [testdata,testevents]=cont_applyClsfr(clsfr,varargin)
 %
 % Options:
 %  buffhost, buffport, hdr
-%  endType, endValue  -- event type and value to match to stop giving feedback
+%  endType, endValue  -- event type and value to match to stop giving feedback   ('stimulus.test','end')
+%  predEventType -- 'str' event type to use for the generated prediction events  ('classifier.prediction')
 %  trlen_ms/samp -- [float] length of trial to apply classifier to               ([])
 %                     if empty, then = windowFn size used in the classifier training
 %  overlap       -- [float] fraction of trlen_samp between successive classifier predictions, i.e.
@@ -18,13 +19,18 @@ function [testdata,testevents]=cont_applyClsfr(clsfr,varargin)
 %                     predFilt<0  - #components to average                    f=mean(f(:,end-predFilt:end),2)
 %                  OR
 %                   {str} {function_handle}  a function to 'filter' the predictions through
-%                             before sending prediction event.  This function should have the signature:
-%                         [f,state]=func(f,state)
+%                             before sending prediction event.
+%                         N.B. If used, prediction events are only sent if f is non-empty
+%                         [f,state]=func(f,state,evt)
 %                             where state is the internal state of the filter, e.g. the history of past values
+%                             and evt is the reason the classifier was applied at this time
 %                      Examples: 
-%                        'predFilt',@(x,s) avefilt(x,s,10)   % moving average filter, length 10
-%                        'predFilt',@(x,s) biasFilt(x,s,50)  % bias adaptation filter, length 50
-%                        'predFilt',@(x,s) stdFilt(x,s,100)  % normalising filter (0-mean,1-std-dev), length 100
+%                        'predFilt',@(x,s,e) avefilt(x,s,10)   % moving average filter, length 10
+%                        'predFilt',@(x,s,e) biasFilt(x,s,50)  % bias adaptation filter, length 50
+%                        'predFilt',@(x,s,e) stdFilt(x,s,100)  % normalising filter (0-mean,1-std-dev), length 100
+%                        'predFilt',@(x,s,e) avenFilt(x,s,10)  % send average f every 10 predictions
+%                        'predFilt',@(x,s,e) marginFilt(x,s,3) % send if margin between best and worst prediction >=3
+%  resetType     -- event type to match to reset the filter states   ('classifier.reset')
 % Examples:
 %  % 1) Default: apply clsfr every 100ms and send predictions as 'classifier.predicition'
 %  %    stop processing when get a 'stimulus.test','end' event.
@@ -39,9 +45,10 @@ function [testdata,testevents]=cont_applyClsfr(clsfr,varargin)
 
 opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
             'endType','stimulus.test','endValue','end','verb',0,...
+				'resetType','classifier.reset',...
             'predEventType','classifier.prediction',...
             'trlen_ms',[],'trlen_samp',[],'overlap',.5,'step_ms',[],...
-            'predFilt',[],'timeout_ms',1000); % exp moving average constant, half-life=10 trials
+            'predFilt',[],'timeout_ms',1000);
 [opts,varargin]=parseOpts(opts,varargin);
 
 % if not explicitly given work out from the classifier information the trial length needed
@@ -148,15 +155,18 @@ while( ~endTest )
           dv=mean(fbuff,2);
         end
       elseif ( ischar(opts.predFilt) || isa(opts.predFilt,'function_handle') )
-        [dv,filtstate]=feval(opts.predFilt,f,filtstate);
+        [dv,filtstate]=feval(opts.predFilt,f,filtstate,fin(si));
       end
     end
       
-    % Send prediction event
-    sendEvent(opts.predEventType,dv,fin(si)-trlen_samp); %N.B. event sample is window-start!
-    if ( opts.verb>0 )
-		fprintf('%d) Clsfr Pred: s:%d->%d v:[%s]\n',fin(si),fin(si)-trlen_samp,fin(si),sprintf('%g ',dv));
-	 elseif ( opts.verb>-1 )
+	 % Send prediction event, if wanted
+	 if( ~isempty(dv) ) 
+		sendEvent(opts.predEventType,dv,fin(si)-trlen_samp); %N.B. event sample is window-start!
+		if ( opts.verb>0 )
+		  fprintf('%d) Clsfr Pred: s:%d->%d v:[%s]\n',fin(si),fin(si)-trlen_samp,fin(si),sprintf('%g ',dv));
+		end
+	 end
+	 if ( opts.verb>-1 )
 		fprintf('.'); 
 	 end;
   end
@@ -166,8 +176,16 @@ while( ~endTest )
 	 if ( t-t0 > opts.endType ) fprintf('Got to end time. Stopping'); endTest=true; end;
   elseif( status.nevents > nEvents  ) % deal with any events which have happened
     devents=buffer('get_evt',[nEvents status.nevents-1],opts.buffhost,opts.buffport);
-    mi=matchEvents(devents,opts.endType,opts.endValue);
-    if ( any(mi) ) fprintf('Got exit event. Stopping'); endTest=true; end;
+    if ( any(matchEvents(devents,opts.endType,opts.endValue)) )
+		fprintf('Got exit event. Stopping');
+		endTest=true;
+	 end
+	 mi=matchEvents(devents,opts.resetType);
+	 elseif ( any(mi) )
+		fprintf('Got reset event. Prediction filters reset');
+		filtstate=[]; fbuff(:)=0; dv(:)=0;
+		endSample = devents(mi).sample+trlen_samp; % look for trials worth of data
+	 end;
     nEvents=status.nevents;
   end
 end % while not endTest
