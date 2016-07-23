@@ -71,7 +71,7 @@ elseif ( opts.binsp ) % decompose into set of binary problems
   if ( isempty(spMx) ) spMx=opts.spType; end;
 end
 if ( ~isempty(spMx) ) % convert to new problem representation
-  [Y,spKey,spMx]=lab2ind(Y,spKey,spMx,opts.zeroLab); 
+  [Y,spKey,spMx]=lab2ind(Y,spKey,spMx,opts.zeroLab); % N.B: Y = [N x L]
 end
 spDesc=[]; % make a human-readable problem description
 if ( ~isempty(spMx) && ~isempty(spKey) )
@@ -98,8 +98,8 @@ end
 % estimate good range hyper-params
 % N.B. ONLY run after the flatten to 2-d inputs!
 Cscale=opts.Cscale;
-if ( isempty(Cscale) || isequal(Cscale,'l2') )  Cscale=CscaleEst(X,2,[],0);
-elseif ( isequal(Cscale,'l1') )                 Cscale=sqrt(CscaleEst(X,2,[],0));
+if ( isempty(Cscale) || isequal(Cscale,'l2') )  Cscale=CscaleEst(X,dim,[],0);
+elseif ( isequal(Cscale,'l1') )                 Cscale=sqrt(CscaleEst(X,dim,[],0));
 end
 if ( isempty(Cs) ) Cs=[5.^(3:-1:-3)]; end;
 
@@ -138,9 +138,15 @@ if ( isfield(res,'opt') && isfield(res.opt,'soln') ) % optimal calibrated soluti
 		soln  = res.opt.soln{isp};
 		W(:,isp) = soln(1:end-1); b(isp)=soln(end);
 	 end
-  else
+  else % single unified classifier run
 	 if ( iscell(res.opt.soln) ) soln  = res.opt.soln{1}; else soln=res.opt.soln; end;
-    W     = soln(1:end-1,:); b=soln(end,:);
+	 if ( iscell(soln) ) % soln keeps W and b separate
+		W=soln{1}; b=soln{2};
+	 elseif ( size(soln,2)>1 ) % soln has [nf+1 x L] structure
+		W     = soln(1:end-1,:);         b=soln(end,:);
+	 else % default organization, all W's then all b's
+		W     = soln(1:end-size(Y,2));   b=soln(end-size(Y,2)+1:end);
+	 end
   end
 else
   if ( opts.binsp ) 
