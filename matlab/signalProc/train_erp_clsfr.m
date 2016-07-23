@@ -15,7 +15,7 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %              *this overrides* ch_pos if given
 %  overridechnms - [bool] flag if channel order from 'capFile' overrides that from the 'ch_names' option
 %  fs        - sampling rate of the data
-%  timeband  - [2 x 1] band of times to use for classification, all if empty ([])
+%  timeband_ms- [2 x 1] band of times in milliseconds to use for classification, all if empty ([])
 %  freqband  - [2 x 1] or [3 x 1] or [4 x 1] band of frequencies to use
 %              EMPTY for *NO* spectral filter
 %              OR
@@ -158,9 +158,9 @@ end
 
 %4.2) time range selection
 timeIdx=[];
-if ( ~isempty(opts.timeband) ) 
-  timeIdx = opts.timeband * fs; % convert to sample indices
-  timeIdx = max(min(timeIdx,size(X,2)),1); % ensure valid range
+if ( ~isempty(opts.timeband_ms) ) 
+  timeIdx = opts.timeband_ms * fs ./1000; % convert to sample indices
+  timeIdx = max(min(round(timeIdx),size(X,2)),1); % ensure valid range
   timeIdx = int32(timeIdx(1):timeIdx(2));
   X    = X(:,timeIdx,:);
 end

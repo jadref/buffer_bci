@@ -154,7 +154,11 @@ end
 if ( isempty(opts.epochEventType) )     opts.epochEventType='stimulus.target'; end;
 if ( isempty(opts.testepochEventType) ) opts.testepochEventType='classifier.apply'; end;
 if ( isempty(opts.erpEventType) )       opts.erpEventType=opts.epochEventType; end;
-userPhaseNames={}; if ( ~isempty(opts.userFeedbackTable) ) userPhaseNames=opts.userFeedbackTable(:,1); end;
+userPhaseNames={};
+if ( ~isempty(opts.userFeedbackTable) )
+  userPhaseNames=opts.userFeedbackTable(:,1);
+  for upi=1:numel(userPhaseNames); userPhaseNames{upi}=lower(userPhaseNames{upi});end;
+end;
 
 
 datestr = datevec(now); datestr = sprintf('%02d%02d%02d',datestr(1)-2000,datestr(2:3));
@@ -362,7 +366,7 @@ while ( true )
 
     %---------------------------------------------------------------------------------
    case {'test','testing','epochfeedback','eventfeedback'};
-    try
+    %try
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
       clsfrfile = [cname '_' subject '_' datestr];
       if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
@@ -378,17 +382,17 @@ while ( true )
 							'endType',{'testing','test','epochfeedback','eventfeedback'},'verb',opts.verb,...
 							'trlen_ms',opts.trlen_ms,...%default to trlen_ms data per prediction
 							opts.epochFeedbackOpts{:}); % allow override with epochFeedbackOpts
-	 catch
-      fprintf('Error in : %s',phaseToRun);
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-		if ( ~isempty(le.stack) )
-		  for i=1:numel(le.stack);
-			 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
-		  end;
-		end
-      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
-      sendEvent('testing','end');    
-    end
+	 ## catch
+    ##   fprintf('Error in : %s',phaseToRun);
+    ##   le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	 ## 	if ( ~isempty(le.stack) )
+	 ## 	  for i=1:numel(le.stack);
+	 ## 		 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	 ## 	  end;
+	 ## 	end
+    ##   msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+    ##   sendEvent('testing','end');    
+    ## end
 
    %---------------------------------------------------------------------------------
    case {'contfeedback'};
@@ -469,8 +473,6 @@ while ( true )
     break;
     
    otherwise;
-
-
 	  
     warning(sprintf('Unrecognised experiment phase ignored! : %s',phaseToRun));
     

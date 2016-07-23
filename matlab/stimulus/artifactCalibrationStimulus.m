@@ -1,13 +1,13 @@
 run ../utilities/initPaths.m
 initsleepSec;
 
-fixateDuration   = 3;
-eyesDuration     = 30;
-artifactDuration = 10;
+fixateDuration   = 1.5;
+eyesDuration     = 15;
+artifactDuration = 7.5;
 interArtifactDuration=2;
 eyeColor         = [.8 .1 0];
 muscleColor      = [.8 .1 0];
-
+nTimes = 2;
 
 % make the stimulus
 %figure;
@@ -54,6 +54,8 @@ txthdl = text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),' ',...
 
 sendEvent('stimulus.artifactcalibration','start');
 
+
+for bi=1:nTimes;
 %------------------------------------------------------------------------
 % Start with eyes moving to different fixatation locations
 set(h(:),'visible','off');               
@@ -92,7 +94,7 @@ waitforbuttonpress;
 set(txthdl,'visible', 'off'); drawnow;
 
 %------------------------------------------------------------------------
-% 30 sec of eyes-open and fixatated
+% 15 sec of eyes-open and fixatated
 set(h(:),'visible','off');
 set(h(1,6),'visible','on');
 set(h(2,6),'visible','on');
@@ -187,8 +189,10 @@ drawnow
 
 sleepSec(interArtifactDuration);
 
+end
+
 %------------------------------------------------------------------------
-% 30 sec of fixation
+% 15 sec of fixation
 set(h(:),'visible','off');
 set(h(1,6),'visible','on');
 set(h(2,6),'visible','on');

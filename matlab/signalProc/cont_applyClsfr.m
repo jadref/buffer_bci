@@ -181,7 +181,7 @@ while( ~endTest )
 		endTest=true;
 	 end
 	 mi=matchEvents(devents,opts.resetType);
-	 elseif ( any(mi) )
+	 if ( any(mi) )
 		fprintf('Got reset event. Prediction filters reset');
 		filtstate=[]; fbuff(:)=0; dv(:)=0;
 		endSample = devents(mi).sample+trlen_samp; % look for trials worth of data

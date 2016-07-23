@@ -76,13 +76,13 @@ step_ms=welch_width_ms/2;% N.B. welch defaults=.5 window overlap, use step=width
 
 %trainOpts={'width_ms',welch_width_ms,'badtrrm',0}; % default: 4hz res, stack of independent one-vs-rest classifiers
 % whiten + direct multi-class training, ignoring the startup window after the cue
-trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','timeband',[250 trlen_ms],'wht','objFn','mlr_cg','binsp',0,'spMx','1vR'}; 
+trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','wht','timeband_ms',[250 trlen_ms],'objFn','mlr_cg','binsp',0,'spMx','1vR'}; 
 %trainOpts = {'spType',{{1 3} {2 4}}}; % train 2 classifiers, 1=N vs S, 2=E vs W
 
 % Epoch feedback opts
 %%0) Use exactly the same classification window for feedback as for training, but
 %%   but also include a bias adaption system to cope with train->test transfer
-earlyStopping = false;
+earlyStopping = true;
 epochFeedbackOpts={}; % raw output
 %epochFeedbackOpts={'predFilt',@(x,s,e) biasFilt(x,s,exp(log(.5)/50))}; % bias-adaption
 

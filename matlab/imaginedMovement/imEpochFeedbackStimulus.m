@@ -76,23 +76,32 @@ for si=1:nSeq;
 	 % event-classifier, so send the event which triggers to classify this data-block
 	 sendEvent('classifier.apply','now',ev.sample); % tell the classifier to apply from now
   end
+  trlStartTime=getwTime();
   sendEvent('stimulus.trial','start',ev.sample);
-  state=buffer('poll'); % Ensure we ignore any predictions before the trial start
-  
+  state=buffer('poll'); % Ensure we ignore any predictions before the trial start  
+  if( verb>0 )
+	 fprintf(1,'Waiting for predictions after: (%d samp, %d evt)\n',...
+				state.nSamples,state.nEvents);
+  end;
   if ( earlyStopping )
 	 % wait for new prediction events to process *or* end of trial time
-	 [events,state,nsamples,nevents] = buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],trialDuration*1000+750);
+	 [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],trialDuration*1000+1500);
   else
     sleepSec(trialDuration); 
 	 % wait for classifier prediction event
-	 if( verb>0 ) fprintf(1,'Waiting for predictions\n'); end;
-	 [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],750);
+	 [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],2000);
   end
+  trlEndTime=getwTime();
 
+  
   % do something with the prediction (if there is one), i.e. give feedback
   if( isempty(devents) ) % extract the decision value
-    fprintf(1,'Error! no predictions, continuing');
+    fprintf(1,'Error! no predictions after %gs, continuing (%d samp, %d evt)\n',trlEndTime-trlStartTime,state.nSamples,state.nEvents);
+    set(h(:),'facecolor',bgColor);
+    set(h(end),'facecolor',fbColor); % fix turns blue to show now pred recieved
+    drawnow;
   else
+	 fprintf(1,'Prediction after %gs : %s',trlEndTime-trlStartTime,ev2str(devents(end)));
     dv = devents(end).value;
     if ( numel(dv)==1 )
       if ( dv>0 && dv<=nSymbs && isinteger(dv) ) % dvicted symbol, convert to dv equivalent
