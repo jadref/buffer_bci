@@ -23,12 +23,20 @@ end
 X=single(X);
 
 %0) bad channel removal
-if ( isfield(clsfr,'isbad') && ~isempty(clsfr.isbad) )
+if ( isfield(clsfr,'isbad') && (~isempty(clsfr.isbad) && sum(clsfr.isbad)>0) )
   X=X(~clsfr.isbad,:,:,:);
 end
 
 %1) Detrend
-X=detrend(X,2); % detrend over time
+if ( isfield(clsfr,'detrend')) && clsfr.detrend ) % detrend over time
+  if ( isequal(clsfr.detrend,1) )
+    fprintf('1) Detrend\n');
+    X=detrend(X,2); % detrend over time
+  elseif ( isequal(clsfr.detrend,2) )
+    fprintf('1) Center\n');
+    X=repop(X,'-',mean(X,2));
+  end
+end 
 
 %2) check for bad channels
 isbadch=false;
@@ -95,7 +103,7 @@ end
 
 %4) spectral filter
 if ( isfield(clsfr,'filt') && ~isempty(clsfr.filt) )
-  X=fftfilter(X,clsfr.filt,clsfr.outsz,2,1);
+  X=fftfilter(X,clsfr.filt,clsfr.outsz,2,2);
 elseif ( clsfr.outsz(2)~=size(X,2) ) % downsample only
   X=subsample(X,clsfr.outsz(2));
 end

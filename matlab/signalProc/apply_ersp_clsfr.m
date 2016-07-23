@@ -29,8 +29,14 @@ if ( isfield(clsfr,'isbad') && ~isempty(clsfr.isbad) )
 end
 
 %1) Detrend
-if ( isfield(clsfr,'detrend') && isequal(clsfr.detrend,1) )
-  X=detrend(X,2); % detrend over time
+if ( isfield(clsfr,'detrend') && clsfr.detrend )
+  if ( isequal(clsfr.detrend,1) )
+    fprintf('1) Detrend\n');
+    X=detrend(X,2); % detrend over time
+  elseif ( isequal(clsfr.detrend,2) )
+    fprintf('1) Center\n');
+    X=repop(X,'-',mean(X,2));
+  end
 end
 
 %2) check for new bad channels
