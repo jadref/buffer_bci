@@ -86,3 +86,11 @@ if (usejava('jvm') )
 else
     t= clock()*[0 0 86400 3600 60 1]'; % in seconds
 end 
+
+%--------------------------
+function testCase()
+% test for off-by-one bugs
+  state=buffer('poll');
+  sendEvent('hello','there');
+  buffer_newevents([],[],state,'hello',[])
+  
