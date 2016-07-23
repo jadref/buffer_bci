@@ -226,7 +226,7 @@ while( ~exitEvent )
         end
         bgns(ei,1)=startevents(ei).sample+startevents(ei).offset;
         ends(ei,1)=startevents(ei).sample+startevents(ei).offset+startevents(ei).duration;
-        if ( opts.verb>0 ) fprintf('%d) recording event: %s\n',status.nsamples,ev2str(startevents(ei))); end
+        if ( opts.verb>0 ) fprintf('%d) starting event: %s\n',status.nsamples,ev2str(startevents(ei))); end
       end
       if( isempty(pending.events) )
         pending.events=startevents; % discard other events
@@ -268,7 +268,9 @@ while( ~exitEvent )
       % N.B. could be clever here with a data cache to prevent getting the same data many times
       for i=1:numel(finEi);
         ei=finEi(i); 
-        if ( opts.verb>0 ) fprintf('%d) saving event: %s\n',nsamples,ev2str(pending.events(ei))); end
+        if ( opts.verb>0 )
+			 fprintf('%d) finishing event: %s dur:%d\n',status.nsamples,ev2str(pending.events(ei)),pending.ends(ei)-pending.bgns(ei));
+		  end
         dat=[];
         if ( pending.bgns(ei)<pending.ends(ei) ) % only get dat if want data
           dat=buffer('get_dat',[pending.bgns(ei) pending.ends(ei)-1],host,port);
