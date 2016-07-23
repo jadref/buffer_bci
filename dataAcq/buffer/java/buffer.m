@@ -181,12 +181,18 @@ switch cmd;
  case 'put_evt';
   if ( numel(detail)==1 ) 
 	 if ( islogical(detail.value) ) detail.value=single(detail.value); end; % BODGE: convert to single float
-    e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.bufferclient.BufferEvent',detail.type,detail.value,detail.sample));
+	 e=javaObject('nl.fcdonders.fieldtrip.bufferclient.BufferEvent',detail.type,detail.value,detail.sample);
+	 % BODGE: on octave the auto-boxing sometimes breaks.... bodge a fix
+	 %if (exist('OCTAVE_VERSION','builtin')) e.setValue(detail.value); end;
+    e=bufClient.putEvent(e);
   else
     for ei=1:numel(detail);
       evt=detail(ei);
 		if ( islogical(evt.value) ) evt.value=single(evt.value); end; % BODGE: convert to single float
-      e=bufClient.putEvent(javaObject('nl.fcdonders.fieldtrip.bufferclient.BufferEvent',evt.type,evt.value,evt.sample));
+		e=javaObject('nl.fcdonders.fieldtrip.bufferclient.BufferEvent',detail.type,detail.value,detail.sample);
+	   % BODGE: on octave the auto-boxing sometimes breaks.... bodge a fix
+		if (exist('OCTAVE_VERSION','builtin')) e.setValue(detail.value); end;
+		e=bufClient.putEvent(e);
     end
   end
   if ( nargout>0 ) % convert to matlab (quickly, getArray is v.slow)
