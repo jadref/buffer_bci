@@ -91,13 +91,15 @@ while (timetogo>0)
       end
 
 		% additional prediction smoothing for display, if wanted
-		if ( ~isempty(stimSmoothFactor) && isnumeric(stimSmoothFactor) )
-        if ( stimSmoothFactor>=0 ) % exp weighted moving average
+		if ( ~isempty(stimSmoothFactor) && isnumeric(stimSmoothFactor) && stimSmoothFactor>0 )
+		  if ( stimSmoothFactor>=0 ) % exp weighted moving average
 			 dv=dv*stimSmoothFactor + (1-stimSmoothFactor)*pred(:);
 		  else % store predictions in a ring buffer
 			 fbuff(:,mod(nEpochs-1,abs(stimSmoothFactor))+1)=pred(:); % store predictions in a ring buffer
 			 dv=mean(fbuff,2);
         end
+		else
+		  dv=pred;
 		end
 
 		% convert from dv to normalised probability
@@ -112,8 +114,8 @@ while (timetogo>0)
   end % if prediction events to process
   
   % feedback information... simply move to absolute location indicated by the BCI
-	 if ( numel(prob)==size(stimPos,2)-1 ) % per-target decomposition
-		dx = stimPos(:,1:end-1)*prob(:); % change in position is weighted by class probs
+	 if ( numel(prob)>=size(stimPos,2)-1 ) % per-target decomposition
+		dx = stimPos(:,numel(prob))*prob(:); % change in position is weighted by class probs
 	 elseif ( numel(prob)==2 ) % direct 2d decomposition
 		dx = prob;
 	 elseif ( numel(prob)==1 )
