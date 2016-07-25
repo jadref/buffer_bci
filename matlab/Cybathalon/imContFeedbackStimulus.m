@@ -101,17 +101,19 @@ for si=1:nSeq;
         end
 
 		  % additional prediction smoothing for display, if wanted
-		  if ( ~isempty(stimSmoothFactor) && isnumeric(stimSmoothFactor) )
+		  if ( ~isempty(stimSmoothFactor) && isnumeric(stimSmoothFactor) && stimSmoothFactor>0 )
 			 if ( stimSmoothFactor>=0 ) % exp weighted moving average
 				dv=dv*stimSmoothFactor + (1-stimSmoothFactor)*pred(:);
 			 else % store predictions in a ring buffer
 				fbuff(:,mod(nEpochs-1,abs(stimSmoothFactor))+1)=pred(:);% store predictions in a ring buffer
 				dv=mean(fbuff,2);
 			 end
+		  else
+			 dv=pred;
 		  end
 
 		  % convert from dv to normalised probability
-        prob = 1./(1+exp(-pred)); prob=prob./sum(prob); % convert from dv to normalised probability
+        prob = 1./(1+exp(-dv)); prob=prob./sum(prob); % convert from dv to normalised probability
         if ( verb>=0 ) 
           fprintf('dv:');fprintf('%5.4f ',pred);fprintf('\t\tProb:');fprintf('%5.4f ',prob);fprintf('\n'); 
         end;

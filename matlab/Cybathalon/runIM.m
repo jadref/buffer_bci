@@ -139,7 +139,11 @@ while (ishandle(contFig))
     %sleepSec(.1);
     sendEvent(phaseToRun,'start');
     try
-      sendEvent('startPhase.cmd','epochfeedback');
+		if ( earlyStopping ) % use the user-defined command
+        sendEvent('startPhase.cmd',userFeedbackTable{1});
+      else
+        sendEvent('startPhase.cmd','epochfeedback');
+      end
       imEpochFeedbackCybathalon;
     catch
        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);

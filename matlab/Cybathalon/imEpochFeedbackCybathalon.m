@@ -2,10 +2,12 @@ configureIM;
 
 cybathalon = struct('host','localhost','port',5555,'player',1,...
                     'cmdlabels',{{'speed' 'rest' 'jump' 'kick'}},'cmddict',[1 99 2 3],...
-                    'socket',[]);
+                    'socket',[],'socketaddress',[]);
 % open socket to the cybathalon game
 [cybathalon.socket]=javaObject('java.net.DatagramSocket'); % create a UDP socket
-cybathalon.socket.connect(javaObject('java.net.InetSocketAddress',cybathalon.host,cybathalon.port)); % connect to host/port
+cybathalon.socketaddress=javaObject('java.net.InetSocketAddress',cybathalon.host,cybathalon.port);
+cybathalon.socket.connect(cybathalon.socketaddress); % connect to host/port
+connectionWarned=0;
 
 % make the target sequence
 tgtSeq=mkStimSeqRand(nSymbs,nSeq);
@@ -127,9 +129,17 @@ for si=1:nSeq;
     set(h(predTgt),'facecolor',fbColor);
     drawnow;
     sendEvent('stimulus.predTgt',predTgt);
-    % send the command to the game server
-    cybathalon.socket.send(uint8(10*cybathalon.player+cybathalon.cmddict(predTgt)),1);
+										  % send the command to the game server
+	 try;
+		cybathalon.socket.send(javaObject('java.net.DatagramPacket',uint8([10*cybathalon.player+cybathalon.cmddict(predTgt) 0]),1));
+	 catch;
+		if ( connectionWarned<10 )
+		  connectionWarned=connectionWarned+1;
+		  warning('Error sending to the Cybathalon game.  Is it running?\n');
+		end
+	 end
 
+	 
   end % if classifier prediction
   sleepSec(feedbackDuration);
   
