@@ -503,7 +503,7 @@ if ( opts.verb >= 0 )
 end
 
 % compute final decision values.
-if ( all(size(X)~=size(oX)) ) f   = w'*oX + b; end;
+if ( ~all(size(X)==size(oX)) ) f   = w'*oX + b; end;
 f = reshape(f,[size(oY,1) 1]);
 obj = [J Ew Ed];
 wb=[w(:);b];
