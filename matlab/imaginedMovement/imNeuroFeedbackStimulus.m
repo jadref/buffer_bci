@@ -112,8 +112,8 @@ while (timetogo>0)
   end % if prediction events to process
   
   % feedback information... simply move to absolute location indicated by the BCI
-	 if ( numel(prob)==size(stimPos,2)-1 ) % per-target decomposition
-		dx = stimPos(:,1:end-1)*prob(:); % change in position is weighted by class probs
+	 if ( numel(prob)>=size(stimPos,2)-1 ) % per-target decomposition
+		dx = stimPos(:,1:numel(prob))*prob(:); % change in position is weighted by class probs
 	 elseif ( numel(prob)==2 ) % direct 2d decomposition
 		dx = prob;
 	 elseif ( numel(prob)==1 )

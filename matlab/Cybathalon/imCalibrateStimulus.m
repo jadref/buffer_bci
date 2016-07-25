@@ -39,7 +39,7 @@ set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized')
 txthdl = text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),' ',...
 				  'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle',...
 				  'fontunits','pixel','fontsize',.05*wSize(4),...
-				  'color',[0.75 0.75 0.75],'visible','off');
+				  'color',txtColor,'visible','off');
 
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
@@ -59,16 +59,18 @@ for si=1:nSeq;
   set(h(end),'facecolor',fixColor); % red fixation indicates trial about to start/baseline
   drawnow;% expose; % N.B. needs a full drawnow for some reason
   sendEvent('stimulus.baseline','start');
+  if ( ~isempty(baselineClass) ) % treat baseline as a special class
+	 sendEvent('stimulus.target',baselineClass);
+  end
   sleepSec(baselineDuration);
-  sendEvent('stimulus.baseline','end');
-  
+  sendEvent('stimulus.baseline','end');  
   
   % show the target
   tgtIdx=find(tgtSeq(:,si)>0);
   set(h(tgtSeq(:,si)>0),'facecolor',tgtColor);
   set(h(tgtSeq(:,si)<=0),'facecolor',bgColor);
   if ( ~isempty(symbCue) )
-	 set(txthdl,'string',sprintf('%s ',symbCue{tgtIdx}),'color',[.1 .1 .1],'visible','on');
+	 set(txthdl,'string',sprintf('%s ',symbCue{tgtIdx}),'color',txtColor,'visible','on');
 	 tgtNm = '';
 	 for ti=1:numel(tgtIdx);
 		if(ti>1) tgtNm=[tgtNm ' + ']; end;
@@ -79,12 +81,14 @@ for si=1:nSeq;
   end
   set(h(end),'facecolor',[0 1 0]); % green fixation indicates trial running
   fprintf('%d) tgt=%10s : ',si,tgtNm);
-  sendEvent('stimulus.target',tgtNm);
-  drawnow;% expose; % N.B. needs a full drawnow for some reason
   sendEvent('stimulus.trial','start');
-  % wait for trial end
-  sleepSec(trialDuration);
-  
+  for ei=1:ceil(trialDuration./epochDuration);
+	 sendEvent('stimulus.target',tgtNm);
+	 drawnow;% expose; % N.B. needs a full drawnow for some reason
+				% wait for trial end
+	 sleepSec(epochDuration);
+  end
+	 
   % reset the cue and fixation point to indicate trial has finished  
   set(h(:),'facecolor',bgColor);
   if ( ~isempty(symbCue) ) set(txthdl,'visible','off'); end

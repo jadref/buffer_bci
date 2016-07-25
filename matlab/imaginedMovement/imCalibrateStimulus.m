@@ -39,7 +39,7 @@ set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized')
 txthdl = text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),' ',...
 				  'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle',...
 				  'fontunits','pixel','fontsize',.05*wSize(4),...
-				  'color',[0.75 0.75 0.75],'visible','off');
+				  'color',txtColor,'visible','off');
 
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
@@ -59,6 +59,9 @@ for si=1:nSeq;
   set(h(end),'facecolor',fixColor); % red fixation indicates trial about to start/baseline
   drawnow;% expose; % N.B. needs a full drawnow for some reason
   sendEvent('stimulus.baseline','start');
+  if ( ~isempty(baselineClass) ) % treat baseline as a special class
+	 sendEvent('stimulus.target',baselineClass);
+  end
   sleepSec(baselineDuration);
   sendEvent('stimulus.baseline','end');
   
@@ -68,7 +71,7 @@ for si=1:nSeq;
   set(h(tgtSeq(:,si)>0),'facecolor',tgtColor);
   set(h(tgtSeq(:,si)<=0),'facecolor',bgColor);
   if ( ~isempty(symbCue) )
-	 set(txthdl,'string',sprintf('%s ',symbCue{tgtIdx}),'color',[.1 .1 .1],'visible','on');
+	 set(txthdl,'string',sprintf('%s ',symbCue{tgtIdx}),'color',txtColor,'visible','on');
 	 tgtNm = '';
 	 for ti=1:numel(tgtIdx);
 		if(ti>1) tgtNm=[tgtNm ' + ']; end;

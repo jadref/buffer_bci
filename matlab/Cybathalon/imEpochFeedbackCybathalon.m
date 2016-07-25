@@ -4,8 +4,8 @@ cybathalon = struct('host','localhost','port',5555,'player',1,...
                     'cmdlabels',{{'speed' 'rest' 'jump' 'kick'}},'cmddict',[1 99 2 3],...
                     'socket',[]);
 % open socket to the cybathalon game
-[cybathalon.socket]=java.net.DatagramSocket(); % create a UDP socket
-cybathalon.socket.connect(java.net.InetSocketAddress(cybathalon.host,cybathalon.port)); % connect to host/port
+[cybathalon.socket]=javaObject('java.net.DatagramSocket'); % create a UDP socket
+cybathalon.socket.connect(javaObject('java.net.InetSocketAddress',cybathalon.host,cybathalon.port)); % connect to host/port
 
 % make the target sequence
 tgtSeq=mkStimSeqRand(nSymbs,nSeq);

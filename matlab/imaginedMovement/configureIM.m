@@ -50,12 +50,10 @@ symbCue      ={'RH' 'rst' 'LH' 'FT'}; % sybmol cue in addition to positional one
 %symbCue      ={'rst' 'LH' 'RH'}; % string cue in addition to positional one. N,W,E for 3 symbs
 nSeq         =20*nSymbs; % 20 examples of each target
 
-trialDuration=3;
-baselineDuration=1;
-cueDuration  =1;
-startDelay   =.5;
-intertrialDuration=0;%3.5
-feedbackDuration=1;
+trialDuration     =3;   % length in seconds of the task in seconds
+baselineDuration  =1;   % length in seconds of the get-ready cue
+intertrialDuration=3.5; % length in seconds of the post-task blank screen
+feedbackDuration  =1;   % length in seconds of the feedback post trial
 
 contFeedbackTrialDuration =10;
 neurofeedbackTrialDuration=30;
@@ -68,9 +66,12 @@ bgColor      =[.5 .5 .5]; % background/inactive stimuli color
 fixColor     =[1 0 0]; % fixitation/get-ready cue point color
 tgtColor     =[0 1 0]; % target color
 fbColor      =[0 0 1]; % feedback color
+txtColor     =[.8 .8 .8]; % cue text color
 
 % classifier training options
 trlen_ms      =trialDuration*1000; % how often to run the classifier
+calibrateOpts ={};
+
 welch_width_ms=250; % width of welch window => spectral resolution
 %trainOpts={'width_ms',welch_width_ms,'badtrrm',0}; % default: 4hz res, stack of independent one-vs-rest classifiers
 trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','wht','objFn','mlr_cg','binsp',0,'spMx','1vR'}; % whiten + direct multi-class training
@@ -79,6 +80,7 @@ trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','wht','objFn','
 % Epoch feedback opts
 %%0) Use exactly the same classification window for feedback as for training, but
 %%   but also include a bias adaption system to cope with train->test transfer
+earlyStopping = false;
 epochFeedbackOpts={}; % raw output
 %epochFeedbackOpts={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/50))}; % bias-apaption
 

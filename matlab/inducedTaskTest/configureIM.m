@@ -46,6 +46,7 @@ buffhost     ='localhost';
 buffport     =1972;
 nSymbs       =6; % E,NE,NW,W,SW,SE,E for 6 outputs
 symbCue      ={'RH' 'Tongue' 'Nav' 'LH' 'Math' 'Feet'};
+baselineClass=[]; % 'Rest';if set, treat baseline phase as a separate class to classify
 nSeq         =20*nSymbs; % 20 examples of each target
 
 trialDuration=4.5;
@@ -70,6 +71,8 @@ txtColor     =[.8 .8 .8]; % text color
 
 % classifier training options
 trlen_ms      =trialDuration*1000; % how often to run the classifier
+calibrateOpts ={};
+
 welch_width_ms=250; % width of welch window => spectral resolution
 %trainOpts={'width_ms',welch_width_ms,'badtrrm',0}; % default: 4hz res, stack of independent one-vs-rest classifiers
 trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','wht','objFn','lr_cg','binsp',1,'spMx','1v1'}; % all-pairwise training
