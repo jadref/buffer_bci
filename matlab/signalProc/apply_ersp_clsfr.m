@@ -53,7 +53,7 @@ if ( isfield(clsfr,'badchthresh') && ~isempty(clsfr.badchthresh) )
 end
 
 %4.2) time range selection
-if ( ~isempty(clsfr.timeIdx) ) 
+if ( ~isempty(clsfr.timeIdx) && clsfr.timeIdx(end)<=size(X,2) && clsfr.timeIdx(1)>=1 ) 
   X    = X(:,clsfr.timeIdx,:);
 end
 

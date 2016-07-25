@@ -87,7 +87,7 @@ epochFeedbackOpts={}; % raw output
 %epochFeedbackOpts={'predFilt',@(x,s,e) biasFilt(x,s,exp(log(.5)/50))}; % bias-adaption
 
 % Epoch feedback with early-stopping, config using the user feedback table
-userFeedbackTable={'epochFeedback_es' 'cont' {'predFilt',@(x,s,e) gausOutlierFilt(x,s,2.5,trlen_ms./step_ms),'trlen_ms',welch_width_ms}}; 
+userFeedbackTable={'epochFeedback_es' 'cont' {'predFilt',@(x,s,e) gausOutlierFilt(x,s,2.5*8,trlen_ms./step_ms),'trlen_ms',welch_width_ms}}; 
 
 % different feedback configs (should all give similar results)
 

@@ -432,7 +432,7 @@ while ( true )
    %---------------------------------------------------------------------------------
    case userPhaseNames;
 	  phasei = find(strcmp(lower(phaseToRun),userPhaseNames));
-     try
+     %try
 		 if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
 			clsfrfile = [cname '_' subject '_' datestr];
 			if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
@@ -457,17 +457,17 @@ while ( true )
 			error('UserFeedback apply-method type is unrecognised');
 		 end
 		 
-	  catch
-		 fprintf('Error in : %s',phaseToRun);
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-		if ( ~isempty(le.stack) )
-		  for i=1:numel(le.stack);
-			 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
-		  end;
-		end
-      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
-      sendEvent('testing','end');    
-    end
+% 	  catch
+% 		 fprintf('Error in : %s',phaseToRun);
+%       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+% 		if ( ~isempty(le.stack) )
+% 		  for i=1:numel(le.stack);
+% 			 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+% 		  end;
+% 		end
+%       msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+%       sendEvent('testing','end');    
+%     end
 	 
    case {'quit','exit'};
     break;

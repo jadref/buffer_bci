@@ -91,7 +91,7 @@ nEvents=status.nevents; nSamples=status.nSamples; % most recent event/sample see
 endSample=nSamples+trlen_samp; % last sample of the first window to apply to
 
 dv=[];
-nEpochs=0; filtstate=[];
+nEpochs=0; filtstate=[]; fbuff=[];
 endTest=false;
 tic;t0=0;t1=t0;
 while( ~endTest )
@@ -144,9 +144,10 @@ while( ~endTest )
       f=sum(f,2); fraw=sum(fraw,2);
     end
     % smooth the classifier predictions if wanted
-    if ( isempty(dv) || isempty(opts.predFilt) ) 
+    if ( isempty(dv) && isempty(opts.predFilt) ) 
       dv=f;
     else
+      if ( isempty(dv) ) dv=zeros(size(f)); end;
       if ( isnumeric(opts.predFilt) )
         if ( opts.predFilt>=0 ) % exp weighted moving average
           dv=dv*opts.predFilt + (1-opts.predFilt)*f;
