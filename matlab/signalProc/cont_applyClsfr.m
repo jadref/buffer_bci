@@ -111,7 +111,7 @@ while( ~endTest )
   if ( opts.verb>=0 ) 
     t=toc;
     if ( t-t1>=5 ) 
-      fprintf(' %5.3f seconds, %d samples %d events\r',t,status.nsamples,status.nevents);
+      fprintf(' %5.3f seconds, %d samples %d events\n',t,status.nsamples,status.nevents);
       if ( ispc() ) drawnow; end; % re-draw display
       t1=t;
     end;
@@ -174,16 +174,16 @@ while( ~endTest )
       
   if ( isnumeric(opts.endType) ) % time-based termination
 	 t=toc;
-	 if ( t-t0 > opts.endType ) fprintf('Got to end time. Stopping'); endTest=true; end;
+	 if ( t-t0 > opts.endType ) fprintf('\nGot to end time. Stopping'); endTest=true; end;
   elseif( status.nevents > nEvents  ) % deal with any events which have happened
     devents=buffer('get_evt',[nEvents status.nevents-1],opts.buffhost,opts.buffport);
     if ( any(matchEvents(devents,opts.endType,opts.endValue)) )
-		fprintf('Got exit event. Stopping');
+		fprintf('\nGot exit event. Stopping');
 		endTest=true;
 	 end
 	 mi=matchEvents(devents,opts.resetType);
 	 if ( any(mi) )
-		fprintf('Got reset event. Prediction filters reset');
+		fprintf('Got reset event. Prediction filters reset.\n');
 		filtstate=[]; fbuff(:)=0; dv(:)=0;
 		endSample = devents(mi).sample+trlen_samp; % look for trials worth of data
 	 end;
