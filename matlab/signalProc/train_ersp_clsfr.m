@@ -299,6 +299,19 @@ else
   clsfr=struct();
 end
 
+if ( opts.visualize ) 
+  if ( size(res.tstconf,1)==numel(labels).^2 ) % confusion matrix is correct
+     % plot the confusion matrix
+     confMxFig=figure(3); set(confMxFig,'name','Class confusion matrix');
+     imagesc(reshape(res.tstconf(:,:,res.opt.Ci),numel(labels),[]));
+     set(gca,'xtick',1:numel(labels),'xticklabel',labels,...
+             'ytick',1:numel(labels),'yticklabel',labels);
+     xlabel('True Class'); ylabel('Predicted Class'); colorbar;
+     title('Class confusion matrix');
+  end
+end
+
+
 %7) combine all the info needed to apply this pipeline to testing data
 clsfr.type        = 'ERsP';
 clsfr.fs          = fs;   % sample rate of training data
@@ -325,11 +338,15 @@ clsfr.dvstats.std = [std(tstf(res.Y(:,1)>0))  std(tstf(res.Y(:,1)<=0))  std(tstf
 %  bins=[-inf -200:5:200 inf]; clf;plot([bins(1)-1 bins(2:end-1) bins(end)+1],[histc(tstf(Y>0),bins) histc(tstf(Y<=0),bins)]); 
 
 if ( opts.visualize >= 1 ) 
-  summary = sprintf('%4.1f ',res.tstbin(:,:,res.opt.Ci)*100);
-  if(size(res.tstbin,2)>1)
-     summary=[summary sprintf(' = %4.1f <ave>',mean(res.tstbin(:,:,res.opt.Ci),2)*100)];
+  summary='';
+  if ( clsfr.binsp ) % print individual classifier outputs with info about what problem it is
+     for spi=1:size(res.opt.tstbin,2);
+        summary = [summary sprintf('%-40s=\t\t%4.1f\n',clsfr.spDesc{spi},res.opt.tstbin(:,spi)*100)];
+     end
+     summary=[summary sprintf('---------------\n')];
   end
-  b=msgbox({sprintf('Classifier performance : %s',summary) 'OK to continue!'},'Results');
+  summary=[summary sprintf('\n%40s = %4.1f','<ave>',mean(res.opt.tstbin,2)*100)];
+  b=msgbox({sprintf('Classifier performance :\n %s',summary) 'OK to continue!'},'Results');
   if ( opts.visualize > 1 )
      for i=0:.2:120; if ( ~ishandle(b) ) break; end; drawnow; pause(.2); end; % wait to close auc figure
      if ( ishandle(b) ) close(b); end;
