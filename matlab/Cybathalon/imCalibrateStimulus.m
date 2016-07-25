@@ -63,8 +63,7 @@ for si=1:nSeq;
 	 sendEvent('stimulus.target',baselineClass);
   end
   sleepSec(baselineDuration);
-  sendEvent('stimulus.baseline','end');
-  
+  sendEvent('stimulus.baseline','end');  
   
   % show the target
   tgtIdx=find(tgtSeq(:,si)>0);
@@ -82,12 +81,14 @@ for si=1:nSeq;
   end
   set(h(end),'facecolor',[0 1 0]); % green fixation indicates trial running
   fprintf('%d) tgt=%10s : ',si,tgtNm);
-  sendEvent('stimulus.target',tgtNm);
-  drawnow;% expose; % N.B. needs a full drawnow for some reason
   sendEvent('stimulus.trial','start');
-  % wait for trial end
-  sleepSec(trialDuration);
-  
+  for ei=1:ceil(trialDuration./epochDuration);
+	 sendEvent('stimulus.target',tgtNm);
+	 drawnow;% expose; % N.B. needs a full drawnow for some reason
+				% wait for trial end
+	 sleepSec(epochDuration);
+  end
+	 
   % reset the cue and fixation point to indicate trial has finished  
   set(h(:),'facecolor',bgColor);
   if ( ~isempty(symbCue) ) set(txthdl,'visible','off'); end

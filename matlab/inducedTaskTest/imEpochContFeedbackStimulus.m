@@ -1,9 +1,9 @@
 configureIM;
-if ( ~exist('contFeedbackTrialDuration') || isempty(contFeedbackTrialDuration) ) contFeedbackTrialDuration=trialDuration; end;
 
 % make the target sequence
 tgtSeq=mkStimSeqRand(nSymbs,nSeq);
 
+% make the stimulus display
 fig=figure(2);
 clf;
 set(fig,'Name','Imagined Movement','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
@@ -13,8 +13,7 @@ ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','b
         'xlim',[-1.5 1.5],'ylim',[-1.5 1.5],'Ydir','normal');
 
 stimPos=[]; h=[];
-stimRadius=diff(axLim)/4;
-cursorSize=stimRadius/2;
+stimRadius=.5;
 theta=linspace(0,2*pi,nSymbs+1);
 if ( mod(nSymbs,2)==1 ) theta=theta+pi/2; end; % ensure left-right symetric by making odd 0=up
 theta=theta(1:end-1);
@@ -29,28 +28,16 @@ h(nSymbs+1)=rectangle('curvature',[1 1],'position',[stimPos(:,end)-stimRadius/4;
                       'facecolor',bgColor); 
 set(gca,'visible','off');
 
-%Create a text object with no text in it, center it, set font and color
-set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
-txthdl = text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),' ',...
-				  'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle',...
-				  'fontunits','pixel','fontsize',.05*wSize(4),...
-				  'color',[0.75 0.75 0.75],'visible','off');
-
 
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
 set(h(:),'facecolor',bgColor);
-
-% wait for user to become ready
-set(txthdl,'string', 'Click mouse when ready', 'visible', 'on'); drawnow;
-waitforbuttonpress;
-set(txthdl,'visible', 'off'); drawnow;
-
 sendEvent('stimulus.testing','start');
-
+drawnow; pause(5); % N.B. pause so fig redraws
+endTesting=false; dvs=[];
 for si=1:nSeq;
 
-  if ( ~ishandle(fig) ) break; end;
+  if ( ~ishandle(fig) || endTesting ) break; end;
   
   sleepSec(intertrialDuration);
   % show the screen to alert the subject to trial start
@@ -73,73 +60,55 @@ for si=1:nSeq;
   sendEvent('stimulus.target',find(tgtSeq(:,si)>0));
   sendEvent('stimulus.trial','start');
   
-  % for the trial duration update the fixatation point in response to prediction events
   % initial fixation point position
-  fixPos = stimPos(:,end);
-  state  = [];
-  dv     = zeros(nSymbs,1);
-  prob   = ones(nSymbs,1)./nSymbs; % start with equal prob over everything
+  dvs(:)=0; nPred=0; state=[];
   trlStartTime=getwTime();
-  timetogo = contFeedbackTrialDuration;
+  timetogo = trialDuration;
   while (timetogo>0)
     timetogo = trialDuration - (getwTime()-trlStartTime); % time left to run in this trial
-    % wait for new prediction events to process *or* end of trial time
-    [events,state,nsamples,nevents] = buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],min(1000,timetogo*1000));
-    if ( ~isempty(events) ) 
-      [ans,si]=sort([events.sample],'ascend'); % proc in *temporal* order
-      for ei=1:numel(events);
-        ev=events(si(ei));% event to process
-		  %fprintf('pred-evt=%s\n',ev2str(ev));
+    % wait for events to process *or* end of trial *or* out of time
+    [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,{'stimulus.prediction' 'stimulus.testing'},[],timetogo*1000);
+    %[dat,events,state]=buffer_waitData(buffhost,buffport,state,'exitSet',{timetogo*1000 {'stimulus.prediction' 'stimulus.testing'}},'verb',verb);
+    for ei=1:numel(events);
+      ev=events(ei);
+      if ( strcmp(ev.type,'stimulus.prediction') ) 
         pred=ev.value;
         % now do something with the prediction....
         if ( numel(pred)==1 )
           if ( pred>0 && pred<=nSymbs && isinteger(pred) ) % predicted symbol, convert to dv equivalent
             tmp=pred; pred=zeros(nSymbs,1); pred(tmp)=1;
-          else % binary problem
+          else % binary problem, convert to per-class
             pred=[pred -pred];
           end
         end
-
-		  % additional prediction smoothing for display, if wanted
-		  if ( ~isempty(stimSmoothFactor) && isnumeric(stimSmoothFactor) )
-			 if ( stimSmoothFactor>=0 ) % exp weighted moving average
-				dv=dv*stimSmoothFactor + (1-stimSmoothFactor)*pred(:);
-			 else % store predictions in a ring buffer
-				fbuff(:,mod(nEpochs-1,abs(stimSmoothFactor))+1)=pred(:);% store predictions in a ring buffer
-				dv=mean(fbuff,2);
-			 end
-		  end
-
-		  % convert from dv to normalised probability
-        prob = 1./(1+exp(-pred)); prob=prob./sum(prob); % convert from dv to normalised probability
+        nPred=nPred+1;
+        dvs(:,nPred)=pred;
         if ( verb>=0 ) 
-          fprintf('dv:');fprintf('%5.4f ',pred);fprintf('\t\tProb:');fprintf('%5.4f ',prob);fprintf('\n'); 
-        end;
-      end
-	 else
-		fprintf('%d) no predictions!\n',nsamples);
-	 end % if prediction events to process
+          fprintf('dv:');fprintf('%5.4f ',pred);fprintf('\n'); 
+        end;          
+      elseif ( strcmp(ev.type,'stimulus.testing') ) 
+        endTesting=true; break;
+      end % prediction events to processa  
+    end % if feedback events to process
+    if ( endTesting ) break; end;
+  end % loop accumulating prediction events
 
-    % feedback information... simply move in direction detected by the BCI
-	 if ( numel(prob)>=size(stimPos,2)-1 ) % per-target decomposition
-		dx = stimPos(:,1:numel(prob))*prob(:); % change in position is weighted by class probs
-	 elseif ( numel(prob)==2 ) % direct 2d decomposition
-		dx = prob;
-	 elseif ( numel(prob)==1 )
-		dx = [prob;0];
-	 end
-    cursorPos=get(h(end),'position'); cursorPos=cursorPos(:);
-	 fixPos   =cursorPos(1:2);
-	 if ( warpCursor ) fixPos=dx; else fixPos=fixPos + dx*moveScale; end; % relative or absolute cursor movement
-	 set(h(end),'position',[fixPos cursorPos(3:4)]);
-    drawnow; % update the display after all events processed    
-  end % while time to go
-
+  % give the feedback on the predicted class
+  dv = sum(dvs,2); prob=1./(1+exp(-dv)); prob=prob./sum(prob);
+  if ( verb>=0 ) 
+    fprintf('dv:');fprintf('%5.4f ',pred);fprintf('\t\tProb:');fprintf('%5.4f ',prob);fprintf('\n'); 
+  end;  
+  [ans,predTgt]=max(dv); % prediction is max classifier output
+  set(h(:),'facecolor',bgColor);
+  set(h(predTgt),'facecolor',tgtColor);
+  drawnow;
+  sendEvent('stimulus.predTgt',predTgt);
+  sleepSec(feedbackDuration);
+  
   % reset the cue and fixation point to indicate trial has finished  
   set(h(:),'facecolor',bgColor);
   if ( ~isempty(symbCue) ) set(txthdl,'visible','off'); end
   % also reset the position of the fixation point
-  set(h(end),'position',[stimPos(:,end)-stimRadius/4;stimRadius/2*[1;1]]);
   drawnow;
   sendEvent('stimulus.trial','end');
   
@@ -150,6 +119,7 @@ end % loop over sequences in the experiment
 sendEvent('stimulus.testing','end');
 
 if ( ishandle(fig) ) % thanks message
-set(txthdl,'string',{'That ends the feedback phase.','Thanks for your patience'}, 'visible', 'on');
+set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
+text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the testing phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','pixel','FontSize',.1*wSize(4));
 pause(3);
 end

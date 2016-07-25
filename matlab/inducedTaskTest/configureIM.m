@@ -44,16 +44,17 @@ end
 verb         =1; % verbosity level for debug messages, 1=default, 0=quiet, 2=very verbose
 buffhost     ='localhost';
 buffport     =1972;
-nSymbs       =4; % E,N,W,S for 4 outputs, N,W,E  for 3 outputs
-symbCue      ={'RH' 'rst' 'LH' 'FT'}; % sybmol cue in addition to positional one. E,N,W,S for 4 symbs
-%nSymbs       =3;
-%symbCue      ={'rst' 'LH' 'RH'}; % string cue in addition to positional one. N,W,E for 3 symbs
+nSymbs       =6; % E,NE,NW,W,SW,SE,E for 6 outputs
+symbCue      ={'RH' 'Tongue' 'Nav' 'LH' 'Math' 'Feet'};
+baselineClass=[]; % 'Rest';if set, treat baseline phase as a separate class to classify
 nSeq         =20*nSymbs; % 20 examples of each target
 
-trialDuration     =3;   % length in seconds of the task in seconds
-baselineDuration  =1;   % length in seconds of the get-ready cue
-intertrialDuration=3.5; % length in seconds of the post-task blank screen
-feedbackDuration  =1;   % length in seconds of the feedback post trial
+trialDuration=4.5;
+baselineDuration=1.5;
+cueDuration  =1.5;
+startDelay   =.5;
+intertrialDuration=0;%3.5
+feedbackDuration=1;
 
 contFeedbackTrialDuration =10;
 neurofeedbackTrialDuration=30;
@@ -66,40 +67,36 @@ bgColor      =[.5 .5 .5]; % background/inactive stimuli color
 fixColor     =[1 0 0]; % fixitation/get-ready cue point color
 tgtColor     =[0 1 0]; % target color
 fbColor      =[0 0 1]; % feedback color
-txtColor     =[.8 .8 .8]; % cue text color
+txtColor     =[.8 .8 .8]; % text color
 
 % classifier training options
 trlen_ms      =trialDuration*1000; % how often to run the classifier
 calibrateOpts ={};
 
 welch_width_ms=250; % width of welch window => spectral resolution
-step_ms=welch_width_ms/2;% N.B. welch defaults=.5 window overlap, use step=width/2 to simulate
-
 %trainOpts={'width_ms',welch_width_ms,'badtrrm',0}; % default: 4hz res, stack of independent one-vs-rest classifiers
-% whiten + direct multi-class training, ignoring the startup window after the cue
-trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','wht','timeband_ms',[250 trlen_ms],'objFn','mlr_cg','binsp',0,'spMx','1vR'}; 
-%trainOpts = {'spType',{{1 3} {2 4}}}; % train 2 classifiers, 1=N vs S, 2=E vs W
+trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','wht','objFn','lr_cg','binsp',1,'spMx','1v1'}; % all-pairwise training
 
 % Epoch feedback opts
 %%0) Use exactly the same classification window for feedback as for training, but
 %%   but also include a bias adaption system to cope with train->test transfer
-earlyStopping = false;
 epochFeedbackOpts={}; % raw output
-%epochFeedbackOpts={'predFilt',@(x,s,e) biasFilt(x,s,exp(log(.5)/50))}; % bias-adaption
+%epochFeedbackOpts={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/50))}; % bias-apaption
 
 % different feedback configs (should all give similar results)
 
 %%1) Use exactly the same classification window for feedback as for training, but apply more often
 %contFeedbackOpts ={'step_ms',welch_width_ms}; % apply classifier more often
 %%   but also include a bias adaption system to cope with train->test transfer
-%contFeedbackOpts ={'predFilt',@(x,s,e) biasFilt(x,s,exp(log(.5)/100)),'step_ms',250};
+%contFeedbackOpts ={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/100)),'step_ms',250};
 stimSmoothFactor= 0; % additional smoothing on the stimulus, not needed with 3s trlen
 
 %%2) Classify every welch-window-width (default 250ms), prediction is average of full trials worth of data, no-bias adaptation
 %% N.B. this is numerically identical to option 1) above, but computationally *much* cheaper 
+step_ms=welch_width_ms/2;% N.B. welch defaults=.5 window overlap, use step=width/2 to simulate
 contFeedbackOpts ={'predFilt',-(trlen_ms/step_ms),'trlen_ms',welch_width_ms};
 
 
 %%3) Classify every welch-window-width (default 500ms), with bias-adaptation
-%contFeedbackOpts ={'predFilt',@(x,s,e) biasFilt(x,s,exp(log(.5)/400)),'trlen_ms',[]}; 
+%contFeedbackOpts ={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/400)),'trlen_ms',[]}; 
 %stimSmoothFactor= -(trlen_ms/500);% actual prediction is average of trail-length worth of predictions

@@ -84,7 +84,7 @@ for si=1:nSeq;
   fprintf('%d) tgt=%10s : ',si,tgtNm);
   sendEvent('stimulus.target',tgtNm);
   drawnow;% expose; % N.B. needs a full drawnow for some reason
-  sendEvent('stimulus.trial','start');
+  sendEvent('stimulus.trial.cued','start');
   % wait for trial end
   sleepSec(trialDuration);
   
@@ -92,7 +92,7 @@ for si=1:nSeq;
   set(h(:),'facecolor',bgColor);
   if ( ~isempty(symbCue) ) set(txthdl,'visible','off'); end
   drawnow;
-  sendEvent('stimulus.trial','end');
+  sendEvent('stimulus.trial.cued','end');
   
   ftime=getwTime();
   fprintf('\n');
