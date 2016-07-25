@@ -36,14 +36,15 @@ if ( isempty(wb) || isempty(strfind('dataAcq',wb)) )
   initsleepSec;
 end;
 opts=struct('phaseEventType','startPhase.cmd',...
-            'dataCatchPhases',{'test','testing','epochfeedback','eventfeedback','contfeedback','calibrate','calibration','calibrate_incremental'},...
-				'epochEventType',[],...
+            'dataCatchPhases',{{'test','testing','epochfeedback','eventfeedback','contfeedback','calibrate','calibration','calibrate_incremental'}},...
+				'epochEventType',[],'trlen_ms',1000,...
 				'calibrateOpts',{{}},
 				'subject','test','verb',1,'buffhost',[],'buffport',[],'timeout_ms',500);
 opts=parseOpts(opts,varargin);
 
 % [] TODO: ask the user for the trigger-event type and the trial-length
-if ( isempty(opts.epochEventType) ) 
+if ( isempty(opts.epochEventType) )
+   ;
 end
 if ( isempty(opts.epochEventType) )     opts.epochEventType='stimulus.target'; end;
 
@@ -71,7 +72,7 @@ while ( true )
 
   if ( ~isempty(phaseToRun) ) state=[]; end
   % GUI update
-  fprinntf('.'); drawnow;
+  fprintf('.'); drawnow;
 
   % wait for a phase control event
   if ( opts.verb>0 ) fprintf('%d) Waiting for phase command\n',nsamples); end;

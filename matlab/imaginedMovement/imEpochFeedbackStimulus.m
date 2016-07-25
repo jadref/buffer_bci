@@ -150,13 +150,21 @@ for si=1:nSeq;
 	 fprintf(1,'Waiting for predictions after: (%d samp, %d evt)\n',...
 				state.nSamples,state.nEvents);
   end;
-  if ( earlyStopping )
-	 % wait for new prediction events to process *or* end of trial time
-	 [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],epochFeedbackTrialDuration*1000+1500);
-  else
-    sleepSec(epochFeedbackTrialDuration); 
-	 % wait for classifier prediction event
-	 [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],2000);
+  devents=[];
+  for eti=1:epochDuration:epochFeedbackTrialDuration;
+    % send target event every epochDuration s
+    ttg=min(epochDuration,epochFeedbackTrialDuration-eti);
+    ev=sendEvent('stimulus.target',tgtNm);
+    if ( earlyStopping )
+	        % wait for new prediction events to process *or* end of trial time
+	   [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],ttg);
+      if( ~isempty(devents) ) break; end;
+    else
+      sleepSec(ttg); 
+    end
+  end
+  if( isempty(devents) ) 	                             % wait for classifier prediction event
+    [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],2000);
   end
   trlEndTime=getwTime();
   

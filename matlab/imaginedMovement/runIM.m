@@ -14,7 +14,10 @@ menustr={'0) EEG'                    'eegviewer';
 			'5) Continuous Feedback'    'contfeedback';
          '6) Center-out Training'    'centerout';
 			'7) NeuroFeedback Training' 'neurofeedback';
-			'q) quit'                   'quit';
+         '' '';
+         'S) Slice ftoffline data'   'sliceraw';
+         'L) Load training data'     'loadtraining';
+			'q) exit'                   'quit';
 };
 menuh=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
 			 'HorizontalAlignment','left','color',[1 1 1]);
@@ -171,6 +174,18 @@ while (ishandle(contFig))
     end   
     sendEvent(phaseToRun,'end');
 
+     %---------------------------------------------------------------------------
+   case {'loadtraining','sliceraw'}; % forward to the signal processor...
+     sigProcCmd=['sigproc.' phaseToRun]; % command to send to the signal processor
+     sendEvent(sigProcCmd,'start'); 
+     % wait for sig-processor startup acknowledgement
+     [devents,state]=buffer_newevents(buffhost,buffport,[],sigProcCmd,'ack',4000); 
+     if( ~isempty(sigProcCmd) && isempty(devents) ) % mark as taking a long time
+       set(msgh,'string',{sprintf('Warning::%s is taking too long to start...',phaseToRun),'did it crash?'},'visible','on');
+     else % mark as running
+       set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Running...'},'visible','on');
+     end
+         
    %---------------------------------------------------------------------------
    case {'train','trainersp'};
     sendEvent('subject',subject);
