@@ -229,10 +229,10 @@ for foldi=1:size(fIdxs,ndims(fIdxs));
 			  tstIndi = tstInd | exInd; 
            res.tstf(tstIndi,spis(spii),ci)=f(tstIndi,spii); 
 			end;
-         res.fold.trnconf(:,1,ci,foldi)=dv2conf(Ytrn,f);
-         res.fold.tstconf(:,1,ci,foldi)=dv2conf(Ytst,f);
-         res.fold.trn(:,1,ci,foldi)=conf2loss(res.fold.trnconf(:,1,ci,foldi),1,opts.lossFn);
-         res.fold.tst(:,1,ci,foldi)=conf2loss(res.fold.tstconf(:,1,ci,foldi),1,opts.lossFn);
+         res.fold.trnconf(:,spis(1),ci,foldi)=dv2conf(Ytrn,f);
+         res.fold.tstconf(:,spis(1),ci,foldi)=dv2conf(Ytst,f);
+         res.fold.trn(:,spis(1),ci,foldi)=conf2loss(res.fold.trnconf(:,spis(1),ci,foldi),1,opts.lossFn);
+         res.fold.tst(:,spis(1),ci,foldi)=conf2loss(res.fold.tstconf(:,spis(1),ci,foldi),1,opts.lossFn);
          for spii=1:numel(spis);% N.B. we need to loop as dv2conf
            % etc. only work on 1 sub-prob at a time               
            res.fold.trnbin (:,spis(spii),ci,foldi)=...

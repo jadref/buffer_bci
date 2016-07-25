@@ -48,9 +48,9 @@ nSymbs       =6; % E,NE,NW,W,SW,SE,E for 6 outputs
 symbCue      ={'RH' 'Tongue' 'Nav' 'LH' 'Math' 'Feet'};
 nSeq         =20*nSymbs; % 20 examples of each target
 
-trialDuration=3;
-baselineDuration=1;
-cueDuration  =1;
+trialDuration=4.5;
+baselineDuration=1.5;
+cueDuration  =1.5;
 startDelay   =.5;
 intertrialDuration=0;%3.5
 feedbackDuration=1;
