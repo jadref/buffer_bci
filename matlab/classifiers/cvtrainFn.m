@@ -277,15 +277,15 @@ res.trnconf= sum(res.fold.trnconf,foldD);
 res.tstconf= sum(res.fold.tstconf,foldD);
 res.trnbin = conf2loss(res.trnconf,1,opts.lossFn);%mean(res.fold.trnbin,foldD);
 res.trn    = res.trnbin;
-res.trnbin_se=sqrt(abs(sum(res.fold.trnbin.^2,foldD)/nFolds-(res.trnbin.^2))/nFolds);
+%res.trnbin_se=sqrt(abs(sum(res.fold.trnbin.^2,foldD)/nFolds-(res.trnbin.^2))/nFolds);
 res.tstbin = conf2loss(res.tstconf,1,opts.lossFn);%mean(res.fold.tstbin,foldD);
 res.tst    = res.tstbin;
-res.tstbin_se=sqrt(abs(sum(res.fold.tstbin.^2,foldD)/nFolds-(res.tstbin.^2))/nFolds);
+%res.tstbin_se=sqrt(abs(sum(res.fold.tstbin.^2,foldD)/nFolds-(res.tstbin.^2))/nFolds);
 if ( opts.binsp )
   res.trnauc = sum(res.fold.trnauc,foldD)./size(res.fold.trnauc,foldD);
-  res.trnauc_se=sqrt(abs(sum(res.fold.trnauc.^2,foldD)/nFolds-(res.trnauc.^2))/nFolds);
+  %res.trnauc_se=sqrt(abs(sum(res.fold.trnauc.^2,foldD)/nFolds-(res.trnauc.^2))/nFolds);
   res.tstauc = sum(res.fold.tstauc,foldD)./size(res.fold.tstauc,foldD);
-  res.tstauc_se=sqrt(abs(sum(res.fold.tstauc.^2,foldD)/nFolds-(res.tstauc.^2))/nFolds);
+  %res.tstauc_se=sqrt(abs(sum(res.fold.tstauc.^2,foldD)/nFolds-(res.tstauc.^2))/nFolds);
 end
 res.fIdxs  = fIdxs;
 res.Y      = Y;
