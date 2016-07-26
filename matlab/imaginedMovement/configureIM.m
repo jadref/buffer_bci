@@ -46,6 +46,7 @@ buffhost     ='localhost';
 buffport     =1972;
 nSymbs       =4; % E,N,W,S for 4 outputs, N,W,E  for 3 outputs
 symbCue      ={'RH' 'rst' 'LH' 'FT'}; % sybmol cue in addition to positional one. E,N,W,S for 4 symbs
+baselineClass=[];
 %nSymbs       =3;
 %symbCue      ={'rst' 'LH' 'RH'}; % string cue in addition to positional one. N,W,E for 3 symbs
 nSeq         =20*nSymbs; % 20 examples of each target
