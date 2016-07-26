@@ -95,10 +95,6 @@ for si=1:nSeq;
 				% wait for trial end
 	 sleepSec(trialDuration);
   end
-  drawnow;% expose; % N.B. needs a full drawnow for some reason
-  sendEvent('stimulus.trial.cued','start');
-  % wait for trial end
-  sleepSec(trialDuration);
   
   % reset the cue and fixation point to indicate trial has finished  
   set(h(:),'facecolor',bgColor);
