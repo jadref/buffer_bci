@@ -71,8 +71,8 @@ fbColor      =[0 0 1]; % feedback color
 txtColor     =[.5 .5 .5]; % color of the cue text
 
 % Calibration/data-recording options
+trlen_ms      =epochDuration*1000; % how much data to use in each classifier training example
 offset_ms     =[250 250]; % give .25s for user to start/finish
-trlen_ms      =epochDuration*1000; % how often to run the classifier
 calibrateOpts ={'offset_ms',offset_ms};
 
 										% classifier training options

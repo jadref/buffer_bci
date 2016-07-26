@@ -104,7 +104,7 @@ for si=1:nSeq;
   sleepSec(feedbackDuration);
   
   % reset the cue and fixation point to indicate trial has finished  
-  set(h(:),'facecolor',bgColor);
+  if( feedbackDuration>0) set(h(:),'facecolor',bgColor); end;
   if ( ~isempty(symbCue) ) set(txthdl,'visible','off'); end
   % also reset the position of the fixation point
   drawnow;

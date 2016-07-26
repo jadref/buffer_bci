@@ -46,15 +46,14 @@ buffhost     ='localhost';
 buffport     =1972;
 nSymbs       =6; % E,NE,NW,W,SW,SE,E for 6 outputs
 symbCue      ={'RH' 'Tongue' 'Nav' 'LH' 'Math' 'Feet'};
-baselineClass=[]; % 'Rest';if set, treat baseline phase as a separate class to classify
+baselineClass='99 rest'; % 'Rest';if set, treat baseline phase as a separate class to classify
 nSeq         =20*nSymbs; % 20 examples of each target
 
-trialDuration=4.5;
-baselineDuration=1.5;
-cueDuration  =1.5;
-startDelay   =.5;
-intertrialDuration=0;%3.5
-feedbackDuration=1;
+epochDuration   =1.5;
+trialDuration   =epochDuration*3;
+baselineDuration=epochDuration;
+intertrialDuration=epochDuration;
+feedbackDuration=.5;
 
 contFeedbackTrialDuration =10;
 neurofeedbackTrialDuration=30;
@@ -69,9 +68,13 @@ tgtColor     =[0 1 0]; % target color
 fbColor      =[0 0 1]; % feedback color
 txtColor     =[.8 .8 .8]; % text color
 
-% classifier training options
-trlen_ms      =trialDuration*1000; % how often to run the classifier
-calibrateOpts ={};
+										  % classifier training options
+if ( isempty(epochDuration) )
+  trlen_ms      =trialDuration*1000; % amount of data in each example
+else
+  trlen_ms      =epochDuration*1000;
+end
+calibrateOpts ={'offset_ms',[250 250]};
 
 welch_width_ms=250; % width of welch window => spectral resolution
 %trainOpts={'width_ms',welch_width_ms,'badtrrm',0}; % default: 4hz res, stack of independent one-vs-rest classifiers

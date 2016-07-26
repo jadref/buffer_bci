@@ -82,7 +82,19 @@ for si=1:nSeq;
   end
   set(h(end),'facecolor',[0 1 0]); % green fixation indicates trial running
   fprintf('%d) tgt=%10s : ',si,tgtNm);
-  sendEvent('stimulus.target',tgtNm);
+  if ( ~isempty(epochDuration) ) 
+	 for ei=1:ceil(trialDuration./epochDuration);
+		sendEvent('stimulus.target',tgtNm);
+		drawnow;% expose; % N.B. needs a full drawnow for some reason
+				  % wait for trial end
+		sleepSec(epochDuration);
+	 end
+  else
+	 sendEvent('stimulus.target',tgtNm);
+	 drawnow;% expose; % N.B. needs a full drawnow for some reason
+				% wait for trial end
+	 sleepSec(trialDuration);
+  end
   drawnow;% expose; % N.B. needs a full drawnow for some reason
   sendEvent('stimulus.trial.cued','start');
   % wait for trial end
