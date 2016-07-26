@@ -94,12 +94,15 @@ opts = struct('binsp',1,'aucNoise',0,'recSoln',0,'dim',[], 'reuseParms',1,...
 				  'lossType',[],'lossFn','bal','dispType','bin', 'subIdx',[],'aucWght',.1);
 [opts,varargin]=parseOpts(opts,varargin);
 
-if ( ndims(Y)>2 || ~any(size(Y,1)==size(X)) ) 
-   error('Y should be a matrix with N elements'); 
+dim=opts.dim; if ( isempty(dim) ) dim=ndims(X); end;
+szX=size(X);
+if ( ndims(Y)>2 || size(Y,1)~=prod(szX(dim)) ) 
+   error('Y should be a matrix with N elements x L classes'); 
 end
 if ( opts.binsp && (~all(Y(:)==-1 | Y(:)==0 | Y(:)==1)) )
   error('Y should be matrix of -1/0/+1 label indicators.');
 end
+if ( isempty(opts.lossFn) && ~isempty(opts.lossType) ) opts.lossFn=opts.lossType; end;
 if ( nargin < 4 || isempty(Cs) ) Cs=[5.^(3:-1:-3) 0]; end;
 if ( nargin < 5 || isempty(fIdxs) ) 
    nFolds=10; fIdxs = gennFold(Y,nFolds,'perm',1);
@@ -111,7 +114,6 @@ elseif ( size(fIdxs,1)==size(Y,1) )
 else
    error('fIdxs isnt compatiable with X,Y');
 end
-dim=opts.dim; if ( isempty(dim) ) dim=ndims(X); end;
 
 siCs=1:size(Cs,2);
 if ( opts.reuseParms && opts.reorderC ) 
@@ -247,12 +249,9 @@ for foldi=1:size(fIdxs,ndims(fIdxs));
          end % sub-probs
          if ( opts.verb>-1 ) % log the performance
             trn=res.fold.trn; tst=res.fold.tst; 
-            if ( size(trn,2)>1 ) fprintf('['); end;
-            for spii=1:size(trn,2);
-               fprintf('%0.2f/%0.2f',trn(:,spii,ci,foldi),tst(:,spii,ci,foldi));
-               if ( spii<size(trn,2)) fprintf(' '); end;
-            end
-            if( size(trn,2)>1 ) fprintf(']'); 
+            if ( size(trn,1)>1 ) fprintf('['); end;
+            fprintf('%0.2f/%0.2f',trn(:,spis(1),ci,foldi),tst(:,spis(1),ci,foldi));
+            if( size(trn,1)>1 ) fprintf(']'); 
               if ( size(trn,2)<5 ) fprintf(' '); else fprintf('\n'); end;
             elseif( size(Cs,2)>1 ) fprintf('\t'); 
             end;
