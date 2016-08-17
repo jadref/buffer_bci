@@ -69,8 +69,7 @@ if ( isfield(clsfr,'spatialfilt') && ~isempty(clsfr.spatialfilt) )
 end
 
 %3.5) adaptive spatial filter
-if ( isfield(clsfr,'adaptspatialfilt') && ...
-	  ~isempty(clsfr.adaptspatialfilt) && ~isequal(clsfr.adaptspatialfilt,0) )
+if ( isfield(clsfr,'adaptspatialfilt') && ~isempty(clsfr.adaptspatialfilt) )
   if ( size(X,3)>1 ) warning('Adaptive filtering only when called with single trials.'); end
   % single number = memory for adapt whitener
   if ( isnumeric(clsfr.adaptspatialfilt) )
@@ -82,7 +81,7 @@ if ( isfield(clsfr,'adaptspatialfilt') && ...
 	 else % update
 	   % between 0 and 1 is an exp weighting factor
 		% N.B. alpha = exp(log(.5)./(half-life))
-		if ( clsfr.adaptspatialfilt>=0 && clsfr.adaptspatialfilt<1 ) % exp-weighted moving average
+		if ( clsfr.adaptspatialfilt>=0 && clsfr.adaptspatialfilt<=1 ) % exp-weighted moving average
 		  chCov = clsfr.adaptspatialfilt*clsfr.chCov + (1-clsfr.adaptspatialfilt)*chCov;
 		  clsfr.chCov = chCov;
 		else % integers 1 or larger => ring buffer
@@ -164,7 +163,11 @@ if ( any(isbadtr) )
 end
 
 % Pr(y==1|x,w,b), map to probability of the positive class
-p = 1./(1+exp(-f)); 
+if ( clsfr.binsp ) 
+   p = 1./(1+exp(-f)); 
+else % direct multi-class softmax
+   p = exp(f-max(f,2)); p=repop(p,'./',sum(p,2));
+end
 
 return;
 %------------------

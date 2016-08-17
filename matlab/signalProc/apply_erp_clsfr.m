@@ -140,7 +140,11 @@ if ( any(isbadtr) )
 end
 
 % Pr(y==1|x,w,b), map to probability of the positive class
-p = 1./(1+exp(-f)); 
+if ( clsfr.binsp ) 
+   p = 1./(1+exp(-f)); 
+else % direct multi-class softmax
+   p = exp(f-max(f,2)); p=repop(p,'./',sum(p,2));
+end
 if ( verb>0 ) fprintf('Classifier prediction:  %g %g\n', f,p); end;
 
 return;

@@ -1,7 +1,7 @@
-function [f,fraw,p,X]=buffer_apply_ersp_clsfr(X,clsfr,verb)
+function [f,fraw,p,X,clsfr]=buffer_apply_ersp_clsfr(X,clsfr,verb)
 % apply a previously trained classifier to the input data
 % 
-%  f=buffer_apply_erp_clsfr(X,clsfr,varargin)
+%  [f,fraw,p,X,clsfr]=buffer_apply_erp_clsfr(X,clsfr,varargin)
 %
 % Inputs:
 %   X -- [ch x time x epoch] data
@@ -27,7 +27,7 @@ if ( iscell(X) )
 elseif ( isstruct(X) )
   X=cat(3,X.buf);
 end 
-[f, fraw, p, X]=apply_ersp_clsfr(X,clsfr,verb);
+[f, fraw, p, X, clsfr]=apply_ersp_clsfr(X,clsfr,verb);
 if ( verb>0 ) fprintf('Classifier prediction:  %g %g\n', f,p); end;
 return;
 %------------------

@@ -360,11 +360,11 @@ clsfr.freqIdx     = fIdx; % start/end index of frequencies to keep
 
 clsfr.badtrthresh = []; if ( ~isempty(trthresh) ) clsfr.badtrthresh = trthresh(end)*opts.badtrscale; end
 clsfr.badchthresh = []; if ( ~isempty(chthresh) ) clsfr.badchthresh = chthresh(end)*opts.badchscale; end
-% record some dv stats which are useful
-tstf = res.tstf(:,res.opt.Ci); % N.B. this *MUST* be calibrated to be useful
-clsfr.dvstats.N   = [sum(res.Y>0) sum(res.Y<=0) numel(res.Y)]; % [pos-class neg-class pooled]
-clsfr.dvstats.mu  = [mean(tstf(res.Y(:,1)>0)) mean(tstf(res.Y(:,1)<=0)) mean(tstf)];
-clsfr.dvstats.std = [std(tstf(res.Y(:,1)>0))  std(tstf(res.Y(:,1)<=0))  std(tstf)];
+% record some dv stats which are useful for bias-adaptation
+tstf = res.opt.tstf; % N.B. this *MUST* be calibrated to be useful
+clsfr.dvstats.N   = sum(res.Y~=0,1);
+clsfr.dvstats.mu  = mean(tstf,1);
+clsfr.dvstats.std = std(tstf,1);
 %  bins=[-inf -200:5:200 inf]; clf;plot([bins(1)-1 bins(2:end-1) bins(end)+1],[histc(tstf(Y>0),bins) histc(tstf(Y<=0),bins)]); 
 
 if ( opts.visualize >= 1 ) 
