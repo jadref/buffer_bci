@@ -16,7 +16,7 @@ if ( isempty(sleepSec) && exist('WaitSecs') )
   end
 end
 if ( isempty(sleepSec) )
-  if ( exist('java')==2 )
+  if ( usejava('jvm') )
     sleepSec=@(t) javaMethod('sleep','java.lang.Thread',max(0,t)*1000);      
   else
     sleepSec=@(t) pause(t);
