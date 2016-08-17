@@ -24,10 +24,16 @@ fraw = repop(fraw,'+',classifier.b);                % include the bias
 
 % apply the multi-class decoding procedure if wanted
 f=fraw;
-if( isfield(classifier,'spMx') && ~isempty(classifier.spMx) && ~isequal(classifier.spMx,[1 -1]) && ...
-    ~(isfield(classifier,'rawdv') && isequal(classifier.rawdv,1)) ) 
-   f = tprod(f,[1 -2],classifier.spMx,[-ndims(f) 2],'n');
-   f = f./mean(sum(classifier.spMx~=0));
+if( isfield(classifier,'spMx') && ~isempty(classifier.spMx) && ...
+	 (~isfield(classifier,'binsp') || isequal(classifier.binsp,1) ) && ...% don't if dir multiclass clsfr
+    ~(isfield(classifier,'rawdv') && isequal(classifier.rawdv,1)) ) % don't if want raw
+									 % check if even necessary, i.e. not for 1vR spMx
+  if( isequal(classifier.spMx,[1 -1]) || all(classifier.spMx-(2*eye(size(classifier.spMx))-1)<eps) )
+	 ; % skip for 1vR decoding matrix
+  else
+	 f = tprod(f,[1 -2],classifier.spMx,[-ndims(f) 2]);
+  end
+   %f = f./mean(sum(classifier.spMx~=0));
 end
 
 %-----------------------------------------------------------------------------
