@@ -1,7 +1,7 @@
 function [f,fraw,p,Xpp]=buffer_apply_clsfr(X,clsfr,verb)
 % apply a previously trained classifier to the input data
 % 
-%  f=buffer_apply_clsfr(X,clsfr,varargin)
+%  f=buffer_apply_clsfr(X,clsfr,verb,varargin)
 %  
 % Note: automatically detect and use ERP/ERsP pipeline as needed
 %

@@ -53,7 +53,12 @@ opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
             'predEventType','classifier.prediction',...
             'trlen_ms',[],'trlen_samp',[],...
             'predFilt',[],'timeout_ms',1000); 
-[opts,varargin]=parseOpts(opts,varargin);
+[opts]=parseOpts(opts,varargin);
+
+% override classifier fields
+if ( ~isempty(opts.adaptspatialfilt) )
+  for ci=1:numel(clsfr); clsfr(ci).adaptspatialfilt=opts.adaptspatialfilt; end;
+end
 
 % if not explicitly given work out from the classifier information the trial length needed
 % to apply the classifier
@@ -127,7 +132,7 @@ while ( ~endTest )
 
       % apply classification pipeline(s) to this events data      
       for ci=1:numel(clsfr);
-        [f(:,ci),fraw(:,ci),p(:,ci)]=buffer_apply_clsfr(data(ei).buf,clsfr(ci));
+        [f(:,ci),fraw(:,ci),p(:,ci)]=buffer_apply_clsfr(data(ei).buf,clsfr(ci),opts.verb);
         if ( opts.verb>1 ) fprintf('clsfr%d pred=[%s]\n',ci,sprintf('%g ',f(:,ci))); end;
       end
       if ( numel(ci)>1 ) % combine individual classifier predictions

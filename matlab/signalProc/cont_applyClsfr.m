@@ -22,9 +22,19 @@ function [testdata,testevents,predevents]=cont_applyClsfr(clsfr,varargin)
 %                         [f,state]=func(f,state)
 %                             where state is the internal state of the filter, e.g. the history of past values
 %                      Examples: 
+<<<<<<< HEAD
 %                        'predFilt',@(x,s) avefilt(x,s,10)   % moving average filter, length 10
 %                        'predFilt',@(x,s) biasFilt(x,s,50)  % bias adaptation filter, length 50
 %                        'predFilt',@(x,s) stdFilt(x,s,100)  % normalising filter (0-mean,1-std-dev), length 100
+=======
+%                        'predFilt',@(x,s,e) avefilt(x,s,10)   % moving average filter, length 10
+%                        'predFilt',@(x,s,e) biasFilt(x,s,50)  % bias adaptation filter, length 50
+%                        'predFilt',@(x,s,e) stdFilt(x,s,100)  % normalising filter (0-mean,1-std-dev), length 100
+%                        'predFilt',@(x,s,e) avenFilt(x,s,10)  % send average f every 10 predictions
+%                        'predFilt',@(x,s,e) marginFilt(x,s,3) % send if margin between best and worst prediction >=3
+%  resetType     -- event type to match to reset the filter states   ('classifier.reset')
+%  clsfrOpts  -- {opts} name,value pairs to override fields in the input classfier structure
+>>>>>>> b0a860b... fixes for the adaptive filter stuff
 % Examples:
 %  % 1) Default: apply clsfr every 100ms and send predictions as 'classifier.predicition'
 %  %    stop processing when get a 'stimulus.test','end' event.
@@ -41,8 +51,18 @@ opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
             'endType','stimulus.test','endValue','end','verb',0,...
             'predEventType','classifier.prediction','resetType','classifier.reset',...
             'trlen_ms',[],'trlen_samp',[],'overlap',.5,'step_ms',[],...
+<<<<<<< HEAD
             'predFilt',[],'timeout_ms',1000); % exp moving average constant, half-life=10 trials
 [opts,varargin]=parseOpts(opts,varargin);
+=======
+            'predFilt',[],'timeout_ms',1000,'adaptspatialfilt',[]);
+[opts]=parseOpts(opts,varargin);
+
+% override classifier fields
+if ( ~isempty(opts.adaptspatialfilt) )
+  for ci=1:numel(clsfr); clsfr(ci).adaptspatialfilt=opts.adaptspatialfilt; end;
+end
+>>>>>>> b0a860b... fixes for the adaptive filter stuff
 
 % if not explicitly given work out from the classifier information the trial length needed
 % to apply the classifier
