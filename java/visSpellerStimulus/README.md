@@ -14,6 +14,9 @@ As with other GDX based systems this project uses [Gradle](http://www.gradle.org
 
 To build with [Eclipse](www.eclipse.org), NetBeans or Intellij IDEA follow the instructions [here](https://github.com/libgdx/libgdx/wiki/Setting-up-your-Development-Environment-%28Eclipse%2C-Intellij-IDEA%2C-NetBeans%29) and then for Eclipse [here](https://github.com/libgdx/libgdx/wiki/Gradle-and-Eclipse).
 
+To build form the command-line use:
+`./gradlew platform:command` for example to build the desktop version `./gradlew desktop:build` or to run the desktop version `./gradlew desktop:run`.
+
 
 Definition
 ==========
