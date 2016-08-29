@@ -27,21 +27,21 @@ if ( (ftime-state.startTime) >= state.stimTime(state.curStim)  || restart ) % ne
     si=find(ostimState>0);
     if ( ~isempty(si) )
       for j=si; % change stim size
-        set(state.hdls(j),'xdat',state.stimPos(1,j)+state.stimPCoords(1,:,j),...
-                          'ydat',state.stimPos(2,j)+state.stimPCoords(2,:,j));
+        set(state.hdls(j),'xdata',state.stimPos(1,j)+state.stimPCoords(1,:,j),...
+                          'ydata',state.stimPos(2,j)+state.stimPCoords(2,:,j));
       end
     end
     si=find(curstimState>0);
     if ( ~isempty(si) )
       for j=si; % change stim size
-        set(state.hdls(j),'xdat',state.stimPos(1,j)+state.stimPCoords(1,:,j)*state.sizeStim,...
-                          'ydat',state.stimPos(2,j)+state.stimPCoords(2,:,j)*state.sizeStim);
+        set(state.hdls(j),'xdata',state.stimPos(1,j)+state.stimPCoords(1,:,j)*state.sizeStim,...
+                          'ydata',state.stimPos(2,j)+state.stimPCoords(2,:,j)*state.sizeStim);
       end
     end
   end
   % change highlighted symbol color
-  set(state.hdls(curstimState>0),'facecolor',state.tgtColor);
-  set(state.hdls(curstimState==0),'facecolor',state.bgColor);
+  set(state.hdls(curstimState>0),'facecolor',state.tgtColor,'edgecolor',state.tgtColor);
+  set(state.hdls(curstimState==0),'facecolor',state.bgColor,'edgecolor',state.bgColor);
   set(state.hdls(curstimState>1),'facecolor',state.tgt2Color);
   % event if something changed & something stimulated
   if ( any(state.curstimState~=curstimState) && any(curstimState>0) ) 

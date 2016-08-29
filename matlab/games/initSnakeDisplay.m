@@ -1,15 +1,16 @@
 function [arenaax,maph,agentsh,titleax,scoreh,moveh]=initSnakeDisplay(fig,map,agents,key,score,segcoords)
 if ( nargin<6 || isempty(segcoords) ) segcoords='seg.coords'; end;
-if ( isempty(fig) ) fig=gcf(); end;
+if ( isempty(fig) ) fig=figure(2); end;
 figure(fig);
-set(fig,'Name','Snake','units','normalized',...%,'position',[0 0 1 1],...
+set(fig,'Name','Snake',...%'units','normalized',...%,'position',[0 0 1 1],...
     'color',[0 0 0],'menubar','none','toolbar','none');
 if ( ispc() )
-  set(fig,'backingstore','on','renderer','painters','doublebuffer','on','Interruptible','off');
+  set(fig,'renderer','painters','doublebuffer','on','Interruptible','off');
 else
   %opengl software; % hardware seems to fail!
-  set(fig,'backingstore','on','renderer','painters','doublebuffer','on','Interruptible','off');
+  set(fig,'renderer','painters');
 end
+if ( ~exist('OCTAVE_VERSION') ) set(fig,'backingstore','on'); end;
 clf;
 arenaax=axes('position',[0.025 0.05 .825 .85],'units','normalized','visible','off','box','off',...
              'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
@@ -33,7 +34,11 @@ if ( ischar(segcoords) ) segcoords = loadPatchCoords(segcoords); end;
 bg=zeros(size(map),'int8'); 
 bg(:)=map; 
 bg(map==key.snakehead | map==key.snakebody | map==key.pellet | map==key.powerpellet)=key.empty;
-bgh=image(bg'+1,'CDataMapping','direct');
+if ( ~exist('OCTAVE_VERSION') )
+  bgh=image(bg'+1,'CDataMapping','direct');
+else
+  bgh=image(single(bg'+1),'CDataMapping','direct');
+end
 % argh image resets lots of axes properties... set them back
 set(arenaax,'visible','off','box','off',...
             'xtick',[],'xticklabelmode','manual','xticklabel',[],...
@@ -42,7 +47,11 @@ set(arenaax,'visible','off','box','off',...
             'xlim',[.5 size(map,1)+.5],'ylim',[.5 size(map,2)+.5],'Ydir','normal');%,'DataAspectRatio',[1 1 1]);
 % mini-map
 miniax=axes('position',[.875 .775 .125 .125],'color',[0 0 0]);
-minih =image(bg'+1,'CDataMapping','direct');
+if ( ~exist('OCTAVE_VERSION') )
+  minih=image(bg'+1,'CDataMapping','direct');
+else
+  minih=image(single(bg'+1),'CDataMapping','direct');
+end
 set(miniax,'visible','off','box','off','xtick',[],'xticklabel',[],'ytick',[],'yticklabel',[],'color',[0 0 0],...
            'Ydir','normal');
 

@@ -1,4 +1,4 @@
-function [ndxy]=validateMove(map,agents,key,dxy,ndxy)
+function [ndxy]=validateSnakeMove(map,agents,key,dxy,ndxy)
 if ( isstruct(agents) ) agents=agents.map; end;
 % get pacman row/col
 [pacrc(1),pacrc(2)]=find(agents==key.snakehead);

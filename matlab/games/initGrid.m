@@ -13,8 +13,9 @@ function [hdls,symbols,opts]=initGrid(symbols,varargin)
 opts=struct('fontSize',[],'relfontSize',.1,'fig',[],'interBoxGap',.01);
 opts=parseOpts(opts,varargin);
 % prepare figure
-if ( ~isempty(opts.fig) ) figure(opts.fig); else opts.fig=gcf; end;
+if ( ~isempty(opts.fig) ) figure(opts.fig); else opts.fig=figure(2); end;
 % set the axes to invisible
+figure(opts.fig);
 set(gcf,'color',[0 0 0],'toolbar','none','menubar','none'); set(gca,'visible','off');
 set(gca,'YDir','reverse');
 set(gca,'xlim',[0 1],'ylim',[0 1],'xtick',[],'ytick',[]);

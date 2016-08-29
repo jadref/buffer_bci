@@ -20,7 +20,6 @@ tgtSeq=mkStimSeqRand(nSymbs,nSeq);
 
 % init game display
 score=0;
-clf;
 %pacmancoords=loadPatchCoords('pacman.coords');
 pacmancoords=mkPacman();
 [arenaax,maph,agentsh,titleax,scoreh,moveh]=initPacmanDisplay([],map,agents,key,score,pacmancoords);
@@ -126,19 +125,18 @@ while( lives>0 && nMoves<max_moves && ~goalReached )
     [ev,stimState]=drawStim(getwTime(),stimState,dxy);
     frametime(nframe,2)=getwTime();
     odrawTime=drawTime;
-    if ( 0 & ispc() )
+    if ( 0 && ispc() )
       sleepSec(max(0,isi-(getwTime()-odrawTime)-50/1000)); % exactly isi ms between calls to drawnow
       while ( isi-(getwTime()-odrawTime)>0 ); end; % live wait - reduces expose variance?
       drawTime=getwTime();
       frametime(nframe,3)=drawTime;
-      drawnow;
     else
       sleepSec(max(0,isi-(getwTime()-odrawTime))); % exactly isi ms between calls to drawnow
       drawTime=getwTime();
       frametime(nframe,3)=drawTime;
-      drawnow;
     end
-    if ( verb>-1) fprintf('.'); end;
+    drawnow;
+    if ( verb>-1 && mod(nframe,ceil(.5./isi))==0 ) fprintf('.'); end;
     frametime(nframe,4)=getwTime();
     if ( ~isempty(ev) && ~isempty(ev.value) ) 
       ev=sendEvent(ev); 
