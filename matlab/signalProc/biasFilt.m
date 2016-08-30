@@ -10,6 +10,10 @@ function [x,s]=biasFilt(x,s,alpha,verb)
 %                   all [1x1] or each [ndx1] input feature
 %           fx(t) = (\sum_0^inf x(t-i)*alpha^i)/(\sum_0^inf alpha^i)
 %           fx(t) = (1-alpha) x(t) + alpha fx(t)
+%           OR
+%           [1 x 2] or [nd x 2] 2-decay factors, one for bias, one for pre-high-pass
+%               alpha(1) = decay for the bias estimation
+%               alpha(2) = decay factor for averaging the inputs (high-pass)
 % Note:
 %   alpha = exp(log(.5)./(half-life))
 %  for any geometric series: s(n)=\sum_1:n a*1 + r*s(n-1)= a + a*r + ... + a*r^{n-1} = a*(1-r^n)/(1-r)
@@ -22,8 +26,11 @@ function [x,s]=biasFilt(x,s,alpha,verb)
 if ( nargin<4 || isempty(verb) ) verb=0; end;
 if ( isempty(s) ) s=struct('sx',zeros(size(x)),'N',0); end;
 if(any(alpha>1)) alpha=exp(log(.5)./alpha); end; % convert to decay factor
-s.N =alpha(:).*s.N  + (1-alpha(:)).*1; % weight accumulated so far, for warmup
-s.sx=alpha(:).*s.sx + (1-alpha(:)).*x;
+if ( size(alpha,2)>1 ) % moving average filter the raw inputs
+  s.x= alpha(:,2).*s.x + (1-alpha(:,2)).*x; x=s.x; 
+end;
+s.N =alpha(:,1).*s.N  + (1-alpha(:,1)).*1; % weight accumulated so far, for warmup
+s.sx=alpha(:,1).*s.sx + (1-alpha(:,1)).*x; % weighted sum of x
 if ( verb>0 ) fprintf('x=[%s]\ts=[%s]',sprintf('%g ',x),sprintf('%g ',s.sx./s.N)); end;
 x=x-s.sx./s.N;
 if ( verb>0 ) fprintf(' => x_new=[%s]\n',sprintf('%g ',x)); end;
