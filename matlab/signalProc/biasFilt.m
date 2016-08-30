@@ -1,5 +1,5 @@
 function [x,s]=biasFilt(x,s,alpha,verb)
-% bias removing filter (high-pass) removes slow drifts from inputs
+% bias removing filter (high-pass) removes slow drifts from inputs, with optional pre-high-pass
 %
 %   [x,s]=biasFilt(x,s,alpha,verb)
 %
