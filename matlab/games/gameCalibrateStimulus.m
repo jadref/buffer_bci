@@ -119,6 +119,7 @@ for si=1:nSeq;
 end % sequences
 % end training marker
 sendEvent('stimulus.training','end');
+sleepSec(1); % wait for brain response to end
 % show the end training message
 axes(arenaax);
 set(txthdl,'string',{'That ends the calibration phase.','Thanks for your patience'}, 'visible', 'on', 'color',[0 1 0]);

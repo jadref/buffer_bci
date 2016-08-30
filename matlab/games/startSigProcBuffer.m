@@ -93,8 +93,8 @@ while ( true )
       if ( verb>0 ) fprintf('%d epochs\n',numel(traindevents)); end;
 
       [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','freqband',[.1 .3 8 10],...
-										'badchrm',1,'badchscale',3,'badtrrm',1,'badtrscale',10,...
-										'objFn','lr_cg','compKernel',0,'dim',3,'capFile',capFile,'overridechnms',overridechnms);
+										'objFn','lr_cg','dim',3,'capFile',capFile,'overridechnms',overridechnms,...
+                                        trainOpts{:});
       clsSubj=subject;
       fprintf('Saving classifier to : %s\n',[cname '_' subject '_' datestr]);
       save([cname '_' subject '_' datestr],'-struct','clsfr');
@@ -113,7 +113,7 @@ while ( true )
       clsSubj = subject;
     end;
 
-    gameApplyClsfr(clsfr,'nSymbs',nSymbs,'verb',verb,'margin',15,'minEvents',nSymbs,'saveFile',[testname '_' subject '_' datestr]);
+    gameApplyClsfr(clsfr,'nSymbs',nSymbs,'verb',verb,'margin',15,'minEvents',nSymbs,'saveFile',[testname '_' subject '_' datestr],contFeedbackOpts{:});
 
     
     %---------------------------------------------------------------------------------

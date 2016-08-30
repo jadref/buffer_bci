@@ -2,7 +2,7 @@ configureGame;
 
 % make the stimulus
 clf;
-fig=gcf;
+fig=figure(2);
 set(fig,'Name','Matrix Speller','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
 [h,symbs,opts]=initGrid(symbols,'relfontSize',symbSize);
 symbSize=opts.fontSize;

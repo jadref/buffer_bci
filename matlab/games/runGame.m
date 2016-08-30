@@ -15,8 +15,6 @@ configureGame;
            '1) Practice'            'practice';
 			  '2) Calibrate'           'calibrate'; 
 			  '3) Train Classifier'    'trainerp';
-			  '4) Epoch Feedback'      'epochfeedback';
-			  '5) Continuous Feedback' 'contfeedback';
            '' ''
 			  's) Snake'               'snake';
 			  'p) Pacman'              'pacman'; 

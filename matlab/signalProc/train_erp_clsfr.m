@@ -158,8 +158,8 @@ end
 
 %4.2) time range selection
 timeIdx=[];
-if ( ~isempty(opts.timeband) ) 
-  timeIdx = opts.timeband * fs; % convert to sample indices
+if ( ~isempty(opts.timeband_ms) ) 
+  timeIdx = opts.timeband_ms * fs; % convert to sample indices
   timeIdx = max(min(timeIdx,size(X,2)),1); % ensure valid range
   timeIdx = int32(timeIdx(1):timeIdx(2));
   X    = X(:,timeIdx,:);
