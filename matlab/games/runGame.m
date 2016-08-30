@@ -80,7 +80,7 @@ while (ishandle(contFig))
     
     %---------------------------------------------------------------------------
    case 'capfitting';
-    sendEvent('subject',info.subject);
+    sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until capFitting is done
     buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
@@ -88,12 +88,31 @@ while (ishandle(contFig))
     
     %---------------------------------------------------------------------------
    case 'eegviewer';
-    sendEvent('subject',info.subject);
+    sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until capFitting is done
     buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
     %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);               
-        
+
+   %---------------------------------------------------------------------------
+   case 'artifact';
+    sendEvent('subject',subject);
+    sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
+														  % wait until capFitting is done
+	 try;
+		artifactCalibrationStimulus;
+	catch
+       fprintf('Error in : %s',phaseToRun);
+       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	 if ( ~isempty(le.stack) )
+	  	   for i=1:numel(le.stack);
+	  	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	   end;
+	  	 end
+	  	 msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+       sendEvent(phaseToRun,'end');    
+    end
+    
     %---------------------------------------------------------------------------
    case {'calibrate','practice'};
     sendEvent('subject',subject);

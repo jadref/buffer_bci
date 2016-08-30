@@ -33,7 +33,7 @@ while ( true )
   drawnow;
   
   % wait for a phase control event
-  if ( verb>0 ) fprintf('Waiting for phase command\n'); end;
+  if ( verb>=0 ) fprintf('Waiting for phase command\n'); end;
   [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,{'startPhase.cmd' 'subject'},[],1000);
   if ( numel(devents)==0 ) 
     continue;
