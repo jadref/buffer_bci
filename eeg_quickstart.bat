@@ -4,28 +4,27 @@ cd %batdir%
 
 set dataacq=%1
 if "%dataacq%"=="" ( 
-set dataacq=java
+set dataacq=mobita
 )
 set sigproc=%2
 
-echo Starting the non-saving java buffer server \(background\)
+echo Starting the java buffer server \(background\)
 rem wmic process call create "dataAcq/startJavaNoSaveBuffer.bat" | find "ProcessId"
-start dataAcq\startJavaNoSaveBuffer.bat
+start dataAcq\startJavaBuffer.bat
 
 rem Weird windows hack to sleep for 2 secs to allow the buffer server to start
 ping 127.0.0.1 -n 3 > nul
 
 
 echo Starting the data acquisation device %dataacq% \(background\)
-if "%dataacq%"=="audio" (
-  start dataAcq\startJavaAudio.bat localhost 2
-) else if "%dataacq%"=="matlab" (
-  start dataAcq\startMatlabSignalProxy.bat
+if "%dataacq%"=="mobita" (
+  start dataAcq\startMobita.bat localhost 2
+) else if "%dataacq%"=="biosemi" (
+  start dataAcq\startBiosemi.bat
 ) else (
-  start dataAcq\startJavaSignalproxy.bat
+  echo Dont recognise the eeg device type
 )
 rem dataacqpid=$!
-echo dataacqpid=$dataacqpid
 
 if defined sigproc (
     if "%sigproc%"=="1" (

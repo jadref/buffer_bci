@@ -7,7 +7,7 @@ if [ $# -gt 0 ]; then dataacq=$1; fi
 sigproc=0;
 if [ $# -gt 1 ]; then sigproc=$2; fi
 
-echo Starting the non-saving java buffer server \(background\)
+echo Starting the java buffer server \(background\)
 dataAcq/startJavaBuffer.sh &
 bufferpid=$!
 echo buffpid=$bufferpid
