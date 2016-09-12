@@ -21,7 +21,7 @@ opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
             'difficulty',1,...
             'endType','stimulus.test','endValue','end','verb',0,...
             'predEventType','classifier.prediction',...
-            'trlen_ms',1000,'trlen_samp',[],'overlap',.5,'step_ms',[],...
+            'trlen_ms',3000,'trlen_samp',[],'overlap',.5,'step_ms',500,...
             'predFilt',[],'timeout_ms',1000); % exp moving average constant, half-life=10 trials
 [opts,varargin]=parseOpts(opts,varargin);
 
@@ -35,12 +35,15 @@ relax = imresize(relax,0.5);
 threshold = setEMGthreshold(data,devents,opts.hdr,opts.difficulty);
 
 % %speed = both hands, rest = rest, jump = left hand, kick = right hand
-% cybathalon = struct('host','localhost','port',5555,'player',1,...
-%                     'cmdlabels',{{'speed' 'rest' 'jump' 'kick'}},'cmddict',[1 99 2 3],... 
-%                     'socket',[]);
-% % open socket to the cybathalon game
-% [cybathalon.socket]=javaObject('java.net.DatagramSocket'); % create a UDP socket
-% cybathalon.socket.connect(javaObject('java.net.InetSocketAddress',cybathalon.host,cybathalon.port)); % connect to host/port
+cybathalon = struct('host','localhost','port',5555,'player',1,...
+                    'cmdlabels',{{'jump' 'slide' 'speed' 'rest'}},'cmddict',[2 3 1 99],...
+						  'cmdColors',[.6 0 .6;.6 .6 0;0 .5 0;.3 .3 .3]',...
+                    'socket',[],'socketaddress',[]);
+% open socket to the cybathalon game
+[cybathalon.socket]=javaObject('java.net.DatagramSocket'); % create a UDP socket
+cybathalon.socketaddress=javaObject('java.net.InetSocketAddress',cybathalon.host,cybathalon.port);
+cybathalon.socket.connect(cybathalon.socketaddress); % connect to host/port
+connectionWarned=0;
 
 fig=figure(2);clf;
 winColor=[0 0 0];
@@ -48,7 +51,7 @@ set(fig,'Name','Muscle Control','color',winColor,'menubar','none','toolbar','non
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
         'color',winColor,'DrawMode','fast','nextplot','replacechildren',...
-        'xlim',[-1.5 1.5],'ylim',[-1.5 1.5],'Ydir','normal');
+        'xlim',[-1.5 1.5],'ylim',[-1.5 1.5]);
 
 set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
 txthdl = text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),' ',...
@@ -167,36 +170,34 @@ while( ~endTest )
     end
     
     % check for movement
+    predTgt=[];
     aboveThresRight = find(X(2,:) > threshold);
     aboveThresLeft = find(X(1,:) > threshold);
     if ~isempty(aboveThresRight) && isempty(aboveThresLeft) % right hand movement
         rightMove = true;
+        predTgt =  strcmp(cybathalon.cmdlabels,'kick');
         % send event if right movement was made
         maxSample = fin(si)-(length(X)-aboveThresRight(1));  %fin(si) is last sample, aboveTresh(1) is first sample above treshhold, Length(X)is current sample 
         
         sendEvent('rightMove',1,maxSample); %N.B. event sample is window-start!=(fin(si)-trlen_samp)
-%         % send the command to the game server
-%         cybathalon.socket.send(uint8(10*cybathalon.player+cybathalon.cmddict(4)),1);
         fprintf('rightMove'); 
         subimage(right);
     elseif ~isempty(aboveThresLeft) && isempty(aboveThresRight) % left hand movement
         leftMove = true;
+        predTgt =  strcmp(cybathalon.cmdlabels,'speed');
         % send event if left movement was made
         maxSample = fin(si)-(length(X)-aboveThresLeft(1));  %fin(si) is last sample, aboveTresh(1) is first sample above treshhold, Length(X)is current sample 
 
         sendEvent('leftMove',1,maxSample); %N.B. event sample is window-start!=(fin(si)-trlen_samp)
-%         % send the command to the game server
-%         cybathalon.socket.send(uint8(10*cybathalon.player+cybathalon.cmddict(3)),1);
         fprintf('leftMove'); 
         subimage(left);
     elseif ~isempty(aboveThresRight) && ~isempty(aboveThresLeft) % both hands move
         bothMove = true;
+        predTgt =  strcmp(cybathalon.cmdlabels,'jump');
         % send event if both hands move
         maxSample = fin(si)-(length(X)-aboveThresRight(1));  %fin(si) is last sample, aboveTresh(1) is first sample above treshhold, Length(X)is current sample 
 
         sendEvent('bothMove',1,maxSample); %N.B. event sample is window-start!=(fin(si)-trlen_samp)
-%         % send the command to the game server
-%         cybathalon.socket.send(uint8(10*cybathalon.player+cybathalon.cmddict(1)),1);
         fprintf('bothMove'); 
         subimage(both);
     else % rest
@@ -205,11 +206,19 @@ while( ~endTest )
         maxSample = fin(si);  %fin(si) is last sample, aboveTresh(1) is first sample above treshhold, Length(X)is current sample 
 
         sendEvent('rest',1,maxSample); %N.B. event sample is window-start!=(fin(si)-trlen_samp)
-%         % send the command to the game server
-%         cybathalon.socket.send(uint8(10*cybathalon.player+cybathalon.cmddict(2)),1);
         fprintf('rest'); 
         subimage(relax);
     end
+    if ( ~isempty(predTgt) )
+    try;
+		cybathalon.socket.send(javaObject('java.net.DatagramPacket',uint8([10*cybathalon.player+cybathalon.cmddict(predTgt) 0]),1));
+	 catch;
+		if ( connectionWarned<10 )
+		  connectionWarned=connectionWarned+1;
+		  warning('Error sending to the Cybathalon game.  Is it running?\n');
+		end
+	 end
+     end
     fprintf('\n');
   end
       

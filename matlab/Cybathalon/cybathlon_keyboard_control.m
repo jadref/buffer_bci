@@ -1,10 +1,13 @@
 function cybathlon_keyboard_control
-cybathalon = struct('host','localhost','port',5555,'player',3,...
-    'cmdlabels',{{'speed' 'rest' 'jump' 'kick'}},'cmddict',[1 99 2 3],...
-    'socket',[]);
+cybathalon = struct('host','localhost','port',5555,'player',1,...
+                    'cmdlabels',{{'jump' 'slide' 'speed' 'rest'}},'cmddict',[2 3 1 99],...
+						  'cmdColors',[.6 0 .6;.6 .6 0;0 .5 0;.3 .3 .3]',...
+                    'socket',[],'socketaddress',[]);
 % open socket to the cybathalon game
 [cybathalon.socket]=javaObject('java.net.DatagramSocket'); % create a UDP socket
-cybathalon.socket.connect(javaObject('java.net.InetSocketAddress',cybathalon.host,cybathalon.port)); % connect to host/port
+cybathalon.socketaddress=javaObject('java.net.InetSocketAddress',cybathalon.host,cybathalon.port);
+cybathalon.socket.connect(cybathalon.socketaddress); % connect to host/port
+connectionWarned=0;
 
 winColor     =[0 0 0]; % window background color
 
@@ -41,7 +44,6 @@ end
 
 
 
-
     function []=keyListener(src,event)
         if ~start
             return
@@ -69,13 +71,15 @@ end
         end
         drawnow;
         if ( ~isempty(command) ) 
-           try;
-              cybathalon.socket.send(uint8(10*cybathalon.player+cybathalon.cmddict(command)),1);
-           catch;
-              fprintf('Couldnt send the game command');
-           end
+try;
+		cybathalon.socket.send(javaObject('java.net.DatagramPacket',uint8([10*cybathalon.player+cybathalon.cmddict(command) 0]),1));
+	 catch;
+		if ( connectionWarned<10 )
+		  connectionWarned=connectionWarned+1;
+		  warning('Error sending to the Cybathalon game.  Is it running?\n');
+		end
+end
         end
-
         fprintf('%s\n',string);
         
         if strcmp(event.Key,'space')
