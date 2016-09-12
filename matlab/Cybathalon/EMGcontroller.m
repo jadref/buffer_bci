@@ -1,4 +1,4 @@
-function EMGcontroller(varargin)
+function EMGcontroller(data,devents,varargin)
 % Continuously decode EMG input to detect: rest, right hand movement, left
 % hand movement, movement with both hands from ongoing EMG signals.
 % EMG is recorded from two electrodes placed on the appropriate muscle of
@@ -15,17 +15,18 @@ function EMGcontroller(varargin)
 %  step_ms       -- [float] time between decodings ([])
 
 % Add all necessary paths
-run /Users/ceciverbaarschot/buffer_bci/matlab/utilities/initPaths.m
+run ../utilities/initPaths.m;
 
 opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
+            'difficulty',10,...
             'endType','stimulus.test','endValue','end','verb',0,...
             'predEventType','classifier.prediction',...
-            'trlen_ms',200,'trlen_samp',[],'overlap',.5,'step_ms',100,...
+            'trlen_ms',1000,'trlen_samp',[],'overlap',.5,'step_ms',[],...
             'predFilt',[],'timeout_ms',1000); % exp moving average constant, half-life=10 trials
 [opts,varargin]=parseOpts(opts,varargin);
 
 % set threshold for movement
-threshold = setEMGthreshold('/Users/ceciverbaarschot/output/expt/test/160909/1409/raw_buffer/0001',10);
+threshold = setEMGthreshold(data,devents,opts.hdr,opts.difficulty);
 
 % %speed = both hands, rest = rest, jump = left hand, kick = right hand
 % cybathalon = struct('host','localhost','port',5555,'player',1,...
@@ -34,6 +35,21 @@ threshold = setEMGthreshold('/Users/ceciverbaarschot/output/expt/test/160909/140
 % % open socket to the cybathalon game
 % [cybathalon.socket]=javaObject('java.net.DatagramSocket'); % create a UDP socket
 % cybathalon.socket.connect(javaObject('java.net.InetSocketAddress',cybathalon.host,cybathalon.port)); % connect to host/port
+
+fig=figure(2);clf;
+winColor=[0 0 0];
+set(fig,'Name','Muscle Control','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
+ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
+        'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
+        'color',winColor,'DrawMode','fast','nextplot','replacechildren',...
+        'xlim',[-1.5 1.5],'ylim',[-1.5 1.5],'Ydir','normal');
+
+set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
+txthdl = text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),' ',...
+				  'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle',...
+				  'fontunits','pixel','fontsize',.05*wSize(4),...
+				  'color',[0.75 0.75 0.75],'visible','off');
+set(txthdl,'string',{'Testing phase:' 'contract you muscles to control the game!'},'visible','on');
 
 % set booleans for movement classes
 rest = false; 
@@ -78,6 +94,8 @@ endTest=false;
 tic;t0=0;t1=t0;
 while( ~endTest )
 
+   drawnow;
+   if ( ~ishandle(fig) ) break; end;
   % block until new data to process
   status=buffer('wait_dat',[endSample -1 opts.timeout_ms],opts.buffhost,opts.buffport);
   if ( status.nSamples < nSamples ) 
@@ -134,7 +152,7 @@ while( ~endTest )
     
     % Rectify the signal = take absolute value
     X = abs(X);  
-    mean(mean(X))
+    %mean(mean(X))
     
     % Low pass filter the signal (cutoff =~ 15 Hz, since tau = 10ms for EMG), Welter et al., 2000; 1st order)
     for ch = 1:size(X,1) % Per channel
@@ -182,6 +200,7 @@ while( ~endTest )
 %         cybathalon.socket.send(uint8(10*cybathalon.player+cybathalon.cmddict(2)),1);
         fprintf('rest'); 
     end
+    fprintf('\n');
   end
       
   if ( isnumeric(opts.endType) ) % time-based termination

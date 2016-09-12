@@ -1,8 +1,8 @@
 configureIM;
 % create the control window and execute the phase selection loop
-try
-  contFig=controller(); info=guidata(contFig); 
-catch
+%try
+%  contFig=controller(); info=guidata(contFig); 
+%catch
   contFig=figure(1);
   set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
   axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
@@ -16,7 +16,10 @@ catch
 			  '3) Train Classifier'    'trainersp';
 			  '4) Epoch Feedback'      'epochfeedback';
 			  '5) Continuous Feedback' 'contfeedback';
-			  '6) NeuroFeedback'       'neurofeedback'
+			  '6) NeuroFeedback'       'neurofeedback';
+           '' '';
+           'K) Keyboard Control'    'keyboardcontrol';
+           'E) EMG Control'         'emgcontrol';
 			  'q) quit'                'quit';
           };
   txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
@@ -26,7 +29,7 @@ catch
   set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
   set(contFig,'userdata',[]);
   drawnow; % make sure the figure is visible
-end
+           %end
 subject='test';
 
 sendEvent('experiment.im','start');
@@ -160,6 +163,40 @@ while (ishandle(contFig))
        sleepSec(.1);
     end
     sendEvent('test','end');
+    sendEvent(phaseToRun,'end');
+
+   %---------------------------------------------------------------------------
+   case {'keyboardcontrol'};
+    sendEvent(phaseToRun,'start');
+    %try
+      cybathlon_keyboard_control;
+      %catch
+      % fprintf('Error in : %s',phaseToRun);
+      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	% if ( ~isempty(le.stack) )
+	  	%   for i=1:numel(le.stack);
+	  	% 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	%   end;
+	  	% end
+      %end
+    sendEvent(phaseToRun,'end');
+
+
+   %---------------------------------------------------------------------------
+   case {'emgcontrol'};
+    sendEvent(phaseToRun,'start');
+    %try
+       [emgdata,emgevents,emghdr]=EMGtraining();
+       EMGcontroller(emgdata,emgevents,'hdr',emghdr,'difficulty',10);
+       %catch
+      % fprintf('Error in : %s',phaseToRun);
+      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	% if ( ~isempty(le.stack) )
+	  	%   for i=1:numel(le.stack);
+	  	% 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	%   end;
+	  	% end
+      %end
     sendEvent(phaseToRun,'end');
 
    %---------------------------------------------------------------------------

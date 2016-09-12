@@ -6,17 +6,14 @@
 %
 % The threshold for acting is defined as 
 % the mean EMG activity in rest + (perc * the max difference between EMG in action and rest) 
-function threshold = setEMGthreshold(datafile,perc)
+function threshold = setEMGthreshold(data,devents,hdr,perc)
     % Add all necessary paths
-    run /Users/ceciverbaarschot/buffer_bci/matlab/utilities/initPaths.m % check path when ran from a different computer
+    run ../utilities/initPaths.m % check path when ran from a different computer
     
     if ~exist('perc')
         perc = 0.8; % perc is default set to 0.8
     end
-
-    % slice recorded data
-    [data,devents,hdr,allevents]=sliceraw(datafile,'startSet',{'move'}, 'trlen_ms', 3000); % slice 3s trials  
-    
+   
     X = data; % keep original data
     
     % keep only EMG channels and subtract bipolar EMG channels
@@ -27,7 +24,7 @@ function threshold = setEMGthreshold(datafile,perc)
     end
     
     % spectrally filter to the range of interest
-    fs=hdr.Fs;
+    if( isfield(hdr,'Fs') ) fs=hdr.Fs; elseif ( isfield(hdr,'fSample') ) fs=hdr.fSample; else fs=hdr.fs; end;
     freqband = [47 51 250 256];
     outsz=[size(X,2) size(X,2)];
     if (size(X,2)>10 && ~isempty(fs)) 
@@ -79,17 +76,17 @@ function threshold = setEMGthreshold(datafile,perc)
     % set threshold for movement
     threshold = (meanEMGrest + (perc*maxdiffEMG))/1000;
     
-    % output the result
-    sz = [100 300]; % figure size
-    screensize = get(0,'ScreenSize');
-    xpos = ceil((screensize(3)-sz(2))/2); % center the figure on the
-    Screen horizontally
-    ypos = ceil((screensize(4)-sz(1))/2); % center the figure on the
-    Screen vertically
-    figure('position',[xpos, ypos, sz(2), sz(1)],...
-        'units','pixels','MenuBar','none');
+%     % output the result
+%     sz = [100 300]; % figure size
+%     screensize = get(0,'ScreenSize');
+%     xpos = ceil((screensize(3)-sz(2))/2); % center the figure on the
+%                                           %Screen horizontally
+%     ypos = ceil((screensize(4)-sz(1))/2); % center the figure on the
+%                                           %Screen vertically
+%     figure('position',[xpos, ypos, sz(2), sz(1)],...
+%         'units','pixels','MenuBar','none');
     
-    instruction = sprintf(['Threshold = ', num2str(round(threshold)), 'mV' ,'\nDifficulty = ',num2str(perc), ' perc']);
-    text(0,0.5,instruction,'Color','black','FontSize',20);
-    set(gca,'visible','off');
+%     instruction = sprintf(['Threshold = ', num2str(round(threshold)), 'mV' ,'\nDifficulty = ',num2str(perc), ' perc']);
+%     text(0,0.5,instruction,'Color','black','FontSize',20);
+%     set(gca,'visible','off');
 end

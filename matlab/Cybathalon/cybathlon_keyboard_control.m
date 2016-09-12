@@ -42,6 +42,7 @@ set(txthdl,'visible', 'off'); drawnow;
             return
         end
         string = [string event.Character];
+        set(txthdl,'string',string,'visible','on');drawnow;
         
         if strcmp(string, 'jumpjumpjump')
             command =  strcmp(cybathalon.cmdlabels,'jump');
