@@ -18,12 +18,18 @@ function EMGcontroller(data,devents,varargin)
 run ../utilities/initPaths.m;
 
 opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
-            'difficulty',10,...
+            'difficulty',1,...
             'endType','stimulus.test','endValue','end','verb',0,...
             'predEventType','classifier.prediction',...
             'trlen_ms',1000,'trlen_samp',[],'overlap',.5,'step_ms',[],...
             'predFilt',[],'timeout_ms',1000); % exp moving average constant, half-life=10 trials
 [opts,varargin]=parseOpts(opts,varargin);
+
+right = imread(fullfile('images','Right.png'));
+left = imread(fullfile('images','Left.png'));
+both = imread(fullfile('images','Both.png'));
+relax = imread(fullfile('images','Relax.jpg'));
+relax = imresize(relax,0.5);
 
 % set threshold for movement
 threshold = setEMGthreshold(data,devents,opts.hdr,opts.difficulty);
@@ -167,11 +173,12 @@ while( ~endTest )
         rightMove = true;
         % send event if right movement was made
         maxSample = fin(si)-(length(X)-aboveThresRight(1));  %fin(si) is last sample, aboveTresh(1) is first sample above treshhold, Length(X)is current sample 
-
+        
         sendEvent('rightMove',1,maxSample); %N.B. event sample is window-start!=(fin(si)-trlen_samp)
 %         % send the command to the game server
 %         cybathalon.socket.send(uint8(10*cybathalon.player+cybathalon.cmddict(4)),1);
         fprintf('rightMove'); 
+        subimage(right);
     elseif ~isempty(aboveThresLeft) && isempty(aboveThresRight) % left hand movement
         leftMove = true;
         % send event if left movement was made
@@ -181,6 +188,7 @@ while( ~endTest )
 %         % send the command to the game server
 %         cybathalon.socket.send(uint8(10*cybathalon.player+cybathalon.cmddict(3)),1);
         fprintf('leftMove'); 
+        subimage(left);
     elseif ~isempty(aboveThresRight) && ~isempty(aboveThresLeft) % both hands move
         bothMove = true;
         % send event if both hands move
@@ -190,6 +198,7 @@ while( ~endTest )
 %         % send the command to the game server
 %         cybathalon.socket.send(uint8(10*cybathalon.player+cybathalon.cmddict(1)),1);
         fprintf('bothMove'); 
+        subimage(both);
     else % rest
         rest = true;
         % send event if both hands move
@@ -199,6 +208,7 @@ while( ~endTest )
 %         % send the command to the game server
 %         cybathalon.socket.send(uint8(10*cybathalon.player+cybathalon.cmddict(2)),1);
         fprintf('rest'); 
+        subimage(relax);
     end
     fprintf('\n');
   end

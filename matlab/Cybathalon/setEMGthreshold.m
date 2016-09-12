@@ -46,10 +46,6 @@ function threshold = setEMGthreshold(data,devents,hdr,perc)
         end
     end
     
-    % Plot data
-    %time = [0.01:1/100:3];
-    %figure;plot(time,X(1).buf);
-    
     rightMoveData = X(find(strcmp({devents.value},'Rechter hand'))); 
     for t=1:length(rightMoveData)
         rightMoveData(t).buf(1,:) = [];
@@ -74,19 +70,6 @@ function threshold = setEMGthreshold(data,devents,hdr,perc)
     maxdiffEMG = abs(meanEMGrest - meanEMGaction);
 
     % set threshold for movement
-    threshold = (meanEMGrest + (perc*maxdiffEMG))/1000;
-    
-%     % output the result
-%     sz = [100 300]; % figure size
-%     screensize = get(0,'ScreenSize');
-%     xpos = ceil((screensize(3)-sz(2))/2); % center the figure on the
-%                                           %Screen horizontally
-%     ypos = ceil((screensize(4)-sz(1))/2); % center the figure on the
-%                                           %Screen vertically
-%     figure('position',[xpos, ypos, sz(2), sz(1)],...
-%         'units','pixels','MenuBar','none');
-    
-%     instruction = sprintf(['Threshold = ', num2str(round(threshold)), 'mV' ,'\nDifficulty = ',num2str(perc), ' perc']);
-%     text(0,0.5,instruction,'Color','black','FontSize',20);
-%     set(gca,'visible','off');
+    threshold = (meanEMGrest + (perc*maxdiffEMG));
+    fprintf(['threshold: ',num2str(round(threshold))]);
 end
