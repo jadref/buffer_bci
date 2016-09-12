@@ -34,6 +34,11 @@ waitforbuttonpress;
 start = 1;
 set(txthdl,'visible', 'off'); drawnow;
 
+% loop to wait for the window to be closed
+while ( ishandle(fig) ) 
+   pause(1);
+end
+
 
 
 
@@ -42,30 +47,35 @@ set(txthdl,'visible', 'off'); drawnow;
             return
         end
         string = [string event.Character];
-        set(txthdl,'string',string,'visible','on');drawnow;
+        set(txthdl,'string',string,'visible','on');
         
+        command=[];
         if strcmp(string, 'jumpjumpjump')
             command =  strcmp(cybathalon.cmdlabels,'jump');
-            cybathalon.socket.send(uint8(10*cybathalon.player+cybathalon.cmddict(command)),1);
             string=[];
-            set(txthdl,'string', 'jump', 'visible', 'on'); drawnow;
+            set(txthdl,'string', 'jump', 'visible', 'on');
         elseif strcmp(string, 'restrestrest')
             command =  strcmp(cybathalon.cmdlabels,'rest');
-            cybathalon.socket.send(uint8(10*cybathalon.player+cybathalon.cmddict(command)),1);
             string=[];
-            set(txthdl,'string', 'rest', 'visible', 'on'); drawnow;
+            set(txthdl,'string', 'rest', 'visible', 'on');
         elseif strcmp(string, 'speedspeedspeed')
             command =  strcmp(cybathalon.cmdlabels,'speed');
-            cybathalon.socket.send(uint8(10*cybathalon.player+cybathalon.cmddict(command)),1);
             string=[];
-            set(txthdl,'string', 'speed', 'visible', 'on'); drawnow;
+            set(txthdl,'string', 'speed', 'visible', 'on');
         elseif strcmp(string, 'kickkickkick')
             command =  strcmp(cybathalon.cmdlabels,'kick');
-            cybathalon.socket.send(uint8(10*cybathalon.player+cybathalon.cmddict(command)),1);
             string=[];
-            set(txthdl,'string', 'kick', 'visible', 'on'); drawnow;
+            set(txthdl,'string', 'kick', 'visible', 'on');
         end
-        
+        drawnow;
+        if ( ~isempty(command) ) 
+           try;
+              cybathalon.socket.send(uint8(10*cybathalon.player+cybathalon.cmddict(command)),1);
+           catch;
+              fprintf('Couldnt send the game command');
+           end
+        end
+
         fprintf('%s\n',string);
         
         if strcmp(event.Key,'space')
