@@ -121,6 +121,32 @@ if ( opts.badchrm || ~isempty(opts.badCh) )
   fprintf('%d ch removed\n',sum(isbadch));
 end
 
+%3.a) Spatial filter/re-reference (data-dependent-unsupervised)
+R=[];
+sfApplied=false;
+if ( isnumeric(opts.spatialfilter) ) % user gives exact filter to use
+   R=opts.spatialfilter;
+elseif ( size(X,1)>=4 && any(strcmpi(opts.spatialfilter,{'wht','whiten','trwht','adaptspatialfilt'})) ) 
+  fprintf('3) whiten');
+  if ( strcmpi(opts.spatialfilter,'trwht') ) % single-trial whitening
+	 fprintf(' trwht');
+	 [trR,Sigma,X]=whiten(X,[1 3],1,0,0,1,1);
+	 R=trR(:,:,end);
+	 sfApplied=true;
+  elseif( strcmpi(opts.spatialfilter,'adaptspatialfilt'))  % adaptive whitening
+	 fprintf(' exp-trwht %g',opts.adaptspatialfilt);
+			  % construct weight vector equivalent to exp-moving-average-filter
+	 hl   = ceil(log(.5)./log(opts.adaptspatialfilt)); % half-life
+	 wght = (1-opts.adaptspatialfilt)*(opts.adaptspatialfilt.^[2*hl:-1:0]);
+    [trR,Sigma,X]=whiten(X,[1 3],1,0,0,1,wght);
+	 R=trR(:,:,end);
+	 sfApplied=true;
+  else			
+	 [R,Sigma]=whiten(X,1,1,0,0,1); % symetric whiten
+  end
+  fprintf('\n');
+end
+
 %2.2) time range selection
 timeIdx=[];
 if ( ~isempty(opts.timeband) ) 
@@ -130,7 +156,7 @@ if ( ~isempty(opts.timeband) )
   X    = X(:,timeIdx,:);
 end
 
-%3) Spatial filter/re-reference
+%3) Spatial filter/re-reference, potentially data dependent
 R=[];
 if ( size(X,1)> 5 ) % only spatial filter if enough channels
   sftype=lower(opts.spatialfilter);
@@ -145,9 +171,6 @@ if ( size(X,1)> 5 ) % only spatial filter if enough channels
    case 'car';
     fprintf('3) CAR\n');
     R=eye(size(X,1))-(1./size(X,1));
-   case {'whiten','wht'};
-    fprintf('3) whiten\n');
-    R=whiten(X,1,1,0,0,1); % symetric whiten
    case {'csp','csp1','csp2','csp3'};
     fprintf('3) csp\n');
     nf=str2num(sftype(end)); if ( isempty(nf) ) nf=3; end;
@@ -179,7 +202,7 @@ if ( size(X,1)> 5 ) % only spatial filter if enough channels
    otherwise; warning(sprintf('Unrecog spatial filter type: %s. Ignored!',opts.spatialfilter ));
   end
 end
-if ( ~isempty(R) ) % apply the spatial filter
+if ( ~isempty(R) && ~sfApplied ) % apply the spatial filter
   X=tprod(X,[-1 2 3],R,[1 -1]); 
 end
 

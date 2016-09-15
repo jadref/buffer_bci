@@ -59,8 +59,8 @@ if ( isempty(trlen_samp) )
   for ci=1:numel(clsfr); 
     if(isfield(clsfr(ci),'outsz') && ~isempty(clsfr(ci).outsz)) trlen_samp=max(trlen_samp,clsfr(ci).outsz(1));
     elseif ( isfield(clsfr(ci),'timeIdx') && ~isempty(clsfr(ci).timeIdx) ) trlen_samp = max(trlen_samp,clsfr(ci).timeIdx(2)); 
-    elseif ( isfield(clsfr,'windowFn') ) % est from size welch window function
-      trlen_samp=max(trlen_samp,size(clsfr.windowFn,2)); 
+    elseif ( isfield(clsfr(ci),'windowFn') ) % est from size welch window function
+      trlen_samp=max(trlen_samp,size(clsfr(ci).windowFn,2)); 
     end
   end
 end;

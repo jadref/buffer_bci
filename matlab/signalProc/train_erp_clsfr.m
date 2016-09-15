@@ -117,8 +117,10 @@ if ( opts.badchrm || (~isempty(opts.badCh) && sum(opts.badCh)>0) )
 end
 
 %3) Spatial filter/re-reference
-R=[];
-if ( size(X,1)> 5 ) % only spatial filter if enough channels
+R=[]; sfApplied=false;
+if ( isnumeric(opts.spatialfilter) ) % user gives exact filter to use
+   R=opts.spatialfilter;
+elseif ( size(X,1)> 5 ) % only spatial filter if enough channels
   sftype=lower(opts.spatialfilter);
   switch ( sftype )
    case 'slap';
@@ -134,11 +136,24 @@ if ( size(X,1)> 5 ) % only spatial filter if enough channels
    case {'whiten','wht'};
     fprintf('3) whiten\n');
     R=whiten(X,1,1,0,0,1); % symetric whiten
+   case {'trwht'};   % single-trial whitening
+	 fprintf('3) trwht\n');
+	 [trR,Sigma,X]=whiten(X,[1 3],1,0,0,1,1);
+	 R=trR(:,:,end);
+	 sfApplied=true;
+   case {'adaptspatialfilt'}; % adaptive whitening
+	 fprintf(' exp-trwht %g',opts.adaptspatialfilt);
+			  % construct weight vector equivalent to exp-moving-average-filter
+	 hl   = ceil(log(.5)./log(opts.adaptspatialfilt)); % half-life
+	 wght = (1-opts.adaptspatialfilt)*(opts.adaptspatialfilt.^[2*hl:-1:0]);
+    [trR,Sigma,X]=whiten(X,[1 3],1,0,0,1,wght);
+	 R=trR(:,:,end);
+	 sfApplied=true;
    case 'none';
    otherwise; warning(sprintf('Unrecog spatial filter type: %s. Ignored!',opts.spatialfilter ));
   end
 end
-if ( ~isempty(R) ) % apply the spatial filter
+if ( ~isempty(R) && ~sfApplied ) % apply the spatial filter (if not already done)
   X=tprod(X,[-1 2 3],R,[1 -1]); 
 end
 

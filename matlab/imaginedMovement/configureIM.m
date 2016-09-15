@@ -44,10 +44,11 @@ end
 verb         =1; % verbosity level for debug messages, 1=default, 0=quiet, 2=very verbose
 buffhost     ='localhost';
 buffport     =1972;
-nSymbs       =4; % E,N,W,S for 4 outputs, N,W,E  for 3 outputs
-symbCue      ={'RH' 'rst' 'LH' 'FT'}; % sybmol cue in addition to positional one. E,N,W,S for 4 symbs
-%nSymbs       =3;
-%symbCue      ={'rst' 'LH' 'RH'}; % string cue in addition to positional one. N,W,E for 3 symbs
+symbCue      ={'RH' 'LH' 'FT'};
+nSymbs       =numel(symbCue); 
+baselineClass='99 Rest'; % if set, treat baseline phase as a separate class to classify
+rbtClass     =[];
+
 nSeq         =20*nSymbs; % 20 examples of each target
 
 trialDuration     =3;   % length in seconds of the task in seconds
@@ -74,7 +75,7 @@ calibrateOpts ={};
 
 welch_width_ms=250; % width of welch window => spectral resolution
 %trainOpts={'width_ms',welch_width_ms,'badtrrm',0}; % default: 4hz res, stack of independent one-vs-rest classifiers
-trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','wht','objFn','mlr_cg','binsp',0,'spMx','1vR'}; % whiten + direct multi-class training
+trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','wht','objFn','mlr_cg','binsp',0,'spMx','1vR','wght','bal'}; % whiten + direct multi-class training with equal class weighting
 %trainOpts = {'spType',{{1 3} {2 4}}}; % train 2 classifiers, 1=N vs S, 2=E vs W
 
 % Epoch feedback opts
