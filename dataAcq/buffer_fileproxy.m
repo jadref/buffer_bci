@@ -36,7 +36,9 @@ if ( nargin<3 || isempty(filename) )
   [fn,pth]=uigetfile('~/output/*.txt','Pick header.txt in a data save directory!'); drawnow;
   if ( ~isequal(fn,0) ) filename=fullfile(pth,fn); end;
 end;
-wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ) run('../utilities/initPaths.m'); end;
+wb=which('buffer'); if ( isempty(wb) || isempty(strfind(wb,'dataAcq')) ) 
+   mfiledir=fileparts(mfilename('fullpath')); run(fullfile(mfiledir,'../utilities/initPaths.m')); 
+end;
 % init the accurate real-time-clock
 initgetwTime;
 initsleepSec;
