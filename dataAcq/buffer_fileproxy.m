@@ -150,9 +150,11 @@ elseif( ~isempty(opts.endEvent) )
       endEvent=numel(oevstartsamp);
     end
   end
-  nSamples=min(nSamples,oevstartsamp(endEvent)-1); % start 1 sample before starting event  
+  if ( ~isempty(endEvent) )
+     nSamples=min(nSamples,oevstartsamp(endEvent)-1); % start 1 sample before starting event  
+  end
 end
-nblk=0; nsamp=startSamp;
+nblk=0; nsamp=max(1,startSamp);
 while( nsamp < nSamples )
   nblk=nblk+1;
   onsamp=nsamp; nsamp=min(nsamp+blockSize,nSamples);
