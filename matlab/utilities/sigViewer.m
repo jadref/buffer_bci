@@ -290,21 +290,24 @@ while ( ~endTraining )
   %------------------------------------------------------------------------
   % pre-process the data
   ppdat = rawdat;
-  switch(lower(ppopts.preproctype));
-   case 'none';   
-   case 'center'; ppdat=repop(ppdat,'-',mean(ppdat,2));
-   case 'detrend';ppdat=detrend(ppdat,2);
-   otherwise; warning(sprintf('Unrecognised pre-proc type: %s',lower(ppopts.preproctype)));
+  if ( ~any(strcmp(curvistype,{'offset'})) ) % no detrend for offset comp
+	 switch(lower(ppopts.preproctype));
+		case 'none';   
+		case 'center'; ppdat=repop(ppdat,'-',mean(ppdat,2));
+		case 'detrend';ppdat=detrend(ppdat,2);
+		otherwise; warning(sprintf('Unrecognised pre-proc type: %s',lower(ppopts.preproctype)));
+	 end
   end
-
-  % track the covariance properties of the data
+  
+  % track the covariance properties of the data -- on the detrended data
   % N.B. total weight up to step n = 1-(covAlpha)^n
-  chCov = (covAlpha) * chCov ...
-			 + (1-covAlpha)*(ppdat(:,blkIdx+1:end)*ppdat(:,blkIdx+1:end)'./(size(ppdat,2)-blkIdx));
+  covDat= rawdat(:,blkIdx+1:end); covDat=repop(covDat,'-',mean(covDat,2));
+  chCov = (covAlpha)*chCov    +     (1-covAlpha)*(covDat*covDat')./(size(covDat,2));
   
   %-------------------------------------------------------------------------------------
   % bad-channel removal + spatial filtering
-  if ( ~strcmp(curvistype,'50hz') ) % BODGE: 50Hz power doesn't do any spatial filtering, or bad-channel removal
+  % BODGE: 50Hz power doesn't do any spatial filtering, or bad-channel removal
+  if ( ~any(strcmp(curvistype,{'50hz','offset'})) ) 
 
     % bad channel removal
     if ( ( ppopts.badchrm>0 || strcmp(ppopts.badchrm,'1') ) && ppopts.badchthresh>0 )
@@ -376,14 +379,17 @@ while ( ~endTraining )
     end
 
    case 'offset'; % time-domain, spectral filter -----------------------------------
-	  ppdat = mean(ppdat,2); ppdat=ppdat - mean(ppdat,1); % ave deviation between channels
+	  ppdat = mean(ppdat,2); % ave over time
+	  ppdat = ppdat - mean(ppdat,1); % ave deviation to global average
     
-   case {'freq','power'}; % freq-domain  -----------------------------------
+   case {'freq'}; % freq-domain  -----------------------------------
     ppdat = welchpsd(ppdat,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'aveType','db');
-    ppdat = ppdat(:,freqIdx(1):freqIdx(2));	 
-    if ( strcmp(curvistype,'power') ) % average over all the frequencies
-		 ppdat = sum(ppdat,2)/size(ppdat,2);
-	 end
+    ppdat = ppdat(:,freqIdx(1):freqIdx(2)); % select the target frequencies
+
+   case 'power'; % power in the passed range  -----------------------------------
+    ppdat = welchpsd(ppdat,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'aveType','amp');
+    ppdat = ppdat(:,freqIdx(1):freqIdx(2)); % select the target frequencies
+	 ppdat = sum(ppdat,2)/size(ppdat,2); % average over all the frequencies
 
    case '50hz'; % 50Hz power, N.B. on the last 2s data only!  -----------------------------------
     ppdat = welchpsd(ppdat(:,find(times>-2,1):end),2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'aveType','amp');
@@ -395,6 +401,7 @@ while ( ~endTraining )
     ppdat = ppdat(:,spectFreqIdx(1):spectFreqIdx(2),:);    
     % subtract the 'common-average' spectrum
     if ( opts.spectBaseline ); ppdat=repop(ppdat,'-',mean(mean(ppdat,3),1)); end
+
   end
   
   % compute useful range of data to show
@@ -451,7 +458,11 @@ while ( ~endTraining )
         if ( ~isempty(get(hdls(hi),'Xlabel')) && isequal(get(get(hdls(hi),'xlabel'),'visible'),'on') ) 
           set(hdls(hi),'xticklabel',[],'yticklabel',[]);
         end
-        xlabel(hdls(hi),'50Hz Power');
+        switch curvistype;
+			 case '50hz';   xlabel(hdls(hi),'50Hz Power');
+			 case 'power';  xlabel(hdls(hi),'Signal Amplitude');
+			 case 'offset'; xlabel(hdls(hi),'offset');
+		  end
         ylabel(hdls(hi),'');
       end
       if ( ~isempty(cbarhdl) ) 
@@ -461,15 +472,19 @@ while ( ~endTraining )
       end;
       
      case 'spect'; % spectrogram -----------------------------------
-      set(hdls,'xlim',start_s([1 end]),'ylim',spectFreqs([spectFreqIdx(1) spectFreqIdx(2)]),'clim',datlim); % all the same axes
+      set(hdls,'xlim',start_s([1 end]),...
+			      'ylim',spectFreqs([spectFreqIdx(1) spectFreqIdx(2)]),...
+			      'clim',datlim); % all the same axes
       set(line_hdls,'visible','off');
       % make the color images visible, in the right place with the right axes positions
-      set(img_hdls,'xdata',start_s([1 end]),'ydata',spectFreqs([spectFreqIdx(1) spectFreqIdx(2)]),'visible','on');      
+      set(img_hdls,'xdata',start_s([1 end]),...
+   			       'ydata',spectFreqs([spectFreqIdx(1) spectFreqIdx(2)]),...
+			          'visible','on');      
       for hi=1:numel(hdls); xlabel(hdls(hi),'time (s)'); ylabel(hdls(hi),'freq (hz)');end;
       if ( ~isempty(cbarhdl) ) 
+        set(cbarhdl,'position',cbarpos); % ARGH! octave moves the cbar if axes are changed!
         set(findobj(cbarhdl),'visible','on'); 
         set(get(cbarhdl,'children'),'ydata',datlim);set(cbarhdl,'ylim',datlim); 
-        set(cbarhdl,'position',cbarpos); 
       end;
     
     end
