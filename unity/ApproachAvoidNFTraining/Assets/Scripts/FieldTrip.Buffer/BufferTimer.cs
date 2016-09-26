@@ -7,21 +7,21 @@ using System.Collections.Generic;
 namespace FieldTrip.Buffer
 {
 	public class BufferTimer  {
-	
+
 		private List<int> bufferSamples;
 		private List<double> times;
 		private int max_num_of_samples;
 		private double rsquared=0;
 	    private double yintercept=0;
 	    private double slope=0;
-		
+
 		public BufferTimer(float fs){
 			bufferSamples = new List<int>();
 			times = new List<double>();
 			max_num_of_samples = (int)fs * 60; //the regression is done over 1 minute worth of data
 		}
-		
-		
+
+
 		public void addSampleToRegression(int sample){
 			bufferSamples.Add(sample);
 			DateTime now = DateTime.UtcNow;
@@ -33,7 +33,7 @@ namespace FieldTrip.Buffer
 			}
 			Regression.LinearRegression(times.ToArray(), bufferSamples.ToArray().Select(i => (double)i).ToArray() ,0 , times.Count, out rsquared, out yintercept, out slope);
 		}
-		
+
 		public void reset(){
 			bufferSamples.Clear ();
 			times.Clear ();
@@ -46,19 +46,19 @@ namespace FieldTrip.Buffer
 			//Debug.Log("rsquared="+rsquared+", nowInMillis="+nowInMillis+", yintercept="+yintercept+", slope="+slope+", sample="+sample);
 			return sample;
 		}
-		
+
 		public int getSampleAtTime(DateTime time){
 			int timeInMillis =  (((time.Hour*60)+time.Minute)*60+time.Second)*1000+time.Millisecond;
 			int sample = (int)(yintercept + slope * timeInMillis);
 			Debug.Log(sample);
 			return sample;
 		}
-		
+
 	}
-}	
-	
-	
-	
+}
+
+
+
 class Regression
 {
     /// Fits a line to a collection of (x,y) points.

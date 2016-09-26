@@ -3,8 +3,8 @@ using System.Linq;
 using System.Text;
 
 namespace FieldTrip.Buffer
-{	
-	public class 
+{
+	public class
 	BufferEvent {
 		public BufferEvent() {
 			wType  = new WrappedObject();
@@ -13,56 +13,56 @@ namespace FieldTrip.Buffer
 			offset     = 0;
 			duration   = 0;
 		}
-		
+
 		public BufferEvent(string type, string value, int sample) {
 			wType  = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
 		}
-		
+
 		public BufferEvent(string type, long value, int sample) {
 			wType  = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}		
-		
+		}
+
 		public BufferEvent(string type, int value, int sample) {
 			wType  = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}	
-		
+		}
+
 		public BufferEvent(string type, short value, int sample) {
 			wType  = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}	
-		
+		}
+
 		public BufferEvent(string type, byte value, int sample) {
 			wType  = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}	
-		
+		}
+
 		public BufferEvent(string type, double value, int sample) {
 			wType  = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}	
-	
+		}
+
 		public BufferEvent(string type, float value, int sample) {
 			wType  = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}		
-		
+		}
+
 		//--- Arrays ----------
 		public BufferEvent(string type, string[] value, int sample) {
 			wType  = new WrappedObject(type);
@@ -70,55 +70,55 @@ namespace FieldTrip.Buffer
 			this.sample = sample;
 			offset = duration = 0;
 		}
-		
+
 		public BufferEvent(string type, long[] value, int sample) {
 			wType  = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}		
-		
+		}
+
 		public BufferEvent(string type, int[] value, int sample) {
 			wType  = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}	
-		
+		}
+
 		public BufferEvent(string type, short[] value, int sample) {
 			wType  = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}	
-		
+		}
+
 		public BufferEvent(string type, byte[] value, int sample) {
 			wType  = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}	
-		
+		}
+
 		public BufferEvent(string type, double[] value, int sample) {
 			wType  = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}	
-	
+		}
+
 		public BufferEvent(string type, float[] value, int sample) {
 			wType  = new WrappedObject(type);
 			wValue = new WrappedObject(value);
 			this.sample = sample;
 			offset = duration = 0;
-		}		
-		
-		
-		
+		}
+
+
+
 		public BufferEvent(ByteBuffer buf) {
 			wType  = new WrappedObject();
-			wValue = new WrappedObject();	
-			
+			wValue = new WrappedObject();
+
 			wType.type   = buf.getInt();
 			wType.numel  = buf.getInt();
 			wValue.type  = buf.getInt();
@@ -127,41 +127,41 @@ namespace FieldTrip.Buffer
 			offset       = buf.getInt();
 			duration     = buf.getInt();
 			int size = buf.getInt();
-		
+
 			wType.array  = DataType.getObject(wType.type, wType.numel, buf);
 			if (wType.array != null) {
 				wType.size = wType.numel * DataType.wordSize[wType.type];
 			}
-			
+
 			wValue.array = DataType.getObject(wValue.type, wValue.numel, buf);
 			if (wValue.array != null) {
 				wValue.size = wValue.numel * DataType.wordSize[wValue.type];
 			}
-			
+
 			size -= wType.size + wValue.size;
 			if (size != 0) {
 				buf.position(buf.position() + size);
 			}
 		}
-		
+
 		public WrappedObject getType() {
 			return wType;
 		}
-		
+
 		public WrappedObject getValue() {
 			return wValue;
-		}	
-		
+		}
+
 		public bool setType(object typeObj) {
 			wType = new WrappedObject(typeObj);
 			return wType.type != DataType.UNKNOWN;
 		}
-		
+
 		public bool setValue(object valueObj) {
 			wValue = new WrappedObject(valueObj);
 			return wValue.type != DataType.UNKNOWN;
 		}
-		
+
 		public bool setValueUnsigned(byte[] array) {
 			wValue = new WrappedObject();
 			wValue.array = array.Clone();
@@ -170,15 +170,15 @@ namespace FieldTrip.Buffer
 			wValue.type  = DataType.UINT8;
 			return true;
 		}
-	
+
 		public int size() {
 			return 32 + wType.size + wValue.size;
 		}
-		
+
 		public static int count(ByteBuffer buf) {
 			int num = 0;
 			long pos = buf.position();
-		
+
 			while (buf.remaining() >= 32) {
 				int typeType   = buf.getInt();
 				int typeNumEl  = buf.getInt();
@@ -190,18 +190,18 @@ namespace FieldTrip.Buffer
 				int size = buf.getInt();
 				int sizeType  = typeNumEl  * DataType.wordSize[typeType];
 				int sizeValue = valueNumEl * DataType.wordSize[valueType];
-			
+
 				if (sizeType < 0 || sizeValue < 0 || sizeType + sizeValue > size) {
 					return -(1+num);
 				}
-			
+
 				buf.position(buf.position() + size);
 				num++;
 			}
 			buf.position(pos);
 			return num;
 		}
-		
+
 		public void serialize(ByteBuffer buf) {
 			buf.putInt(wType.type);
 			buf.putInt(wType.numel);
@@ -214,13 +214,13 @@ namespace FieldTrip.Buffer
 			wType.serialize(buf);
 			wValue.serialize(buf);
 		}
-		
+
 		//For a general C# application change the UnityEngine.Debug.Log() with Console.WriteLine()
 		public void print() {
 			UnityEngine.Debug.Log("-------Begin Event Printout-------");
 			UnityEngine.Debug.Log("Sample registered = "+sample.ToString());
 			UnityEngine.Debug.Log("Type = "+wType.array.ToString());
-	
+
 			string result="";
 			if ( wValue.array is string){
 				result = wValue.array as string;
@@ -258,7 +258,7 @@ namespace FieldTrip.Buffer
 			UnityEngine.Debug.Log("Value = "+result);
 			UnityEngine.Debug.Log("-------End Event Printout-------");
 		}
-		
+
 		public int sample;
 		public int offset;
 		public int duration;

@@ -8,72 +8,72 @@ namespace FieldTrip.Buffer
 		public int numel;
 		public int size;
 		public object array;
-		
+
 		public WrappedObject() {
 			type  = DataType.UNKNOWN;
 			numel = 0;
 			size  = 0;
 			array = null;
 		}
-		
+
 		public WrappedObject(string s) {
 			type  = DataType.CHAR;
 			numel = s.Length;
 			size  = numel;
 			array = s;
 		}
-		
+
 		public WrappedObject(double x) {
 			type  = DataType.FLOAT64;
 			numel = 1;
 			size  = 8;
 			array = new double[] {x};
-		}	
-		
+		}
+
 		public WrappedObject(float x) {
 			type  = DataType.FLOAT32;
 			numel = 1;
 			size  = 4;
 			array = new float[] {x};
 		}
-		
+
 		public WrappedObject(long x) {
 			type  = DataType.INT64;
 			numel = 1;
 			size  = 8;
 			array = new long[] {x};
-		}	
-		
+		}
+
 		public WrappedObject(int x) {
 			type  = DataType.INT32;
 			numel = 1;
 			size  = 4;
 			array = new int[] {x};
 		}
-		
+
 		public WrappedObject(short x) {
 			type  = DataType.INT16;
 			numel = 1;
 			size  = 2;
 			array = new short[] {x};
 		}
-		
+
 		public WrappedObject(byte x) {
 			type  = DataType.INT8;
 			numel = 1;
 			size  = 1;
 			array = new byte[] {x};
-		}	
-		
+		}
+
 		public WrappedObject(object obj) {
-	
+
 			Type cls = obj.GetType();
 			string name = cls.FullName;
-	
+
 			if (cls.IsArray) {
 				Type elc = cls.GetElementType();
 				if (!elc.IsPrimitive) return;
-				
+
 				if (name == "System.Double[]") {
 					type = DataType.FLOAT64;
 					array = ((double[]) obj).Clone();
@@ -126,14 +126,14 @@ namespace FieldTrip.Buffer
 				array = new short[] {((short) obj)};
 			} else if (name == "System.Byte") {
 				type = DataType.INT8;
-				array = new byte[] {((byte) obj)};		
+				array = new byte[] {((byte) obj)};
 			} else {
 				return;
 			}
 			numel = 1;
 			size  = DataType.wordSize[type];
-		}	
-			
+		}
+
 		public void serialize(ByteBuffer buf) {
 			switch(type) {
 				case DataType.CHAR:
@@ -162,8 +162,8 @@ namespace FieldTrip.Buffer
 					buf.asDoubleBuffer().put((double[]) array);
 					break;
 			}
-		}	
-		
+		}
+
 		public string toString() {
 			if (type == DataType.CHAR) return (string) array;
 			if (type == DataType.FLOAT64) return (((double[]) array)[0]).ToString();

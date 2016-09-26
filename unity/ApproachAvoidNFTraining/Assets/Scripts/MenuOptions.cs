@@ -1,212 +1,356 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.EventSystems;
+using System.IO;
 
 public class MenuOptions : MonoBehaviour {
 	// This class contains the main controller for the whole experiment!
 
-
 	public FieldtripServicesInterfaceMain FTSInterface;
+    public QualityCheck Quality;
 
 	public GameObject mainPanel;
-	public GameObject connectionPanel;
-	public GameObject userInfoPanel;
-	public UnityEngine.UI.InputField userTxt;
-	public UnityEngine.UI.InputField sessionTxt;
-	public UnityEngine.UI.Toggle     agenticToggle;
-	public UnityEngine.UI.Text       cueText;
-	public UnityEngine.UI.Text       splashText;
-	public UnityEngine.UI.Text       restCueText;
-	public AudioSource audio;
-	public GameObject cuePanel;
-	public GameObject questionairePanel1;
-	public GameObject questionairePanel2;
-	public GameObject questionairePanel3;
-	public GameObject evaluationPanel;
+	public GameObject optionsPanel;
 	public GameObject loadingPanel;
+    public GameObject qualityPanel;
+	public GameObject cuePanel;
+	public GameObject questionairePanel;
+	public GameObject scorePanel;
+
+	public GameObject LoadingButton;
+	public UnityEngine.UI.Text 		 StatusText;
+	public UnityEngine.UI.Text       cueText;
+	public UnityEngine.UI.Text		 cueButton;
+	public UnityEngine.UI.Text       restCueText;
+	public UnityEngine.UI.Text		 questionnaireQuestionText;
+	public UnityEngine.UI.Text		 questionnaireAnswerLeftText;
+	public UnityEngine.UI.Text		 questionnaireAnswerRightText;
+	public UnityEngine.UI.Slider	 questionnaireSlider;
+	public UnityEngine.UI.Text		 scoreText;
+	public AudioSource sfx_ding;
 
 	public GameObject restStage;
 	public GameObject trainingStage;
 
-	private static int sessions;
-
 	private IEnumerator phaseMachine; // stateMachine for the experiment
 	private bool moveForward = true;
-	private bool endAll=false;
-	private bool agenticControl=false;
+	private bool agenticControl = false;
+	private int currentSession = 0;
+	private int currentQuestion = 0;
+	private float[] sessionScores;
 
-	// game state controller to switch between stages of the experiment/game
-	// N.B. you should never call this directly, but via the nextStage function
-	private IEnumerable nextStageInner(){
-		while (!endAll) {
-				// Start screen
-			FTSInterface.setMenu (false);
-			HideAllBut (mainPanel);
-			yield return null; // wait to be called back when the stage has finished
-			if ( endAll ) break; // finish if quit from main-menu
+	// Rest.cs uses this to see how long the rest should take
+	public float currentRestDuration = 0f;
 
-			// show the connection panel, start trying to connect to the buffer, wait for continue to be pressed
-			HideAllBut (connectionPanel);
-			FTSInterface.setMenu (true);// BODGE: manually tell the FTS interface that it's visible.....
-			//Connect (); // connect to Buffer
-			yield return null;
-			if ( endAll ) break; // finish if quit from main-menu
+    // game state controller to switch between stages of the experiment/game
+    // N.B. you should never call this directly, but via the nextStage function
+    private IEnumerable nextStageInner() {
 
-			if (Config.askUserInfo) {
-				HideAllBut (userInfoPanel);  // ask user information
-				yield return null;
-			}
-			if (userTxt.text != null)
-				FTSInterface.sendEvent (Config.userEventType, userTxt.text);
-			if (sessionTxt.text != null)
-					FTSInterface.sendEvent (Config.sessionEventType, sessionTxt.text);
-			agenticControl = agenticToggle.isOn; 
-			if (agenticControl) {
-				FTSInterface.sendEvent (Config.agenticEventType, "agentic");
-			} else {
-				FTSInterface.sendEvent (Config.agenticEventType, "operant");
-			}
-			if (FTSInterface.getSystemIsReady()) {
-				FTSInterface.setMenu (false);
-			}
+        // Start screen
+        HideAllBut(mainPanel);
+        yield return null; // wait to be called back when the stage has finished
+
+        // Load connections, then wait for continue
+        HideAllBut(loadingPanel);
+        LoadingButton.SetActive(false);
+
+        //ConnectServices();
+        RefreshServices(); // BODGE: blindly stop services to make sure they aren't still running before starting a new instance
+        yield return null; // wait to be called back when the stage has finished
+
+        // Quality check
+        Quality.enable(true);
+        HideAllBut(qualityPanel);
+        yield return null;
+
+        if ((bool)Config.questionaire) {
+            cueText.text = Config.preQuestionnaireText;
+            cueButton.text = "verder";
+            HideAllBut(cuePanel);
+            yield return null;
+
+            currentQuestion = 0;
+            while (currentQuestion < Config.preQuestionnaire.GetLength(0)) {
+                if (moveForward)
+                    currentQuestion++;
+                else
+                    currentQuestion--;
+                createQuestion(Config.preQuestionnaire);
+
+                yield return null;
+                string answer = string.Format("{0}, {1:N2}", currentQuestion, questionnaireSlider.value);
+                FTSInterface.sendEvent(Config.preQuestionEventType, answer);
+            }
+        }
+
+        else {
+            cueText.text = Config.introText;
+            cueButton.text = "verder";
+            HideAllBut(cuePanel);
+            yield return null;
+        }
+
+        if (Config.eyesOpenPre) {
+            // quality check
+            if (!Quality.getAvgQualityStatus())
+            {
+                HideAllBut(qualityPanel);
+                yield return null;
+            }
+            Quality.resetAverage();
+
+            currentRestDuration = Config.eyesOpenDuration;
+            cueText.text = Config.eyesOpenText;
+            cueButton.text = "verder";
+            HideAllBut(cuePanel);
+            yield return null;
+
+            restCueText.text = Config.baselineCueText;
+            HideAllBut(restStage);
+            FTSInterface.sendEvent(Config.eyesOpenEventType, "start"); // first is pure rest, i.e. no baseline
+            yield return null;
+            FTSInterface.sendEvent(Config.eyesOpenEventType, "end");
+        }
+
+        if (Config.eyesClosedPre) {
+            // quality check
+            if (!Quality.getAvgQualityStatus())
+            {
+                HideAllBut(qualityPanel);
+                yield return null;
+            }
+            Quality.resetAverage();
+
+            currentRestDuration = Config.eyesClosedDuration;
+            cueText.text = Config.eyesClosedText;
+            cueButton.text = "ok";
+            HideAllBut(cuePanel);
+            yield return null;
+
+            restCueText.text = Config.eyesClosedCue;
+            HideAllBut(restStage);
+            FTSInterface.sendEvent(Config.eyesClosedEventType, "start"); // first is pure rest, i.e. no baseline
+            yield return null;
+            FTSInterface.sendEvent(Config.eyesClosedEventType, "end");
+            sfx_ding.Play();
+        }
+
+        // Trial Instructions
+        cueText.text = Config.experimentInstructText1;
+        cueButton.text = "verder";
+        HideAllBut(cuePanel);
+        yield return null;
+
+        cueText.text = Config.experimentInstructText2;
+        yield return null;
 
 
-			if (Config.preMeasure) {
-				cueText.text = Config.premeasureText;
-				HideAllBut (cuePanel);
-				yield return null;
-				if (endAll)
-					break; // finish if quit from main-menu
+        // Run Trial sessions
+        string trialType = "";
+        sessionScores = new float[Config.trainingBlocks];
+        for (int si = 0; si < Config.trainingBlocks; si++) {
+            // quality check
+            if (!Quality.getAvgQualityStatus())
+            {
+                HideAllBut(qualityPanel);
+                yield return null;
+            }
+            Quality.resetAverage();
 
-				Config.fixationDuration = Config.baselineDuration;
-				HideAllBut (restStage);
-				FTSInterface.sendEvent (Config.restEventType, "start"); // first is pure rest, i.e. no baseline
-				yield return null;
-				FTSInterface.sendEvent (Config.restEventType, "end");
-			}
-			if (Config.eyesOpenTest) {
-				cueText.text = Config.eyesOpenText;
-				HideAllBut (cuePanel);
-				yield return null;
-				if (endAll)
-					break; // finish if quit from main-menu
+            // run the baseline stage
+            currentRestDuration = Config.baselineDuration;
+            cueText.text = Config.baselineText;
+            cueButton.text = "ok";
+            HideAllBut(cuePanel);
+            yield return null;
+            restCueText.text = Config.baselineCueText;
+            HideAllBut(restStage);
+            FTSInterface.sendEvent(Config.baselineEventType, "start"); // rest is also baseline
+            yield return null;
 
-				restCueText.text = Config.baselineCueText;
-				Config.fixationDuration = Config.eyesOpenDuration;
-				HideAllBut (restStage);
-				FTSInterface.sendEvent (Config.eyesOpenEventType, "start"); // first is pure rest, i.e. no baseline
-				yield return null;
-				FTSInterface.sendEvent (Config.eyesOpenEventType, "end");
-			}
-			if (Config.eyesClosedTest) {
-				cueText.text = Config.eyesClosedText;
-				HideAllBut (cuePanel);
-				yield return null;
-				if (endAll)
-					break; // finish if quit from main-menu
+            FTSInterface.sendEvent(Config.baselineEventType, "end");
 
-				restCueText.text = Config.eyesClosedCue;
-				Config.fixationDuration = Config.eyesClosedDuration;
-				HideAllBut (restStage);
-				FTSInterface.sendEvent (Config.eyesClosedEventType, "start"); // first is pure rest, i.e. no baseline
-				yield return null;
-				FTSInterface.sendEvent (Config.eyesClosedEventType, "end");
-				audio.Play ();
-			}
+            // quality check (now calibrated)
+            Quality.setCalibration(true);
+            if (!Quality.getAvgQualityStatus())
+            {
+                HideAllBut(qualityPanel);
+                yield return null;
+            }
+            Quality.resetAverage();
 
-//			cueText.text = Config.experimentInstructText;
-//			HideAllBut (cuePanel);
-//			yield return 0;
-//			if ( endAll ) break; // finish if quit from main-menu
+            // instructions before the control phase
+            if (agenticControl && si % 2 == 1)
+                trialType = "avoid";
+            else
+                trialType = "approach";
+            if (trialType.Equals("avoid")) {
+                cueText.text = Config.avoidCueText;
+            } else if (trialType.Equals("approach")) {
+                cueText.text = Config.approachCueText;
+            }
+            cueButton.text = "ok";
+            HideAllBut(cuePanel);
+            yield return null;
 
-			string trialType="";
-			for (int si=0; si<Config.trainingBlocks; si++) {
-				// run the baseline stage
-				cueText.text = Config.baselineText;
-				HideAllBut (cuePanel);
-				yield return null;
-				Config.fixationDuration = Config.baselineDuration;
-				restCueText.text = Config.baselineCueText;
-				HideAllBut (restStage);
-				FTSInterface.sendEvent (Config.baselineEventType, "start"); // rest is also baseline
-				yield return null;
-				if ( endAll ) break; // finish if quit from main-menu
-				FTSInterface.sendEvent (Config.baselineEventType, "end");
+            // run the training stage
+            FTSInterface.sendEvent(Config.trialEventType, "start");
+            FTSInterface.sendEvent(Config.targetEventType, trialType);
+            HideAllBut(trainingStage);
+            yield return null;
+            FTSInterface.sendEvent(Config.trialEventType, "end");
+            currentSession += 1;
+        }
 
-				// instructions before the control phase
-				if ( agenticControl && si%2==1 ) 
-					trialType="avoid"; 
-				else 
-					trialType="approach";
-				if ( trialType.Equals("avoid") ) {
-					cueText.text = Config.avoidCueText;
-				} else if ( trialType.Equals("approach") ){
-					cueText.text = Config.approachCueText;
-				}
-				HideAllBut (cuePanel);
-				yield return 0;
-				if ( endAll ) break; // finish if quit from main-menu
+        if (Config.eyesOpenPost) {
+            // quality check
+            if (!Quality.getAvgQualityStatus())
+            {
+                HideAllBut(qualityPanel);
+                yield return null;
+            }
+            Quality.resetAverage();
 
-				// run the training stage
-				FTSInterface.sendEvent (Config.trialEventType, "start");
-				FTSInterface.sendEvent (Config.targetEventType, trialType);
-				HideAllBut (trainingStage);
-				yield return null;
-				FTSInterface.sendEvent (Config.trialEventType, "end");
-				if ( endAll ) break; // finish if quit from main-menu
-			}
+            currentRestDuration = Config.eyesOpenDuration;
+            cueText.text = Config.eyesOpenText;
+            cueButton.text = "verder";
+            HideAllBut(cuePanel);
+            yield return null;
 
-			if ((bool)Config.questionaire) {
+            restCueText.text = Config.baselineCueText;
+            HideAllBut(restStage);
+            FTSInterface.sendEvent(Config.eyesOpenEventType, "start"); // first is pure rest, i.e. no baseline
+            yield return null;
+            FTSInterface.sendEvent(Config.eyesOpenEventType, "end");
+        }
 
-				cueText.text = Config.questionaireText;
-				HideAllBut (cuePanel);
-				yield return null;
-				if ( endAll ) break; // finish if quit from main-menu
+        if (Config.eyesClosedPost) {
+            // quality check
+            if (!Quality.getAvgQualityStatus())
+            {
+                HideAllBut(qualityPanel);
+                yield return null;
+            }
+            Quality.resetAverage();
 
-				int questionaireStage = 1;
-				while (questionaireStage <= 3) {
-					if (questionaireStage == 1)
-					{
-						HideAllBut (questionairePanel1);
-					}
-					else if (questionaireStage == 2)
-					{
-						HideAllBut (questionairePanel2);
-					}
-					else if (questionaireStage == 3)
-					{
-						HideAllBut (questionairePanel3);
-					}
-					yield return null;
-					if ( endAll ) break; // finish if quit from main-menu
+            currentRestDuration = Config.eyesClosedDuration;
+            cueText.text = Config.eyesClosedPostText;
+            cueButton.text = "ok";
+            HideAllBut(cuePanel);
+            sfx_ding.Play();
+            yield return null;
 
-					if (moveForward)
-						questionaireStage++;
-					else
-						questionaireStage--;
-				}
-			}
+            restCueText.text = Config.eyesClosedCue;
+            HideAllBut(restStage);
+            FTSInterface.sendEvent(Config.eyesClosedEventType, "start"); // first is pure rest, i.e. no baseline
+            yield return null;
+            FTSInterface.sendEvent(Config.eyesClosedEventType, "end");
+            sfx_ding.Play();
+        }
 
-			if ((bool)Config.evaluation) {
-				LoadEvaluationPage ();
-				yield return null;
-				if ( endAll ) break; // finish if quit from main-menu
-			}
-		}
+        // turn off quality check to save resources
+        Quality.enable(false);
 
-		splashText.text = Config.farwellText;
-		HideAllBut (loadingPanel);
-		Disconnect(true);
-		Application.Quit ();
+        if ((bool)Config.questionaire) {
+            cueText.text = Config.postQuestionnaireText;
+            cueButton.text = "verder";
+            HideAllBut(cuePanel);
+            yield return null;
+
+            currentQuestion = 0;
+            while (currentQuestion < Config.postQuestionnaire.GetLength(0)) {
+                if (moveForward)
+                    currentQuestion++;
+                else
+                    currentQuestion--;
+                createQuestion(Config.postQuestionnaire);
+
+                yield return null;
+                string answer = string.Format("{0}, {1}", currentQuestion, questionnaireSlider.value);
+                FTSInterface.sendEvent(Config.postQuestionEventType, answer);
+            }
+        }
+
+        if ((bool)Config.evaluation) {
+            currentQuestion = 0;
+            while (currentQuestion < Config.evalQuestionnaire.GetLength(0)) {
+                if (moveForward)
+                    currentQuestion++;
+                else
+                    currentQuestion--;
+                createQuestion(Config.evalQuestionnaire);
+
+                yield return null;
+                string answer = string.Format("{0}, {1}", currentQuestion, questionnaireSlider.value);
+                FTSInterface.sendEvent(Config.evalQuestionEventType, answer);
+            }
+        }
+
+        //Say goodbye
+        cueText.text = Config.farewellText;
+        cueButton.text = "sluiten";
+        HideAllBut(cuePanel);
+        yield return null;
+
+        //End
+        Quit();
 	}
 
 	public void nextStage(){
 		moveForward = true;
 		phaseMachine.MoveNext ();
 	}
+
 	public void previousStage(){
 		moveForward = false;
 		phaseMachine.MoveNext ();
 	}
+
+	public IEnumerator ShutDown()
+	{
+		StatusText.text = "Afsluiten...";
+		LoadingButton.SetActive (false);
+		HideAllBut (loadingPanel);
+
+		Debug.Log ("Disconnecting.");
+		DisconnectServices();
+
+		while (FTSInterface.getSystemIsReady())
+		{
+			yield return new WaitForSeconds(1);
+		}
+
+		yield return new WaitForSeconds (1);
+		Debug.Log ("Quitting.");
+		Application.Quit ();
+		// Kill insurance
+		System.Diagnostics.Process.GetCurrentProcess ().Kill ();
+	}
+
+	public void logScore(float score) {
+		sessionScores [currentSession] = score;
+		Debug.Log (string.Format("Score of session {0}: {1}",currentSession,score));
+	}
+
+	public void toggleOptionsPanel(bool toggle){
+		if (toggle) {
+			HideAllBut (optionsPanel);
+		} else {
+			//Save options
+			HideAllBut (mainPanel);
+		}
+	}
+
+	public void createQuestion(string[,] content){
+		int i = currentQuestion-1;
+		questionnaireQuestionText.text = content[i,0];
+		questionnaireAnswerLeftText.text = content[i,1];
+		questionnaireAnswerRightText.text = content[i,2];
+		questionnaireSlider.value = (float)(questionnaireSlider.maxValue+questionnaireSlider.minValue)/2;
+		HideAllBut (questionairePanel);
+	}
+
+
 	// Initialize
 	void Awake ()
 	{
@@ -215,7 +359,7 @@ public class MenuOptions : MonoBehaviour {
 		//trainingStage.GetComponent<Training> ().Initialize ();
 		HideAll();
 		// start the first stage and get an iterator to the state-machine management
-		phaseMachine = nextStageInner ().GetEnumerator(); // get the state machine object 
+		phaseMachine = nextStageInner ().GetEnumerator(); // get the state machine object
 		nextStage (); // start the 1st stage
 	}
 
@@ -245,43 +389,24 @@ public class MenuOptions : MonoBehaviour {
 		HideAll ();
 		Show (obj);
 	}
-		
-	public void Refresh()
+
+	public void ConnectServices()
+	{
+		StartCoroutine (FTSInterface.startServerAndAllClients ());
+	}
+
+	public void RefreshServices()
 	{
 		StartCoroutine (FTSInterface.refreshClientAndServer ());
 	}
 
-	public void Disconnect (bool silent)
+	public void DisconnectServices ()
 	{
-		if (silent) {
-			StartCoroutine (FTSInterface.stopClientAndServer ());
-		} else {
-			StartCoroutine (SafeDisconnect ());
-		}
-	}
-
-	public IEnumerator SafeDisconnect()
-	{
-		Show(loadingPanel);
-		yield return StartCoroutine (FTSInterface.stopClientAndServer ());
-		Hide (loadingPanel);
+		StartCoroutine (FTSInterface.stopClientAndServer ());
 	}
 
 	public void Quit()
 	{
-		endAll = true;
-		nextStage ();
-	}
-
-	public IEnumerator SafeShutdown()
-	{
-		Debug.Log ("Shutting down safely");
-		yield return SafeDisconnect ();
-		Application.Quit ();
-	}
-	
-	public void LoadEvaluationPage()
-	{
-		HideAllBut (evaluationPanel);
-	}
+        StartCoroutine(ShutDown());
+    }
 }

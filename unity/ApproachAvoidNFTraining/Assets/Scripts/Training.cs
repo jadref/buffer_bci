@@ -19,13 +19,15 @@ public class Training : MonoBehaviour {
 
 	private static float duration;
 	private float alpha;
+	private float alphaLatAvg = 0f;
+	private int avgSamples = 1;
 	private float badness;
 
 	Renderer ballRenderMan;
 	SkinnedMeshRenderer skinnedMeshRenderMan;
 	Mesh skinnedMesh;
 
-	Renderer[] tunnelRenderMen;
+	Renderer[] tunnelRenderMans;
 
 
 	// Initialization
@@ -56,6 +58,12 @@ public class Training : MonoBehaviour {
 			if ((Time.time-startTime) >= duration)
 			{
 				gameObject.SetActive (false);
+
+				// Log session score and reset for performance sake
+				// menu.logScore((float)alphaLatAvg);
+				// alphaLatAvg = 0;
+				// avgSamples = 1;
+
 				menu.nextStage();
 			}
 
@@ -77,7 +85,20 @@ public class Training : MonoBehaviour {
 			ball.transform.position = Vector3.SmoothDamp(ball.transform.position, targetPosition, ref velocity, smoothTime);
 			ball.transform.Rotate (targetRotX, 0, 0);
 
-			// Badness to Ball Color
+			/*
+			// AlphaLat Rolling average to Ball Color
+			alphaLatAvg = (alphaLatAvg * avgSamples + alpha) / (avgSamples + 1);
+			avgSamples += 1;
+			//Debug.Log (alphaLatAvg);
+
+			float targetBlend = 0.5f + (alpha - alphaLatAvg)/Config.alphaLimit;
+			float ballBlend = Mathf.Min(Mathf.Max(targetBlend,0f),1f);
+
+			ballRenderMan.material.SetFloat ("_Blend", ballBlend);
+			//skinnedMeshRenderMan.SetBlendShapeWeight (0, value * 100f);
+			*/
+
+			// Badness to Tunnel color
 			float b = (float)FTSInterface.getBadness();
 			// smooth badness to make it visible for longer
 			if ( Config.badnessFilter>0 ) {
@@ -88,17 +109,8 @@ public class Training : MonoBehaviour {
 			float badColor = Mathf.Max(0,badness-Config.badnessThreshold); // > .5 = bad
 			badColor = Mathf.Min(badColor,Config.badnessLimit) / Config.badnessLimit; // 3 is max badness, linear between
 
-			ballRenderMan.material.SetFloat ("_Blend", badColor);
-			//skinnedMeshRenderMan.SetBlendShapeWeight (0, value * 100f);
-
-			// Channel quality to tunnel Color
-			float c1 = FTSInterface.getQualityCh1();
-			float c2 = FTSInterface.getQualityCh2();
-
-			float cmax = Mathf.Max (c1,c2) / Config.qualityLimit;
-
-			for (int i=0; i < tunnelRenderMen.Length; ++i) {
-				tunnelRenderMen[i].material.SetFloat ("_Blend", badColor); // BODGE: channel quality doesn't go here.
+			for (int i=0; i < tunnelRenderMans.Length; ++i) {
+				tunnelRenderMans[i].material.SetFloat ("_Blend", badColor);
 			}
 		}
 	}
@@ -107,12 +119,12 @@ public class Training : MonoBehaviour {
 	{
 		if (!isInitialized) {
 			int sections = 8;
-			tunnelRenderMen = new Renderer[sections];
+			tunnelRenderMans = new Renderer[sections];
 			for (int i=0; i<sections; ++i) {
 				GameObject newSection = Instantiate (tunnelPrefab, new Vector3 (0, 0, i * 4f), Quaternion.identity) as GameObject;
 				newSection.transform.parent = tunnelContainer.transform;
-				tunnelRenderMen [i] = newSection.transform.GetComponent<Renderer>();
-				tunnelRenderMen [i].material.SetFloat ("_Blend", 1);
+				tunnelRenderMans [i] = newSection.transform.GetComponent<Renderer>();
+				tunnelRenderMans [i].material.SetFloat ("_Blend", 1);
 			}
 			isInitialized = true;
 		}

@@ -21,7 +21,7 @@ public class Rest : MonoBehaviour {
 	// when made visible
 	void OnEnable(){
 		startTime = Time.time;
-		duration = (float)Config.fixationDuration;
+		duration = (float)menu.currentRestDuration;
 	}
 
 	// called when the app is made invisible..

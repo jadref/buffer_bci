@@ -113,7 +113,7 @@ namespace MiscUtil.IO
 			get { return stream; }
 		}
 		#endregion
-	
+
 		#region Public methods
 		/// <summary>
 		/// Closes the reader, including the underlying stream..
@@ -506,14 +506,14 @@ namespace MiscUtil.IO
 
 		/// <summary>
 		/// Reads a length-prefixed string from the stream, using the encoding for this reader.
-		/// A 7-bit encoded integer is first read, which specifies the number of bytes 
+		/// A 7-bit encoded integer is first read, which specifies the number of bytes
 		/// to read from the stream. These bytes are then converted into a string with
 		/// the encoding for this reader.
 		/// </summary>
 		/// <returns>The string read from the stream.</returns>
 		public string ReadString(int bytesToRead)
 		{
-			//int bytesToRead = Read7BitEncodedInt(); //This had to go because I had to remove the equivalent in the EndianBinaryWriter!!! 
+			//int bytesToRead = Read7BitEncodedInt(); //This had to go because I had to remove the equivalent in the EndianBinaryWriter!!!
 			//To cal this I need to know the number of the string's bits and and pass it on instead of encoding this info in the buffer!!
 			byte[] data = new byte[bytesToRead];
 			ReadInternal(data, bytesToRead);

@@ -11,8 +11,8 @@ namespace FieldTrip.Buffer
 		public const int CHUNK_NIFTI1 = 5;
 		public const int CHUNK_SIEMENS_AP = 6;
 		public const int CHUNK_CTF_RES4 = 7;
-		
-	
+
+
 		public Header(ByteBuffer buf) {
 			nChans   = buf.getInt();
 			nSamples = buf.getInt();
@@ -21,13 +21,13 @@ namespace FieldTrip.Buffer
 			dataType = buf.getInt();
 			int size = buf.getInt();
 			labels   = new string[nChans];
-		
+
 			while (size > 0) {
 				int chunkType = buf.getInt();
 				int chunkSize = buf.getInt();
 				byte[] bs = new byte[chunkSize];
 				buf.get(ref bs);
-				
+
 				if (chunkType == CHUNK_CHANNEL_NAMES) {
 					int n = 0, len = 0, index =0;
 					for (int pos = 0;pos<chunkSize;pos++) {
@@ -48,7 +48,7 @@ namespace FieldTrip.Buffer
 				size -= 8 + chunkSize;
 			}
 		}
-		
+
 		public Header(int nChans, float fSample, int dataType) {
 			this.nChans   = nChans;
 			this.fSample  = fSample;
@@ -57,15 +57,15 @@ namespace FieldTrip.Buffer
 			this.dataType = dataType;
 			this.labels   = new string[nChans]; // allocate, but do not fill
 		}
-		
+
 		public int getSerialSize() {
 			int size = 24;
-		
+
 			if (labels.Length == nChans) {
 				channelNameSize = 0;
 				for (int i=0;i<nChans;i++) {
 					channelNameSize++;
-					if (labels[i] != null) 
+					if (labels[i] != null)
 						channelNameSize += labels[i].ToString().ToCharArray().Length;
 				}
 				if (channelNameSize > nChans) {
@@ -75,7 +75,7 @@ namespace FieldTrip.Buffer
 			}
 			return size;
 		}
-		
+
 		public void serialize(ByteBuffer buf) {
 			buf.putInt(nChans);
 			buf.putInt(nSamples);
@@ -90,15 +90,15 @@ namespace FieldTrip.Buffer
 				buf.putInt(CHUNK_CHANNEL_NAMES);
 				buf.putInt(channelNameSize);
 				for (int i=0;i<nChans;i++) {
-					if (labels[i] != null) 
+					if (labels[i] != null)
 						buf.putString( labels[i]);
 					buf.putByte((byte) 0);
 				}
-			} 
+			}
 		}
-		
+
 		public int channelNameSize;
-	
+
 		public int dataType;
 		public float fSample;
 		public int nChans;

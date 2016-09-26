@@ -7,7 +7,7 @@ namespace FieldTrip.Buffer
 			this.nSamples = nSamples;
 			this.nEvents  = nEvents;
 		}
-		
+
 		public int nSamples;
 		public int nEvents;
 	}

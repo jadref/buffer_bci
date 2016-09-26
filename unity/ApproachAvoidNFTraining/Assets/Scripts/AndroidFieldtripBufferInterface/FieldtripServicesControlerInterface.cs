@@ -1,9 +1,8 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System;
 using System.Runtime.InteropServices;
-
 
 public static class FieldtripServicesControlerInterface {
 	//Server Interface
@@ -23,7 +22,7 @@ public static class FieldtripServicesControlerInterface {
 		StopService(Config.bufferServerAppPackageName,Config.bufferServerPackageName);
 		return true; //mainActivity.Call<bool>("stopServer");
 	}
-		
+
 	//Clients in Buffer Interface
 	public static string startClients(){
 		Debug.Log ("Starting the clients");
@@ -50,13 +49,12 @@ public static class FieldtripServicesControlerInterface {
 	}
 
 	public static void StartService(string package,string service){
-	   #if UNITY_ANDROID && !UNITY_EDITOR
+	    #if UNITY_ANDROID && !UNITY_EDITOR
 		AndroidJavaClass activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
 		AndroidJavaObject mainActivity = activityClass.GetStatic<AndroidJavaObject>("currentActivity");
 		AndroidJavaObject intent = new AndroidJavaObject("android.content.Intent");
 		intent = intent.Call<AndroidJavaObject>("setClassName",package,service);
 		Debug.Log("service intent = " + intent);
-		//intent.Call<AndroidJavaObject>("setAction",package);
 		AndroidJavaObject cname = mainActivity.Call<AndroidJavaObject>("startService",intent);
 		#endif
 	}
@@ -65,8 +63,8 @@ public static class FieldtripServicesControlerInterface {
 		AndroidJavaClass activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
 		AndroidJavaObject mainActivity = activityClass.GetStatic<AndroidJavaObject>("currentActivity");
 		AndroidJavaObject intent = new AndroidJavaObject("android.content.Intent");
-		intent.Call<AndroidJavaObject>("setAction",package);
-		mainActivity.Call<AndroidJavaObject>("stopService",intent);
+		intent = intent.Call<AndroidJavaObject>("setClassName",package,service);
+		bool succ = mainActivity.Call<bool>("stopService",intent);
 		#endif
 	}
 

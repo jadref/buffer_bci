@@ -10,9 +10,7 @@ using System.Linq;
 public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 	bool androidDevice = false;
-	bool inMenu = true;
-	bool updateServer = false;
-	bool clientIsConnected = false;
+	bool updateStatus = false;
 	bool systemIsReady = false;
 
 	string serverUptime = "00:00";
@@ -25,28 +23,17 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	Boolean bufferIsOn = false;
 	double[] currentAlphaLat;
 
-	//float badnessFilter;
-	//float badnessLimit;
-	//float qualityLimit;
-
 	public bool verbose;
-	public Image ServerStatusIcon;
-	public Image MuseStatusIcon;
-	public Image SignalAStatusIcon;
-	public Image SignalBStatusIcon;
-	public Button StatusButton;
-
-	private Color themeGreen = new Color (0.42f, 0.56f, 0.36f, 1.0f);
-	private Color themeRed = new Color (0.79f, 0.38f, 0.27f, 1.0f);
-	private ColorBlock buttonColors = ColorBlock.defaultColorBlock;
+	public UnityEngine.UI.Text StatusText;
+	public GameObject LoadingButton;
 
 	void Start () {
 		#if UNITY_ANDROID && !UNITY_EDITOR
+		Screen.sleepTimeout = (int)SleepTimeout.NeverSleep;
 		androidDevice = true;
 		#endif
 
 		currentAlphaLat = new double[] {0, 0, 0, 0};
-		resetStatus();
 	}
 
 	// called when the app is made invisible..
@@ -56,69 +43,17 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 	// called when frame is made visible
 	void OnEnable() {
+		Debug.Log ("enable");
 	}
-		
-	void Update(){ // Called every video frame
-		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
-		if (androidDevice && inMenu) {
-			if (updateServer){
-				string serverUptimeNew = FieldtripServicesControlerInterface.getBufferUptime ();
-				if (serverUptimeNew != serverUptime) {
-					serverUptime = serverUptimeNew;
-					serverDowntime = 0;
-					ServerStatusIcon.color = themeGreen;
-				} else {
-					serverDowntime += 1;
-					if (serverDowntime > 120) {
-						ServerStatusIcon.color = themeRed;
-						systemIsReady = false;
-					}
-				}
-			}
-		}
-       #endif
-	   if (clientIsConnected) {
-			float qch1 = getQualityCh1();
-			float qch2 = getQualityCh2();
-			if (qch1 >= Config.qualityLimit) {
-				SignalAStatusIcon.color = themeRed;
-			} else {
-				SignalAStatusIcon.color = themeGreen;
-			}
-			if (qch2 >= Config.qualityLimit) {
-				SignalBStatusIcon.color = themeRed;
-			} else {
-				SignalBStatusIcon.color = themeGreen;
-			}
-		}
-	}
-
 
 	// Maintenance
 
 	private void logStatus(string status)
 	{
-		if (verbose) {
-			Debug.Log ("Status: "+status);
+		Debug.Log ("Status: "+status);
+		if (updateStatus) {
+			StatusText.text = status;
 		}
-		if (inMenu) {
-			if (StatusButton!=null && StatusButton.IsActive() ) {
-				Text tag = StatusButton.GetComponentInChildren<Text> ();
-				if (tag)
-					tag.text = status;
-			}
-		}
-	}
-
-	public void resetStatus()
-	{
-		ServerStatusIcon.color = Color.grey;
-		MuseStatusIcon.color = Color.grey;
-		SignalAStatusIcon.color = Color.grey;
-		SignalBStatusIcon.color = Color.grey;
-		buttonColors.normalColor = Color.grey;
-		buttonColors.highlightedColor = Color.grey;
-		StatusButton.colors = buttonColors;
 	}
 
 	private float normalize(float input, float limit)
@@ -133,164 +68,94 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	// System Startup and Shutdown
 
 	public IEnumerator startServerAndAllClients(){
+		updateStatus = true; // show status in loading screen
 		#if UNITY_ANDROID && !UNITY_EDITOR
 			//Start Server
-			logStatus ("starting server...");
-			//Debug.Log ("Started: " + FieldtripServicesControlerInterface.startServerApp ());
+			logStatus ("Server opstarten...");
+			Debug.Log ("Started: " + FieldtripServicesControlerInterface.startServer ());
 			yield return new WaitForSeconds (4);//These waits are for the Services to have time to pass around their intents. Used to be 10.
 
-			Debug.Log ("Started: " + FieldtripServicesControlerInterface.startServer ());
-		    ServerStatusIcon.color = themeRed;
-			yield return new WaitForSeconds (2);//These waits are for the Services to have time to pass around their intents. Used to be 10.
-		    updateServer = true;
-
 			//Start Clients
-			logStatus ("starting clients...");
+			logStatus ("Client opstarten...");
 			Debug.Log ("Started: " + FieldtripServicesControlerInterface.startClients ());
 			yield return new WaitForSeconds (2);
 
-
-			//start the required clients
-		for ( int i =0 ; i < Config.bufferClientThreadList.Length; i++ ) {
-		string clientname=Config.bufferClientThreadList[i];
-			logStatus( "starting = " + clientname);
-			FieldtripServicesControlerInterface.startThread(clientname);
-			yield return new WaitForSeconds (1);//These waits are for the Services to have time to pass around their intents. Used to be 10.
-		}
-		#endif
-			
-
-		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
-			//Start Threads
-			logStatus ("loading threads...");
-			bool museIsAvailable = false;
-			string[] result = FieldtripServicesControlerInterface.getAllThreadsNamesAndIDs ();
-			while (result.Length==0) {//Wait until the ClientsService updates the controller with all the available threads
-				yield return new WaitForSeconds (1);
-				result = FieldtripServicesControlerInterface.getAllThreadsNamesAndIDs ();
+			for ( int i =0 ; i < Config.bufferClientThreadList.Length; i++ ) {
+				string clientname=Config.bufferClientThreadList[i];
+				logStatus(clientname + "\nopstarten");
+				FieldtripServicesControlerInterface.startThread(clientname);
+				yield return new WaitForSeconds (1);//These waits are for the Services to have time to pass around their intents.
 			}
-			for (int i=0; i<result.Length; ++i) {
-				if (result [i].Split (':') [1].Contains ("Muse")) {
-					logStatus ("connecting to muse...");
-					museIsAvailable = true;
-					MuseStatusIcon.color = themeRed;
-					museThreadID = int.Parse (result [i].Split (':') [0]);
-					if (verbose) {
-						Debug.Log ("Starting MuseConnection @ thread: " + museThreadID.ToString ());
-					}
-					FieldtripServicesControlerInterface.startThread (museThreadID);
-				}
-			}
-		#endif
 
-		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
-			if (museIsAvailable) {
-				//Start Buffer
-				logStatus ("creating buffer...");
-				initializeBuffer ();
-
-				//Check Muse connection
-				logStatus ("waiting for muse...");
-				int museClientID = 0;
-				int currentSamples = FieldtripServicesControlerInterface.getClientSamplesPut (museClientID);
-				int samplesPut = currentSamples;
-				while (samplesPut < 100) {//Wait for Muse to put some samples in the buffer
-					yield return new WaitForSeconds (1);
-					samplesPut = FieldtripServicesControlerInterface.getClientSamplesPut (museClientID);
-				}
-				MuseStatusIcon.color = themeGreen;
-
-				logStatus ("sending events to buffer...");
-				for (int i=0; i<result.Length; ++i) {
-					if (result [i].Split (':') [1].Contains ("AlphaLat")) {
-						ccThreadID = int.Parse (result [i].Split (':') [0]);
-						Debug.Log ("Starting ContinuousClassifier @ thread: " + ccThreadID.ToString ());
-						FieldtripServicesControlerInterface.startThread (ccThreadID);
-					}
-				}
-				while (!clientIsConnected) {
-					yield return new WaitForSeconds(0.5f);
-				}
-
-				logStatus ("check signal quality...");
-				yield return new WaitForSeconds (2f);
-			J
-
-		#endif
 			//Start Buffer
-			logStatus ("Connecting to buffer...");
+			logStatus ("Verbinden met buffer...");
 			while ( ! bufferIsOn ){
 				initializeBuffer ();
 				if ( ! bufferIsOn ){
-					//logStatus ("Couldnt connect, waiting");
 					yield return new WaitForSeconds(1);
 				}
 			}
-			logStatus ("Connected!");
-			yield return new WaitForSeconds(1);
-		buttonColors.normalColor = themeGreen;
-		buttonColors.highlightedColor = themeGreen;
-		StatusButton.colors = buttonColors;
-		logStatus ("beginnen");
+		#endif
+		logStatus ("Wachten...");
+		yield return new WaitForSeconds(1);
+		logStatus ("Gereed!");
 		systemIsReady = true;
+		updateStatus = false;
+		LoadingButton.SetActive (true);
 	}
 
 
 	public IEnumerator stopClientAndServer(){
-		systemIsReady = false;
-		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
-			//Stop Clients
-			clientIsConnected = false;
-			logStatus ("stopping classifier...");
-			FieldtripServicesControlerInterface.stopThread (ccThreadID);
-			yield return new WaitForSeconds (1);
-			logStatus ("stopping muse...");
-			FieldtripServicesControlerInterface.stopThread (museThreadID);
-			yield return new WaitForSeconds (1);
-			logStatus ("shutting down clients...");
-			Debug.Log ("Stopped Clients = " + FieldtripServicesControlerInterface.stopClients ());
-			yield return new WaitForSeconds (1);
+		#if UNITY_ANDROID && !UNITY_EDITOR
+			//Stop Threads
+			for ( int i =0 ; i < Config.bufferClientThreadList.Length; i++ ) {
+				string clientname=Config.bufferClientThreadList[i];
+				logStatus(clientname + "\nstoppen");
+				FieldtripServicesControlerInterface.stopThread(clientname);
+				yield return new WaitForSeconds (1);//These waits are for the Services to have time to pass around their intents.
+			}
 		#endif
 
 		//Stop buffer
-		logStatus ("removing buffer...");
+		logStatus ("Buffer stoppen...");
 		if ( bufferIsOn ){
 			buffer.disconnect ();
 			bufferIsOn = false;
 		}
 		yield return new WaitForSeconds (1);
 
-		#if !NOSERVICESCONTROLLER && UNITY_ANDROID && !UNITY_EDITOR
-			//Stop Server
-			logStatus ("shutting down server...");
-			updateServer = false;
-			Debug.Log ("Stopped Server = " + FieldtripServicesControlerInterface.stopServer ());
-			yield return new WaitForSeconds (1);
+		#if UNITY_ANDROID && !UNITY_EDITOR
+			//Stop Clients
+			logStatus ("Client stoppen...");
+			Debug.Log ("Stopped: " + FieldtripServicesControlerInterface.stopClients ());
+			yield return new WaitForSeconds (2);
 
-      #endif
-		//Update Status
-		clientIsConnected = false;
-		logStatus ("system offline");
-		resetStatus ();
+			//Stop Server
+			logStatus ("Server stoppen...");
+			Debug.Log ("Stopped: " + FieldtripServicesControlerInterface.stopServer ());
+			yield return new WaitForSeconds (2);
+     	#endif
+
+      	//Update Status
+		systemIsReady = false; //signals Unity it is safe to close down as well
+		logStatus ("Systeem offline");
 	}
 
 	public IEnumerator refreshClientAndServer(){
-		logStatus("Resetting Client and Server");
+		logStatus("Client en server herstarten...");
 		yield return StartCoroutine (stopClientAndServer ());
 		yield return StartCoroutine (startServerAndAllClients());
 	}
 
 
 	// Buffer
-	// TODO: This is a horrilble combination of service management and buffer/event tracking... should separate into different pieces.
+	// TODO: This is a horrible combination of service management and buffer/event tracking... should separate into different pieces.
 	private void eventsAdded(UnityBuffer _buffer, EventArgs e){
 		BufferEvent latestEvent = _buffer.getLatestEvent();
 		if(bufferIsOn && latestEvent.getType().toString()==Config.feedbackEventType)
 		{
-			clientIsConnected = true;
 			IList alphaLatObjects = latestEvent.getValue().array as IList;
 			currentAlphaLat = alphaLatObjects.Cast<double>().ToArray();
-			//Debug.Log (alphaLatObjects);
 		}
 	}
 
@@ -308,12 +173,11 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 	public void sendEvent(string eventType, string eventData)
 	{
-		//Debug.Log ("Event sent to buffer: " + eventType + ": " + eventData);
+		Debug.Log ("Event sent to buffer: " + eventType + ": " + eventData);
 		if (buffer != null) {
 			buffer.putEvent (eventType, eventData, buffer.getSampleNumberNow ());
 		}
 	}
-
 
 	// Interfacing
 
@@ -322,8 +186,8 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 		return systemIsReady;
 	}
 
-
-	public double[] getFeedback (){
+	public double[] getFeedback()
+	{
 		return currentAlphaLat;
 	}
 
@@ -341,7 +205,6 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 	public float getQualityCh1()
 	{
-		//return normalize ((float)currentAlphaLat [2], qualityLimit);
 		return (float)currentAlphaLat [currentAlphaLat.Length-2];
 	}
 
@@ -349,13 +212,4 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	{
 		return (float)currentAlphaLat [currentAlphaLat.Length-1];
 	}
-
-	// Called m*manually* when this interface is visible!
-	public void setMenu(bool value)
-	{
-		inMenu = value;
-		if (value) {
-			StartCoroutine (startServerAndAllClients ());
-		}
-	}
-}
+ }
