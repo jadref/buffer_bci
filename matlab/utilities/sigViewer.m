@@ -14,6 +14,9 @@ function []=sigViewer(buffhost,buffport,varargin);
 %  fftfilter  -- [4x1] spectral filter to apply to the data before plotting ([.1 .3 45 47])
 %  downsample -- [single] frequency to downsample to before drawing display (128)
 %  spatfilt   -- 'str' name of type of spatial filtering to do to the data   ('car')
+%                oneof: 'none','car','whiten'
+%              OR
+%                [nCh x nCh] matrix giving directly the spatial filter coefficients
 %  capFile    -- [str] capFile name to get the electrode positions from      ('1010')
 %  overridechnms -- [bool] flag if we use the channel names from the capFile rather than the buffer (0)
 %  welch_width_ms -- [single] size in time of the welch window                      (1000ms) 
@@ -23,6 +26,7 @@ function []=sigViewer(buffhost,buffport,varargin);
 %  freqbands  -- [2x1] frequency bands to display in the freq-domain plot    (opts.fftfilter)
 %  noisebands -- [2x1] frequency bands to display for the 50 Hz noise plot   ([45 47 53 55])
 %  sigProcOptsGui -- [bool] show the on-line option changing gui             (1)
+%  drawHead   -- [bool] flag if we should draw the background head           (true)
 wb=which('buffer'); 
 if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ); 
     fprintf('Running %s\n',fullfile(fileparts(mfilename('fullpath')),'../utilities/initPaths.m')); 
@@ -34,7 +38,8 @@ opts=struct('endType','end.training','verb',1,'timeOut_ms',1000,...
 				'badchrm',0,'badchthresh',3,'capFile',[],'overridechnms',0,...
 				'welch_width_ms',1000,'spect_width_ms',500,'spectBaseline',1,...
 				'noisebands',[45 47 53 55],'noiseBins',[0 1.75],...
-				'sigProcOptsGui',1,'dataStd',2.5,'covhalflife',600);
+				'sigProcOptsGui',1,'dataStd',2.5,'covhalflife',600,...
+			  'drawHead',1);
 opts=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ); buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ); buffport=1972; end;
@@ -64,6 +69,7 @@ while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffe
   end;
   pause(1);
 end;
+drawHead=opts.drawHead; if ( isempty(drawHead) ) drawHead=true; end;
 % extract channel info from hdr
 ch_names=hdr.channel_names; ch_pos=[]; iseeg=true(numel(ch_names),1);
 % get capFile info for positions
@@ -84,6 +90,7 @@ if ( ~isempty(capFile) )
     warning('Capfile didnt match any data channels -- no EEG?');
     ch_names=hdr.channel_names;
     ch_pos=[];
+	 drawHead=false;
     iseeg=true(numel(ch_names),1);
   end
 end
@@ -135,7 +142,9 @@ end
 % make the figure window
 fig=figure(1);clf;
 set(fig,'Name','Sig-Viewer : t=time, f=freq, p=power, 5=50Hz power, s=spectrogram, o=offset, close window=quit','menubar','none','toolbar','none','doublebuffer','on');
-axes('position',[0 0 1 1]); topohead();set(gca,'visible','off','nextplot','add');
+axes('position',[0 0 1 1]);
+if( drawHead ) topohead(); end;
+set(gca,'visible','off','nextplot','add');
 plotPos=ch_pos; if ( ~isempty(plotPos) ); plotPos=plotPos(:,iseeg); end;
 hdls=image3d(ppspect,1,'plotPos',plotPos,'Xvals',ch_names,'yvals',spectFreqs(spectFreqIdx(1):spectFreqIdx(2)),'ylabel','freq (hz)','zvals',start_s,'zlabel','time (s)','disptype','imaget','colorbar',1,'ticklabs','sw','legend',0,'plotPosOpts.plotsposition',[.05 .08 .91 .85]);
 cbarhdl=[]; 
@@ -179,7 +188,7 @@ end;
 ppopts.badchrm=opts.badchrm;
 ppopts.badchthresh=opts.badchthresh;
 ppopts.preproctype='none';if(opts.detrend);ppopts.preproctype='detrend'; end;
-ppopts.spatfilttype=opts.spatfilt;
+if ( ischar(opts.spatfilt) ) ppopts.spatfilttype=opts.spatfilt; else ppopts.spatfilttype='none'; end;
 ppopts.freqbands=opts.freqbands;
 optsFighandles=[];
 damage=false(4,1);	 
@@ -340,12 +349,16 @@ while ( ~endTraining )
       if ( ~isempty(slapfilt) ) % only use and update from the good channels
         ppdat(~isbadch,:,:)=tprod(ppdat(~isbadch,:,:),[-1 2 3],slapfilt(~isbadch,~isbadch),[-1 1]); 
       end;
+	  case 'user';
+		 if ( isnumeric(opts.spatfilt) ) % use the user-specified spatial filter matrix
+			ppdat(~isbadch,:,:)=tprod(ppdat,[-1 2 3],opts.spatfilt,[-1 1]);      
+		 end
      case 'whiten'; % use the current data-cov to estimate the whitener
        [U,s]=eig(chCov(~isbadch,~isbadch)); s=diag(s); % eig-decomp
        % re-scale to correct for startup effects, N.B. total weight up to step n = 1-(covAlpha)^n
 		 s=s./(1-covAlpha.^nUpdate);
        si=s>0 & ~isinf(s) & ~isnan(s);
-       W    = U(:,si) * diag(1./s(si)) * U(:,si)'; % symetric whitener
+       W    = U(:,si) * diag(1./sqrt(s(si))) * U(:,si)'; % symetric whitener
        ppdat(~isbadch,:,:)=tprod(ppdat(~isbadch,:,:),[-1 2 3],W,[-1 1]);      
      otherwise; warning(sprintf('Unrecognised spatial filter type : %s',ppopts.spatfilttype));
     end
