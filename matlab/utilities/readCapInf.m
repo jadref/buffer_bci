@@ -7,21 +7,21 @@ function [Cname latlong xy xyz capFile]=readCapInf(cap,capRoots)
 %  cap     -- file name of the cap-file
 %  capRoot -- directory(s) to look for caps in ({'.',mfiledir'/positions'})
 if ( nargin<2 || isempty(capRoots) ) 
-   capRoots = {'.',fileparts(mfilename('fullpath')),fullfile(fileparts(mfilename('fullpath')),'./positions'),fullfile(fileparts(mfilename('fullpath')),'./caps'),fullfile(fileparts(mfilename('fullpath')),'..','..','resources','./caps'),''};
+   capRoots = {'.',fileparts(mfilename('fullpath')),fullfile(fileparts(mfilename('fullpath')),'./positions'),''};
  end
- if ( ischar(capRoots) ); capRoots={capRoots}; end;
+ if ( isstr(capRoots) ) capRoots={capRoots}; end;
 [capDir capFn capExt]=fileparts(cap);
 % search given directories for the capfile
 for cr=1:numel(capRoots);
   capRoot=capRoots{cr};
   if ( ~isempty(capExt) )
     capFile=fullfile(capRoot,capDir,[capFn,'.txt']);
-    if(exist(capFile,'file') ); break; end;
+    if(exist(capFile,'file') ) break; end;
   else
     capFile=fullfile(capRoot,capDir,[capFn,'.txt']);
-    if(exist(capFile,'file') ); capExt='txt'; break; end;
+    if(exist(capFile,'file') ) capExt='txt'; break; end;
     capFile=fullfile(capRoot,capDir,[capFn,'.lay']);
-    if(exist(capFile,'file') ); capExt='lay'; break; end;
+    if(exist(capFile,'file') ) capExt='lay'; break; end;
   end
 end
 if ( ~exist(capFile,'file') ) 
@@ -41,7 +41,7 @@ elseif ( strfind(cap,'xy') ) % contains xy coords
    xy     = [x y]';
    latlong= xy2latlong(xy);
    xyz    = latlong2xyz(latlong);
-elseif ( isequal(capExt,'.lay') ) % fieldtrip layout file
+elseif ( isequal(capExt,'lay') ) % fieldtrip layout file
    [ans x y w h Cname]=textread(capFile,'%d %f %f %f %f %s');
    xy     = [x y]'; 
    xy     = repop(xy,'-',mean(xy,2)); 
@@ -51,7 +51,7 @@ elseif ( isequal(capExt,'.lay') ) % fieldtrip layout file
 else % contains lat/long co-ords
    [Cname lat long]=textread(capFile,'%s %f %f');
    latlong = [lat long]';
-   if( max(abs(latlong(:)))>2*pi ); latlong=latlong/180*pi; end;
+   if( max(abs(latlong(:)))>2*pi ) latlong=latlong/180*pi; end;
    xyz     = latlong2xyz(latlong);
    xy      = latlong2xy(latlong);
 end
@@ -61,26 +61,40 @@ return;
 function xy=xyz2xy(xyz)
 %if ( all(xyz(3,:)>=0) && all(xyz(3,:)<=2) && all(abs(xyz(1,:))<2) && all(abs(xyz(2,:))<2) ) % good co-ords
 %  cz=0;
-%else 
-   cz= mean(xyz(3,:)); % center
+%else
+  eegch=~any(isnan(xyz) | isinf(xyz),1);
+  cz= mean(xyz(3,eegch)); % center
 %end
-r = abs(max(abs(xyz(3,:)-cz))*1.1); if( r<eps ); r=1; end;  % radius
-h = xyz(3,:)-cz;  % height
-rr=sqrt(2*(r.^2-r*h)./(r.^2-h.^2)); % arc-length to radial length ratio
-xy = [xyz(1,:).*rr; xyz(2,:).*rr];
+  r = abs(max(abs(xyz(3,eegch)-cz))*1.1); if( r<eps ) r=1; end;  % radius
+  h = xyz(3,eegch)-cz;  % height
+  rr=sqrt(2*(r.^2-r*h)./(r.^2-h.^2)); % arc-length to radial length ratio
+  xy(:,eegch) = [xyz(1,eegch).*rr; xyz(2,eegch).*rr];
+  xy(:,~eegch)= NaN;
 return
 
 function latlong=xy2latlong(xy);
 % convert xy to lat-long, taking care to prevent division by 0
-latlong= [sqrt(sum(xy.^2,1)); atan2(xy(2,:),xy(1,:))];
+  eegch=~any(isnan(xy) | isinf(xy),1);
+  latlong=zeros(size(xy));
+  latlong(:,eegch)= [sqrt(sum(xy(:,eegch).^2,1)); atan2(xy(2,eegch),xy(1,eegch))];
+  latlong(:,~eegch)= NaN;
 return
 
 function xyz=latlong2xyz(latlong)
-xyz= [sin(latlong(1,:)).*cos(latlong(2,:)); sin(latlong(1,:)).*sin(latlong(2,:)); cos(latlong(1,:))]; %3d
+  eegch=~any(isnan(latlong) | isinf(latlong),1);
+  xyz=zeros(3,size(latlong,2));
+  xyz(:,eegch)= [sin(latlong(1,eegch)).*cos(latlong(2,eegch)); ...
+					  sin(latlong(1,eegch)).*sin(latlong(2,eegch)); ...
+					  cos(latlong(1,eegch))]; %3d
+  xyz(:,~eegch)= NaN;
 return
 
 function xy=latlong2xy(latlong)
-xy = [latlong(1,:).*cos(latlong(2,:));latlong(1,:).*sin(latlong(2,:))]; % 2d
+  eegch=~any(isnan(latlong) | isinf(latlong),1);
+  xy = zeros(size(latlong));
+  xy(:,eegch) = [latlong(1,eegch).*cos(latlong(2,eegch))...
+					  ;latlong(1,eegch).*sin(latlong(2,eegch))]; % 2d
+  xy(:,~eegch)= NaN;
 return
 
 %---------------------------------------------------------------------
