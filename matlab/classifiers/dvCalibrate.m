@@ -61,7 +61,7 @@ for iter=1:maxIter
    if ( verb>0 )
       fprintf('%d) A=[%s]\tf=[%s]\tdf=[%s]\n',iter,sprintf('%0.5f ',Ab(:,1:min(end,3))),sprintf('%0.5f ',f),sprintf('%0.5f ',dAb(:,1:min(end,3))));
    end
-   % stabilise step size, but limiting rate of step growth, use Arjia step-size computation
+   % stabilise step size, by limiting rate of step growth, use Arjia step-size computation
    for i=1:size(Ab,2); % stabilize each sub-problem independently
       if( dAb(:,i)'*(Ab(:,i)-oAb(:,i))>0 ) % lower bound
          dAb(:,i)=.5*norm(Ab(:,i)-oAb(:,i))./norm(dAb(:,i))*dAb(:,i);
@@ -70,7 +70,9 @@ for iter=1:maxIter
       end
    end
    oAb=Ab;  Ab     = Ab - dAb;
-   if ( abs(norm(oAb(:)-Ab(:)))<tol || norm(dAb(1,:))<tol || norm(f(:)-of(:))<tol*1e-2 ) break; end;
+   if ( abs(norm(oAb(:)-Ab(:)))<tol || norm(dAb(1,:))<tol || norm(f(:)-of(:))<tol*1e-2 )
+	  break;
+	end;
 end
 % return as a raw multplier, i.e. not log
 Ab(1,:)=exp(Ab(1,:)); Ab(2,:)=Ab(2,:).*Ab(1,:);
@@ -93,6 +95,29 @@ dv=(Y+randn(size(Y))*2e-0)*2+5; % include a re-scaling and an offset
 [Ab,f,dvAb]=dvCalibrate(Y,dv,[],sum(Y~=0)./[sum(Y<0) sum(Y>0)]./2,[],[],2);
 % check the per-class loss
 conf2loss(dv2conf(Y,dvAb),'pc')
+
+% multi-class test
+Y=sign(randn(100,4)+0.0); 
+dv=(Y+randn(size(Y))*4e-0)*2+5; % include a re-scaling and an offset
+conf2loss(dv2conf(Y,dv))
+p =repop(dv,'-',max(dv,2)); p=exp(p); p=p./sum(p,2);
+mean(p(Y>0)) % mean prob true class
+
+sf=[-3:.2:3];
+sbesti=0; muptruebest=inf;
+for si=1:numel(sf);
+  dvAb=dv*exp(sf(si));
+  p   =repop(dvAb,'-',max(dvAb,2));
+  p   =exp(p); p=p./sum(p,2);
+  muptrue=mean(p(Y>0));
+  if ( abs(muptrue-cr)<muptruebest )
+	 muptruebest=abs(muptrue-cr);
+	 sbesti     =si;
+  end  
+  fprintf('%d) sf=%g\t <p_true>=%g\n',si,exp(sf(si)),muptrue);
+end
+Ab=[exp(sf(besti)),0];
+
 
 
 if ( exist('res','var') ) 
