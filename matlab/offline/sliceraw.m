@@ -114,6 +114,8 @@ elseif ( isstruct(opts.startSet) ) % already the set of events to slice on
   events=opts.startSet; mi=true(numel(events),1);
 elseif ( isa(opts.startSet,'function_handle') || exist(opts.startSet)==2 )
   mi=feval(opts.startSet,events);
+elseif ( ischar(opts.startSet) ) % just a type spec
+  mi=matchEvents(events,opts.startSet);
 elseif ( isempty(opts.startSet) ) % return all events
   mi=true(numel(events),1);
 end
