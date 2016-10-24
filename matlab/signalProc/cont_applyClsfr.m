@@ -1,4 +1,4 @@
-function [testdata,testevents]=cont_applyClsfr(clsfr,varargin)
+function [testdata,testevents,predevents]=cont_applyClsfr(clsfr,varargin)
 % continuously apply this classifier to the new data
 %
 %  [testdata,testevents]=cont_applyClsfr(clsfr,varargin)
