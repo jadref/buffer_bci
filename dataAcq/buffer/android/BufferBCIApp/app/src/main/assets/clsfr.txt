@@ -1,3 +1,4 @@
+# % clsfr=buffer_train_nf_clsfr(trlen_ms,feedback,struct('Fs',220,'label',{{'TP9' 'FP1' 'FP2' 'TP10'}}),'trlen_samp',[],'trlen_samp',256,'width_samp',128,'capFile','muse')
 
 #Type:
 ERsP

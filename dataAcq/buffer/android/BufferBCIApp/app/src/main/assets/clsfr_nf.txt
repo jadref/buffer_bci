@@ -1,4 +1,12 @@
-# % clsfr=buffer_train_nf_clsfr(trlen_ms,feedback,struct('Fs',220,'label',{{'TP9' 'FP1' 'FP2' 'TP10'}}),'trlen_samp',[],'trlen_samp',256,'width_samp',128,'capFile','muse')
+# % This set of commands in matlab with create this classifier
+# feedback(1) = struct('label','alphaL','freqband',[8 12],'electrodes',{{'FP2'}});
+# feedback(2) = struct('label','alphaR','freqband',[8 12],'electrodes',{{'FP1'}});
+# freqs=fftBins(128,[],220,1);
+# feedback(3) = struct('label','badness','freqband',mkFilter(freqs,[1 8])*10 + mkFilter(freqs,[55 100]),'electrodes',{{'FP1' 'FP2'}});
+# feedback(4) = struct('label','badChL','freqband',[3 47],'electrodes',{{'FP1'}});
+# feedback(5) = struct('label','badChR','freqband',[3 47],'electrodes',{{'FP2'}});
+# clsfr=buffer_train_nf_clsfr(trlen_ms,feedback,struct('Fs',220,'label',{{'TP9' 'FP1' 'FP2' 'TP10'}}),'trlen_samp',[],'trlen_samp',256,'width_samp',128,'capFile','muse')
+# str=clsfr2txt([],clsfr); fid=fopen('clsfr.txt','w');fprintf(fid,str);fclose(fid); % save it to the text file
 
 #Type:
 ERsP
@@ -57,14 +65,14 @@ alphaL alphaR badness badChL badChR
 
 
 0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
-1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1
+0	0	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
 0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
 0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
 
 
 0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
 0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
-1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1
+0	0	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
 0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
 
 

@@ -109,7 +109,9 @@ if ( ~isempty(opts.timeband) ) warning('Time band selection not supported!'); en
 
 %3) Spatial filter/re-reference
 R=[];
-if ( numel(ch_names)> 5 ) % only spatial filter if enough channels
+if ( isnumeric(opts.spatialfilter) ) % user gives exact filter to use
+   R=opts.spatialfilter;
+elseif ( numel(ch_names)> 5 ) % only spatial filter if enough channels
   sftype=lower(opts.spatialfilter);
   switch ( sftype )
    case 'slap';

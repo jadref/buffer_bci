@@ -191,12 +191,12 @@ public class UnityBuffer : MonoBehaviour {
 	// N.B. this function is called EVERY VIDEO FRAME!..... so should be as fast as possible...
 	// TODO: the buffer communication should really move to be in a seperate thread!!!
 	void Update () {
-		if(bufferIsConnected && bufferClient!=null && bufferClient.errorReturned != BufferClient.BUFFER_READ_ERROR ){
+		if(bufferIsConnected && bufferClient!=null && bufferClient.errorReturned != BufferClient.BUFFER_READ_ERROR && bufferClient.isConnected()){
 			//int dataTrigger=-1;
 			//if ( storeData ) {
 			//	dataTrigger = latestCapturedSample+DATAUPDATEINTERVAL_SAMP;
 			//}
-			SamplesEventsCount count = bufferClient.poll (); //wait( dataTrigger, lastNumberOfEvents + 1, timeout_ms);
+			SamplesEventsCount count = bufferClient.poll ();
 			latestNumberOfEventsInBuffer = count.nEvents;
 			latestBufferSample = count.nSamples;
 			// reset if we have been re-awoken
@@ -266,6 +266,12 @@ public class UnityBuffer : MonoBehaviour {
 
 
 	public void putEvent<T>(string type, T val, int sample){
+
+		if (!bufferClient.isConnected ()) { // re-connect if the connection was dropped
+			Debug.LogError("Buffer Connection reset detected!  reconnecting........");
+			bufferClient.reconnect ();
+		}
+
 
 		Type cls = typeof(T);
 		string typeOfVal = cls.FullName;

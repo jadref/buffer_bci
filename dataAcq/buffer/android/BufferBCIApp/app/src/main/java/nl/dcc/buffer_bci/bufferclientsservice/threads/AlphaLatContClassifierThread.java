@@ -24,7 +24,7 @@ public class AlphaLatContClassifierThread extends ThreadBase {
     protected int timeout_ms = 1000;
     protected int trialLength_ms  =-1;
     protected int step_ms  = 100;
-    protected String clsfrFile="clsfr_nf.txt";
+    protected String clsfrFile="clsfr_nf_tpref.txt";
     private ContinuousClassifier clsfr=null;
 	 protected boolean compLat=true;
 	 protected boolean normLat=true;

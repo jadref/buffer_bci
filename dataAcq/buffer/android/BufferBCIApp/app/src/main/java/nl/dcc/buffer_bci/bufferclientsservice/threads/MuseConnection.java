@@ -20,12 +20,6 @@ import java.util.List;
 public class MuseConnection extends ThreadBase {
 
     public final String TAG = MuseConnection.class.getSimpleName();
-<<<<<<< HEAD
-    @Override
-    public String getName() {return TAG; }
-
-=======
->>>>>>> dd61ac196669f4a1447bf04104725270b1c38a48
     private Muse muse = null;
     private ConnectionListener connectionListener = null;
     private DataListener dataListener = null;
