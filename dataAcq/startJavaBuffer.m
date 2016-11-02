@@ -20,7 +20,7 @@ else
 end
 savepath=fullfile(rootdir,'output',subject,session,block);
 if ( ~exist(savepath,'dir') ) 
-   diri=find(savepath==pathsep | savepath=='/');
+   diri=find(savepath==filesep | savepath=='/');
    if(diri(1)==1);diri=diri(2:end);end;
    if(diri(end)~=numel(savepath))diri=[diri numel(savepath)+1];end;
    for di=1:numel(diri);
