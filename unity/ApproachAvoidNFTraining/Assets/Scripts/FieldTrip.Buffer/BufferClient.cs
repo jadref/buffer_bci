@@ -53,15 +53,16 @@ namespace FieldTrip.Buffer
 			myOrder = order;
 		}
 
-		public bool connect(string hostname, int inport) {
+		public bool connect(string host, int port) {
 			if(sockChan == null){
 				sockChan = new SocketChannel();
 			}else if(sockChan.isConnected()){
 				disconnect();
+				sockChan = new SocketChannel(); // force build of new socket connection
 			}
-			host = hostname;
-			port = inport;
-			sockChan.connect(host, port);
+			this.host = host;
+			this.port = port;
+			sockChan.connect(this.host, this.port);
 
 			return sockChan.isConnected();
 		}

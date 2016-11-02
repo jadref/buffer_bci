@@ -74,7 +74,6 @@ public class MuseConnection extends ThreadBase {
         connectionListener = new ConnectionListener();
         dataListener = new DataListener(blockSize, nChannels);
         Log.i(TAG, "libmuse version=" + LibMuseVersion.SDK_VERSION);
-        getMuse();
         connectToMuseAndRun();
 
         // connect to the buffer
@@ -99,36 +98,46 @@ public class MuseConnection extends ThreadBase {
     }
 
     /**
-     * Get the muse headband that is first paired with the device
+     * Get the muse headband that is first paired with the device ...
+     * This should be clever and search for which device is actually available...
      */
-    private void getMuse() {
-        while (muse == null) {
+    private void connectToMuseAndRun() {
+        boolean running=false;
+        while (muse == null && !running) {
             Log.i(TAG, "Refreshing paired muses list");
             MuseManager.refreshPairedMuses();
             List<Muse> pairedMuses = MuseManager.getPairedMuses();
-            if (pairedMuses.size() > 0) muse = pairedMuses.get(0);
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                break;
+            // Loop over possible muse devices and try to connect to each in turn
+            for ( Muse pmuse : pairedMuses  ){
+                muse = pmuse;
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    break;
+                }
+                running=tryToConnectToMuseAndRun();
+                ConnectionState state = muse.getConnectionState();
+                if ( state == ConnectionState.CONNECTED ) {
+                    running=true;
+                }
+                if ( running ) break; // could connect to this muse so stop trying new ones
             }
         }
     }
 
+
+
     /**
      * Connect to the detected muse.
      */
-    private void connectToMuseAndRun() {
+    private boolean tryToConnectToMuseAndRun() {
+        boolean running=true;
         ConnectionState state = muse.getConnectionState();
         if (state == ConnectionState.CONNECTED || state == ConnectionState.CONNECTING) {
             Log.w("Muse Headband", "doesn't make sense to connect second time to the same muse");
-            return;
+            return running;
         }
-        muse.registerConnectionListener(connectionListener);
-        muse.registerDataListener(dataListener, MuseDataPacketType.EEG);
-        muse.setPreset(MusePreset.PRESET_14);
-        muse.enableDataTransmission(dataTransmission);
         /**
          * In most cases libmuse native library takes care about
          * exceptions and recovery mechanism, but native code still
@@ -136,10 +145,29 @@ public class MuseConnection extends ThreadBase {
          * connection). Print all exceptions here.
          */
         try {
+            muse.registerConnectionListener(connectionListener);
+            muse.registerDataListener(dataListener, MuseDataPacketType.EEG);
+            muse.setPreset(MusePreset.PRESET_14);
+            muse.enableDataTransmission(dataTransmission);
             muse.runAsynchronously();
+            // wait for the connection to come up
+            while ( muse.getConnectionState() == ConnectionState.CONNECTING ) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    break;
+                }
+            }
+            state = muse.getConnectionState();
+            if ( state != ConnectionState.CONNECTED ) {
+                running=false;
+            }
         } catch (Exception e) {
             Log.e(TAG, Log.getStackTraceString(e));
+            running = false;
         }
+        return running;
     }
 
     /**

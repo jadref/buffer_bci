@@ -8,7 +8,7 @@ public class AlphaContClassifierThread extends AlphaLatContClassifierThread {
 		  // override default for computing the lateralization to false, so just return summed power
 		  compLat=false;
 		  this.processName=TAG; // reset the process name used in logging
-		  this.clsfrFile="clsfr_nf_tpref.txt"; // override the default classifier file name
+		  this.clsfrFile="clsfr_nf.txt"; // override the default classifier file name
 	 }
 	 
     @Override
