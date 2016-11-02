@@ -20,7 +20,7 @@ import nl.fcdonders.fieldtrip.bufferserver.network.ConnectionThread;
  * @author wieke, jadref
  *
  */
-public class BufferServer extends Thread {
+public class BufferServer implements Runnable {
 
 	 static final int serverPort  =1972;    // default server port
 	 static final int dataBufSize =1024*60; // default save samples = 60s @ 1024Hz
@@ -65,13 +65,26 @@ public class BufferServer extends Thread {
 		} else {
 			 buffer = new BufferServer(serverPort, dataBufSize, eventBufSize);
 		}
-		buffer.addMonitor(new SystemOutMonitor(logging));
-		buffer.run();
-		buffer.cleanup();
+      // Now run the thread
+      buffer.addMonitor(new SystemOutMonitor(logging));
+      buffer.run();
+      buffer.cleanup(); // only gets here after stopBuffer() method was called            
 	}
+
+
+    public void start(){ // run in a background thread
+        try {
+            addMonitor(new SystemOutMonitor(0));
+            Thread thread = new Thread(this,"Fieldtrip Buffer Server");
+            thread.start();
+        } catch ( Exception e ) {
+            System.err.println(e);
+        }
+    }
 
 	 public static void usage(){
 		  System.err.println("java -jar BufferServer.jar PORT sampLen eventLen SaveLocation verbosityLevel");
+		  System.err.println("Matlab: buffer=nl.fcdonders.fieldtrip.bufferserver.BufferServer(PORT,samplen,eventlen,savePath); buffer.start();");
 	 }
 
 
@@ -92,14 +105,13 @@ public class BufferServer extends Thread {
 	public BufferServer(final int portNumber) {
 		this.portNumber = portNumber;
 		dataStore = new RingDataStore(dataBufSize,eventBufSize);
-		setName("Fieldtrip Buffer Server");
 	}
 
 	 public BufferServer(final String path, final int portNumber) {
 		this.portNumber = portNumber;
 		dataStore = new SavingRingDataStore(dataBufSize,eventBufSize,path);
 		System.err.println("Saving to : " + path);
-		setName("Fieldtrip Buffer Server");
+		//setName("Fieldtrip Buffer Server");
 	}
 
 	/**
@@ -112,7 +124,7 @@ public class BufferServer extends Thread {
 	public BufferServer(final int portNumber, final int nSamplesEvents) {
 		this.portNumber = portNumber;
 		dataStore = new RingDataStore(nSamplesEvents);
-		setName("Fieldtrip Buffer Server");
+		//setName("Fieldtrip Buffer Server");
 	}
 
 	/**
@@ -126,21 +138,21 @@ public class BufferServer extends Thread {
 	public BufferServer(final int portNumber, final int nSamples, final int nEvents) {
 		this.portNumber = portNumber;
 		dataStore = new RingDataStore(nSamples, nEvents);
-		setName("Fieldtrip Buffer Server");
+		//setName("Fieldtrip Buffer Server");
 	}
 
 	public BufferServer(final int portNumber, final int nSamples, final int nEvents, final java.io.File file) {
 		this.portNumber = portNumber;
 		System.err.println("Saving to : " + file.getPath());
 		dataStore = new SavingRingDataStore(nSamples, nEvents, file);
-		setName("Fieldtrip Buffer Server");
+		//setName("Fieldtrip Buffer Server");
 	}
 
 	public BufferServer(final int portNumber, final int nSamples, final int nEvents, final String path) {
 		this.portNumber = portNumber;
 		System.err.println("Saving to : " + path);
 		dataStore = new SavingRingDataStore(nSamples, nEvents, path);
-		setName("Fieldtrip Buffer Server");
+		//setName("Fieldtrip Buffer Server");
 	}
 
 	public synchronized void addMonitor(final FieldtripBufferMonitor monitor) {

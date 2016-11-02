@@ -4,7 +4,7 @@ import java.util.Random;
 import nl.fcdonders.fieldtrip.bufferclient.BufferClient;
 import nl.fcdonders.fieldtrip.bufferclient.Header;
 
-public class SignalProxy {
+public class SignalProxy implements Runnable {
 	static int VERB=1;
 
 	 boolean run = true;
@@ -82,6 +82,16 @@ public class SignalProxy {
 		sp.stop();
 	 }
 
+	 public SignalProxy(){
+        hostname="localhost";
+        port    =1972;
+        nChannels=4;
+        fSample =100;
+        blockSize=5;
+		  client   = new BufferClient();
+		  generator= new Random();        
+    }
+
 	 public SignalProxy(String hostname, int port, int nChannels, double fSample, int blockSize){
 		  this.hostname = hostname;
 		  this.port     = port;
@@ -153,6 +163,20 @@ public class SignalProxy {
 			return;
 		}
 	}
+
+	@Override
+	public void run() {
+       mainloop();
+   }
+
+   public void start(){ // run in a background thread
+       try {
+           Thread thread = new Thread(this,"Java Signal Proxy");
+           thread.start();
+       } catch ( Exception e ) {
+           System.err.println(e);
+       }
+   }
 
 	public void stop() { run=false; }
    public boolean isrunning(){ return run; }
