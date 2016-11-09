@@ -1,4 +1,5 @@
-run ../../utilities/initPaths.m;
+try; cd(fileparts(mfilename('fullpath')));catch; end;
+run ../../matlab/utilities/initPaths.m
 
 % N.B. only really need the header to get the channel information, and sample rate
 buffhost='localhost';buffport=1972;

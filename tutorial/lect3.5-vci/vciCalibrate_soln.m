@@ -1,5 +1,5 @@
 try; cd(fileparts(mfilename('fullpath')));catch; end;
-run ../../utilities/initPaths.m
+run ../../matlab/utilities/initPaths.m
 
 buffhost='localhost';buffport=1972;
 % wait for the buffer to return valid header information
