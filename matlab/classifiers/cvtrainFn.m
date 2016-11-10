@@ -182,6 +182,7 @@ szX=size(X);
 res.tstf=zeros([prod(szX(dim)) size(Y,2) size(Cs,2)],class(X));
 % Next compute the per-fold values
 for foldi=1:size(fIdxs,ndims(fIdxs));
+  if( opts.verb > 0 ) fprintf('Calibrate\n'); end; 
    for spi=1:nSubProbs; % loop over sub-problems get train/test split (possibly sub-prob specific)
       trnInd=fIdxs(:,min(end,spi),foldi)<0;  % training points
       tstInd=fIdxs(:,min(end,spi),foldi)>0;  % testing points
@@ -414,18 +415,30 @@ if ( ~all(exInd) && opts.binsp && ~isempty(opts.calibrate) && ~isequal(opts.cali
       cwght(1,:)=sum(Y(~exInd,:)~=0,1)./sum(Y(~exInd,:)<0)./2; 
       cwght(2,:)=sum(Y(~exInd,:)~=0,1)./sum(Y(~exInd,:)>0)./2;
    end
-   [Ab]=dvCalibrate(Y(~exInd,:),res.tstf(~exInd,:,res.opt.Ci),cr,cwght);
-   for i=1:numel(res.opt.soln);
-      if ( iscell(res.opt.soln{i}) ) % cell, assume W is full and b is separate!
-         res.opt.soln{i}{1}  =res.opt.soln{i}{1}*Ab(1,i);
-         res.opt.soln{i}{end}=res.opt.soln{i}{end}*Ab(1,i)+Ab(2,i);
-      else  % non-cell, assume is wb format
-         res.opt.soln{i}(1:end-1)=res.opt.soln{i}(1:end-1)*Ab(1,i);
-         res.opt.soln{i}(end)    =res.opt.soln{i}(end)*Ab(1,i)+Ab(2,i);
-      end
-      % update the predictions also
-      res.opt.f(:,i)    = res.opt.f(:,i)*Ab(1,i)+Ab(2,i);
-      res.opt.tstf(:,i) = res.tstf(:,i,res.opt.Ci)*Ab(1,i)+Ab(2,i);
+	if ( ~opts.binsp ) % compute once for all classifiers
+	  Ab=mcCalibrate(Y(~exInd,:),res.opt.tstf(~exInd,:));
+	end
+   for i=1:size(Y,2);
+	  if ( opts.binsp ) 
+		 [Ab(:,i)]=dvCalibrate(Y(~exInd,i),res.opt.tstf(~exInd,i),cr,cwght);
+       if ( iscell(res.opt.soln{i}) ) % cell, assume W is full and b is separate!
+         res.opt.soln{i}{1}      = res.opt.soln{i}{1}*Ab(1,i);
+         res.opt.soln{i}{end}    = res.opt.soln{i}{end}*Ab(1,i)+Ab(2,i);
+       else  % non-cell, assume is wb format
+         res.opt.soln{i}(1:end-1)= res.opt.soln{i}(1:end-1)*Ab(1,i);
+         res.opt.soln{i}(end)    = res.opt.soln{i}(end)*Ab(1,i)+Ab(2,i);
+       end
+	  else
+		 if ( size(res.opt.soln,2)==size(Y,2) ) % [wb x nSp]
+			res.opt.soln(1:end-1,i)=res.opt.soln(1:end-1,min(end,i))*Ab(1,min(end,i));
+			res.opt.soln(end,i)    =res.opt.soln(end,i)*Ab(1,min(end,i))+Ab(2,min(end,i));
+		 else % [w*nSp;b*nSp]
+			error('not implemented yet');
+		 end
+	  end
+										  % update the predictions also
+     res.opt.f(:,i)    = res.opt.f(:,i)   *Ab(1,min(end,i))+Ab(2,min(end,i));
+     res.opt.tstf(:,i) = res.opt.tstf(:,i)*Ab(1,min(end,i))+Ab(2,min(end,i));
    end  
    res.opt.cal.scale=Ab(1,:); res.opt.cal.offset=Ab(2,:);
 end
