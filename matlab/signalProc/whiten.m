@@ -1,7 +1,7 @@
-function [W,D,wX,U,mu,Sigma,alpha]=whiten(X,dim,alpha,centerp,stdp,symp,linMapMx,tol,unitCov,order)
+function [W,Sigma,wX,U,mu,D,alpha]=whiten(X,dim,alpha,centerp,stdp,symp,linMapMx,tol,unitCov,order)
 % whiten the input data
 %
-% [W,D,wX,U,mu,Sigma,alpha]=whiten(X,dim[,alpha,center,stdp,symp,linMapMx,tol,unitCov,order])
+% [W,Sigma,wX,U,mu,D,alpha]=whiten(X,dim[,alpha,center,stdp,symp,linMapMx,tol,unitCov,order])
 % 
 % N.B. this whitener leaves average signal power unchanged, but just de-correlates input channels
 %
@@ -34,7 +34,7 @@ function [W,D,wX,U,mu,Sigma,alpha]=whiten(X,dim,alpha,centerp,stdp,symp,linMapMx
 %  W    - [size(X,dim(1)) x nF x size(X,dim(2:end))] 
 %          whitening matrix which maps from dim(1) to its whitened version
 %          with number of factors nF
-%       N.B. whitening matrix: W = U*diag(D.^order); 
+%       N.B. whitening matrix: W = U*diag(D.^order);  or W=U*diag(D.^order)*U'; for symetric version
 %            and inverse whitening matrix: W^-1 = U*diag(D.^-order);
 %  D    - [nF x size(X,dim(2:end))] orginal eigenvalues for each coefficient
 %  wX   - [size(X)] the whitened version of X
@@ -119,7 +119,9 @@ end
 
 % give the covariance matrix unit norm to improve numerical accuracy
 if ( unitCov )  
-  unitCov=median(diag(sum(Sigma,3)./size(Sigma,3))); Sigma=Sigma./unitCov; 
+  unitCov=median(diag(sum(Sigma,3)./size(Sigma,3)));
+  if ( unitCov>1e-1 && unitCov<1e1 ) unitCov=1; end;
+  Sigma=Sigma./unitCov; 
 end;
 
 W=zeros(size(Sigma),class(X));
@@ -192,7 +194,7 @@ D=reshape(D(1:nF,:),[nF szX(dim(2:end)) 1]);
 if ( stdp && dim(1)~=0 ) W=repop(W,'*',istdX); end
 
 % undo numerical re-scaling
-if ( unitCov ) W=W./sqrt(unitCov); D=D.*unitCov; end
+if ( unitCov ) W=W./sqrt(unitCov); D=D.*unitCov; Sigma=Sigma*unitCov; end
 
 if ( nargout>2 ) % compute the whitened output if wanted
   if ( covIn ) % covariance input

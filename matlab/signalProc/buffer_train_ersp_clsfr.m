@@ -98,3 +98,10 @@ end
 % call the actual function which does the classifier training
 [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,'ch_names',ch_names,'ch_pos',ch_pos,'fs',fs,'badCh',~iseeg,varargin{:});
 return;
+
+%---------------------
+function testCase()
+load('training_data_test_160725');
+[clsfr,res]=buffer_train_ersp_clsfr(traindata,traindevents,hdr);
+[clsfr,res]=buffer_train_ersp_clsfr(traindata,traindevents,hdr,'spatialfilter','trwht','adaptspatialfilt',exp(log(.1)/300));
+[f]=buffer_apply_ersp_clsfr(traindata,clsfr);

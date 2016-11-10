@@ -359,7 +359,7 @@ while ( ~endTraining )
           if ( ~isempty(slapfilt) ) % only use and update from the good channels
             ppdatmi(~isbadch,:,:)=tprod(ppdatmi(~isbadch,:,:),[-1 2 3],slapfilt(~isbadch,~isbadch),[-1 1]); 
           end;
-         case 'whiten'; [W,D,ppdatmi(~isbadch,:,:)]=whiten(ppdatmi(~isbadch,:,:),1,'opt',1,0,1); %symetric whiten
+         case 'whiten'; [W,Sigma,ppdatmi(~isbadch,:,:)]=whiten(ppdatmi(~isbadch,:,:),1,'opt',1,0,1); %symetric whiten
          otherwise; warning(sprintf('Unrecognised spatial filter type : %s',ppopts.spatfilttype));
         end        
         

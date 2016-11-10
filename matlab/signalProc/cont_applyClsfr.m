@@ -39,7 +39,7 @@ function [testdata,testevents,predevents]=cont_applyClsfr(clsfr,varargin)
 
 opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
             'endType','stimulus.test','endValue','end','verb',0,...
-            'predEventType','classifier.prediction',...
+            'predEventType','classifier.prediction','resetType','classifier.reset',...
             'trlen_ms',[],'trlen_samp',[],'overlap',.5,'step_ms',[],...
             'predFilt',[],'timeout_ms',1000); % exp moving average constant, half-life=10 trials
 [opts,varargin]=parseOpts(opts,varargin);
@@ -166,8 +166,16 @@ while( ~endTest )
 	 if ( t-t0 > opts.endType ) fprintf('Got to end time. Stopping'); endTest=true; end;
   elseif( status.nevents > nEvents  ) % deal with any events which have happened
     devents=buffer('get_evt',[nEvents status.nevents-1],opts.buffhost,opts.buffport);
-    mi=matchEvents(devents,opts.endType,opts.endValue);
-    if ( any(mi) ) fprintf('Got exit event. Stopping'); endTest=true; end;
+    if ( any(matchEvents(devents,opts.endType,opts.endValue)) )
+		fprintf('\nGot exit event. Stopping');
+		endTest=true;
+	 end
+	 mi=matchEvents(devents,opts.resetType);
+	 if ( any(mi) )
+		fprintf('Got reset event. Prediction filters reset.\n');
+		filtstate=[]; fbuff(:)=0; dv(:)=0;
+		endSample = devents(mi).sample+trlen_samp; % wait for trials worth of data post reset time
+	 end;
     nEvents=status.nevents;
   end
 end % while not endTest

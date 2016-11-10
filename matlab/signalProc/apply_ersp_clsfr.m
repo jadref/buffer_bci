@@ -65,7 +65,7 @@ end
 
 %3) Spatial filter
 if ( isfield(clsfr,'spatialfilt') && ~isempty(clsfr.spatialfilt) )
-  X=tprod(X,[-1 2 3 4],clsfr.spatialfilt,[1 -1]); % apply the SLAP
+  X=tprod(X,[-1 2 3 4],clsfr.spatialfilt,[1 -1]); % apply the spatial filter
 end
 
 %3.5) adaptive spatial filter
@@ -82,8 +82,8 @@ if ( isfield(clsfr,'adaptspatialfilt') && ...
 	 else % update
 	   % between 0 and 1 is an exp weighting factor
 		% N.B. alpha = exp(log(.5)./(half-life))
-		if ( clsfr.adaptspatialfilt>0 && clsfr.adaptspatialfilt<1 ) % exp-weighted moving average
-		  chCov = clsfr.adaptspatialfilt*chCov + (1-clsfr.adaptspatialfilt)*chCov;
+		if ( clsfr.adaptspatialfilt>=0 && clsfr.adaptspatialfilt<1 ) % exp-weighted moving average
+		  chCov = clsfr.adaptspatialfilt*clsfr.chCov + (1-clsfr.adaptspatialfilt)*chCov;
 		  clsfr.chCov = chCov;
 		else % integers 1 or larger => ring buffer
 		  if ( abs(clsfr.adaptspatialfilt)==1 ) % just use current entry
@@ -101,9 +101,11 @@ if ( isfield(clsfr,'adaptspatialfilt') && ...
 	 [U,s]=eig(double(chCov)); s=diag(s); % N.B. force double to ensure precision with poor condition
 	 % select non-zero entries - cope with rank deficiency, numerical issues
 	 si = s>eps & ~isnan(s) & ~isinf(s) & abs(imag(s))<eps;
-	 fprintf('%g ',s(si));fprintf('\n');
-	 W  = U(:,si)*diag(1./s(si))*U(:,si)'; % compute symetric whitener	 
+	 if ( verb>0 ) fprintf('New eig:');fprintf('%g ',s(si));fprintf('\n'); end;
+	 W  = U(:,si)*diag(1./sqrt(s(si)))*U(:,si)'; % compute symetric whitener	 
 	 X  = tprod(X,[-1 2 3 4],W,[-1 1]); % apply it to the data
+  else
+	 error('unsupported apaptspatialfilt type');
   end
 end
 

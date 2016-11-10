@@ -23,7 +23,7 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %  width_ms  - [float] width in millisecs for the windows in the welch spectrum (250)
 %              estimation.  
 %              N.B. the output frequency resolution = 1000/width_ms, so 4Hz with 250ms
-%  spatialfilter -- [str] one of 'slap','car','none','csp','ssep'              ('slap')
+%  spatialfilter -- [str] one of 'slap','car','none','csp','ssep','trwht'              ('slap')
 %       WARNING: CSP is particularly prone to *overfitting* so treat any performance estimates with care...
 %  badchrm   - [bool] do we do bad channel removal    (1)
 %  badchthresh - [float] threshold in std-dev units to id channel as bad (3.5)
@@ -65,7 +65,7 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
 opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],...
             'width_ms',500,'windowType','hanning','aveType','amp',...
-            'detrend',1,'spatialfilter','slap',...
+            'detrend',1,'spatialfilter','slap','adaptspatialfilt',[],...
             'badchrm',1,'badchthresh',3.1,'badchscale',2,...
             'badtrrm',1,'badtrthresh',3,'badtrscale',2,...
             'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
@@ -158,7 +158,8 @@ end
 
 %3) Spatial filter/re-reference, potentially data dependent
 R=[];
-if ( size(X,1)> 5 ) % only spatial filter if enough channels
+%3.b) Spatial filter/re-reference (data-independent / supervised)
+if ( size(X,1)>=4 ) % only spatial filter if enough channels
   sftype=lower(opts.spatialfilter);
   switch ( sftype )
    case 'slap';
@@ -171,6 +172,8 @@ if ( size(X,1)> 5 ) % only spatial filter if enough channels
    case 'car';
     fprintf('3) CAR\n');
     R=eye(size(X,1))-(1./size(X,1));
+   case {'whiten','wht','trwht','adaptspatialfilt'};
+	  % N.B. done before time-range selection so has access to artifact information
    case {'csp','csp1','csp2','csp3'};
     fprintf('3) csp\n');
     nf=str2num(sftype(end)); if ( isempty(nf) ) nf=3; end;
@@ -341,7 +344,11 @@ clsfr.fs          = fs;   % sample rate of training data
 clsfr.detrend     = opts.detrend; % detrend?
 clsfr.isbad       = isbadch;% bad channels to be removed
 clsfr.spatialfilt = R;    % spatial filter used for surface laplacian
-clsfr.adaptspatialfilt=[]; % no adaption
+if ( any(strcmp(opts.spatialfilter,{'trwht','adaptspatialfilter'})) ) % configure for apaptive use later
+  clsfr.spatialfilt=[];
+  clsfr.adaptspatialfilt=opts.adaptspatialfilt; % no adaption
+  clsfr.chCov      =Sigma;
+end
 
 clsfr.filt        = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
 clsfr.outsz       = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
