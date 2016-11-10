@@ -29,9 +29,12 @@ Platform/Language support
   [] - osc2evt, osc messages into buffer events
   [] - evt2osc, buffer events into osc messages (for sound/video integeration)
 
+[] - Lab-streaming-Layer interface
+
+
 Demo BCIs
 =========
-[] - Simple (induced) Neuro-feedback example
+[X] - Simple (induced) Neuro-feedback example
 [] - Finish ssep example
   [] - brain-test ssep example
 [] - Finish cursor example
@@ -55,11 +58,11 @@ Signal Analysis
 [x] - c-based, java-based and python-based signal proxies
   [x] - fix the c-sig proxy so runs a the correct data rate
 [x] - universum-SVM classifier support
-[] - second order baseline adaptive sig-processing support in classifier
-[] - convert demos to use string event values when possible to improve readability
+[x] - second order baseline adaptive sig-processing support in classifier
+[x] - convert demos to use string event values when possible to improve readability
 [x] - OSC2FT add the channel names when sending the header
 [x] - Validate the 50Hz power as a bad-channel indicator.  
-  [] - Add channel offset mode to sigViewer
+  [x] - Add channel offset mode to sigViewer
 
 Documentation
 =============
