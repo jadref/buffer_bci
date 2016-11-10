@@ -9,7 +9,7 @@ sbesti=0; Edbest=inf;
 for si=1:numel(sf);
   sfi =2.^sf(si);
   dvAb=dv*sfi;
-  p   =exp(dvAb); p=p./sum(p,2);
+  p   =exp(dvAb); p=repop(p,'./',sum(p,2));
   % log-entropy loss
   Ed  =0; for i=1:size(p,1); Ed = Ed+ -log(p(i,Y(i,:)>0)); end;
   if ( Ed<Edbest )
