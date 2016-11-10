@@ -67,11 +67,12 @@ if ( ~isempty(spKey) && ~isempty(spMx) && isnumeric(spMx) ) % sub-prob decomp al
 elseif ( isnumeric(Y) &&  all(Y(:)==-1 | Y(:)==0 | Y(:)==1) && ~(size(Y,2)==1 && opts.zeroLab && any(Y(:)==0)) ) 
   if ( size(Y,2)==1 ) spKey=[1 -1]; spMx =[1 -1];   % binary problem
   else                spKey=[1:size(Y,2)]; spMx=spKey; end;
+  if ( ~isfloat(Y) ) Y=single(Y); end; % ensure is floating point to avoid mult issues later
 elseif ( opts.binsp ) % decompose into set of binary problems
   if ( isempty(spMx) ) spMx=opts.spType; end;
 end
-if ( ~isempty(spMx) ) % convert to new problem representation
-  [Y,spKey,spMx]=lab2ind(Y,spKey,spMx,opts.zeroLab); 
+if ( ~isempty(spMx) || ~isnumeric(Y) ) % convert to new problem representation
+  [Y,spKey,spMx]=lab2ind(Y,spKey,spMx,opts.zeroLab); % N.B: Y = [N x L]
 end
 spDesc=[]; % make a human-readable problem description
 if ( ~isempty(spMx) && ~isempty(spKey) )
