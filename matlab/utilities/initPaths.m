@@ -4,6 +4,13 @@ if ( exist('OCTAVE_VERSION','builtin') ) % octave specific
 end
 %Add necessary paths
 buffer_bcidir=fileparts(fileparts(mfilename('fullpath'))); % parent directory
+if ( exist(fullfile(buffer_bcidir,'utilities'),'dir') ) addpath(fullfile(buffer_bcidir,'utilities')); end;
+if ( exist(fullfile(buffer_bcidir,'stimulus'),'dir') ) addpath(fullfile(buffer_bcidir,'stimulus')); end;
+if ( exist(fullfile(buffer_bcidir,'classifiers'),'dir') ) addpath(fullfile(buffer_bcidir,'classifiers')); end;
+if ( exist(fullfile(buffer_bcidir,'plotting'),'dir') ) addpath(fullfile(buffer_bcidir,'plotting')); end;
+if ( exist(fullfile(buffer_bcidir,'signalProc'),'dir') ) addpath(fullfile(buffer_bcidir,'signalProc')); end;
+if ( exist(fullfile(buffer_bcidir,'offline'),'dir') ) addpath(fullfile(buffer_bcidir,'offline')); end;
+
 dataAcq_dir=fullfile(buffer_bcidir,'dataAcq');
 if ( ~exist(dataAcq_dir,'dir') )
   dataAcq_dir=fullfile(fileparts(buffer_bcidir),'dataAcq');
@@ -30,9 +37,3 @@ if ( exist(dataAcq_dir,'dir') )
   end
 end;
 
-if ( exist(fullfile(buffer_bcidir,'utilities'),'dir') ) addpath(fullfile(buffer_bcidir,'utilities')); end;
-if ( exist(fullfile(buffer_bcidir,'stimulus'),'dir') ) addpath(fullfile(buffer_bcidir,'stimulus')); end;
-if ( exist(fullfile(buffer_bcidir,'classifiers'),'dir') ) addpath(fullfile(buffer_bcidir,'classifiers')); end;
-if ( exist(fullfile(buffer_bcidir,'plotting'),'dir') ) addpath(fullfile(buffer_bcidir,'plotting')); end;
-if ( exist(fullfile(buffer_bcidir,'signalProc'),'dir') ) addpath(fullfile(buffer_bcidir,'signalProc')); end;
-if ( exist(fullfile(buffer_bcidir,'offline'),'dir') ) addpath(fullfile(buffer_bcidir,'offline')); end;
