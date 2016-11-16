@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 cd `dirname ${BASH_SOURCE[0]}`
-buffdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+buffdir="$( pwd )"
 echo $buffdir
 bciroot=~/output
 subject='test';
