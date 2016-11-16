@@ -1,23 +1,24 @@
 configureIM;
 % create the control window and execute the phase selection loop
-if ~( exist('OCTAVE_VERSION','builtin') ) 
-  contFig=controller(); info=guidata(contFig); 
-else
-  contFig=figure(1);
+% try
+%   contFig=controller(); info=guidata(contFig); 
+% catch
+  contFig=figure(1);clf;
   set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
   axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
   set(contFig,'Units','pixel');wSize=get(contFig,'position');
   fontSize = .05*wSize(4);
-  %        Instruct String          Phase-name
-  menustr={'0) EEG'                 'eegviewer';
-			  'a) Artifacts'           'artifact';
-           '1) Practice'            'practice';
-			  '2) Calibrate'           'calibrate'; 
-			  '3) Train Classifier'    'trainersp';
-			  '4) Epoch Feedback'      'epochfeedback';
-			  '5) Continuous Feedback' 'contfeedback';
-			  '6) NeuroFeedback'       'neurofeedback'
-			  'q) quit'                'quit';
+  %        Instruct String             Phase-name
+  menustr={'0) EEG'                    'eegviewer';
+			  'a) Artifacts'              'artifact';
+           '1) Practice'               'practice';
+			  '2) Calibrate'              'calibrate'; 
+			  '3) Train Classifier'       'trainersp';
+			  '4) Epoch Feedback'         'epochfeedback';
+			  '5) Continuous Feedback'    'contfeedback';
+           '6) Center-out Training'    'centerout';
+			  '7) NeuroFeedback Training' 'neurofeedback';
+			  'q) quit'                   'quit';
           };
   txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
 				'HorizontalAlignment','left','color',[1 1 1]);
@@ -26,7 +27,7 @@ else
   set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
   set(contFig,'userdata',[]);
   drawnow; % make sure the figure is visible
-end
+% end
 subject='test';
 
 sendEvent('experiment.im','start');
@@ -35,7 +36,7 @@ while (ishandle(contFig))
   if ( ~ishandle(contFig) ) break; end;
 
   phaseToRun=[];
-  if ( ~exist('OCTAVE_VERSION','builtin') ) 
+  if ( ~exist('OCTAVE_VERSION','builtin') && ~isempty(get(contFig,'tag')) ) % using the gui-figure-window
 	 uiwait(contFig);
     if ( ~ishandle(contFig) ) break; end;    
 	 info=guidata(contFig); 
@@ -53,9 +54,9 @@ while (ishandle(contFig))
 	 fprintf('key=%s\n',modekey);
 	 phaseToRun=[];
 	 if ( ischar(modekey(1)) )
-		ri = strmatch(modekey(1),menustr(:,1)); % get the row in the instructions
-		if ( ~isempty(ri) ) 
-		  phaseToRun = menustr{ri,2};
+		ri = strncmpi(modekey(1),menustr(:,1),1); % get the row in the instructions
+		if ( any(ri) ) 
+		  phaseToRun = menustr{find(ri,1),2};
 		elseif ( any(strcmp(modekey(1),{'q','Q'})) )
 		  break;
 		end
@@ -85,46 +86,40 @@ while (ishandle(contFig))
    %---------------------------------------------------------------------------
    case 'artifact';
     sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
-														  % wait until capFitting is done
-	 %try;
-		artifactCalibrationStimulus;
-	%catch
-      % fprintf('Error in : %s',phaseToRun);
-      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-	  	% if ( ~isempty(le.stack) )
-	  	%   for i=1:numel(le.stack);
-	  	% 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
-	  	%   end;
-	  	% end
-	  	% msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
-      % sendEvent(phaseToRun,'end');    
-    %end
-
-   %---------------------------------------------------------------------------
-   case 'practice';
-    sendEvent('subject',subject);
     sendEvent(phaseToRun,'start');
-    onSeq=nSeq; nSeq=4; % override sequence number
-    try
-      imCalibrateStimulus;
-    catch
+	 try;
+		artifactCalibrationStimulus;
+	catch
+      fprintf('Error in : %s',phaseToRun);
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	if ( ~isempty(le.stack) )
+	  	  for i=1:numel(le.stack);
+	  		 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	  end;
+	  	end
+	  	msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+      sendEvent(phaseToRun,'end');    
     end
-    sendEvent(phaseToRun,'end');
-    nSeq=onSeq;
+	 sendEvent(phaseToRun,'end');
     
    %---------------------------------------------------------------------------
-   case {'calibrate','calibration'};
-    sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun)
+   case {'calibrate','calibration','practice'};
+     sendEvent('subject',subject);
+	  if ( ~isempty(strfind(phaseToRun,'calibrat')) ) % tell the sig-proc to go if real run
+		 sendEvent('startPhase.cmd','calibrate')
+	  end
     sendEvent(phaseToRun,'start');
     try
       imCalibrateStimulus;
     catch
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-      sendEvent('training','end');    
+       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	 if ( ~isempty(le.stack) )
+	  	   for i=1:numel(le.stack);
+	  	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	   end;
+	  	 end
     end
+    if ( ~isempty(strfind(phaseToRun,'calibrat')) ) sendEvent('calibrate','end'); end   
     sendEvent(phaseToRun,'end');
 
    %---------------------------------------------------------------------------
@@ -139,10 +134,19 @@ while (ishandle(contFig))
     %sleepSec(.1);
     sendEvent(phaseToRun,'start');
     try
-      sendEvent('startPhase.cmd','epochfeedback');
+		if ( earlyStopping ) % use the user-defined command
+		  sendEvent('startPhase.cmd',userFeedbackTable{1});
+		else
+        sendEvent('startPhase.cmd','epochfeedback');
+		end
       imEpochFeedbackStimulus;
     catch
        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	 if ( ~isempty(le.stack) )
+	  	   for i=1:numel(le.stack);
+	  	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	   end;
+	  	 end
     end
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');
@@ -157,7 +161,11 @@ while (ishandle(contFig))
       imContFeedbackStimulus;
     catch
        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-       sleepSec(.1);
+	  	 if ( ~isempty(le.stack) )
+	  	   for i=1:numel(le.stack);
+	  	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	   end;
+	  	 end
     end
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');
@@ -172,6 +180,11 @@ while (ishandle(contFig))
       imNeuroFeedbackStimulus;
     catch
        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	 if ( ~isempty(le.stack) )
+	  	   for i=1:numel(le.stack);
+	  	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	   end;
+	  	 end
     end
     sendEvent('contfeedback','end');
     sendEvent('test','end');
@@ -184,10 +197,14 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'start');
     try
       sendEvent('startPhase.cmd','contfeedback');
-      imCenteroutStimulus;
+      imCenterOutTrainingStimulus;
     catch
        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-       sleepSec(.1);
+	  	 if ( ~isempty(le.stack) )
+	  	   for i=1:numel(le.stack);
+	  	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	   end;
+	  	 end
     end
     sendEvent('contfeedback','end');
     sendEvent('test','end');
