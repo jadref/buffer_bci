@@ -74,7 +74,7 @@ while (ishandle(contFig))
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until capFitting is done
-    buffer_newevents(buffhost,buffport,[],phaseToRun,'end');    
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end',inf);    
     %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);       
 
    %---------------------------------------------------------------------------
@@ -82,7 +82,7 @@ while (ishandle(contFig))
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until capFitting is done
-    buffer_newevents(buffhost,buffport,[],phaseToRun,'end');    
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end',inf);    
     %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);           
     
    %---------------------------------------------------------------------------
@@ -118,7 +118,7 @@ while (ishandle(contFig))
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until training is done
-    buffer_newevents(buffhost,buffport,[],phaseToRun,'end');    
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end',inf);    
     %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);  
     
    %---------------------------------------------------------------------------

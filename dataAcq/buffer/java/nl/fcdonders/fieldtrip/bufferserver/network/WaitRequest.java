@@ -9,7 +9,7 @@ public class WaitRequest {
 		 /* Sanity check the inputs... */
 		if ( nSamples < 0 ) { this.nSamples=-1; } else { this.nSamples=nSamples; }
 		if ( nEvents < 0 )  { this.nEvents=-1;  } else { this.nEvents=nEvents; }
-		this.timeout = timeout;
+      if ( timeout < 0 )  { this.timeout=0;  } else { this.timeout=timeout; }
 	}
 
 	public synchronized void blockUntilSatisfied(long timeout)

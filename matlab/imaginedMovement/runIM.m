@@ -74,14 +74,14 @@ while (ishandle(contFig))
    case 'capfitting';
     sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
-    buffer_newevents(buffhost,buffport,[],phaseToRun,'end'); % wait until finished
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end',inf); % wait until finished
 
    %---------------------------------------------------------------------------
    case 'eegviewer';
     sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
     % wait until capFitting is done
-    buffer_newevents(buffhost,buffport,[],phaseToRun,'end'); % wait until finished
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end',inf); % wait until finished
     
    %---------------------------------------------------------------------------
    case 'artifact';
@@ -126,7 +126,7 @@ while (ishandle(contFig))
    case {'train','trainersp'};
     sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
-    buffer_newevents(buffhost,buffport,[],phaseToRun,'end'); % wait until finished
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end',inf); % wait until finished
 
    %---------------------------------------------------------------------------
    case {'epochfeedback'};

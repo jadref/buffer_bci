@@ -64,7 +64,7 @@ while (ishandle(contFig) && ~strcmp(phaseToRun,'quit') )
     sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until capFitting is done
-    buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end',inf);
     %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);       
 
    %---------------------------------------------------------------------------
@@ -72,7 +72,7 @@ while (ishandle(contFig) && ~strcmp(phaseToRun,'quit') )
     sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until capFitting is done
-    buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
+    buffer_newevents(buffhost,buffport,[],phaseToRun,'end',inf);
     %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);           
     
    %---------------------------------------------------------------------------
