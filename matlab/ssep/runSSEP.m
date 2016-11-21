@@ -55,7 +55,7 @@ while (ishandle(contFig))
   if ( isempty(phaseToRun) ) pause(.3); continue; end;
 
   fprintf('Start phase : %s\n',phaseToRun);
-  set(contFig,'visible','off');
+  set(contFig,'visible','off');drawnow;
   
   switch phaseToRun;
     

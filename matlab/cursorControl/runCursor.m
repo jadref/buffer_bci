@@ -6,7 +6,7 @@ while (ishandle(contFig))
   set(contFig,'visible','on');
   uiwait(contFig); % CPU hog on ver 7.4
   if ( ~ishandle(contFig) ) break; end;
-  set(contFig,'visible','off');
+  set(contFig,'visible','off');drawnow;
   info=guidata(contFig); 
   subject=info.subject;
   phaseToRun=lower(info.phaseToRun);

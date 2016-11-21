@@ -56,7 +56,7 @@ while (ishandle(contFig) && ~strcmp(phaseToRun,'quit') )
   if ( isempty(phaseToRun) ) continue; end;
 
   fprintf('Start phase : %s\n',phaseToRun);  
-  set(contFig,'visible','off');
+  set(contFig,'visible','off');drawnow;
   switch phaseToRun;
     
    %---------------------------------------------------------------------------

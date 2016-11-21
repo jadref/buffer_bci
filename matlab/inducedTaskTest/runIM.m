@@ -66,7 +66,7 @@ while (ishandle(contFig))
   if ( isempty(phaseToRun) ) pause(.3); continue; end;
 
   fprintf('Start phase : %s\n',phaseToRun);  
-  set(contFig,'visible','off');
+  set(contFig,'visible','off'); drawnow;
   switch phaseToRun;
     
    %---------------------------------------------------------------------------
@@ -74,6 +74,7 @@ while (ishandle(contFig))
     sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
     buffer_newevents(buffhost,buffport,[],phaseToRun,'end',inf); % wait until finished
+    set(contFig,'userdata',[]); % ignore any key-presses here while the other window was running
 
    %---------------------------------------------------------------------------
    case 'eegviewer';
@@ -81,6 +82,7 @@ while (ishandle(contFig))
     sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
     % wait until capFitting is done
     buffer_newevents(buffhost,buffport,[],phaseToRun,'end',inf); % wait until finished
+    set(contFig,'userdata',[]); % ignore any key-presses here while the other window was running
     
    %---------------------------------------------------------------------------
    case 'artifact';
@@ -132,6 +134,7 @@ while (ishandle(contFig))
     sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
     buffer_newevents(buffhost,buffport,[],phaseToRun,'end',inf); % wait until finished
+    set(contFig,'userdata',[]); % ignore any key-presses here while the other window was running
 
    %---------------------------------------------------------------------------
    case {'epochfeedback'};
