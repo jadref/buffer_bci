@@ -78,13 +78,10 @@ adaptHalfLife_ms = 10*1000; %10s
 
 										% classifier training options
 welch_width_ms=250; % width of welch window => spectral resolution
-<<<<<<< HEAD
-=======
 step_ms       =welch_width_ms/2;% N.B. welch defaults=.5 window overlap, use step=width/2 to simulate
 trialadaptfactor=exp(log(.5)/(adaptHalfLife_ms/trlen_ms)); % adapt rate when apply per-trial
 contadaptfactor =exp(log(.5)/(adaptHalfLife_ms/welch_width_ms)); % adapt rate when apply per welch-win
 
->>>>>>> b0a860b... fixes for the adaptive filter stuff
 %trainOpts={'width_ms',welch_width_ms,'badtrrm',0}; % default: 4hz res, stack of independent one-vs-rest classifiers
 %trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','wht','objFn','mlr_cg','binsp',0,'spMx','1vR'}; % whiten + direct multi-class training
 trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','trwht','adaptivespatialfilt',trialadaptfactor,'objFn','mlr_cg','binsp',0,'spMx','1vR'}; % adaptive-whiten + direct multi-class training
@@ -96,14 +93,10 @@ trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','trwht','adapti
 earlyStopping=false;%true;
 epochFeedbackOpts={}; % raw output
 %epochFeedbackOpts={'predFilt',@(x,s) biasFilt(x,s,exp(log(.5)/50))}; % bias-apaption
-<<<<<<< HEAD
-=======
 % Epoch feedback with early-stopping, config using the user feedback table
 userFeedbackTable={'epochFeedback_es' 'cont' {'predFilt',@(x,s,e) gausOutlierFilt(x,s,3.0,trialDuration*1000./step_ms),'trlen_ms',welch_width_ms}};
 % Epoch feedback with early-stopping, (cont-classifer, so update adaptive whitener constant)
 userFeedbackTable={'epochFeedback_es' 'cont' {'predFilt',@(x,s,e) gausOutlierFilt(x,s,3.0,trialDuration*1000./step_ms),'trlen_ms',welch_width_ms,'adaptivespatialfilt',contadaptfactor}};
-
->>>>>>> b0a860b... fixes for the adaptive filter stuff
 
 % different feedback configs (should all give similar results)
 
