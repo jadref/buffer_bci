@@ -24,15 +24,17 @@ initsleepSec;
 
 % load the cap layout from file
 [ch_names latlong ch_pos ch_pos3d]=readCapInf('1010');
+% mark only num-channels send by amp as EEG and to-be plotted
+iseeg=false(size(ch_names));iseeg(1:numel(hdr.labels))=true; 
 
 trlen_samp = 50; % #samples per epoch
 nSymbols = 2;
 erp      = zeros(sum(iseeg),trlen_samp,nSymbols);
 nTarget  = zeros(nSymbols,1);
 
-% make the figure window
+% make the figure window, but only for the channels which are actually EEG channels
 clf;
-hdls=image3d(erp,1,'plotPos',ch_pos,'xlabel','ch','Xvals',ch_names,'zlabel','class','disptype','plot','ticklabs','sw');
+hdls=image3d(erp,1,'plotPos',ch_pos(:,iseeg),'xlabel','ch','Xvals',ch_names(iseeg),'zlabel','class','disptype','plot','ticklabs','sw');
 
 state=[];
 endTest=false; 
