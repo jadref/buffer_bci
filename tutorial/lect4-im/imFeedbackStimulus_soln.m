@@ -31,6 +31,11 @@ trialDuration=3;
 baselineDuration=1;
 intertrialDuration=2;
 
+bgColor=[.5 .5 .5];
+tgtColor=[0 1 0];
+fixColor=[1 0 0];
+fbColor=[0 0 1];
+
 % make the target sequence
 tgtSeq=mkStimSeqRand(nSymbs,nSeq);
 
