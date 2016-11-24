@@ -30,6 +30,7 @@ nBlock=2;%10; % number of stim blocks to use
 trialDuration=3;
 baselineDuration=1;
 intertrialDuration=2;
+feedbackDuration=1;
 
 bgColor=[.5 .5 .5];
 tgtColor=[0 1 0];
