@@ -299,6 +299,8 @@ clsfr.timeIdx     = timeIdx; % time range to apply the classifer to
 clsfr.windowFn    = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
 clsfr.welchAveType= []; % DUMMY -- so ERP and ERSP classifier have same structure fields
 clsfr.freqIdx     = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
+clsfr.featFilt    = featFilt; % feature normalization type
+clsfr.ffState     = ffState;  % state of the feature filter
 
 clsfr.badtrthresh = []; if ( ~isempty(trthresh) ) clsfr.badtrthresh = trthresh(end)*opts.badtrscale; end
 clsfr.badchthresh = []; if ( ~isempty(chthresh) ) clsfr.badchthresh = chthresh(end)*opts.badchscale; end
