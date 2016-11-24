@@ -28,7 +28,7 @@ cname  ='clsfr';
 %useful functions
 load(dname);
 % train classifier
-clsfr=buffer_train_ersp_clsfr(data,devents,hdr,'spatialfilter','slap','freqband',[6 10 26 30],'badchrm',0,'capFile',capFile,'overridechnm',overridechnm);
+clsfr=buffer_train_ersp_clsfr(data,devents,hdr,'spatialfilter','slap','freqband',[6 10 26 30],'badchrm',0,'capFile',capFile,'overridechnms',overridechnm);
 fprintf('Saving classifier to : %s\n',cname);
 save(cname,'-struct','clsfr');
 sendEvent('phase.training','start');
