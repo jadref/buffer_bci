@@ -40,8 +40,9 @@ symbols={'1' '2' '3';...
 % ----------------------------------------------------------------------------
 
 % useful functions 
-% make the stimulus
+% make the stimulus, h matrix of handles to matlab graphical text objects
 [h,symbs]=initGrid(symbols);
+set(h(1,1),'color',tgtCol);% change the color of the top left one of the text objects
 
 % make the target stimulus sequence
 [ans,ans,ans,ans,tgtSeq]=mkStimSeqRand(numel(symbols),nSeq);
@@ -54,5 +55,5 @@ stimSamp=buffer('get_samp'); % get current sample time, for event time-stamps
 sendEvent('stimulus.rowFlash',stimSeqRow(:,ei),stimSamp); % indicate this row is 'flashed'
 sendEvent('stimulus.tgtFlash',stimSeqRow(tgtRow,ei),stimSamp); % indicate if it was a 'target' flash
 
-% convert from single index to 2-d matrix index
+% convert from single index to 2-d matrix index, useful for converting target index, into a target location
 [tgtRow,tgtCol]=ind2sub(size(symbols),tgtSeq(si)); % convert to row/col index
