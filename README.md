@@ -25,15 +25,24 @@ This is a *client-server architecture*.  Thus to use any of the demos or run tim
 
 Further different clients may be written in different programming languages and hence have different dependences.  As a minimum many of the clients interfacing with signal measurement hardware are written in java (specificially: the MUSE and openBCI clients) hence you will need a working java run-time to use these devices.  Further, most of the demonstration systems are written in Matlab/Octave, so you will need to install these systems to run these demos – though check the java, python and csharp directories for demonstrations written in those languages.
 
-## Installation
+## Installation: General
 
 Copy these directories somewhere on your local drive.
 
 Note: If using MATLAB/Octave and the .bat/.sh files do not work because the MATLAB/Octave executable is not found automatically then modify the path in the file [`utilities\findMatlab.bat`](utilities/findMatlab.bat) (windows) or [`utilities/findMatlab.sh`](utilities/findMatlab.sh) (Linux/MacOSX) to point to the executable location.
 
-Note2: For Linux there is a [Docker image]( https://github.com/dokterbob/docker-bci) which can be used to simply install buffer_bci and all it's dependencies directly 
+### Installation: Octave+Windows
+When using Matlab/Octave this code relies on java for network communication between processes.  Matlab includes a JRE internally, for octave you must download and install the *correct* JRE first.  These are specific instructions for that case:
 
-Note3: *MacOS* to run the *.sh files from the finder you need to set them to open with the *Terminal* application (which is in the utilities sub-directory of applications).  Set this by Control-clicking any .sh file and choosing 'Open With' then browse to the *Terminal* application and choose open all .sh files this way.
+1) First install java *32bit*.  Note: with the current version of octave is *must* be the 32bit java version, e.g. from <https://www.java.com/en/download/manual.jsp>, which is not what you get by default if you just 'download java'.
+
+2) Then install / setup octave.  You can find a binary installer here <https://ftp.gnu.org/gnu/octave/windows/>.  This should then auto-detect the java install and setup the java environment.
+
+3) Check your octave-java install with: usejava('jvm') at the octave command line, which should return 1.
+
+### Installation : MacOS
+
+*MacOS* to run the *.sh files from the finder you need to set them to open with the *Terminal* application (which is in the utilities sub-directory of applications).  Set this by Control-clicking any .sh file and choosing 'Open With' then browse to the *Terminal* application and choose open all .sh files this way.
 
 ## QuickStart
 
