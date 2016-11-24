@@ -1,4 +1,4 @@
-function [sf,d,Sigmac,SigmaAll]=csp(X,Y,dim,nf_cent,ridge,singThresh,powThresh)
+function [sf,d,Sigmac,SigmaAll]=csp(X,Y,dim,nfilt,ridge,singThresh,powThresh)
 % Generate spatial filters using CSP
 %
 % [sf,d,Sigmac,SigmaAll]=csp(X,Y,[dim,nfilt,ridge]);
@@ -22,12 +22,12 @@ function [sf,d,Sigmac,SigmaAll]=csp(X,Y,dim,nf_cent,ridge,singThresh,powThresh)
 %  d     -- [nCh x nClass] spatial filter eigen values, N.B. d==0 indicates bad direction
 if( nargin>4 ) 
   warning('extra options ignored'); 
-  if ( nargin>3 && nfeat<=1 ) nfeat=[]; end; % reset to default number features
+  if ( nargin>3 && nfilt<=1 ) nfilt=[]; end; % reset to default number features
 end;
 if ( nargin < 3 || isempty(dim) ) dim=[-1 1]; end;
 if ( numel(dim) < 2 ) if ( dim(1)==1 ) dim(2)=2; else dim(2)=1; end; end
 dim(dim<0)=ndims(X)+dim(dim<0)+1; % convert negative dims
-if ( nargin < 4 || isempty(nfeat) ) nfeat=3; end;
+if ( nargin < 4 || isempty(nfilt) ) nfilt=3; end;
 if ( nargin < 5 || isempty(ridge) ) 
   if ( isequal(class(X),'single') ) ridge=1e-7; else ridge=0; end;
 end;
@@ -48,23 +48,24 @@ idx1(dim(2))=1;     idx2(dim(2))=2;     % Outer product over ch dimension
 Xidx{dim(1)}=~all(Y==0,2); % all except examples marked as ignored
 Sigmaall = tprod(X(Xidx{:}),idx1,[],idx2)./sum(Xidx{dim(1)});
 
-sf    = zeros([nCh,nfeat,nClass],class(X)); d=zeros(nfeat,nClass,class(X));
+sf    = zeros([nCh,nfilt,nClass],class(X)); d=zeros(nfilt,nClass,class(X));
 for c=1:nClass; % generate sf's for each sub-problem
   Xidx{dim(1)}=Y(:,c)>0;
   Sigmac(:,:,c) = tprod(X(Xidx{:}),idx1,[],idx2)./sum(Xidx{dim(1)});
+  Sigma = Sigmaall;
   % solve the generalised eigenvalue problem, 
   if ( ridge>0 ) % Add ridge if wanted to help with numeric issues in the inv
     Sigmac(:,:,c)=Sigmac(:,:,c)+eye(size(Sigma))*ridge*mean(diag(Sigmac(:,:,c))); 
     Sigma        =Sigma        +eye(size(Sigma))*ridge*mean(diag(Sigma));
-  end
+  end 
   % N.B. use double to avoid rounding issues with the inv(Sigma) bit
-  [W D]=eig(double(Sigmac(:,:,c)),double(Sigmaall));D=diag(D); % generalised eigen-value formulation!
+  [W D]=eig(double(Sigmac(:,:,c)),double(Sigma));D=diag(D); % generalised eigen-value formulation!
   W=real(W); % only real part is useful
   [D,di]=sort(D,'descend'); W=W(:,di); % order in decreasing eigenvalue
    
   % Save the normalised filters & eigenvalues
-  sf(:,:,c)= W(:,1:nfeat);  
-  d(:,c)   = D(1:nfeat);
+  sf(:,:,c)= W(:,1:nfilt);  
+  d(:,c)   = D(1:nfilt);
 end
 return;
 
