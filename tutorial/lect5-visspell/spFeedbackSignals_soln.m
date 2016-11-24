@@ -4,6 +4,7 @@ try;
 catch
    msgbox({'Please change to the directory where this file is saved before running the rest of this code'},'Change directory'); 
 end
+try; cd(fileparts(mfilename('fullpath')));catch; end; %ARGH! fix bug with paths on Octave
   
 buffhost='localhost';buffport=1972;
 % wait for the buffer to return valid header information
@@ -25,7 +26,7 @@ initsleepSec;
 verb=1;
 cname='clsfr';
 trlen_ms=600;
-clsfr=load(cname);
+clsfr=load(cname);if(isfield(clsfr,'clsfr'))clsfr=clsfr.clsfr;end;
 
 state=[]; 
 endTest=0; fs=0;

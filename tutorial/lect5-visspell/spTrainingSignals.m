@@ -4,6 +4,7 @@ try;
 catch
    msgbox({'Please change to the directory where this file is saved before running the rest of this code'},'Change directory'); 
 end
+try; cd(fileparts(mfilename('fullpath')));catch; end; %ARGH! fix bug with paths on Octave
 
 % N.B. only really need the header to get the channel information, and sample rate
 buffhost='localhost';buffport=1972;
