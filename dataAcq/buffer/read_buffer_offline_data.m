@@ -21,8 +21,10 @@ if ( ~isempty(hdr) && isfield(hdr,'orig') && isfield(hdr.orig,'endianness') )
   endianess=hdr.orig.endianness;
 end
 
+bReadRemain = 0;
 k = 0;
 sizeSoFar = 0;
+dat=[];
 % start with name_k = datafile (= '.../samples' )
 name_k = datafile;
 while true
@@ -35,7 +37,7 @@ while true
   if status < 0 ; error('Cant read the file: %s',name_k); end;
   size_k = ftell(F);
    
-  if nStart >= sizeSoFar && nStart < sizeSoFar + size_k
+  if bStart >= sizeSoFar && bStart < sizeSoFar + size_k
     status = fseek(F, bStart - sizeSoFar, 'bof');
     if status < 0 ; error('Cant read the file: %s',name_k); end;
     if bStart + bRead <= sizeSoFar + size_k
