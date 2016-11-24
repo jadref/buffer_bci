@@ -108,7 +108,7 @@ for si=1:nSeq;
     timetogo = trialDuration - (getwTime()-trlStartTime); % time left to run in this trial
     % wait for new prediction events to process *or* end of trial time
     % N.B. we use raw predictions as we will do the prediction filtering ourselves....
-    [events,state,nsamples,nevents] = buffer_newevents(buffhost,buffport,state,'classifier.rawprediction',[],min(1000,timetogo*1000));
+    [events,state,nsamples,nevents] = buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],min(1000,timetogo*1000));
     if ( isempty(events) ) 
 		if ( timetogo>.1 ) fprintf('%d) no predictions!\n',nsamples); end;
     else
