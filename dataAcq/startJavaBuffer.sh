@@ -3,9 +3,9 @@ buffdir=`dirname $0`
 outdir=
 
 # use GUI to update the save location
-if [ -x $buffdir/getBufferSaveDir.py ] && [ ! -z `which python` ]; then
-   outdir=`python $buffdir/getBufferSaveDir.py`;
-fi
+#if [ -x $buffdir/getBufferSaveDir.py ] && [ ! -z `which python` ]; then
+#   outdir=`python $buffdir/getBufferSaveDir.py`;
+#fi
 
 # fall back code to compute save location
 if [ -z $outdir ] ; then

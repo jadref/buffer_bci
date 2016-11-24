@@ -3,6 +3,7 @@ package nl.fcdonders.fieldtrip.bufferserver.data;
 import nl.fcdonders.fieldtrip.bufferserver.exceptions.DataException;
 import nl.fcdonders.fieldtrip.bufferserver.network.NetworkProtocol;
 
+import java.io.OutputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -13,9 +14,9 @@ import java.nio.ByteOrder;
 public class SavingRingDataStore extends RingDataStore {
     private static final int dataBufSize  = 256 * 10 * 1; // ~1s data (@256Hz) file-write buffer
     private static final int eventBufSize =  10 * 40 * 1; // ~1s event(@10/s) file-write buffer
-    private BufferedOutputStream eventWriter;
-    private BufferedOutputStream dataWriter;
-    private BufferedOutputStream headerWriter;
+    private OutputStream eventWriter;
+    private OutputStream dataWriter;
+    private OutputStream headerWriter;
     private String savePathRoot;
     private int numReset = 1;
     private ByteBuffer writeBuf;
@@ -115,7 +116,7 @@ public class SavingRingDataStore extends RingDataStore {
         }
         // record the save path used
         String savePath = file.getPath();
-		if ( 0 ){ // don't buffer the file output.... (NOTE: may result in real-time jitters)
+		if ( false ){ // don't buffer the file output.... (NOTE: may result in real-time jitters)
         dataWriter = new BufferedOutputStream(new FileOutputStream(savePath + File.separator + "samples"),
                                               dataBufSize);
         eventWriter = new BufferedOutputStream(new FileOutputStream(savePath + File.separator + "events"),
