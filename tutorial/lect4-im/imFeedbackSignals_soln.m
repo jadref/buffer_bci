@@ -23,6 +23,9 @@ end;
 initsleepSec;
 
 
+%load the saved classifier
+load('clsfr');
+
 % call the feedback signals function to do the classifier application
 [testdata,testevt]=imFeedbackSignals(clsfr);
 
