@@ -116,7 +116,7 @@ adaptHalfLife_ms = 30*1000; %30s amount of data to use for adapting spatialfilte
 conttrialAdaptHL=(adaptHalfLife_ms/step_ms); % half-life in number of calls to apply clsfr
 conttrialAdaptFactor=exp(log(.5)./conttrialAdaptHL) ;% convert to exp-move-ave weighting factor 
 epochtrialAdaptHL=(adaptHalfLife_ms/epochtrlen_ms); % half-life in number called to apply-clsfr in epoch feedback
-epochtrailAdaptFactor=exp(log(.5)/epochtrialAdaptHL); % convert to exp-move-ave weight factor
+epochtrialAdaptFactor=exp(log(.5)/epochtrialAdaptHL); % convert to exp-move-ave weight factor
 
 %trainOpts={'width_ms',welch_width_ms,'badtrrm',0}; % default: 4hz res, stack of independent one-vs-rest classifiers
 %trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','wht','objFn','mlr_cg','binsp',0,'spMx','1vR'}; % whiten + direct multi-class training
