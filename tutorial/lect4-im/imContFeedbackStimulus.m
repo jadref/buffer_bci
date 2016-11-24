@@ -29,6 +29,10 @@ baselineDuration=1;
 intertrialDuration=2;
 expSmoothFactor=1; % smoothing factor for combining classifier outputs over time
 
+bgColor=[.5 .5 .5];
+tgtColor=[0 1 0];
+fixColor=[1 0 0];
+
 % make the target sequence
 tgtSeq=mkStimSeqRand(nSymbs,nSeq);
 
@@ -98,6 +102,7 @@ for si=1:nSeq;
         dv = expSmoothFactor*dv + pred(:); % exp-smoothed weighted average of classifier output
         prob = 1./(1+exp(-dv(:))); prob=prob./sum(prob); % convert from dv to normalised probability
         
+        fprintf('dv:');fprintf('%5.4f ',dv);fprintf('\t\tProb:');fprintf('%5.4f ',prob);fprintf('\n'); 
         % feedback... simply move to location indicated by the BCI
         fixPos = stimPos(:,1:end-1)*prob(:); % position is weighted by class probabilties
         set(h(end),'position',[fixPos-stimRadius/2;stimRadius/2*[1;1]]);

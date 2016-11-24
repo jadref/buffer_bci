@@ -24,7 +24,8 @@ initsleepSec;
 
 
 %load the saved classifier
-load('clsfr');
+clsfr=load('clsfr');
+if ( isfield(clsfr,'clsfr') ) clsfr=clsfr.clsfr; end; % check is saved variable or struc
 
 % call the feedback signals function to do the classifier application
 [testdata,testevt]=imFeedbackSignals(clsfr);

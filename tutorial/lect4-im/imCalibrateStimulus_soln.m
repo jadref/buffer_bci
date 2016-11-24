@@ -20,6 +20,7 @@ end;
 
 % set the real-time-clock to use
 initsleepSec;
+initgetwTime();
 
 verb=0;
 nSymbs=3;

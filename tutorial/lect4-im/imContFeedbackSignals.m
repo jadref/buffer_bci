@@ -20,6 +20,7 @@ end;
 
 % set the real-time-clock to use
 initsleepSec;
+initgetwTime();
 
 % constants
 trialDuration=3;
@@ -28,6 +29,11 @@ step_ms    = 500; % new classification every 1/2 second
 timeout_ms = 5000; % how long to wait for new data..
 trlen_samp = round(trlen_ms*hdr.fSample/1000);
 step_samp  = round(step_ms*hdr.fSample/1000);
+
+% load the saved classifier
+clsfr=load('clsfr');
+if ( isfield(clsfr,'clsfr') ) clsfr=clsfr.clsfr; end; % check is saved variable or struc
+
 state=[]; % for the buffer_newevents waiting for exit event
 nEvents=hdr.nEvents; nSamples=hdr.nSamples; % current number events/samples
 endTest=false;
@@ -47,7 +53,7 @@ while( ~endTest )
   % apply classification pipeline to this events data
   [f,fraw,p]=buffer_apply_ersp_clsfr(data.buf,clsfr);    
   % Send prediction event when wanted
-  sendEvent('stimulus.prediction',f);
+  sendEvent('classifier.prediction',f);
   
   % check for exit events -- any event with t:stimulus.testing v:end
   [devents,state]=buffer_newevents(buffhost,buffport,state,'stimulus.testing','end',0);
