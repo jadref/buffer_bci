@@ -1,6 +1,6 @@
 #!/bin/bash
 cd `dirname ${BASH_SOURCE[0]}`
-source ../utilities/findMatlab.sh
+source ../matlab/utilities/findMatlab.sh
 fname=$1;
 if [ ${fname:0:1}X != "'"X ]; then fname="'$fname'"; fi
 if [[ $matexe == *matlab ]]; then  args=-nodesktop; fi

@@ -33,7 +33,7 @@ function []=buffer_signalproxy(host,port,filename,varargin);
 if ( nargin<2 || isempty(port) ) port=1972; end;
 if ( nargin<1 || isempty(host) ) host='localhost'; end;
 if ( nargin<3 || isempty(filename) ) 
-  [fn,pth]=uigetfile('~/output/*.txt','Pick header.txt in a data save directory!'); drawnow;
+  [fn,pth]=uigetfile('~/output/*.*','Pick header.txt in a data save directory!'); drawnow;
   if ( ~isequal(fn,0) ) filename=fullfile(pth,fn); end;
 end;
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind(wb,'dataAcq')) ) 
