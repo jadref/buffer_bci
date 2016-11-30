@@ -363,6 +363,7 @@ while ( true )
 	  end;
       if(opts.verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
       clsfr=load(clsfrfile);
+      if( isfield(clsfr,'clsfr') ) clsfr=clsfr.clsfr; end;
       clsSubj = subject;
     end;
 
@@ -393,6 +394,7 @@ while ( true )
 		end;
       if(opts.verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
       clsfr=load(clsfrfile);
+      if( isfield(clsfr,'clsfr') ) clsfr=clsfr.clsfr; end;
       clsSubj = subject;
     end;
 
