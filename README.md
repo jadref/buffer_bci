@@ -44,6 +44,10 @@ When using Matlab/Octave this code relies on java for network communication betw
 
 *MacOS* to run the *.sh files from the finder you need to set them to open with the *Terminal* application (which is in the utilities sub-directory of applications).  Set this by Control-clicking any .sh file and choosing 'Open With' then browse to the *Terminal* application and choose open all .sh files this way.
 
+### Installation : Linux
+
+*Linux* to run the *.sh files from Nautilus, the Gnome file manager, you need to set it to run 'executable text files' directly.  To do this goto: Files->Preferences, open the Behaviour tab and in the 'Executable Text Files' set it to either 'Run them' (potential security risk) or 'Ask what to do' (safer).
+
 ## QuickStart
 
 Read the `README` file in either of the [`games`](matlab/games), [`EEGBCITutorial`](tutorial/EEGBCITutorial), [`imaginedMovement`](matlab/imaginedMovement), [`matrixSpeller`](matlab/matrixSpeller) directories for instructions on how to startup and run
