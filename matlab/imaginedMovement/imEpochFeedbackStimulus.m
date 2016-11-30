@@ -106,7 +106,7 @@ for si=1:nSeq;
   set(h(tgtSeq(:,si)>0),'facecolor',tgtColor);
   set(h(tgtSeq(:,si)<=0),'facecolor',bgColor);
   %green fixation indicates trial running, if its not actually the target
-  if ( size(tgtSeq,1)<nSymbs || tgtSeq(nSymbs+1,si)<=0 )
+  if ( size(tgtSeq,1)<=nSymbs || tgtSeq(nSymbs+1,si)<=0 )
 	 set(h(end),'facecolor',tgtColor);
   end
   if ( ~isempty(symbCue) )
