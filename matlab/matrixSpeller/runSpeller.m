@@ -74,16 +74,22 @@ while (ishandle(contFig))
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until capFitting is done
-    buffer_newevents(buffhost,buffport,[],phaseToRun,'end',inf);    
-    %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);       
+    while (true) % N.B. use a loop as safer and matlab still responds on windows...
+       [devents]=buffer_newevents(buffhost,buffport,[],phaseToRun,'end',1000); % wait until finished
+       drawnow;
+       if ( ~isempty(devents) ) break; end;
+    end
 
    %---------------------------------------------------------------------------
    case 'eegviewer';
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
-    % wait until capFitting is done
-    buffer_newevents(buffhost,buffport,[],phaseToRun,'end',inf);    
-    %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);           
+    % wait until viewer is done
+    while (true) % N.B. use a loop as safer and matlab still responds on windows...
+       [devents]=buffer_newevents(buffhost,buffport,[],phaseToRun,'end',1000); % wait until finished
+       drawnow;
+       if ( ~isempty(devents) ) break; end;
+    end
     
    %---------------------------------------------------------------------------
    case 'practice';
