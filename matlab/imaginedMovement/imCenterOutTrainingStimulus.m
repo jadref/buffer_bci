@@ -161,7 +161,7 @@ for si=1:nSeq;
     if(feedbackMagFactor>1) fixPos=(fixPos-stimPos(:,end))*feedbackMagFactor + stimPos(:,end); end;
 
     % update display
-    set(h(end),'position',[fixPos-.5*cursorPos(3:4) cursorPos(3:4)]); % for the fixation point    
+    set(h(end),'position',[fixPos-.5*cursorPos(3:4); cursorPos(3:4)]); % for the fixation point    
     set(timehdl,'string',sprintf('Time: %4.1f',getwTime()-t0+timePen)); % for the time-display
     drawnow; % update the display after all events processed
 

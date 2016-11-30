@@ -105,7 +105,8 @@ for si=1:nSeq;
   tgtIdx=find(tgtSeq(:,si)>0);
   set(h(tgtSeq(:,si)>0),'facecolor',tgtColor);
   set(h(tgtSeq(:,si)<=0),'facecolor',bgColor);
-  if ( tgtSeq(nSymbs+1,si)<=0 )%green fixation indicates trial running, if its not actually the target
+  %green fixation indicates trial running, if its not actually the target
+  if ( size(tgtSeq,1)<nSymbs || tgtSeq(nSymbs+1,si)<=0 )
 	 set(h(end),'facecolor',tgtColor);
   end
   if ( ~isempty(symbCue) )
@@ -155,7 +156,6 @@ for si=1:nSeq;
   if( isempty(devents) ) % extract the decision value
     fprintf(1,'Error! no predictions after %gs, continuing (%d samp, %d evt)\n',trlEndTime-trlStartTime,state.nSamples,state.nEvents);
     set(h(:),'facecolor',bgColor);
-    set(h(end),'facecolor',fbColor); % fix turns blue to show now pred recieved
     drawnow;
     nMissed=nMissed+1;
   else

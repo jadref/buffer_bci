@@ -213,7 +213,7 @@ for si=1:nSeq;
 	 else % relative movement
 		fixPos=fixPos + dx*moveScale;
 	 end;
-	 set(h(end),'position',[fixPos-.5*cursorPos(3:4) cursorPos(3:4)]);
+	 set(h(end),'position',[fixPos-.5*cursorPos(3:4);cursorPos(3:4)]);
     drawnow; % update the display after all events processed    
   end % while time to go
 
