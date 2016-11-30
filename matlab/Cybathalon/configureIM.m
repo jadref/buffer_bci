@@ -59,7 +59,7 @@ feedbackDuration  =epochDuration;
 
 contFeedbackTrialDuration =10;
 neurofeedbackTrialDuration=30;
-warpCursor   = 0; % flag if in feedback BCI output sets cursor location or how the cursor moves
+warpCursor   = 1; % flag if in feedback BCI output sets cursor location or how the cursor moves
 moveScale    = .1;
 
 axLim        =[-1.5 1.5]; % size of the display axes
