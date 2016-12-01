@@ -15,7 +15,7 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %              *this overrides* ch_pos if given
 %  overridechnms - [bool] flag if channel order from 'capFile' overrides that from the 'ch_names' option
 %  fs        - sampling rate of the data
-%  timeband  - [2 x 1] band of times to use for classification, all if empty ([])
+%  timeband_ms- [2 x 1] band of times in milliseconds to use for classification, all if empty ([])
 %  freqband  - [2 x 1] or [3 x 1] or [4 x 1] band of frequencies to use
 %              EMPTY for *NO* spectral filter
 %              OR
@@ -62,11 +62,13 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %  res    - [struct] results structure as returned by 'cvtrainFn'. 
 %                    use: help cvtrainFn for more information on its structure
 %  X      - [size(X)] the pre-processed data
-opts=struct('classify',1,'fs',[],'timeband_ms',[],'freqband',[],'downsample',[],'detrend',1,'spatialfilter','car',...
-    'badchrm',1,'badchthresh',3.1,'badchscale',2,...
-    'badtrrm',1,'badtrthresh',3,'badtrscale',2,...
-    'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
-    'visualize',1,'badCh',[],'nFold',10,'class_names',[],'zeroLab',1);
+  opts=struct('classify',1,'fs',[],...
+				  'timeband_ms',[],'freqband',[],'downsample',[],'detrend',1,'spatialfilter','car',...
+				  'badchrm',1,'badchthresh',3.1,'badchscale',2,...
+				  'badtrrm',1,'badtrthresh',3,'badtrscale',2,...
+				  'featFilt',[],...
+				  'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
+				  'visualize',1,'badCh',[],'nFold',10,'class_names',[],'zeroLab',1);
 [opts,varargin]=parseOpts(opts,varargin);
 
 di=[]; ch_pos=opts.ch_pos; ch_names=opts.ch_names;
@@ -100,7 +102,7 @@ if ( opts.badchrm || (~isempty(opts.badCh) && sum(opts.badCh)>0) )
   isbadch = false(size(X,1),1);
   if ( ~isempty(ch_pos) ) isbadch(numel(ch_pos)+1:end)=true; end;
   if ( ~isempty(opts.badCh) )
-      isbadch(opts.badCh)=true;
+      isbadch(opts.badCh(1:min(end,size(isbadch,1))))=true;
       goodCh=find(~isbadch);
       if ( opts.badchrm ) 
           [isbad2,chstds,chthresh]=idOutliers(X(goodCh,:,:),1,opts.badchthresh);
@@ -113,7 +115,7 @@ if ( opts.badchrm || (~isempty(opts.badCh) && sum(opts.badCh)>0) )
     if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names))); end;
     ch_names=ch_names(~isbadch(1:numel(ch_names)));
   end
-  fprintf('%d ch removed\n',sum(isbadch));
+  fprintf('%d ch removed\n',sum(isbadch(1:numel(ch_names))));
 end
 
 %3) Spatial filter/re-reference
@@ -174,12 +176,11 @@ end
 %4.2) time range selection
 timeIdx=[];
 if ( ~isempty(opts.timeband_ms) ) 
-  timeIdx = opts.timeband_ms * fs; % convert to sample indices
-  timeIdx = max(min(timeIdx,size(X,2)),1); % ensure valid range
+  timeIdx = opts.timeband_ms * fs ./1000; % convert to sample indices
+  timeIdx = max(min(round(timeIdx),size(X,2)),1); % ensure valid range
   timeIdx = int32(timeIdx(1):timeIdx(2));
   X    = X(:,timeIdx,:);
 end
-
 
 %4.5) Bad trial removal
 isbadtr=[]; trthresh=[];
@@ -190,6 +191,15 @@ if ( opts.badtrrm )
   Y=Y(~isbadtr,:);
   fprintf(' %d tr removed\n',sum(isbadtr));
 end;
+
+% 5.9) Apply a feature filter post-processor if wanted
+featFilt=opts.featFilt; ffState=[];
+if ( ~isempty(featFilt) )
+  if ( ~iscell(featFilt) ) featFilt={featFilt}; end;
+  for ei=1:size(X,3);
+	 [X(:,:,ei),ffState]=feval(featFilt{1},X(:,:,ei),ffState,featFilt{2:end});
+  end
+end
 
 %5.5) Visualise the input?
 aucfig=[];erpfig=[];
@@ -236,7 +246,7 @@ if ( opts.visualize )
    end
    times=(1:size(mu,2))/opts.fs;
 	xy=ch_pos; if (size(xy,1)==3) xy = xyz2xy(xy); end
-   erpfig=figure(1); clf(erpfig);  set(erpfig,'Name','Data Visualisation: ERP');
+   erpfig=figure(2); clf(erpfig);  set(erpfig,'Name','Data Visualisation: ERP');
 	yvals=times;
    try; 
 	  image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',yvals,'zlabel','class','Zvals',labels(:),'disptype','plot','ticklabs','sw');
@@ -246,7 +256,7 @@ if ( opts.visualize )
 	  if ( ~isempty(le.stack) ) fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
 	end;
    if ( ~(all(Yci(:)==Yci(1))) ) % only if >1 class input
-     aucfig=figure(2); clf(aucfig); set(aucfig,'Name','Data Visualisation: ERP AUC');
+     aucfig=figure(3); clf(aucfig); set(aucfig,'Name','Data Visualisation: ERP AUC');
      try;  
 		 image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel',auc);
 		 colormap ikelvin;
@@ -268,9 +278,9 @@ else
 end
 
 if ( opts.visualize ) 
-  if ( size(res.tstconf,1)==numel(labels).^2 ) % confusion matrix is correct
+  if ( size(res.tstconf,2)==1 ) % confusion matrix is correct
      % plot the confusion matrix
-    confMxFig=figure(3); set(confMxFig,'name','Class confusion matrix');	 
+    confMxFig=figure(4); set(confMxFig,'name','Class confusion matrix');	 
 	 if ( size(clsfr.spMx,1)==1 )
 		if ( iscell(clsfr.spKey) ) clabels={clsfr.spKey{clsfr.spMx>0} clsfr.spKey{clsfr.spMx<0}};
 		else                       clabels={sprintf('%g',clsfr.spKey(clsfr.spMx>0)) sprintf('%g',clsfr.spKey(clsfr.spMx<0))};
@@ -302,8 +312,8 @@ clsfr.freqIdx     = []; % DUMMY -- so ERP and ERSP classifier have same structur
 clsfr.featFilt    = featFilt; % feature normalization type
 clsfr.ffState     = ffState;  % state of the feature filter
 
-clsfr.badtrthresh = []; if ( ~isempty(trthresh) ) clsfr.badtrthresh = trthresh(end)*opts.badtrscale; end
-clsfr.badchthresh = []; if ( ~isempty(chthresh) ) clsfr.badchthresh = chthresh(end)*opts.badchscale; end
+clsfr.badtrthresh = []; if ( ~isempty(trthresh) && opts.badtrscale>0 ) clsfr.badtrthresh = trthresh(end)*opts.badtrscale; end
+clsfr.badchthresh = []; if ( ~isempty(chthresh) && opts.badchscale>0 ) clsfr.badchthresh = chthresh(end)*opts.badchscale; end
 % record some dv stats which are useful
 tstf = res.tstf(:,res.opt.Ci); % N.B. this *MUST* be calibrated to be useful
 clsfr.dvstats.N   = [sum(res.Y>0) sum(res.Y<=0) numel(res.Y)]; % [pos-class neg-class pooled]
@@ -351,5 +361,5 @@ return
 %---------------------------------------
 function testCase()
 z=jf_mksfToy('Y',sign(round(rand(600,1))-.5));
-[clsfr]=train_ersp_clsfr(z.X,z.Y,'fs',z.di(2).info.fs,'ch_pos',[z.di(1).extra.pos3d],'ch_names',z.di(1).vals,'freqband',[0 .1 10 12],'visualize',1,'verb',1);
-f=apply_ersp_clsfr(X,clsfr);
+[clsfr]=train_erp_clsfr(z.X,z.Y,'fs',z.di(2).info.fs,'ch_pos',[z.di(1).extra.pos3d],'ch_names',z.di(1).vals,'freqband',[0 .1 10 12],'visualize',1,'verb',1);
+f=apply_erp_clsfr(X,clsfr);
