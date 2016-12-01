@@ -97,11 +97,11 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'start');
     onSeq=nSeq; nSeq=4; % override sequence number
     onRepetitions=nRepetitions; nRepetitions=3;
-    %try
+    try
       spCalibrateStimulus;
-    %catch
-      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-    %end
+    catch
+       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    end
     sendEvent(phaseToRun,'end');
     nSeq=onSeq;
     nRepetitions=onRepetitions;
@@ -111,12 +111,12 @@ while (ishandle(contFig))
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun)
     sendEvent(phaseToRun,'start');
-    %try
+    try
       spCalibrateStimulus;
-    %catch
-      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    catch
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.training','end');    
-    %end
+    end
     sendEvent(phaseToRun,'end');
 
    %---------------------------------------------------------------------------
@@ -124,21 +124,24 @@ while (ishandle(contFig))
     sendEvent('subject',info.subject);
     sendEvent('startPhase.cmd',phaseToRun);
     % wait until training is done
-    buffer_newevents(buffhost,buffport,[],phaseToRun,'end',inf);    
-    %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);  
+    while (true) % N.B. use a loop as safer and matlab still responds on windows...
+       [devents]=buffer_newevents(buffhost,buffport,[],phaseToRun,'end',1000); % wait until finished
+       drawnow;
+       if ( ~isempty(devents) ) break; end;
+    end
     
    %---------------------------------------------------------------------------
    case 'copyspell1';
     sendEvent('subject',info.subject);
     %sleepSec(.1);
     sendEvent(phaseToRun,'start');
-    %try
+    try
       sendEvent('startPhase.cmd','testing');
       spFeedbackStimulus;
-    %catch
-      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+    catch
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('stimulus.test','end');
-    %end
+    end
     sendEvent('stimulus.test','end');
     sendEvent(phaseToRun,'end');
     
@@ -172,6 +175,7 @@ while (ishandle(contFig))
     sendEvent('stimulus.test','end');
     sendEvent(phaseToRun,'end');
     
+   %---------------------------------------------------------------------------
    case 'contfeedback';
     sendEvent('subject',info.subject);
     %sleepSec(.1);
