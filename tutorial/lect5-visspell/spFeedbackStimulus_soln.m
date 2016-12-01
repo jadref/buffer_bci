@@ -60,6 +60,9 @@ for si=1:nSeq;
   sleepSec(interSeqDuration);
   sendEvent('stimulus.sequence','start');
   
+  % reset the newevents function state to only return matching events after this time
+  [devents,state]=buffer_newevents(buffhost,buffport,[],'classifier.prediction',[],0);
+
   if( verb>0 ) fprintf(1,'Rows'); end;
   % rows stimulus
   for ei=1:size(stimSeqRow,2);
@@ -91,17 +94,17 @@ for si=1:nSeq;
   % reset the cue and fixation point to indicate trial has finished  
   set(h(:),'color',bgColor);
   drawnow;
-  sleepSec(dataDuration-stimDuration);    
+  sleepSec(dataDuration-stimDuration);    % wait enough extra time for the last brain-response to finish
   sendEvent('stimulus.sequence','end');
 
   % combine the classifier predictions with the stimulus used
-  % wait for the signal processing pipeline to return the sequence of epoch predictions
+  % wait for the signal processing pipeline to return the set of predictions
   if( verb>0 ) fprintf(1,'Waiting for predictions\n'); end;
   [devents,state]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],500);
   if ( ~isempty(devents) ) 
     % correlate the stimulus sequence with the classifier predictions to identify the most likely letter
-    % N.B. assume last prediction is one for prev sequence  
-    corr = reshape(stimSeq(:,:,1:nFlash),[numel(symbols) nFlash])*devents(end).value(:); 
+    pred=[devents.value]; % get all the classifier predictions in order
+    corr = reshape(stimSeq(:,:,1:nFlash),[numel(symbols) nFlash])*pred(:); 
     [ans,predTgt] = max(corr); % predicted target is highest correlation
   
     % show the classifier prediction
