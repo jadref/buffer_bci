@@ -20,7 +20,7 @@ switch ( stimType )
     i=1;j=1;while(any(si==0)); si(mod(j-1,nSymbs)+1)=i; i=i+1; j=j+nSkip; if(si(mod(j-1,nSymbs)+1)>0) j=j+1; end; end 
 	 stimSeq=stimSeq(si,:);
 
-  case {'ssvep','ssvep_2phase'};
+  case {'ssvep','ssvep_2phase','ssep','ssep_2phase'};
 	 ssepPeriod=[1./ssepFreq/isi]'; % frequency -> duration in samples
 	 ssepPeriod=[ssepPeriod(:) ssepPhase(:)/2/pi*ssepPeriod(:)]; % radians -> offset in samples
 	 [stimSeq,stimTime,eventSeq,colors]=mkStimSeqSSEP(nSymbs,seqDuration,isi,ssepPeriod,1);
