@@ -1,11 +1,17 @@
 configureIM;
+if ( ~exist('contFeedbackTrialDuration') || isempty(contFeedbackTrialDuration) )
+  contFeedbackTrialDuration=trialDuration;
+end;
 
 cybathalon = struct('host','localhost','port',5555,'player',1,...
-                    'cmdlabels',{{'speed' 'rest' 'jump' 'kick'}},'cmddict',[1 99 2 3],...
-                    'socket',[]);
+                    'cmdlabels',{{'jump' 'slide' 'speed' 'rest'}},'cmddict',[2 3 1 99],...
+						  'cmdColors',[.6 0 .6;.6 .6 0;0 .5 0;.3 .3 .3]',...
+                    'socket',[],'socketaddress',[]);
 % open socket to the cybathalon game
 [cybathalon.socket]=javaObject('java.net.DatagramSocket'); % create a UDP socket
-cybathalon.socket.connect(javaObject('java.net.InetSocketAddress',cybathalon.host,cybathalon.port)); % connect to host/port
+cybathalon.socketaddress=javaObject('java.net.InetSocketAddress',cybathalon.host,cybathalon.port);
+cybathalon.socket.connect(cybathalon.socketaddress); % connect to host/port
+connectionWarned=0;
 
 % make the target sequence
 tgtSeq=mkStimSeqRand(nSymbs,nSeq);
@@ -27,8 +33,16 @@ if ( mod(nSymbs,2)==1 ) theta=theta+pi/2; end; % ensure left-right symetric by m
 theta=theta(1:end-1);
 stimPos=[cos(theta);sin(theta)];
 for hi=1:nSymbs; 
+  % set tgt to the color of that part of the game
   h(hi)=rectangle('curvature',[1 1],'position',[stimPos(:,hi)-stimRadius/2;stimRadius*[1;1]],...
-                  'facecolor',bgColor); 
+                  'facecolor',cybathalon.cmdColors(:,hi));
+
+  if ( ~isempty(symbCue) ) % cue-text
+	 htxt(hi)=text(stimPos(1,hi),stimPos(2,hi),{symbCue{hi} '->' cybathalon.cmdlabels{hi}},...
+						'HorizontalAlignment','center',...
+						'fontunits','pixel','fontsize',.05*wSize(4),...
+						'color',txtColor,'visible','on');
+  end  
 end;
 % add symbol for the center of the screen
 stimPos(:,nSymbs+1)=[0 0];
@@ -53,7 +67,7 @@ sendEvent('stimulus.testing','start');
 % initialize the state so don't miss classifier prediction events
 state=[]; 
 endTesting=false; dvs=[];
-for si=1:nSeq;
+for si=1:max(100000,nSeq);
 
   if ( ~ishandle(fig) || endTesting ) break; end;
   
@@ -77,41 +91,35 @@ for si=1:nSeq;
   drawnow;% expose; % N.B. needs a full drawnow for some reason
   ev=sendEvent('stimulus.target',find(tgtSeq(:,si)>0));
   sendEvent('stimulus.trial','start',ev.sample);
-  state=buffer('poll'); % Ensure we ignore any predictions before the trial start  
-
   
   %------------------------------- trial interval --------------
   % for the trial duration update the fixatation point in response to prediction events
   % initial fixation point position
   fixPos = stimPos(:,end);
-  state  = [];
+  state  = buffer('poll'); % Ensure we ignore any predictions before the trial start  
   preds  = []; % buffer of all predictions since trial start
-  dv     = zeros(nSymbs,1);
+  dv     = zeros(nSymbs,1); % current classifier decision value
   prob   = ones(nSymbs,1)./nSymbs; % start with equal prob over everything
   trlStartTime=getwTime();
   timetogo = contFeedbackTrialDuration;
-  nevt=0;
-  evtTime=trlStartTime+epochDuration; % N.B. already sent the 1st target event
   while (timetogo>0) % loop until the trail end
 	 curTime  = getwTime();
     timetogo = contFeedbackTrialDuration - (curTime-trlStartTime); % time left to run in this trial
     % wait for new prediction events to process *or* end of trial time
-    [events,state,nsamples,nevents] = buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],min([epochDuration,evtTime-curTime,timetogo])*1000);
+    [events,state,nsamples,nevents] = buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],timetogo*1000);
     if ( isempty(events) ) 
-		if ( timetogo>.1 ) fprintf('%d) no predictions!\n',nsamples); end;
+		if ( timetogo>.2 ) 
+         fprintf('%d) no predictions!\n',nsamples); 
+      end;
     else
-		[ans,si]=sort([events.sample],'ascend'); % proc in *temporal* order
       for ei=1:numel(events);
-        ev=events(si(ei));% event to process        
-		  %fprintf('pred-evt=%s\n',ev2str(ev));
-        dv=ev.value;
-        % accumulate all predictions
-        preds=[preds dv];
+        ev=events(ei);% event to process        
+        dv=ev.value;  % get the classifier prediction
+        preds=[preds dv]; % accumulate all predictions since trial start
         
-        % convert from dv to normalised probability
-        prob=exp((dv-max(dv))); prob=prob./sum(prob); % robust soft-max prob computation
         if ( verb>=0 ) 
-			 fprintf('%d) dv:[%s]\tPr:[%s]\n',ev.sample,sprintf('%5.4f ',pred),sprintf('%5.4f ',prob));
+           prob=exp((dv-max(dv))); prob=prob./sum(prob); % robust soft-max prob computation
+           fprintf('%d) dv:[%s]\tPr:[%s]\n',ev.sample,sprintf('%5.4f ',dv),sprintf('%5.4f ',prob));
         end;
       end
 
@@ -151,7 +159,14 @@ for si=1:nSeq;
      drawnow;
      sendEvent('stimulus.predTgt',predTgt);
      % send the command to the game server
-     cybathalon.socket.send(uint8(10*cybathalon.player+cybathalon.cmddict(predTgt)),1);
+	 try;
+		cybathalon.socket.send(javaObject('java.net.DatagramPacket',uint8([10*cybathalon.player+cybathalon.cmddict(predTgt) 0]),1));
+	 catch;
+		if ( connectionWarned<10 )
+		  connectionWarned=connectionWarned+1;
+		  warning('Error sending to the Cybathalon game.  Is it running?\n');
+		end
+	 end
 
   end % if classifier prediction
   sleepSec(feedbackDuration);
@@ -166,8 +181,3 @@ for si=1:nSeq;
 end % loop over sequences in the experiment
 % end training marker
 sendEvent('stimulus.testing','end');
-
-if ( ishandle(fig) ) % thanks message
-set(txthdl,'string',{'That ends the testing phase.','Thanks for your patience'}, 'visible', 'on', 'color',[0 1 0]);
-pause(3);
-end
