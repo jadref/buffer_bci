@@ -62,7 +62,6 @@ waitforbuttonpress;
 set(txthdl,'visible', 'off'); drawnow;
 
 % play the stimulus
-set(h(:),'facecolor',bgColor);
 sendEvent('stimulus.testing','start');
 % initialize the state so don't miss classifier prediction events
 state=[]; 
@@ -73,24 +72,12 @@ for si=1:max(100000,nSeq);
   
   sleepSec(intertrialDuration);
   % show the screen to alert the subject to trial start
-  set(h(:),'faceColor',bgColor);
   set(h(end),'facecolor',fixColor); % red fixation indicates trial about to start/baseline
   drawnow;% expose; % N.B. needs a full drawnow for some reason
   sendEvent('stimulus.baseline','start');
   sleepSec(baselineDuration);
   sendEvent('stimulus.baseline','end');
-
-  % show the target
-  fprintf('%d) tgt=%d : ',si,find(tgtSeq(:,si)>0));
-  set(h(tgtSeq(:,si)>0),'facecolor',tgtColor);
-  set(h(tgtSeq(:,si)<=0),'facecolor',bgColor);
-  if ( ~isempty(symbCue) )
-	 set(txthdl,'string',sprintf('%s ',symbCue{tgtSeq(:,si)>0}),'color',[.1 .1 .1],'visible','on');
-  end
-  set(h(end),'facecolor',tgtColor); % green fixation indicates trial running
-  drawnow;% expose; % N.B. needs a full drawnow for some reason
-  ev=sendEvent('stimulus.target',find(tgtSeq(:,si)>0));
-  sendEvent('stimulus.trial','start',ev.sample);
+  sendEvent('stimulus.trial','start');
   
   %------------------------------- trial interval --------------
   % for the trial duration update the fixatation point in response to prediction events
@@ -130,11 +117,9 @@ for si=1:max(100000,nSeq);
     prob=exp((dv-max(dv))); prob=prob./sum(prob); % robust soft-max prob computation
 
     % feedback information... simply move in direction detected by the BCI
-	 if ( numel(prob)>=size(stimPos,2)-1 ) % per-target decomposition
-      if(numel(prob)>size(stimPos,2)) prob=[prob(1:size(stimPos,2)-1);sum(prob(size(stimPos,2):end))];end
-		dx = stimPos(:,1:numel(prob))*prob(:); % change in position is weighted by class probs
-	 end
-    fixPos   =dx; % new fix pos is weighted by classifier output
+    if(numel(prob)>size(stimPos,2)) prob=[prob(1:size(stimPos,2)-1);sum(prob(size(stimPos,2):end))];end
+	dx      = stimPos(:,1:numel(prob))*prob(:); % change in position is weighted by class probs
+    fixPos  = dx; % new fix pos is weighted by classifier output
     %move the fixation to reflect feedback
     cursorPos=get(h(end),'position'); cursorPos=cursorPos(:);
 	 set(h(end),'position',[fixPos-.5*cursorPos(3:4);cursorPos(3:4)]);
@@ -142,9 +127,9 @@ for si=1:max(100000,nSeq);
   end % while time to go
 
 						  %------------------------------- feedback --------------
+	predTgt=[];
   if ( isempty(preds) ) 
-    fprintf(1,'Error! no predictions after %gs, continuing (%d samp, %d evt)\n',trlEndTime-trlStartTime,state.nSamples,state.nEvents);
-    set(h(:),'facecolor',bgColor);
+    fprintf(1,'Error! no predictions after %gs, continuing (%d samp, %d evt)\n',curTime-trlStartTime,state.nSamples,state.nEvents);
     set(h(end),'facecolor',fbColor); % fix turns blue to show now pred recieved
     drawnow;
   
@@ -154,7 +139,6 @@ for si=1:max(100000,nSeq);
      prob=exp((dv-max(dv))); prob=prob./sum(prob); % robust soft-max prob computation
     
      [ans,predTgt]=max(dv); % prediction is max classifier output
-     set(h(:),'facecolor',bgColor);
      set(h(predTgt),'facecolor',fbColor);
      drawnow;
      sendEvent('stimulus.predTgt',predTgt);
@@ -172,7 +156,10 @@ for si=1:max(100000,nSeq);
   sleepSec(feedbackDuration);
   
   % reset the cue and fixation point to indicate trial has finished  
-  set(h(:),'facecolor',bgColor);
+  if ( ~isempty(predTgt) ) 
+	set(h(predTgt),'facecolor',cybathalon.cmdColors(:,predTgt)); % reset the feedback
+  end
+  set(h(end),'facecolor',bgColor);
   if ( ~isempty(symbCue) ) set(txthdl,'visible','off'); end
   % also reset the position of the fixation point
   drawnow;
