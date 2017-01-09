@@ -249,6 +249,7 @@ class Event:
             self.duration = duration
 
     def __str__(self):
+        
         return '(t:%s v:%s s:%i o:%i d:%i)\n'%(str(self.type),str(self.value), self.sample, self.offset, self.duration)
 
     def deserialize(self, buf):
@@ -271,13 +272,13 @@ class Event:
         raw_type = buf[32:32+st]
         raw_value = buf[32+st:32+st+sv]
 
-        if type_type == 0:
-            self.type = raw_type
+        if type_type == 0: # str type, decode to string value
+            self.type = raw_type.decode()
         else:
             self.type = rawtoarray((type_numel), type_type, raw_type)
 
-        if value_type == 0:
-            self.value = raw_value
+        if value_type == 0:#str type, decode to string value
+            self.value = raw_value.decode()
         else:
             self.value = rawtoarray((value_numel), value_type, raw_value)
 

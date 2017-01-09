@@ -2,6 +2,7 @@ import numpy
 import scipy.stats
 import sklearn.grid_search
 import sklearn.cross_validation
+import collections
 
 def fit(data, events, classifier, mapping=dict(), params = None, folds = 5, shuffle=True, reducer=None):
     '''Calls the fit function on the classifier using data and events.
@@ -76,14 +77,14 @@ def fit(data, events, classifier, mapping=dict(), params = None, folds = 5, shuf
     
     if params is not None:
         if isinstance(params,dict):
-            if any(map(lambda x: not isinstance(x,str), params.keys())):
+            if any([not isinstance(x,str) for x in list(params.keys())]):
                 raise Exception("param keys should be strings")
-            if any(map(lambda x: not isinstance(x,list), params.values())):
+            if any([not isinstance(x,list) for x in list(params.values())]):
                 raise Exception("param values should be lists")
         elif isinstance(params,list):
-            if any(map(lambda y: any(map(lambda x: not isinstance(x,str), y.keys())),params)):
+            if any([any([not isinstance(x,str) for x in list(y.keys())]) for y in params]):
                 raise Exception("all dicts in param keys should be strings")
-            if any(map(lambda y: any(map(lambda x: not isinstance(x,list), y.values())),params)):
+            if any([any([not isinstance(x,list) for x in list(y.values())]) for y in params]):
                 raise Exception("all dicts in param values should be lists")
         else:
             raise Exception("param should be a dict or list of dicts")
@@ -184,7 +185,7 @@ def predict(data, classifier, mapping = None, reducerdata=None, reducerpred=None
             pred = reduceArray(pred,data,numpy.median)            
         elif reducerpred == "mode":
             pred = reduceArray(pred,data,lambda x: scipy.stats.mode(x)[0][0])
-        elif callable(reducerpred):
+        elif isinstance(reducerpred, collections.Callable):
             pred = reduceArray(pred,data,reducerpred)
         else:
             raise Exception("Unkown reducer.")
@@ -192,13 +193,13 @@ def predict(data, classifier, mapping = None, reducerdata=None, reducerpred=None
     if mapping is None:
         return pred        
     elif isinstance(mapping,dict):
-        if not all(map(lambda x: isinstance(x,numpy.ndarray), data)):
+        if not all([isinstance(x,numpy.ndarray) for x in data]):
             raise Exception("data contains non numpy.array elements.")
         
-        if not all(map(lambda x: x.shape[1] == data[0].shape[1], data)):
+        if not all([x.shape[1] == data[0].shape[1] for x in data]):
             raise Exception("Inconsistent number of channels in data!")
 
-        if not all(map(lambda x: x.shape[0] == data[0].shape[0], data)):
+        if not all([x.shape[0] == data[0].shape[0] for x in data]):
             raise Exception("Inconsistent number of samples in data!") 
                             
         return [mapping[int(p)] for p in pred ]
@@ -276,7 +277,7 @@ def predict_proba(data, classifier, reducerdata=None, reducerpred=None):
             pred = reduceArray(pred,data,numpy.median)            
         elif reducerpred == "mode":
             pred = reduceArray(pred,data,lambda x: scipy.stats.mode(x)[0][0])
-        elif callable(reducerpred):
+        elif isinstance(reducerpred, collections.Callable):
             pred = reduceArray(pred,data,reducerpred)
         else:
             raise Exception("Unkown reducer.")
@@ -315,18 +316,18 @@ def createdata(data, reducer=None):
         if not isinstance(data, list):
             raise Exception("data is not a list.")
             
-        if not all(map(lambda x: isinstance(x,numpy.ndarray), data)):
+        if not all([isinstance(x,numpy.ndarray) for x in data]):
             raise Exception("data contains non numpy.array elements.")
         
-        if not all(map(lambda x: x.shape[1] == data[0].shape[1], data)):
+        if not all([x.shape[1] == data[0].shape[1] for x in data]):
             raise Exception("Inconsistent number of channels in data!")
 
-        if not all(map(lambda x: x.shape[0] == data[0].shape[0], data)):
+        if not all([x.shape[0] == data[0].shape[0] for x in data]):
             raise Exception("Inconsistent number of samples in data!")
         
         if reducer is not None:
             if reducer == "concat":
-                X = numpy.concatenate(map(lambda x: numpy.reshape(x, (1,x.size)), data))
+                X = numpy.concatenate([numpy.reshape(x, (1,x.size)) for x in data])
             elif reducer == "mean":
                 X = reduceArray(numpy.concatenate(data),data,numpy.mean)
             elif reducer == "max":
@@ -337,7 +338,7 @@ def createdata(data, reducer=None):
                 X = reduceArray(numpy.concatenate(data),data,numpy.median)            
             elif reducer == "mode":
                 X = reduceArray(numpy.concatenate(data),data,lambda x: scipy.stats.mode(x)[0][0])
-            elif callable(reducer):
+            elif isinstance(reducer, collections.Callable):
                 X = reduceArray(numpy.concatenate(data),data,reducer)
             else:
                 raise Exception("Unkown reducer.")       
@@ -391,18 +392,18 @@ def createclasses(events, nSample = 1, mapping = dict()):
     if not isinstance(mapping,dict):
         raise Exception("mapping should be a dict.")
         
-    if len(mapping.items()) > 0:            
+    if len(list(mapping.items())) > 0:            
         
-        if any(map(lambda x: not isinstance(x,tuple), mapping.keys())):
+        if any([not isinstance(x,tuple) for x in list(mapping.keys())]):
             raise Exception("keys in mapping contains non tuples")
         
-        if any(map(lambda x: len(x) != 2, mapping.keys())):
+        if any([len(x) != 2 for x in list(mapping.keys())]):
             raise Exception("keys in mapping contains non lenght 2 tuples")
         
-        if any(map(lambda x: not (isinstance(x[0],str) and isinstance(x[1],str)), mapping.keys())):
+        if any([not (isinstance(x[0],str) and isinstance(x[1],str)) for x in list(mapping.keys())]):
             raise Exception("tuples in keys contains non strings")
             
-        if any(map(lambda x: not isinstance(x,int), mapping.values())):
+        if any([not isinstance(x,int) for x in list(mapping.values())]):
             raise Exception("values in mapping contains non integers")
         
         j = 0
@@ -454,7 +455,7 @@ def reduceArray(pred, data, reducerfunc):
     >>> data = preproc.rebuilddata(X,data)
     '''   
     
-    if pred.shape[0] != sum(map(lambda x: x.shape[0], data)):
+    if pred.shape[0] != sum([x.shape[0] for x in data]):
         raise Exception("Different number of samples in pred and data!")
     
     out = numpy.zeros((len(data),pred.shape[1]))

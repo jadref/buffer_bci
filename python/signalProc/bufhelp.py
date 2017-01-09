@@ -10,7 +10,7 @@ MAXEVENTHISTORY=50
 
 def askaddress():
     port=1972
-    adress = input("Buffer adress (default is \"localhost:1972\"):")    
+    adress = eval(input("Buffer adress (default is \"localhost:1972\"):"))    
     if adress == "":
         adress = "localhost"
     else:
@@ -19,9 +19,9 @@ def askaddress():
             adress = split[0]
             port = int(split(1))
         except ValueError:
-            print("Invalid port formatting " + split[1])
+            print(("Invalid port formatting " + split[1]))
         except IndexError:
-            print("Invalid adress formatting " + adress)
+            print(("Invalid adress formatting " + adress))
     return (address,port)
     
 def connect(address="localhost", port=1972, header=True, verbose = True):
@@ -34,7 +34,7 @@ def connect(address="localhost", port=1972, header=True, verbose = True):
         try:
             ftc.connect(address, port)
         except socket.error:
-            print("Failed to connect at " + address + ":" + str(port))
+            print(("Failed to connect at " + address + ":" + str(port)))
             time.sleep(1)
                    
     if header:
@@ -161,7 +161,7 @@ def update(verbose = True):
     nEvents  = nevent
     lastupdate = time.time()
     if verbose:
-        print("Updated. nSamples = " + str(nSamples) + " at lastupdate " + str(lastupdate))
+        print(("Updated. nSamples = " + str(nSamples) + " at lastupdate " + str(lastupdate)))
     return (nsamp,nevent)
 
 def waitforevent(trigger, timeout=1000,verbose = True):
@@ -180,7 +180,7 @@ def waitforevent(trigger, timeout=1000,verbose = True):
     elapsed = time.time()*1000 - start*1000
     
     if verbose:
-        print("Waiting for event " + str(trigger) + " with timeout " + str(timeout))
+        print(("Waiting for event " + str(trigger) + " with timeout " + str(timeout)))
     
     while elapsed < timeout:
         nSamples, nEvents2 = ftc.wait(-1,nEvents, timeout - elapsed)     
@@ -189,9 +189,11 @@ def waitforevent(trigger, timeout=1000,verbose = True):
             if nEvents<nEvents2-MAXEVENTHISTORY:
                 print("Warning: long delay means missed events")
                 nEvents = nEvents2-MAXEVENTHISTORY
-            
-            e = func(ftc.getEvents((nEvents, nEvents2 -1)))
-                
+            evts=ftc.getEvents((nEvents, nEvents2-1))
+            print ( "Processing events:" + str(evts[0]))
+            e = func(evts)
+            print(str(len(e))+" events left")
+    
             if len(e) == 1:
                 return e[0]
             elif len(e) > 1:
@@ -343,7 +345,7 @@ def gatherdata(trigger, time, stoptrigger, milliseconds=False, verbose = True):
                 data.append(ftc.getData((event.sample, endSample -1)))
                 gather.remove(point)            
                 if verbose:
-                    print("Gathering " + str(event.type) + " " + str(event.value) + " data from " + str(event.sample) + " to " +str(endSample))
+                    print(("Gathering " + str(event.type) + " " + str(event.value) + " data from " + str(event.sample) + " to " +str(endSample)))
                 
         if not stillgathering and not gather:
             break

@@ -1,6 +1,6 @@
-#!/usr/bin/python
-import sys
-sys.path.append("../../dataAcq/buffer/python")
+#!/usr/bin/env python3
+import sys,os
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),"../../dataAcq/buffer/python"))
 sys.path.append("../signalProc")
 import preproc
 import bufhelp
@@ -14,8 +14,8 @@ run = True
 
 print ("Waiting for startPhase.cmd event.")
 while run:
-    e = bufhelp.waitforevent("startPhase.cmd",1000, False)
-
+    e = bufhelp.waitforevent("startPhase.cmd",1000, True)
+    print("Got startPhase event: %s"%e)
     if e is not None:
 
         if e.value == "calibration":
