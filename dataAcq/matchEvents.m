@@ -18,11 +18,11 @@ mi=true(size(ev));
 if ( isequal(mtype,'*') )
 else
 										  % extract all the type info
-  if ( ischar(ev(1).type) )
-	 type={ev.type}; type=type(:);
-  else
-	 try;   type  =cat(1,ev.type); % single type, matrix
-	 catch; type ={ev.type}; type=type(:); % mixed types => cell-array
+  type ={ev.type}; type=type(:);
+  if ( isnumeric(mtype) && isnumeric(type{1}) ) % try to make single type matrix for speed..
+	 try;   
+       type =cat(1,type{:}); % single type, matrix
+	 catch; 
 	 end
   end
   if ( isnumeric(mtype) && isnumeric(type) ) % fast path
@@ -51,11 +51,11 @@ end
 if ( isequal(mval,'*') )
 else
 														  % extract the values
-  if ( ischar(ev(1).value) )
-	 value={ev.value}; value=value(:);
-  else
-	 try;   value =cat(1,ev.value); % single type, matrix
-	 catch; value ={ev.value}; value=value(:); % mixed types => cell-array
+  value ={ev.value}; value=value(:);
+  if ( isnumeric(mval) && isnumeric(value{1}) ) % try to make single type matrix for speed..
+	 try;   
+       value =cat(1,value{:}); % single type, matrix
+	 catch; 
 	 end
   end
   if ( isnumeric(mval) && isnumeric(value) )
