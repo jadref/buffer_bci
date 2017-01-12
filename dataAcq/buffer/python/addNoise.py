@@ -32,21 +32,21 @@ if len(sys.argv)>2:
 	try:
 		portIn = int(sys.argv[2])
 	except:
-		print 'Error: second argument (%s) must be a valid (=integer) port number'%sys.argv[2]
+		print('Error: second argument (%s) must be a valid (=integer) port number'%sys.argv[2])
 		sys.exit(1)
 if len(sys.argv)>3:
 	try:
 		portOut = int(sys.argv[3])
 	except:
-		print 'Error: second argument (%s) must be a valid (=integer) port number'%sys.argv[2]
+		print('Error: second argument (%s) must be a valid (=integer) port number'%sys.argv[2])
 		sys.exit(1)		
 	
 ftIn  = FieldTrip.Client()		
 ftOut = FieldTrip.Client()		
 		
-print 'Trying to connect to buffer on %s:%i ...'%(hostname,portIn)
+print('Trying to connect to buffer on %s:%i ...'%(hostname,portIn))
 ftIn.connect(hostname, portIn)
-print 'Trying to connect to buffer on %s:%i ...'%(hostname,portOut)
+print('Trying to connect to buffer on %s:%i ...'%(hostname,portOut))
 ftOut.connect(hostname, portOut)
 
 noiseLevel = 0.1
@@ -54,7 +54,7 @@ noiseLevel = 0.1
 while 1:
 	H = ftIn.getHeader()
 	if H is None:
-		print 'Header could not be read.'
+		print('Header could not be read.')
 		time.sleep(0.5)
 		continue
 		
@@ -68,13 +68,13 @@ while 1:
 		newSmp, newEvt = ftIn.wait(numSmp, numEvt, 500)
 		
 		if newSmp < numSmp:
-			print 'Number of samples decreased - re-reading header.'
+			print('Number of samples decreased - re-reading header.')
 			break
 		
 		if newEvt > numEvt:
 			E = ftIn.getEvents([numEvt, newEvt-1])
 			for e in E:
-				print e
+				print(e)
 				if e.type == 'noise':
 					try:
 						noiseLevel = float(e.value)
@@ -93,7 +93,7 @@ while 1:
 		
 		ftOut.putData(Dn)
 		
-		print 'Send out samples %i - %i'%(numSmp,newSmp-1)
+		print('Send out samples %i - %i'%(numSmp,newSmp-1))
 		
 		numSmp = newSmp
 

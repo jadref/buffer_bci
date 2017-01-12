@@ -1,7 +1,8 @@
+#!/usr/bin/env python3
 bufferpath = "../../python/signalProc"
 
 import os, sys, random, math, time, socket, struct
-sys.path.append(os.path.dirname(__file__)+bufferpath)
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),bufferpath))
 import bufhelp
 
 # Configuration of buffer
@@ -25,13 +26,13 @@ THRESHOLDS= [.1,        .1,       .1,     .1      ]
 
 # Sends a command to BrainRacer.
 def send_command(command):
-	global br_socket
-	print("Send cmd " + str(command) )
-	cmd = (br_player * 10) + command
-	data = struct.pack('B', cmd)
-	
-	br_socket.sendto(data, (br_hostname, br_port))
-	
+        global br_socket
+        print("Send cmd " + str(command) )
+        cmd = (br_player * 10) + command
+        data = struct.pack('B', cmd)
+        
+        br_socket.sendto(data, (br_hostname, br_port))
+        
 #Connect to BrainRacers
 br_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM);
 
@@ -56,30 +57,30 @@ def max2(numbers):
 
 # Receive events from the buffer and process them.
 def processBufferEvents():
-	global running
-	events = bufhelp.buffer_newevents()
+        global running
+        events = bufhelp.buffer_newevents()
 
-	for evt in events:
-		print(str(evt.sample) + ": " + str(evt))
+        for evt in events:
+                print(str(evt.sample) + ": " + str(evt))
 
-		if evt.type == 'classifier.prediction':
-			pred = evt.value
+                if evt.type == 'classifier.prediction':
+                        pred = evt.value
                         (m12,i12) = max2(pred) # find max value
-			if m12[0]-m12[1] > THRESHOLDS[i12[0]] : send_command(CMDS[i12[0]]); # if above threshold send
+                        if m12[0]-m12[1] > THRESHOLDS[i12[0]] : send_command(CMDS[i12[0]]); # if above threshold send
 
-		elif evt.type == 'keyboard':
-	                if   evt.value == 'q' :  send_command(CMD_SPEED)
+                elif evt.type == 'keyboard':
+                        if   evt.value == 'q' :  send_command(CMD_SPEED)
                         elif evt.value == 'w' :  send_command(CMD_JUMP)
                         elif evt.value == 'e' :  send_command(CMD_ROLL)
                         elif evt.value == 'esc': running=false
 
-		elif evt.type == 'startPhase.cmd':
-			if evt.value == 'quit':
-				running = False
+                elif evt.type == 'startPhase.cmd':
+                        if evt.value == 'quit':
+                                running = False
 
 
-# Receive events until we stop.	
+# Receive events until we stop. 
 running = True
 while running:
-	processBufferEvents()
+        processBufferEvents()
 

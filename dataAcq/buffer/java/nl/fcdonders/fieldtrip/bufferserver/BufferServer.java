@@ -47,22 +47,22 @@ public class BufferServer implements Runnable {
 			 } catch ( NumberFormatException e ){ // not a number, assume it's the save location
 				  buffer = new BufferServer(serverPort, dataBufSize, eventBufSize, args[0]);
 			 }
-		} else if (args.length == 2) {
+		} else if (args.length == 2) {// portNumber, samp/EventsBuffSize
 			buffer = new BufferServer(Integer.parseInt(args[0]),
 					Integer.parseInt(args[1]));
-		} else if (args.length == 3) {
+		} else if (args.length == 3) {// portNumber, sampBuffSize, eventBuffSize, 
 			buffer = new BufferServer(Integer.parseInt(args[0]),
 					Integer.parseInt(args[1]), Integer.parseInt(args[2]));
-		} else if (args.length == 4 ) { // 4rd arg is save location
+		} else if (args.length == 4 ) {// portNumber, sampBuffSize, eventBuffSize, saveLocation
 			 buffer = new BufferServer(Integer.parseInt(args[0]),
 												Integer.parseInt(args[1]), Integer.parseInt(args[2]),
 												args[3]);
-		} else if (args.length == 5 ) { // 5th arg is save location
+		} else if (args.length == 5 ) {// portNumber, sampBuffSize, eventBuffSize, logLevel, saveLocation
 			 buffer = new BufferServer(Integer.parseInt(args[0]),
 												Integer.parseInt(args[1]), Integer.parseInt(args[2]),
 												args[3]);
 			 logging = Integer.parseInt(args[4]);
-		} else {
+		} else { // fall back on no-arguments & default config
 			 buffer = new BufferServer(serverPort, dataBufSize, eventBufSize);
 		}
       // Now run the thread
@@ -84,7 +84,7 @@ public class BufferServer implements Runnable {
 
 	 public static void usage(){
 		  System.err.println("java -jar BufferServer.jar PORT sampLen eventLen SaveLocation verbosityLevel");
-		  System.err.println("Matlab: buffer=nl.fcdonders.fieldtrip.bufferserver.BufferServer(PORT,samplen,eventlen,savePath); buffer.start();");
+		  System.err.println("Matlab/Library: buffer=nl.fcdonders.fieldtrip.bufferserver.BufferServer(PORT,samplen,eventlen,savePath); buffer.start();");
 	 }
 
 
@@ -123,7 +123,7 @@ public class BufferServer implements Runnable {
 	 */
 	public BufferServer(final int portNumber, final int nSamplesEvents) {
 		this.portNumber = portNumber;
-		dataStore = new RingDataStore(nSamplesEvents);
+		dataStore = new RingDataStore(nSamplesEvents,nSamplesEvents);
 		//setName("Fieldtrip Buffer Server");
 	}
 

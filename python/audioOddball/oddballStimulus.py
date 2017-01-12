@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 ## CONFIGURABLE VARIABLES
 # Path of the folder containing the buffer client
 bufferpath = "../../dataAcq/buffer/python"
@@ -41,9 +41,9 @@ from pygame.locals import *
 from random import shuffle, randint, random
 from time import sleep, time
 import os
-sys.path.append(os.path.dirname(__file__) + bufferpath)
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),bufferpath))
 import FieldTrip
-sys.path.append(os.path.dirname(__file__) + sigProcPath)
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),sigProcPath))
 import stimseq
 
 ## HELPER FUNCTIONS
@@ -56,12 +56,12 @@ def updateframe(string, big=False, center=False):
 
     # render the text into a back-buffer
     if big:
-        text = map(lambda x: basicBigFont.render(x, True, WHITE, BLACK), string)
+        text = [basicBigFont.render(x, True, WHITE, BLACK) for x in string]
     else:
-        text = map(lambda x: basicFont.render(x, True, WHITE, BLACK), string)
+        text = [basicFont.render(x, True, WHITE, BLACK) for x in string]
     # get the size to position centrally on the screen
-    rects = map(lambda x: x.get_rect(), text)
-    h = sum(map(lambda x: x.h, rects)) - rects[0].h
+    rects = [x.get_rect() for x in text]
+    h = sum([x.h for x in rects]) - rects[0].h
     offset = h/2
 
     # move the text to the center and draw onto the screen
@@ -129,7 +129,7 @@ def runTrainingEpoch(nEpoch,seqDur,isi,tti,distID,tgtID):
         if ttg>0 : 
             sleep(ttg) 
         else: 
-            print(str(time()-t0) + ") Lagging behind! tn=" + str(st/1000) + " ttg=" + str(ttg));
+            print((str(time()-t0) + ") Lagging behind! tn=" + str(st/1000) + " ttg=" + str(ttg)));
         # send events as close in time as possible to when the actual stimulus starts
         sendEvent("stimulus.target", tgt)   # target/non-target
         sendEvent("stimulus.play", names[audioID]) # which stimulus
@@ -192,7 +192,7 @@ def runTestingEpoch(nEpoch,seqDur,isi,tti,audioIDs,tgtIdx=None):
             #else:
             #    sleep(ttg) 
         else: 
-            print(str(time()-t0) + ") Lagging behind! tn=" + str(st/1000) + " ttg=" + str(ttg));
+            print((str(time()-t0) + ") Lagging behind! tn=" + str(st/1000) + " ttg=" + str(ttg)));
 
         # send events as close in time as possible to when the actual stimulus starts
         audioID = audioIDs[tgtIdx if tgt else 0]
@@ -214,7 +214,7 @@ def getFeedback(prompt,maxLowered,trueLowered):
         key[i] = waitForKey()
         while not (key[i] in numKeyDict or key[i]==pygame.K_ESCAPE):
             key[i] = waitForKey()
-        print("Got key: " + str(key[i]) + "\n")                
+        print(("Got key: " + str(key[i]) + "\n"))                
         if key[i]==pygame.K_ESCAPE:
             endSeq=True # mark that we should stop
             return None # abort
@@ -285,7 +285,7 @@ def doTesting():
   sendEvent('stimulus.testing','start')
   # run with given parameters, and max audio difference
   runTestingEpoch(0,testing_sequence_duration,inter_stimulus_interval,target_to_target_interval,
-                  range(nrStimuli))
+                  list(range(nrStimuli)))
 
   updateframe("Training Finished")
   sleep(2)
@@ -320,7 +320,7 @@ ftc = FieldTrip.Client()
 # Wait until the buffer connects correctly and returns a valid header
 hdr = None;
 while hdr is None :
-    print('Trying to connect to buffer on %s:%i ...'%(hostname,port))
+    print(('Trying to connect to buffer on %s:%i ...'%(hostname,port)))
     try:
         ftc.connect(hostname, port)
         print('\nConnected - trying to read header...')
@@ -333,7 +333,7 @@ while hdr is None :
         sleep(1)
     else:
         print(hdr)
-        print(hdr.labels)
+        print((hdr.labels))
   
 fSample = hdr.fSample
 
@@ -361,7 +361,7 @@ pygame.display.set_caption('BCI Audio OddBall Experiment')
 # Pre-Loading Music data
 names     = ['500', '505', '510', '515', '520', '525', '530', '535', '540', '545', '550']
 nrStimuli = len(names)
-sounds = map(lambda i: pygame.mixer.Sound("stimuli/" + names[i] + ".wav"), range(0,nrStimuli))
+sounds = [pygame.mixer.Sound("stimuli/" + names[i] + ".wav") for i in range(0,nrStimuli)]
 
 # set up the colors
 BLACK = (0, 0, 0)

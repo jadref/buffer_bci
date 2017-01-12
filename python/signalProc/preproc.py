@@ -1,6 +1,8 @@
 import scipy.signal 
 import numpy
 from math import ceil
+import collections
+from functools import reduce
 
 def detrend(data, dim=1, type="linear"):
     '''Removes trends from the data.
@@ -137,7 +139,7 @@ def spatialfilter(data, type="car",whitencutoff=1e-15):
         
     elif type=="whiten":
         
-        if not isinstance(whitencutoff, (int,float,long)):
+        if not isinstance(whitencutoff, (int,float)):
             raise Exception("whitencutoff is not a number.") 
             
         C = numpy.cov(X)
@@ -358,9 +360,9 @@ def spectralfilteronly(data, band, fSample, dim=1):
     if isinstance(band, (tuple,list)):
         if not (len(band)==2 or len(band)==4):
             raise Exception("band is wrong length tuple/list")
-    elif callable(band):
+    elif isinstance(band, collections.Callable):
         try:
-            if not isinstance(band(4.0), (int,float,long)):
+            if not isinstance(band(4.0), (int,float)):
                 raise Exception("band does not return a number")
         except:
             raise Exception("band does not have accept floats as an argument")
@@ -451,7 +453,7 @@ def timebandfiler(data, timeband, milliseconds=False, fSample=None):
     if len(timeband) != 2:
         raise Exception("Timeband is not size 2.")
         
-    if not all(map(lambda x: isinstance(x,(int,long,float)), timeband)):
+    if not all([isinstance(x,(int,float)) for x in timeband]):
         raise Exception("timeband contains non-number elements.")
         
     if timeband[0] > timeband[1]:
@@ -460,7 +462,7 @@ def timebandfiler(data, timeband, milliseconds=False, fSample=None):
     if not isinstance(data, list):
         raise Exception("Data is not a list.")
         
-    if not all(map(lambda x: isinstance(x,numpy.ndarray), data)):
+    if not all([isinstance(x,numpy.ndarray) for x in data]):
         raise Exception("Data contains non numpy.array elements.")
 
     if not isinstance(milliseconds,bool):
@@ -512,10 +514,10 @@ def concatdata(data):
     if not isinstance(data, list):
         raise Exception("Data is not a list.")
         
-    if not all(map(lambda x: isinstance(x,numpy.ndarray), data)):
+    if not all([isinstance(x,numpy.ndarray) for x in data]):
         raise Exception("Data contains non numpy.array elements.")
     
-    if not all(map(lambda x: x.shape[1] == data[0].shape[1], data)):
+    if not all([x.shape[1] == data[0].shape[1] for x in data]):
         raise Exception("Inconsistent number of channels in data!")
         
     return numpy.concatenate(data)
@@ -551,10 +553,10 @@ def badchannelremoval(data, badchannels = None, threshold = (-numpy.inf,3.1)):
     if not isinstance(data, list):
         raise Exception("Data is not a list.")
         
-    if not all(map(lambda x: isinstance(x,numpy.ndarray), data)):
+    if not all([isinstance(x,numpy.ndarray) for x in data]):
         raise Exception("Data contains non numpy.array elements.")
     
-    if not all(map(lambda x: x.shape[1] == data[0].shape[1], data)):
+    if not all([x.shape[1] == data[0].shape[1] for x in data]):
         raise Exception("Inconsistent number of channels in data!")
     
     if badchannels is not None:
@@ -671,13 +673,13 @@ def outlierdetection(X, dim=0, threshold=(None,3), maxIter=3, feat="var"):
     elif feat =="mu":
         feat = numpy.mean(X,dim)
     elif isinstance(feat,numpy.array):
-        if not (all(map(lambda x: isinstance(x,(int , long , float)), feat)) and feat.shape == X.shape):
+        if not (all([isinstance(x,(int , float)) for x in feat]) and feat.shape == X.shape):
             raise Exception("Unrecognised feature type.")
     else:        
         raise Exception("Unrecognised feature type.")
     
     outliers = []
-    inliers = numpy.array(range(0,max(feat.shape)))    
+    inliers = numpy.array(list(range(0,max(feat.shape))))    
 
     mufeat = numpy.zeros(maxIter)
     stdfeat = numpy.zeros(maxIter)
@@ -728,7 +730,7 @@ def rebuilddata(X,data):
     >>> data = preproc.rebuilddata(X,data)
     '''   
     
-    if X.shape[0] != sum(map(lambda x: x.shape[0], data)):
+    if X.shape[0] != sum([x.shape[0] for x in data]):
         raise Exception("Different number of samples in X and data!")
     
     data = clonelist(data)    

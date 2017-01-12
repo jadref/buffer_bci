@@ -16,7 +16,15 @@ configureIM;
 			  '3) Train Classifier'    'trainersp';
 			  '4) Epoch Feedback'      'epochfeedback';
 			  '5) Continuous Feedback' 'contfeedback';
-			  '6) NeuroFeedback'       'neurofeedback';
+           '6) Center-out Feedback Training' 'centerout';
+			  '7) NeuroFeedback'       'neurofeedback'
+           '' '';
+			  'p) Practice - runway'    'practice_runway'; 
+			  'r) Calibrate - runway'   'calibrate_runway'; 
+			  'f) Continuous Feedback - runway'   'contfeedback_runway';
+			  'w) Cybathalon warmup->Control'    'cybathalon_warmup';
+			  'c) Cybathalon Control'   'cybathalon';
+			  'e) Cybathalon Control (contFeedback)'   'cybathalon_cont';
            '' '';
            'K) Keyboard Control'    'keyboardcontrol';
            'E) EMG Control'         'emgcontrol';
@@ -157,7 +165,27 @@ while (ishandle(contFig))
     end
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');
-   
+
+    %---------------------------------------------------------------------------
+   case {'cybathalon_cont'};
+    sendEvent('subject',subject);
+    %sleepSec(.1);
+    sendEvent(phaseToRun,'start');
+    try
+       sendEvent('startPhase.cmd','contfeedback');
+       % run the main cybathalon control
+       imContFeedbackCybathalon;
+    catch
+       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	 if ( ~isempty(le.stack) )
+	  	   for i=1:numel(le.stack);
+	  	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	   end;
+	  	 end
+    end
+    sendEvent('test','end');
+    sendEvent(phaseToRun,'end');
+        
    %---------------------------------------------------------------------------
    case {'contfeedback'};
     sendEvent('subject',subject);

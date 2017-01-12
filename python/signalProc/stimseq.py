@@ -2,7 +2,7 @@
 #  [X] - load sequence from file
 #  [] - use of the event sequence
 #  [] - noise codes stimulus
-from __future__ import division  # ensure the divisions produce float if needed
+  # ensure the divisions produce float if needed
 from random import shuffle, randint, random
 from math import ceil, cos, sin, pi
 
@@ -52,7 +52,7 @@ class StimSeq :
             cols = line.split();
             if width<0 : width=len(line)
             elif width>0 and not len(cols) == width : 
-                raise(Exception("Row widths are not consistent: "+ str(width) + "!=" + str(len(cols))))
+                raise Exception
             cols = [ float(c) for c in cols ] # convert string to numeric
             array.append(cols) # add to the stimSeq
         return array
@@ -61,7 +61,7 @@ class StimSeq :
     def fromString(fname):
         f=open(fname,'r') if type(fname) is str else fname
         st=StimSeq.readArray(f) # read the stim times
-        if len(st)>1 : raise(Exception("Error: stimTime has multiple rows!"))
+        if len(st)>1 : raise Exception
         else: st=st[0] # un-nest
         ss=StimSeq.readArray(f,len(st)) # read stim-seq - check same length
         # transpose ss to have time in the major dimension
@@ -178,12 +178,12 @@ class StimSeq :
 
 # testcase code
 if __name__ == "__main__":
-    print("Noise:" + str(stimseq.StimSeq.mkStimSeqNoise(4,3,.1)))
-    print("Scan: " + str(stimseq.StimSeq.mkStimSeqScan(4,3,.1)))
-    print("Rand: " + str(stimseq.StimSeq.mkStimSeqRand(4,3,.1)))
-    print("Odd:  " + str(stimseq.StimSeq.mkStimSeqOddball(1,3,.4)))
-    print("SSEP: " + str(stimseq.StimSeq.mkStimSeqSSEP(4,3,.1,[x*.1 for x in [2,3,4,5]])))
-    print("gold: " + str(stimseq.StimSeq.fromString("../../stimulus/gold_10hz.txt")))
-    print("interval:" + str(stimseq.StimSeq.mkStimSeqInterval(2,4,.15,[3*.15,4*.15])))
-    print("Scan(psk): " + str(stimseq.StimSeq.mkStimSeqScan(4,3,.1).phaseShiftKey()))
+    print(("Noise:" + str(stimseq.StimSeq.mkStimSeqNoise(4,3,.1))))
+    print(("Scan: " + str(stimseq.StimSeq.mkStimSeqScan(4,3,.1))))
+    print(("Rand: " + str(stimseq.StimSeq.mkStimSeqRand(4,3,.1))))
+    print(("Odd:  " + str(stimseq.StimSeq.mkStimSeqOddball(1,3,.4))))
+    print(("SSEP: " + str(stimseq.StimSeq.mkStimSeqSSEP(4,3,.1,[x*.1 for x in [2,3,4,5]]))))
+    print(("gold: " + str(stimseq.StimSeq.fromString("../../stimulus/gold_10hz.txt"))))
+    print(("interval:" + str(stimseq.StimSeq.mkStimSeqInterval(2,4,.15,[3*.15,4*.15]))))
+    print(("Scan(psk): " + str(stimseq.StimSeq.mkStimSeqScan(4,3,.1).phaseShiftKey())))
     

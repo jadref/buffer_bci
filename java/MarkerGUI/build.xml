@@ -1,0 +1,59 @@
+<project name="MarkerGUI" basedir="." default="main">
+  
+  <!-- Set the default java version to 1.5 to maximise compatability over OS/versions -->
+  <property name="ant.build.javac.source" value="1.5"/>
+  <property name="ant.build.javac.target" value="1.5"/>
+
+    <property name="src.dir"     value="."/>
+    <property name="build.dir"   value="build"/>
+    <property name="classes.dir" value="${build.dir}/classes"/>
+    <property name="jar.dir"     value="${build.dir}/jar"/>
+
+	 <!-- Any library jar's we depend on? -->
+	 <property name="lib.dir"     value="lib"/>
+	 <property name="buffer.dir"  value="../../dataAcq/buffer/java"/>
+	 <property name="buffer.jar"  value="${buffer.dir}/BufferClient.jar"/>
+    <path id="classpath">
+        <fileset dir="${lib.dir}" includes="**/*.jar"/>
+		  <fileset file="${buffer.jar}"/>
+    </path>
+
+    <target name="compile">
+        <mkdir dir="${classes.dir}"/>
+        <mkdir dir="${lib.dir}"/>
+        <javac srcdir="${src.dir}" 
+					destdir="${classes.dir}" 
+					classpathref="classpath" 
+					debug="on"
+					debuglevel="lines,vars,source"/>
+	 </target>
+
+    <target name="jar" depends="compile">
+        <mkdir dir="${jar.dir}"/>
+        <jar destfile="${jar.dir}/${ant.project.name}.jar">
+			 <fileset dir="${classes.dir}" includes="**//*.class"/>
+			 <fileset dir="${src.dir}" includes="*.java"/>
+          <manifest>
+            <attribute name="Main-Class" value="${ant.project.name}"/>
+          </manifest>			 
+        </jar>		  
+    </target>
+
+    <target name="run" depends="jar">
+      <java fork="true" classname="${ant.project.name}">
+        <classpath>
+			 <path refid="classpath"/>
+			 <path location="${jar.dir}/${ant.project.name}.jar"/>
+        </classpath>
+      </java>
+    </target>
+
+	 <target name="dist" depends="jar">
+		<copy file="${jar.dir}/${ant.project.name}.jar" todir="${buffer.dir}"/>
+	 </target>
+    
+    <target name="clean">   <delete dir="${build.dir}"/>  </target>
+    <target name="build" depends="jar"/>
+    <target name="clean-build" depends="clean,build"/>
+    <target name="main" depends="build,dist"/>
+</project>

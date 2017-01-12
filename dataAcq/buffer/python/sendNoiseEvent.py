@@ -22,12 +22,12 @@ if len(sys.argv)>2:
 	try:
 		port = int(sys.argv[2])
 	except:
-		print 'Error: second argument (%s) must be a valid (=integer) port number'%sys.argv[2]
+		print('Error: second argument (%s) must be a valid (=integer) port number'%sys.argv[2])
 		sys.exit(1)
 	
 ftc  = FieldTrip.Client()		
 		
-print 'Trying to connect to buffer on %s:%i ...'%(hostname,port)
+print('Trying to connect to buffer on %s:%i ...'%(hostname,port))
 ftc.connect(hostname, port)
 
 def setNoise(val):

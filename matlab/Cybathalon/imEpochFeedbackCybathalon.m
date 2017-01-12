@@ -53,7 +53,7 @@ sendEvent('stimulus.testing','start');
 % initialize the state so don't miss classifier prediction events
 state=[]; 
 endTesting=false; dvs=[];
-for si=1:nSeq;
+for si=1:max(100000,nSeq);
 
   if ( ~ishandle(fig) || endTesting ) break; end;
   

@@ -1,3 +1,7 @@
+% Note: this solution works differently to the proposal in the slides.  Here the signal-processor
+% internally accumulates the predictions for each flash event, and then sends all the predictions in
+% 1 big event value when requested by sending a ('stimulus.sequence,'end') event
+
 try; cd(fileparts(mfilename('fullpath')));catch; end;
 try;
    run ../../matlab/utilities/initPaths.m

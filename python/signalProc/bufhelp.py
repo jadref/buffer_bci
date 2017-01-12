@@ -1,4 +1,5 @@
 import sys, os
+import collections
 sys.path.append(os.path.dirname(__file__) + "/../../dataAcq/buffer/python")
 import FieldTrip
 import time
@@ -9,7 +10,7 @@ MAXEVENTHISTORY=50
 
 def askaddress():
     port=1972
-    adress = raw_input("Buffer adress (default is \"localhost:1972\"):")    
+    adress = eval(input("Buffer adress (default is \"localhost:1972\"):"))    
     if adress == "":
         adress = "localhost"
     else:
@@ -18,9 +19,9 @@ def askaddress():
             adress = split[0]
             port = int(split(1))
         except ValueError:
-            print "Invalid port formatting " + split[1]
+            print(("Invalid port formatting " + split[1]))
         except IndexError:
-            print "Invalid adress formatting " + adress
+            print(("Invalid adress formatting " + adress))
     return (address,port)
     
 def connect(address="localhost", port=1972, header=True, verbose = True):
@@ -33,7 +34,7 @@ def connect(address="localhost", port=1972, header=True, verbose = True):
         try:
             ftc.connect(address, port)
         except socket.error:
-            print "Failed to connect at " + address + ":" + str(port)
+            print(("Failed to connect at " + address + ":" + str(port)))
             time.sleep(1)
                    
     if header:
@@ -50,7 +51,7 @@ def waitforheader(verbose = True):
     hdr = ftc.getHeader()
     while hdr is None:
         if verbose:
-            print "Waiting for header"
+            print("Waiting for header")
         time.sleep(1)
         hdr = ftc.getHeader()
         
@@ -99,7 +100,7 @@ def buffer_newevents(evttype=None,timeout_ms=500,state=True,verbose=False):
         state = globalstate
 
     if verbose:
-        print("Waiting for event(s) " + str(evttype) + " with timeout_ms " + str(timeout_ms))
+        print(("Waiting for event(s) " + str(evttype) + " with timeout_ms " + str(timeout_ms)))
 
     start = time.time()
     elapsed_ms = -1 # ensure checks at least once even with 0-timeout
@@ -109,12 +110,12 @@ def buffer_newevents(evttype=None,timeout_ms=500,state=True,verbose=False):
     while len(events)==0 and elapsed_ms<timeout_ms:
         nSamples,curEvents=ftc.wait(-1,nEvents, int(timeout_ms - elapsed_ms))
         if curEvents>nEvents:
-	    if nEvents<curEvents-MAXEVENTHISTORY:
-		print("Warning: long delay means missed events")
-		nEvents = curEvents-MAXEVENTHISTORY
+            if nEvents<curEvents-MAXEVENTHISTORY:
+                print("Warning: long delay means missed events")
+                nEvents = curEvents-MAXEVENTHISTORY
             events = ftc.getEvents([nEvents,curEvents-1])
             if not evttype is None and not events is None:
-                events = filter(lambda x: x.type in evttype, events)
+                events = [x for x in events if x.type in evttype]
         nEvents = curEvents # update starting number events (allow for buffer restarts)
         elapsed_ms = (time.time() - start)*1000
 
@@ -145,8 +146,8 @@ def sendEventAuto(type, value, duration = 0, sample=-1, offset=-1, verbose = Tru
             event.offset = ((diffSamples - int(diffSamples)) / fSample) * 1000.0
     
     if verbose:
-        print "Sending event:"
-        print event
+        print("Sending event:")
+        print(event)
     
     ftc.putEvents(event)
 
@@ -160,7 +161,7 @@ def update(verbose = True):
     nEvents  = nevent
     lastupdate = time.time()
     if verbose:
-        print "Updated. nSamples = " + str(nSamples) + " at lastupdate " + str(lastupdate)
+        print(("Updated. nSamples = " + str(nSamples) + " at lastupdate " + str(lastupdate)))
     return (nsamp,nevent)
 
 def waitforevent(trigger, timeout=1000,verbose = True):
@@ -179,7 +180,7 @@ def waitforevent(trigger, timeout=1000,verbose = True):
     elapsed = time.time()*1000 - start*1000
     
     if verbose:
-        print "Waiting for event " + str(trigger) + " with timeout " + str(timeout)
+        print(("Waiting for event " + str(trigger) + " with timeout " + str(timeout)))
     
     while elapsed < timeout:
         nSamples, nEvents2 = ftc.wait(-1,nEvents, timeout - elapsed)     
@@ -188,9 +189,11 @@ def waitforevent(trigger, timeout=1000,verbose = True):
             if nEvents<nEvents2-MAXEVENTHISTORY:
                 print("Warning: long delay means missed events")
                 nEvents = nEvents2-MAXEVENTHISTORY
-            
-            e = func(ftc.getEvents((nEvents, nEvents2 -1)))
-                
+            evts=ftc.getEvents((nEvents, nEvents2-1))
+            print ( "Processing events:" + str(evts[0]))
+            e = func(evts)
+            print(str(len(e))+" events left")
+    
             if len(e) == 1:
                 return e[0]
             elif len(e) > 1:
@@ -217,17 +220,17 @@ def createeventfilter(trigger):
                 
     Returns a function."""
                 
-    if callable(trigger):
+    if isinstance(trigger, collections.Callable):
         if isinstance(trigger(e[0]),bool):
-            func = lambda events: filter(trigger,events)
+            func = lambda events: list(filter(trigger,events))
         else:
             raise Exception("Bad trigger, function should return a bool.")
     elif isinstance(trigger,str):
-        func = lambda events: filter(lambda x: trigger == x.type,events)
+        func = lambda events: [x for x in events if trigger == x.type]
     elif isinstance(trigger, tuple):
         if len(trigger) == 2:
             if isinstance(trigger[0],str):
-                func = lambda events: filter(lambda x: trigger[0] == x.type and trigger[1] == x.value,events)
+                func = lambda events: [x for x in events if trigger[0] == x.type and trigger[1] == x.value]
             else:
                 raise Exception("Bad trigger, frist element in tuple should be a string.")
         else:
@@ -235,12 +238,12 @@ def createeventfilter(trigger):
     elif isinstance(trigger, list):
         if not trigger:
             raise Exception("Bad trigger, list should not be empty.")
-        if all(map(lambda x: isinstance(x, str), trigger)):
-            func = lambda events: filter(lambda x: any(map(lambda y: x.type == y, trigger)),events)
-        elif all(map(lambda x: isinstance(x, tuple), trigger)):
-            if all(map(lambda x: len(x) == 2, trigger)):
-                if all(map(lambda x: isinstance(x[0],str), trigger)):
-                    func = lambda events: filter(lambda x: any(map(lambda y: x.type == y[0] and x.value == y[1], trigger)),events)
+        if all([isinstance(x, str) for x in trigger]):
+            func = lambda events: [x for x in events if any([x.type == y for y in trigger])]
+        elif all([isinstance(x, tuple) for x in trigger]):
+            if all([len(x) == 2 for x in trigger]):
+                if all([isinstance(x[0],str) for x in trigger]):
+                    func = lambda events: [x for x in events if any([x.type == y[0] and x.value == y[1] for y in trigger])]
                 else:
                     raise Exception("Bad trigger, frist element in tuple in list should be a string.")
             else:
@@ -248,10 +251,10 @@ def createeventfilter(trigger):
         else:
             raise Exception("Bad trigger, list should contain tuples or strings.")            
     elif isinstance(trigger, dict):
-        if all(map(lambda x: isinstance(x, str), trigger.keys())):
-            if all(map(lambda x: isinstance(x,list),trigger.values())):            
-                func1 = lambda events: filter(lambda x: any(map(lambda y: x.type == y, trigger.keys())),events)
-                func2 = lambda events: filter(lambda x: any(map(lambda y: x.value == y, trigger[x.type])) or not trigger[x.type], events)
+        if all([isinstance(x, str) for x in list(trigger.keys())]):
+            if all([isinstance(x,list) for x in list(trigger.values())]):            
+                func1 = lambda events: [x for x in events if any([x.type == y for y in list(trigger.keys())])]
+                func2 = lambda events: [x for x in events if any([x.value == y for y in trigger[x.type]]) or not trigger[x.type]]
                 func = lambda events: func2(func1(events))
             else:
                 raise Exception("Bad trigger, values should be lists")
@@ -288,7 +291,7 @@ def gatherdata(trigger, time, stoptrigger, milliseconds=False, verbose = True):
     global fSample
     
     if isinstance(time, dict):
-        for key in time.keys():
+        for key in list(time.keys()):
             if milliseconds:
                 time[key] = int(ceil((time[key]/1000.0)*fSample))
             elif isinstance(time[key],float):
@@ -342,7 +345,7 @@ def gatherdata(trigger, time, stoptrigger, milliseconds=False, verbose = True):
                 data.append(ftc.getData((event.sample, endSample -1)))
                 gather.remove(point)            
                 if verbose:
-                    print "Gathering " + str(event.type) + " " + str(event.value) + " data from " + str(event.sample) + " to " +str(endSample)
+                    print(("Gathering " + str(event.type) + " " + str(event.value) + " data from " + str(event.sample) + " to " +str(endSample)))
                 
         if not stillgathering and not gather:
             break
