@@ -20,7 +20,7 @@ public class UnityBuffer : MonoBehaviour {
 	public int dataPacketsLost=0;
 	public int bufferEventsMaxCapacity = 100;
 	public int MAXDATASAMPLES=100000;
-	public int MINUPDATEINTERVAL_ms=15; // at most update every 15ms
+	public int MINUPDATEINTERVAL_ms=100; // at most update every 15ms
 	private int DATAUPDATEINTERVAL_SAMP=1;
 	public bool bufferIsConnected=false;
 
@@ -29,6 +29,7 @@ public class UnityBuffer : MonoBehaviour {
 	private int latestBufferSample=-1;
 	private int latestCapturedSample=-1;
 	private int timeout_ms = 1; //In msecs. This blocks the Update of the UnityBuffer so this gives the maximum fps the app will run so keep it a low number unless blocking is required
+	private float lastUpdateTime=0; //in sec, time we last did a buffer.poll()
 	private object data;							//Holds the latest data of the fieldtrip buffer between the two last updates of the fieldtrip buffer
 	private int lastNumberOfEvents;
 	private int latestNumberOfEventsInBuffer;
@@ -191,12 +192,24 @@ public class UnityBuffer : MonoBehaviour {
 	// N.B. this function is called EVERY VIDEO FRAME!..... so should be as fast as possible...
 	// TODO: the buffer communication should really move to be in a seperate thread!!!
 	void Update () {
-		if(bufferIsConnected && bufferClient!=null && bufferClient.errorReturned != BufferClient.BUFFER_READ_ERROR && bufferClient.isConnected()){
+		float curTime = Time.realtimeSinceStartup;
+		if(bufferIsConnected && bufferClient!=null &&
+				curTime - lastUpdateTime > MINUPDATEINTERVAL_ms / 1000.0 ){
+			lastUpdateTime = curTime; // keep track of when we last polled, to limit the polling rate
 			//int dataTrigger=-1;
 			//if ( storeData ) {
 			//	dataTrigger = latestCapturedSample+DATAUPDATEINTERVAL_SAMP;
 			//}
-			SamplesEventsCount count = bufferClient.poll ();
+			SamplesEventsCount count = null;
+			try { 
+				count = bufferClient.poll ();
+			} catch { // poll failed.... why?
+				Debug.LogError("Poll failed.... buffer connectin reset, trying to reconnect!");
+				if ( !bufferClient.isConnected () ) { // if we are not connected try to re-connect..
+					bufferClient.reconnect ();
+				}
+				return;
+			}
 			latestNumberOfEventsInBuffer = count.nEvents;
 			latestBufferSample = count.nSamples;
 			// reset if we have been re-awoken
@@ -270,6 +283,9 @@ public class UnityBuffer : MonoBehaviour {
 		if (!bufferClient.isConnected ()) { // re-connect if the connection was dropped
 			Debug.LogError("Buffer Connection reset detected!  reconnecting........");
 			bufferClient.reconnect ();
+			if (!bufferClient.isConnected ()) {
+				
+			}
 		}
 
 

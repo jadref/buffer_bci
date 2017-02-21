@@ -30,7 +30,7 @@ public class QualityCheck : MonoBehaviour {
         QualityText.text = Config.qualityText;
         QualityIndicatorL.color = themeRed;
         QualityIndicatorR.color = themeRed;
-        AdvanceButton.interactable = false;
+		AdvanceButton.interactable = true;//false;
     }
 
     private bool CheckChannel(float value, int channel, Image indicator) {

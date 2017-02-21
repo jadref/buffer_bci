@@ -652,10 +652,13 @@ namespace FieldTrip.Buffer
 		//*********************************************************************
 
 		protected ByteBuffer readAll(ByteBuffer dst) {
+			// Implement our own read-time-out for when the connection goes down....
 			int cap = dst.capacity();
-			while (cap > 0) {
+			while (cap > 0 && sockChan.isConnected() ) {
 				int now = sockChan.read(dst);
 				cap -= now;
+				if (cap > 0) // wait a bit for more data if not done, also prevents live-lock... 
+					System.Threading.Thread.Sleep(1);
 			}
 			return dst;
 		}

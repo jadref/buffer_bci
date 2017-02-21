@@ -11,6 +11,7 @@ namespace FieldTrip.Buffer
 
 	    private TcpClient mySocket;
 	    private NetworkStream theStream;
+		private int readTimeout_ms = 1000;
 	    public String Host;
 	    public int Port;
 
@@ -31,7 +32,16 @@ namespace FieldTrip.Buffer
 	        {
 	        	Host = hostname;
 	        	Port = port;
-	            mySocket = new TcpClient(Host, Port);
+
+				mySocket = new TcpClient();
+				var result = mySocket.BeginConnect(Host, Port,null,null); // timeout connect 
+				result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(1));
+				if (!mySocket.Connected)
+				{
+					throw new Exception("Failed to connect.");
+				}
+				mySocket.EndConnect(result); // we have connected
+
 	            theStream = mySocket.GetStream();
 	            socketReady = true;
 	            theStream.ReadTimeout=500;
@@ -39,6 +49,8 @@ namespace FieldTrip.Buffer
 	        catch (Exception e)
 	        {
 	          	//throw new IOException("Socket error: " + e);
+				mySocket=null;
+				theStream = null;
 	            socketReady = false;
 	        }
 	        return socketReady;
@@ -62,8 +74,14 @@ namespace FieldTrip.Buffer
 	 		byte[] message = new byte[toRead];
 
 	 		int readBytes = 0;
-	 		while(readBytes<toRead){
-	 			readBytes += theStream.Read(message, readBytes, toRead-readBytes);
+			int waitTime = 0;
+			while(readBytes<toRead && waitTime < readTimeout_ms){
+				waitTime++;
+				if (theStream.DataAvailable) { // read if something to do
+					readBytes += theStream.Read (message, readBytes, toRead - readBytes);
+				} else { // prevent live-lock
+					System.Threading.Thread.Sleep (1);
+				}
 	 		}
 	 		dst.put(message);
 	 		return readBytes;
@@ -80,10 +98,45 @@ namespace FieldTrip.Buffer
 
 
 	    public bool isConnected(){
-	    	if(mySocket!=null)
-	    		return mySocket.Connected;
-	    	else
-	    		return false;
+				try
+				{
+					if (mySocket != null && mySocket.Client != null && mySocket.Client.Connected)
+					{
+						/* pear to the documentation on Poll:
+                * When passing SelectMode.SelectRead as a parameter to the Poll method it will return 
+                * -either- true if Socket.Listen(Int32) has been called and a connection is pending;
+                * -or- true if data is available for reading; 
+                * -or- true if the connection has been closed, reset, or terminated; 
+                * otherwise, returns false
+                */
+
+						// Detect if client disconnected
+						if (mySocket.Client.Poll(0, SelectMode.SelectRead))
+						{
+							byte[] buff = new byte[1];
+							if (mySocket.Client.Receive(buff, SocketFlags.Peek) == 0)
+							{
+								// Client disconnected
+								return false;
+							}
+							else
+							{
+								return true;
+							}
+						}
+
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+				}
+				catch
+				{
+					return false;
+				}
+
 	    }
 	}
 }

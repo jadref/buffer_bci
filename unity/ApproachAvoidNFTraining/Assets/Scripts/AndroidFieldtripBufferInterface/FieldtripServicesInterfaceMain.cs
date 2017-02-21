@@ -87,15 +87,16 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 				yield return new WaitForSeconds (1);//These waits are for the Services to have time to pass around their intents.
 			}
 
-			//Start Buffer
-			logStatus ("Verbinden met buffer...");
-			while ( ! bufferIsOn ){
-				initializeBuffer ();
-				if ( ! bufferIsOn ){
-					yield return new WaitForSeconds(1);
-				}
-			}
 		#endif
+		//Start Buffer
+		logStatus ("Verbinden met buffer...");
+		while ( ! bufferIsOn ){
+			initializeBuffer ();
+			if ( ! bufferIsOn ){
+				yield return new WaitForSeconds(1);
+			}
+		}
+
 		logStatus ("Wachten...");
 		yield return new WaitForSeconds(1);
 		logStatus ("Gereed!");
