@@ -8,6 +8,7 @@ public class Training : MonoBehaviour {
 	public GameObject ball;
 	public GameObject tunnelPrefab;
 	public GameObject tunnelContainer;
+	public UnityEngine.UI.Text TrnSampEvent;
 	public float smoothTime = 0.3f;
 	public float turningRate = 100f;
 	private float MINZPOS = 2f; // closest allowed position
@@ -53,7 +54,7 @@ public class Training : MonoBehaviour {
 	// Update is called once per frame
 	void Update ()
 	{
-		if (gameObject.activeSelf)
+		if (gameObject.activeSelf && FTSInterface.getSystemIsReady())
 		{
 			if ((Time.time-startTime) >= duration)
 			{
@@ -66,6 +67,8 @@ public class Training : MonoBehaviour {
 
 				menu.nextStage();
 			}
+
+			TrnSampEvent.text = FTSInterface.getCurrentSampleNumber() + "/" + FTSInterface.getCurrentEventsNumber() + " (samp/evt)";
 
 			// Tunnel rotation
 			tunnelContainer.transform.Rotate (0, 0.02f, 0);
