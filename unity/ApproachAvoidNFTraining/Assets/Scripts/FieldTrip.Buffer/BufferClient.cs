@@ -656,9 +656,8 @@ namespace FieldTrip.Buffer
 			int cap = dst.capacity();
 			while (cap > 0 && sockChan.isConnected() ) {
 				int now = sockChan.read(dst);
+				if (now == 0) return dst; // read failed = abort
 				cap -= now;
-				if (cap > 0) // wait a bit for more data if not done, also prevents live-lock... 
-					System.Threading.Thread.Sleep(1);
 			}
 			return dst;
 		}
@@ -670,6 +669,10 @@ namespace FieldTrip.Buffer
 			def.order(myOrder);
 			readAll(def);
 			def.rewind();
+			if (def.length() == 0) {
+				errorReturned = BUFFER_READ_ERROR;
+				throw new IOException("Error reading from the buffer server.");
+			}
 
 			short version = def.getShort();
 			short _expected = def.getShort();

@@ -76,14 +76,14 @@ namespace FieldTrip.Buffer
 	 		int readBytes = 0;
 			int waitTime = 0;
 			while(readBytes<toRead && waitTime < readTimeout_ms){
-				waitTime++;
 				if (theStream.DataAvailable) { // read if something to do
 					readBytes += theStream.Read (message, readBytes, toRead - readBytes);
 				} else { // prevent live-lock
-					System.Threading.Thread.Sleep (1);
+					waitTime+=2;
+					System.Threading.Thread.Sleep (2);
 				}
 	 		}
-	 		dst.put(message);
+	 		dst.put(message,0,readBytes);
 	 		return readBytes;
 	 	}
 
@@ -114,7 +114,7 @@ namespace FieldTrip.Buffer
 						if (mySocket.Client.Poll(0, SelectMode.SelectRead))
 						{
 							byte[] buff = new byte[1];
-							if (mySocket.Client.Receive(buff, SocketFlags.Peek) == 0)
+						if (mySocket.Available>0 && mySocket.Client.Receive(buff, SocketFlags.Peek) == 0)
 							{
 								// Client disconnected
 								return false;

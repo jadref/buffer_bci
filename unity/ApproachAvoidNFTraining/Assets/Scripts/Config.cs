@@ -29,12 +29,13 @@ public class Config : MonoBehaviour {
 
     // SIGNAL QUALITY
 
-    public static float qualityThresholdActiveUncal = 10; //uncalibrated
-    public static float qualityThresholdRollingUncal = 20;
-    public static float qualityLimitBadUncal = 20;
+    public static float qualityThresholdActiveUncal = 5; //uncalibrated
+    public static float qualityThresholdRollingUncal = 10;
+    public static float qualityLimitBadUncal = 10;
     public static float qualityThresholdActiveCal = 5; //calibrated
     public static float qualityThresholdRollingCal = 5;
     public static float qualityLimitBadCal = 10;
+	public static float qualityThresholdDisconnected = .5f; // below this is not-connected
     public static int qualitySamplesRequired = 120;
     public static int qualityTimeOut = 60; // timeout (samples) after one or more channels have dropped again
 

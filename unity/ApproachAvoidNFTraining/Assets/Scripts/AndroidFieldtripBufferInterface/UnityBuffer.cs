@@ -20,7 +20,7 @@ public class UnityBuffer : MonoBehaviour {
 	public int dataPacketsLost=0;
 	public int bufferEventsMaxCapacity = 100;
 	public int MAXDATASAMPLES=100000;
-	public int MINUPDATEINTERVAL_ms=100; // at most update every 15ms
+	public int MINUPDATEINTERVAL_ms=100; // at most update every 10Hz
 	private int DATAUPDATEINTERVAL_SAMP=1;
 	public bool bufferIsConnected=false;
 
@@ -201,13 +201,15 @@ public class UnityBuffer : MonoBehaviour {
 			//	dataTrigger = latestCapturedSample+DATAUPDATEINTERVAL_SAMP;
 			//}
 			SamplesEventsCount count = null;
+			bool bufferClientIsConnected = bufferClient.isConnected ();
+			if ( !bufferClientIsConnected ) { // if we are not connected try to re-connect..
+				bufferClient.reconnect ();
+				return;
+			}
 			try { 
 				count = bufferClient.poll ();
 			} catch { // poll failed.... why?
-				Debug.LogError("Poll failed.... buffer connectin reset, trying to reconnect!");
-				if ( !bufferClient.isConnected () ) { // if we are not connected try to re-connect..
-					bufferClient.reconnect ();
-				}
+				Debug.LogError("Poll failed.... buffer connection reset, trying to reconnect!");
 				return;
 			}
 			latestNumberOfEventsInBuffer = count.nEvents;
@@ -260,10 +262,11 @@ public class UnityBuffer : MonoBehaviour {
 		return bufferEvents[bufferEvents.Count-1];
 	}
 
-
-
 	public int getCurrentSampleNumber(){
 		return latestBufferSample;
+	}
+	public int getCurrentEventsNumber(){
+		return lastNumberOfEvents;
 	}
 
 	public int getSampleNumberNow(){

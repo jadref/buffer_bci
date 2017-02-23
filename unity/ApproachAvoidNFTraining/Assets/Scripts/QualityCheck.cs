@@ -9,6 +9,7 @@ public class QualityCheck : MonoBehaviour {
     public Image QualityIndicatorL;
     public Image QualityIndicatorR;
     public Button AdvanceButton;
+	public Text	SampEvent;
 
     private bool isEnabled = false;
     private bool curQualityStatusAllChannels = false;
@@ -30,14 +31,17 @@ public class QualityCheck : MonoBehaviour {
         QualityText.text = Config.qualityText;
         QualityIndicatorL.color = themeRed;
         QualityIndicatorR.color = themeRed;
-		AdvanceButton.interactable = true;//false;
+		AdvanceButton.interactable = true;
+		#if UNITY_ANDROID && !UNITY_EDITOR
+			AdvanceButton.interactable = false;
+		#endif
     }
 
     private bool CheckChannel(float value, int channel, Image indicator) {
         bool channelIsGood = false;
         bool codeOrange = false;
 
-        if (value < activeTreshold && value != 0f) //Sometimes it takes a second for values to come in, will be 0 until then, so let's mark that as bad.
+		if (value < activeTreshold && value > Config.qualityThresholdDisconnected) //Sometimes it takes a second for values to come in, will be 0 until then, so let's mark that as bad.
         {
             curQualityDuration[channel]++;
             if (curQualityDuration[channel] < Config.qualitySamplesRequired)
@@ -77,7 +81,9 @@ public class QualityCheck : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
-        if (isEnabled && FTSInterface.getSystemIsReady()) {
+		if (isEnabled && QualityIndicatorL.IsActive() &&  FTSInterface.getSystemIsReady()) {
+			SampEvent.text = FTSInterface.getCurrentSampleNumber() + "/" + FTSInterface.getCurrentEventsNumber() + " (samp/evt)";
+
             float qualityCh1 = FTSInterface.getQualityCh1();
             float qualityCh2 = FTSInterface.getQualityCh2();
 

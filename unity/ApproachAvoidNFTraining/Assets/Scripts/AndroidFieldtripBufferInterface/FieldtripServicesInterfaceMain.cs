@@ -152,6 +152,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	// Buffer
 	// TODO: This is a horrible combination of service management and buffer/event tracking... should separate into different pieces.
 	private void eventsAdded(UnityBuffer _buffer, EventArgs e){
+		
 		BufferEvent latestEvent = _buffer.getLatestEvent();
 		if(bufferIsOn && latestEvent.getType().toString()==Config.feedbackEventType)
 		{
@@ -159,6 +160,23 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 			currentAlphaLat = alphaLatObjects.Cast<double>().ToArray();
 		}
 	}
+
+	public int getCurrentSampleNumber(){
+		if (buffer != null && buffer.bufferIsConnected) {
+			return buffer.getCurrentSampleNumber ();
+		} else {
+			return -1;
+		}
+	}
+	public int getCurrentEventsNumber(){
+		if (buffer != null && buffer.bufferIsConnected) {
+			return buffer.getCurrentEventsNumber ();
+		} else {
+			return -1;
+		}
+	}
+
+
 
 	public void initializeBuffer(){
 		if( buffer == null ) buffer = gameObject.AddComponent<UnityBuffer>();
