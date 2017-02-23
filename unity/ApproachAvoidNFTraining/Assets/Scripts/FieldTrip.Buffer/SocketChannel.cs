@@ -33,6 +33,7 @@ namespace FieldTrip.Buffer
 	        	Host = hostname;
 	        	Port = port;
 
+				lock(this){
 				mySocket = new TcpClient();
 				var result = mySocket.BeginConnect(Host, Port,null,null); // timeout connect 
 				result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(1));
@@ -45,6 +46,7 @@ namespace FieldTrip.Buffer
 	            theStream = mySocket.GetStream();
 	            socketReady = true;
 	            theStream.ReadTimeout=500;
+				}
 	        }
 	        catch (Exception e)
 	        {
@@ -58,13 +60,14 @@ namespace FieldTrip.Buffer
 
 
 		public int write(ByteBuffer src){
-	        int toWrite = (int)src.remaining();
-	        byte[] message = new byte[toWrite];
+				int toWrite = (int)src.remaining ();
+				byte[] message = new byte[toWrite];
 
-	        src.get(ref message);
+				src.get (ref message);
 
-	        theStream.Write(message,0,toWrite);
-
+			lock (this) {
+				theStream.Write (message, 0, toWrite);
+			}
 	        return toWrite;
 		}
 
@@ -75,14 +78,16 @@ namespace FieldTrip.Buffer
 
 	 		int readBytes = 0;
 			int waitTime = 0;
-			while(readBytes<toRead && waitTime < readTimeout_ms){
-				if (theStream.DataAvailable) { // read if something to do
-					readBytes += theStream.Read (message, readBytes, toRead - readBytes);
-				} else { // prevent live-lock
-					waitTime+=2;
-					System.Threading.Thread.Sleep (2);
+			lock (this) {
+				while (readBytes < toRead && waitTime < readTimeout_ms) {
+					if (theStream.DataAvailable) { // read if something to do
+						readBytes += theStream.Read (message, readBytes, toRead - readBytes);
+					} else { // prevent live-lock
+						waitTime += 2;
+						System.Threading.Thread.Sleep (2);
+					}
 				}
-	 		}
+			}
 	 		dst.put(message,0,readBytes);
 	 		return readBytes;
 	 	}
@@ -92,16 +97,17 @@ namespace FieldTrip.Buffer
 	    {
 	        if (!socketReady)
 	            return;
-	        mySocket.Close();
+			lock (this) {
+				mySocket.Close ();
 	        socketReady = false;
+			}
 	    }
 
 
 	    public bool isConnected(){
-				try
-				{
-					if (mySocket != null && mySocket.Client != null && mySocket.Client.Connected)
-					{
+			lock (this) {
+				try {
+					if (mySocket != null && mySocket.Client != null && mySocket.Client.Connected) {
 						/* pear to the documentation on Poll:
                 * When passing SelectMode.SelectRead as a parameter to the Poll method it will return 
                 * -either- true if Socket.Listen(Int32) has been called and a connection is pending;
@@ -111,32 +117,25 @@ namespace FieldTrip.Buffer
                 */
 
 						// Detect if client disconnected
-						if (mySocket.Client.Poll(0, SelectMode.SelectRead))
-						{
+						if (mySocket.Client.Poll (0, SelectMode.SelectRead)) {
 							byte[] buff = new byte[1];
-						if (mySocket.Available>0 && mySocket.Client.Receive(buff, SocketFlags.Peek) == 0)
-							{
+							if (mySocket.Available > 0 && mySocket.Client.Receive (buff, SocketFlags.Peek) == 0) {
 								// Client disconnected
 								return false;
-							}
-							else
-							{
+							} else {
 								return true;
 							}
 						}
 
 						return true;
-					}
-					else
-					{
+					} else {
 						return false;
 					}
-				}
-				catch
-				{
+				} catch {
 					return false;
 				}
 
-	    }
+			}
+		}
 	}
 }

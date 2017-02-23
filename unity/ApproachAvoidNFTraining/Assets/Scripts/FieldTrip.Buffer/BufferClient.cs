@@ -54,17 +54,19 @@ namespace FieldTrip.Buffer
 		}
 
 		public bool connect(string host, int port) {
-			if(sockChan == null){
-				sockChan = new SocketChannel();
-			}else if(sockChan.isConnected()){
-				disconnect();
-				sockChan = new SocketChannel(); // force build of new socket connection
-			}
-			this.host = host;
-			this.port = port;
-			sockChan.connect(this.host, this.port);
+			lock (this) {
+				if (sockChan == null) {
+					sockChan = new SocketChannel ();
+				} else if (sockChan.isConnected ()) {
+					disconnect ();
+					sockChan = new SocketChannel (); // force build of new socket connection
+				}
+				this.host = host;
+				this.port = port;
+				sockChan.connect (this.host, this.port);
 
-			return sockChan.isConnected();
+				return sockChan.isConnected ();
+			}
 		}
 			
 		public bool connect(string address) {
@@ -83,12 +85,16 @@ namespace FieldTrip.Buffer
 		}
 
 		public void disconnect()  {
-			sockChan.close();
+			lock (this) {
+				sockChan.close ();
+			}
 		}
 
 		public bool isConnected() {
 			if (sockChan == null) return false;
-			return sockChan.isConnected();
+			lock (this) {
+				return sockChan.isConnected ();
+			}
 		}
 
 		public Header getHeader() {
@@ -101,9 +107,11 @@ namespace FieldTrip.Buffer
 			buf = buf.putShort(GET_HDR);
 			buf = buf.putInt(0);
 			buf.rewind();
-			writeAll(buf);
+			lock (this) {
+				writeAll (buf);
 
-			buf = readResponse(GET_OK);
+				buf = readResponse (GET_OK);
+			}
 			if(errorReturned == NO_ERROR){
 				header = new Header(buf);
 			}else{
@@ -123,8 +131,10 @@ namespace FieldTrip.Buffer
 			buf.putShort(VERSION).putShort(PUT_HDR).putInt(bufsize);
 			hdr.serialize(buf);
 			buf.rewind();
-			writeAll(buf);
-			readResponse(PUT_OK);
+			lock (this) {
+				writeAll (buf);
+				readResponse (PUT_OK);
+			}
 			return hdr.channelNameSize > hdr.nChans;
 		}
 
@@ -372,8 +382,10 @@ namespace FieldTrip.Buffer
 
 			buf.putShort(VERSION).putShort(GET_DAT).putInt(8);
 			buf.putInt(first).putInt(last).rewind();
-			writeAll(buf);
-			buf = readResponse(GET_OK);
+			lock (this) {
+				writeAll (buf);
+				buf = readResponse (GET_OK);
+			}
 
 			descr.nChans    = buf.getInt();
 			descr.nSamples  =buf.getInt();
@@ -398,8 +410,10 @@ namespace FieldTrip.Buffer
 
 			buf.putShort(VERSION).putShort(GET_EVT).putInt(0).rewind();
 
-			writeAll(buf);
-			buf = readResponse(GET_OK);
+			lock (this) {
+				writeAll (buf);
+				buf = readResponse (GET_OK);
+			}
 
 			int numEvt = BufferEvent.count(buf);
 			if (numEvt < 0){
@@ -424,9 +438,10 @@ namespace FieldTrip.Buffer
 			buf.putShort(VERSION).putShort(GET_EVT).putInt(8);
 			buf.putInt(first).putInt(last).rewind();
 
-			writeAll(buf);
-			buf = readResponse(GET_OK);
-
+			lock (this) {
+				writeAll (buf);
+				buf = readResponse (GET_OK);
+			}
 			int numEvt = BufferEvent.count(buf);
 			if (numEvt != (last-first+1)){
 				errorReturned = INVALID_EVENT_DEF_ERROR;
@@ -452,8 +467,10 @@ namespace FieldTrip.Buffer
 			ByteBuffer buf = preparePutData(nChans, nSamples, dataType);
 			buf.put(data);
 			buf.rewind();
-			writeAll(buf);
-			readResponse(PUT_OK);
+			lock (this) {
+				writeAll (buf);
+				readResponse (PUT_OK);
+			}
 		}
 
 		public void putData(byte[,] data) {
@@ -469,8 +486,10 @@ namespace FieldTrip.Buffer
 				buf.put(rowData);
 			}
 			buf.rewind();
-			writeAll(buf);
-			readResponse(PUT_OK);
+			lock (this) {
+				writeAll (buf);
+				readResponse (PUT_OK);
+			}
 		}
 
 		public void putData(short[,] data) {
@@ -486,8 +505,10 @@ namespace FieldTrip.Buffer
 				buf.asShortBuffer().put(rowData);
 			}
 			buf.rewind();
-			writeAll(buf);
-			readResponse(PUT_OK);
+			lock (this) {
+				writeAll (buf);
+				readResponse (PUT_OK);
+			}
 		}
 
 		public void putData(int[,] data) {
@@ -503,8 +524,10 @@ namespace FieldTrip.Buffer
 				buf.asIntBuffer().put(rowData);
 			}
 			buf.rewind();
-			writeAll(buf);
-			readResponse(PUT_OK);
+			lock (this) {
+				writeAll (buf);
+				readResponse (PUT_OK);
+			}
 		}
 
 		public void putData(long[,] data) {
@@ -520,8 +543,10 @@ namespace FieldTrip.Buffer
 				buf.asLongBuffer().put(rowData);
 			}
 			buf.rewind();
-			writeAll(buf);
-			readResponse(PUT_OK);
+			lock (this) {
+				writeAll (buf);
+				readResponse (PUT_OK);
+			}
 		}
 
 		public void putData(float[,] data) {
@@ -537,8 +562,10 @@ namespace FieldTrip.Buffer
 				buf.asFloatBuffer().put(rowData);
 			}
 			buf.rewind();
-			writeAll(buf);
-			readResponse(PUT_OK);
+			lock (this) {
+				writeAll (buf);
+				readResponse (PUT_OK);
+			}
 		}
 
 		public void putData(double[,] data) {
@@ -554,8 +581,10 @@ namespace FieldTrip.Buffer
 				buf.asDoubleBuffer().put(rowData);
 			}
 			buf.rewind();
-			writeAll(buf);
-			readResponse(PUT_OK);
+			lock (this) {
+				writeAll (buf);
+				readResponse (PUT_OK);
+			}
 		}
 
 		public void putEvent(BufferEvent e)  {
@@ -567,8 +596,10 @@ namespace FieldTrip.Buffer
 			buf.putShort(VERSION).putShort(PUT_EVT).putInt(e.size());
 			e.serialize(buf);
 			buf.rewind();
-			writeAll(buf);
-			readResponse(PUT_OK);
+			lock (this) {
+				writeAll (buf);
+				readResponse (PUT_OK);
+			}
 		}
 
 		public void putEvents(BufferEvent[] e){
@@ -587,8 +618,10 @@ namespace FieldTrip.Buffer
 				e[i].serialize(buf);
 			}
 			buf.rewind();
-			writeAll(buf);
-			readResponse(PUT_OK);
+			lock (this) {
+				writeAll (buf);
+				readResponse (PUT_OK);
+			}
 		}
 
 		public void flushHeader()  {
@@ -596,8 +629,10 @@ namespace FieldTrip.Buffer
 			buf.order(myOrder);
 
 			buf.putShort(VERSION).putShort(FLUSH_HDR).putInt(0).rewind();
-			writeAll(buf);
-			buf = readResponse(FLUSH_OK);
+			lock (this) {
+				writeAll (buf);
+				buf = readResponse (FLUSH_OK);
+			}
 		}
 
 		public void flushData() {
@@ -605,8 +640,10 @@ namespace FieldTrip.Buffer
 			buf.order(myOrder);
 
 			buf.putShort(VERSION).putShort(FLUSH_DAT).putInt(0).rewind();
-			writeAll(buf);
-			buf = readResponse(FLUSH_OK);
+			lock (this) {
+				writeAll (buf);
+				buf = readResponse (FLUSH_OK);
+			}
 		}
 
 		public void flushEvents(){
@@ -614,8 +651,10 @@ namespace FieldTrip.Buffer
 			buf.order(myOrder);
 
 			buf.putShort(VERSION).putShort(FLUSH_EVT).putInt(0).rewind();
-			writeAll(buf);
-			buf = readResponse(FLUSH_OK);
+			lock (this) {
+				writeAll (buf);
+				buf = readResponse (FLUSH_OK);
+			}
 		}
 
 		public SamplesEventsCount wait(int nSamples, int nEvents, int timeout)  {
@@ -627,9 +666,10 @@ namespace FieldTrip.Buffer
 			buf.putShort(VERSION).putShort(WAIT_DAT).putInt(12);
 			buf.putInt(nSamples).putInt(nEvents).putInt(timeout).rewind();
 
-			writeAll(buf);
-			buf = readResponse(WAIT_OK);
-
+			lock (this) {
+				writeAll (buf);
+				buf = readResponse (WAIT_OK);
+			}
 			return new SamplesEventsCount(buf.getInt(), buf.getInt());
 		}
 
@@ -652,14 +692,17 @@ namespace FieldTrip.Buffer
 		//*********************************************************************
 
 		protected ByteBuffer readAll(ByteBuffer dst) {
-			// Implement our own read-time-out for when the connection goes down....
-			int cap = dst.capacity();
-			while (cap > 0 && sockChan.isConnected() ) {
-				int now = sockChan.read(dst);
-				if (now == 0) return dst; // read failed = abort
-				cap -= now;
+			lock (this) {
+				// Implement our own read-time-out for when the connection goes down....
+				int cap = dst.capacity ();
+				while (cap > 0 && sockChan.isConnected ()) {
+					int now = sockChan.read (dst);
+					if (now == 0)
+						return dst; // read failed = abort
+					cap -= now;
+				}
+				return dst;
 			}
-			return dst;
 		}
 
 

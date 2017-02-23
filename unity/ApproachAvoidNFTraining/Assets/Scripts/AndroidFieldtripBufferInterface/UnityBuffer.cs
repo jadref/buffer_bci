@@ -216,17 +216,24 @@ public class UnityBuffer : MonoBehaviour {
 		}
 	}
 
+	public bool bufferClientIsConnected(){
+		if (bufferClient != null) {
+			return bufferClient.isConnected ();
+		}	
+		return false;
+	}
+
 	// N.B. this function is called EVERY VIDEO FRAME!..... so should be as fast as possible...
 	// TODO: the buffer communication should really move to be in a seperate thread!!!
 	void updateBuffer () {
-		if(bufferIsConnected && bufferClient!=null ){
+		if( bufferClient!=null ){
 			//int dataTrigger=-1;
 			//if ( storeData ) {
 			//	dataTrigger = latestCapturedSample+DATAUPDATEINTERVAL_SAMP;
 			//}
 			SamplesEventsCount count = null;
-			bool bufferClientIsConnected = bufferClient.isConnected ();
-			if ( !bufferClientIsConnected ) { // if we are not connected try to re-connect..
+			bufferIsConnected = bufferClient.isConnected ();
+			if ( !bufferIsConnected ) { // if we are not connected try to re-connect..
 				bufferClient.reconnect ();
 				return;
 			}
@@ -304,7 +311,9 @@ public class UnityBuffer : MonoBehaviour {
 	}
 
 
-
+	public void putEvent<T>(string type, T val){
+		putEvent<T> (type, val, getSampleNumberNow());
+	}
 	public void putEvent<T>(string type, T val, int sample){
 
 		if (!bufferClient.isConnected ()) { // re-connect if the connection was dropped
