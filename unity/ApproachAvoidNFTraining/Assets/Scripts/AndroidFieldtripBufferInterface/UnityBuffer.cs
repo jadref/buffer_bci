@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 using System.IO;
+using System.Threading;
 using FieldTrip.Buffer;
 
 //A delegate to be used as an Event Handler for changes in the buffer that need to notify other objects
@@ -26,6 +27,7 @@ public class UnityBuffer : MonoBehaviour {
 
 	private Header hdr;
 	private BufferClient bufferClient;
+	private Thread bufferUpdateThread;
 	private int latestBufferSample=-1;
 	private int latestCapturedSample=-1;
 	private int timeout_ms = 1; //In msecs. This blocks the Update of the UnityBuffer so this gives the maximum fps the app will run so keep it a low number unless blocking is required
@@ -53,6 +55,11 @@ public class UnityBuffer : MonoBehaviour {
 		if(NewEventsAdded!=null){
 			NewEventsAdded(this, e);
 		}
+	}
+
+	private void Start(){
+		bufferUpdateThread = new Thread (run){ Name = "BufferUpdateThread" };
+		bufferUpdateThread.Start ();
 	}
 
 
@@ -132,6 +139,8 @@ public class UnityBuffer : MonoBehaviour {
 		}
 	}
 
+
+
 	private void initializeData(){
 		Debug.Log ("Initialize Data");
 		int dataType = hdr.dataType;
@@ -188,14 +197,29 @@ public class UnityBuffer : MonoBehaviour {
 		}
 	}
 
+	private bool running;
+	private  System.Diagnostics.Stopwatch elapsedsw;
+	void stopThread(){
+		running = false;
+	}
+	void run(){
+		elapsedsw = System.Diagnostics.Stopwatch.StartNew ();
+		running = true;
+		while (running) {
+			if (elapsedsw.ElapsedMilliseconds > MINUPDATEINTERVAL_ms) {
+				updateBuffer ();
+				elapsedsw.Reset (); 
+				elapsedsw.Start ();
+			} else {
+				Thread.Sleep (MINUPDATEINTERVAL_ms);
+			}
+		}
+	}
 
 	// N.B. this function is called EVERY VIDEO FRAME!..... so should be as fast as possible...
 	// TODO: the buffer communication should really move to be in a seperate thread!!!
-	void Update () {
-		float curTime = Time.realtimeSinceStartup;
-		if(bufferIsConnected && bufferClient!=null &&
-				curTime - lastUpdateTime > MINUPDATEINTERVAL_ms / 1000.0 ){
-			lastUpdateTime = curTime; // keep track of when we last polled, to limit the polling rate
+	void updateBuffer () {
+		if(bufferIsConnected && bufferClient!=null ){
 			//int dataTrigger=-1;
 			//if ( storeData ) {
 			//	dataTrigger = latestCapturedSample+DATAUPDATEINTERVAL_SAMP;
