@@ -315,7 +315,7 @@ public class MenuOptions : MonoBehaviour {
 		Debug.Log ("Disconnecting.");
 		DisconnectServices();
 
-		while (FTSInterface.getSystemIsReady())
+		while (FTSInterface.systemIsReady())
 		{
 			yield return new WaitForSeconds(1);
 		}

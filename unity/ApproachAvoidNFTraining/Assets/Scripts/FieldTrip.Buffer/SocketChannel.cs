@@ -11,7 +11,7 @@ namespace FieldTrip.Buffer
 
 	    private TcpClient mySocket;
 	    private NetworkStream theStream;
-		private int readTimeout_ms = 1000;
+		private int readTimeout_ms = 2000;
 	    public String Host;
 	    public int Port;
 

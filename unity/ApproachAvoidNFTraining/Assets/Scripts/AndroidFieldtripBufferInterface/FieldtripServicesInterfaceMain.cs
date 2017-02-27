@@ -11,7 +11,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 	bool androidDevice = false;
 	bool updateStatus = false;
-	bool systemIsReady = false;
+	private bool _systemIsReady = false;
 
 	string serverUptime = "00:00";
 	int serverDowntime = 0;
@@ -20,7 +20,6 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	Dictionary<int, string> threads;
 
 	UnityBuffer buffer;
-	Boolean bufferIsOn = false;
 	double[] currentAlphaLat;
 
 	public bool verbose;
@@ -90,9 +89,10 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 		#endif
 		//Start Buffer
 		logStatus ("Verbinden met buffer...");
-		while ( ! bufferIsOn ){
-			initializeBuffer ();
-			if ( ! bufferIsOn ){
+		bool inited = false;
+		while ( ! inited ){
+			inited = initializeBuffer ();
+			if ( ! inited ){
 				yield return new WaitForSeconds(1);
 			}
 		}
@@ -100,7 +100,6 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 		logStatus ("Wachten...");
 		yield return new WaitForSeconds(1);
 		logStatus ("Gereed!");
-		systemIsReady = true;
 		updateStatus = false;
 		LoadingButton.SetActive (true);
 	}
@@ -119,9 +118,8 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 		//Stop buffer
 		logStatus ("Buffer stoppen...");
-		if ( bufferIsOn ){
+		if ( buffer != null && _systemIsReady ){
 			buffer.disconnect ();
-			bufferIsOn = false;
 		}
 		yield return new WaitForSeconds (1);
 
@@ -138,7 +136,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
      	#endif
 
       	//Update Status
-		systemIsReady = false; //signals Unity it is safe to close down as well
+		_systemIsReady = false; //signals Unity it is safe to close down as well
 		logStatus ("Systeem offline");
 	}
 
@@ -154,55 +152,61 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 	private void eventsAdded(UnityBuffer _buffer, EventArgs e){
 		
 		BufferEvent latestEvent = _buffer.getLatestEvent();
-		if(bufferIsOn && latestEvent.getType().toString()==Config.feedbackEventType)
-		{
-			IList alphaLatObjects = latestEvent.getValue().array as IList;
-			currentAlphaLat = alphaLatObjects.Cast<double>().ToArray();
+		if (latestEvent.getType ().toString () == Config.feedbackEventType) {
+			IList alphaLatObjects = latestEvent.getValue ().array as IList;
+			currentAlphaLat = alphaLatObjects.Cast<double> ().ToArray ();
 		}
 	}
 
 	public int getCurrentSampleNumber(){
-		if (buffer != null && buffer.bufferIsConnected) {
+		if ( systemIsReady() ) {
 			return buffer.getCurrentSampleNumber ();
 		} else {
 			return -1;
 		}
 	}
 	public int getCurrentEventsNumber(){
-		if (buffer != null && buffer.bufferIsConnected) {
+		if ( systemIsReady() ) {
 			return buffer.getCurrentEventsNumber ();
 		} else {
 			return -1;
 		}
 	}
 
-
-
-	public void initializeBuffer(){
+	public bool initializeBuffer(){
 		if( buffer == null ) buffer = gameObject.AddComponent<UnityBuffer>();
-		buffer.initializeBuffer();
-		if(buffer!=null && buffer.bufferIsConnected){
+		if (!systemIsReady ()) {
+			buffer.initializeBuffer ();
+		}
+		if(systemIsReady()){
 			//Attach the buffer's event handler to the eventsAdded function
 			buffer.NewEventsAdded += new BufferChangeEventHandler(eventsAdded);
-			bufferIsOn = true;
+			return true;
 		}else{
 			Debug.Log ("Failed to initialize Unity Buffer Client");
+			return false;
 		}
 	}
 
 	public void sendEvent(string eventType, string eventData)
 	{
-		Debug.Log ("Event sent to buffer: " + eventType + ": " + eventData);
-		if (buffer != null) {
-			buffer.putEvent (eventType, eventData, buffer.getSampleNumberNow ());
+		if ( systemIsReady() ) {
+			buffer.putEvent (eventType, eventData);
+			Debug.Log ("Event sent to buffer: " + eventType + ": " + eventData);
+		} else {
+			Debug.Log ("Error: Could not sent event to buffer: " + eventType + ": " + eventData);
 		}
 	}
 
 	// Interfacing
-
-	public bool getSystemIsReady()
+	public bool systemIsReady()
 	{
-		return systemIsReady;
+		if (buffer != null && buffer.bufferConnectionInitialized && buffer.bufferIsConnected && buffer.bufferClientIsConnected ()) {
+			_systemIsReady = true;
+		} else {
+			_systemIsReady = false;
+		}
+		return _systemIsReady;
 	}
 
 	public double[] getFeedback()
@@ -212,23 +216,39 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 	public float getAlpha()
 	{
-		return (float)currentAlphaLat[0];
+		if (currentAlphaLat.Length > 0) { 
+			return (float)currentAlphaLat [0];
+		} else {
+			return -1;
+		}
 	}
 
 	public float getBadness()
 	{
 		//float badness = normalize ((float)currentAlphaLat [1], badnessLimit);
 		//badnessFilter = (float) (0.3 * badness + 0.7 * badnessFilter);
-		return (float)currentAlphaLat [1];//badnessFilter;
+		if (currentAlphaLat.Length > 1) { 
+			return (float)currentAlphaLat [1];//badnessFilter;
+		} else {
+			return 1e6f;
+		}
 	}
 
 	public float getQualityCh1()
 	{
-		return (float)currentAlphaLat [currentAlphaLat.Length-2];
+		if (currentAlphaLat.Length > 2) { 
+			return (float)currentAlphaLat [currentAlphaLat.Length - 2];
+		} else {
+			return -1;
+		}
 	}
 
 	public float getQualityCh2()
 	{
-		return (float)currentAlphaLat [currentAlphaLat.Length-1];
+		if (currentAlphaLat.Length > 3) {
+			return (float)currentAlphaLat [currentAlphaLat.Length - 1];
+		} else {
+			return -1;
+		}
 	}
  }

@@ -23,7 +23,8 @@ public class UnityBuffer : MonoBehaviour {
 	public int MAXDATASAMPLES=100000;
 	public int MINUPDATEINTERVAL_ms=100; // at most update every 10Hz
 	private int DATAUPDATEINTERVAL_SAMP=1;
-	public bool bufferIsConnected=false;
+	public bool bufferConnectionInitialized=false;
+	public bool bufferIsConnected = false;
 
 	private Header hdr;
 	private BufferClient bufferClient;
@@ -58,8 +59,6 @@ public class UnityBuffer : MonoBehaviour {
 	}
 
 	private void Start(){
-		bufferUpdateThread = new Thread (run){ Name = "BufferUpdateThread" };
-		bufferUpdateThread.Start ();
 	}
 
 
@@ -69,6 +68,7 @@ public class UnityBuffer : MonoBehaviour {
 	}
 	// called when the app is made invisible..
 	void OnDisable() {
+		stopThread();
 		Debug.Log ("disabling unity buffer");
 	}
 
@@ -111,12 +111,16 @@ public class UnityBuffer : MonoBehaviour {
 		if (hostname == null) {
 			hostname = GetLocalIPAddress ();
 		}
-		Debug.Log("Connecting to "+hostname+":"+port);
-		if(bufferClient.connect(hostname, port)){
+		Debug.Log ("Connecting to " + hostname + ":" + port);
+		if (!bufferClient.isConnected()){ // attempt to re-connect
+			bufferClient.connect (hostname, port); 
+		}
+		if(bufferClient.isConnected()){
+			Debug.Log("Connected to "+hostname+":"+port+" succeeded");
 			hdr = bufferClient.getHeader();
 			if(bufferClient.errorReturned == BufferClient.BUFFER_READ_ERROR){
 				Debug.Log("No header on "+hostname+":"+port+" failed");
-				bufferIsConnected = false;
+				bufferConnectionInitialized = false;
 				return;
 			}
 			latestBufferSample = hdr.nSamples;
@@ -124,17 +128,21 @@ public class UnityBuffer : MonoBehaviour {
 			nChans = hdr.nChans;
 			fSample = hdr.fSample;
 			if ( storeData ) { initializeData(); }
-			bufferIsConnected = true;
 			bufferTimer = new BufferTimer(fSample);
-			Debug.Log("Connection to "+hostname+":"+port+" succeeded");
+			Debug.Log("Got valid header on "+hostname+":"+port);
 			// compute the min-update-interval in samples
 			if ( MINUPDATEINTERVAL_ms>0 ) {
 				DATAUPDATEINTERVAL_SAMP = (int)(MINUPDATEINTERVAL_ms * 1000.0 / hdr.fSample) ;
 				if ( DATAUPDATEINTERVAL_SAMP<1 ) DATAUPDATEINTERVAL_SAMP=1;
 			}
+			bufferConnectionInitialized = true;
+			if ( bufferUpdateThread==null  ){
+				bufferUpdateThread = new Thread (run){ Name = "BufferUpdateThread" };
+				bufferUpdateThread.Start (); // start the buffer-monitoring thread
+			}
 		}else{
 			Debug.Log("Connection to "+hostname+":"+port+" failed");
-			bufferIsConnected = false;
+			bufferConnectionInitialized = false;
 			return;
 		}
 	}
@@ -191,9 +199,9 @@ public class UnityBuffer : MonoBehaviour {
 
 
 	public void disconnect(){
-		if(bufferIsConnected){
+		if(bufferConnectionInitialized){
 			bufferClient.disconnect();
-			bufferIsConnected = false;
+			bufferConnectionInitialized = false;
 		}
 	}
 
@@ -217,16 +225,16 @@ public class UnityBuffer : MonoBehaviour {
 	}
 
 	public bool bufferClientIsConnected(){
-		if (bufferClient != null) {
+		if (bufferClient != null && bufferConnectionInitialized && bufferIsConnected) {
 			return bufferClient.isConnected ();
-		}	
+		}
 		return false;
 	}
 
 	// N.B. this function is called EVERY VIDEO FRAME!..... so should be as fast as possible...
 	// TODO: the buffer communication should really move to be in a seperate thread!!!
 	void updateBuffer () {
-		if( bufferClient!=null ){
+		if( bufferClient!=null && bufferConnectionInitialized ){
 			//int dataTrigger=-1;
 			//if ( storeData ) {
 			//	dataTrigger = latestCapturedSample+DATAUPDATEINTERVAL_SAMP;
@@ -234,13 +242,14 @@ public class UnityBuffer : MonoBehaviour {
 			SamplesEventsCount count = null;
 			bufferIsConnected = bufferClient.isConnected ();
 			if ( !bufferIsConnected ) { // if we are not connected try to re-connect..
+				Debug.LogError("Buffer connection closed..... trying to reconnect!");
 				bufferClient.reconnect ();
 				return;
 			}
 			try { 
 				count = bufferClient.poll ();
 			} catch { // poll failed.... why?
-				Debug.LogError("Poll failed.... buffer connection reset, trying to reconnect!");
+				Debug.LogError("Poll failed.... waiting for valid response!");
 				return;
 			}
 			latestNumberOfEventsInBuffer = count.nEvents;
@@ -248,7 +257,15 @@ public class UnityBuffer : MonoBehaviour {
 			// reset if we have been re-awoken
 			if ( latestCapturedSample<0 ) latestCapturedSample=latestBufferSample;
 			if ( lastNumberOfEvents<0 ) lastNumberOfEvents=latestNumberOfEventsInBuffer;
+			if ( latestBufferSample < latestCapturedSample ) {
+				Debug.LogError("Buffer restart detected .. skipping everything before now...");
+				bufferTimer.reset();
+				latestCapturedSample = latestBufferSample;
+				lastNumberOfEvents = latestNumberOfEventsInBuffer;
+			}
+			bufferTimer.addSampleToRegression(latestBufferSample);//Updates the bufferTimer with the new samples.
 
+			// Loop ot push events to the event stream
 			while(lastNumberOfEvents < latestNumberOfEventsInBuffer){
 				try { // Watch out can miss events if we are too slow...
 				    bufferEvents.Add(bufferClient.getEvents(lastNumberOfEvents, lastNumberOfEvents)[0]);
@@ -262,6 +279,7 @@ public class UnityBuffer : MonoBehaviour {
 			}
 			lastNumberOfEvents=latestNumberOfEventsInBuffer;
 
+			// push new data into the data event stream
 			if(latestBufferSample>latestCapturedSample){
 				if ( storeData ) { // if we should track and store the data
 					storedSamples = latestBufferSample - latestCapturedSample;
@@ -274,11 +292,7 @@ public class UnityBuffer : MonoBehaviour {
 						newDataIn = true;
 					}
 				}
-			} else if ( latestBufferSample < latestCapturedSample ) {
-				Debug.LogError("Buffer restart detected");
-				bufferTimer.reset();
 			}
-			bufferTimer.addSampleToRegression(latestBufferSample);//Updates the bufferTimer with the new samples.
 			latestCapturedSample = latestBufferSample;
 		}
 	}

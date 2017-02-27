@@ -10,6 +10,8 @@ public class QualityCheck : MonoBehaviour {
     public Image QualityIndicatorR;
     public Button AdvanceButton;
 	public Text	SampEvent;
+	public Text QualityL;
+	public Text QualityR;
 
     private bool isEnabled = false;
     private bool curQualityStatusAllChannels = false;
@@ -81,11 +83,13 @@ public class QualityCheck : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
-		if (isEnabled && QualityIndicatorL.IsActive() &&  FTSInterface.getSystemIsReady()) {
+		if (isEnabled && FTSInterface.systemIsReady()) {
 			SampEvent.text = FTSInterface.getCurrentSampleNumber() + "/" + FTSInterface.getCurrentEventsNumber() + " (samp/evt)";
 
             float qualityCh1 = FTSInterface.getQualityCh1();
+			QualityL.text = qualityCh1.ToString("0.00");
             float qualityCh2 = FTSInterface.getQualityCh2();
+			QualityR.text = qualityCh2.ToString("0.00");
 
             // Judge current quality
             bool channel1Good = CheckChannel(qualityCh1, 1, QualityIndicatorL);
@@ -122,7 +126,7 @@ public class QualityCheck : MonoBehaviour {
     }
 
     public bool getAvgQualityStatus() {
-        if (avgQualityAllChannels < rollingTreshold) {
+		if (avgQualityAllChannels < rollingTreshold && avgQualityAllChannels > Config.qualityThresholdDisconnected) {
             // quality is good
             return true;
         }

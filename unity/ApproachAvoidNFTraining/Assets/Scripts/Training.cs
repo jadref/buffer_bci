@@ -54,7 +54,7 @@ public class Training : MonoBehaviour {
 	// Update is called once per frame
 	void Update ()
 	{
-		if (gameObject.activeSelf && FTSInterface.getSystemIsReady())
+		if (gameObject.activeSelf && FTSInterface.systemIsReady())
 		{
 			if ((Time.time-startTime) >= duration)
 			{
