@@ -127,7 +127,7 @@ public class QualityCheck : MonoBehaviour {
     }
 
     public bool getAvgQualityStatus() {
-		if (avgQualityAllChannels < rollingTreshold && avgQualityAllChannels > Config.qualityThresholdDisconnected) {
+		if (avgQualityAllChannels < rollingTreshold && avgQualityAllChannels > disconnectLimit) {
             // quality is good
             return true;
         }
