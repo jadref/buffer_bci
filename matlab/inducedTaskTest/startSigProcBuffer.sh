@@ -1,8 +1,10 @@
 #!/bin/bash
-cd `dirname ${BASH_SOURCE[0]}`
+scriptDir=`dirname ${BASH_SOURCE[0]}`
+cd $scriptDir
 source ../../utilities/findMatlab.sh
 if [[ $matexe == *matlab ]]; then  args=-nodesktop; fi
 cat <<EOF | $matexe $args
+cd $scriptDir
 configureIM;
 startSigProcBuffer('epochEventType','stimulus.target','freqband',[6 8 28 30],...
                    'clsfr_type','ersp','trlen_ms',trlen_ms,...
