@@ -22,6 +22,7 @@ public class QualityCheck : MonoBehaviour {
     private float activeTreshold;
     private float rollingTreshold;
     private float badLimit;
+	private float disconnectLimit;
 
     private Color themeGreen = new Color32(0x55, 0xAD, 0x5A, 0xFF);
     private Color themeRed = new Color32(0xAD, 0x34, 0x48, 0xFF);
@@ -145,11 +146,13 @@ public class QualityCheck : MonoBehaviour {
             activeTreshold = Config.qualityThresholdActiveCal;
             rollingTreshold = Config.qualityThresholdRollingCal;
             badLimit = Config.qualityLimitBadCal;
+			disconnectLimit = Config.qualityThresholdDisconnectedCal;
         }
         else {
             activeTreshold = Config.qualityThresholdActiveUncal;
             rollingTreshold = Config.qualityThresholdRollingUncal;
             badLimit = Config.qualityLimitBadUncal;
+			disconnectLimit = Config.qualityThresholdDisconnected;
         }
     }
 

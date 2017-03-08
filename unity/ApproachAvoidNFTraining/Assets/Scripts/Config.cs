@@ -36,6 +36,7 @@ public class Config : MonoBehaviour {
     public static float qualityThresholdRollingCal = 5;
     public static float qualityLimitBadCal = 10;
 	public static float qualityThresholdDisconnected = .5f; // below this is not-connected
+	public static float qualityThresholdDisconnectedCal = -3.0f; // below this is not-connected
     public static int qualitySamplesRequired = 120;
     public static int qualityTimeOut = 60; // timeout (samples) after one or more channels have dropped again
 
