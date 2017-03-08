@@ -109,7 +109,8 @@ public class UnityBuffer : MonoBehaviour {
 
 	public void initializeBuffer(){
 		if (hostname == null) {
-			hostname = GetLocalIPAddress ();
+			//hostname = GetLocalIPAddress ();
+			hostname = "127.0.0.1";
 		}
 		Debug.Log ("Connecting to " + hostname + ":" + port);
 		if (!bufferClient.isConnected()){ // attempt to re-connect
