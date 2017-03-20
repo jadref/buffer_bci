@@ -1,4 +1,4 @@
-package Mobita2ft;
+package nl.dcc.buffer_bci.Mobita2ft;
 
 public class TMS_CHANNEL_DESC_T
 {

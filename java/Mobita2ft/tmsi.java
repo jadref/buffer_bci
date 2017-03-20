@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package Mobita2ft;
+package nl.dcc.buffer_bci.Mobita2ft;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -17,11 +17,15 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
+
+// TODO: convert to non java8 version for backward compatability
+import java.util.Date;
+// import java.time.Instant;
+// import java.time.LocalDateTime;
+// import java.time.ZoneId;
+// import java.time.ZoneOffset;
+// import java.time.format.DateTimeFormatter;
+
 import java.util.Calendar;
 import java.util.Date;
 import java.util.logging.Level;
@@ -575,7 +579,7 @@ public class tmsi {
      * @return 0 on success, -1 on failure.
      */
 //C++ TO JAVA CONVERTER TODO TASK: Pointer arithmetic is detected on the parameter 't', so pointers on this parameter are left unchanged:
-    public int tms_get_date(byte[] msg, RefObject<Integer> i, LocalDateTime t) {
+    public int tms_get_date(byte[] msg, RefObject<Integer> i, java.util.Date t) {
 
         int j; //*< general index
         int[] wrd = new int[8]; //*< TMS date format
@@ -598,7 +602,7 @@ public class tmsi {
         }
         if ((zeros == 8) || (ffcnt > 0)) {
             /* by definition 1970-01-01 00:00:00 GMT */
-            t = LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.of(ZoneId.systemDefault().toString()));
+            t = new java.util.Date(0); 
             return (-1);
         } else {
             /* year since 1900 */
@@ -621,8 +625,8 @@ public class tmsi {
 //            cal.tm_sec = wrd[7];
             /* convert to broken calendar to calendar */
             Date ts = cal.getTime();
-            Instant instant = Instant.ofEpochMilli(ts.getTime());
-            t = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+            //Instant instant = Instant.ofEpochMilli(ts.getTime());
+            t = ts;//LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 //            t = mktime(cal);
             return (0);
         }
@@ -634,13 +638,13 @@ public class tmsi {
      * @note position after parsing in returned in 'i'.
      * @return 0 always.
      */
-    public int tms_put_date(LocalDateTime t, byte[] msg, RefObject<Integer> i) {
+    public int tms_put_date(Date t, byte[] msg, RefObject<Integer> i) {
 
         int j; //*< general index
         int[] wrd = new int[8]; //*< TMS date format
         Calendar cal = Calendar.getInstance(); //*< broken calendar time
 
-        if (t.equals(LocalDateTime.ofInstant(Instant.ofEpochMilli(0), ZoneId.systemDefault()))) {
+        if (t.getTime() == 0 ) {
             /* all zero for t-zero */
             for (j = 0; j < 8; j++) {
                 wrd[j] = 0;
@@ -834,7 +838,7 @@ public class tmsi {
         fp = fp.format("i 0x%08X ; initId\n", cfg.initId);
         fp = fp.format("d   %8d ; sample Rate Divider\n", cfg.sampleRateDiv);
 
-        atime = cfg.alarmTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        //atime = cfg.alarmTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 //        atime = cfg.alarmTime.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now());
         fp = fp.format("a   %8d ; alarm time %s\n", cfg.alarmTime.toString());
         fp = fp.format("f %12s ; file name\n", cfg.fileName);
@@ -955,7 +959,7 @@ public class tmsi {
                     cfg.sampleRateDiv = (short) strtol(line, endptr, 0, 2);
                     break;
                 case 'a':
-                    cfg.alarmTime = LocalDateTime.ofEpochSecond(strtol(line, endptr, 0, 2), 0, ZoneOffset.UTC);
+                    cfg.alarmTime = new java.util.Date(strtol(line, endptr, 0, 2));
                     break;
                 case 'f':
 //                    sscanf(line, "f %s ;", cfg.fileName);
@@ -1154,8 +1158,8 @@ public class tmsi {
         String stime = new String(new char[MNCN]); //*< start time
         String etime = new String(new char[MNCN]); //*< end time
 
-        stime = hdr.startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        etime = hdr.endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        stime = hdr.startTime.toString();//format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        etime = hdr.endTime.toString();//format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         fp = fp.format("# time start %s end %s\n", stime, etime);
         fp = fp.format("# Frontend SerialNr 0x%08X HWNr 0x%04X SWNr 0x%04X\n", hdr.frontendSerialNr, hdr.frontendHWNr, hdr.frontendSWNr);
         fp = fp.format("# nsamples %9d\n", hdr.nsamples);

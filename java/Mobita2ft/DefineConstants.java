@@ -1,4 +1,4 @@
-package Mobita2ft;
+package nl.dcc.buffer_bci.Mobita2ft;
 
 //C++ TO JAVA CONVERTER TODO TASK: There is no preprocessor in Java:
 ///#if __WIN32__ || __WIN64__

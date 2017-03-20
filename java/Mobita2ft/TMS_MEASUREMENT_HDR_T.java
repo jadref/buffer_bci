@@ -1,15 +1,15 @@
-package Mobita2ft;
+package nl.dcc.buffer_bci.Mobita2ft;
 
 
-import java.time.Instant;
-import java.time.LocalDateTime;
+// TODO: convert to non java8 version
+import java.util.Date;
 
 /** TMS measurement header struct */
 public class TMS_MEASUREMENT_HDR_T
 {
   public int nsamples; //*< number of samples in this recording
-  public LocalDateTime startTime = LocalDateTime.now(); //*< start time
-  public LocalDateTime endTime = LocalDateTime.now(); //*< end time
+  public Date startTime = new java.util.Date(); //*< start time
+  public Date endTime = new java.util.Date(); //*< end time
   public int frontendSerialNr; //*< frontendSerial Number
   public short frontendHWNr; //*< frontend Hardware version Number
   public short frontendSWNr; //*< frontend Software version Number

@@ -5,7 +5,7 @@
  * TODO: Channel names
  *       Noise in the LSBs for float data?
  */
-package Mobita2ft;
+package nl.dcc.buffer_bci.Mobita2ft;
 import java.io.*;
 import nl.fcdonders.fieldtrip.bufferclient.*;
 

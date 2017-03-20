@@ -1,4 +1,4 @@
-<project name="Mobita2ft" basedir="." default="main">
+<project name="nl.dcc.buffer_bci.Mobita2ft" basedir="." default="main">
   
   <!-- Set the default java version to 1.5 to maximise compatability over OS/versions -->
   <property name="ant.build.javac.source" value="1.5"/>
