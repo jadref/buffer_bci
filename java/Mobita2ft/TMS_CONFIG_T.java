@@ -1,6 +1,4 @@
-package nl.dcc.buffer_bci.Mobita2ft;
-
-//TODO: convert to java-6 version
+package nl.dcc.buffer_bci;
 import java.util.Date;
 
 /** TMS config struct */

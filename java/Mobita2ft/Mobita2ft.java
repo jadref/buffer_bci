@@ -5,7 +5,7 @@
  * TODO: Channel names
  *       Noise in the LSBs for float data?
  */
-package nl.dcc.buffer_bci.Mobita2ft;
+package nl.dcc.buffer_bci;
 import java.io.*;
 import nl.fcdonders.fieldtrip.bufferclient.*;
 
@@ -127,6 +127,8 @@ public class Mobita2ft {
 		  System.out.println("Closing...");
 		  run=false;
 	 }
+    public boolean isrunning(){ return run; }
+
 
 	 public static void main(String[] args) {
 		  String tmsidev=DefineConstants.TMSIDEFAULT;

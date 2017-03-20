@@ -1,4 +1,4 @@
-package nl.dcc.buffer_bci.Mobita2ft;
+package nl.dcc.buffer_bci;
 
 /** Frontend system info struct */
 public class TMS_FRONTENDINFO_T

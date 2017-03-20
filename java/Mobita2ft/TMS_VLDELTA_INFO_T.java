@@ -1,4 +1,4 @@
-package nl.dcc.buffer_bci.Mobita2ft;
+package nl.dcc.buffer_bci;
 
 public class TMS_VLDELTA_INFO_T
 {

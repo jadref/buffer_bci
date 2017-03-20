@@ -1,4 +1,4 @@
-package nl.dcc.buffer_bci.Mobita2ft;
+package nl.dcc.buffer_bci;
 
 
 // TODO: convert to non java8 version
