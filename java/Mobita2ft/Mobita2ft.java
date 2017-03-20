@@ -98,7 +98,7 @@ public class Mobita2ft {
 		  int status = tms.tms_init(tmsidev, srd);
 		  if (status != 0) {
             System.err.format("Mobita2ft: CANNOT CONNECT: %d\n", status);
-				//            return 1;
+				return false;
 		  }
 		  System.err.println("Mobita2ft: tms initialized, making header");
 		  int nchans = tms.tms_get_number_of_channels();

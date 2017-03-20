@@ -2262,7 +2262,7 @@ public class tmsi {
             } catch (IOException ex) {
                 System.err.println("ERROR, connecting to " + host + ":" + port);
 					 System.err.println(ex);
-                System.exit(0);
+                s=null;
             }
             System.err.println("connection made");
         }
@@ -2953,6 +2953,10 @@ public class tmsi {
         in_dev = new TMS_INPUT_DEVICE_T();
 
         fd = tms_open_port(fname);
+        if ( fd == null ) {
+            System.err.println("Failed to open socket");
+            return -1;
+        } 
         System.out.println("Opened socket " + fd);
 
         while (state < 4) {
