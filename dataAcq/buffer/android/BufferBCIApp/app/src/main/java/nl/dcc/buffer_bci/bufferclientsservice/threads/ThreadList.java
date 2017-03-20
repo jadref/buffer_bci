@@ -9,5 +9,6 @@ public abstract class ThreadList {
 		  AlphaContClassifierThread.class,
 		  //ContinuousClassifierThread.class,
 		  AlphaLatContClassifierThread.class,
+          MobitaConnectionThread.class,
     };
 }
