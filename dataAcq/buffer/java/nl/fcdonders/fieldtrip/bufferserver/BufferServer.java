@@ -97,6 +97,9 @@ public class BufferServer implements Runnable {
 	private FieldtripBufferMonitor monitor = null;
 	private int nextClientID = 0;
 
+   private static final String TAG = BufferServer.class.getSimpleName();
+   public String getName() { return TAG; }
+
 	/**
 	 * Constructor, creates a simple datastore.
 	 *
