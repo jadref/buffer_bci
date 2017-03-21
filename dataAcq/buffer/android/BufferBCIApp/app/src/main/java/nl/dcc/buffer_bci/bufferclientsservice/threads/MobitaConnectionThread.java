@@ -74,11 +74,7 @@ public class MobitaConnectionThread extends ThreadBase {
     @Override
     public void mainloop() {
         initialize();
-        try {
-            mobita2ft = new Mobita2ft(bufferhostport, fSample, blockSize, mobitahostport);
-        } catch ( java.net.ConnectException ex ) {
-            ex.printStackTrace();
-        }
+        mobita2ft = new Mobita2ft(bufferhostport, fSample, blockSize, mobitahostport);
         mobita2ft.mainloop();
         try {
             cleanup();
