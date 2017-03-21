@@ -19,6 +19,7 @@ public class Config : MonoBehaviour {
 	public static string targetEventType   = "stimulus.target";
 
 	public static string feedbackEventType = "classifier.prediction";
+	public static string rawfeedbackEventType="classifier.rawprediction";
 	public static string baselineEventType = "stimulus.baseline";
 	public static string eyesClosedEventType = "stimulus.eyesclosed";
 	public static string eyesOpenEventType = "stimulus.eyesopen";

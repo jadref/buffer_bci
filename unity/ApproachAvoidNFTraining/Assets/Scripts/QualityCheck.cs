@@ -140,20 +140,20 @@ public class QualityCheck : MonoBehaviour {
         isEnabled = status;
     }
 
-    public void setCalibration(bool status) {
+    public void setCalibration(bool status) { // use raw-predictions so no-need to worry about calibrated/uncalibrated....
         // toggle between raw threshold and corrected threshold
-        if (status) {
-            activeTreshold = Config.qualityThresholdActiveCal;
-            rollingTreshold = Config.qualityThresholdRollingCal;
-            badLimit = Config.qualityLimitBadCal;
-			disconnectLimit = Config.qualityThresholdDisconnectedCal;
-        }
-        else {
+//        if (status) {
+//            activeTreshold = Config.qualityThresholdActiveCal;
+//            rollingTreshold = Config.qualityThresholdRollingCal;
+//            badLimit = Config.qualityLimitBadCal;
+//			disconnectLimit = Config.qualityThresholdDisconnectedCal;
+//        }
+//        else {
             activeTreshold = Config.qualityThresholdActiveUncal;
             rollingTreshold = Config.qualityThresholdRollingUncal;
             badLimit = Config.qualityLimitBadUncal;
 			disconnectLimit = Config.qualityThresholdDisconnected;
-        }
+//        }
     }
 
     public void resetAverage() {

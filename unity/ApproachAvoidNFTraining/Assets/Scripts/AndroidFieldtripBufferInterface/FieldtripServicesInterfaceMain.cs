@@ -21,6 +21,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 	UnityBuffer buffer;
 	double[] currentAlphaLat;
+	double[] currentrawpred;
 
 	public bool verbose;
 	public UnityEngine.UI.Text StatusText;
@@ -155,6 +156,9 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 		if (latestEvent.getType ().toString () == Config.feedbackEventType) {
 			IList alphaLatObjects = latestEvent.getValue ().array as IList;
 			currentAlphaLat = alphaLatObjects.Cast<double> ().ToArray ();
+		} else if (latestEvent.getType ().toString () == Config.rawfeedbackEventType) {
+			IList rawpred = latestEvent.getValue ().array as IList;
+			currentrawpred = rawpred.Cast<double> ().ToArray ();
 		}
 	}
 
@@ -236,7 +240,9 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 	public float getQualityCh1()
 	{
-		if (currentAlphaLat.Length > 2) { 
+		if (currentrawpred.Length > 2) { // use raw predictions if available, fall back on baselined if not
+			return (float)currentrawpred [currentrawpred.Length - 2];
+		} else if (currentAlphaLat.Length > 2) { 
 			return (float)currentAlphaLat [currentAlphaLat.Length - 2];
 		} else {
 			return -1;
@@ -245,7 +251,9 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 	public float getQualityCh2()
 	{
-		if (currentAlphaLat.Length > 3) {
+		if (currentrawpred.Length > 3) {
+			return (float)currentrawpred [currentrawpred.Length - 1];
+		} else if (currentAlphaLat.Length > 3) {
 			return (float)currentAlphaLat [currentAlphaLat.Length - 1];
 		} else {
 			return -1;
