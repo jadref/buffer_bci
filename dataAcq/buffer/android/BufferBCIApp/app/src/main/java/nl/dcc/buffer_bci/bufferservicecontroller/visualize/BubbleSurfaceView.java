@@ -13,7 +13,7 @@ public class BubbleSurfaceView extends SurfaceView implements SurfaceHolder.Call
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     // Variables go here
     DrawThread drawThread;
-    BufferThread bufferThread;
+    VisualizeBufferThread visualizeBufferThread;
     private SurfaceHolder sh;
     private Context ctx;
 
@@ -42,11 +42,11 @@ public class BubbleSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
         sh.unlockCanvasAndPost(canvas);
 
-        bufferThread = new BufferThread("localhost", 1972);
-        bufferThread.setRunning(true);
-        bufferThread.start();
+        visualizeBufferThread = new VisualizeBufferThread("localhost", 1972);
+        visualizeBufferThread.setRunning(true);
+        visualizeBufferThread.start();
 
-        drawThread = new DrawThread(sh, ctx, null, bufferThread);
+        drawThread = new DrawThread(sh, ctx, null, visualizeBufferThread);
         drawThread.setRunning(true);
         drawThread.start();
     }
@@ -73,8 +73,8 @@ public class BubbleSurfaceView extends SurfaceView implements SurfaceHolder.Call
                 }
             }
         }
-        if ( bufferThread != null ) {
-            bufferThread.setRunning(false);
+        if ( visualizeBufferThread != null ) {
+            visualizeBufferThread.setRunning(false);
         }
     }
 }

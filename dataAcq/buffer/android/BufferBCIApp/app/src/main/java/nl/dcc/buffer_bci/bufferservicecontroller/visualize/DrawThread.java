@@ -5,7 +5,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Handler;
-import android.util.Log;
 import android.view.SurfaceHolder;
 
 import java.util.Arrays;
@@ -38,14 +37,14 @@ public class DrawThread extends Thread {
 
     float baddnessFilter=0.0f;
 
-    private BufferThread bufferThread;
+    private VisualizeBufferThread visualizeBufferThread;
 
-    public DrawThread(SurfaceHolder surfaceHolder, Context context, Handler handler, BufferThread bufferThread) {
+    public DrawThread(SurfaceHolder surfaceHolder, Context context, Handler handler, VisualizeBufferThread visualizeBufferThread) {
         sh = surfaceHolder;
         handler = handler;
         ctx = context;
         max = new float[3];
-        this.bufferThread = bufferThread;
+        this.visualizeBufferThread = visualizeBufferThread;
         baddnessFilter = 0.0f;
     }
 
@@ -63,13 +62,13 @@ public class DrawThread extends Thread {
     public boolean updateModel() {
         boolean damage=false;
         synchronized (sh) {
-            damage = bufferThread.isDamage();
+            damage = visualizeBufferThread.isDamage();
             if ( damage ) {
-                float[] values = bufferThread.getValues();
+                float[] values = visualizeBufferThread.getValues();
                 color = computeColor(values);
                 size = computeSize(values);
                 predString = computeString(values);
-                bufferThread.setDamage(false); // mark as processed
+                visualizeBufferThread.setDamage(false); // mark as processed
             }
         }
         return damage;
