@@ -68,7 +68,7 @@ public class Training : MonoBehaviour {
 				menu.nextStage();
 			}
 
-			TrnSampEvent.text = FTSInterface.getCurrentSampleNumber() + "/" + FTSInterface.getCurrentEventsNumber() + " (samp/evt)";
+			//TrnSampEvent.text = FTSInterface.getCurrentSampleNumber() + "/" + FTSInterface.getCurrentEventsNumber() + " (samp/evt)";
 
 			// Tunnel rotation
 			tunnelContainer.transform.Rotate (0, 0.02f, 0);

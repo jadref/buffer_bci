@@ -240,7 +240,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 	public float getQualityCh1()
 	{
-		if (currentrawpred.Length > 2) { // use raw predictions if available, fall back on baselined if not
+		if (currentrawpred!=null && currentrawpred.Length > 2) { // use raw predictions if available, fall back on baselined if not
 			return (float)currentrawpred [currentrawpred.Length - 2];
 		} else if (currentAlphaLat.Length > 2) { 
 			return (float)currentAlphaLat [currentAlphaLat.Length - 2];
@@ -251,7 +251,7 @@ public class FieldtripServicesInterfaceMain : MonoBehaviour {
 
 	public float getQualityCh2()
 	{
-		if (currentrawpred.Length > 3) {
+		if (currentrawpred!=null && currentrawpred.Length > 3) {
 			return (float)currentrawpred [currentrawpred.Length - 1];
 		} else if (currentAlphaLat.Length > 3) {
 			return (float)currentAlphaLat [currentAlphaLat.Length - 1];
