@@ -49,6 +49,7 @@ while( ~endTest )
   
   % get the data
   data = buffer('get_dat',[nSamples nSamples+trlen_samp-1],buffhost,buffport);
+  nSamples = nSamples + trlen_samp-1; % update the last-sample processed
   
   % apply classification pipeline to this events data
   [f,fraw,p]=buffer_apply_ersp_clsfr(data.buf,clsfr);    
