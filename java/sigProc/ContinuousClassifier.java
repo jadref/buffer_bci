@@ -36,6 +36,7 @@ public class ContinuousClassifier {
     protected String endType = "stimulus.test";
     protected String endValue = "end";
     protected String predictionEventType = "classifier.prediction";
+    protected String rawpredictionEventType = "classifier.rawprediction";
 
     protected double predictionFilter = 1.0;
     protected int timeout_ms = 1000;
@@ -330,6 +331,16 @@ public class ContinuousClassifier {
                     fraw   = new Matrix(fraw.add(result.fraw));
                 }
 					 if ( VERB>1 ) System.out.println(TAG+ " pred="+f);
+
+                // Send raw-prediction event
+                if( rawpredictionEventType != null ) {
+                    try {
+                        BufferEvent event = new BufferEvent(rawpredictionEventType, f.getColumn(0), fromId);
+                        C.putEvent(event);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
 
                 // Smooth the classifiers
                 if (dv == null ) {

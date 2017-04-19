@@ -10,6 +10,8 @@ public class QualityCheck : MonoBehaviour {
     public Image QualityIndicatorR;
     public Button AdvanceButton;
 	public Text	SampEvent;
+	public Text QualityL;
+	public Text QualityR;
 
     private bool isEnabled = false;
     private bool curQualityStatusAllChannels = false;
@@ -20,6 +22,7 @@ public class QualityCheck : MonoBehaviour {
     private float activeTreshold;
     private float rollingTreshold;
     private float badLimit;
+	private float disconnectLimit;
 
     private Color themeGreen = new Color32(0x55, 0xAD, 0x5A, 0xFF);
     private Color themeRed = new Color32(0xAD, 0x34, 0x48, 0xFF);
@@ -81,11 +84,13 @@ public class QualityCheck : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
-		if (isEnabled && QualityIndicatorL.IsActive() &&  FTSInterface.getSystemIsReady()) {
+		if (isEnabled && FTSInterface.systemIsReady()) {
 			SampEvent.text = FTSInterface.getCurrentSampleNumber() + "/" + FTSInterface.getCurrentEventsNumber() + " (samp/evt)";
 
             float qualityCh1 = FTSInterface.getQualityCh1();
+			QualityL.text = qualityCh1.ToString("0.00");
             float qualityCh2 = FTSInterface.getQualityCh2();
+			QualityR.text = qualityCh2.ToString("0.00");
 
             // Judge current quality
             bool channel1Good = CheckChannel(qualityCh1, 1, QualityIndicatorL);
@@ -122,7 +127,7 @@ public class QualityCheck : MonoBehaviour {
     }
 
     public bool getAvgQualityStatus() {
-        if (avgQualityAllChannels < rollingTreshold) {
+		if (avgQualityAllChannels < rollingTreshold && avgQualityAllChannels > disconnectLimit) {
             // quality is good
             return true;
         }
@@ -135,18 +140,20 @@ public class QualityCheck : MonoBehaviour {
         isEnabled = status;
     }
 
-    public void setCalibration(bool status) {
+    public void setCalibration(bool status) { // use raw-predictions so no-need to worry about calibrated/uncalibrated....
         // toggle between raw threshold and corrected threshold
-        if (status) {
-            activeTreshold = Config.qualityThresholdActiveCal;
-            rollingTreshold = Config.qualityThresholdRollingCal;
-            badLimit = Config.qualityLimitBadCal;
-        }
-        else {
+//        if (status) {
+//            activeTreshold = Config.qualityThresholdActiveCal;
+//            rollingTreshold = Config.qualityThresholdRollingCal;
+//            badLimit = Config.qualityLimitBadCal;
+//			disconnectLimit = Config.qualityThresholdDisconnectedCal;
+//        }
+//        else {
             activeTreshold = Config.qualityThresholdActiveUncal;
             rollingTreshold = Config.qualityThresholdRollingUncal;
             badLimit = Config.qualityLimitBadUncal;
-        }
+			disconnectLimit = Config.qualityThresholdDisconnected;
+//        }
     }
 
     public void resetAverage() {

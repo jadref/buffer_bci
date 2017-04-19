@@ -54,7 +54,7 @@ public class Training : MonoBehaviour {
 	// Update is called once per frame
 	void Update ()
 	{
-		if (gameObject.activeSelf && FTSInterface.getSystemIsReady())
+		if (gameObject.activeSelf && FTSInterface.systemIsReady())
 		{
 			if ((Time.time-startTime) >= duration)
 			{
@@ -68,7 +68,7 @@ public class Training : MonoBehaviour {
 				menu.nextStage();
 			}
 
-			TrnSampEvent.text = FTSInterface.getCurrentSampleNumber() + "/" + FTSInterface.getCurrentEventsNumber() + " (samp/evt)";
+			//TrnSampEvent.text = FTSInterface.getCurrentSampleNumber() + "/" + FTSInterface.getCurrentEventsNumber() + " (samp/evt)";
 
 			// Tunnel rotation
 			tunnelContainer.transform.Rotate (0, 0.02f, 0);

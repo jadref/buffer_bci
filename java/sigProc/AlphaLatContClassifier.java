@@ -199,36 +199,46 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
                 }
 					 if ( VERB>1 ) System.out.println(TAG+ " pred="+f);					 
 
-                // convert from channel powers to lateralization score
-					 if ( f.getRowDimension() > 1 ) {
-						  double[] dvColumn = f.getColumn(0);
-						  // return 1 less column
-						  f = new Matrix(dvColumn.length - 1, 1);
-						  f.setColumn(0, Arrays.copyOfRange(dvColumn, 1, dvColumn.length));
-						  if ( computeLateralization ) { // compute difference in feature values
-								if (normalizeLateralization) { // normalized difference score
-									 f.setEntry(0, 0, (dvColumn[1] - dvColumn[0]) / (dvColumn[0] + dvColumn[1]));
-								} else {
-									 f.setEntry(0, 0, dvColumn[1] - dvColumn[0]);
-								}
-						  } else { // summed feature values
-								f.setEntry(0,0,dvColumn[0]+dvColumn[1]);
-						  }
-                    if ( medianFilter ) { // report median filtered values -- to suppress artifacts
-                        f.setEntry(0,0, medFilt.apply(f.getEntry(0,0))); 
-                    }
-					 }
+                // Send raw-prediction event
+                if( rawpredictionEventType != null ) {
+                try {
+                    BufferEvent event = new BufferEvent(rawpredictionEventType, f.getColumn(0), fromId);
+                    C.putEvent(event);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                }
 
                 // Smooth the classifiers
                 if (dv == null || predictionFilter < 0) {
 						  dv = f;
                 } else {
-                    if (predictionFilter >= 0.) {// exponiential smoothing of predictions
-								// dv = (1-alpha)*dv + alpha*f
+                    if ( medianFilter ) { // median filtering of predictions
+                        dv = f;
+                        dv.setEntry(0,0, medFilt.apply(dv.getEntry(0,0)));
+                    } else if (predictionFilter >= 0.) {// exponiential smoothing of predictions
+                        // dv = (1-alpha)*dv + alpha*f
                         dv = new Matrix(dv.scalarMultiply(1. - predictionFilter)
 													 .add(f.scalarMultiply(predictionFilter)));
                     }
                 }
+
+                // convert from channel powers to lateralization score
+					 if ( dv.getRowDimension() > 1 ) {
+						  double[] dvColumn = dv.getColumn(0);
+						  // return 1 less column
+						  dv = new Matrix(dvColumn.length - 1, 1);
+						  dv.setColumn(0, Arrays.copyOfRange(dvColumn, 1, dvColumn.length));
+						  if ( computeLateralization ) { // compute difference in feature values
+								if (normalizeLateralization) { // normalized difference score
+									 dv.setEntry(0, 0, (dvColumn[1] - dvColumn[0]) / (dvColumn[0] + dvColumn[1]));
+								} else {
+									 dv.setEntry(0, 0, dvColumn[1] - dvColumn[0]);
+								}
+						  } else { // summed feature values
+								dv.setEntry(0,0,dvColumn[0]+dvColumn[1]);
+						  }
+					 }
 
                 // Update baseline
                 if (baselinePhase) {

@@ -1,4 +1,4 @@
-package Mobita2ft;
+package nl.dcc.buffer_bci;
 
 /** TMS storage type struct */
 public class TMS_STORAGE_T
