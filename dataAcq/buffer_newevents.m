@@ -1,7 +1,7 @@
 function [events,state,nevents,nsamples]=buffer_newevents(host,port,state,mtype,mval,timeOut_ms)
 % Get new events of matching type from the ft_buffer
 %
-% [events,state]=buffer_newevents(host,port,state,startType,startVal,timeOut_ms)
+% [events,state]=buffer_newevents(host,port,state,matchType,matchVal,timeOut_ms)
 % Inputs:
 %  host -- buffer host name
 %  port -- buffer port
@@ -17,8 +17,8 @@ function [events,state,nevents,nsamples]=buffer_newevents(host,port,state,mtype,
 %          [struct] - This contains 3 fields:
 %           .nevents -- [int] number of events processed so far
 %           .nsamples - [int] number of samples processed so far
-%  mType -- {{types}} cell array of match strings for matching events types
-%  mVal  -- {{values}} cell array of match values for matching events.  
+%  matchType -- {{types}} cell array of match strings for matching events types
+%  matchVal  -- {{values}} cell array of match values for matching events.  
 %     N.B. Match occurs if type matches *any* startType, and value matches *any* startValue
 %     [N.B. internally matchEvents is used to matching mi=matchEvents(events,startType,startValue)
 %               See matchEvents for more details on the structure of startSet
