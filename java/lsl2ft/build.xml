@@ -70,4 +70,11 @@
     nbproject/build-impl.xml file. 
 
     -->
+	
+	<target name="buffdist" depends="jar">
+     <copy todir="${buffer.dir}">
+		 <fileset dir="${lib.dir}" />
+	  </copy>
+     <copy file="${dist.dir}/${ant.project.name}.jar" todir="${buffer.dir}"/>
+	</target>
 </project>
