@@ -1,0 +1,131 @@
+classdef CannonBall < handle
+    
+    %% Properties:
+    
+    properties (Constant)
+        verticalSpeed = 0.8;   % rising speed of ball.
+        relSizeBall   = 0.03; % ball size
+    end
+    
+    
+    properties
+        shotX;               % X where ball was shot.
+        shotY;               % Y where ball was shot.
+        shotClock;           % time when ball was shot.
+        sizeBall;
+        hGraphic;            % handle to ball graphics object.
+        hAxes;               % handle to axes.
+        hCannon;
+    end
+    
+    %% Methods:
+    
+    methods
+        
+        
+        %==================================================================
+        function obj = CannonBall(hAxes,hCannon)
+            % Constructs a cannonball.
+            disp('now a ball')
+            
+            % Save properties:
+            obj.sizeBall = obj.relSizeBall*range(get(hAxes,'YLim'));
+            obj.shotX = hCannon.Xbase+0.5*hCannon.cannonWidth...
+                -0.5* obj.sizeBall;
+            obj.shotY = hCannon.Ybase+hCannon.cannonHeight;
+            obj.hAxes = hAxes;
+            obj.hCannon  = hCannon;
+            
+            % Draw cannonball:
+            obj.hGraphic = rectangle(...
+                'curvature',[1 1]...
+                ,'facecolor','w'...
+                ,'parent',hAxes...
+                ,'position',[obj.shotX,obj.shotY...
+                ,obj.sizeBall,obj.sizeBall]...
+                ,'visible','on');
+            
+            % Save the time that the ball was shot:
+            obj.shotClock = tic;
+            
+        end
+        
+        
+        %==================================================================
+        function [ballsOut, hits] = updateBalls(ballsIn,hAlien)
+            % Processes cannonballs.
+            
+            % Only use the first (lowest) alien:
+            if ~isempty(hAlien)
+            hAlien = hAlien(1);
+            else
+                hAlien = [];
+            end
+            
+            hits = 0;
+            % Skip if there are no balls, return an empy object:
+            if isempty(ballsIn);
+                ballsOut = CannonBall.empty;
+                return
+            end
+            
+            % Otherwise, loop through balls:
+            for obj = ballsIn;
+                
+                % Update current cannonball (NewY  = shotY + elapsedTime *
+                % speed):
+                yLims = get(obj.hAxes,'YLim');
+                curY = obj.shotY + toc(obj.shotClock)...
+                    *obj.verticalSpeed*range(yLims);
+                
+                % Check out of bounds of current ball:
+                if curY>yLims(2)
+                    obj.deleteBall;
+                    continue
+                end
+                
+                % Check collision with alien:
+                if ~isempty(hAlien)&&isvalid(hAlien)
+                    allowableBallOverlap = 0.8;
+                    if curY >= hAlien.y - allowableBallOverlap*obj.sizeBall
+                        if obj.shotX +obj.sizeBall >= hAlien.x ...
+                                && obj.shotX <= hAlien.x + hAlien.alienSize
+                            disp('You got it!');
+                            hAlien.hit;
+                            hits = hits + 1;
+                            obj.deleteBall;
+                            continue
+                        end
+                    end
+                    
+                    % Check collision with forcefield
+                    if curY>hAlien.calcForceFieldY...
+                            -allowableBallOverlap*obj.sizeBall
+                        obj.deleteBall;
+                        continue
+                    end
+                end
+                
+                % Update the ball graphic if the ball is still alive:
+                set(obj.hGraphic...
+                    ,'position',[obj.shotX,curY...
+                    ,obj.sizeBall,obj.sizeBall]);
+            end
+            
+            % Only return the balls that were not deleted:
+            ballsOut = ballsIn(isvalid(ballsIn));
+            
+        end
+        
+        
+        %==================================================================
+        function deleteBall(obj)
+            % Deletes the ball graphic, and the CannonBall object.
+            
+            delete(obj.hGraphic)
+            delete(obj);
+            
+        end
+    end
+    
+end
