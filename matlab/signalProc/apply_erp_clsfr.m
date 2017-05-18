@@ -140,7 +140,7 @@ if ( any(isbadtr) )
 end
 
 % Pr(y==1|x,w,b), map to probability of the positive class
-if ( clsfr.binsp ) 
+if ( clsfr.binsp || size(f,2)==1 ) 
    p = 1./(1+exp(-f)); 
 else % direct multi-class softmax
    p = exp(f-max(f,2)); p=repop(p,'./',sum(p,2));
