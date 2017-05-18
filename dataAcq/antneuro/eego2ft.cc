@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <map>
+#include <sys/time.h>
 
 #ifdef PLATFORM_WIN32
     // function Sleep in ms!
@@ -23,6 +24,7 @@
 
 static int BUFFRATE=50; /* rate (Hz) at which samples are sent to the buffer */
 static int BUFFERSUBSAMPLESIZE=1; /* number of buffer samples per amplifier sample */
+static int sampleRate=250;
 
 #if defined(__WIN32__) || defined(__WIN64__)
  #define SIGALRM -1
@@ -32,12 +34,27 @@ static int BUFFERSUBSAMPLESIZE=1; /* number of buffer samples per amplifier samp
 #endif
 
 
-amplifier* amp=null ; 
-stream* eegStream=null; 
+bool running=true;
 int port=1972, ctrlPort=8000;
 char hostname[256]="localhost";
 StringServer ctrlServ;
 ConsoleInput conIn;
+
+using namespace eemagine::sdk;
+amplifier* amp=NULL ; 
+stream* eegStream=NULL; 
+
+
+void shutdown(){
+  running=false;
+      #ifdef PLATFORM_WIN32
+        Sleep(100);
+      #else
+        sleep(.1); 
+      #endif  
+   delete eegStream;
+   delete amp;
+}
 
 void sig_handler(int32_t sig) 
 {
@@ -68,16 +85,16 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
    struct timeval starttime, curtime;
    if( packetInterval_ms<1 ) { packetInterval_ms = 10; }
 
-   nChannels = amp.getChannelList().size();
+   int nChannels = amp->getChannelList().size();
    OnlineDataManager<double, double> ODM(0, nChannels, (float) sampleRate);
 	
    if( !strcmp(configFile, "-") ) {
-	if (ODM.configureFromFile(configFile) != 0) {
-		fprintf(stderr, "Configuration %s file is invalid\n", configFile);
-		return;
-	} else {
-		printf("Streaming %i out of %i channels\n", ODM.getSignalConfiguration().getStreamingSelection().getSize(), TOTAL_CHANNELS);
-	}
+     if (ODM.configureFromFile(configFile) != 0) {
+       fprintf(stderr, "Configuration %s file is invalid\n", configFile);
+       return;
+     } else {
+       printf("Streaming %i out of %i channels\n", ODM.getSignalConfiguration().getStreamingSelection().getSize(), nChannels);
+     }
    }
 	if (!strcmp(hostname, "-")) {
 		if (!ODM.useOwnServer(port)) {
@@ -95,7 +112,7 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
 	
 	printf("Starting to transfer data - press [Escape] to quit\n");
 
-	while (1) {
+	while (running) {
 		if (conIn.checkKey() && conIn.getKey()==27) break;	
 		ctrlServ.checkRequests(ODM);
 	
@@ -103,9 +120,9 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
 		unsigned int nSamplesTaken=buf.getSampleCount();
 		if (nSamplesTaken != 0) {
 			double* dest = ODM.provideBlock(nSamplesTaken); 
-			for (int i=0;i<TOTAL_CHANNELS;i++) {					
+			for (int i=0;i<nChannels;i++) {					
 				for (unsigned int j=0;j<nSamplesTaken;j++) {
-              dest[i + j*TOTAL_CHANNELS] = buf.getSample(i,j);
+              dest[i + j*nChannels] = buf.getSample(i,j);
 				}
 			}
 			if (!ODM.handleBlock()) break;
@@ -124,56 +141,46 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
       #ifdef PLATFORM_WIN32
         Sleep(packetInterval_ms);
       #else
-        sleep(packetInterval_ms./1000.0f); 
+        sleep(packetInterval_ms/1000.0f); 
       #endif
 	}
 }
 
-
-
 int main(int argc, char **argv) {
 	//const unsigned short composerPort	= 1726;
-	unsigned int samplingRate = 0;
 	
 	if (argc<2) {
      usage();
-		return 1;
+     return 1;
 	}
-	
 	if (argc>2) {
-		strncpy(hostname, argv[2], sizeof(hostname));
-	} else {
-		strcpy(hostname, "localhost");
-	}
-	
+     strncpy(hostname, argv[2], sizeof(hostname));
+	}	
 	if (argc>3) {
 		port = atoi(argv[3]);
-	} else {
-		port = 1972;
 	}	
-
 	if (argc>4) {
 		ctrlPort = atoi(argv[4]);
-	} else {
-		ctrlPort = 8000;
-	}	
+	}
+	if (argc>5 ){
+     sampleRate = atoi(argv[5]);
+   }
+	if (argc>6 ){
+     BUFFRATE = atoi(argv[5]);
+   }
 	
 	if (!ctrlServ.startListening(ctrlPort)) {
 		fprintf(stderr, "Cannot listen on port %d for configuration commands\n", ctrlPort);
 		return 1;
 	}
 	
-  using namespace eemagine::sdk;
   factory fact;
   amp = fact.getAmplifier(); // Get an amplifier
-  eegStream = amp->OpenEegStream(samplingRate); // The sampling rate is the only argument needed
+  eegStream = amp->OpenEegStream(sampleRate); // The sampling rate is the only argument needed
 	
-	if (eegStream != 0 && samplingRate!=0) {
-		acquisition(argv[1], samplingRate);
+	if (eegStream != 0 && sampleRate!=0) {
+		acquisition(argv[1], sampleRate);
 	}
 	
-   delete eegStream;
-   delete amp;
-
 	return 0;
 }  
