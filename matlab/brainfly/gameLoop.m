@@ -1,4 +1,4 @@
-function gameLoop
+function gameLoop()
 % The main game loop
 %
 % Control the cannon with the bottom row of keys on the keyboard, and
@@ -15,8 +15,8 @@ function gameLoop
 %% Prepare Workspace:
 
 %close all; clc; clear
-
-
+configureGame;
+ 
 %% Game Parameters:
 
 % Game canvas size:
@@ -70,6 +70,12 @@ score.shots  = 0;
 score.hits   = 0;
 cannonKills = 0;
 
+% Initialize buffer-prediction processing variables:
+buffstate=[];
+predFiltFn=[]; % additional filter function for the classifier predictions? %-contFeedbackFiltLen; % average full-trials worth of predictions
+filtstate=[];
+predType =[];
+
 % Make an alien:
 hAliens = Alien(hAxes,hCannon);
 
@@ -81,48 +87,15 @@ hText = text(gameCanvasXLims(1),gameCanvasYLims(2)-5,genTextStr...
 while ishandle(hFig)
     newBall = [];
     
-    % Get the current key once, to prevent it from being updated within a
-    % game loop teration:
-    curKeyLocal    = curKey;
-
-    %----------------------------------------------------------------------
-    %----------------------------------------------------------------------
-    % This section needs to produce two variables: cannonTrotFrac and
-    % cannonTrotFrac.
-    
-    cannonAction   = [];
-    cannonTrotFrac = [];
-    
-    % Determine speed:
-    switch curKeyLocal
-        
-        case {'z','slash'} % super fast!
-            cannonTrotFrac = 1;
-            
-        case {'x','period'} % fast
-            cannonTrotFrac = 0.8;
-            
-        case {'c','comma'} % meh
-            cannonTrotFrac = 0.6;
-            
-        case {'v','m'} % slow
-            cannonTrotFrac = 0.4;
-            
-        case {'b','n'} % slooow
-            cannonTrotFrac = 0.2;
+    if ( useKeyboard )
+        % Get the current key once, to prevent it from being updated within a
+        % game loop teration:
+      curKeyLocal    = curKey;
+      [cannonAction,cannonTrotFrac]=key2action(curKeyLocal);
     end
-    
-    % Determine the correct action:
-    switch curKeyLocal
-        
-        case {'z','x','c','v','b'}
-            cannonAction = 'left';
-            
-        case {'n','m','comma','period','slash'}
-            cannonAction = 'right';
-            
-        case 'space'
-            cannonAction = 'fire';
+    if ( useBuffer )
+      [dv,prob,buffstate,filtstate]=processNewPredictionEvents(buffhost,buffport,buffstate,predType,isi*1000/2,predFiltFn,filtstate,verb)      
+      [cannonAction,cannonTrotFrac]=prediction2action(dv,prob);
     end
     
     %----------------------------------------------------------------------
@@ -175,7 +148,8 @@ while ishandle(hFig)
     
     % Set score disp and loop:
     set(hText,'String',genTextStr());
-    pause(0.01);
+    % TODO: make this more accurate to take account of display lag
+    pause(isi);
     
 end
 
@@ -184,7 +158,62 @@ end
         curKey = key;
     end
 
+%==========================================================================
+function [cannonAction,cannonTrotFrac]=key2action(curKeyLocal)
 
+    %----------------------------------------------------------------------
+    %----------------------------------------------------------------------
+    % This section needs to produce two variables: cannonTrotFrac and
+    % cannonTrotFrac.
+    
+    cannonAction   = [];
+    cannonTrotFrac = [];
+    
+    % Determine speed:
+    switch curKeyLocal
+        
+        case {'z','slash'} % super fast!
+            cannonTrotFrac = 1;
+            
+        case {'x','period'} % fast
+            cannonTrotFrac = 0.8;
+            
+        case {'c','comma'} % meh
+            cannonTrotFrac = 0.6;
+            
+        case {'v','m'} % slow
+            cannonTrotFrac = 0.4;
+            
+        case {'b','n'} % slooow
+            cannonTrotFrac = 0.2;
+    end
+    
+    % Determine the correct action:
+    switch curKeyLocal
+        
+        case {'z','x','c','v','b'}
+            cannonAction = 'left';
+            
+        case {'n','m','comma','period','slash'}
+            cannonAction = 'right';
+            
+        case 'space'
+            cannonAction = 'fire';
+    end
+
+
+    function [cannonAction,cannonTrotFrac]=prediction2action(prob)
+                 % assume class order: [left right fire] (if fire is present)      
+      margin=.1;
+      if( prob(1)>prob(2)+margin ) cannonAction='left'; end;
+      if( prob(2)>prob(1)+margin ) cannonAction='right'; end;
+      if( numel(prob)>2 && prob(3)>max(prob(1:2)) ) cannonAction='fire'; end;
+      cannonTrotFrac=.4; % Meh speed
+      
+
+
+
+    
 %==========================================================================
     function str = genTextStr()
         str = sprintf(['  Shots: %i  |  hits: %i  |  acc.:%.1f%%'...
