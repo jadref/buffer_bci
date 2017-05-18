@@ -118,7 +118,7 @@ for si=1:max(100000,nSeq);
 
     % feedback information... simply move in direction detected by the BCI
     if(numel(prob)>size(stimPos,2)) prob=[prob(1:size(stimPos,2)-1);sum(prob(size(stimPos,2):end))];end
-	dx      = stimPos(:,1:numel(prob))*prob(:); % change in position is weighted by class probs
+    dx      = stimPos(:,1:numel(prob))*prob(:); % change in position is weighted by class probs
     fixPos  = dx; % new fix pos is weighted by classifier output
     %move the fixation to reflect feedback
     cursorPos=get(h(end),'position'); cursorPos=cursorPos(:);
