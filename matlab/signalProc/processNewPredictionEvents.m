@@ -30,6 +30,8 @@ if( nargin<6 ) filtFn=''; end;
 if( nargin<7 ) filtstate=[]; end;
 if( nargin<8 || isempty(verb) ) verb=0; end
 
+dv=[]; prob=[];
+
 % wait for new prediction events to process *or* end of trial time
 if( isstruct(predType) && isfield(predType,'sample') ) % predType is already the events to process
   events = predType;
