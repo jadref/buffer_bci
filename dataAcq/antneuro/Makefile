@@ -6,7 +6,7 @@ FTBUFFER = $(FTPATH)
 CXX = gcc
 ##LDFLAGS = -L$(FTBUFFER)
 LDLIBS = -lm
-LDXXLIBS= $(LDLIBS)o
+LDXXLIBS= $(LDLIBS)
 LIBEXT=so
 EXTENSION=
 
@@ -27,7 +27,8 @@ ifneq (,$(findstring mingw, $(PLATFORM)))
 	EXTENSION = .exe
 #	LDLIBS += -lws2_32 $(BINDIR)/pthreadGC2.dll 
 	LDLIBS += -lws2_32
-	LDFLAGS += -static -Lwindows/32bit
+	EEGOLIBDIR= windows/32bit
+	LDFLAGS += -static -L$(EEGOLIBDIR) -leego-SDK
    # Make clean target work on windows:
 	fixpath = $(subst /,\,$1)
 #	RM = del
@@ -42,16 +43,17 @@ ifneq (,$(findstring apple-darwin,$(PLATFORM))) # MacOS
 	LDLIBS += -lpthread -m32
 	fixpath = $1
 	LIBEXT=la
-	LDFLAGS += -static -Lmaci
+	EEGOLIBDIR= linux/64bit
+	LDFLAGS += -Lmaci -leego-SDK
 endif
 
 ifneq (,$(findstring linux,$(PLATFORM))) # linux
-	CXX = gcc
+	CXX = g++
 #	BINDIR = $(FTPATH)/realtime/bin/glnx86
 	BINDIR = ../buffer/glnx86
-   # Only Linux has BLUEz support
 	CFLAGS += -DDISABLE_NAGLE
-	LDFLAGS+= -static -Llinux/32bit
+	EEGOLIBDIR= linux/64bit
+	LDFLAGS+= -lpthread -L$(EEGOLIBDIR) -leego-SDK
 endif
 
 # dependencies info
@@ -61,13 +63,14 @@ bufferSOURCES = $(patsubst %,$(FTPATH)/cpp/%,\
 	$(patsubst %,$(FTPATH)/c/%,\
 	tcpserver.o tcpsocket.o tcprequest.o clientrequest.o dmarequest.o cleanup.o util.o printstruct.o swapbytes.o extern.o endianutil.o socketserver.o)
 
-TARGETS = eggo2ft$(EXTENSION)
+TARGETS = eego2ft$(EXTENSION)
 
 all: $(TARGETS)
 
-eggo2ft$(EXTENSION): $(SOURCES) $(bufferSOURCES)
-	$(CXX) -o eggo2ft $^ $(CXXFLAGS) $(LDXXFLAGS) $(LDXXLIBS)
-	cp eggo2ft$(EXTENSION) $(BINDIR)
+eego2ft$(EXTENSION): $(SOURCES) $(bufferSOURCES)
+	$(CXX) -o eego2ft $^ $(CXXFLAGS) $(LDXXFLAGS) $(LDXXLIBS)
+	cp eego2ft$(EXTENSION) $(BINDIR)
+	cp $(EEGOLIBDIR)/* $(BINDIR)
 
 clean:
 	$(RM) *.o $(call fixpath, $(TARGETS)) eego2ft$(EXTENSION)

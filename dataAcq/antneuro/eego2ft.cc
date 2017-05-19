@@ -23,7 +23,6 @@
 #include <StringServer.h>
 
 static int BUFFRATE=50; /* rate (Hz) at which samples are sent to the buffer */
-static int BUFFERSUBSAMPLESIZE=1; /* number of buffer samples per amplifier sample */
 static int sampleRate=250;
 
 #if defined(__WIN32__) || defined(__WIN64__)
@@ -81,7 +80,7 @@ void usage(){
 void acquisition(const char *configFile, unsigned int sampleRate) {
   int nsamp=0, nblk=0;
    int packetInterval_ms = 1000./BUFFRATE;
-   long int elapsedusec=0, sampleusec=0, printtime=0;
+   long int elapsedusec=0, printtime=0;
    struct timeval starttime, curtime;
    if( packetInterval_ms<1 ) { packetInterval_ms = 10; }
 

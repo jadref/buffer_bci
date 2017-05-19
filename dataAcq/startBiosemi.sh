@@ -23,7 +23,7 @@ fi
    if [ -r $buffdir/buffer/glnx86/biosemi2ft ]; then
 	 cd $buffdir'/buffer/glnx86';
    fi
-   export LD_LIBRARY_LOADPATH=${LD_LIBRARY_LOADPATH}:`pwd`   
+   export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:`pwd`   
    buffexe='./biosemi2ft'
 else # Mac
    if [ -r $buffdir/buffer/bin/maci/biosemi2ft ]; then
