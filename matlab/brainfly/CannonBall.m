@@ -48,16 +48,25 @@ classdef CannonBall < handle
             % Save the time that the ball was shot:
             obj.shotClock = tic;
             
+        end       
+        
+         %==================================================================
+        function deleteBall(obj)
+            % Deletes the ball graphic, and the CannonBall object.
+            
+            delete(obj.hGraphic)
+            delete(obj);
+            
         end
-        
-        
+    end
+    methods(Static)
         %==================================================================
         function [ballsOut, hits] = updateBalls(ballsIn,hAlien)
             % Processes cannonballs.
             
             % Only use the first (lowest) alien:
             if ~isempty(hAlien)
-            hAlien = hAlien(1);
+              hAlien = hAlien(1);
             else
                 hAlien = [];
             end
@@ -70,7 +79,8 @@ classdef CannonBall < handle
             end
             
             % Otherwise, loop through balls:
-            for obj = ballsIn;
+            for bi=1:numel(ballsIn);
+              obj = ballsIn(bi);
                 
                 % Update current cannonball (NewY  = shotY + elapsedTime *
                 % speed):
@@ -85,7 +95,7 @@ classdef CannonBall < handle
                 end
                 
                 % Check collision with alien:
-                if ~isempty(hAlien)&&isvalid(hAlien)
+                if ~isempty(hAlien)&&ishandle(hAlien)
                     allowableBallOverlap = 0.8;
                     if curY >= hAlien.y - allowableBallOverlap*obj.sizeBall
                         if obj.shotX +obj.sizeBall >= hAlien.x ...
@@ -113,19 +123,10 @@ classdef CannonBall < handle
             end
             
             % Only return the balls that were not deleted:
-            ballsOut = ballsIn(isvalid(ballsIn));
+            ballsOut = ballsIn(ishandle(ballsIn));
             
         end
-        
-        
-        %==================================================================
-        function deleteBall(obj)
-            % Deletes the ball graphic, and the CannonBall object.
-            
-            delete(obj.hGraphic)
-            delete(obj);
-            
-        end
+
     end
     
 end

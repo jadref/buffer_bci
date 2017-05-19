@@ -65,6 +65,8 @@ classdef Cannon < handle
             
             % Calculate the variable step size:
             curStepSize = howMuch*obj.moveStepSize;
+            axesXLim     = get(obj.hAxes,'XLim');
+            pos=get(obj.hGraphic,'position');
             
             switch whereTo
                 
@@ -72,15 +74,15 @@ classdef Cannon < handle
                     
                     % Move cannon left, but keep in in bounds.
                     obj.Xbase = max(obj.Xbase-curStepSize...
-                        ,obj.hAxes.XLim(1));
-                    obj.hGraphic.Position(1) = obj.Xbase;
+                                    ,axesXLim(1));
                     
                 case 'right'
                     % Move cannon right, but keep in in bounds.
                     obj.Xbase = min(obj.Xbase+curStepSize...
-                        ,obj.hAxes.XLim(2)-obj.cannonWidth);
-                    obj.hGraphic.Position(1) = obj.Xbase;
+                        ,axesXLim(2)-obj.cannonWidth);
             end
+            pos(1)=obj.Xbase;
+            set(obj.hGraphic,'position',pos);
             
         end
         

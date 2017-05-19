@@ -43,8 +43,9 @@ classdef Alien < handle
         function obj = Alien(hAxes,hCannon)
             % Constructs an alien.
             
-            % Save properties:
-            obj.y = hAxes.YLim(1)+obj.relStartLine*range(hAxes.YLim);
+                                % Save properties:
+            Ylim=get(hAxes,'Ylim');
+            obj.y = Ylim(1)+obj.relStartLine*range(Ylim);
             obj.hAxes = hAxes;
             obj.hCannon = hCannon;
             
@@ -70,51 +71,6 @@ classdef Alien < handle
         end
         
         
-        %==================================================================
-        function [hAliensOut, cannonKills] = updateAliens(hAliensIn)
-            
-            cannonKills = 0;
-            if isempty(hAliensIn);
-                hAliensOut = Alien.empty;
-                return
-            end
-            
-            % Loop through aliens:
-            for obj = hAliensIn;
-                
-                if~isvalid(obj)
-                    continue
-                end
-                yLims = get(obj.hAxes,'YLim');
-                obj.alienSize = (obj.relAlienStartSize...
-                    +(toc(obj.alienSpawnTime)^obj.alienGrowExp)...
-                    *obj.relAlienGrowRate)...
-                    *range(obj.hAxes.YLim);
-                obj.y = (obj.relStartLine - toc(obj.alienSpawnTime)...
-                    *obj.relFallSpeed)*range(yLims);
-                waistY = calcForceFieldY(obj);
-                if obj.x+obj.alienSize>obj.hCannon.Xbase...
-                        && obj.x<obj.hCannon.Xbase+obj.hCannon.cannonWidth
-                    if obj.y<obj.hCannon.Ybase+obj.hCannon.cannonHeight
-                    obj.deleteAlien();
-                    cannonKills = cannonKills+1;
-                    continue
-                    end
-                end
-                if waistY<obj.hCannon.Ybase+obj.hCannon.cannonHeight
-                    obj.deleteAlien();
-                    cannonKills = cannonKills+1;
-                    continue
-                end
-
-                % update alien graphic, and spawn time:
-                set(obj.hLineGraphic(1),'YData',[waistY waistY]);
-                set(obj.hGraphic...
-                    ,'position',[obj.x,obj.y,obj.alienSize,obj.alienSize]);
-
-            end
-            hAliensOut = hAliensIn(isvalid(hAliensIn));
-        end
         
         
         %==================================================================
@@ -122,12 +78,12 @@ classdef Alien < handle
             % randomly respawns the alien somwehere within the axes lims.
             
             % Set random size and position:
-            obj.alienSize = obj.relAlienStartSize*range(obj.hAxes.YLim);
-            alienXLims = get(obj.hAxes,'XLim')+obj.alienSize.*[1 -1];
+            obj.alienSize = obj.relAlienStartSize*range(get(obj.hAxes,'Ylim'));
+            alienXLims = get(obj.hAxes,'Xlim')+obj.alienSize.*[1 -1];
             alienX = alienXLims(1) + rand(1)*range(alienXLims);
             obj.x = alienX;
             
-            set(obj.hLineGraphic,'XData',obj.hAxes.XLim);
+            set(obj.hLineGraphic,'XData',get(obj.hAxes,'Xlim'));
             waistY = calcForceFieldY(obj);
             set(obj.hLineGraphic(1),'YData',[waistY waistY]);
             
@@ -154,6 +110,59 @@ classdef Alien < handle
             delete(obj);
             
         end
+
+        
+        
+    end
+
+    methods(Static)
+              %==================================================================
+        function [hAliensOut, cannonKills] = updateAliens(hAliensIn)
+            
+            cannonKills = 0;
+            if isempty(hAliensIn);
+              hAliensOut = [];%Alien.empty;
+                return
+            end
+            
+            % Loop through aliens:
+            for ai=1:numel(hAliensIn);
+              obj = hAliensIn(ai);
+                
+                if~ishandle(obj)
+                    continue
+                end
+                Ylim = get(obj.hAxes,'Ylim');
+                obj.alienSize = (obj.relAlienStartSize...
+                    +(toc(obj.alienSpawnTime)^obj.alienGrowExp)...
+                    *obj.relAlienGrowRate)...
+                    *range(Ylim);
+                obj.y = (obj.relStartLine - toc(obj.alienSpawnTime)...
+                    *obj.relFallSpeed)*range(Ylim);
+                waistY = calcForceFieldY(obj);
+                if obj.x+obj.alienSize>obj.hCannon.Xbase...
+                        && obj.x<obj.hCannon.Xbase+obj.hCannon.cannonWidth
+                    if obj.y<obj.hCannon.Ybase+obj.hCannon.cannonHeight
+                    obj.deleteAlien();
+                    cannonKills = cannonKills+1;
+                    continue
+                    end
+                end
+                if waistY<obj.hCannon.Ybase+obj.hCannon.cannonHeight
+                    obj.deleteAlien();
+                    cannonKills = cannonKills+1;
+                    continue
+                end
+
+                % update alien graphic, and spawn time:
+                set(obj.hLineGraphic(1),'YData',[waistY waistY]);
+                set(obj.hGraphic...
+                    ,'position',[obj.x,obj.y,obj.alienSize,obj.alienSize]);
+
+            end
+            hAliensOut = hAliensIn(ishandle(hAliensIn));
+        end
+
     end
 end
 
