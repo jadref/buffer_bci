@@ -14,7 +14,7 @@
   %% Prepare Workspace:
 
                                 %close all; clc; clear
-  configureGame;
+if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureGame; end
   
   %% Game Parameters:
 
