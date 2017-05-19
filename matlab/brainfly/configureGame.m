@@ -34,6 +34,10 @@ if ( useBuffer ...
   gameConfig=true;
 end
 
+% add path where the standard IM stuff lives
+addpath(fullfile(fileparts(mfilename('fullpath')),'..','imaginedMovement'));
+
+
 %global dispState gameState;
 verb=0;
 buffhost='localhost'; buffport=1972;
