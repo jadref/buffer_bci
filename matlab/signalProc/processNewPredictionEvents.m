@@ -72,7 +72,7 @@ else
     
     % convert from dv to normalised probability
     prob=exp((dv-max(dv))); prob=prob./sum(prob); % robust soft-max prob computation
-    if ( verb>=0 ) 
+    if ( verb>0 ) 
 		fprintf('%d) dv:[%s]\tPr:[%s]\n',ev.sample,sprintf('%5.4f ',pred),sprintf('%5.4f ',prob));
     end;
   end

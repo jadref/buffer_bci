@@ -38,7 +38,6 @@ end
 addpath(fullfile(fileparts(mfilename('fullpath')),'..','imaginedMovement'));
 
 
-%global dispState gameState;
 verb=0;
 buffhost='localhost'; buffport=1972;
 
@@ -52,10 +51,12 @@ txtColor     =[.9 .9 .9]; % color of the cue text
 
 isi = 1/5; % 5hz screen update interval
 
+% how long 1 game level lasts
+gameDuration = 40;
+
 % epoch timing info
 stimDuration=isi;
 
-trlen_ms=1000;
 
 %---------------------------------------------------------------------------------------------------------
 % IM calibration config

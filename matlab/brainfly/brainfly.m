@@ -83,7 +83,7 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
                                 % Loop while figure is active:
   cannonAction=[];cannonTrotFrac=0;
   t0=tic;
-  while ishandle(hFig)
+  while ( toc(t0)<gameDuration && ishandle(hFig))
     newBall = [];
     
     if ( useKeyboard )

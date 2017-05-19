@@ -2,6 +2,8 @@
 if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) ) configureIM; end;
 if ( ~exist('contFeedbackTrialDuration') || isempty(contFeedbackTrialDuration) ) contFeedbackTrialDuration=trialDuration; end;
 if ( ~exist('stimSmoothFactor') ) stimSmoothFactor=[]; end;
+if ( ~exist('dvCalFactor') ) dvCalFactor=[]; end;
+if ( ~exist('warpCursor') ) warpCursor=true; end;
 
 % make the target sequence
 if ( baselineClass ) % with rest targets
