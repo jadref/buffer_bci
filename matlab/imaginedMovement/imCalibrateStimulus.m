@@ -1,4 +1,5 @@
-configureIM;
+if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) ) configureIM; end;
+
 
 % make the target sequence
 tgtSeq=mkStimSeqRand(nSymbs,nSeq);

@@ -38,6 +38,9 @@ if ( ~exist('configRun','var') || isempty(configRun) )
   configRun=true;
 end
 %----------------------------------------------------------------------
+% add path where the standard IM stuff lives
+addpath(fullfile(fileparts(mfilename('fullpath')),'..','imaginedMovement'));
+
 
 %----------------------------------------------------------------------
 % Application specific config

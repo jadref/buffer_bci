@@ -126,7 +126,9 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'start');
     onSeq=nSeq; nSeq=4; % override sequence number
     try
+      preConfigured=true;      
       imCalibrateStimulus;
+      preConfigured=false;
     catch
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
     end
@@ -139,7 +141,9 @@ while (ishandle(contFig))
     sendEvent('startPhase.cmd',phaseToRun)
     sendEvent(phaseToRun,'start');
     try
+      preConfigured=true;      
       imCalibrateStimulus;
+      preConfigured=false;
     catch
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
       sendEvent('training','end');    
@@ -193,7 +197,9 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'start');
     try
       sendEvent('startPhase.cmd','contfeedback');
+      preConfigured=true;      
       imContFeedbackStimulus;
+      preConfigured=false;
     catch
        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
        sleepSec(.1);
@@ -242,7 +248,9 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'start');
     try
       sendEvent('startPhase.cmd','contfeedback');
+      preConfigured=true;      
       imNeuroFeedbackStimulus;
+      preConfigured=false;
     catch
        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
     end
@@ -258,6 +266,7 @@ while (ishandle(contFig))
     try
       sendEvent('startPhase.cmd','contfeedback');
       imCenteroutStimulus;
+      preConfigured=false;
     catch
        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
        sleepSec(.1);

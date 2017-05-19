@@ -25,8 +25,8 @@ while count <= PAD_COUNT+1
       cur_val = fread(socket,1); % blocking read-wait for the game to send us something
    catch
    end
-   if  ̃isemptycur_val) %game sent us something
-      if cur_val >01 %this is a pad entry message
+   if  ̃isempty(cur_val) %game sent us something
+      if cur_val > 01 %this is a pad entry message
          count = count + 1;
          sendEvent(’stimulus.target’,sprintf(’%d’,cur_val));
       end

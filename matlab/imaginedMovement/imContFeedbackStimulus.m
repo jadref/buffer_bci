@@ -1,5 +1,5 @@
 % continous feedback within a cued trial based structure
-configureIM;
+if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) ) configureIM; end;
 if ( ~exist('contFeedbackTrialDuration') || isempty(contFeedbackTrialDuration) ) contFeedbackTrialDuration=trialDuration; end;
 if ( ~exist('stimSmoothFactor') ) stimSmoothFactor=[]; end;
 
