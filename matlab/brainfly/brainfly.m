@@ -106,13 +106,11 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
     
     
                                 % Operate the cannon:
-    if ~isempty(cannonAction)&& ~isempty(cannonTrotFrac)
-                                % Move cannon.
+    if ~isempty(cannonAction) % updat the cannon
       fprintf('%g) move %s %g\n',toc(t0),cannonAction,cannonTrotFrac);
       hCannon.move(cannonAction,cannonTrotFrac);
-    elseif strcmp(cannonAction,'fire')
-      
-                               % Shoot cannonball if enough time has elapsed.
+    end
+    if strcmp(cannonAction,'fire') % Shoot cannonball if enough time has elapsed.
       if isempty(lastShotTime)||toc(lastShotTime)>=(1/maxCannonShotsPerSecond)
         newBall = CannonBall(hAxes,hCannon);
         score.shots = score.shots + 1;
