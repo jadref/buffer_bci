@@ -127,7 +127,13 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
     end
     
                                 % Update cannonballs:
-    if( isempty(balls) ) curBalls=newBall; elseif( isempty(newBall) ) curBalls=balls; else curBalls = [balls newBall]; end;
+    if( isempty(balls) ) 
+       curBalls=newBall; 
+    elseif( isempty(newBall) ) 
+       curBalls=balls; 
+    else 
+       curBalls = [balls newBall]; 
+    end;
     if ~isempty(curBalls)
       [balls, hits] = CannonBall.updateBalls(curBalls,hAliens);
       score.hits = score.hits + hits;
@@ -139,9 +145,9 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
       
                % Die animation (currently doesn't pause the aliens' descent):
       if newKills~=0
-        hAxes.Color = 'r';
+        set(hAxes,'Color','r');
         pause(0.05);
-        hAxes.Color = 'k';
+        set(hAxes,'Color','k');
       end
       
       cannonKills = cannonKills + newKills;
@@ -153,13 +159,6 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
     pause(isi);
     
   end
-
-
-
-## %==========================================================================
-## function processKeys(hObj,evt,key)
-##   set(hObj,'userdata',key);  
-## end
 
 
 

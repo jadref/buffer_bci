@@ -1,4 +1,4 @@
-useBuffer=true;
+useBuffer=false;%true;
 useKeyboard=true;
 
 if ( exist('OCTAVE_VERSION') ) debug_on_error(1); else dbstop if error; end;
