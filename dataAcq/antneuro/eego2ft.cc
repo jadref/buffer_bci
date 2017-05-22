@@ -23,7 +23,7 @@
 #include <StringServer.h>
 
 static int BUFFRATE=50; /* rate (Hz) at which samples are sent to the buffer */
-static int sampleRate=250;
+static int sampleRate=500;
 
 #if defined(__WIN32__) || defined(__WIN64__)
  #define SIGALRM -1
@@ -85,17 +85,24 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
    if( packetInterval_ms<1 ) { packetInterval_ms = 10; }
 
    int nChannels = amp->getChannelList().size();
+   fprintf(stderr,"Setting: %d channels @ %d hz\n",nChannels,sampleRate);
    OnlineDataManager<double, double> ODM(0, nChannels, (float) sampleRate);
 	
-   if( !strcmp(configFile, "-") ) {
+   if( strcmp(configFile, "-")!=0 ) {
      if (ODM.configureFromFile(configFile) != 0) {
        fprintf(stderr, "Configuration %s file is invalid\n", configFile);
        return;
-     } else {
-       printf("Streaming %i out of %i channels\n", ODM.getSignalConfiguration().getStreamingSelection().getSize(), nChannels);
      }
+   }else { // setup a default stream everything config.
+     SignalConfiguration sigCfg;
+     // make a channel map with simple numbers
+     ChannelSelection cs;
+     std::string *labci; for (int ci=0; ci<nChannels; ci++) { labci = new std::string("eego01"); *labci = "eggo" + ci; cs.add(ci,*labci); }
+     sigCfg.setStreamingSelection(cs);
+     ODM.setSignalConfiguration(sigCfg);
    }
-	if (!strcmp(hostname, "-")) {
+   fprintf(stderr,"Streaming %i out of %i channels\n", ODM.getSignalConfiguration().getStreamingSelection().getSize(), nChannels);
+	if ( strcmp(hostname, "-")==0 ) {
 		if (!ODM.useOwnServer(port)) {
 			fprintf(stderr, "Could not spawn buffer server on port %d.\n",port);
 			return;
@@ -111,19 +118,23 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
 	
 	printf("Starting to transfer data - press [Escape] to quit\n");
 
-	while (running) {
+   gettimeofday(&starttime,NULL);
+   while (running) {
 		if (conIn.checkKey() && conIn.getKey()==27) break;	
 		ctrlServ.checkRequests(ODM);
 	
       buffer buf = eegStream->getData(); // Retrieve data from stream std::cout << "Samples read: "
 		unsigned int nSamplesTaken=buf.getSampleCount();
 		if (nSamplesTaken != 0) {
-			double* dest = ODM.provideBlock(nSamplesTaken); 
+        //allocate memory for new samples to go into
+        double* dest = ODM.provideBlock(nSamplesTaken); 
+        //copy the data from the amp-driver into the buffer-data-block
 			for (int i=0;i<nChannels;i++) {					
 				for (unsigned int j=0;j<nSamplesTaken;j++) {
               dest[i + j*nChannels] = buf.getSample(i,j);
 				}
 			}
+         // tell the ODM to process this block of data
 			if (!ODM.handleBlock()) break;
 		}
 
@@ -134,7 +145,7 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
       elapsedusec=(curtime.tv_usec + 1000000 * curtime.tv_sec) - (starttime.tv_usec + 1000000 * starttime.tv_sec);
       if ( elapsedusec / 1000000 >= printtime ) {
         fprintf(stderr,"%d %d %d %f (blk,samp,event,sec)\r",nblk,nsamp,0,elapsedusec/1000000.0);
-        printtime+=10;
+        printtime=(elapsedusec/1000000)+2;
       }
       // TODO: sleep taking account of the delay in sending etc?
       #ifdef PLATFORM_WIN32
@@ -180,6 +191,7 @@ int main(int argc, char **argv) {
 	if (eegStream != 0 && sampleRate!=0) {
 		acquisition(argv[1], sampleRate);
 	}
-	
+
+   shutdown();
 	return 0;
 }  

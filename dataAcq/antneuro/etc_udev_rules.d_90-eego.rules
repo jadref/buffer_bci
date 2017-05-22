@@ -1,0 +1,1 @@
+ATTRS{idVendor}=="2a56",ATTRS{idProduct}=="ee01",SYMLINK+="eego3.%n",MODE:="0666",ENV{SUBSYSTEM}=="usb"
