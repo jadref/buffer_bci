@@ -36,7 +36,7 @@ dv=[]; prob=[];
 if( isstruct(predType) && isfield(predType,'sample') ) % predType is already the events to process
   events = predType;
 else
-  [events,buffstate,nsamples,nevents] = buffer_newevents(buffhost,buffport,buffstate,predType,[],min(1000,timeout_ms*1000));
+  [events,buffstate,nsamples,nevents] = buffer_newevents(buffhost,buffport,buffstate,predType,[],min(1000,timeout_ms));
 end
 
 if ( isempty(events) ) 

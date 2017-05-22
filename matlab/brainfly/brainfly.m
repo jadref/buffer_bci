@@ -84,6 +84,7 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
   cannonAction=[];cannonTrotFrac=0;
   t0=tic;
   while ( toc(t0)<gameDuration && ishandle(hFig))
+    frameEndTime = toc(t0)+isi;
     newBall = [];
     
     if ( useKeyboard )
@@ -155,8 +156,13 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
     
                                 % Set score disp and loop:
     set(hText,'String',genTextStr(score,curBalls,cannonKills));
-               % TODO: make this more accurate to take account of display lag
-    pause(isi);
+               % TODO: make this more accurate to take account of display/network lag
+    drawnow;
+    ttg=frameEndTime-toc(t0);
+    if (ttg>0) pause(ttg); 
+    else 
+       fprintf('%g) frame-lagged %gs\n',toc(t0),ttg);
+    end;
     
   end
 

@@ -1,4 +1,4 @@
-useBuffer=false;%true;
+useBuffer=true;
 useKeyboard=true;
 
 if ( exist('OCTAVE_VERSION') ) debug_on_error(1); else dbstop if error; end;
@@ -49,7 +49,7 @@ cueColor = [0 1 0];
 predColor= [0 1 0]; % prediction color
 txtColor     =[.9 .9 .9]; % color of the cue text
 
-isi = 1/5; % 5hz screen update interval
+isi = 1/10; % 5hz screen update interval
 
 % how long 1 game level lasts
 gameDuration = 40;
