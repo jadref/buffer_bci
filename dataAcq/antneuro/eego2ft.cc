@@ -97,7 +97,11 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
      SignalConfiguration sigCfg;
      // make a channel map with simple numbers
      ChannelSelection cs;
-     std::string *labci; for (int ci=0; ci<nChannels; ci++) { labci = new std::string("eego01"); *labci = "eggo" + ci; cs.add(ci,*labci); }
+     std::stringstream ss;
+     for (int ci=0; ci<nChannels; ci++) {
+       ss.clear(); ss<<ci; // int->string
+       std::string labci; labci.append("eggo").append(ss.str());cs.add(ci,labci); 
+     }
      sigCfg.setStreamingSelection(cs);
      ODM.setSignalConfiguration(sigCfg);
    }
