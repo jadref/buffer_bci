@@ -33,7 +33,7 @@ if ( isfield(clsfr,'detrend') && clsfr.detrend ) % detrend over time
     if ( verb>0 ) fprintf('1) Detrend\n'); end
     X=detrend(X,2); % detrend over time
   elseif ( isequal(clsfr.detrend,2) )
-    if ( verb>0) fprintf('1) Center\n'); end
+    if ( verb>0 ) fprintf('1) Center\n'); end;
     X=repop(X,'-',mean(X,2));
   end
 end 
@@ -127,6 +127,13 @@ if ( isfield(clsfr,'badtrthresh') && ~isempty(clsfr.badtrthresh) )
   end;
 end
 
+%5) feature post-processing filter
+if ( isfield(clsfr,'featFilt') && ~isempty(clsfr.featFilt) )
+  for ei=1:size(X,3);
+	 [X(:,:,ei),clsfr.ffState]=feval(clsfr.featFilt{1},X(:,:,ei),clsfr.ffState,clsfr.featFilt{2:end});
+  end  
+end
+
 %6) apply classifier
 [f, fraw]=applyLinearClassifier(X,clsfr);
 
@@ -140,7 +147,7 @@ if ( any(isbadtr) )
 end
 
 % Pr(y==1|x,w,b), map to probability of the positive class
-if ( clsfr.binsp || size(f,2)==1 ) 
+if ( clsfr.binsp ) 
    p = 1./(1+exp(-f)); 
 else % direct multi-class softmax
    p = exp(f-max(f,2)); p=repop(p,'./',sum(p,2));
