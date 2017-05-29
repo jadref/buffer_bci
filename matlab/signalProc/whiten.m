@@ -112,7 +112,8 @@ if ( ~isempty(linMapMx) ) % smooth the covariance estimates
   if ( size(linMapMx,1)==1 ) 
     nrm=sum(linMapMx);
     linMapMx=spdiags(repmat(linMapMx,szX(dim(2)),1),numel(linMapMx)-1:-1:0,szX(dim(2)),szX(dim(2)));
-    linMapMx=repop(full(linMapMx),'.*',nrm./sum(linMapMx,1)); % equal weight for all offsets
+	 % equal weight for all offsets - fix startup effects
+    linMapMx=repop(full(linMapMx),'.*',nrm./sum(linMapMx,1)); 
   end
   Sigma=tprod(Sigma,[1 2 -(3:ndims(Sigma))],full(linMapMx),[-(3:ndims(Sigma)) 3:ndims(Sigma)]);
 end
