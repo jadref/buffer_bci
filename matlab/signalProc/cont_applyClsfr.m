@@ -1,11 +1,12 @@
 function [testdata,testevents,predevents]=cont_applyClsfr(clsfr,varargin)
 % continuously apply this classifier to the new data
 %
-%  [testdata,testevents]=cont_applyClsfr(clsfr,varargin)
+%  [testdata,testevents,predevents]=cont_applyClsfr(clsfr,varargin)
 %
 % Options:
 %  buffhost, buffport, hdr
-%  endType, endValue  -- event type and value to match to stop giving feedback
+%  endType, endValue  -- event type and value to match to stop giving feedback   ('stimulus.test','end')
+%  predEventType -- 'str' event type to use for the generated prediction events  ('classifier.prediction')
 %  trlen_ms/samp -- [float] length of trial to apply classifier to               ([])
 %                     if empty, then = windowFn size used in the classifier training
 %  overlap       -- [float] fraction of trlen_samp between successive classifier predictions, i.e.
@@ -18,13 +19,12 @@ function [testdata,testevents,predevents]=cont_applyClsfr(clsfr,varargin)
 %                     predFilt<0  - #components to average                    f=mean(f(:,end-predFilt:end),2)
 %                  OR
 %                   {str} {function_handle}  a function to 'filter' the predictions through
-%                             before sending prediction event.  This function should have the signature:
-%                         [f,state]=func(f,state)
+%                             before sending prediction event.
+%                         N.B. If used, prediction events are only sent if f is non-empty
+%                         [f,state]=func(f,state,evt)
 %                             where state is the internal state of the filter, e.g. the history of past values
+%                             and evt is the reason the classifier was applied at this time
 %                      Examples: 
-%                        'predFilt',@(x,s) avefilt(x,s,10)   % moving average filter, length 10
-%                        'predFilt',@(x,s) biasFilt(x,s,50)  % bias adaptation filter, length 50
-%                        'predFilt',@(x,s) stdFilt(x,s,100)  % normalising filter (0-mean,1-std-dev), length 100
 %                        'predFilt',@(x,s,e) avefilt(x,s,10)   % moving average filter, length 10
 %                        'predFilt',@(x,s,e) biasFilt(x,s,50)  % bias adaptation filter, length 50
 %                        'predFilt',@(x,s,e) stdFilt(x,s,100)  % normalising filter (0-mean,1-std-dev), length 100
@@ -46,9 +46,13 @@ function [testdata,testevents,predevents]=cont_applyClsfr(clsfr,varargin)
 
 opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
             'endType','stimulus.test','endValue','end','verb',0,...
-            'predEventType','classifier.prediction','resetType','classifier.reset',...
+				'resetType','classifier.reset',...
+            'predEventType','classifier.prediction',...
+            'rawpredEventType','',...
+				'labelEventType',[],...
+            'maxFrameLag',3,...
             'trlen_ms',[],'trlen_samp',[],'overlap',.5,'step_ms',[],...
-            'predFilt',[],'timeout_ms',1000,'adaptspatialfilt',[]);% exp moving average constant, half-life=10 trials
+            'predFilt',[],'timeout_ms',1000,'adaptspatialfilt',[]);
 [opts]=parseOpts(opts,varargin);
 
 % override classifier fields
@@ -88,7 +92,7 @@ else
 end
 
 % for returning the data used by the classifier if wanted
-testdata={}; testevents={}; %N.B. cell array to avoid expensive mem-realloc during execution loop
+testdata={}; testevents={}; predevents={};%N.B. cell array to avoid expensive mem-realloc during execution loop
 
 % get the current number of samples, so we can start from now
 status=buffer('wait_dat',[-1 -1 -1],opts.buffhost,opts.buffport);
@@ -96,7 +100,8 @@ nEvents=status.nevents; nSamples=status.nSamples; % most recent event/sample see
 endSample=nSamples+trlen_samp; % last sample of the first window to apply to
 
 dv=[];
-nEpochs=0; filtstate=[];
+lev=[]; testLabi=1;
+nEpochs=0; filtstate=[]; fbuff=[];
 endTest=false;
 tic;t0=0;t1=t0;
 while( ~endTest )
@@ -116,7 +121,7 @@ while( ~endTest )
   if ( opts.verb>=0 ) 
     t=toc;
     if ( t-t1>=5 ) 
-      fprintf(' %5.3f seconds, %d samples %d events\r',t,status.nsamples,status.nevents);
+      fprintf(' %5.3f seconds, %d samples %d events\n',t,status.nsamples,status.nevents);
       if ( ispc() ) drawnow; end; % re-draw display
       t1=t;
     end;
@@ -126,7 +131,7 @@ while( ~endTest )
   oendSample=endSample;
   fin = oendSample:step_samp:status.nSamples; % window start positions
   if( ~isempty(fin) ) endSample=fin(end)+step_samp; end %fin of next trial for which not enough data
-  if ( numel(fin)>3 ) % drop frames if we can't keep up
+  if ( numel(fin)>opts.maxFrameLag ) % drop frames if we can't keep up
 	  fprintf('Warning: classifier cant keep up, dropping %d frames!\n',numel(fin)-1);
 	  fin=fin(end);
   end
@@ -148,10 +153,19 @@ while( ~endTest )
     if ( numel(clsfr)>1 ) % combine individual classifier predictions, simple max-likelihood sum
       f=sum(f,2); fraw=sum(fraw,2);
     end
-    % smooth the classifier predictions if wanted
-    if ( isempty(dv) || isempty(opts.predFilt) ) 
+    % send raw prediction event if wanted
+    if ( ~isempty(opts.rawpredEventType) )
+	   if(opts.verb>0)
+          fprintf('%3d)  raw Pred: s:%d->%d v:[%s]\n',fin(si),fin(si)-trlen_samp,fin(si),sprintf('%5.2f ',f));
+       end
+       sendEvent(opts.rawpredEventType,f,fin(si)-trlen_samp); %N.B. event sample is window-start!       
+    end
+
+    % filter the raw predictions if wanted
+    if ( isempty(dv) && isempty(opts.predFilt) ) 
       dv=f;
     else
+      if ( isempty(dv) ) dv=zeros(size(f)); end;
       if ( isnumeric(opts.predFilt) )
         if ( opts.predFilt>=0 ) % exp weighted moving average
           dv=dv*opts.predFilt + (1-opts.predFilt)*f;
@@ -160,22 +174,26 @@ while( ~endTest )
           dv=mean(fbuff,2);
         end
       elseif ( ischar(opts.predFilt) || isa(opts.predFilt,'function_handle') )
-        [dv,filtstate]=feval(opts.predFilt,f,filtstate);
+        [dv,filtstate]=feval(opts.predFilt,f,filtstate,fin(si));
       end
     end
       
-    % Send prediction event
-    sendEvent(opts.predEventType,dv,fin(si)-trlen_samp); %N.B. event sample is window-start!
-    if ( opts.verb>0 )
-		fprintf('%d) Clsfr Pred: s:%d->%d v:[%s]\n',fin(si),fin(si)-trlen_samp,fin(si),sprintf('%g ',dv));
-	 elseif ( opts.verb>-1 )
+	 % Send prediction event, if wanted
+	 if( ~isempty(dv) ) 
+		ev=sendEvent(opts.predEventType,dv,fin(si)-trlen_samp); %N.B. event sample is window-start!
+		if ( opts.verb>0 )
+		  fprintf('%3d) Clsfr Pred: s:%d->%d v:[%s]\n',fin(si),fin(si)-trlen_samp,fin(si),sprintf('%5.2f ',dv));
+		end
+		if( nargout>2 ) predevents{nEpochs}=ev; end;
+	 end
+	 if ( opts.verb>-1 )
 		fprintf('.'); 
 	 end;
   end
       
   if ( isnumeric(opts.endType) ) % time-based termination
 	 t=toc;
-	 if ( t-t0 > opts.endType ) fprintf('Got to end time. Stopping'); endTest=true; end;
+	 if ( t-t0 > opts.endType ) fprintf('\nGot to end time. Stopping'); endTest=true; end;
   elseif( status.nevents > nEvents  ) % deal with any events which have happened
     devents=buffer('get_evt',[nEvents status.nevents-1],opts.buffhost,opts.buffport);
     if ( any(matchEvents(devents,opts.endType,opts.endValue)) )
@@ -188,6 +206,28 @@ while( ~endTest )
 		filtstate=[]; fbuff(:)=0; dv(:)=0;
 		endSample = devents(mi).sample+trlen_samp; % wait for trials worth of data post reset time
 	 end;
+	 if ( nargout>1 && ~isempty(opts.labelEventType) )
+		mi=matchEvents(devents,opts.labelEventType);
+		if ( any(mi) )
+        % N.B. we assume that a label applies until the next label event and that data *must*
+		  % lie within a single labels range to be valid
+		  if( ~isempty(lev) ) lev=[lev;devents(mi)]; else lev=devents(mi); end;
+		  [ans,si]=sort([lev.sample],'ascend'); lev=lev(si);
+		  for li=1:numel(lev-1);
+			 for ti=testLabi:numel(testevents);
+				if ( testevents{ti}.sample-trlen_samp > lev(li+1).sample )%start after end of labelled range
+				  break;
+				end
+				if( testevents{ti}.sample-trlen_samp > lev(li).sample ... % after start of unlab data
+					 && testevents{ti}.sample         < lev(li+1).sample ) % contained in this label range
+				  testevents{ti}.value = lev(li).value; % add the label info
+				end				  
+			 end
+			 testLabi=ti;
+		  end
+		  lev=lev(end);
+		end
+	 end
     nEvents=status.nevents;
   end
 end % while not endTest
