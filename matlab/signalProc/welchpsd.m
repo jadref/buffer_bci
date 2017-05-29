@@ -29,7 +29,7 @@ function [W,opts,winFn]=welchpsd(X,dim,varargin);
 %  winFn      -- [size(X,dim) x 1] the temporal window used
 opts=struct('fs',[],'aveType',[],'outType',[],...
             'center',0,'detrend',1,...
-            'windowType','hanning',...
+            'windowType','hamming',...
             'nwindows',[],'overlap',.5,... % spec windows as # and overlap
             'width_ms',500,'width_samp',[],... % spec as start+width
             'width_hz',[],...
@@ -106,10 +106,11 @@ for wi=1:numel(start);
    wX       = wX(wIdx{:});                 % positive freq only
    wX       = 2*(real(wX).^2 + imag(wX).^2); % map to power
    switch(lower(aveType));
-    case 'db';     wX(wX==0)=eps; W = W + 10*log10(wX); % map to db
-    case 'power';  W = W + wX;                          % map to power
-    case 'amp';    W = W + sqrt(wX);                    % map to amplitudes
-	 case 'medianamp';   if(wi==1) W=wX; else W=cat(numel(sz)+1,W,sqrt(wX)); end; % accumulate for median
+    case {'db','log'};  wX(wX==0)=eps; W = W + 10*log10(wX); % map to db
+    case 'power';       W = W + wX;                          % map to power
+    case {'amp','abs'}; W = W + sqrt(wX);                    % map to amplitudes
+	 case {'medianamp','medianabs'};
+		                  if(wi==1) W=wX; else W=cat(numel(sz)+1,W,sqrt(wX)); end; % accumulate for median
 	 case 'medianpower'; if(wi==1) W=wX; else W=cat(numel(sz)+1,W,wX); end; % accumulate res for median
     otherwise;     error(sprintf('Unrecognised welch output type: %s',aveType));
    end
