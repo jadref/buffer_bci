@@ -59,7 +59,7 @@ if ( isfield(clsfr,'badchthresh') && ~isempty(clsfr.badchthresh) )
 end
 
 %4.2) time range selection
-if ( ~isempty(clsfr.timeIdx) ) 
+if ( ~isempty(clsfr.timeIdx) && clsfr.timeIdx(end)<=size(X,2) && clsfr.timeIdx(1)>=1 ) 
   X    = X(:,clsfr.timeIdx,:);
 end
 
@@ -70,11 +70,10 @@ end
 
 %3.5) adaptive spatial filter
 if ( isfield(clsfr,'adaptspatialfilt') && ~isempty(clsfr.adaptspatialfilt) )
-  if ( size(X,3)>1 ) warning('Adaptive filtering only when called with single trials.'); end
   if ( isstr(clsfr.adaptspatialfilt) || isa(clsfr.adaptspatialfilt,'function_handle') ) % function to call to do the filtering
     [X,clsfr.adaptspatialfiltstate] = feval(clsfr.adaptspatialfilt,X,clsfr.adaptspatialfiltstate);
   elseif ( isnumeric(clsfr.adaptspatialfilt) )  % single number = memory for adapt whitener
-    [X,clsfr.adaptspatialfiltstate] = adaptwhtFilt(X,clsfr.adaptspatialfilt,clsfr.adaptspatialfiltstate);    
+    [X,clsfr.adaptspatialfiltstate] = adaptwhitenFilt(X,clsfr.adaptspatialfilt,clsfr.adaptspatialfiltstate);    
   else
 	 error('unsupported apaptspatialfilt type');
   end
@@ -120,6 +119,13 @@ end
 %4) sub-select the range of frequencies we care about
 if ( isfield(clsfr,'freqIdx') && ~isempty(clsfr.freqIdx) )
   X=X(:,clsfr.freqIdx,:); % sub-set to the interesting frequency range
+end
+
+%5) feature post-processing filter
+if ( isfield(clsfr,'featFilt') && ~isempty(clsfr.featFilt) )
+  for ei=1:size(X,3);
+	 [X(:,:,ei),clsfr.ffState]=feval(clsfr.featFilt{1},X(:,:,ei),clsfr.ffState,clsfr.featFilt{2:end});
+  end  
 end
 
 %6) apply classifier
