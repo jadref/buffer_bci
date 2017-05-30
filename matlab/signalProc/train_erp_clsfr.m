@@ -38,6 +38,7 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %               1 - visualize, but don't wait
 %               2 - visualize, and wait for user before continuing
 %  verb      - [int] verbosity level
+%  ch_names  - {str} cell array of strings which label each channel
 %  class_names - {str} names for each of the classes in Y in *increasing* order ([])
 % Outputs:
 %  clsfr  - [struct] structure contining the stuff necessary to apply the trained classifier
@@ -62,11 +63,13 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %  res    - [struct] results structure as returned by 'cvtrainFn'. 
 %                    use: help cvtrainFn for more information on its structure
 %  X      - [size(X)] the pre-processed data
+%  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
   opts=struct('classify',1,'fs',[],...
 				  'timeband_ms',[],'freqband',[],'downsample',[],'detrend',1,'spatialfilter','car',...
-				  'badchrm',1,'badchthresh',3.1,'badchscale',2,...
-				  'badtrrm',1,'badtrthresh',3,'badtrscale',2,...
-				  'featFilt',[],...
+              'adaptspatialfiltFn',[],'adaptspatialfiltstate',[],...
+				  'badchrm',1,'badchthresh',3.1,'badchscale',4,...
+				  'badtrrm',1,'badtrthresh',3,'badtrscale',4,...
+				  'featFiltFn',[],...
 				  'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
 				  'visualize',1,'badCh',[],'nFold',10,'class_names',[],'zeroLab',1);
 [opts,varargin]=parseOpts(opts,varargin);
@@ -123,6 +126,10 @@ R=[]; sfApplied=false;
 if ( isnumeric(opts.spatialfilter) ) % user gives exact filter to use
    R=opts.spatialfilter;
 elseif ( size(X,1)> 5 ) % only spatial filter if enough channels
+  % BODGE: re-write as a std adpative spatial filter call
+  if ( strcmpi(opts.spatialfilter,'trwht') ) % single-trial whitening -> special adapt-whiten
+    opts.spatialfilter='adaptspatialfilt'; opts.adaptspatialfiltFn={'adaptWhitenFilt' 0};
+  end
   sftype=lower(opts.spatialfilter);
   switch ( sftype )
    case 'slap';
@@ -138,18 +145,11 @@ elseif ( size(X,1)> 5 ) % only spatial filter if enough channels
    case {'whiten','wht'};
     fprintf('3) whiten\n');
     R=whiten(X,1,1,0,0,1); % symetric whiten
-   case {'trwht'};   % single-trial whitening
-	 fprintf('3) trwht\n');
-	 [trR,Sigma,X]=whiten(X,[1 3],1,0,0,1,1);
-	 R=trR(:,:,end);
-	 sfApplied=true;
    case {'adaptspatialfilt'}; % adaptive whitening
-	 fprintf(' exp-trwht %g',opts.adaptspatialfilt);
-			  % construct weight vector equivalent to exp-moving-average-filter
-	 hl   = ceil(log(.5)./log(opts.adaptspatialfilt)); % half-life
-	 wght = (1-opts.adaptspatialfilt)*(opts.adaptspatialfilt.^[2*hl:-1:0]);
-    [trR,Sigma,X]=whiten(X,[1 3],1,0,0,1,wght);
-	 R=trR(:,:,end);
+    if( ~iscell(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={opts.adaptspatialfiltFn}; end;
+    fprintf(' %s',opts.adaptspatialfiltFn{1});
+    [X,adaptspatialfiltstate]=feval(opts.adaptspatialfiltFn{1},X,opts.adaptspatialfiltstate,opts.adaptspatialfiltFn{2:end});
+    if( isfield(adaptspatialfiltstate,'R') ) R=adaptspatialfiltstate.R; end;
 	 sfApplied=true;
    case 'none';
    otherwise; warning(sprintf('Unrecog spatial filter type: %s. Ignored!',opts.spatialfilter ));
@@ -193,11 +193,12 @@ if ( opts.badtrrm )
 end;
 
 % 5.9) Apply a feature filter post-processor if wanted
-featFilt=opts.featFilt; ffState=[];
-if ( ~isempty(featFilt) )
-  if ( ~iscell(featFilt) ) featFilt={featFilt}; end;
+featFiltFn=opts.featFiltFn; featFiltState=[];
+if ( ~isempty(featFiltFn) )
+  fprintf('5.5) Filter features\n');
+  if ( ~iscell(featFiltFn) ) featFiltFn={featFiltFn}; end;
   for ei=1:size(X,3);
-	 [X(:,:,ei),ffState]=feval(featFilt{1},X(:,:,ei),ffState,featFilt{2:end});
+	 [X(:,:,ei),featFiltState]=feval(featFiltFn{1},X(:,:,ei),featFiltState,featFiltFn{2:end});
   end
 end
 
@@ -232,9 +233,9 @@ if ( opts.visualize )
   for spi=1:size(Yidx,2);
     Yci=Yidx(:,spi);
     if( size(labels,1)==1 ) % plot sub-prob positive response only
-      mu(:,:,spi)=mean(X(:,:,Yci>0),3);      
+      mu(:,:,spi)=sum(X(:,:,Yci>0),3)./sum(Yci>0);      
     else % pos and neg sub-problem average responses
-      mu(:,:,1,spi)=mean(X(:,:,Yci>0),3); mu(:,:,2,spi)=mean(X(:,:,Yci<0),3);
+      mu(:,:,1,spi)=sum(X(:,:,Yci>0),3)./sum(Yci>0); mu(:,:,2,spi)=sum(X(:,:,Yci<0),3)./sum(Yci<0);
     end
     % if not all same class, or simple binary problem
     if(~(all(Yci(:)==Yci(1))) && ~(spi>1 && all(Yidx(:,1)==-Yidx(:,spi)))) 
@@ -301,16 +302,22 @@ clsfr.fs          = fs;   % sample rate of training data
 clsfr.detrend     = opts.detrend; % detrend?
 clsfr.isbad       = isbadch;% bad channels to be removed
 clsfr.spatialfilt = R;    % spatial filter used for surface laplacian
-clsfr.adaptspatialfilt=[]; % no adaption
-clsfr.filt        = filt; % filter weights for spectral filtering
-clsfr.outsz       = outsz; % info on size after spectral filter for downsampling
-clsfr.timeIdx     = timeIdx; % time range to apply the classifer to
+% configure for apaptive use later
+if( strncmpi(opts.spatialfilter,'adaptspatialfilt',numel('adaptspatialfilter')) )  
+  clsfr.spatialfilt=[];
+  clsfr.adaptspatialfiltFn=opts.adaptspatialfiltFn; % record the function to use
+  clsfr.adaptspatialfiltstate=adaptspatialfiltstate;
+end
 
-clsfr.windowFn    = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
-clsfr.welchAveType= []; % DUMMY -- so ERP and ERSP classifier have same structure fields
-clsfr.freqIdx     = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
-clsfr.featFilt    = featFilt; % feature normalization type
-clsfr.ffState     = ffState;  % state of the feature filter
+clsfr.filt         = filt; % filter weights for spectral filtering
+clsfr.outsz        = outsz; % info on size after spectral filter for downsampling
+clsfr.timeIdx      = timeIdx; % time range to apply the classifer to
+
+clsfr.windowFn     = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
+clsfr.welchAveType = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
+clsfr.freqIdx      = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
+clsfr.featFiltFn   = featFiltFn; % feature normalization type
+clsfr.featFiltState= featFiltState;  % state of the feature filter
 
 clsfr.badtrthresh = []; if ( ~isempty(trthresh) && opts.badtrscale>0 ) clsfr.badtrthresh = trthresh(end)*opts.badtrscale; end
 clsfr.badchthresh = []; if ( ~isempty(chthresh) && opts.badchscale>0 ) clsfr.badchthresh = chthresh(end)*opts.badchscale; end
@@ -330,7 +337,7 @@ if ( opts.visualize >= 1 )
      summary=[summary sprintf('---------------\n')];
   end
   summary=[summary sprintf('\n%40s = %4.1f','<ave>',mean(res.opt.tstbin,2)*100)];
-  b=msgbox({sprintf('Classifier performance : %s',summary) 'OK to continue!'},'Results');
+  b=msgbox({sprintf('Classifier performance :\n %s',summary) 'OK to continue!'},'Results');
   if ( opts.visualize > 1 )
      for i=0:.2:120; if ( ~ishandle(b) ) break; end; drawnow; pause(.2); end; % wait to close auc figure
      if ( ishandle(b) ) close(b); end;

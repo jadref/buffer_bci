@@ -33,11 +33,7 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %              0 - do nothing
 %              1 - detrend the data
 %              2 - center the data (i.e. subtract the mean)
-%  normalize - [int] normalise the features before giving to the classifier ([])
-%               0 - don't normalize
-%               1 - normalize to zero-mean, i.e. X(i) = X(i) - mean(X)
-%               2 - normalize to unit-average-power, i.e. X(i)=X(i)./sqrt(mean(X.^2))
-%  visualize - [int] visualize the data                      (1)
+%  visualize - [int] visualize the data                     (1)
 %               0 - don't visualize
 %               1 - visualize, but don't wait
 %               2 - visualize, and wait for user before continuing
@@ -82,7 +78,8 @@ opts=struct('classify',1,'fs',[],'timeband_ms',[],'freqband',[],...
 if ( isempty(opts.fs) ) error('Sampling rate not specified!'); end;
 di=[]; ch_pos  =opts.ch_pos; ch_names=opts.ch_names;
 if ( iscell(ch_pos) && ischar(ch_pos{1}) ) ch_names=ch_pos; ch_pos=[]; end;
-if ( isempty(ch_pos) && ~isempty(opts.capFile) && (~isempty(ch_names) || opts.overridechnms) ) % convert names to positions
+% convert names to positions
+if ( isempty(ch_pos) && ~isempty(opts.capFile) && (~isempty(ch_names) || opts.overridechnms) ) 
   di = addPosInfo(ch_names,opts.capFile,opts.overridechnms); % get 3d-coords
   if ( any([di.extra.iseeg]) ) 
     ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names    
@@ -106,7 +103,7 @@ end
 
 %2) Bad channel identification & removal
 isbadch=[]; chthresh=[];
-if ( opts.badchrm || ~isempty(opts.badCh) )
+if ( opts.badchrm || (~isempty(opts.badCh) && sum(opts.badCh)>0) )
   fprintf('2) bad channel removal, ');
   isbadch = false(size(X,1),1);
   if ( ~isempty(ch_pos) ) isbadch(numel(ch_pos)+1:end)=true; end;
@@ -209,7 +206,7 @@ if ( size(X,1)>=4 ) % only spatial filter if enough channels
    otherwise; warning(sprintf('Unrecog spatial filter type: %s. Ignored!',opts.spatialfilter ));
   end
 end
-if ( ~isempty(R) && ~sfApplied ) % apply the spatial filter
+if ( ~isempty(R) && ~sfApplied ) % apply the spatial filter (if not already done)
   X=tprod(X,[-1 2 3],R,[1 -1]); 
 end
 
@@ -270,8 +267,8 @@ aucfig=[];erpfig=[];
 if ( opts.visualize )
   % Compute the labeling and set of sub-problems and classes to plot
   Yidx=Y; sidx=[]; labels=opts.class_names; auclabels=labels;
-  if ( size(Y,2)==1 && ~(isnumeric(Y) && ~opts.zeroLab && all(Y(:)==1 | Y(:)==0 | Y(:)==-1)))
-    uY=unique(Y); Yidx=-ones([size(Y,1),numel(uY)],'int8');    
+  if ( size(Y,2)==1 && ~(isnumeric(Y) && ~opts.zeroLab && all(Y(:)==1 | Y(:)==0 | Y(:)==-1)))%convert from labels to 1vR sub-problems
+    uY=unique(Y,'rows'); Yidx=-ones([size(Y,1),numel(uY)],'int8');    
     for ci=1:size(uY,1); 
       if(iscell(uY)) 
         tmp=strmatch(uY{ci},Y); Yidx(tmp,ci)=1; 
@@ -300,6 +297,7 @@ if ( opts.visualize )
     else % pos and neg sub-problem average responses
       mu(:,:,1,spi)=sum(X(:,:,Yci>0),3)./sum(Yci>0); mu(:,:,2,spi)=sum(X(:,:,Yci<0),3)./sum(Yci<0);
     end
+    % if not all same class, or simple binary problem
     if(~(all(Yci(:)==Yci(1))) && ~(spi>1 && all(Yidx(:,1)==-Yidx(:,spi)))) 
       [aucci,sidx]=dv2auc(Yci,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
       aucesp=auc_confidence(sum(Yci~=0),single(sum(Yci>0))./single(sum(Yci~=0)),.2);
@@ -325,7 +323,8 @@ if ( opts.visualize )
 		saveaspdf('AUC'); 
 	 catch; 
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-	 end;
+	  if ( ~isempty(le.stack) ) fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
+	  end;
    end
    drawnow;
    figure(erpfig);
@@ -334,7 +333,7 @@ end
 %6) train classifier
 if ( opts.classify ) 
   fprintf('6) train classifier\n');
-  [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',opts.zeroLab,varargin{:});
+  [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',opts.zeroLab,'verb',opts.verb,varargin{:});
 else
   clsfr=struct();
 end
@@ -343,7 +342,10 @@ if ( opts.visualize )
   if ( size(res.tstconf,2)==1 ) % confusion matrix is correct
      % plot the confusion matrix
     confMxFig=figure(4); set(confMxFig,'name','Class confusion matrix');	 
-	 if ( size(clsfr.spMx,1)==1 ) clabels={clsfr.spKey{clsfr.spMx>0} clsfr.spKey{clsfr.spMx<0}};
+	 if ( size(clsfr.spMx,1)==1 )
+		if ( iscell(clsfr.spKey) ) clabels={clsfr.spKey{clsfr.spMx>0} clsfr.spKey{clsfr.spMx<0}};
+		else                       clabels={sprintf('%g',clsfr.spKey(clsfr.spMx>0)) sprintf('%g',clsfr.spKey(clsfr.spMx<0))};
+		end
 	 else                         [ans,li]=find(clsfr.spMx>0); clabels=clsfr.spKey(li);
 	 end
     imagesc(reshape(res.tstconf(:,1,res.opt.Ci),sqrt(size(res.tstconf,1)),[]));
@@ -379,12 +381,12 @@ clsfr.featFiltFn   = featFiltFn; % feature normalization type
 clsfr.featFiltState= featFiltState;  % state of the feature filter
 
 clsfr.badtrthresh = []; if ( ~isempty(trthresh) && opts.badtrscale>0 ) clsfr.badtrthresh = trthresh(end)*opts.badtrscale; end
-clsfr.badchthresh = []; if ( ~isempty(chthresh) && opts.badchscale>0) clsfr.badchthresh = chthresh(end)*opts.badchscale; end
-% record some dv stats which are useful for bias-adaptation
-tstf = res.opt.tstf; % N.B. this *MUST* be calibrated to be useful
-clsfr.dvstats.N   = sum(res.Y~=0,1);
-clsfr.dvstats.mu  = mean(tstf,1);
-clsfr.dvstats.std = std(tstf,1);
+clsfr.badchthresh = []; if ( ~isempty(chthresh) && opts.badchscale>0 ) clsfr.badchthresh = chthresh(end)*opts.badchscale; end
+% record some dv stats which are useful
+tstf = res.tstf(:,res.opt.Ci); % N.B. this *MUST* be calibrated to be useful
+clsfr.dvstats.N   = [sum(res.Y>0) sum(res.Y<=0) numel(res.Y)]; % [pos-class neg-class pooled]
+clsfr.dvstats.mu  = [mean(tstf(res.Y(:,1)>0)) mean(tstf(res.Y(:,1)<=0)) mean(tstf)];
+clsfr.dvstats.std = [std(tstf(res.Y(:,1)>0))  std(tstf(res.Y(:,1)<=0))  std(tstf)];
 %  bins=[-inf -200:5:200 inf]; clf;plot([bins(1)-1 bins(2:end-1) bins(end)+1],[histc(tstf(Y>0),bins) histc(tstf(Y<=0),bins)]); 
 
 if ( opts.visualize >= 1 ) 

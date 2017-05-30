@@ -57,20 +57,14 @@ if ( isfield(clsfr,'badchthresh') && ~isempty(clsfr.badchthresh) )
   end
 end
 
-%3) Spatial filter
+%3) fixed spatial filter
 if ( isfield(clsfr,'spatialfilt') && ~isempty(clsfr.spatialfilt) )
   X=tprod(X,[-1 2 3 4],clsfr.spatialfilt,[1 -1]); % apply the SLAP
 end
 
 %3.5) adaptive spatial filter
-if ( isfield(clsfr,'adaptspatialfilt') && ~isempty(clsfr.adaptspatialfilt) )
-  if ( isstr(clsfr.adaptspatialfilt) || isa(clsfr.adaptspatialfilt,'function_handle') ) % function to call to do the filtering
-    [X,clsfr.adaptspatialfiltstate] = feval(clsfr.adaptspatialfilt,X,clsfr.adaptspatialfiltstate);
-  elseif ( isnumeric(clsfr.adaptspatialfilt) )  % single number = memory for adapt whitener
-    [X,clsfr.adaptspatialfiltstate] = adaptwhitenFilt(X,clsfr.adaptspatialfilt,clsfr.adaptspatialfiltstate);    
-  else
-	 error('unsupported apaptspatialfilt type');
-  end
+if ( isfield(clsfr,'adaptspatialfiltFn') && ~isempty(clsfr.adaptspatialfiltFn) )
+   [X,clsfr.adaptspatialfiltstate] = feval(clsfr.adaptspatialfiltFn{1},X,clsfr.adaptspatialfiltstate,clsfr.adaptspatialfiltFn{2:end});
 end
 
 %4) spectral filter
@@ -100,9 +94,10 @@ if ( isfield(clsfr,'badtrthresh') && ~isempty(clsfr.badtrthresh) )
 end
 
 %5) feature post-processing filter
-if ( isfield(clsfr,'featFilt') && ~isempty(clsfr.featFilt) )
-  for ei=1:size(X,3);
-	 [X(:,:,ei),clsfr.ffState]=feval(clsfr.featFilt{1},X(:,:,ei),clsfr.ffState,clsfr.featFilt{2:end});
+%5) feature post-processing filter
+if ( isfield(clsfr,'featFiltFn') && ~isempty(clsfr.featFiltFn) )
+  for ei=1:size(X,3); % incrementall call the function
+	 [X(:,:,ei),clsfr.featFiltState]=feval(clsfr.featFilt{1},X(:,:,ei),clsfr.featFiltState,clsfr.featFilt{2:end});
   end  
 end
 
@@ -124,7 +119,7 @@ if ( clsfr.binsp )
 else % direct multi-class softmax
    p = exp(f-max(f,2)); p=repop(p,'./',sum(p,2));
 end
-if ( verb>0 ) fprintf('Classifier prediction:  %g %g\n', f,p); end;
+if ( verb>1 ) fprintf('Classifier prediction:  %g %g\n', f,p); end;
 
 return;
 %------------------
