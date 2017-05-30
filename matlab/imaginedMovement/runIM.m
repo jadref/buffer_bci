@@ -134,7 +134,10 @@ while (ishandle(contFig))
    case {'train','trainersp'};
     sendEvent('subject',subject);
     sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
-    buffer_newevents(buffhost,buffport,[],phaseToRun,'end',inf); % wait until finished
+    events=buffer_newevents(buffhost,buffport,[],phaseToRun,'end',20*1000); % wait until finished
+    if( isempty(events) ) % display warning that classifier training didn't finish in time...
+       uiwait(msgbox({'Warning::classifier training taking too long....' 'did it crash?'},'Warning','modal'),10);       
+    end
 
    %---------------------------------------------------------------------------
    case {'epochfeedback'};
