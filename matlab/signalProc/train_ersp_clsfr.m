@@ -69,7 +69,8 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
 opts=struct('classify',1,'fs',[],'timeband_ms',[],'freqband',[],...
             'width_ms',500,'windowType','hamming','aveType','amp',...
-            'detrend',1,'spatialfilter','slap','adaptspatialfilt',[],...
+            'detrend',1,'spatialfilter','slap',...
+            'adaptspatialfilt',[],'adaptspatialfiltstate',[],...
             'badchrm',1,'badchthresh',3.1,'badchscale',4,...
             'badtrrm',1,'badtrthresh',3,'badtrscale',4,...
 				'featFilt',[],...
@@ -132,22 +133,20 @@ sfApplied=false;
 if ( isnumeric(opts.spatialfilter) ) % user gives exact filter to use
    R=opts.spatialfilter;
 elseif ( size(X,1)>=4 && any(strcmpi(opts.spatialfilter,{'wht','whiten','trwht','adaptspatialfilt'})) ) 
-  fprintf('3) whiten');
-  if ( strcmpi(opts.spatialfilter,'trwht') ) % single-trial whitening
+  fprintf('3) ');
+  if ( any(strcmpi(opts.spatialfilter,{'wht','whiten'})) ) % global whiten
+	 fprintf(' whiten');
+	 [R,Sigma]=whiten(X,1,1,0,0,1); % symetric whiten
+  elseif ( strcmpi(opts.spatialfilter,'trwht') ) % single-trial whitening
 	 fprintf(' trwht');
-	 [trR,Sigma,X]=whiten(X,[1 3],1,0,0,1,1);
-	 R=trR(:,:,end);
+    [X,adaptspatialfiltstate]=adaptWhitenFilt(X,[],0,opts.verb-1);
+	 R=adaptspatialfiltstate.R;
 	 sfApplied=true;
   elseif( strcmpi(opts.spatialfilter,'adaptspatialfilt'))  % adaptive whitening
-	 fprintf(' exp-trwht %g',opts.adaptspatialfilt);
-			  % construct weight vector equivalent to exp-moving-average-filter
-	 hl   = ceil(log(.5)./log(opts.adaptspatialfilt)); % half-life
-	 wght = (1-opts.adaptspatialfilt)*(opts.adaptspatialfilt.^[2*hl:-1:0]);
-    [trR,Sigma,X]=whiten(X,[1 3],1,0,0,1,wght);
-	 R=trR(:,:,end);
-	 sfApplied=true;
-  else			
-	 [R,Sigma]=whiten(X,1,1,0,0,1); % symetric whiten
+    fprintf(' %s',opts.adaptspatialfilt);
+    [X,adaptspatialfiltstate]=feval(opts.adaptspatialfilt,X,opts.adaptspatialfiltstate);
+    if( isfield(adaptspatialfiltstate,'R') ) R=adaptspatialfiltstate.R; end;
+	 sfApplied=true;    
   end
   fprintf('\n');
 end

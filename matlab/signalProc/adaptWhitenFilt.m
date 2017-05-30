@@ -1,8 +1,14 @@
 function [X,state]=adaptWhitenFilt(X,state,alpha,verb);
 % filter function implementing adaptive spatial whitening
-if( nargin<2 || isempty(alpha) ) alpha=0; end; % default to single-trial whitener
-if( isempty(state) ) state=struct('N',0,'sXX',[]); end;
+if( nargin<2 ) alpha=[]; end; % default to single-trial whitener
+if( isempty(state) ) state=struct('N',0,'sXX',[],'W',[]); end;
+if( isempty(alpha) && isfield(state,'alpha') ) alpha=state.alpha; end;
+if( isempty(alpha) ) alpha=0; end;
+
+if( nargin<4 || isempty(verb) ) verb=0; end;
+
 if( alpha>1 ) alpha=exp(log(.5)./alpha); end;
+
 N=state.N; sXX=state.sXX;
 for ei=1:size(X,3); % auto-apply incrementally if given multiple epochs
   Xei = X(:,:,ei);
@@ -23,5 +29,5 @@ for ei=1:size(X,3); % auto-apply incrementally if given multiple epochs
   X(:,:,ei) = tprod(Xei,[-1 2 3 4],W,[-1 1]); % apply it to the data
 end
 % update the final return state
-state.N=N; state.sXX=sXX;
+state.N=N; state.sXX=sXX; state.R=W;
 return;
