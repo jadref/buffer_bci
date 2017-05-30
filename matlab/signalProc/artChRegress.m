@@ -1,12 +1,11 @@
-function [X,state,artSig]=artChRegress(X,dim,idx,varargin);
+function [X,state,artSig]=artChRegress(X,state,dim,idx,varargin);
 % remove any signal correlated with the input signals from the data
 % 
-%   [X,state,artSig]=artChRegress(X,dim,idx,varargin) % all-at-once calling mode / init incremental calling
-%     OR
-%   [X,state]=artChRegress(X,state);  % incremental calling mode
+%   [X,state,artSig]=artChRegress(X,state,dim,idx,...);% incremental calling mode
 %
 % Inputs:
 %  X   -- [n-d] the data to be deflated/art channel removed
+%  state -- [struct] internal state of the filter. Init-filter if empty.   ([])
 %  dim -- dim(1) = the dimension along which to correlate/deflate ([1 2])
 %         dim(2) = the time dimension for spectral filtering/detrending along
 %         dim(3) = compute regression separately for each element on this dimension
@@ -22,12 +21,12 @@ function [X,state,artSig]=artChRegress(X,dim,idx,varargin);
 %            OR
 %             [float] half-life to use for simple exp-moving average filter
 opts=struct('detrend',0,'center',0,'bands',[],'fs',[],'verb',0,'covFilt',[],'filtstate',[]);
-if( nargin<3 && isstruct(dim) ) % called with a filter-state, incremental filtering mode
+if( ~isempty(state) && isstruct(state) ) % called with a filter-state, incremental filtering mode
   % extract the arguments/state
-  opts    =dim;
-  dim     =opts.dim;
-  idx     =opts.idx;
-  artFilt =opts.artFilt;
+  opts    =state;
+  dim     =state.dim;
+  idx     =state.idx;
+  artFilt =state.artFilt;
 else % normal option string call
   [opts]=parseOpts(opts,varargin);
   artFilt=[];
@@ -128,16 +127,16 @@ S=randn(10,1000,100);% sources
 sf=randn(10,2);% per-electrode spatial filter
 X =S+reshape(sf*S(1:size(sf,2),:),size(S)); % source+propogaged noise
 
-Y =artChRegress(X,1,[1 2]); % global mode
+Y =artChRegress(X,[],1,[1 2]); % global mode
 clf;mimage(S,X-S,Y-S,'clim','cent0','colorbar',1,'title',{'S','S-X','S-Y'}); colormap ikelvin
 Y2=artChRm(X,1,[1 2]);
 clf;mimage(S,Y2-S,'clim','cent0','colorbar',1); colormap ikelvin
 
                                 % regress per-epoch
-[Y,info] =artChRegress(X,[1 2 3],[1 2]);
+[Y,info] =artChRegress(X,[],[1 2 3],[1 2]);
 
                                 % incremental regress per-epoch
-[Yi(:,:,1),state]=artChRegress(X(:,:,1),[1 2 3],[1 2]);
+[Yi(:,:,1),state]=artChRegress(X(:,:,1),[],[1 2 3],[1 2]);
 for epi=2:size(X,3);
   textprogressbar(epi,size(X,3));
   [Yi(:,:,epi),state]=artChRegress(X(:,:,epi),state);

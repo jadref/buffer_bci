@@ -70,10 +70,10 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 opts=struct('classify',1,'fs',[],'timeband_ms',[],'freqband',[],...
             'width_ms',500,'windowType','hamming','aveType','amp',...
             'detrend',1,'spatialfilter','slap',...
-            'adaptspatialfilt',[],'adaptspatialfiltstate',[],...
+            'adaptspatialfiltFn',[],'adaptspatialfiltstate',[],...
             'badchrm',1,'badchthresh',3.1,'badchscale',4,...
             'badtrrm',1,'badtrthresh',3,'badtrscale',4,...
-				'featFilt',[],...
+				'featFiltFn',[],...
             'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
             'visualize',1,'badCh',[],'nFold',10,'class_names',[],'zeroLab',1);
 [opts,varargin]=parseOpts(opts,varargin);
@@ -128,23 +128,23 @@ if ( opts.badchrm || ~isempty(opts.badCh) )
 end
 
 %3.a) Spatial filter/re-reference (data-dependent-unsupervised)
-R=[];
+R=[]; adaptspatialfiltstate=[];
 sfApplied=false;
 if ( isnumeric(opts.spatialfilter) ) % user gives exact filter to use
    R=opts.spatialfilter;
 elseif ( size(X,1)>=4 && any(strcmpi(opts.spatialfilter,{'wht','whiten','trwht','adaptspatialfilt'})) ) 
   fprintf('3) ');
+  % BODGE: re-write as a std adpative spatial filter call
+  if ( strcmpi(opts.spatialfilter,'trwht') ) % single-trial whitening -> special adapt-whiten
+    opts.spatialfilter='adaptspatialfilt'; opts.adaptspatialfiltFn={'adaptWhitenFilt' 0};
+  end
   if ( any(strcmpi(opts.spatialfilter,{'wht','whiten'})) ) % global whiten
 	 fprintf(' whiten');
 	 [R,Sigma]=whiten(X,1,1,0,0,1); % symetric whiten
-  elseif ( strcmpi(opts.spatialfilter,'trwht') ) % single-trial whitening
-	 fprintf(' trwht');
-    [X,adaptspatialfiltstate]=adaptWhitenFilt(X,[],0,opts.verb-1);
-	 R=adaptspatialfiltstate.R;
-	 sfApplied=true;
   elseif( strcmpi(opts.spatialfilter,'adaptspatialfilt'))  % adaptive whitening
-    fprintf(' %s',opts.adaptspatialfilt);
-    [X,adaptspatialfiltstate]=feval(opts.adaptspatialfilt,X,opts.adaptspatialfiltstate);
+    if( ~iscell(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={opts.adaptspatialfiltFn}; end;
+    fprintf(' %s',opts.adaptspatialfiltFn{1});
+    [X,adaptspatialfiltstate]=feval(opts.adaptspatialfiltFn{1},X,opts.adaptspatialfiltstate,opts.adaptspatialfiltFn{2:end});
     if( isfield(adaptspatialfiltstate,'R') ) R=adaptspatialfiltstate.R; end;
 	 sfApplied=true;    
   end
@@ -256,12 +256,12 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
 end;
 
 % 5.9) Apply a feature filter post-processor if wanted
-featFilt=opts.featFilt; ffState=[];
-if ( ~isempty(featFilt) )
+featFiltFn=opts.featFiltFn; featFiltState=[];
+if ( ~isempty(featFiltFn) )
   fprintf('5.5) Filter features\n');
-  if ( ~iscell(featFilt) ) featFilt={featFilt}; end;
+  if ( ~iscell(featFiltFn) ) featFiltFn={featFiltFn}; end;
   for ei=1:size(X,3);
-	 [X(:,:,ei),ffState]=feval(featFilt{1},X(:,:,ei),ffState,featFilt{2:end});
+	 [X(:,:,ei),featFiltState]=feval(featFiltFn{1},X(:,:,ei),featFiltState,featFiltFn{2:end});
   end
 end
 
@@ -361,21 +361,22 @@ clsfr.fs          = fs;   % sample rate of training data
 clsfr.detrend     = opts.detrend; % detrend?
 clsfr.isbad       = isbadch;% bad channels to be removed
 clsfr.spatialfilt = R;    % spatial filter used for surface laplacian
-if ( any(strcmp(opts.spatialfilter,{'trwht','adaptspatialfilter'})) ) % configure for apaptive use later
+% configure for apaptive use later
+if( strncmpi(opts.spatialfilter,'adaptspatialfilt',numel('adaptspatialfilter')) )  
   clsfr.spatialfilt=[];
-  clsfr.adaptspatialfilt=opts.adaptspatialfilt; % no adaption
-  clsfr.chCov      =Sigma;
+  clsfr.adaptspatialfiltFn=opts.adaptspatialfiltFn; % record the function to use
+  clsfr.adaptspatialfiltstate=adaptspatialfiltstate;
 end
 
-clsfr.filt        = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
-clsfr.outsz       = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
-clsfr.timeIdx     = timeIdx; % time range to apply the classifer to
+clsfr.filt         = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
+clsfr.outsz        = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
+clsfr.timeIdx      = timeIdx; % time range to apply the classifer to
 
-clsfr.windowFn    = winFn;% temporal window prior to fft
-clsfr.welchAveType= opts.aveType;% other options to pass to the welchpsd
-clsfr.freqIdx     = fIdx; % start/end index of frequencies to keep
-clsfr.featFilt    = featFilt; % feature normalization type
-clsfr.ffState     = ffState;  % state of the feature filter
+clsfr.windowFn     = winFn;% temporal window prior to fft
+clsfr.welchAveType = opts.aveType;% other options to pass to the welchpsd
+clsfr.freqIdx      = fIdx; % start/end index of frequencies to keep
+clsfr.featFiltFn   = featFiltFn; % feature normalization type
+clsfr.featFiltState= featFiltState;  % state of the feature filter
 
 clsfr.badtrthresh = []; if ( ~isempty(trthresh) && opts.badtrscale>0 ) clsfr.badtrthresh = trthresh(end)*opts.badtrscale; end
 clsfr.badchthresh = []; if ( ~isempty(chthresh) && opts.badchscale>0) clsfr.badchthresh = chthresh(end)*opts.badchscale; end
