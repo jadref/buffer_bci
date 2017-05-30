@@ -22,7 +22,7 @@ n  = randn(sz);  % white noise
 Fn = fft(n,[],dim);
 ss = shiftdim([spect;zeros(mod(sz(dim)+1,2),1);spect(end:-1:2)],-dim+1);
 Fn = repop(Fn,'.*',ss);
-n  = ifft(Fn,[],dim);
+n  = real(ifft(Fn,[],dim));
 return
 
 function [yi]=oversample(y,N,intType)

@@ -7,7 +7,7 @@ function []=startSigProcBuffer(varargin)
 %  (startPhase.cmd,erpviewer)  -- show a running event-locked average viewer
 %                                 N.B. the event type used to lock to is given in the option:
 %                                    erpEventType
-%  (startPhase.cmd,calibrate)  -- start calibration phase processing (i.e. cat data)
+%  (startPhase.cmd,calibrate)  -- start calibration phase processing (i.e. concat data)
 %                                 Specifically for each epoch the specified block of data will be
 %                                 saved and labelled with the value of this event.
 %                                 N.B. the event type used to define an epoch is given in the option:
@@ -62,7 +62,13 @@ function []=startSigProcBuffer(varargin)
 %                        SEE: event_applyClsfr for a list of options available
 %   contFeedbackOpts  -- {cell} cell array of addition options to pass to the continuous feedback 
 %                        (i.e. every n-ms triggered) classifier
-%                        SEE: cont_applyClsfr for a list of options available   
+%                        SEE: cont_applyClsfr for a list of options available
+%   userFeedbackTable -- {3 x L} table of phase names and feedback method and options to use for user-triggered
+%                                feedback options.  Format is:
+%                          {'PhaseName' 'FeedbackType' feedbackOptions}
+%                         where 'phaseName' is the phase name as found in the value of 'startPhase.cmd'
+%                               FeedbackType is the type of feedback function to call, i.e. one-of 'epoch' or 'cont'
+%                               feedbackOptions is a cell array of options to pass to the feedback-type function
 %
 %   capFile        -- [str] filename for the channel positions                         ('1010')
 %   verb           -- [int] verbosity level                                            (1)
@@ -102,6 +108,8 @@ opts=struct('phaseEventType','startPhase.cmd',...
 				'calibrateOpts',{{}},'trainOpts',{{}},...
             'epochPredFilt',[],'epochFeedbackOpts',{{}},...
 				'contPredFilt',[],'contFeedbackOpts',{{}},...
+				'userFeedbackTable',{{}},...
+				'savetestdata',0,... % save data seen during the test phase (i.e. in cont_applyClsfr)
 				'capFile',[],...
 				'subject','test','verb',1,'buffhost',[],'buffport',[],'timeout_ms',500,...
 				'useGUI',1,'cancelError',0);
@@ -117,7 +125,7 @@ if( isempty(capFile) )
   else                                   capFile=fullfile(pth,fn);
   end; % 1010 default if not selected
 end
-if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
+if(~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
 if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4; end;
 
 if ( isempty(opts.epochEventType) && opts.useGUI )
@@ -149,6 +157,12 @@ end
 if ( isempty(opts.epochEventType) )     opts.epochEventType='stimulus.target'; end;
 if ( isempty(opts.testepochEventType) ) opts.testepochEventType='classifier.apply'; end;
 if ( isempty(opts.erpEventType) )       opts.erpEventType=opts.epochEventType; end;
+userPhaseNames={};
+if ( ~isempty(opts.userFeedbackTable) )
+  userPhaseNames=opts.userFeedbackTable(:,1);
+  for upi=1:numel(userPhaseNames); userPhaseNames{upi}=lower(userPhaseNames{upi});end;
+end;
+
 
 datestr = datevec(now); datestr = sprintf('%02d%02d%02d',datestr(1)-2000,datestr(2:3));
 dname='training_data';
@@ -230,7 +244,9 @@ while ( true )
 		set(contFig,'userdata',[]);	 
 	 end
 										  % and convert to phase control events
-	 if ( ~isempty(phaseToRun) ) sendEvent(opts.phaseEventType,phaseToRun); phaseToRun=[]; drawnow; pause(1); end;
+	 if ( ~isempty(phaseToRun) )
+		sendEvent(opts.phaseEventType,phaseToRun); phaseToRun=[]; drawnow; pause(.2);
+	 end;
   else
 	 drawnow;
   end
@@ -300,7 +316,7 @@ while ( true )
     trainSubj=subject;
 
     %---------------------------------------------------------------------------------
-   case {'train','training','trainerp','trainersp'};
+   case {'train','training','trainerp','trainersp','train_subset','trainerp_subset','trainersp_subset','train_useropts','trainerp_useropts','trainersp_useropts'};
      %try
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
         fname=[dname '_' subject '_' datestr];
@@ -317,23 +333,58 @@ while ( true )
 		% get type of classifier to train.
 		clsfr_type=opts.clsfr_type;
 		% phase command name overrides option if given
-		if ( strcmp(phaseToRun,'trainerp') ) clsfr_type='erp';
-		elseif ( strcmp(phaseToRun,'trainersp') ) clsfr_type='ersp';
+		if ( ~isempty(strfind(phaseToRun,'trainerp')) ) clsfr_type='erp';
+		elseif ( ~isempty(strfind(phaseToRun,'trainersp')) ) clsfr_type='ersp';
 		end
 
+										% get any additional user specified input arguments if needed
+		userOpts={};
+		if ( ~isempty(strfind(phaseToRun,'subset')) )
+		  if( ischar(traindevents(1).value) ) % string values
+			 clsnms = unique({traindevents.value});
+		  else % numeric values
+			 tmp = unique([traindevents.value]);
+			 clsnms={}; for i=1:numel(tmp); clsnms{i}=sprintf(tmp(i)); end;
+		  end		  
+		  userOpts = inputdlg(sprintf('Enter the sub-set of classes to train with:\nNote: available classes=%s',sprintf('%s,',clsnms{:})),'Specify subset of classes to use as: ''c1'',''c2'',''c3'',... ',2);
+		  try;
+          tgtClss =eval(['{' userOpts{:} '}']);
+		  catch;
+			 warning('invlald set of user options, ignored');
+			 break;
+		  end
+		  % build the spType spec for 1vR from the list of classes
+		  spType={};
+		  if ( numel(tgtClss)==2 ) 
+			 spType=tgtClss;		  % binary special case = 1 sub-problem
+		  else
+			 for ci=1:numel(tgtClss); spType{ci} = {tgtClss{ci} tgtClss([1:ci-1 ci+1:end])}; end
+		  end
+		  userOpts={'spMx',spType}; % set the options up
+		  
+		elseif ( ~isempty(strfind(phaseToRun,'useropts')) )
+		  userOpts= inputdlg('Enter additional options for the classifier training\nas valid eval-string','Enter user options');
+		  try
+			 userOpts=eval(userOpts);
+		  catch;
+			 warning('invlald set of user options, ignored');
+			 break;
+		  end
+		end
+		
       switch lower(clsfr_type);
        
        case {'erp','evoked'};
          [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car',...
                     'freqband',opts.freqband,'badchrm',1,'badtrrm',1,...
 						  'capFile',capFile,'overridechnms',overridechnms,'verb',opts.verb,...
-						  opts.trainOpts{:});
+						  opts.trainOpts{:},userOpts{:});
        
        case {'ersp','induced'};
          [clsfr,res]=buffer_train_ersp_clsfr(traindata,traindevents,hdr,'spatialfilter','car',...
 						   'freqband',opts.freqband,'badchrm',1,'badtrrm',1,...
 							'capFile',capFile,'overridechnms',overridechnms,'verb',opts.verb,...
-							opts.trainOpts{:});
+							opts.trainOpts{:},userOpts{:});
        
        otherwise;
         error('Unrecognised classifer type');
@@ -355,7 +406,7 @@ while ( true )
 
     %---------------------------------------------------------------------------------
    case {'test','testing','epochfeedback','eventfeedback'};
-    try
+    %try
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
       clsfrfile = [cname '_' subject '_' datestr];
       if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
@@ -372,22 +423,21 @@ while ( true )
 							'endType',{'testing','test','epochfeedback','eventfeedback'},'verb',opts.verb,...
 							'trlen_ms',opts.trlen_ms,...%default to trlen_ms data per prediction
 							opts.epochFeedbackOpts{:}); % allow override with epochFeedbackOpts
-	 catch
-      fprintf('Error in : %s',phaseToRun);
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-		if ( ~isempty(le.stack) )
-		  for i=1:numel(le.stack);
-			 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
-		  end;
-		end
-      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
-      sendEvent('testing','end');    
-    end
+% 	  catch
+%        fprintf('Error in : %s',phaseToRun);
+%        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+% 	  	if ( ~isempty(le.stack) )
+% 	  	  for i=1:numel(le.stack);
+% 	  		 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+% 	  	  end;
+% 	  	end
+%        msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+%        sendEvent('testing','end');    
+%      end
 
    %---------------------------------------------------------------------------------
    case {'contfeedback'};
-    try
-    if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
+    try % try to load the classifier from file (in case someone else made it for us)
       clsfrfile = [cname '_' subject '_' datestr];
       if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
 		  clsfrfile=[cname '_' subject]; 
@@ -396,18 +446,51 @@ while ( true )
       clsfr=load(clsfrfile);
       if( isfield(clsfr,'clsfr') ) clsfr=clsfr.clsfr; end;
       clsSubj = subject;
-    end;
+	 catch
+		if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) % can't use the clsfr variable
+		  fprintf('Error in : %s',phaseToRun);
+        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+		  if ( ~isempty(le.stack) )
+			 for i=1:numel(le.stack);
+				fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+			 end;
+		  end
+        msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+        sendEvent('testing','end');    
+		end;
+	 end
 
+	 try		
     if ( ~any(strcmp(lower(opts.clsfr_type),{'ersp','induced'})) )
       warning('Trying to use an ERP classifier in continuous application mode.\nAre you sure?');
     end
 	 % generate prediction every trlen_ms/2 seconds using trlen_ms data
-    cont_applyClsfr(clsfr,...
-						  'endType',{'testing','test','contfeedback'},...
-						  'predFilt',opts.contPredFilt,'verb',opts.verb,...
-						  'trlen_ms',opts.trlen_ms,'overlap',.5,... %default to prediction every trlen_ms/2 ms
-						  opts.contFeedbackOpts{:}); % but override with contFeedbackOpts
-    catch
+	 if ( ~opts.savetestdata )
+		cont_applyClsfr(clsfr,...
+							 'endType',{'testing','test','contfeedback'},...
+							 'predFilt',opts.contPredFilt,'verb',opts.verb,...
+							 'trlen_ms',opts.trlen_ms,'overlap',.5,... %default to predict every trlen_ms/2 ms
+							 opts.contFeedbackOpts{:}); % but override with contFeedbackOpts
+	 else
+		[testdata,testdevents]=...
+		cont_applyClsfr(clsfr,...
+							 'endType',{'testing','test','contfeedback'},...
+							 'predFilt',opts.contPredFilt,'verb',opts.verb,...
+							 'trlen_ms',opts.trlen_ms,'overlap',.5,... %default to predict every trlen_ms/2 ms
+							 opts.contFeedbackOpts{:}); % but override with contFeedbackOpts
+										  % save to disk and merge with training data
+		fname=['testingdata' '_' subject '_' datestr];
+		fprintf('Saving %d epochs to : %s\n',numel(testdevents),fname);save([fname '.mat'],'testdata','testdevents','hdr');
+		% concatenate with the training data so can re-train with the extended data-set
+		if ( ~isempty(traindata) )
+		  traindata   =cat(1,traindata,testdata);
+		  traindevents=cat(1,traindevents,testdevents);
+		else
+		  traindata   =testdata;
+		  traindevents=testdevents;
+		end
+	 end
+		 catch
       fprintf('Error in : %s',phaseToRun);
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
 		if ( ~isempty(le.stack) )
@@ -418,11 +501,53 @@ while ( true )
       msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
       sendEvent('testing','end');    
     end
-      
+
+
+   %---------------------------------------------------------------------------------
+   case userPhaseNames;
+	  phasei = find(strcmp(lower(phaseToRun),userPhaseNames));
+     %try
+		 if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
+			clsfrfile = [cname '_' subject '_' datestr];
+			if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
+			  clsfrfile=[cname '_' subject]; 
+			end;
+			if(opts.verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
+			clsfr=load(clsfrfile);
+			clsSubj = subject;
+		 end;
+
+		 if( any(strcmp(opts.userFeedbackTable{phasei,2},{'event','epoch'})) )		 
+			event_applyClsfr(clsfr,'startSet',opts.testepochEventType,...
+								  'endType',{'testing','test','epochfeedback','eventfeedback',lower(phaseToRun)},'verb',opts.verb,...
+								  'trlen_ms',opts.trlen_ms,...
+								  opts.userFeedbackTable{phasei,3}{:});
+		 elseif ( any(strcmp(opts.userFeedbackTable{phasei,2},'cont')) )
+			cont_applyClsfr(clsfr,...
+								 'endType',{'testing','test','contfeedback',lower(phaseToRun)},'verb',opts.verb,...
+								 'trlen_ms',opts.trlen_ms,'overlap',.5,... %default to prediction every trlen_ms/2 ms
+								 opts.userFeedbackTable{phasei,3}{:}); 			
+		 else
+			error('UserFeedback apply-method type is unrecognised');
+		 end
+		 
+% 	  catch
+% 		 fprintf('Error in : %s',phaseToRun);
+%       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+% 		if ( ~isempty(le.stack) )
+% 		  for i=1:numel(le.stack);
+% 			 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+% 		  end;
+% 		end
+%       msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+%       sendEvent('testing','end');    
+%     end
+	 
    case {'quit','exit'};
     break;
     
    otherwise;
+	  
     warning(sprintf('Unrecognised experiment phase ignored! : %s',phaseToRun));
     
   end

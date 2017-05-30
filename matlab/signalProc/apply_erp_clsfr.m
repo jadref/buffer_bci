@@ -33,7 +33,7 @@ if ( isfield(clsfr,'detrend') && clsfr.detrend ) % detrend over time
     if ( verb>0 ) fprintf('1) Detrend\n'); end
     X=detrend(X,2); % detrend over time
   elseif ( isequal(clsfr.detrend,2) )
-    if ( verb>0) fprintf('1) Center\n'); end
+    if ( verb>0 ) fprintf('1) Center\n'); end;
     X=repop(X,'-',mean(X,2));
   end
 end 
@@ -63,41 +63,13 @@ if ( isfield(clsfr,'spatialfilt') && ~isempty(clsfr.spatialfilt) )
 end
 
 %3.5) adaptive spatial filter
-if ( isfield(clsfr,'adaptspatialfilt') && ...
-	  ~isempty(clsfr.adaptspatialfilt) && ~isequal(clsfr.adaptspatialfilt,0) )
-  if ( size(X,3)>1 ) warning('Adaptive filtering only when called with single trials.'); end
-  % single number = memory for adapt whitener
-  if ( isnumeric(clsfr.adaptspatialfilt) )
-	 % compute average spatial covariance for this trial
-	 chCov = tprod(X,[1 -2 -3],[],[2 -2 -3])./size(X,2)./size(X,3); 
-	 % update the running average
-	 if( ~isfield(clsfr,'chCov') ) % initialize
-		clsfr.chCov=chCov;
-	 else % update
-	   % between 0 and 1 is an exp weighting factor
-		% N.B. alpha = exp(log(.5)./(half-life))
-		if ( clsfr.adaptspatialfilt>0 && clsfr.adaptspatialfilt<1 ) % exp-weighted moving average
-		  chCov = clsfr.adaptspatialfilt*chCov + (1-clsfr.adaptspatialfilt)*chCov;
-		  clsfr.chCov = chCov;
-		else % integers 1 or larger => ring buffer
-		  if ( abs(clsfr.adaptspatialfilt)==1 ) % just use current entry
-			 clsfr.chCov=chCov;
-		  elseif ( abs(clsfr.adaptspatialfilt)==2 ) % this and previous
-			 tmp  = ( clsfr.chCov + chCov) /2;
-			 clsfr.chCov = chCov; % record current info for next time
-			 chCov= tmp; % use average of now and previous
-		  else
-			 error('Ring buffer for cov-estimation not supported yet!');
-		  end
-		end
-	 end
-	 % compute the whitener from the local adapative covariance estimate
-	 [U,s]=eig(double(chCov)); s=diag(s); % N.B. force double to ensure precision with poor condition
-	 % select non-zero entries - cope with rank deficiency, numerical issues
-	 si = s>eps & ~isnan(s) & ~isinf(s) & abs(imag(s))<eps;
-	 fprintf('%g ',s(si));fprintf('\n');
-	 W  = U(:,si)*diag(1./s(si))*U(:,si)'; % compute symetric whitener	 
-	 X  = tprod(X,[-1 2 3 4],W,[-1 1]); % apply it to the data
+if ( isfield(clsfr,'adaptspatialfilt') && ~isempty(clsfr.adaptspatialfilt) )
+  if ( isstr(clsfr.adaptspatialfilt) || isa(clsfr.adaptspatialfilt,'function_handle') ) % function to call to do the filtering
+    [X,clsfr.adaptspatialfiltstate] = feval(clsfr.adaptspatialfilt,X,clsfr.adaptspatialfiltstate);
+  elseif ( isnumeric(clsfr.adaptspatialfilt) )  % single number = memory for adapt whitener
+    [X,clsfr.adaptspatialfiltstate] = adaptwhitenFilt(X,clsfr.adaptspatialfilt,clsfr.adaptspatialfiltstate);    
+  else
+	 error('unsupported apaptspatialfilt type');
   end
 end
 
@@ -127,6 +99,13 @@ if ( isfield(clsfr,'badtrthresh') && ~isempty(clsfr.badtrthresh) )
   end;
 end
 
+%5) feature post-processing filter
+if ( isfield(clsfr,'featFilt') && ~isempty(clsfr.featFilt) )
+  for ei=1:size(X,3);
+	 [X(:,:,ei),clsfr.ffState]=feval(clsfr.featFilt{1},X(:,:,ei),clsfr.ffState,clsfr.featFilt{2:end});
+  end  
+end
+
 %6) apply classifier
 [f, fraw]=applyLinearClassifier(X,clsfr);
 
@@ -140,7 +119,7 @@ if ( any(isbadtr) )
 end
 
 % Pr(y==1|x,w,b), map to probability of the positive class
-if ( clsfr.binsp || size(f,2)==1 ) 
+if ( clsfr.binsp ) 
    p = 1./(1+exp(-f)); 
 else % direct multi-class softmax
    p = exp(f-max(f,2)); p=repop(p,'./',sum(p,2));

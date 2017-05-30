@@ -25,6 +25,9 @@ elseif ( isempty(width_samp) && isempty(start_samp) ) % use #win + overlap
 elseif ( ~isempty(width_samp) ) % use width + overlap
    width = width_samp;
    start = round(0:width*(1-overlap):N-width)'+1;
+	if ( N-(start(end)+width*(1-overlap))>.9*width )% miss almost a whole window, tweak overlap to make fit
+	  start = round(linspace(0,N-width,numel(start)+1))+1;
+	end
 elseif ( ~isempty(start_samp) ) % use start + overlap
    if( ~all(abs(diff(diff(start_samp,1)))<=1) ) warning('Start should be equally spaced'); end;
    start = start_samp;

@@ -15,7 +15,7 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %              *this overrides* ch_pos if given
 %  overridechnms - [bool] flag if channel order from 'capFile' overrides that from the 'ch_names' option
 %  fs        - sampling rate of the data
-%  timeband  - [2 x 1] band of times to use for classification, all if empty ([])
+%  timeband_ms- [2 x 1] band of times in milliseconds to use for classification, all if empty ([])
 %  freqband  - [2 x 1] or [3 x 1] or [4 x 1] band of frequencies to use
 %              EMPTY for *NO* spectral filter
 %              OR
@@ -33,6 +33,10 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %              0 - do nothing
 %              1 - detrend the data
 %              2 - center the data (i.e. subtract the mean)
+%  normalize - [int] normalise the features before giving to the classifier ([])
+%               0 - don't normalize
+%               1 - normalize to zero-mean, i.e. X(i) = X(i) - mean(X)
+%               2 - normalize to unit-average-power, i.e. X(i)=X(i)./sqrt(mean(X.^2))
 %  visualize - [int] visualize the data                      (1)
 %               0 - don't visualize
 %               1 - visualize, but don't wait
@@ -63,11 +67,13 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %  res    - [struct] detailed results for each fold
 %  X       -- [ppch x pptime x ppepoch] pre-processed data (N.B. may/will have different size to input X)
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
-opts=struct('classify',1,'fs',[],'timeband',[],'freqband',[],...
-            'width_ms',500,'windowType','hanning','aveType','amp',...
-            'detrend',1,'spatialfilter','slap','adaptspatialfilt',[],...
-            'badchrm',1,'badchthresh',3.1,'badchscale',2,...
-            'badtrrm',1,'badtrthresh',3,'badtrscale',2,...
+opts=struct('classify',1,'fs',[],'timeband_ms',[],'freqband',[],...
+            'width_ms',500,'windowType','hamming','aveType','amp',...
+            'detrend',1,'spatialfilter','slap',...
+            'adaptspatialfilt',[],'adaptspatialfiltstate',[],...
+            'badchrm',1,'badchthresh',3.1,'badchscale',4,...
+            'badtrrm',1,'badtrthresh',3,'badtrscale',4,...
+				'featFilt',[],...
             'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
             'visualize',1,'badCh',[],'nFold',10,'class_names',[],'zeroLab',1);
 [opts,varargin]=parseOpts(opts,varargin);
@@ -105,7 +111,7 @@ if ( opts.badchrm || ~isempty(opts.badCh) )
   isbadch = false(size(X,1),1);
   if ( ~isempty(ch_pos) ) isbadch(numel(ch_pos)+1:end)=true; end;
   if ( ~isempty(opts.badCh) )
-    isbadch(opts.badCh)=true;
+    isbadch(opts.badCh(1:min(end,size(isbadch,1))))=true;
     goodCh=find(~isbadch);
     if ( opts.badchrm ) 
       [isbad2,chstds,chthresh]=idOutliers(X(goodCh,:,:),1,opts.badchthresh);
@@ -118,7 +124,7 @@ if ( opts.badchrm || ~isempty(opts.badCh) )
     if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names))); end;
     ch_names=ch_names(~isbadch(1:numel(ch_names)));
   end
-  fprintf('%d ch removed\n',sum(isbadch));
+  fprintf('%d ch removed\n',sum(isbadch(1:numel(ch_names))));
 end
 
 %3.a) Spatial filter/re-reference (data-dependent-unsupervised)
@@ -127,31 +133,29 @@ sfApplied=false;
 if ( isnumeric(opts.spatialfilter) ) % user gives exact filter to use
    R=opts.spatialfilter;
 elseif ( size(X,1)>=4 && any(strcmpi(opts.spatialfilter,{'wht','whiten','trwht','adaptspatialfilt'})) ) 
-  fprintf('3) whiten');
-  if ( strcmpi(opts.spatialfilter,'trwht') ) % single-trial whitening
+  fprintf('3) ');
+  if ( any(strcmpi(opts.spatialfilter,{'wht','whiten'})) ) % global whiten
+	 fprintf(' whiten');
+	 [R,Sigma]=whiten(X,1,1,0,0,1); % symetric whiten
+  elseif ( strcmpi(opts.spatialfilter,'trwht') ) % single-trial whitening
 	 fprintf(' trwht');
-	 [trR,Sigma,X]=whiten(X,[1 3],1,0,0,1,1);
-	 R=trR(:,:,end);
+    [X,adaptspatialfiltstate]=adaptWhitenFilt(X,[],0,opts.verb-1);
+	 R=adaptspatialfiltstate.R;
 	 sfApplied=true;
   elseif( strcmpi(opts.spatialfilter,'adaptspatialfilt'))  % adaptive whitening
-	 fprintf(' exp-trwht %g',opts.adaptspatialfilt);
-			  % construct weight vector equivalent to exp-moving-average-filter
-	 hl   = ceil(log(.5)./log(opts.adaptspatialfilt)); % half-life
-	 wght = (1-opts.adaptspatialfilt)*(opts.adaptspatialfilt.^[2*hl:-1:0]);
-    [trR,Sigma,X]=whiten(X,[1 3],1,0,0,1,wght);
-	 R=trR(:,:,end);
-	 sfApplied=true;
-  else			
-	 [R,Sigma]=whiten(X,1,1,0,0,1); % symetric whiten
+    fprintf(' %s',opts.adaptspatialfilt);
+    [X,adaptspatialfiltstate]=feval(opts.adaptspatialfilt,X,opts.adaptspatialfiltstate);
+    if( isfield(adaptspatialfiltstate,'R') ) R=adaptspatialfiltstate.R; end;
+	 sfApplied=true;    
   end
   fprintf('\n');
 end
 
 %2.2) time range selection
 timeIdx=[];
-if ( ~isempty(opts.timeband) ) 
-  timeIdx = opts.timeband * fs; % convert to sample indices
-  timeIdx = max(min(timeIdx,size(X,2)),1); % ensure valid range
+if ( ~isempty(opts.timeband_ms) ) 
+  timeIdx = opts.timeband_ms * fs ./1000; % convert to sample indices
+  timeIdx = max(min(round(timeIdx),size(X,2)),1); % ensure valid range
   timeIdx = int32(timeIdx(1):timeIdx(2));
   X    = X(:,timeIdx,:);
 end
@@ -251,13 +255,23 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
   freqs=freqs(fIdx); % update labelling info
 end;
 
+% 5.9) Apply a feature filter post-processor if wanted
+featFilt=opts.featFilt; ffState=[];
+if ( ~isempty(featFilt) )
+  fprintf('5.5) Filter features\n');
+  if ( ~iscell(featFilt) ) featFilt={featFilt}; end;
+  for ei=1:size(X,3);
+	 [X(:,:,ei),ffState]=feval(featFilt{1},X(:,:,ei),ffState,featFilt{2:end});
+  end
+end
+
 %5.5) Visualise the input?
 aucfig=[];erpfig=[];
 if ( opts.visualize )
   % Compute the labeling and set of sub-problems and classes to plot
   Yidx=Y; sidx=[]; labels=opts.class_names; auclabels=labels;
   if ( size(Y,2)==1 && ~(isnumeric(Y) && ~opts.zeroLab && all(Y(:)==1 | Y(:)==0 | Y(:)==-1)))
-    uY=unique(Y,'rows'); Yidx=-ones([size(Y,1),numel(uY)],'int8');    
+    uY=unique(Y); Yidx=-ones([size(Y,1),numel(uY)],'int8');    
     for ci=1:size(uY,1); 
       if(iscell(uY)) 
         tmp=strmatch(uY{ci},Y); Yidx(tmp,ci)=1; 
@@ -282,9 +296,9 @@ if ( opts.visualize )
   for spi=1:size(Yidx,2);
     Yci=Yidx(:,spi);
     if( size(labels,1)==1 ) % plot sub-prob positive response only
-      mu(:,:,spi)=mean(X(:,:,Yci>0),3);      
+      mu(:,:,spi)=sum(X(:,:,Yci>0),3)./sum(Yci>0);      
     else % pos and neg sub-problem average responses
-      mu(:,:,1,spi)=mean(X(:,:,Yci>0),3); mu(:,:,2,spi)=mean(X(:,:,Yci<0),3);
+      mu(:,:,1,spi)=sum(X(:,:,Yci>0),3)./sum(Yci>0); mu(:,:,2,spi)=sum(X(:,:,Yci<0),3)./sum(Yci<0);
     end
     if(~(all(Yci(:)==Yci(1))) && ~(spi>1 && all(Yidx(:,1)==-Yidx(:,spi)))) 
       [aucci,sidx]=dv2auc(Yci,X,3,sidx); % N.B. re-seed with sidx to speed up later calls
@@ -295,7 +309,7 @@ if ( opts.visualize )
    end
    % Actually plot the data and AUC scores
 	xy=ch_pos; if (size(xy,1)==3) xy = xyz2xy(xy); end
-   erpfig=figure(1);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');
+   erpfig=figure(2);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');
    yvals=freqs;
    try; 
 	  image3d(mu(:,:,:),1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels(:),'disptype','plot','ticklabs','sw','clabel',opts.aveType);
@@ -304,7 +318,7 @@ if ( opts.visualize )
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
 	end;
    if ( ~(all(Yci(:)==Yci(1))) )
-    aucfig=figure(2);clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');
+    aucfig=figure(3);clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');
     try; 
 		image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
 		colormap ikelvin; 
@@ -326,14 +340,17 @@ else
 end
 
 if ( opts.visualize ) 
-  if ( size(res.tstconf,1)==numel(labels).^2 ) % confusion matrix is correct
+  if ( size(res.tstconf,2)==1 ) % confusion matrix is correct
      % plot the confusion matrix
-     confMxFig=figure(3); set(confMxFig,'name','Class confusion matrix');
-     imagesc(reshape(res.tstconf(:,:,res.opt.Ci),numel(labels),[]));
-     set(gca,'xtick',1:numel(labels),'xticklabel',labels,...
-             'ytick',1:numel(labels),'yticklabel',labels);
-     xlabel('True Class'); ylabel('Predicted Class'); colorbar;
-     title('Class confusion matrix');
+    confMxFig=figure(4); set(confMxFig,'name','Class confusion matrix');	 
+	 if ( size(clsfr.spMx,1)==1 ) clabels={clsfr.spKey{clsfr.spMx>0} clsfr.spKey{clsfr.spMx<0}};
+	 else                         [ans,li]=find(clsfr.spMx>0); clabels=clsfr.spKey(li);
+	 end
+    imagesc(reshape(res.tstconf(:,1,res.opt.Ci),sqrt(size(res.tstconf,1)),[]));
+    set(gca,'xtick',1:numel(clabels),'xticklabel',clabels,...
+        'ytick',1:numel(clabels),'yticklabel',clabels);
+    xlabel('True Class'); ylabel('Predicted Class'); colorbar;
+    title('Class confusion matrix');
   end
 end
 
@@ -357,9 +374,11 @@ clsfr.timeIdx     = timeIdx; % time range to apply the classifer to
 clsfr.windowFn    = winFn;% temporal window prior to fft
 clsfr.welchAveType= opts.aveType;% other options to pass to the welchpsd
 clsfr.freqIdx     = fIdx; % start/end index of frequencies to keep
+clsfr.featFilt    = featFilt; % feature normalization type
+clsfr.ffState     = ffState;  % state of the feature filter
 
-clsfr.badtrthresh = []; if ( ~isempty(trthresh) ) clsfr.badtrthresh = trthresh(end)*opts.badtrscale; end
-clsfr.badchthresh = []; if ( ~isempty(chthresh) ) clsfr.badchthresh = chthresh(end)*opts.badchscale; end
+clsfr.badtrthresh = []; if ( ~isempty(trthresh) && opts.badtrscale>0 ) clsfr.badtrthresh = trthresh(end)*opts.badtrscale; end
+clsfr.badchthresh = []; if ( ~isempty(chthresh) && opts.badchscale>0) clsfr.badchthresh = chthresh(end)*opts.badchscale; end
 % record some dv stats which are useful for bias-adaptation
 tstf = res.opt.tstf; % N.B. this *MUST* be calibrated to be useful
 clsfr.dvstats.N   = sum(res.Y~=0,1);
@@ -407,11 +426,21 @@ return
 %---------------------------------------
 function testCase()
 z=jf_mksfToy('Y',sign(round(rand(600,1))-.5));
-[clsfr]=train_ersp_clsfr(z.X,z.Y,'fs',z.di(2).info.fs,'ch_pos',[z.di(1).extra.pos3d],'ch_names',z.di(1).vals,'freqband',[0 .1 10 12],'visualize',1,'verb',1);
-f=apply_ersp_clsfr(X,clsfr);
+[clsfr,res]=train_ersp_clsfr(z.X,z.Y,'fs',z.di(2).info.fs,'ch_pos',[z.di(1).extra.pos3d],'ch_names',z.di(1).vals,'freqband',[0 .1 10 12],'visualize',0,'verb',1);
+[fmc,f]=apply_ersp_clsfr(z.X,clsfr);
+mad(res.opt.f,f)
 
 % try with 3 class problem
-[clsfr]=train_ersp_clsfr(z.X,ceil(rand(size(z.Y,1),1)*2.9),'fs',z.di(2).info.fs,'ch_pos',[z.di(1).extra.pos3d],'ch_names',z.di(1).vals,'freqband',[0 .1 10 12],'visualize',1,'verb',1);
+[clsfr,res]=train_ersp_clsfr(z.X,ceil(rand(size(z.Y,1),1)*2.9),'fs',z.di(2).info.fs,'ch_pos',[z.di(1).extra.pos3d],'ch_names',z.di(1).vals,'freqband',[0 .1 10 12],'visualize',0,'verb',1);
 
 % try with pre-built set of sub-problems
 [clsfr]=train_ersp_clsfr(z.X,[z.Y sign(randn(size(z.Y)))],'fs',z.di(2).info.fs,'ch_pos',[z.di(1).extra.pos3d],'ch_names',z.di(1).vals,'freqband',[0 .1 10 12],'visualize',1,'verb',1);
+
+
+										  % apply to jf_obj
+Yl = cat(1,z.Ydi(1).extra.marker); Yl={Yl.value}; Yl=Yl(:); % string labels...
+uY=unique(Yl);spMx={uY(1:end-1)};
+[clsfr,res,X,Y]=train_ersp_clsfr(z.X,Yl,'fs',z.di(2).info.fs,'ch_names',z.di(1).vals,'badCh',~[z.di(1).extra.iseeg],'width_ms',250,'freqband',freqband,'binsp',0,'objFn','mlr_cg','spMx',spMx)
+										  % off-line equivalent
+zpp=jf_retain(jf_welchpsd(jf_whiten(jf_rmOutliers(jf_detrend(z),'dim','ch')),'width_ms',250),'dim','freq','range','between','vals',[8 28]);
+jf_cvtrain(zpp,'objFn','mlr_cg','binsp',0,'spMx',spMx);
