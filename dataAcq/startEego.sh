@@ -24,8 +24,8 @@ else # Mac
 fi
 
 #identify the config file to use
-if [ -r ${buffdir}/${buffexe}.cfg ]; then
-    configFile=${buffdir}/${buffexe}.cfg
+if [ -r ${buffdir}/${buffexe%2ft}.cfg ]; then
+    configFile=${buffdir}/${buffexe%2ft}.cfg
 else
     configFile=-
 fi
