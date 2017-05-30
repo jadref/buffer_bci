@@ -55,7 +55,7 @@ classdef CannonBall < handle
             % Deletes the ball graphic, and the CannonBall object.
             
             delete(obj.hGraphic)
-            delete(obj);
+            %delete(obj);
             
         end
     end
@@ -95,7 +95,7 @@ classdef CannonBall < handle
                 end
                 
                 % Check collision with alien:
-                if ~isempty(hAlien)&&ishandle(hAlien)
+                if ~isempty(hAlien) && ishandle(hAlien.hGraphic)
                     allowableBallOverlap = 0.8;
                     if curY >= hAlien.y - allowableBallOverlap*obj.sizeBall
                         if obj.shotX +obj.sizeBall >= hAlien.x ...
@@ -103,6 +103,7 @@ classdef CannonBall < handle
                             disp('You got it!');
                             hAlien.hit;
                             hits = hits + 1;
+                            keep(bi)=false;
                             obj.deleteBall;
                             continue
                         end
@@ -111,6 +112,7 @@ classdef CannonBall < handle
                     % Check collision with forcefield
                     if curY>hAlien.calcForceFieldY...
                             -allowableBallOverlap*obj.sizeBall
+                       keep(bi)=false;
                         obj.deleteBall;
                         continue
                     end
@@ -123,7 +125,7 @@ classdef CannonBall < handle
             end
             
             % Only return the balls that were not deleted:
-            ballsOut = ballsIn(ishandle(ballsIn));
+            keep=true(1,numel(ballsIn)); for bi=1:numel(ballsIn); if( ~ishandle(ballsIn(bi).hGraphic) ) keep(bi)=false; end; end;ballsOut = ballsIn(keep);
             
         end
 

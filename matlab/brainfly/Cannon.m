@@ -10,7 +10,7 @@ classdef Cannon < handle
         % object instantiation:
         relCannonWidth  = 0.05;   % The width of the cannon.
         relCannonHeight = 0.1;    % The height of the cannon.
-        relMoveStepSize = 0.02;   % The maximum cannon movement step size.
+        relMoveStepSize = .5;     % The maximum cannon move in 1 second
     end
     
     properties
@@ -23,6 +23,7 @@ classdef Cannon < handle
         Ybase;              % Y position of bottom left of cannon.
         hGraphic;           % Handle to ball graphics object.
         hAxes;              % Handle to axes.
+        lastDrawTime;       % logs when we last re-drew the cannon
     end
     
     
@@ -51,6 +52,7 @@ classdef Cannon < handle
             % Save properties:
             obj.hAxes = hAxes;
             obj.moveStepSize = obj.relMoveStepSize*range(axesXLim);
+            obj.lastDrawTime = [];
             
         end
         
@@ -63,8 +65,9 @@ classdef Cannon < handle
             %   howMuch argument determines the fraction of the
             %   moveStepSize that is taken (ideally: 0<howMuch<=1).
             
-            % Calculate the variable step size:
+            % Calculate the variable step size, taking account of draw lags
             curStepSize = howMuch*obj.moveStepSize;
+            if ( ~isempty(obj.lastDrawTime) ) curStepSize=curStepSize*toc(obj.lastDrawTime); end;
             axesXLim     = get(obj.hAxes,'XLim');
             pos=get(obj.hGraphic,'position');
             
@@ -81,9 +84,8 @@ classdef Cannon < handle
                     obj.Xbase = min(obj.Xbase+curStepSize...
                         ,axesXLim(2)-obj.cannonWidth);
             end
-            pos(1)=obj.Xbase;
-            set(obj.hGraphic,'position',pos);
-            
+            pos(1)=obj.Xbase; set(obj.hGraphic,'position',pos);
+            obj.lastDrawTime=tic;     
         end
         
     end

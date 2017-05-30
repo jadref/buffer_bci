@@ -84,6 +84,7 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
   cannonAction=[];cannonTrotFrac=0;
   t0=tic;
   while ( toc(t0)<gameDuration && ishandle(hFig))
+    frameEndTime = toc(t0)+isi;
     newBall = [];
     
     if ( useKeyboard )
@@ -105,13 +106,11 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
     
     
                                 % Operate the cannon:
-    if ~isempty(cannonAction)&& ~isempty(cannonTrotFrac)
-                                % Move cannon.
+    if ~isempty(cannonAction) % updat the cannon
       fprintf('%g) move %s %g\n',toc(t0),cannonAction,cannonTrotFrac);
       hCannon.move(cannonAction,cannonTrotFrac);
-    elseif strcmp(cannonAction,'fire')
-      
-                               % Shoot cannonball if enough time has elapsed.
+    end
+    if strcmp(cannonAction,'fire') % Shoot cannonball if enough time has elapsed.
       if isempty(lastShotTime)||toc(lastShotTime)>=(1/maxCannonShotsPerSecond)
         newBall = CannonBall(hAxes,hCannon);
         score.shots = score.shots + 1;
@@ -127,7 +126,13 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
     end
     
                                 % Update cannonballs:
-    if( isempty(balls) ) curBalls=newBall; elseif( isempty(newBall) ) curBalls=balls; else curBalls = [balls newBall]; end;
+    if( isempty(balls) ) 
+       curBalls=newBall; 
+    elseif( isempty(newBall) ) 
+       curBalls=balls; 
+    else 
+       curBalls = [balls newBall]; 
+    end;
     if ~isempty(curBalls)
       [balls, hits] = CannonBall.updateBalls(curBalls,hAliens);
       score.hits = score.hits + hits;
@@ -139,9 +144,9 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
       
                % Die animation (currently doesn't pause the aliens' descent):
       if newKills~=0
-        hAxes.Color = 'r';
+        set(hAxes,'Color','r');
         pause(0.05);
-        hAxes.Color = 'k';
+        set(hAxes,'Color','k');
       end
       
       cannonKills = cannonKills + newKills;
@@ -149,17 +154,15 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
     
                                 % Set score disp and loop:
     set(hText,'String',genTextStr(score,curBalls,cannonKills));
-               % TODO: make this more accurate to take account of display lag
-    pause(isi);
+               % TODO: make this more accurate to take account of display/network lag
+    drawnow;
+    ttg=frameEndTime-toc(t0);
+    if (ttg>0) pause(ttg); 
+    else 
+       fprintf('%g) frame-lagged %gs\n',toc(t0),ttg);
+    end;
     
   end
-
-
-
-## %==========================================================================
-## function processKeys(hObj,evt,key)
-##   set(hObj,'userdata',key);  
-## end
 
 
 

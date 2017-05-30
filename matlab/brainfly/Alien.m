@@ -13,6 +13,7 @@ classdef Alien < handle
         relFallSpeed      = 0.15;
         relAlienStartSize = 0.05;  % The start size of the alien.
         relAlienGrowRate  = 0.015; % The growth rate of the alien.
+        relSpawnDelta     = .3;   % fraction of screen to spawn the new alien
         alienGrowExp      = 1.5;   % The time exponent of the growth rate.
         
         % NOTE: Aliens sometimes grow exponentially, so their sizes are
@@ -66,21 +67,23 @@ classdef Alien < handle
         
         %==================================================================
         function hit(obj)
-            obj.deleteAlien();
-            
+            obj.deleteAlien();            
         end
-        
-        
-        
+                
         
         %==================================================================
         function randomlyPlaceAlien(obj)
             % randomly respawns the alien somwehere within the axes lims.
             
             % Set random size and position:
+            relxloc=Alien.getsetLastSpawnLoc(); if ( isempty(relxloc) ) relxloc=rand(1); end;
+            relxloc= relxloc + ((rand(1)>.5)*2-1)*obj.relSpawnDelta; % always +/- relSpawnDelta
+            relxloc=min(max(0,relxloc),1);
+            Alien.getsetLastSpawnLoc(relxloc);
+
             obj.alienSize = obj.relAlienStartSize*range(get(obj.hAxes,'Ylim'));
             alienXLims = get(obj.hAxes,'Xlim')+obj.alienSize.*[1 -1];
-            alienX = alienXLims(1) + rand(1)*range(alienXLims);
+            alienX = alienXLims(1) + range(alienXLims)*relxloc;
             obj.x = alienX;
             
             set(obj.hLineGraphic,'XData',get(obj.hAxes,'Xlim'));
@@ -107,7 +110,7 @@ classdef Alien < handle
             
             delete(obj.hGraphic);
             delete(obj.hLineGraphic);
-            delete(obj);
+            %delete(obj);
             
         end
 
@@ -116,6 +119,13 @@ classdef Alien < handle
     end
 
     methods(Static)
+       function outxloc=getsetLastSpawnLoc(inxloc)
+          persistent xloc; 
+          if( nargin>0 ) xloc=inxloc; end; 
+          outxloc=xloc;
+          return;
+       end
+
               %==================================================================
         function [hAliensOut, cannonKills] = updateAliens(hAliensIn)
             
@@ -129,7 +139,7 @@ classdef Alien < handle
             for ai=1:numel(hAliensIn);
               obj = hAliensIn(ai);
                 
-                if~ishandle(obj)
+                if~ishandle(obj.hGraphic)
                     continue
                 end
                 Ylim = get(obj.hAxes,'Ylim');
@@ -160,7 +170,8 @@ classdef Alien < handle
                     ,'position',[obj.x,obj.y,obj.alienSize,obj.alienSize]);
 
             end
-            hAliensOut = hAliensIn(ishandle(hAliensIn));
+            % remove deleted objects
+            keep=true(1,numel(hAliensIn)); for bi=1:numel(hAliensIn); if( ~ishandle(hAliensIn(bi).hGraphic) ) keep(bi)=false; end; end; hAliensOut = hAliensIn(keep);
         end
 
     end
