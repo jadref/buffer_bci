@@ -25,7 +25,8 @@ function [X,state,artSig]=artChRegress(X,state,dim,idx,varargin);
 %             [float] half-life to use for simple exp-moving average filter
 %  ch_names -- {'str' size(X,dim(1))} cell array of strings of the names of the channels in dim(1) of X
 %  ch_pos   -- [3 x size(X,dim(1))] physical positions of the channels in dim(1) of X
-opts=struct('detrend',0,'center',0,'bands',[],'fs',[],'verb',0,'covFilt',[],'filtstate',[],'ch_names',[],'ch_pos',[]);
+%
+opts=struct('detrend',0,'center',0,'bands',[],'fs',[],'verb',0,'covFilt',[],'filtstate',[],'ch_names',[],'ch_pos',[],'pushbackartsig',1);
 if( ~isempty(state) && isstruct(state) ) % called with a filter-state, incremental filtering mode
   % extract the arguments/state
   opts    =state;
@@ -56,6 +57,7 @@ if( numel(dim)<3 ) nEp=1; else nEp=szX(dim(3)); end;
 
 % compute the artifact signal and its forward propogation to the other channels
 if ( isempty(artFilt) && ~isempty(opts.bands) ) % smoothing filter applied to art-sig before we use it
+  if( isempty(opts.fs) ) warning('Sampling rate not specified.... using default=100Hz'); opts.fs=100; end;
   artFilt = mkFilter(floor(szX(dim(2))./2),opts.bands,opts.fs/szX(dim(2)));
 end
 
@@ -96,7 +98,8 @@ for epi=1:nEp; % loop over epochs
   if ( opts.center )       artSig = repop(artSig,'-',mean(artSig,dim(2))); end;
   if ( opts.detrend )      artSig = detrend(artSig,dim(2)); end;
   if ( ~isempty(artFilt) ) artSig = fftfilter(artSig,artFilt,[],dim(2),1); end % smooth the result  
-  % compute the artifact covariance
+
+                                          % compute the artifact covariance
   BXXtB  = tprod(artSig,tpIdx,[],tpIdx2); % cov of the artifact signal: [nArt x nArt]
   % smooth the covariance filter estimates if wanted
   if( ~isempty(covFilt) )
@@ -121,8 +124,10 @@ for epi=1:nEp; % loop over epochs
 
                                 % apply the deflation
   if( nEp>1 ) % per-epoch mode, update in-place
+    if(opts.pushbackartsig&&(opts.detrend||opts.center||~isempty(artFilt)))  Xei(artIdx{:})=artSig;  end % push-back pre-processing changes
     X(xidx{:}) = tprod(sf,[-dim(1) dim(1)],Xei,[1:dim(1)-1 -dim(1) dim(1)+1:ndims(X)]);    
   else % global regression mode
+    if(opts.pushbackartsig&&(opts.detrend||opts.center||~isempty(artFilt)))  X(artIdx{:})=artSig; end % push-back pre-processing changes
     X = tprod(sf,[-dim(1) dim(1)],X,[1:dim(1)-1 -dim(1) dim(1)+1:ndims(X)]);
   end
 end %epoch loop

@@ -16,7 +16,7 @@ function [X,state,info]=rmEMGFilt(X,state,dim,varargin);
 %  corrStdThresh - [1x1] threshold measured in std deviations for detection of   (2.5)
 %                        anomylously small correlations, which is indicative of an emg
 %                        channel
-%  bands   -- spectral filter (as for fftfilter) to apply to the artifact signal ([])
+%  bands   -- spectral filter (as for fftfilter) to apply to the artifact signal ([30 35 inf inf])
 %  fs  -- the sampling rate of this data for the time dimension ([])
 %         N.B. fs is only needed if you are using a spectral filter, i.e. bands.
 %  detrend -- detrend the artifact before removal                        (1)
@@ -25,6 +25,13 @@ function [X,state,info]=rmEMGFilt(X,state,dim,varargin);
 %              SEE: biasFilt for example function format
 %            OR
 %             [float] half-life to use for simple exp-moving average filter
+%
+%  TODO:
+%    [] - does pre-processing the signal, e.g. detrend or high-pass at 30Hz, help the removal?
+%         H: With this implementation a pure-spatial filter, such pre-processing is potentially dangerous
+%            when it means the filter is applied to different data from what it was trained on. e.g. if big
+%            linear-trend in EMG channel and detrend before fit, then applying to the non-detrended data will
+%            result in moving this linear-trend into all the other channels!
 opts=struct('tau_samp',1,'tol',1e-7,'minCorr',.2,'corrStdThresh',2.5,...
             'detrend',0,'center',0,'bands',[],'fs',[],'covFilt','','filtstate',[],'filtstatetau',[],'verb',2);
 if( nargin<2 ) state=[]; end;
@@ -47,6 +54,7 @@ if( numel(dim)<3 ) nEp=1; else nEp=szX(dim(3)); end;
 
 % compute the artifact signal and its forward propogation to the other channels
 if ( isempty(artFilt) && ~isempty(opts.bands) ) % smoothing filter applied to art-sig before we use it
+  if( isempty(opts.fs) ) warning('Sampling rate not specified.... using default=100Hz'); opts.fs=100; end;
   artFilt = mkFilter(floor(szX(dim(2))./2),opts.bands,opts.fs/szX(dim(2)));
 end
 
