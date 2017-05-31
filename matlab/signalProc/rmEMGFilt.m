@@ -6,7 +6,7 @@ function [X,state,info]=rmEMGFilt(X,state,dim,varargin);
 % Inputs:
 %  X   -- [n-d] the data to be deflated/art channel removed
 %  state -- [struct] internal state of the filter. Init-filter if empty.   ([])
-%  dim -- dim(1) = the dimension along which to correlate/deflate ([1 2])
+%  dim -- dim(1) = the dimension along which to correlate/deflate ([1 2 3])
 %         dim(2) = the time dimension for spectral filtering/detrending along
 %         dim(3) = compute regression separately for each element on this dimension
 % Options:
@@ -27,6 +27,8 @@ function [X,state,info]=rmEMGFilt(X,state,dim,varargin);
 %             [float] half-life to use for simple exp-moving average filter
 opts=struct('tau_samp',1,'tol',1e-7,'minCorr',.2,'corrStdThresh',2.5,...
             'detrend',0,'center',0,'bands',[],'fs',[],'covFilt','','filtstate',[],'filtstatetau',[],'verb',2);
+if( nargin<2 ) state=[]; end;
+if( nargin<3 ) dim=[]; end;
 if( ~isempty(state) && isstruct(state) ) % called with a filter-state, incremental filtering mode
   % extract the arguments/state
   opts    =state;
@@ -37,7 +39,7 @@ else % normal option string call
   artFilt=[];
 end
 
-if ( isempty(dim) ) dim=[1 2]; end;
+if ( isempty(dim) ) dim=[1 2 3]; end;
 dim(dim<0)=ndims(X)+1+dim(dim<0);
 if ( numel(dim)<2 ) dim(2)=dim(1)+1; end;
 szX=size(X); szX(end+1:max(dim))=1;
@@ -170,9 +172,9 @@ X =reshape(A'*S(:,:),[nCh,nSamp,nEp]); % source+propogaged noise
 [Y0,info] =rmEMG2(X,1); % single set of emg-filters for all time
 [Y,info] =rmEMGFilt(X,[],1); % single set of emg-filters for all time
 mad(Y0,Y)
-[Y0,info] =rmEMG2(X,[1 2 3]); % single set of emg-filters for all time
-[Y,info] =rmEMGFilt(X,[],[1 2 3]); % adaptive filter over time
-[Y,info] =rmEMGFilt(X,[],[1 2 3],'covFilt',10); % adaptive filter over time, cov-smoothing
+[Y0,info] =rmEMG2(X); % adaptive filter over time
+[Y,info] =rmEMGFilt(X,[]); % adaptive filter over time
+[Y,info] =rmEMGFilt(X,[],[],'covFilt',10); % adaptive filter over time, cov-smoothing
 
 % incremental calling
                                 % incremental regress per-epoch
