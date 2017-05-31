@@ -52,12 +52,12 @@ opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
 				'labelEventType',[],...
             'maxFrameLag',3,...
             'trlen_ms',[],'trlen_samp',[],'overlap',.5,'step_ms',[],...
-            'predFilt',[],'timeout_ms',1000,'adaptspatialfilt',[]);
+            'predFilt',[],'timeout_ms',1000,'adaptspatialfiltFn',[]);
 [opts]=parseOpts(opts,varargin);
 
 % override classifier fields
-if ( ~isempty(opts.adaptspatialfilt) )
-  for ci=1:numel(clsfr); clsfr(ci).adaptspatialfilt=opts.adaptspatialfilt; end;
+if ( ~isempty(opts.adaptspatialfiltFn) )
+  for ci=1:numel(clsfr); clsfr(ci).adaptspatialfiltFn=opts.adaptspatialfiltFn; end;
 end
 
 % if not explicitly given work out from the classifier information the trial length needed
