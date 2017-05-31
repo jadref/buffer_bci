@@ -247,7 +247,8 @@ clsfr.fs          = fs;   % sample rate of training data
 clsfr.detrend     = opts.detrend; % detrend?
 clsfr.isbad       = isbadch;% bad channels to be removed
 clsfr.spatialfilt = R;    % spatial filter used for surface laplacian
-clsfr.adaptspatialfilt=[]; % no adaption
+clsfr.adaptspatialfiltFn=[]; % no adaption
+clsfr.adaptspatialfiltstate=[]; % no-state
 
 clsfr.filt        = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
 clsfr.outsz       = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
@@ -256,6 +257,8 @@ clsfr.timeIdx     = timeIdx; % time range to apply the classifer to
 clsfr.windowFn    = winFn;% temporal window prior to fft
 clsfr.welchAveType= opts.aveType;% other options to pass to the welchpsd
 clsfr.freqIdx     = fIdx; % start/end index of frequencies to keep
+clsfr.featFiltFn   = []; % feature normalization type
+clsfr.featFiltState= [];  % state of the feature filter
 
 clsfr.badtrthresh = []; 
 clsfr.badchthresh = []; 
