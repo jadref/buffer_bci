@@ -25,6 +25,18 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %              N.B. the output frequency resolution = 1000/width_ms, so 4Hz with 250ms
 %  spatialfilter -- [str] one of 'slap','car','none','csp','ssep'              ('slap')
 %       WARNING: CSP is particularly prone to *overfitting* so treat any performance estimates with care...
+%  adaptspatialfiltFn -- 'fname' or {fname args} function to call for adaptive spatial filtering, such as 'adaptWhitenFilt', or 'artChRegress'
+%                fname should be the name of a *filterfunction* to call.  This should have a prototype:
+%                 [X,state]=fname(X,state,args{:})
+%                where state is some arbitary internal state of the filter which is propogated between calls
+%                NOTE: during *training* we call with extra arguments about the channel names and positions as:
+%                           [X,state]=fname(X,state,args{:},'ch_names',ch_names,'ch_pos',ch_pos);
+%                SEE ALSO: adaptWhitenFilt, artChRegress, rmEMGFilt
+%  featFiltFn -- 'fname' or {fname args} function to for feature filtering, (such as normalization, bias-correction etc.)
+%                fname should be the name of a *filterfunction* to call.  This should have a prototype:
+%                 [X,state]=fname(X,state,args{:})
+%                where state is some arbitary internal state of the filter which is propogated between calls
+%                SEE ALSO: biasFilt, stdFilt, rbiasFilt
 %  badchrm   - [bool] do we do bad channel removal    (1)
 %  badchthresh - [float] threshold in std-dev units to id channel as bad (3.5)
 %  badtrrm   - [bool] do we do bad trial removal      (1)
@@ -145,10 +157,11 @@ elseif ( size(X,1)> 5 ) % only spatial filter if enough channels
    case {'whiten','wht'};
     fprintf('3) whiten\n');
     R=whiten(X,1,1,0,0,1); % symetric whiten
-   case {'adaptspatialfilt'}; % adaptive whitening
+   case {'adaptspatialfilt','adaptspatialfilter','adaptspatialfiltFn'}; % adaptive whitening
+    opts.spatialfilter='adaptspatialfilt'; % BODGE: ensure same string in all cases
     if( ~iscell(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={opts.adaptspatialfiltFn}; end;
     fprintf(' %s',opts.adaptspatialfiltFn{1});
-    [X,adaptspatialfiltstate]=feval(opts.adaptspatialfiltFn{1},X,opts.adaptspatialfiltstate,opts.adaptspatialfiltFn{2:end});
+    [X,adaptspatialfiltstate]=feval(opts.adaptspatialfiltFn{1},X,opts.adaptspatialfiltstate,opts.adaptspatialfiltFn{2:end},'ch_names',ch_names,'ch_ps',ch_pos);
     if( isfield(adaptspatialfiltstate,'R') ) R=adaptspatialfiltstate.R; end;
 	 sfApplied=true;
    case 'none';
@@ -304,10 +317,10 @@ clsfr.isbad       = isbadch;% bad channels to be removed
 clsfr.spatialfilt = R;    % spatial filter used for surface laplacian
 % configure for apaptive use later
 if( strncmpi(opts.spatialfilter,'adaptspatialfilt',numel('adaptspatialfilter')) )  
-  clsfr.spatialfilt=[];
-  clsfr.adaptspatialfiltFn=opts.adaptspatialfiltFn; % record the function to use
-  clsfr.adaptspatialfiltstate=adaptspatialfiltstate;
+  clsfr.spatialfilt=[]; % don't use R if adaptive mode
 end
+clsfr.adaptspatialfiltFn=opts.adaptspatialfiltFn; % record the function to use
+clsfr.adaptspatialfiltstate=adaptspatialfiltstate;
 
 clsfr.filt         = filt; % filter weights for spectral filtering
 clsfr.outsz        = outsz; % info on size after spectral filter for downsampling
