@@ -6,10 +6,13 @@ function [X,state,artSig]=artChRegress(X,state,dim,idx,varargin);
 % Inputs:
 %  X   -- [n-d] the data to be deflated/art channel removed
 %  state -- [struct] internal state of the filter. Init-filter if empty.   ([])
-%  dim -- dim(1) = the dimension along which to correlate/deflate ([1 2])
+%  dim -- dim(1) = the dimension along which to correlate/deflate ([1 2 3])
 %         dim(2) = the time dimension for spectral filtering/detrending along
 %         dim(3) = compute regression separately for each element on this dimension
-%  idx -- the index/indicies along dim(1) to use as artifact channels ([])
+%  idx -- [1 x nArt] the index/indicies along dim(1) to use as artifact channels ([])
+%        OR
+%         {'str' 1 x nArt} names of the artifact channels.  These will be matched with the 'ch_names' option.
+%           with any missing names ignored.  Note: in the absence of an exact match *any* channel with the same prefix will be matched
 % Options:
 %  bands   -- spectral filter (as for fftfilter) to apply to the artifact signal ([])
 %  fs  -- the sampling rate of this data for the time dimension ([])
@@ -20,7 +23,10 @@ function [X,state,artSig]=artChRegress(X,state,dim,idx,varargin);
 %              SEE: biasFilt for example function format
 %            OR
 %             [float] half-life to use for simple exp-moving average filter
-opts=struct('detrend',0,'center',0,'bands',[],'fs',[],'verb',0,'covFilt',[],'filtstate',[]);
+%  ch_names -- {'str' size(X,dim(1))} cell array of strings of the names of the channels in dim(1) of X
+%  ch_pos   -- [3 x size(X,dim(1))] physical positions of the channels in dim(1) of X
+%
+opts=struct('detrend',0,'center',0,'bands',[],'fs',[],'verb',0,'covFilt',[],'filtstate',[],'ch_names',[],'ch_pos',[],'pushbackartsig',1);
 if( ~isempty(state) && isstruct(state) ) % called with a filter-state, incremental filtering mode
   % extract the arguments/state
   opts    =state;
@@ -30,15 +36,28 @@ if( ~isempty(state) && isstruct(state) ) % called with a filter-state, increment
 else % normal option string call
   [opts]=parseOpts(opts,varargin);
   artFilt=[];
+                   % convert idx-channel names into channel numbers if needed
+  if ( iscell(idx) && ~isempty(opts.ch_names) )
+    % find the matching entries
+    tmp=idx; idx=[];
+    for ii=1:numel(tmp);
+      mi=strcmp(tmp{ii},opts.ch_names); % exact match
+      if( ~any(mi) ) mi=strcmpi(tmp{ii},opts.ch_names); end; % case-insensitive
+      if( ~any(mi) ) mi=strncmpi(tmp{ii},opts.ch_names,numel(tmp{ii})); end; % prefix+case-insenstive
+      if ( any(mi) ) mi=find(mi); idx=[idx;mi]; end
+    end    
+  end
 end
 
 dim(dim<0)=ndims(X)+1+dim(dim<0);
+if( isempty(dim) ) dim=[1 2 3]; end;
 if( numel(dim)<2 ) dim(2)=dim(1)+1; end;
 szX=size(X); szX(end+1:max(dim))=1;
 if( numel(dim)<3 ) nEp=1; else nEp=szX(dim(3)); end;
 
 % compute the artifact signal and its forward propogation to the other channels
 if ( isempty(artFilt) && ~isempty(opts.bands) ) % smoothing filter applied to art-sig before we use it
+  if( isempty(opts.fs) ) warning('Sampling rate not specified.... using default=100Hz'); opts.fs=100; end;
   artFilt = mkFilter(floor(szX(dim(2))./2),opts.bands,opts.fs/szX(dim(2)));
 end
 
@@ -47,15 +66,15 @@ covFilt=opts.covFilt; filtstate=opts.filtstate;
 if( ~isempty(covFilt) )
   if( ~iscell(covFilt) ) covFilt={covFilt}; end;
   if( isnumeric(covFilt{1}) ) % covFilt{1} is alpha for move-ave
-    if(covFilt{1}>1) covFilt{1}=exp(log(.5)./alpha); end; % convert half-life to alpha
+    if(covFilt{1}>1) covFilt{1}=exp(log(.5)./covFilt{1}); end; % convert half-life to alpha
     if(isempty(filtstate) ) filtstate=struct('N',0,'sx',0); end;
   end
 end
 
 % make a index expression to extract the current epoch
-xidx  =repmat({':'},1,numel(szX)); 
+xidx  ={}; for di=1:numel(szX); xidx{di}=int32(1:szX(di)); end;
 % index expression to extract the artifact channels
-artIdx=repmat({':'},1,numel(szX)); artIdx{dim(1)}=idx; if( numel(dim)>2 ) artidx{dim(3)}=1;  end;
+artIdx  ={}; for di=1:numel(szX); artIdx{di}=int32(1:szX(di));end; artIdx{dim(1)}=idx; if( numel(dim)>2 ) artIdx{dim(3)}=1;  end;
 % tprod-arguments for computing the channel-covariance matrix
 tpIdx  = -(1:ndims(X)); tpIdx(dim(1)) =1; 
 tpIdx2 = -(1:ndims(X)); tpIdx2(dim(1))=2; 
@@ -79,14 +98,15 @@ for epi=1:nEp; % loop over epochs
   if ( opts.center )       artSig = repop(artSig,'-',mean(artSig,dim(2))); end;
   if ( opts.detrend )      artSig = detrend(artSig,dim(2)); end;
   if ( ~isempty(artFilt) ) artSig = fftfilter(artSig,artFilt,[],dim(2),1); end % smooth the result  
-  % compute the artifact covariance
+
+                                          % compute the artifact covariance
   BXXtB  = tprod(artSig,tpIdx,[],tpIdx2); % cov of the artifact signal: [nArt x nArt]
   % smooth the covariance filter estimates if wanted
   if( ~isempty(covFilt) )
     if( isnumeric(covFilt{1}) ) % move-ave
-      filtstate.N = alpha.*filtstate.N + (1-alpha).*1;      % update weight
-      filtstate.sx= alpha.*filtstate.sx+ (1-alpha).*BXXtB; % update move-ave
-      BXXtB       = sx./N; % move-ave with warmup-protection
+      filtstate.N = covFilt{1}.*filtstate.N + (1-covFilt{1}).*1;      % update weight
+      filtstate.sx= covFilt{1}.*filtstate.sx+ (1-covFilt{1}).*BXXtB; % update move-ave
+      BXXtB       = filtstate.sx./filtstate.N; % move-ave with warmup-protection
     else
       [BXXtB,filtstate]=feval(covFilt{1},BXXtB,filtstate,covFilt{2:end});
     end
@@ -104,8 +124,10 @@ for epi=1:nEp; % loop over epochs
 
                                 % apply the deflation
   if( nEp>1 ) % per-epoch mode, update in-place
+    if(opts.pushbackartsig&&(opts.detrend||opts.center||~isempty(artFilt)))  Xei(artIdx{:})=artSig;  end % push-back pre-processing changes
     X(xidx{:}) = tprod(sf,[-dim(1) dim(1)],Xei,[1:dim(1)-1 -dim(1) dim(1)+1:ndims(X)]);    
   else % global regression mode
+    if(opts.pushbackartsig&&(opts.detrend||opts.center||~isempty(artFilt)))  X(artIdx{:})=artSig; end % push-back pre-processing changes
     X = tprod(sf,[-dim(1) dim(1)],X,[1:dim(1)-1 -dim(1) dim(1)+1:ndims(X)]);
   end
 end %epoch loop
@@ -142,3 +164,6 @@ for epi=2:size(X,3);
   [Yi(:,:,epi),state]=artChRegress(X(:,:,epi),state);
 end
 mad(Y,Yi)
+
+                                % specify channels with names mode
+[Y,info]=artChRegress(X,[],[],{'C1','C2'},'ch_names',{'C1','C2','C3','C4','C5','C6','C7','C8','C9','C10'});
