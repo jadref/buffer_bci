@@ -50,7 +50,11 @@ function [X,state,info]=rmEMGFilt(X,state,dim,varargin);
 %            when it means the filter is applied to different data from what it was trained on. e.g. if big
 %            linear-trend in EMG channel and detrend before fit, then applying to the non-detrended data will
 %            result in moving this linear-trend into all the other channels!
+<<<<<<< HEAD
 opts=struct('tau_samp',1,'tol',1e-7,'minCorr',.4,'corrStdThresh',2.5,...
+=======
+opts=struct('tau_samp',1,'tol',1e-7,'minCorr',.2,'corrStdThresh',2.5,...
+>>>>>>> 9ee56213e7195dbfa3c19aa8b5ce071ecbec3785
             'detrend',0,'center',0,'bands',[],'fs',[],'covFilt','','filtstate',[],'filtstatetau',[],'verb',2);
 if( nargin<2 ) state=[]; end;
 if( nargin<3 ) dim=[]; end;

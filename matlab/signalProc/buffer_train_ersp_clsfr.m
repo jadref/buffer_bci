@@ -103,7 +103,7 @@ return;
 function testCase()
 load('training_data_test_160816');
 [clsfr,res]=buffer_train_ersp_clsfr(traindata,traindevents,hdr,'spatialfilter','wht','objFn','mlr_cg','binsp',0,'spMx','1vR');
-[clsfr,res]=buffer_train_ersp_clsfr(traindata,traindevents,hdr,'spatialfilter','trwht','adaptspatialfilt',exp(log(.1)/300),'objFn','mlr_cg','binsp',0,'spMx','1vR');
+[clsfr,res]=buffer_train_ersp_clsfr(traindata,traindevents,hdr,'spatialfilter','trwht','adaptspatialfiltFn',exp(log(.1)/300),'objFn','mlr_cg','binsp',0,'spMx','1vR');
 % apply to the training data with the adaptive whitener
 oclsfr=clsfr;
 testdata = traindata;
@@ -112,9 +112,9 @@ for ei=1:numel(testdata); % bodge in and additional noise source
 end;
 
 of = buffer_apply_ersp_clsfr(traindata,oclsfr);
-c=oclsfr; c.adaptspatialfilt=1; nf = buffer_apply_ersp_clsfr(testdata,c); %non-adaptive clsfr
+c=oclsfr; c.adaptspatialfiltFn=1; nf = buffer_apply_ersp_clsfr(testdata,c); %non-adaptive clsfr
 
-clsfr=oclsfr;clsfr.adaptspatialfilt=exp(log(.5)/30);
+clsfr=oclsfr;clsfr.adaptspatialfiltFn=exp(log(.5)/30);
 f=[];p=[];
 for ei=1:numel(testdata);
    textprogressbar(ei,numel(testdata));

@@ -105,7 +105,7 @@ while (ishandle(contFig))
 	  		 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
 	  	  end;
 	  	end
-	  	msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
       sendEvent(phaseToRun,'end');    
     end
 	 sendEvent(phaseToRun,'end');
@@ -136,7 +136,8 @@ while (ishandle(contFig))
     sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
     events=buffer_newevents(buffhost,buffport,[],phaseToRun,'end',20*1000); % wait until finished
     if( isempty(events) ) % display warning that classifier training didn't finish in time...
-       uiwait(msgbox({'Warning::classifier training taking too long....' 'did it crash?'},'Warning','modal'),10);       
+      b=msgbox({'Warning::classifier training taking too long....' 'did it crash?'},'Warning');
+      %if(ishandle(b))for i=1:20; pause(1);if(~ishandle(b))break;end;end; end; % force to wait...
     end
 
    %---------------------------------------------------------------------------
@@ -230,4 +231,4 @@ end
 % shut down signal proc
 sendEvent('startPhase.cmd','exit');
 % give thanks
-uiwait(msgbox({'Thankyou for participating in our experiment.'},'Thanks','modal'),10);
+msgbox({'Thankyou for participating in our experiment.'},'Thanks');

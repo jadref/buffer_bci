@@ -162,7 +162,7 @@ oclsfr=clsfr;
 
 % apply it to the data in an adaptive fashion
 clsfr=oclsfr;
-clsfr.adaptspatialfilt=exp(log(1/2)/10); % alpha = exp(log(.5)./(half-life))
+clsfr.adaptspatialfiltFn=exp(log(1/2)/10); % alpha = exp(log(.5)./(half-life))
 ei=1;
 fprintf('apply:');
 f=[];fa=[];
