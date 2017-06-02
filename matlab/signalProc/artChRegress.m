@@ -67,7 +67,9 @@ if( ~isempty(covFilt) )
   if( ~iscell(covFilt) ) covFilt={covFilt}; end;
   if( isnumeric(covFilt{1}) ) % covFilt{1} is alpha for move-ave
     if(covFilt{1}>1) covFilt{1}=exp(log(.5)./covFilt{1}); end; % convert half-life to alpha
-    if(isempty(filtstate) ) filtstate=struct('N',0,'sx',0); end;
+    if(isempty(filtstate) ) filtstate=struct('N',0,'sxx',0,'sxy',0); end;
+  else
+    filtstate=struct('XX',[],'XY',[]); % 2 states for the 2 filters we use
   end
 end
 
@@ -101,22 +103,28 @@ for epi=1:nEp; % loop over epochs
 
                                           % compute the artifact covariance
   BXXtB  = tprod(artSig,tpIdx,[],tpIdx2); % cov of the artifact signal: [nArt x nArt]
-  % smooth the covariance filter estimates if wanted
-  if( ~isempty(covFilt) )
-    if( isnumeric(covFilt{1}) ) % move-ave
-      filtstate.N = covFilt{1}.*filtstate.N + (1-covFilt{1}).*1;      % update weight
-      filtstate.sx= covFilt{1}.*filtstate.sx+ (1-covFilt{1}).*BXXtB; % update move-ave
-      BXXtB       = filtstate.sx./filtstate.N; % move-ave with warmup-protection
-    else
-      [BXXtB,filtstate]=feval(covFilt{1},BXXtB,filtstate,covFilt{2:end});
-    end
-  end    
                                 % get the artifact/channel cross-covariance
   BXYt   = tprod(artSig,tpIdx,Xei,tpIdx2); % cov of the artifact signal: [nArt x nCh]
+
+                           % smooth the covariance filter estimates if wanted
+  if( ~isempty(covFilt) )
+    if( isnumeric(covFilt{1}) ) % move-ave
+      filtstate.N  = covFilt{1}.*filtstate.N + (1-covFilt{1}).*1;      % update weight
+      filtstate.sxx= covFilt{1}.*filtstate.sxx+ (1-covFilt{1}).*BXXtB; 
+      filtstate.sxy= covFilt{1}.*filtstate.sxy+ (1-covFilt{1}).*BXYt;  
+      BXXtB        = filtstate.sxx./filtstate.N; % move-ave with warmup-protection
+      BXYt         = filtstate.sxy./filtstate.N; % move-ave with warmup-protection
+    else
+      [BXXtB,filtstate.XX]=feval(covFilt{1},BXXtB,filtstate.XX,covFilt{2:end});
+      [BXYt,filtstate.XY] =feval(covFilt{1},BXYt, filtstate.XY,covFilt{2:end});
+    end
+  end    
   
   % regression solution for estimateing X from the artifact channels: w_B = (B^TXX^TB)^{-1} B^TXY^T = (BX)\Y
+  %w_B    = BXXtB\BXYt; % slower, min-norm, low-rank robust(ish) [nArt x nCh]
   w_B    = pinv(BXXtB)*BXYt; % slower, min-norm, low-rank robust(ish) [nArt x nCh]
-
+  if( abs(w_B(1)-1)>.1 ) keyboard; end;
+  
        % make a single spatial filter to remove the artifact signal in 1 step
        %  X-w*X = X*(I-w)
   sf     = eye(size(X,dim(1))); % [nCh x nCh]

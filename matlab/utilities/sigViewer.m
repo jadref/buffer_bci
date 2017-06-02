@@ -35,10 +35,11 @@ end;
 opts=struct('endType','end.training','verb',1,'timeOut_ms',1000,...
 				'trlen_ms',5000,'trlen_samp',[],'updateFreq',3,...
 				'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',[],'spatfilt','car',...
+            'adaptspatialfiltFn','','whiten',0,'rmartch',0,'artCh',{{'EOG' 'AFz' 'EMG' 'FP1' 'FP2' '1'}},'rmemg',0,...
 				'badchrm',0,'badchthresh',3,'capFile',[],'overridechnms',0,...
 				'welch_width_ms',1000,'spect_width_ms',500,'spectBaseline',1,...
 				'noisebands',[45 47 53 55],'noiseBins',[0 1.75],...
-				'sigProcOptsGui',1,'dataStd',2.5,'covhalflife',600,...
+				'sigProcOptsGui',1,'dataStd',2.5,'adapthalflife_s',60,...
 			  'drawHead',1);
 opts=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ); buffhost='localhost'; end;
@@ -46,7 +47,7 @@ if ( nargin<2 || isempty(buffport) ); buffport=1972; end;
 if ( isempty(opts.freqbands) && ~isempty(opts.fftfilter) ); opts.freqbands=opts.fftfilter; end;
 
 if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics facility
-  if ( 0 & ~isempty(strmatch('qt',available_graphics_toolkits())) )
+  if ( ~isempty(strmatch('qt',available_graphics_toolkits())) )
 	 graphics_toolkit('qt'); 
   elseif ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
     graphics_toolkit('qthandles'); % use fast rendering library
@@ -128,7 +129,9 @@ ppspect=ppspect(:,spectFreqIdx(1):spectFreqIdx(2),:); % subset to freq range of 
 start_s=-start_samp(end:-1:1)/hdr.fsample;
 % and the data summary statistics
 chCov     = zeros(sum(iseeg),sum(iseeg));
-covAlpha  = exp(log(.5)./opts.covhalflife);
+adaptHL   = opts.adapthalflife_s*opts.updateFreq; % half-life for updating the adaptive filters
+adaptAlpha= exp(log(.5)./adaptHL);
+whtstate=[]; eogstate=[]; emgstate=[];
 isbadch   = false(sum(iseeg),1);
 
 % pre-compute the SLAP spatial filter
@@ -152,9 +155,7 @@ if ( strcmpi(get(hdls(end),'Tag'),'colorbar') )
   cbarhdl=hdls(end); hdls(end)=[]; cbarpos=get(cbarhdl,'position');
   set(findobj(cbarhdl),'visible','off'); % store and make invisible
 end;
-if ( ~exist('OCTAVE_VERSION','builtin') ) % in octave have to manually convert arrays..
-  zoomplots;
-end
+if ( ~exist('OCTAVE_VERSION','builtin') ) zoomplots; end
 % install listener for key-press mode change
 set(fig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
 set(fig,'userdata',[]);
@@ -189,24 +190,25 @@ ppopts.badchrm=opts.badchrm;
 ppopts.badchthresh=opts.badchthresh;
 ppopts.preproctype='none';if(opts.detrend);ppopts.preproctype='detrend'; end;
 if ( ischar(opts.spatfilt) ) ppopts.spatfilttype=opts.spatfilt; else ppopts.spatfilttype='none'; end;
+if ( ischar(opts.adaptspatialfiltFn) ) ppopts.adaptspatialfiltFn=opts.adaptspatialfiltFn; else ppopts.adaptspatialfiltFn='none'; end;
+ppopts.whiten =opts.whiten;
+ppopts.rmartch=opts.rmartch;
+ppopts.rmemg  =opts.rmemg;
 ppopts.freqbands=opts.freqbands;
-optsFighandles=[];
-damage=false(4,1);	 
+damage=false(5,1);	 
 if ( isequal(opts.sigProcOptsGui,1) )
   try;
-  optsFigh=sigProcOptsFig();
-  optsFighandles=guihandles(optsFigh);
-  set(optsFighandles.lowcutoff,'string',sprintf('%g',ppopts.freqbands(1)));
-  set(optsFighandles.highcutoff,'string',sprintf('%g',ppopts.freqbands(end)));  
-  for h=get(optsFighandles.spatfilt,'children')'; 
-    if ( strcmpi(get(h,'string'),ppopts.spatfilttype) ); set(h,'value',1); break;end; 
-  end;
-  for h=get(optsFighandles.preproc,'children')'; 
-    if ( strcmpi(get(h,'string'),ppopts.preproctype) ); set(h,'value',1); break;end; 
-  end;
-  set(optsFighandles.badchrm,'value',ppopts.badchrm);
-  set(optsFighandles.badchthresh,'value',ppopts.badchthresh);  
-  ppopts=getSigProcOpts(optsFighandles);
+    optsFigh=sigProcOptsFig();
+  % set defaults to match input options  
+  set(findobj(optsFig,'tag','lowcutoff'),'string',sprintf('%g',ppopts.freqbands(1)));
+  set(findobj(optsFig,'tag','highcutoff'),'string',sprintf('%g',ppopts.freqbands(end)));  
+  % set the graphics objects to match the inputs
+  fn=fieldnames(ppopts);
+  for fi=1:numel(fn);
+    go=findobj(optsFigh,'tag',fn{fi});
+    if(ishandle(go)) set(go,'value',ppopts.(fn{fi})); end;
+  end
+  ppopts=getSigProcOpts(optsFigh);
   catch;
   end
 end
@@ -219,6 +221,7 @@ while ( ~endTraining )
   %------------------------------------------------------------------------
   % wait for new data, 
   % N.B. wait_data returns based on Number of samples, get_data uses sample index = #samples-1
+
   status=buffer('wait_dat',[cursamp+update_samp+1 inf opts.timeOut_ms],buffhost,buffport);
   if( status.nSamples < cursamp+update_samp )
     fprintf('Buffer stall detected...\n');
@@ -271,9 +274,9 @@ while ( ~endTraining )
 %  end
 
   % get updated sig-proc parameters if needed
-  if ( ~isempty(optsFighandles) && ishandle(optsFighandles.figure1) )
+  if ( ~isempty(optsFigh) && ishandle(optsFigh) )
 	 try
-		[ppopts,damage]=getSigProcOpts(optsFighandles,ppopts);
+		[ppopts,damage]=getSigProcOpts(optsFigh,ppopts);
 	 catch;
 	 end;
     % compute updated spectral filter information, if needed
@@ -291,18 +294,14 @@ while ( ~endTraining )
   % pre-process the data
   ppdat = rawdat;
   if ( ~any(strcmp(curvistype,{'offset'})) ) % no detrend for offset comp
-	 switch(lower(ppopts.preproctype));
-		case 'none';   
-		case 'center'; ppdat=repop(ppdat,'-',mean(ppdat,2));
-		case 'detrend';ppdat=detrend(ppdat,2);
-		otherwise; warning(sprintf('Unrecognised pre-proc type: %s',lower(ppopts.preproctype)));
-	 end
+	 if( ppopts.center  ) ppdat=repop(ppdat,'-',mean(ppdat,2)); end;
+    if( ppopts.detrend ) ppdat=detrend(ppdat,2); end;
   end
   
   % track the covariance properties of the data -- on the detrended data
-  % N.B. total weight up to step n = 1-(covAlpha)^n
+  % N.B. total weight up to step n = 1-(adaptHL)^n
   covDat= rawdat(:,blkIdx+1:end); covDat=repop(covDat,'-',mean(covDat,2));
-  chCov = (covAlpha)*chCov    +     (1-covAlpha)*(covDat*covDat')./(size(covDat,2));
+  chCov = (adaptAlpha)*chCov    +     (1-adaptAlpha)*(covDat*covDat')./(size(covDat,2));
   
   %-------------------------------------------------------------------------------------
   % bad-channel removal + spatial filtering
@@ -342,29 +341,37 @@ while ( ~endTraining )
     end
     
     % spatial filter
-    switch(lower(ppopts.spatfilttype))
-     case 'none';
-     case 'car';    
+    if( ppopts.car ) 
 		 if ( sum(~isbadch)>1 ) 
 			ppdat(~isbadch,:,:)=repop(ppdat(~isbadch,:,:),'-',mean(ppdat(~isbadch,:,:),1));
 		 end
-     case 'slap';   
+    end
+    if( ppopts.slap ) 
       if ( ~isempty(slapfilt) ) % only use and update from the good channels
         ppdat(~isbadch,:,:)=tprod(ppdat(~isbadch,:,:),[-1 2 3],slapfilt(~isbadch,~isbadch),[-1 1]); 
       end;
-	  case 'user';
-		 if ( isnumeric(opts.spatfilt) ) % use the user-specified spatial filter matrix
-			ppdat(~isbadch,:,:)=tprod(ppdat,[-1 2 3],opts.spatfilt,[-1 1]);      
-		 end
-     case 'whiten'; % use the current data-cov to estimate the whitener
-       [U,s]=eig(chCov(~isbadch,~isbadch)); s=diag(s); % eig-decomp
-       % re-scale to correct for startup effects, N.B. total weight up to step n = 1-(covAlpha)^n
-		 s=s./(1-covAlpha.^nUpdate);
-       si=s>0 & ~isinf(s) & ~isnan(s);
-       W    = U(:,si) * diag(1./sqrt(s(si))) * U(:,si)'; % symetric whitener
-       ppdat(~isbadch,:,:)=tprod(ppdat(~isbadch,:,:),[-1 2 3],W,[-1 1]);      
-     otherwise; warning(sprintf('Unrecognised spatial filter type : %s',ppopts.spatfilttype));
     end
+	 if ( isnumeric(opts.spatfilt) ) % use the user-specified spatial filter matrix
+		ppdat(~isbadch,:,:)=tprod(ppdat,[-1 2 3],opts.spatfilt,[-1 1]);      
+	 end
+
+                                % adaptive spatial filter
+    if( ppopts.whiten ) % symetric-whitener
+      [ppdat,whtstate]=adaptWhitenFilt(ppdat,whtstate,adaptAlpha);
+    else % clear state if turned off
+      whtstate=[];
+    end
+    if( ppopts.rmartch ) % artifact channel regression
+      [ppdat,eogstate]=artChRegress(ppdat,eogstate,[],opts.artCh,'covFilt',adaptAlpha,'ch_names',ch_names);
+    else
+      eogstate=[];
+    end
+    if( ppopts.rmemg ) % artifact channel regression
+      [ppdat,emgstate]=rmEMGFilt(ppdat,emgstate,[],'covFilt',adaptAlpha,'ch_names',ch_names);
+    else
+      emgstate=[];
+    end    
+           
   end
   
   %-------------------------------------------------------------------------------------
@@ -539,6 +546,7 @@ while ( ~endTraining )
 end
 % close the options figure as well
 if ( exist('optsFigh') && ishandle(optsFigh) ); close(optsFigh); end;
+drawnow;
 return;
 
 function freqIdx=getfreqIdx(freqs,freqbands)
