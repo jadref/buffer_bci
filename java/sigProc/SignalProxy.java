@@ -102,11 +102,15 @@ public class SignalProxy implements Runnable {
 		  generator= new Random();
 	 }
 
-	private double[][] genData() {
-		double[][] data = new double[blockSize][nChannels];
-
-		for (int x = 0; x < data.length; x++) {
-			for (int y = 0; y < data[x].length-1; y++) {
+	private double[][] genData(double[][] data) {
+		for (int x = 0; x < data.length; x++) {//samples
+         // 1st channel is random walk
+         if( x==0 ) {// wrap around state for last sample
+            data[x][0] = data[data[x].length-1][0] + generator.nextDouble()/10;
+         } else{
+            data[x][0] = data[x-1][0] + generator.nextDouble();
+         }
+         for (int y = 1; y < data[x].length-1; y++) {// pure random channels
 				data[x][y] = generator.nextDouble();
 			}
 			// last channel is always pure sin wave
@@ -131,13 +135,13 @@ public class SignalProxy implements Runnable {
 			client.putHeader(new Header(nChannels, fSample, 10));
 			nSample = 0;
 			nBlk    = 0;
-			double[][] data = null;			
+         double[][] data = new double[blockSize][nChannels];//double[][] data = null;			
 			long printTime = 0;
 			long t0 = System.currentTimeMillis();
 			long t  = t0;
 			long nextBlockTime = t0;
 			while (run) {
-				data = genData();
+				data = genData(data);
 				client.putData(data);
 				nBlk     = nBlk+1;
 				nSample  = nSample + blockSize; // current total samples sent
