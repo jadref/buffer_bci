@@ -10,7 +10,7 @@ mdir=fileparts(mfilename('fullpath'));
 if ( nargin<2 || isempty(capRoots) ) 
    capRoots = {'.',mdir,fullfile(mdir,'./positions'),fullfile(mdir,'..','..','resources','caps'),''};
  end
- if ( isstr(capRoots) ) capRoots={capRoots}; end;
+ if ( ischar(capRoots) ) capRoots={capRoots}; end;
 [capDir capFn capExt]=fileparts(cap);
 % search given directories for the capfile
 for cr=1:numel(capRoots);

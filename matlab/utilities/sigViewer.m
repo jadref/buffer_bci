@@ -82,7 +82,7 @@ if(isempty(opts.capFile))
 end
 if ( ~isempty(capFile) ) 
   if ( ~isempty(strfind(capFile,'1010.txt')) ); overridechnms=0; else overridechnms=1; end; % force default override
-  di = addPosInfo(ch_names,capFile,overridechnms); % get 3d-coords
+  di = addPosInfo(ch_names,capFile,overridechnms,0,1); % get 3d-coords
   ch_pos=cat(2,di.extra.pos2d); % extract pos and channels names
   ch_pos3d=cat(2,di.extra.pos3d);
   ch_names=di.vals; 
@@ -148,8 +148,8 @@ set(fig,'Name','Sig-Viewer : t=time, f=freq, p=power, 5=50Hz power, s=spectrogra
 axes('position',[0 0 1 1]);
 if( drawHead ) topohead(); end;
 set(gca,'visible','off','nextplot','add');
-plotPos=ch_pos; if ( ~isempty(plotPos) ); plotPos=plotPos(:,iseeg); end;
-hdls=image3d(ppspect,1,'plotPos',plotPos,'Xvals',ch_names,'yvals',spectFreqs(spectFreqIdx(1):spectFreqIdx(2)),'ylabel','freq (hz)','zvals',start_s,'zlabel','time (s)','disptype','imaget','colorbar',1,'ticklabs','sw','legend',0,'plotPosOpts.plotsposition',[.05 .08 .91 .85]);
+plotPos=ch_pos; if ( ~isempty(plotPos) ); plotPos=plotPos(:,iseeg); end;  plot_nms=ch_names(iseeg);
+hdls=image3d(ppspect,1,'plotPos',plotPos,'Xvals',plot_nms,'yvals',spectFreqs(spectFreqIdx(1):spectFreqIdx(2)),'ylabel','freq (hz)','zvals',start_s,'zlabel','time (s)','disptype','imaget','colorbar',1,'ticklabs','sw','legend',0,'plotPosOpts.plotsposition',[.05 .08 .91 .85]);
 cbarhdl=[]; 
 if ( strcmpi(get(hdls(end),'Tag'),'colorbar') ) 
   cbarhdl=hdls(end); hdls(end)=[]; cbarpos=get(cbarhdl,'position');
@@ -294,10 +294,12 @@ while ( ~endTraining )
   % pre-process the data
   ppdat = rawdat;
   if ( ~any(strcmp(curvistype,{'offset'})) ) % no detrend for offset comp
-	if( strcmpi(ppopts.preproctype,'center') || (isfield(ppopts,'center') && ppopts.center)  ) 
+	 if( (isfield(ppopts,'preproctype') && strcmpi(ppopts.preproctype,'center'))...
+        || (isfield(ppopts,'center') && ppopts.center)  ) 
             ppdat=repop(ppdat,'-',mean(ppdat,2)); 
     end;
-    if( strcmpi(ppopts.preproctype,'detrend') || (isfield(ppopts,'detrend') && ppopts.detrend) ) 
+    if( (isfield(ppopts,'preproctype') && strcmpi(ppopts.preproctype,'detrend'))...
+        || (isfield(ppopts,'detrend') && ppopts.detrend) ) 
         ppdat=detrend(ppdat,2); 
     end;
   end
@@ -345,12 +347,14 @@ while ( ~endTraining )
     end
     
     % spatial filter
-    if( strcmpi(ppopts.spatfilttype,'car') || (isfield(ppopts,'car') && ppopts.car) ) 
+    if( (isfield(ppopts,'spatfilttype') &&  strcmpi(ppopts.spatfilttype,'car'))...
+        || (isfield(ppopts,'car') && ppopts.car) ) 
 		 if ( sum(~isbadch)>1 ) 
 			ppdat(~isbadch,:,:)=repop(ppdat(~isbadch,:,:),'-',mean(ppdat(~isbadch,:,:),1));
 		 end
     end
-    if( strcmpi(ppopts.spatfilttype,'slap') || (isfield(ppopts,'slap') && ppopts.slap) ) 
+    if( (isfield(ppopts,'spatfilttype') &&  strcmpi(ppopts.spatfilttype,'slap'))...
+        || (isfield(ppopts,'slap') && ppopts.slap) ) 
       if ( ~isempty(slapfilt) ) % only use and update from the good channels
         ppdat(~isbadch,:,:)=tprod(ppdat(~isbadch,:,:),[-1 2 3],slapfilt(~isbadch,~isbadch),[-1 1]); 
       end;
