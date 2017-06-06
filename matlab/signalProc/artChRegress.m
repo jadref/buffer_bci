@@ -123,7 +123,6 @@ for epi=1:nEp; % loop over epochs
   % regression solution for estimateing X from the artifact channels: w_B = (B^TXX^TB)^{-1} B^TXY^T = (BX)\Y
   %w_B    = BXXtB\BXYt; % slower, min-norm, low-rank robust(ish) [nArt x nCh]
   w_B    = pinv(BXXtB)*BXYt; % slower, min-norm, low-rank robust(ish) [nArt x nCh]
-  if( abs(w_B(1)-1)>.1 ) keyboard; end;
   
        % make a single spatial filter to remove the artifact signal in 1 step
        %  X-w*X = X*(I-w)
