@@ -294,8 +294,12 @@ while ( ~endTraining )
   % pre-process the data
   ppdat = rawdat;
   if ( ~any(strcmp(curvistype,{'offset'})) ) % no detrend for offset comp
-	 if( ppopts.center  ) ppdat=repop(ppdat,'-',mean(ppdat,2)); end;
-    if( ppopts.detrend ) ppdat=detrend(ppdat,2); end;
+	if( strcmpi(ppopts.preproctype,'center') || (isfield(ppopts,'center') && ppopts.center)  ) 
+            ppdat=repop(ppdat,'-',mean(ppdat,2)); 
+    end;
+    if( strcmpi(ppopts.preproctype,'detrend') || (isfield(ppopts,'detrend') && ppopts.detrend) ) 
+        ppdat=detrend(ppdat,2); 
+    end;
   end
   
   % track the covariance properties of the data -- on the detrended data
@@ -341,12 +345,12 @@ while ( ~endTraining )
     end
     
     % spatial filter
-    if( ppopts.car ) 
+    if( strcmpi(ppopts.spatfilttype,'car') || (isfield(ppopts,'car') && ppopts.car) ) 
 		 if ( sum(~isbadch)>1 ) 
 			ppdat(~isbadch,:,:)=repop(ppdat(~isbadch,:,:),'-',mean(ppdat(~isbadch,:,:),1));
 		 end
     end
-    if( ppopts.slap ) 
+    if( strcmpi(ppopts.spatfilttype,'slap') || (isfield(ppopts,'slap') && ppopts.slap) ) 
       if ( ~isempty(slapfilt) ) % only use and update from the good channels
         ppdat(~isbadch,:,:)=tprod(ppdat(~isbadch,:,:),[-1 2 3],slapfilt(~isbadch,~isbadch),[-1 1]); 
       end;
@@ -356,17 +360,17 @@ while ( ~endTraining )
 	 end
 
                                 % adaptive spatial filter
-    if( ppopts.whiten ) % symetric-whitener
+    if( isfield(ppopts,'whiten') && ppopts.whiten ) % symetric-whitener
       [ppdat,whtstate]=adaptWhitenFilt(ppdat,whtstate,adaptAlpha);
     else % clear state if turned off
       whtstate=[];
     end
-    if( ppopts.rmartch ) % artifact channel regression
+    if( isfield(ppopts,'rmartch') && ppopts.rmartch ) % artifact channel regression
       [ppdat,eogstate]=artChRegress(ppdat,eogstate,[],opts.artCh,'covFilt',adaptAlpha,'ch_names',ch_names);
     else
       eogstate=[];
     end
-    if( ppopts.rmemg ) % artifact channel regression
+    if( isfield(ppopts,'rmemg') && ppopts.rmemg ) % artifact channel regression
       [ppdat,emgstate]=rmEMGFilt(ppdat,emgstate,[],'covFilt',adaptAlpha,'ch_names',ch_names);
     else
       emgstate=[];
