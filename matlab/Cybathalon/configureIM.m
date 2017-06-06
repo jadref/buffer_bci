@@ -78,6 +78,7 @@ offset_ms     =[250 250]; % give .25s for user to start/finish
 trlen_ms      =epochDuration*1000; % how often to run the classifier
 calibrateOpts ={'offset_ms',offset_ms};
 adaptHalfLife_ms = 10*1000; %10s
+freqband=[6 8 28 30];
 
 										% classifier training options
 welch_width_ms=250; % width of welch window => spectral resolution
