@@ -26,9 +26,11 @@ ifneq (,$(findstring mingw, $(PLATFORM)))
 	BINDIR = ../buffer/win32
 	EXTENSION = .exe
 #	LDLIBS += -lws2_32 $(BINDIR)/pthreadGC2.dll 
-	LDLIBS += -lws2_32
+#	LDLIBS += -lws2_32
 	EEGOLIBDIR= windows/32bit
 	LDFLAGS += -static -L$(EEGOLIBDIR) -leego-SDK
+	CFLAGS += -I$(BINDIR)/pthreads-win32/include
+	LDFLAGS += -L$(BINDIR)/pthreads-win32/lib -lws2_32 -lpthreadGC2
    # Make clean target work on windows:
 	fixpath = $(subst /,\,$1)
 #	RM = del
