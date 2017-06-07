@@ -25,8 +25,8 @@ end
 sigprocopts.badchthresh=str2num(sigprocopts.badchthresh);
 
 sigprocopts.freqbands=[str2num(sigprocopts.lowcutoff) str2num(sigprocopts.highcutoff)];  
-## sigprocopts.freqbands=[str2num(get(optsFighandles.lowcutoff,'string')) ...
-##                               str2num(get(optsFighandles.highcutoff,'string'))];  
+% sigprocopts.freqbands=[str2num(get(optsFighandles.lowcutoff,'string')) ...
+%                               str2num(get(optsFighandles.highcutoff,'string'))];  
 if ( numel(sigprocopts.freqbands)>4 ) sigprocopts.freqbands=sigprocopts.freqbands(1:min(end,4));
 elseif ( numel(sigprocopts.freqbands)<2 ) sigprocopts.freqbands=[];
 end;

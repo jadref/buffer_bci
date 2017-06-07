@@ -51,8 +51,9 @@ function [X,state,info]=rmEMGFilt(X,state,dim,varargin);
 %            linear-trend in EMG channel and detrend before fit, then applying to the non-detrended data will
 %            result in moving this linear-trend into all the other channels!
 opts=struct('tau_samp',1,'tol',1e-7,'minCorr',.4,'corrStdThresh',2.5,...
-            'detrend',0,'center',0,'bands',[],'fs',[],'covFilt','','filtstate',[],'filtstatetau',[],'verb',2,
-           'ch_names','','ch_pos','');
+            'detrend',0,'center',0,'bands',[],'fs',[],...
+            'covFilt','','filtstate',[],'filtstatetau',[],'verb',2,...
+            'ch_names','','ch_pos','');
 if( nargin<2 ) state=[]; end;
 if( nargin<3 ) dim=[]; end;
 if( ~isempty(state) && isstruct(state) ) % called with a filter-state, incremental filtering mode

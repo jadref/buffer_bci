@@ -188,9 +188,11 @@ end;
 
 ppopts.badchrm=opts.badchrm;
 ppopts.badchthresh=opts.badchthresh;
-ppopts.preproctype='none';if(opts.detrend);ppopts.preproctype='detrend'; end;
-if ( ischar(opts.spatfilt) ) ppopts.spatfilttype=opts.spatfilt; else ppopts.spatfilttype='none'; end;
-if ( ischar(opts.adaptspatialfiltFn) ) ppopts.adaptspatialfiltFn=opts.adaptspatialfiltFn; else ppopts.adaptspatialfiltFn='none'; end;
+if(opts.detrend); ppopts.detrend=1; end;
+if ( ischar(opts.spatfilt) && ~isempty(opts.spatfilt) ) ppopts.(opts.spatfilt)=1; end;
+if ( ischar(opts.adaptspatialfiltFn) && ~isempty(opts.adaptspatialfiltFn) ) 
+   ppopts.(opts.adaptspatialfiltFn)=1; 
+end;
 ppopts.whiten =opts.whiten;
 ppopts.rmartch=opts.rmartch;
 ppopts.rmemg  =opts.rmemg;
@@ -294,12 +296,10 @@ while ( ~endTraining )
   % pre-process the data
   ppdat = rawdat;
   if ( ~any(strcmp(curvistype,{'offset'})) ) % no detrend for offset comp
-	 if( (isfield(ppopts,'preproctype') && strcmpi(ppopts.preproctype,'center'))...
-        || (isfield(ppopts,'center') && ppopts.center)  ) 
+	 if( (isfield(ppopts,'center') && ppopts.center)  ) 
             ppdat=repop(ppdat,'-',mean(ppdat,2)); 
     end;
-    if( (isfield(ppopts,'preproctype') && strcmpi(ppopts.preproctype,'detrend'))...
-        || (isfield(ppopts,'detrend') && ppopts.detrend) ) 
+    if( (isfield(ppopts,'detrend') && ppopts.detrend) ) 
         ppdat=detrend(ppdat,2); 
     end;
   end
@@ -315,8 +315,9 @@ while ( ~endTraining )
   if ( ~any(strcmp(curvistype,{'50hz','offset'})) ) 
 
     % bad channel removal
+    oisbadch=isbadch;
     if ( ( ppopts.badchrm>0 || strcmp(ppopts.badchrm,'1') ) && ppopts.badchthresh>0 )
-       oisbadch=isbadch;
+
        chPow = chCov(1:size(chCov,1)+1:end)';
        if ( opts.verb > 1 )
           fprintf('%s < %g  %g\n',sprintf('%g ',chPow),mean(chPow)+ppopts.badchthresh*std(chPow),ppopts.badchthresh);
@@ -325,36 +326,34 @@ while ( ~endTraining )
         isbadch = chPow>(mean(chPow(~isbadch))+ppopts.badchthresh*std(chPow(~isbadch))) | chPow<eps;
       end
       ppdat(isbadch,:)=0; % zero out the bad channels
-    
-      % give feedback on which channels are marked as bad
-      for hi=find(oisbadch(:)~=isbadch(:))';
-         th=[];
-         try;
-            th = get(hdls(hi),'title');
-         catch; 
-         end
-         if ( ~isempty(th) ) 
-            tstr=get(th,'string'); 
-            if(isbadch(hi))
-               if ( ~strcmp(tstr(max(end-5,1):end),' (bad)')) set(th,'string',[tstr ' (bad)']); end
-            elseif ( ~isbadch(hi) )
-               if (strcmp(tstr(max(end-5,1):end),' (bad)'));  set(th,'string',tstr(1:end-6)); end;
-            end
-         end
-      end
     else
-      isbadch(:)=false;
+       isbadch(:)=false; % bad-ch-rm turned off=> all channels are good
+    end
+    
+    % give feedback on which channels are marked as bad
+    for hi=find(oisbadch(:)~=isbadch(:))';
+       th=[];
+       try;
+          th = get(hdls(hi),'title');
+       catch; 
+       end
+       if ( ~isempty(th) ) 
+          tstr=get(th,'string'); 
+          if(isbadch(hi))
+             if ( ~strcmp(tstr(max(end-5,1):end),' (bad)')) set(th,'string',[tstr ' (bad)']); end
+          elseif ( ~isbadch(hi) )
+             if (strcmp(tstr(max(end-5,1):end),' (bad)'));  set(th,'string',tstr(1:end-6)); end;
+          end
+       end
     end
     
     % spatial filter
-    if( (isfield(ppopts,'spatfilttype') &&  strcmpi(ppopts.spatfilttype,'car'))...
-        || (isfield(ppopts,'car') && ppopts.car) ) 
+    if( (isfield(ppopts,'car') && ppopts.car) ) 
 		 if ( sum(~isbadch)>1 ) 
 			ppdat(~isbadch,:,:)=repop(ppdat(~isbadch,:,:),'-',mean(ppdat(~isbadch,:,:),1));
 		 end
     end
-    if( (isfield(ppopts,'spatfilttype') &&  strcmpi(ppopts.spatfilttype,'slap'))...
-        || (isfield(ppopts,'slap') && ppopts.slap) ) 
+    if( (isfield(ppopts,'slap') && ppopts.slap) ) 
       if ( ~isempty(slapfilt) ) % only use and update from the good channels
         ppdat(~isbadch,:,:)=tprod(ppdat(~isbadch,:,:),[-1 2 3],slapfilt(~isbadch,~isbadch),[-1 1]); 
       end;
