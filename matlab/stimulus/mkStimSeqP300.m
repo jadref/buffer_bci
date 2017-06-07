@@ -1,7 +1,7 @@
 function [stimSeq,stimTime,eventSeq,colors]=mkStimSeqP300(nSymb,duration,isi,tti,oddp)
 % make a P300/oddball type of stimulus sequence
 %
-% [stimSeq,stimTime,eventSeq,stimCode]=mkStimSeqP300(nSymb,duration,isi,mintti,oddp)
+% [stimSeq,stimTime,eventSeq,colors]=mkStimSeqP300(nSymb,duration,isi,mintti,oddp)
 %
 %  The stimSeq generated has the property that the same symbol will not flash again within
 %  mittti seconds
