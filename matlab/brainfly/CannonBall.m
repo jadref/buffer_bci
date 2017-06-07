@@ -64,67 +64,67 @@ classdef CannonBall < handle
     methods(Static)
         %==================================================================
         function [ballsOut, hits] = updateBalls(ballsIn,hAlien)
-            % Processes cannonballs.
+        % Processes cannonballs.
             
-            % Only use the first (lowest) alien:
-            if ~isempty(hAlien)
+        % Only use the first (lowest) alien:
+           if ~isempty(hAlien)
               hAlien = hAlien(1);
-            else
-                hAlien = [];
-            end
+           else
+              hAlien = [];
+           end
             
-            hits = 0;
-            % Skip if there are no balls, return an empy object:
-            if isempty(ballsIn);
-                ballsOut = CannonBall.empty;
-                return
-            end
+           hits = 0;
+           % Skip if there are no balls, return an empy object:
+           if isempty(ballsIn);
+              ballsOut = CannonBall.empty;
+              return
+           end
             
-            % Otherwise, loop through balls:
-            for bi=1:numel(ballsIn);
+           % Otherwise, loop through balls:
+           for bi=1:numel(ballsIn);
               obj = ballsIn(bi);
+              if( ~ishandle(obj.hGraphic) ) continue; end; % already deleted?
+
+              % Update current cannonball (NewY  = shotY + elapsedTime *
+              % speed):
+              yLims = get(obj.hAxes,'YLim');
+              curY = obj.shotY + toc(obj.shotClock)...
+                     *obj.verticalSpeed*range(yLims);
                 
-                % Update current cannonball (NewY  = shotY + elapsedTime *
-                % speed):
-                yLims = get(obj.hAxes,'YLim');
-                curY = obj.shotY + toc(obj.shotClock)...
-                    *obj.verticalSpeed*range(yLims);
+              % Check out of bounds of current ball:
+              if curY>yLims(2)
+                 obj.deleteBall;
+                 continue
+              end
                 
-                % Check out of bounds of current ball:
-                if curY>yLims(2)
+              % Check collision with alien:
+              if ~isempty(hAlien) && ishandle(hAlien.hGraphic)
+                 allowableBallOverlap = 0.8;
+                 if curY >= hAlien.y - allowableBallOverlap*obj.sizeBall
+                    if obj.shotX +obj.sizeBall >= hAlien.x ...
+                           && obj.shotX <= hAlien.x + hAlien.alienSize
+                       disp('You got it!');
+                       hAlien.hit;
+                       hits = hits + 1;
+                       obj.deleteBall;
+                       continue
+                    end
+                 end
+                    
+                 % Check collision with forcefield
+                 if curY>hAlien.y-allowableBallOverlap*obj.sizeBall
                     obj.deleteBall;
                     continue
-                end
+                 end
+              end
                 
-                % Check collision with alien:
-                if ~isempty(hAlien) && ishandle(hAlien.hGraphic)
-                    allowableBallOverlap = 0.8;
-                    if curY >= hAlien.y - allowableBallOverlap*obj.sizeBall
-                        if obj.shotX +obj.sizeBall >= hAlien.x ...
-                                && obj.shotX <= hAlien.x + hAlien.alienSize
-                            disp('You got it!');
-                            hAlien.hit;
-                            hits = hits + 1;
-                            keep(bi)=false;
-                            obj.deleteBall;
-                            continue
-                        end
-                    end
-                    
-                    % Check collision with forcefield
-                    if curY>hAlien.calcForceFieldY...
-                            -allowableBallOverlap*obj.sizeBall
-                       keep(bi)=false;
-                        obj.deleteBall;
-                        continue
-                    end
-                end
-                
-                % Update the ball graphic if the ball is still alive:
-                set(obj.hGraphic...
-                    ,'position',[obj.shotX,curY...
-                    ,obj.sizeBall,obj.sizeBall]);
-            end
+              % Update the ball graphic if the ball is still alive:
+              if( ishandle(obj.hGraphic) )
+              set(obj.hGraphic...
+                  ,'position',[obj.shotX,curY...
+                               ,obj.sizeBall,obj.sizeBall]);
+              end
+           end
             
             % Only return the balls that were not deleted:
             keep=true(1,numel(ballsIn)); for bi=1:numel(ballsIn); if( ~ishandle(ballsIn(bi).hGraphic) ) keep(bi)=false; end; end;ballsOut = ballsIn(keep);
