@@ -40,7 +40,7 @@ else
 end
 
 if ( isempty(events) ) 
-  if ( timeout_ms>.3 ) fprintf('%d) no predictions!\n',nsamples); end;
+  if ( verb>=0 && timeout_ms>300 ) fprintf('%d) no predictions!\n',nsamples); end;
 else
   [ans,si]=sort([events.sample],'ascend'); % proc in *temporal* order
   for predEventi=1:numel(events);
