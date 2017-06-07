@@ -37,10 +37,9 @@ if ( ~exist('configRun','var') || isempty(configRun) )
   % One-time configuration has successfully completed
   configRun=true;
 end
-%----------------------------------------------------------------------
 
 %----------------------------------------------------------------------
-% General Application specific config
+% Application specific config
 verb         =1; % verbosity level for debug messages, 1=default, 0=quiet, 2=very verbose
 buffhost     ='localhost';
 buffport     =1972;
@@ -118,6 +117,8 @@ conttrialAdaptFactor=exp(log(.5)./conttrialAdaptHL) ;% convert to exp-move-ave w
 epochtrialAdaptHL=(adaptHalfLife_ms/epochtrlen_ms); % half-life in number called to apply-clsfr in epoch feedback
 epochtrialAdaptFactor=exp(log(.5)/epochtrialAdaptHL); % convert to exp-move-ave weight factor
 
+%-----------------------------------------------------------
+% Classifier training / application options
 %trainOpts={'width_ms',welch_width_ms,'badtrrm',0}; % default: 4hz res, stack of independent one-vs-rest classifiers
 %trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','wht','objFn','mlr_cg','binsp',0,'spMx','1vR'}; % whiten + direct multi-class training
 trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','trwht','objFn','mlr_cg','binsp',0,'spMx','1vR'}; % whiten + direct multi-class training
@@ -127,6 +128,7 @@ trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','trwht','objFn'
 %trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','adaptspatialfilt','adaptspatialfiltFn',{'filtPipeline' {'rmEMGFilt',[1 2 3]} {'artChRegress',[],{'C3' 'C4'}}},'objFn','mlr_cg','binsp',0,'spMx','1vR'}; % (emg-removal->eog-removal) + direct multi-class training
 %trainOpts = {'spType',{{1 3} {2 4}}}; % train 2 classifiers, 1=N vs S, 2=E vs W
 
+%-----------------------------------------------------------
 % Epoch feedback opts
 %%0) Use exactly the same classification window for feedback as for training, but
 %%   but also include a bias adaption system to cope with train->test transfer
@@ -139,6 +141,8 @@ userFeedbackTable={'epochFeedback_es' 'cont' {'predFilt',@(x,s,e) gausOutlierFil
 
 % different feedback configs (should all give similar results)
 
+%-----------------------------------------------------------
+% continuous feedback options
 %%1) Use exactly the same classification window for feedback as for training, but apply more often
 %contFeedbackOpts ={'step_ms',welch_width_ms}; % apply classifier more often
 %%   but also include a bias adaption system to cope with train->test transfer
