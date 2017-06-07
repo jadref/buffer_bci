@@ -10,7 +10,7 @@ classdef Alien < handle
         % screen width or height, these properties are used to generate the
         % actual sized at object instantiation:
         relStartLine      = 0.9;
-        relFallSpeed      = 0.15;
+        relFallSpeed      = 0.1;
         relAlienStartSize = 0.05;  % The start size of the alien.
         relAlienGrowRate  = 0.015; % The growth rate of the alien.
         relSpawnDelta     = .3;   % fraction of screen to spawn the new alien
@@ -20,12 +20,13 @@ classdef Alien < handle
         % calculated as:
         %
         % alienSize = (startSize + alienAge^alienGrowExp)*relAlienGrowRate
+        minuid = 256;
     end
     
     
     properties
-        x;                   % X pos of alien.
-        y;                   % Y pos of alien.
+        x;                   % X pos of *center* of the alien.
+        y;                   % Y pos of *center* of the alien.
         alienSize;           % Alien size.
         hGraphic;            % handle to alien graphics object.
         hLineGraphic;
@@ -33,6 +34,7 @@ classdef Alien < handle
         alienSpawnTime;      % logs the alien spawn time.
         shotsToKill;
         hCannon;
+        uid; % unique identifier for this alien
     end
     
     %% Methods:
@@ -62,6 +64,7 @@ classdef Alien < handle
                 ,'position',[10,10,1,1]...
                 ,'visible','on');
             obj.randomlyPlaceAlien;
+            obj.uid = Alien.getuid();
         end
         
         
@@ -87,22 +90,15 @@ classdef Alien < handle
             obj.x = alienX;
             
             set(obj.hLineGraphic,'XData',get(obj.hAxes,'Xlim'));
-            waistY = calcForceFieldY(obj);
-            set(obj.hLineGraphic(1),'YData',[waistY waistY]);
+            waistY = obj.y;
             
             % update alien graphic, and spawn time:
-            set(obj.hGraphic...
-                ,'position',[obj.x,obj.y,obj.alienSize,obj.alienSize]);
+            set(obj.hLineGraphic(1),'YData',[waistY waistY]);
+            set(obj.hGraphic,'position',[obj.x,obj.y-obj.alienSize/2,obj.alienSize,obj.alienSize]);
             obj.alienSpawnTime = tic;
             
         end
-        
-        
-        %==================================================================
-        function out = calcForceFieldY(obj)
-            out = obj.y + 0.5*obj.alienSize;
-        end
-       
+               
         
         %==================================================================        
         function deleteAlien(obj)
@@ -143,21 +139,23 @@ classdef Alien < handle
                     continue
                 end
                 Ylim = get(obj.hAxes,'Ylim');
+                % update the alien position and size
                 obj.alienSize = (obj.relAlienStartSize...
                     +(toc(obj.alienSpawnTime)^obj.alienGrowExp)...
                     *obj.relAlienGrowRate)...
                     *range(Ylim);
-                obj.y = (obj.relStartLine - toc(obj.alienSpawnTime)...
-                    *obj.relFallSpeed)*range(Ylim);
-                waistY = calcForceFieldY(obj);
+                obj.y = (obj.relStartLine - toc(obj.alienSpawnTime)*obj.relFallSpeed)*range(Ylim);
+                waistY = obj.y;
+                % kill alien if hit cannon.....
                 if obj.x+obj.alienSize>obj.hCannon.Xbase...
-                        && obj.x<obj.hCannon.Xbase+obj.hCannon.cannonWidth
-                    if obj.y<obj.hCannon.Ybase+obj.hCannon.cannonHeight
-                    obj.deleteAlien();
-                    cannonKills = cannonKills+1;
-                    continue
-                    end
+                   && obj.x<obj.hCannon.Xbase+obj.hCannon.cannonWidth
+                  if obj.y<obj.hCannon.Ybase+obj.hCannon.cannonHeight
+                    %obj.deleteAlien();
+                    %cannonKills = cannonKills+1;
+                    %continue
+                  end
                 end
+                % kill cannon if pass the middle of the alien
                 if waistY<obj.hCannon.Ybase+obj.hCannon.cannonHeight
                     obj.deleteAlien();
                     cannonKills = cannonKills+1;
@@ -166,12 +164,19 @@ classdef Alien < handle
 
                 % update alien graphic, and spawn time:
                 set(obj.hLineGraphic(1),'YData',[waistY waistY]);
-                set(obj.hGraphic...
-                    ,'position',[obj.x,obj.y,obj.alienSize,obj.alienSize]);
+                set(obj.hGraphic,'position',[obj.x,obj.y-obj.alienSize/2,obj.alienSize,obj.alienSize]);
 
             end
             % remove deleted objects
             keep=true(1,numel(hAliensIn)); for bi=1:numel(hAliensIn); if( ~ishandle(hAliensIn(bi).hGraphic) ) keep(bi)=false; end; end; hAliensOut = hAliensIn(keep);
+        end
+
+                          % get a unique idenification number for this object
+        function nuid=getuid()
+          persistent uid;
+          if(isempty(uid))uid=256;end; % Aliens always >256 (bit 8 set)
+          uid=uid+1;
+          nuid=uid;
         end
 
     end

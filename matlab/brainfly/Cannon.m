@@ -11,6 +11,7 @@ classdef Cannon < handle
         relCannonWidth  = 0.05;   % The width of the cannon.
         relCannonHeight = 0.1;    % The height of the cannon.
         relMoveStepSize = .5;     % The maximum cannon move in 1 second
+        minuid=1;
     end
     
     properties
@@ -24,6 +25,7 @@ classdef Cannon < handle
         hGraphic;           % Handle to ball graphics object.
         hAxes;              % Handle to axes.
         lastDrawTime;       % logs when we last re-drew the cannon
+        uid;                % unique identification number
     end
     
     
@@ -53,7 +55,7 @@ classdef Cannon < handle
             obj.hAxes = hAxes;
             obj.moveStepSize = obj.relMoveStepSize*range(axesXLim);
             obj.lastDrawTime = [];
-            
+            obj.uid = Cannon.getuid();
         end
         
         %==================================================================
@@ -89,5 +91,12 @@ classdef Cannon < handle
         end
         
     end
-    
+
+    methods(Static)
+                            
+      function nuid=getuid()% only 1 cannon, so always UID=1
+        nuid=1;
+      end
+
+    end   
 end

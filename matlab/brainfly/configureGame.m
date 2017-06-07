@@ -49,14 +49,17 @@ cueColor = [0 1 0];
 predColor= [0 1 0]; % prediction color
 txtColor     =[.9 .9 .9]; % color of the cue text
 
-isi = 1/5; % 5hz screen update interval
+gameFrameDuration = 1/5; % 5hz screen update interval
 
 % how long 1 game level lasts
 gameDuration = 40;
 
-% epoch timing info
+% P300 stimulus info
+isi   = 1/5;
+mintti= .6;
+oddballp=false;
 stimDuration=isi;
-
+maxOnScreenObjs=20;
 
 %---------------------------------------------------------------------------------------------------------
 % IM calibration config

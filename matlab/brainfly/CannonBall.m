@@ -5,6 +5,7 @@ classdef CannonBall < handle
     properties (Constant)
         verticalSpeed = 0.8;   % rising speed of ball.
         relSizeBall   = 0.03; % ball size
+        minuid=1024;
     end
     
     
@@ -15,6 +16,7 @@ classdef CannonBall < handle
         sizeBall;
         hGraphic;            % handle to ball graphics object.
         hAxes;               % handle to axes.
+        uid;                 % unique identifier for this cannonball
         hCannon;
     end
     
@@ -47,7 +49,7 @@ classdef CannonBall < handle
             
             % Save the time that the ball was shot:
             obj.shotClock = tic;
-            
+            obj.uid = CannonBall.getuid();
         end       
         
          %==================================================================
@@ -129,6 +131,12 @@ classdef CannonBall < handle
             
         end
 
-    end
-    
+        % get a unique idenification number for this object
+        function nuid=getuid()
+          persistent uid;
+          if(isempty(uid))uid=Alien.minuid;end;%Cannonball > 1024 (bit 10 set)
+          uid=uid+1;
+          nuid=uid;
+        end
+    end       
 end
