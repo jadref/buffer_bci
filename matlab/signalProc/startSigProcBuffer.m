@@ -125,7 +125,10 @@ if( isempty(capFile) )
   else                                   capFile=fullfile(pth,fn);
   end; % 1010 default if not selected
 end
-if(~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
+overridechnms=1; % default cap-file is wire->name+position mapping
+if ( ~isempty(strfind(capFile,'1010.txt')) || ~isempty(strfind(capFile,'subset')) ) 
+    overridechnms=0; % capFile is just position-info / channel-subset selection
+end; 
 if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4; end;
 
 if ( isempty(opts.epochEventType) && opts.useGUI )
