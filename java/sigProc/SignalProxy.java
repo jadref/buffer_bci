@@ -102,11 +102,11 @@ public class SignalProxy implements Runnable {
 		  generator= new Random();
 	 }
 
-	private double[][] genData(double[][] data) {
+    private double[][] genData(double[][] data) { // data=[samples x channels]
 		for (int x = 0; x < data.length; x++) {//samples
          // 1st channel is random walk
          if( x==0 ) {// wrap around state for last sample
-            data[x][0] = data[data[x].length-1][0] + generator.nextDouble()/10;
+            data[x][0] = data[data.length-1][0] + generator.nextDouble()/10;
          } else{
             data[x][0] = data[x-1][0] + generator.nextDouble();
          }
