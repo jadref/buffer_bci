@@ -172,7 +172,14 @@ colormap trafficlight; % red-green colormap for 50Hz pow
 
 % extract the lines so we can directly update them.
 datlim=[inf -inf];
-for hi=1:numel(hdls); set(hdls(hi),'nextplot','add'); end; % all plots hold on.  Needed for OCTAVE
+for hi=1:numel(hdls); 
+    set(hdls(hi),'nextplot','add'); % all plots hold on.  Needed for OCTAVE
+    xhdl=get(hdls(hi),'xlabel');
+    if( ~isempty(xhdl) && isempty(get(xhdl,'string')) )
+        set(xhdl,'visible','off');
+        yhdl=get(hdls(hi),'ylabel'); if(~isempty(yhdl))set(yhdl,'visible','off');end
+    end
+end; 
 for hi=1:size(ppdat,1); 
   cldhdls = get(hdls(hi),'children');
   img_hdls(hi)=findobj(cldhdls,'type','image');%set(line_hdls(hi),'linewidth',1);
@@ -432,11 +439,13 @@ while ( ~endTraining )
     switch ( vistype ) % do pre-work dependent on current mode, i.e. mode we're switching from
      case {'50hz','power','offset'}; % 50hz, power
       for hi=1:size(ppdat,1); % turn the tickmarks and label visible again
+        ylabel('');
         if ( ~isempty(get(hdls(hi),'Xlabel')) && isequal(get(get(hdls(hi),'xlabel'),'visible'),'on') ) 
           set(hdls(hi),'xticklabelmode','auto','yticklabelmode','auto');
+          xlabel(hdls(hi),'time (s)','visible','on');
+        else
+          xlabel(hdls(hi),'time (s)','visible','off');
         end
-        xlabel(hdls(hi),'time (s)');
-        ylabel('');
       end        
       if ( ~isempty(cbarhdl) ); set(findobj(cbarhdl),'visible','off'); end
      case 'spect'; if ( ~isempty(cbarhdl) ); set(findobj(cbarhdl),'visible','off'); end
