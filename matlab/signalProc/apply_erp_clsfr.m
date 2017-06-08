@@ -64,6 +64,7 @@ end
 
 %3.5) adaptive spatial filter
 if ( isfield(clsfr,'adaptspatialfiltFn') && ~isempty(clsfr.adaptspatialfiltFn) )
+   if( ~iscell(clsfr.adaptspatialfiltFn) ) clsfr.adaptspatialfiltFn={clsfr.adaptspatialfiltFn}; end;
    [X,clsfr.adaptspatialfiltstate] = feval(clsfr.adaptspatialfiltFn{1},X,clsfr.adaptspatialfiltstate,clsfr.adaptspatialfiltFn{2:end});
 end
 
@@ -94,8 +95,8 @@ if ( isfield(clsfr,'badtrthresh') && ~isempty(clsfr.badtrthresh) )
 end
 
 %5) feature post-processing filter
-%5) feature post-processing filter
 if ( isfield(clsfr,'featFiltFn') && ~isempty(clsfr.featFiltFn) )
+  if( ~iscell(clsfr.featFiltFn) ) clsfr.featFiltFn={clsfr.featFiltFn}; end;
   for ei=1:size(X,3); % incrementall call the function
 	 [X(:,:,ei),clsfr.featFiltState]=feval(clsfr.featFilt{1},X(:,:,ei),clsfr.featFiltState,clsfr.featFilt{2:end});
   end  
