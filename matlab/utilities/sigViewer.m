@@ -27,6 +27,10 @@ function []=sigViewer(buffhost,buffport,varargin);
 %  noisebands -- [2x1] frequency bands to display for the 50 Hz noise plot   ([45 47 53 55])
 %  sigProcOptsGui -- [bool] show the on-line option changing gui             (1)
 %  drawHead   -- [bool] flag if we should draw the background head           (true)
+
+% TODO:
+%   [] - pre-process the raw-data including non-eeg channels, but only
+%   display eeg-channels..
 wb=which('buffer'); 
 if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ); 
     fprintf('Running %s\n',fullfile(fileparts(mfilename('fullpath')),'../utilities/initPaths.m')); 
@@ -35,7 +39,7 @@ end;
 opts=struct('endType','end.training','verb',1,'timeOut_ms',1000,...
 				'trlen_ms',5000,'trlen_samp',[],'updateFreq',3,...
 				'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',[],'spatfilt','car',...
-            'adaptspatialfiltFn','','whiten',0,'rmartch',0,'artCh',{{'EOG' 'AFz' 'EMG' 'FP1' 'FP2' '1'}},'rmemg',0,...
+            'adaptspatialfiltFn','','whiten',0,'rmartch',0,'artCh',{{'EOG' 'AFz' 'EMG' 'AF3' 'FP1' 'FPz' 'FP2' 'AF4' '1'}},'rmemg',0,...
 				'badchrm',0,'badchthresh',3,'capFile',[],'overridechnms',0,...
 				'welch_width_ms',1000,'spect_width_ms',500,'spectBaseline',1,...
 				'noisebands',[45 47 53 55],'noiseBins',[0 1.75],...
@@ -96,9 +100,6 @@ if ( ~isempty(capFile) )
   end
 end
 
-% add number prefix to ch-names for display
-for ci=1:numel(ch_names); ch_names{ci} = sprintf('%d %s',ci,ch_names{ci}); end;
-
 if ( isfield(hdr,'fSample') ); fs=hdr.fSample; else fs=hdr.fsample; end;
 trlen_samp=opts.trlen_samp;
 if ( isempty(trlen_samp) && ~isempty(opts.trlen_ms) ); trlen_samp=round(opts.trlen_ms*fs/1000); end;
@@ -148,7 +149,10 @@ set(fig,'Name','Sig-Viewer : t=time, f=freq, p=power, 5=50Hz power, s=spectrogra
 axes('position',[0 0 1 1]);
 if( drawHead ) topohead(); end;
 set(gca,'visible','off','nextplot','add');
-plotPos=ch_pos; if ( ~isempty(plotPos) ); plotPos=plotPos(:,iseeg); end;  plot_nms=ch_names(iseeg);
+plotPos=ch_pos; if ( ~isempty(plotPos) ); plotPos=plotPos(:,iseeg); end;
+% add number prefix to ch-names for display
+plot_nms={}; for ci=1:numel(ch_names); plot_nms{ci} = sprintf('%d %s',ci,ch_names{ci}); end;plot_nms=plot_nms(iseeg);
+
 hdls=image3d(ppspect,1,'plotPos',plotPos,'Xvals',plot_nms,'yvals',spectFreqs(spectFreqIdx(1):spectFreqIdx(2)),'ylabel','freq (hz)','zvals',start_s,'zlabel','time (s)','disptype','imaget','colorbar',1,'ticklabs','sw','legend',0,'plotPosOpts.plotsposition',[.05 .08 .91 .85]);
 cbarhdl=[]; 
 if ( strcmpi(get(hdls(end),'Tag'),'colorbar') ) 
@@ -376,12 +380,12 @@ while ( ~endTraining )
       whtstate=[];
     end
     if( isfield(ppopts,'rmartch') && ppopts.rmartch ) % artifact channel regression
-      [ppdat,eogstate]=artChRegress(ppdat,eogstate,[],opts.artCh,'covFilt',adaptAlpha,'ch_names',ch_names);
+      [ppdat,eogstate]=artChRegress(ppdat,eogstate,[],opts.artCh,'covFilt',adaptAlpha,'ch_names',ch_names(iseeg));
     else
       eogstate=[];
     end
     if( isfield(ppopts,'rmemg') && ppopts.rmemg ) % artifact channel regression
-      [ppdat,emgstate]=rmEMGFilt(ppdat,emgstate,[],'covFilt',adaptAlpha,'ch_names',ch_names);
+      [ppdat,emgstate]=rmEMGFilt(ppdat,emgstate,[],'covFilt',adaptAlpha,'ch_names',ch_names(iseeg));
     else
       emgstate=[];
     end    

@@ -44,7 +44,10 @@ else % normal option string call
       mi=strcmp(tmp{ii},opts.ch_names); % exact match
       if( ~any(mi) ) mi=strcmpi(tmp{ii},opts.ch_names); end; % case-insensitive
       if( ~any(mi) ) mi=strncmpi(tmp{ii},opts.ch_names,numel(tmp{ii})); end; % prefix+case-insenstive
-      if ( any(mi) ) mi=find(mi); idx=[idx;mi]; end
+      if ( any(mi) )
+          if( opts.verb>1 ) fprintf('Matched: %s -> %s\n',tmp{ii},opts.ch_names{mi}); end;
+          mi=find(mi); idx=[idx;mi]; 
+      end
     end    
   end
 end
