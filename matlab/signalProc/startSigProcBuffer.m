@@ -274,8 +274,10 @@ while ( true )
     if ( strcmp(devents(di).type,'subject') )     
       subject=devents(di).value; 
       if ( opts.verb>0 ) fprintf('Setting subject to : %s\n',subject); end;
-      continue; 
-    elseif ( strncmp(devents(di).type,'sigproc.',numel('sigproc.')) && strcmp(devents(di).value,'start') )
+      continue;
+    elseif ( strcmp(devents(di).type,'sigproc.reset') )
+           ; % ignore sig-proc reset
+    elseif ( strncmp(devents(di).type,'sigproc.',numel('sigproc.')) && strcmp(devents(di).value,'start') ) % start phase command
       phaseToRun=devents(di).type(numel('sigproc.')+1:end);
     else
       phaseToRun=devents(di).value;
@@ -330,7 +332,9 @@ while ( true )
           warning(['Couldnt find a classifier to load file: ' fname]);
           break;
         end
+        chdr=hdr;
         load(fname); 
+        if( ~isempty(chdr) ) hdr=chdr; end;
         trainSubj=subject;
       end;
       if ( opts.verb>0 ) fprintf('%d epochs\n',numel(traindevents)); end;

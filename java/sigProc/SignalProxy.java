@@ -131,9 +131,16 @@ public class SignalProxy implements Runnable {
 			}
 			
 			System.out.println("Putting header");
+         Header hdr = new Header(nChannels,fSample,10);
+         // Copy the channel names in
+         hdr.labels[0]="1/f";
+		  for (int i = 1; i < nChannels-1; i++) {
+				hdr.labels[i]= "noise" + i;
+		  }
+        hdr.labels[nChannels-1]="sin"+sinFreq+"Hz";
+        client.putHeader(hdr);
 
-			client.putHeader(new Header(nChannels, fSample, 10));
-			nSample = 0;
+        nSample = 0;
 			nBlk    = 0;
          double[][] data = new double[blockSize][nChannels];//double[][] data = null;			
 			long printTime = 0;

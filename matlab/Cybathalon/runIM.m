@@ -144,7 +144,6 @@ while (ishandle(contFig))
 	  		 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
 	  	  end;
 	  	end
-      %msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
       sendEvent(phaseToRun,'end');    
     end
 	 sendEvent(phaseToRun,'end');

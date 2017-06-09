@@ -1,7 +1,7 @@
-function [X,state,artSig]=artChRegress(X,state,dim,idx,varargin);
+function [X,state,info]=artChRegress(X,state,dim,idx,varargin);
 % remove any signal correlated with the input signals from the data
 % 
-%   [X,state,artSig]=artChRegress(X,state,dim,idx,...);% incremental calling mode
+%   [X,state,info]=artChRegress(X,state,dim,idx,...);% incremental calling mode
 %
 % Inputs:
 %  X   -- [n-d] the data to be deflated/art channel removed
@@ -44,12 +44,23 @@ else % normal option string call
       mi=strcmp(tmp{ii},opts.ch_names); % exact match
       if( ~any(mi) ) mi=strcmpi(tmp{ii},opts.ch_names); end; % case-insensitive
       if( ~any(mi) ) mi=strncmpi(tmp{ii},opts.ch_names,numel(tmp{ii})); end; % prefix+case-insenstive
-      if ( any(mi) )
-          if( opts.verb>1 ) fprintf('Matched: %s -> %s\n',tmp{ii},opts.ch_names{mi}); end;
-          mi=find(mi); idx=[idx;mi]; 
-      end
-    end    
+      if ( any(mi) ) mi=find(mi); idx=[idx;mi]; end
+      if( opts.verb>=0 )
+        if( any(mi) ) fprintf('artChRegress:: %s -> %s\n',tmp{ii},opts.ch_names{mi});
+        else          fprintf('artChRegress:: %s unmatched\n',tmp{ii});
+        end
+      end;
+    end
+    if ( isempty(idx) )
+      fprintf('artChRegress:: Warning, no artifact channels given!');
+    end
   end
+end
+if ( isempty(idx) )% create empty state and return
+  state         =opts;  state.dim     =dim;   state.idx     =idx;
+  state.artFilt =[];    state.covFilt =[];    state.filtstate=[];
+  info = [];
+  return;
 end
 
 dim(dim<0)=ndims(X)+1+dim(dim<0);

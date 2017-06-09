@@ -161,7 +161,7 @@ elseif ( size(X,1)> 5 ) % only spatial filter if enough channels
     opts.spatialfilter='adaptspatialfilt'; % BODGE: ensure same string in all cases
     if( ~iscell(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={opts.adaptspatialfiltFn}; end;
     fprintf(' %s',opts.adaptspatialfiltFn{1});
-    [X,adaptspatialfiltstate]=feval(opts.adaptspatialfiltFn{1},X,opts.adaptspatialfiltstate,opts.adaptspatialfiltFn{2:end},'ch_names',ch_names,'ch_ps',ch_pos);
+    [X,adaptspatialfiltstate]=feval(opts.adaptspatialfiltFn{1},X,opts.adaptspatialfiltstate,opts.adaptspatialfiltFn{2:end},'ch_names',ch_names,'ch_pos',ch_pos);
     if( isfield(adaptspatialfiltstate,'R') ) R=adaptspatialfiltstate.R; end;
 	 sfApplied=true;
    case 'none';
