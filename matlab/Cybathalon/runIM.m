@@ -1,15 +1,11 @@
 configureIM;
-% create the control window and execute the phase selection loop
-%try
-%  contFig=controller(); info=guidata(contFig); 
-%catch
-  contFig=figure(1);
-  set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
-  axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
-  set(contFig,'Units','pixel');wSize=get(contFig,'position');
-  fontSize = .05*wSize(4);
-  %        Instruct String          Phase-name
-  menustr={'0) EEG'                 'eegviewer';
+contFig=figure(1);clf;
+set(contFig,'name','BCI Controller : close to quit','color',[0 0 0],'menubar','none','toolbar','none');
+axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
+set(contFig,'Units','pixel');wSize=get(contFig,'position');
+fontSize = .05*wSize(4);
+%        Instruct String          Phase-name
+menustr={'0) EEG'                 'eegviewer';
 			  'a) Artifacts'           'artifact';
            '1) Practice'            'practice';
 			  '2) Calibrate'           'calibrate'; 
@@ -30,23 +26,25 @@ configureIM;
            'E) EMG Control'         'emgcontrol';
 			  'q) quit'                'quit';
           };
-  txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
-				'HorizontalAlignment','left','color',[1 1 1]);
-  ph=plot(1,0,'k'); % BODGE: point to move around to update the plot to force key processing
-  % install listener for key-press mode change
-  set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
-  set(contFig,'userdata',[]);
-  drawnow; % make sure the figure is visible
-           %end
+menuh=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
+			 'HorizontalAlignment','left','color',[1 1 1]);
+msgh=text(.5,.1,'','fontunits','pixel','fontsize',.08*wSize(4),...
+          'HorizontalAlignment','center','color',[1 1 1]);
+ph=plot(1,0,'k'); % BODGE: point to move around to update the plot to force key processing
+% install listener for key-press mode change
+set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
+set(contFig,'userdata',[]);
+drawnow; % make sure the figure is visible
 subject='test';
 
 sendEvent('experiment.im','start');
 while (ishandle(contFig))
-  set(contFig,'visible','on');
   if ( ~ishandle(contFig) ) break; end;
-
+  set(menuh,'color',[1 1 1]);% ensure menu is visible....
+  set(msgh,'color',[1 1 1]*.5); % ensure status is grey
+  
   phaseToRun=[];
-  if ( ~exist('OCTAVE_VERSION','builtin') && ~isempty(get(contFig,'tag')) ) 
+  if ( ~exist('OCTAVE_VERSION','builtin') && ~isempty(get(contFig,'tag')) ) % using the gui-figure-window
 	 uiwait(contFig);
     if ( ~ishandle(contFig) ) break; end;    
 	 info=guidata(contFig); 
@@ -64,9 +62,9 @@ while (ishandle(contFig))
 	 fprintf('key=%s\n',modekey);
 	 phaseToRun=[];
 	 if ( ischar(modekey(1)) )
-		ri = strmatch(modekey(1),menustr(:,1)); % get the row in the instructions
-		if ( ~isempty(ri) ) 
-		  phaseToRun = menustr{ri,2};
+		ri = strncmpi(modekey(1),menustr(:,1),1); % get the row in the instructions
+		if ( any(ri) ) 
+		  phaseToRun = menustr{find(ri,1),2};
 		elseif ( any(strcmp(modekey(1),{'q','Q'})) )
 		  break;
 		end
@@ -77,53 +75,82 @@ while (ishandle(contFig))
   if ( isempty(phaseToRun) ) pause(.3); continue; end;
 
   fprintf('Start phase : %s\n',phaseToRun);  
-  set(contFig,'visible','off');drawnow;
+  set(menuh,'color',[1 1 1]*.5);
+  set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Starting...'},'color',[1 1 1],'visible','on');
+  drawnow;
+  sigProcCmd=['sigproc.' lower(phaseToRun)]; 
   switch phaseToRun;
     
    %---------------------------------------------------------------------------
    case 'capfitting';
     sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
+    sendEvent(sigProcCmd,'start'); % tell sig-proc what to do
+
+    % wait until sig-processor is finished
     while (true) % N.B. use a loop as safer and matlab still responds on windows...
-       [devents]=buffer_newevents(buffhost,buffport,[],phaseToRun,'end',1000); % wait until finished
+       [devents]=buffer_newevents(buffhost,buffport,[],sigProcCmd,'end',1000); % wait until finished
        drawnow;
        if ( ~isempty(devents) ) break; end;
     end
+    if( isempty(devents) ) % warn if taking too long
+      set(msgh,'string',{sprintf('Warning::%s is taking a long time....',phaseToRun),'did it crash?'},'visible','on');
+    else
+      set(msgh,'string','');
+      sigProcCmd='';
+    end
+    drawnow;
 
    %---------------------------------------------------------------------------
    case 'eegviewer';
     sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
-    % wait until capFitting is done
-    while (true) % N.B. use a loop as safer and matlab still responds on windows...
-       [devents]=buffer_newevents(buffhost,buffport,[],phaseToRun,'end',1000); % wait until finished
-       drawnow;
-       if ( ~isempty(devents) ) break; end;
+    sendEvent(sigProcCmd,'start'); % tell sig-proc what to do
+    [devents,state]=buffer_newevents(buffhost,buffport,[],sigProcCmd,'ack',4000); % wait for start acknowledgement
+    % mark as running
+    if( isempty(devents) )
+      set(msgh,'string',{sprintf('Warning::%s is taking too long to start...',phaseToRun),'did it crash?'},'visible','on');
+    else
+      set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Running...'},'visible','on');
     end
+    drawnow;
+    % wait to finish
+    for i=1:20;
+      [devents,state]=buffer_newevents(buffhost,buffport,state,sigProcCmd,'end',1000); % wait until finished
+      drawnow;
+      if ( ~isempty(devents) ) break; end;
+    end
+    if( isempty(devents) ) % warn if taking too long
+      set(msgh,'string',{sprintf('Warning::%s is taking a long time....',phaseToRun),'did it crash?'},'visible','on');
+    else
+      set(msgh,'string','');
+      sigProcCmd='';
+    end
+    drawnow;
     
    %---------------------------------------------------------------------------
    case 'artifact';
     sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
-														  % wait until capFitting is done
-	 %try;
+    sendEvent(phaseToRun,'start');
+    sigProcCmd=''; % mark as no-sig-proc needed
+	 try;
 		artifactCalibrationStimulus;
-	%catch
-      % fprintf('Error in : %s',phaseToRun);
-      % le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-	  	% if ( ~isempty(le.stack) )
-	  	%   for i=1:numel(le.stack);
-	  	% 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
-	  	%   end;
-	  	% end
-	  	% msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
-      % sendEvent(phaseToRun,'end');    
-    %end
+	catch
+      fprintf('Error in : %s',phaseToRun);
+      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	if ( ~isempty(le.stack) )
+	  	  for i=1:numel(le.stack);
+	  		 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	  end;
+	  	end
+      %msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+      sendEvent(phaseToRun,'end');    
+    end
+	 sendEvent(phaseToRun,'end');
 
    %---------------------------------------------------------------------------
    case 'practice';
     sendEvent('subject',subject);
     sendEvent(phaseToRun,'start');
+    sigProcCmd=''; % mark as no-sig-proc needed
     onSeq=nSeq; nSeq=4; % override sequence number
     try
       preConfigured=true;      
@@ -137,35 +164,83 @@ while (ishandle(contFig))
     
    %---------------------------------------------------------------------------
    case {'calibrate','calibration'};
-    sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun)
     sendEvent(phaseToRun,'start');
+    sendEvent('subject',subject);
+    sigProcCmd='sigproc.calibrate';
+    sendEvent(sigProcCmd,'start'); 
+                             % wait for sig-processor startup acknowledgement
+    [devents,state]=buffer_newevents(buffhost,buffport,[],sigProcCmd,'ack',4000); 
+     if( ~isempty(sigProcCmd) && isempty(devents) ) % mark as taking a long time
+       set(msgh,'string',{sprintf('Warning::%s is taking too long to start...',phaseToRun),'did it crash?'},'visible','on');
+     else % mark as running
+       set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Running...'},'visible','on');
+     end
+     drawnow;
     try
       preConfigured=true;      
       imCalibrateStimulus;
       preConfigured=false;
     catch
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-      sendEvent('training','end');    
+       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	 if ( ~isempty(le.stack) )
+	  	   for i=1:numel(le.stack);
+	  	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	   end;
+	  	 end
     end
     sendEvent(phaseToRun,'end');
 
    %---------------------------------------------------------------------------
    case {'train','trainersp'};
     sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
-    buffer_newevents(buffhost,buffport,[],phaseToRun,'end'); % wait until finished
-
+    sendEvent(sigProcCmd,'start'); % tell sig-proc what to do
+    % wait for sig-processor startup acknowledgement
+    [devents,state]=buffer_newevents(buffhost,buffport,[],sigProcCmd,'ack',4000); 
+    if( isempty(devents) ) % mark as taking a long time
+      set(msgh,'string',{sprintf('Warning::%s is taking too long to start...',phaseToRun),'did it crash?'},'visible','on');
+    else % mark as running
+      set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Running...'},'visible','on');
+    end
+    drawnow;
+    % wait to finish
+    for i=1:20;
+      [devents,state]=buffer_newevents(buffhost,buffport,state,sigProcCmd,'end',1000); % wait until finished
+      drawnow;
+      if ( ~isempty(devents) ) break; end;
+    end
+    if( isempty(devents) ) % warn if taking too long
+      set(msgh,'string',{sprintf('Warning::%s is taking a long time....',phaseToRun),'did it crash?'},'visible','on'); 
+    else
+      set(msgh,'string','');
+      sigProcCmd='';
+    end
+    drawnow;
+    
    %---------------------------------------------------------------------------
    case {'epochfeedback'};
     sendEvent('subject',subject);
     %sleepSec(.1);
     sendEvent(phaseToRun,'start');
+    sendEvent(sigProcCmd,'start');
+                             % wait for sig-processor startup acknowledgement
+    [devents,state]=buffer_newevents(buffhost,buffport,[],['sigproc.' phaseToRun],'ack',4000); 
+    if( isempty(devents) ) % mark as taking a long time
+      set(msgh,'string',{sprintf('Warning::%s is taking too long to start...',phaseToRun),'did it crash?'},'visible','on');
+    else % mark as running
+      set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Running...'},'visible','on');
+    end
+    drawnow;
     try
-      sendEvent('startPhase.cmd','epochfeedback');
-      imEpochFeedbackCybathalon;
+      preConfigured=true;      
+      imEpochFeedbackStimulus;
+      preConfigured=false;
     catch
        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	 if ( ~isempty(le.stack) )
+	  	   for i=1:numel(le.stack);
+	  	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	   end;
+	  	 end
     end
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');
@@ -175,8 +250,18 @@ while (ishandle(contFig))
     sendEvent('subject',subject);
     %sleepSec(.1);
     sendEvent(phaseToRun,'start');
+    % over-ride sig-proc mode
+    sigProcCmd='sigproc.contfeedback';
+    sendEvent(sigProcCmd,'start'); % tell sig-proc what to do
+                             % wait for sig-processor startup acknowledgement
+    [devents,state]=buffer_newevents(buffhost,buffport,[],sigProcCmd,'ack',4000); 
+    if( isempty(devents) ) % mark as taking a long time
+      set(msgh,'string',{sprintf('Warning::%s is taking too long to start...',phaseToRun),'did it crash?'},'visible','on');
+    else % mark as running
+      set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Running...'},'visible','on');
+    end
+    
     try
-       sendEvent('startPhase.cmd','contfeedback');
        % run the main cybathalon control
        imContFeedbackCybathalon;
     catch
@@ -195,13 +280,26 @@ while (ishandle(contFig))
     sendEvent('subject',subject);
     %sleepSec(.1);
     sendEvent(phaseToRun,'start');
+    sendEvent(sigProcCmd,'start'); % tell sig-proc what to do
+                             % wait for sig-processor startup acknowledgement
+    [devents,state]=buffer_newevents(buffhost,buffport,[],sigProcCmd,'ack',4000); 
+    if( isempty(devents) ) % mark as taking a long time
+      set(msgh,'string',{sprintf('Warning::%s is taking too long to start...',phaseToRun),'did it crash?'},'visible','on');
+    else % mark as running
+      set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Running...'},'visible','on');
+    end
+    
     try
-      sendEvent('startPhase.cmd','contfeedback');
       preConfigured=true;      
       imContFeedbackStimulus;
       preConfigured=false;
     catch
        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	 if ( ~isempty(le.stack) )
+	  	   for i=1:numel(le.stack);
+	  	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	   end;
+	  	 end
        sleepSec(.1);
     end
     sendEvent('test','end');
@@ -226,7 +324,8 @@ while (ishandle(contFig))
 
    %---------------------------------------------------------------------------
    case {'emgcontrol'};
-    sendEvent(phaseToRun,'start');
+     sendEvent(phaseToRun,'start');
+     sigProcCmd=''; % no-sig-proc needed
     %try
        [emgdata,emgevents,emghdr]=EMGtraining();
        EMGcontroller(emgdata,emgevents,'hdr',emghdr,'difficulty',10);
@@ -246,6 +345,18 @@ while (ishandle(contFig))
     sendEvent('subject',subject);
     %sleepSec(.1);
     sendEvent(phaseToRun,'start');
+
+    % setup the sig-processor
+    sigProcCmd='sigproc.contfeedback';
+    sendEvent(sigProcCmd,'start'); % tell sig-proc what to do
+                             % wait for sig-processor startup acknowledgement
+    [devents,state]=buffer_newevents(buffhost,buffport,[],sigProcCmd,'ack',4000); 
+    if( isempty(devents) ) % mark as taking a long time
+      set(msgh,'string',{sprintf('Warning::%s is taking too long to start...',phaseToRun),'did it crash?'},'visible','on');
+    else % mark as running
+      set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Running...'},'visible','on');
+    end
+
     try
       sendEvent('startPhase.cmd','contfeedback');
       preConfigured=true;      
@@ -263,12 +374,29 @@ while (ishandle(contFig))
     sendEvent('subject',subject);
     %sleepSec(.1);
     sendEvent(phaseToRun,'start');
+
+    sigProcCmd='sigproc.contfeedback';
+    sendEvent(sigProcCmd,'start'); % tell sig-proc what to do
+                             % wait for sig-processor startup acknowledgement
+    [devents,state]=buffer_newevents(buffhost,buffport,[],sigProcCmd,'ack',4000); 
+    if( isempty(devents) ) % mark as taking a long time
+      set(msgh,'string',{sprintf('Warning::%s is taking too long to start...',phaseToRun),'did it crash?'},'visible','on');
+    else % mark as running
+      set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Running...'},'visible','on');
+    end
+
+
     try
-      sendEvent('startPhase.cmd','contfeedback');
+      preConfigured=true;      
       imCenteroutStimulus;
       preConfigured=false;
     catch
        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	 if ( ~isempty(le.stack) )
+	  	   for i=1:numel(le.stack);
+	  	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	   end;
+	  	 end
        sleepSec(.1);
     end
     sendEvent('contfeedback','end');
@@ -280,8 +408,23 @@ while (ishandle(contFig))
     break;
     
   end
+
+
+  if( ~isempty(sigProcCmd) )
+                                % check for sig-processor finish
+  [devents,state]=buffer_newevents(buffhost,buffport,state,sigProcCmd,'end',4000); % wait until finished
+  if( isempty(devents) ) % warn if taking too long
+    set(msgh,'string',{sprintf('Warning::%s is taking a long time....',phaseToRun),'did it crash?'},'visible','on'); 
+  else
+    set(msgh,'string','');
+  end
+  else
+    set(msgh,'string','');
+  end
+  drawnow;
+
 end
 % shut down signal proc
 sendEvent('startPhase.cmd','exit');
 % give thanks
-uiwait(msgbox({'Thankyou for participating in our experiment.'},'Thanks','modal'),10);
+msgbox({'Thankyou for participating in our experiment.'},'Thanks');

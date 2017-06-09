@@ -25,7 +25,6 @@ ph=plot(1,0,'k'); % BODGE: point to move around to update the plot to force key 
 set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
 set(contFig,'userdata',[]);
 drawnow; % make sure the figure is visible
-% end
 subject='test';
 
 sendEvent('experiment.im','start');
@@ -202,19 +201,19 @@ while (ishandle(contFig))
     sendEvent('subject',subject);
     %sleepSec(.1);
     sendEvent(phaseToRun,'start');
+
+    if ( earlyStopping ) sigProcCmd=['sigproc.' userFeedbackTable{1}]; end;
+    sendEvent(sigProcCmd,'start');
+                             % wait for sig-processor startup acknowledgement
+    [devents,state]=buffer_newevents(buffhost,buffport,[],['sigproc.' phaseToRun],'ack',4000); 
+    if( isempty(devents) ) % mark as taking a long time
+      set(msgh,'string',{sprintf('Warning::%s is taking too long to start...',phaseToRun),'did it crash?'},'visible','on');
+    else % mark as running
+      set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Running...'},'visible','on');
+    end
+    drawnow;
+
     try
-		if ( earlyStopping ) sigProcCmd=['sigproc.' userFeedbackTable{1}]; end;
-      sendEvent(sigProcCmd,'start');
-      % wait for sig-processor startup acknowledgement
-      [devents,state]=buffer_newevents(buffhost,buffport,[],['sigproc.' phaseToRun],'ack',4000); 
-      if( isempty(devents) ) % mark as taking a long time
-        set(msgh,'string',{sprintf('Warning::%s is taking too long to start...',phaseToRun),'did it crash?'},'visible','on');
-      else % mark as running
-        set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Running...'},'visible','on');
-      end
-      drawnow;
-
-
       imEpochFeedbackStimulus;
     catch
        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
@@ -324,12 +323,12 @@ while (ishandle(contFig))
 
   if( ~isempty(sigProcCmd) )
                                 % check for sig-processor finish
-  [devents,state]=buffer_newevents(buffhost,buffport,state,sigProcCmd,'end',4000); % wait until finished
-  if( isempty(devents) ) % warn if taking too long
-    set(msgh,'string',{sprintf('Warning::%s is taking a long time....',phaseToRun),'did it crash?'},'visible','on'); 
-  else
-    set(msgh,'string','');
-  end
+    [devents,state]=buffer_newevents(buffhost,buffport,state,sigProcCmd,'end',4000); % wait until finished
+    if( isempty(devents) ) % warn if taking too long
+      set(msgh,'string',{sprintf('Warning::%s is taking a long time....',phaseToRun),'did it crash?'},'visible','on'); 
+    else
+      set(msgh,'string','');
+    end
   else
     set(msgh,'string','');
   end
