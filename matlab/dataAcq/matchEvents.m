@@ -5,8 +5,10 @@ function mi=matchEvents(ev,mtype,mval)
 %  ev -- [struct array] set of event structure to match within
 %  mtype -- {cell} cell array of possible event types to match
 %           N.B. mtype='*' means match everything
+%                mtype='prefix*' means match any type which starts with prefix
 %  mval  -- {cell} cell array of possible event values to match
 %           N.B. mval='*' means match everything
+%                mval='prefix*' means match any type which starts with prefix
 if ( nargin<2 ) mtype='*'; end;
 if ( nargin<3 ) mval='*'; end;
 if ( isempty(ev) || isempty(mtype) || isempty(mval) ) mi=[]; return; end; % fast path!
@@ -34,10 +36,11 @@ else
 		for vi=1:numel(mtype);
         if ( iscell(mtype) ) mstr=mtype{vi}; else mstr=mtype(vi); end;
         if ( ischar(estr) && ischar(mstr) )
-			 if ( strcmp(estr,mstr) || ... % normal match || prefix match
-					( mstr(end)=='*' && numel(estr)>=numel(mstr)-1 && strcmp(estr(1:numel(mstr)-1),mstr(1:end-1))) )
-				mi(ei)=true; break;
-			 end
+          if( mstr(end)=='*' && strncmp(estr,mstr(1:end-1),numel(mstr)-1)) % prefix match
+            mi(ei)=true; break;
+          elseif ( strcmp(estr,mstr) ) % full-str match
+            mi(ei)=true; break;
+          end;
 		  elseif ( isequal(estr,mstr) )
 			 mi(ei)=true; break;
 		  end				
@@ -68,10 +71,11 @@ else
 		for vi=1:numel(mval);
         if ( iscell(mval) ) mstr=mval{vi}; else mstr=mval(vi); end;
 		  if ( ischar(vstr) && ischar(mstr) )
-			 if ( strcmp(vstr,mstr) || ... % normal match || prefix match
-					( mstr(end)=='*' && numel(vstr)>=numel(mstr)-1 && strcmp(vstr(1:numel(mstr)-1),mstr(1:end-1))) ) 
-				mi(ei)=true; break; 
-			 end;
+          if( mstr(end)=='*' && strncmp(vstr,mstr(1:end-1),numel(mstr)-1)) % prefix match
+            mi(ei)=true; break;
+          elseif ( strcmp(vstr,mstr) ) % full-str match
+            mi(ei)=true; break;
+          end;
 		  elseif ( isequal(vstr,mstr) )
 			 mi(ei)=true; break;
 		  end

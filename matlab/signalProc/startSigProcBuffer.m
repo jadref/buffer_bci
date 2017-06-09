@@ -257,7 +257,7 @@ while ( true )
   % wait for a phase control event
   if ( opts.verb>0 ) fprintf('%d) Waiting for phase command\n',nsamples); end;
   [devents,state,nevents,nsamples]=buffer_newevents(opts.buffhost,opts.buffport,state,...
-																	 {opts.phaseEventType 'subject'},[],opts.timeout_ms);
+																	 {opts.phaseEventType 'subject' 'sigproc.*'},[],opts.timeout_ms);
   if ( numel(devents)==0 ) 
     continue;
   elseif ( numel(devents)>1 ) 
@@ -275,6 +275,8 @@ while ( true )
       subject=devents(di).value; 
       if ( opts.verb>0 ) fprintf('Setting subject to : %s\n',subject); end;
       continue; 
+    elseif ( strncmp(devents(di).type,'sigproc.',numel('sigproc.')) && strcmp(devents(di).value,'start') )
+      phaseToRun=devents(di).type(numel('sigproc.')+1:end);
     else
       phaseToRun=devents(di).value;
       break;
@@ -284,10 +286,10 @@ while ( true )
 
   fprintf('%d) Starting phase : %s\n',devents(di).sample,phaseToRun);
   if ( opts.verb>0 ) ptime=getwTime(); end;
-  sendEvent(lower(phaseToRun),'start'); % mark start/end testing
   % hide controller window while the phase is actually running
   if ( opts.useGUI && ishandle(contFig) ) set(contFig,'visible','off'); end;
   
+  sendEvent(['sigproc.' lower(phaseToRun)],'ack'); % ack-start cmd recieved
   switch lower(phaseToRun);
     
     %---------------------------------------------------------------------------------
@@ -296,11 +298,11 @@ while ( true )
 
     %---------------------------------------------------------------------------------
    case {'eegviewer','sigViewer'};
-    eegViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms);
+    sigViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms);
     
     %---------------------------------------------------------------------------------
    case {'erspvis','erpvis','erpviewer','erpvisptb'};
-    erpViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix',opts.erpEventType,'endType',lower(phaseToRun),'trlen_ms',opts.trlen_ms,'freqbands',[.0 .3 45 47],'maxEvents',opts.erpMaxEvents,opts.erpOpts{:});
+     erpViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix',opts.erpEventType,'endType',lower(phaseToRun),'trlen_ms',opts.trlen_ms,'freqbands',[.0 .3 45 47],'maxEvents',opts.erpMaxEvents,opts.erpOpts{:});
 
    %---------------------------------------------------------------------------------
    case {'erpviewcalibrate','erpviewercalibrate','calibrateerp'};
@@ -406,6 +408,7 @@ while ( true )
 	  	% msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
       % sendEvent('training','end');    
     %end
+    sendEvent(lower(phaseToRun),'end'); % indicate command finished
 
     %---------------------------------------------------------------------------------
    case {'test','testing','epochfeedback','eventfeedback'};
@@ -437,6 +440,7 @@ while ( true )
 %        msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
 %        sendEvent('testing','end');    
 %      end
+
 
    %---------------------------------------------------------------------------------
    case {'contfeedback'};
@@ -533,6 +537,7 @@ while ( true )
 		 else
 			error('UserFeedback apply-method type is unrecognised');
 		 end
+       sendEvent(lower(phaseToRun),'end'); % indicate command finished
 		 
 % 	  catch
 % 		 fprintf('Error in : %s',phaseToRun);
@@ -555,7 +560,7 @@ while ( true )
     
   end
   if ( opts.verb>0 ) fprintf('Finished : %s @ %5.3fs\n',phaseToRun,getwTime()-ptime); end;
-  sendEvent(lower(phaseToRun),'end');    
+  sendEvent(['sigproc.' lower(phaseToRun)],'end');    
   % show GUI again when phase has completed
   if ( opts.useGUI && ishandle(contFig) ) set(contFig,'visible','on'); end;
   
