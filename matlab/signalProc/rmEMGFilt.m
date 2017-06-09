@@ -62,6 +62,9 @@ if( ~isempty(state) && isstruct(state) ) % called with a filter-state, increment
   dim     =state.dim;
   artFilt =state.artFilt;
 else % normal option string call
+  if( ischar(dim) ) % BODGE:: to support argument-less calls.. this is the 1st option name....
+    varargin={dim varargin{:}}; dim=[];
+  end
   [opts]=parseOpts(opts,varargin);
   artFilt=[];
 end

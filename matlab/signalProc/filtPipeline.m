@@ -1,15 +1,29 @@
 function [X,state]=filtPipeline(X,state,varargin);
+% apply a sequence of filters in a pipeline to the data
 % apply a sequence of filters to the input data
-pipeline=varargin;
-pipelinestate=[];  
-if( ~isempty(state) && isempty(varargin) )% extract the pipeline from the state
+opts={};
+if( isempty(state) )  % extract the pipeline from the state
+  % BODGE: deal with the name/position options as a special case....
+  opts=struct('ch_names',[],'ch_pos',[]);
+  [opts,varargin]=parseOpts(opts,varargin);
+  opts={'ch_names',opts.ch_names,'ch_pos',opts.ch_pos};
+  pipeline     =varargin;
+  pipelinestate=[];  
+else % extract the pipeline from the arguments
   pipeline     =state.pipeline;      % function to run + args
   pipelinestate=state.pipelinestate; % running state for each function
 end
+
+% apply the pipeline
 if(isempty(pipelinestate))pipelinestate=cell(1,numel(pipeline));end;
 for pi=1:numel(pipeline);
-  [X,pipelinestate{pi}]=feval(pipeline{pi}{1},X,pipelinestate{pi},pipeline{pi}{2:end});
+  if( ischar(pipeline{pi}) ) pipeline{pi}={pipeline{pi}}; end;
+  [X,pipelinestate{pi}]=feval(pipeline{pi}{1},X,pipelinestate{pi},pipeline{pi}{2:end},opts{:});
 end
+
+% put the state into the state variable
+state.pipeline     =pipeline;
+state.pipelinestate=pipelinestate;
 return;
 %-------------------------------------------------------------------
 function testCase();

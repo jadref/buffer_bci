@@ -154,7 +154,7 @@ elseif ( size(X,1)>=4 && any(strcmpi(opts.spatialfilter,{'wht','whiten','trwht',
     opts.spatialfilter='adaptspatialfilt'; % BODGE: ensure same string in all cases
     if( ~iscell(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={opts.adaptspatialfiltFn}; end;
     fprintf(' %s\n',opts.adaptspatialfiltFn{1});
-    [X,adaptspatialfiltstate]=feval(opts.adaptspatialfiltFn{1},X,opts.adaptspatialfiltstate,opts.adaptspatialfiltFn{2:end},'ch_names',ch_names,'ch_ps',ch_pos);
+    [X,adaptspatialfiltstate]=feval(opts.adaptspatialfiltFn{1},X,opts.adaptspatialfiltstate,opts.adaptspatialfiltFn{2:end},'ch_names',ch_names,'ch_pos',ch_pos);
     if( isfield(adaptspatialfiltstate,'R') ) R=adaptspatialfiltstate.R; end;
 	 sfApplied=true;    
   end

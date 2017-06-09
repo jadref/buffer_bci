@@ -466,7 +466,7 @@ while ( true )
 				fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
 			 end;
 		  end
-        msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+        msgbox({sprintf('%s::ERROR loading classifier, %s',phaseToRun,clsfrfile) 'OK to continue!'},'Error');
         sendEvent('testing','end');    
 		end;
 	 end
