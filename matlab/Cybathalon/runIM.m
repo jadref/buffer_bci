@@ -37,6 +37,7 @@ set(contFig,'userdata',[]);
 drawnow; % make sure the figure is visible
 subject='test';
 
+state=[];
 sendEvent('experiment.im','start');
 while (ishandle(contFig))
   if ( ~ishandle(contFig) ) break; end;
@@ -78,7 +79,8 @@ while (ishandle(contFig))
   set(menuh,'color',[1 1 1]*.5);
   set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Starting...'},'color',[1 1 1],'visible','on');
   drawnow;
-  sigProcCmd=['sigproc.' lower(phaseToRun)]; 
+  sigProcCmd=['sigproc.' lower(phaseToRun)];
+  state=[]; % reset to ignore anything from before now...
   switch phaseToRun;
     
    %---------------------------------------------------------------------------
@@ -87,8 +89,8 @@ while (ishandle(contFig))
     sendEvent(sigProcCmd,'start'); % tell sig-proc what to do
 
     % wait until sig-processor is finished
-    while (true) % N.B. use a loop as safer and matlab still responds on windows...
-       [devents]=buffer_newevents(buffhost,buffport,[],sigProcCmd,'end',1000); % wait until finished
+    for i=1:20; % N.B. use a loop as safer and matlab still responds on windows...
+       [devents,state]=buffer_newevents(buffhost,buffport,state,sigProcCmd,'end',1000); % wait until finished
        drawnow;
        if ( ~isempty(devents) ) break; end;
     end
