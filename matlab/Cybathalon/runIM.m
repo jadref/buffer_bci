@@ -79,6 +79,7 @@ while (ishandle(contFig))
   set(menuh,'color',[1 1 1]*.5);
   set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Starting...'},'color',[1 1 1],'visible','on');
   drawnow;
+  sendEvent('sigproc.reset','end'); % reset the sig-processor just in case
   sigProcCmd=['sigproc.' lower(phaseToRun)];
   state=[]; % reset to ignore anything from before now...
   switch phaseToRun;
@@ -192,6 +193,39 @@ while (ishandle(contFig))
     end
     sendEvent(phaseToRun,'end');
 
+
+   %---------------------------------------------------------------------------
+   case {'calibrate_runway','practice_runway'};
+     sendEvent('subject',subject);
+     sigProcCmd='';
+	  if ( ~isempty(strfind(phaseToRun,'calibrat')) ) % tell the sig-proc to go if real run
+       sigProcCmd='sigproc.calibrate';
+       sendEvent(sigProcCmd,'start'); 
+                             % wait for sig-processor startup acknowledgement
+       [devents,state]=buffer_newevents(buffhost,buffport,[],sigProcCmd,'ack',4000); 
+       if( ~isempty(sigProcCmd) && isempty(devents) ) % mark as taking a long time
+         set(msgh,'string',{sprintf('Warning::%s is taking too long to start...',phaseToRun),'did it crash?'},'visible','on');
+       else % mark as running
+         set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Running...'},'visible','on');
+       end
+       drawnow;
+     end;
+
+     sendEvent(phaseToRun,'start');
+    try
+      imCalibrateRunwayStimulus;
+    catch
+       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	 if ( ~isempty(le.stack) )
+	  	   for i=1:numel(le.stack);
+	  	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	   end;
+	  	 end
+    end
+    if ( ~isempty(strfind(phaseToRun,'calibrat')) ) sendEvent('calibrate','end'); end   
+	 sendEvent(phaseToRun,'end');
+    
+    
    %---------------------------------------------------------------------------
    case {'train','trainersp'};
     sendEvent('subject',subject);
@@ -307,6 +341,35 @@ while (ishandle(contFig))
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');
 
+
+   %---------------------------------------------------------------------------
+   case {'feedback_runway','contfeedback_runway'};
+    sendEvent('subject',subject);
+    sendEvent(phaseToRun,'start');
+
+    sigProcCmd='sigproc.contfeedback';
+    sendEvent(sigProcCmd,'start'); % tell sig-proc what to do
+                             % wait for sig-processor startup acknowledgement
+    [devents,state]=buffer_newevents(buffhost,buffport,[],sigProcCmd,'ack',4000); 
+    if( isempty(devents) ) % mark as taking a long time
+      set(msgh,'string',{sprintf('Warning::%s is taking too long to start...',phaseToRun),'did it crash?'},'visible','on');
+    else % mark as running
+      set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Running...'},'visible','on');
+    end
+
+    try
+      imContFeedbackRunway
+    catch
+       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	 if ( ~isempty(le.stack) )
+	  	   for i=1:numel(le.stack);
+	  	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	   end;
+	  	 end
+    end
+    sendEvent('contfeedback','end');
+	 sendEvent(phaseToRun,'end');
+    
    %---------------------------------------------------------------------------
    case {'keyboardcontrol'};
     sendEvent(phaseToRun,'start');

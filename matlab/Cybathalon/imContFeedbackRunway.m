@@ -5,6 +5,13 @@ addpath('../imaginedMovement');
 initgetwTime;
 initsleepSec;
 
+
+                         % Initialize buffer-prediction processing variables:
+buffstate=[];
+predFiltFn=[]; % additional filter function for the classifier predictions? %-contFeedbackFiltLen; % average full-trials worth of predictions
+filtstate=[];
+predType =[];
+
 % pre-build the time-line for the whole experiment
 tgtSeq=mkStimSeqRand(nSymbs,nSeq);
 % insert the rest between tgts to make a complete stim sequence + event seq with times
@@ -194,14 +201,16 @@ for ei=1:size(stimSeq,2);
   fprintf('%d) Tgt=[%6.2f-%6.2f]\tTrue=%6.2f\tdiff=%g\n',ei,stimTime(ei:ei+1),et,et-stimTime(ei));
   while ( et<stimTime(ei+1) ) % run until next epoch
 	 % do other slow stuff/display update in here
-	 processNewPredictionEvents;
-	 % update the feedback display -- change size of the row labels
-	 [ans,predTgt]=max(prob);
-    for hi=1:nSymbs;
-		set(h(hi+1),'fontSize',symbSize_px*(1+.5*(prob(hi)-1/nSymbs)),'color',txtColor);
-		if(hi==predTgt) set(h(hi+1),'color',fbColor); end;
-	 end;	 
-	 
+	 [dv,prob,buffstate,filtstate]=processNewPredictionEvents([],[],buffstate,predType,eventWaitTime*1000,predFiltFn,filtstate,1);
+    if( ~isempty(dv) )
+	            % update the feedback display -- change size of the row labels
+	   [ans,predTgt]=max(prob);
+      for hi=1:nSymbs;
+		  set(h(hi+1),'fontSize',symbSize_px*(1+.5*(prob(hi)-1/nSymbs)),'color',txtColor);
+		  if(hi==predTgt) set(h(hi+1),'color',fbColor); end;
+	   end;	 
+    end
+    
 	 % update the runway display
 	 et=getwTime()-t0;
 	 ofi=fi;	 fi=max(0,floor(et/frameDuration))+1; % get current frame index

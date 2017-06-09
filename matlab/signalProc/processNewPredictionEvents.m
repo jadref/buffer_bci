@@ -23,7 +23,9 @@ function [dv,prob,buffstate,filtstate]=processNewPredictionEvents(buffhost,buffp
 %    % do something with the predictions
 %    fprintf('%5.2f) Pr=[%s]\n',timetogo,sprintf('%g ',prob)); % print the class probs
 %  end
-  
+if( nargin<1 ) buffhost=[]; end;
+if( nargin<2 ) buffport=[]; end;
+if( nargin<3 ) buffstate=[]; end;
 if( nargin<4 || isempty((predType)))   predType='classifier.prediction'; end;
 if( nargin<5 || isempty(timeout_ms) )  timeout_ms=5000; end;
 if( nargin<6 ) filtFn=''; end;

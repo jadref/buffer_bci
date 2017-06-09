@@ -68,7 +68,9 @@ while (ishandle(contFig))
   set(menuh,'color',[1 1 1]*.5);
   set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Starting...'},'color',[1 1 1],'visible','on');
   drawnow;
+  sendEvent('sigproc.reset','end'); % reset the sig-processor just in case
   sigProcCmd=['sigproc.' lower(phaseToRun)]; 
+  state=[]; % reset to ignore anything from before now...
   switch phaseToRun;
     
    %---------------------------------------------------------------------------
