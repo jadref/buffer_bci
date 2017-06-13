@@ -14,6 +14,7 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %  capFile   - 'filename' file from which to load the channel position information.
 %              *this overrides* ch_pos if given
 %  overridechnms - [bool] flag if channel order from 'capFile' overrides that from the 'ch_names' option
+%  eegonly   - use the capFile info to specify the eeg subset and only use those channels
 %  fs        - sampling rate of the data
 %  timeband_ms- [2 x 1] band of times in milliseconds to use for classification, all if empty ([])
 %  freqband  - [2 x 1] or [3 x 1] or [4 x 1] band of frequencies to use
@@ -79,7 +80,7 @@ opts=struct('classify',1,'fs',[],'timeband_ms',[],'freqband',[],...
             'width_ms',500,'windowType','hamming','aveType','amp',...
             'detrend',1,'spatialfilter','slap',...
             'adaptspatialfiltFn',[],'adaptspatialfiltstate',[],...
-            'badchrm',1,'badchthresh',3.1,'badchscale',4,...
+            'badchrm',1,'badchthresh',3.1,'badchscale',4,'eegonly',1,...
             'badtrrm',1,'badtrthresh',3,'badtrscale',4,...
 				'featFiltFn',[],...
             'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
@@ -94,7 +95,16 @@ if ( iscell(ch_pos) && ischar(ch_pos{1}) ) ch_names=ch_pos; ch_pos=[]; end;
 if ( isempty(ch_pos) && ~isempty(opts.capFile) && (~isempty(ch_names) || opts.overridechnms) ) 
   di = addPosInfo(ch_names,opts.capFile,opts.overridechnms); % get 3d-coords
   if ( any([di.extra.iseeg]) ) 
-    ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names    
+    ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names
+    if( opts.eegonly )% add the non-eeg channels to the set of bad-channels to be removed
+      if( isempty(opts.badCh) )
+        opts.badCh=~[di.extra.iseeg];
+      else
+        if ( islogical(opts.badCh) )    opts.badCh = opts.badCh | ~[di.extra.iseeg];
+        elseif( isnumeric(opts.badCh) ) opts.badCh = [opts.badCh(:); find(~[di.extra.iseeg])];
+        end
+      end
+    end
   else % fall back on showing all data
     warning('Capfile didnt match any data channels -- no EEG?');
     ch_pos=[];
@@ -133,31 +143,52 @@ if ( opts.badchrm || (~isempty(opts.badCh) && sum(opts.badCh)>0) )
     if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names))); end;
     ch_names=ch_names(~isbadch(1:numel(ch_names)));
   end
-  fprintf('%d ch removed\n',sum(isbadch(1:numel(ch_names))));
+  fprintf('%d ch removed\n',sum(isbadch));
 end
 
-%3.a) Spatial filter/re-reference (data-dependent-unsupervised)
-R=[]; adaptspatialfiltstate=[];
-sfApplied=false;
+              %3.a) Spatial filter/re-reference (data-dependent-unsupervised)
+sftype='';if( ischar(opts.spatialfilter) ) sftype=lower(opts.spatialfilter); end;
+adaptspatialfiltstate=[];
+R=1; % the composed spatial filter to apply.  N.B. R is applied directly as: X = R*X
+if( strncmpi(opts.spatialfilter,'car',numel('car')))
+  fprintf('3) CAR\n');
+  Rc=eye(size(X,1))-(1./size(X,1));
+  X =tprod(X,[-1 2 3],Rc,[1 -1]); % filter the data
+  R = Rc*R; % compose the combined filter for test time
+end;  
+if( any(strfind(sftype,'slap')) )
+  fprintf('3) Slap\n');
+  if ( ~isempty(ch_pos) )       
+    Rs=sphericalSplineInterpolate(ch_pos,ch_pos,[],[],'slap');%pre-compute the SLAP filter we'll use
+    X =tprod(X,[-1 2 3],Rs,[1 -1]); % filter the data
+    R = Rs*R; % compose the combined filter for test time
+  else
+    warning('Cant compute SLAP without channel positions!'); 
+  end
+end
 if ( isnumeric(opts.spatialfilter) ) % user gives exact filter to use
-   R=opts.spatialfilter;
-elseif ( size(X,1)>=4 && any(strcmpi(opts.spatialfilter,{'wht','whiten','trwht','adaptspatialfilt'})) ) 
-  fprintf('3) ');
+  R=opts.spatialfilter;
+  X =tprod(X,[-1 2 3],R,[1 -1]); % filter the data
+end;
+if( any(strfind(sftype,'wht')) || any(strfind(sftype,'whiten')) )
+  fprintf('3) whiten\n');
+  Rw=whiten(X,1,1,0,0,1); % symetric whiten
+  X =tprod(X,[-1 2 3],Rw,[1 -1]); % filter the data
+  R = Rw*R; % compose the combined filter for test time
+end
+if ( size(X,1)>=4 && ...
+     (any(strcmpi(opts.spatialfilter,{'trwht','adaptspatialfilt','adaptspatialfiltFn'})) || ...
+      ~isempty(opts.adaptspatialfiltFn) ) )
+  fprintf('3) adpatFilt');
   % BODGE: re-write as a std adpative spatial filter call
   if ( strcmpi(opts.spatialfilter,'trwht') ) % single-trial whitening -> special adapt-whiten
     opts.spatialfilter='adaptspatialfilt'; opts.adaptspatialfiltFn={'adaptWhitenFilt' 0};
   end
-  if ( any(strcmpi(opts.spatialfilter,{'wht','whiten'})) ) % global whiten
-	 fprintf(' whiten');
-	 [R,Sigma]=whiten(X,1,1,0,0,1); % symetric whiten
-  elseif( strncmpi(opts.spatialfilter,'adaptspatialfilt',numel('adaptspatialfilt')))  % adaptive whitening
-    opts.spatialfilter='adaptspatialfilt'; % BODGE: ensure same string in all cases
-    if( ~iscell(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={opts.adaptspatialfiltFn}; end;
-    fprintf(' %s\n',opts.adaptspatialfiltFn{1});
-    [X,adaptspatialfiltstate]=feval(opts.adaptspatialfiltFn{1},X,opts.adaptspatialfiltstate,opts.adaptspatialfiltFn{2:end},'ch_names',ch_names,'ch_pos',ch_pos);
-    if( isfield(adaptspatialfiltstate,'R') ) R=adaptspatialfiltstate.R; end;
-	 sfApplied=true;    
-  end
+  if( isnumeric(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={'adaptWhitenFilt' opts.adaptspatialfiltFn}; end;
+  if( ~iscell(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={opts.adaptspatialfiltFn}; end;
+  fprintf(' %s\n',opts.adaptspatialfiltFn{1});
+  [X,adaptspatialfiltstate]=feval(opts.adaptspatialfiltFn{1},X,opts.adaptspatialfiltstate,opts.adaptspatialfiltFn{2:end},'ch_names',ch_names,'ch_pos',ch_pos);
+  if( isfield(adaptspatialfiltstate,'R') ) R=adaptspatialfiltstate.R; end;
   fprintf('\n');
 end
 
@@ -171,32 +202,21 @@ if ( ~isempty(opts.timeband_ms) )
 end
 
 %3) Spatial filter/re-reference, potentially data dependent
-R=[];
 %3.b) Spatial filter/re-reference (data-independent / supervised)
 if ( size(X,1)>=4 ) % only spatial filter if enough channels
-  sftype=lower(opts.spatialfilter);
-  switch ( sftype )
-   case 'slap';
-    fprintf('3) Slap\n');
-    if ( ~isempty(ch_pos) )       
-      R=sphericalSplineInterpolate(ch_pos,ch_pos,[],[],'slap');%pre-compute the SLAP filter we'll use
-    else
-      warning('Cant compute SLAP without channel positions!'); 
-    end
-   case 'car';
-    fprintf('3) CAR\n');
-    R=eye(size(X,1))-(1./size(X,1));
-   case {'whiten','wht','trwht','adaptspatialfilt'};
-	  % N.B. done before time-range selection so has access to artifact information
-   case {'csp','csp1','csp2','csp3'};
+  if( any(strfind(sftype,'csp')) )
     fprintf('3) csp\n');
     nf=str2num(sftype(end)); if ( isempty(nf) ) nf=3; end;
-    [R,d]=csp(X,Y,3,nf); % 3 comp for each class CSP [oldCh x newCh x nClass]
-    R=R(:,:)'; % [ newCh x oldCh ]
+    [Rc,d]=csp(X,Y,3,nf); % 3 comp for each class CSP [oldCh x newCh x nClass]
+    Rc=Rc(:,:)'; % [ newCh x oldCh ], N.B. R is applied directly: X = R*X
     ch_pos=[]; 
     % re-name channels
     ch_names={};for ci=1:size(d,1); for clsi=1:size(d,2); ch_names{ci,clsi}=sprintf('SF%d.%d',clsi,ci); end; end;
-   case {'ssep','car-ssep','car+ssep','ssep1','ssep2','ssep3'};
+
+    X=tprod(X,[-1 2 3],Rc,[1 -1]); % filter the data
+    R = Rc*R; % compose the combined filter for test time    
+  end
+  if( any(strfind(sftype,'ssep')) )
     fprintf('3) SSEP\n'); % est spatial filter using the SSEP approach
     nf=str2num(sftype(end)); if ( isempty(nf) ) nf=2; end;
     if ( iscell(opts.freqband) ) 
@@ -205,22 +225,16 @@ if ( size(X,1)>=4 ) % only spatial filter if enough channels
       if ( numel(opts.freqband)==2 ) passband=opts.freqband; else passband=opts.freqband([2 3]); end;
       periods = fs./[passband(1):passband(2)];
     end
-    Xcar=X; % copy of data
-    if ( strcmp('car',sftype(1:min(end,3))) ) % first CAR the data
-      Xcar=repop(X,'-',mean(X,1));Rcar=eye(size(X,1))-(1./size(X,1));
-    end
     % Now find the ssep filt
-    [R,s]=ssepSpatFilt(Xcar,[1 2],periods); % R=[ch x newCh]    
-    R=R(:,1:nf);     % only keep the best 2 filters
-    R=R'; % [ newCh x ch]
+    [Rs,s]=ssepSpatFilt(X,[1 2],periods); % R=[ch x newCh]    
+    Rs=Rs(:,1:nf);     % only keep the best 2 filters
+    Rs=Rs'; % [ newCh x ch]
     if ( strcmp('car',sftype(1:min(end,3))) ) R=R*Rcar; end    % include the effect of the CAR
     ch_pos=[]; ch_names={}; for ci=1:size(R,1); ch_names{ci}=sprintf('SF%d',ci); end; % re-name channels
-   case 'none';
-   otherwise; warning(sprintf('Unrecog spatial filter type: %s. Ignored!',opts.spatialfilter ));
+
+    X=tprod(X,[-1 2 3],Rs,[1 -1]); % filter the data
+    R = Rs*R; % compose the combined filter for test time    
   end
-end
-if ( ~isempty(R) && ~sfApplied ) % apply the spatial filter (if not already done)
-  X=tprod(X,[-1 2 3],R,[1 -1]); 
 end
 
 %3.5) Bad trial removal
@@ -346,10 +360,12 @@ end
 %6) train classifier
 if ( opts.classify ) 
   fprintf('6) train classifier\n');
-  [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',opts.zeroLab,'verb',opts.verb,varargin{:});
+  [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',opts.zeroLab,'verb',opts.verb,varargin{:});  
 else
+  res=[];
   clsfr=struct();
 end
+res.isbadtr=isbadtr; % record the list of found bad trials
 
 if ( opts.visualize ) 
   if ( size(res.tstconf,2)==1 ) % confusion matrix is correct
@@ -376,10 +392,6 @@ clsfr.fs          = fs;   % sample rate of training data
 clsfr.detrend     = opts.detrend; % detrend?
 clsfr.isbad       = isbadch;% bad channels to be removed
 clsfr.spatialfilt = R;    % spatial filter used for surface laplacian
-% configure for apaptive use later
-if( strncmpi(opts.spatialfilter,'adaptspatialfilt',numel('adaptspatialfilter')) )  
-  clsfr.spatialfilt=[]; % don't use R if adaptive mode
-end
 clsfr.adaptspatialfiltFn=opts.adaptspatialfiltFn; % record the function to use
 clsfr.adaptspatialfiltstate=adaptspatialfiltstate;
 
@@ -443,6 +455,8 @@ return
 function testCase()
 z=jf_mksfToy('Y',sign(round(rand(600,1))-.5));
 [clsfr,res]=train_ersp_clsfr(z.X,z.Y,'fs',z.di(2).info.fs,'ch_pos',[z.di(1).extra.pos3d],'ch_names',z.di(1).vals,'freqband',[0 .1 10 12],'visualize',0,'verb',1);
+% multi-class example
+[clsfr,res]=train_ersp_clsfr(z.X,z.Y,'badtrrm',0,'capFile','cap_im_dense_subset.txt','overridechnms',0,'ch_names',z.di(1).vals,'fs',z.di(2).info.fs,'spatialfilter','car+wht','detrend',1,'freqband',[8 28],'objFn','mlr_cg','binsp',0)
 [fmc,f]=apply_ersp_clsfr(z.X,clsfr);
 mad(res.opt.f,f)
 

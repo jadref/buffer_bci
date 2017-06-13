@@ -134,42 +134,49 @@ if ( opts.badchrm || (~isempty(opts.badCh) && sum(opts.badCh)>0) )
 end
 
 %3) Spatial filter/re-reference
-R=[]; sfApplied=false;
+sftype='';if( ischar(opts.spatialfilter) ) sftype=lower(opts.spatialfilter); end;
+adaptspatialfiltstate=[];
+R=1; % the composed spatial filter to apply.  N.B. R is applied directly as: X = R*X
+if( strncmpi(opts.spatialfilter,'car',numel('car')))
+  fprintf('3) CAR\n');
+  Rc=eye(size(X,1))-(1./size(X,1));
+  X =tprod(X,[-1 2 3],Rc,[1 -1]); % filter the data
+  R = Rc*R; % compose the combined filter for test time
+end;  
+if( any(strfind(sftype,'slap')) )
+  fprintf('3) Slap\n');
+  if ( ~isempty(ch_pos) )       
+    Rs=sphericalSplineInterpolate(ch_pos,ch_pos,[],[],'slap');%pre-compute the SLAP filter we'll use
+    X =tprod(X,[-1 2 3],Rs,[1 -1]); % filter the data
+    R = Rs*R; % compose the combined filter for test time
+  else
+    warning('Cant compute SLAP without channel positions!'); 
+  end
+end
 if ( isnumeric(opts.spatialfilter) ) % user gives exact filter to use
-   R=opts.spatialfilter;
-elseif ( size(X,1)> 5 ) % only spatial filter if enough channels
+  R=opts.spatialfilter;
+  X =tprod(X,[-1 2 3],R,[1 -1]); % filter the data
+end;
+if( any(strfind(sftype,'wht')) || any(strfind(sftype,'whiten')) )
+  fprintf('3) whiten\n');
+  Rw=whiten(X,1,1,0,0,1); % symetric whiten
+  X =tprod(X,[-1 2 3],Rw,[1 -1]); % filter the data
+  R = Rw*R; % compose the combined filter for test time
+end
+if ( size(X,1)>=4 && ...
+     (any(strcmpi(opts.spatialfilter,{'trwht','adaptspatialfilt','adaptspatialfiltFn'})) || ...
+      ~isempty(opts.adaptspatialfiltFn) ) )
+  fprintf('3) adpatFilt');
   % BODGE: re-write as a std adpative spatial filter call
   if ( strcmpi(opts.spatialfilter,'trwht') ) % single-trial whitening -> special adapt-whiten
     opts.spatialfilter='adaptspatialfilt'; opts.adaptspatialfiltFn={'adaptWhitenFilt' 0};
   end
-  sftype=lower(opts.spatialfilter);
-  switch ( sftype )
-   case 'slap';
-    fprintf('3) Slap\n');
-    if ( ~isempty(ch_pos) )       
-      R=sphericalSplineInterpolate(ch_pos,ch_pos,[],[],'slap');%pre-compute the SLAP filter we'll use
-    else
-      warning('Cant compute SLAP without channel positions!'); 
-    end
-   case 'car';
-    fprintf('3) CAR\n');
-    R=eye(size(X,1))-(1./size(X,1));
-   case {'whiten','wht'};
-    fprintf('3) whiten\n');
-    R=whiten(X,1,1,0,0,1); % symetric whiten
-   case {'adaptspatialfilt','adaptspatialfilter','adaptspatialfiltFn'}; % adaptive whitening
-    opts.spatialfilter='adaptspatialfilt'; % BODGE: ensure same string in all cases
-    if( ~iscell(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={opts.adaptspatialfiltFn}; end;
-    fprintf(' %s',opts.adaptspatialfiltFn{1});
-    [X,adaptspatialfiltstate]=feval(opts.adaptspatialfiltFn{1},X,opts.adaptspatialfiltstate,opts.adaptspatialfiltFn{2:end},'ch_names',ch_names,'ch_pos',ch_pos);
-    if( isfield(adaptspatialfiltstate,'R') ) R=adaptspatialfiltstate.R; end;
-	 sfApplied=true;
-   case 'none';
-   otherwise; warning(sprintf('Unrecog spatial filter type: %s. Ignored!',opts.spatialfilter ));
-  end
-end
-if ( ~isempty(R) && ~sfApplied ) % apply the spatial filter (if not already done)
-  X=tprod(X,[-1 2 3],R,[1 -1]); 
+  if( isnumeric(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={'adaptWhitenFilt' opts.adaptspatialfiltFn}; end;
+  if( ~iscell(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={opts.adaptspatialfiltFn}; end;
+  fprintf(' %s\n',opts.adaptspatialfiltFn{1});
+  [X,adaptspatialfiltstate]=feval(opts.adaptspatialfiltFn{1},X,opts.adaptspatialfiltstate,opts.adaptspatialfiltFn{2:end},'ch_names',ch_names,'ch_pos',ch_pos);
+  if( isfield(adaptspatialfiltstate,'R') ) R=adaptspatialfiltstate.R; end;
+  fprintf('\n');
 end
 
 %4) spectrally filter to the range of interest

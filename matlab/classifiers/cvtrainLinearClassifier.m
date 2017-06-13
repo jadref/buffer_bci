@@ -66,7 +66,8 @@ if ( ~isempty(spKey) && ~isempty(spMx) && isnumeric(spMx) ) % sub-prob decomp al
 % already a valid binary problem indicator matrix
 elseif ( isnumeric(Y) &&  all(Y(:)==-1 | Y(:)==0 | Y(:)==1) && ~(size(Y,2)==1 && opts.zeroLab && any(Y(:)==0)) ) 
   if ( size(Y,2)==1 ) spKey=[1 -1]; spMx =[1 -1];   % binary problem
-  else                spKey=[1:size(Y,2)]; spMx=spKey; end;
+  else                spMx=spKey; spKey=[1:size(Y,2)];
+  end;
   if ( ~isfloat(Y) ) Y=single(Y); end; % ensure is floating point to avoid mult issues later
 elseif ( opts.binsp ) % decompose into set of binary problems
   if ( isempty(spMx) ) spMx=opts.spType; end;
