@@ -37,13 +37,13 @@ if ( isempty(wb) || isempty(strfind('dataAcq',wb)) );
     run(fullfile(fileparts(mfilename('fullpath')),'../utilities/initPaths.m')); 
 end;
 opts=struct('endType','end.training','verb',1,'timeOut_ms',1000,...
-				'trlen_ms',5000,'trlen_samp',[],'updateFreq',3,...
+				'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,...
 				'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',[],'spatfilt','car',...
             'adaptspatialfiltFn','','whiten',0,'rmartch',0,'artCh',{{'EOG' 'AFz' 'EMG' 'AF3' 'FP1' 'FPz' 'FP2' 'AF4' '1'}},'rmemg',0,...
 				'badchrm',0,'badchthresh',3,'capFile',[],'overridechnms',0,...
 				'welch_width_ms',1000,'spect_width_ms',500,'spectBaseline',1,...
 				'noisebands',[45 47 53 55],'noiseBins',[0 1.75],...
-				'sigProcOptsGui',1,'dataStd',2.5,'adapthalflife_s',60,...
+				'sigProcOptsGui',1,'dataStd',2.5,'adapthalflife_s',15,...
 			  'drawHead',1);
 opts=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ); buffhost='localhost'; end;
@@ -132,7 +132,7 @@ spectFreqIdx =getfreqIdx(spectFreqs,opts.freqbands);
 ppspect=ppspect(:,spectFreqIdx(1):spectFreqIdx(2),:); % subset to freq range of interest
 start_s=-start_samp(end:-1:1)/hdr.fsample;
 % and the data summary statistics
-chCov     = zeros(sum(iseeg),sum(iseeg));
+chPow     = zeros(sum(iseeg),1);
 adaptHL   = opts.adapthalflife_s*opts.updateFreq; % half-life for updating the adaptive filters
 adaptAlpha= exp(log(.5)./adaptHL);
 whtstate=[]; eogstate=[]; emgstate=[];
@@ -318,10 +318,12 @@ while ( ~endTraining )
     end;
   end
   
-  % track the covariance properties of the data -- on the detrended data
+  % track the covariance properties of the data
   % N.B. total weight up to step n = 1-(adaptHL)^n
-  covDat= rawdat(:,blkIdx+1:end); covDat=repop(covDat,'-',mean(covDat,2));
-  chCov = (adaptAlpha)*chCov    +     (1-adaptAlpha)*(covDat*covDat')./(size(covDat,2));
+  covDat= rawdat(:,blkIdx+1:end); 
+  % detrend and CAR to remove obvious external artifacts
+  covDat=repop(covDat,'-',mean(covDat,2)); covDat=repop(covDat,'-',mean(covDat,1));
+  chPow = (adaptAlpha)*chPow    +     (1-adaptAlpha)*sum(covDat.*covDat,2)./(size(covDat,2));
   
   %-------------------------------------------------------------------------------------
   % bad-channel removal + spatial filtering
@@ -331,11 +333,10 @@ while ( ~endTraining )
     % bad channel removal
     oisbadch=isbadch;
     if ( ( ppopts.badchrm>0 || strcmp(ppopts.badchrm,'1') ) && ppopts.badchthresh>0 )
-
-       chPow = chCov(1:size(chCov,1)+1:end)';
        if ( opts.verb > 1 )
           fprintf('%s < %g  %g\n',sprintf('%g ',chPow),mean(chPow)+ppopts.badchthresh*std(chPow),ppopts.badchthresh);
        end
+      isbadch(:)=false; % start no-channels are bad
       for i=1:3;
         isbadch = chPow>(mean(chPow(~isbadch))+ppopts.badchthresh*std(chPow(~isbadch))) | chPow<eps;
       end
@@ -410,7 +411,7 @@ while ( ~endTraining )
 	  ppdat = mean(ppdat,2); % ave over time
 	  ppdat = ppdat - mean(ppdat,1); % ave deviation to global average
     
-   case {'freq'}; % freq-domain  -----------------------------------
+   case 'freq'; % freq-domain  -----------------------------------
     ppdat = welchpsd(ppdat,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'aveType','db');
     ppdat = ppdat(:,freqIdx(1):freqIdx(2)); % select the target frequencies
 
