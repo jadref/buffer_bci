@@ -83,6 +83,7 @@ animateStep  = diff(axLim)*.01; % amount by which to move point per-frame in fix
 calibrate_instruct ={'When instructed perform the indicated' 'actual movement'};
 
 epochfeedback_instruct={'When instructed perform the indicated' 'actual movement.  When trial is done ' 'classifier prediction with be shown' 'with a blue highlight'};
+epochFeedbackTrialDuration=trialDuration;
 
 contfeedback_instruct={'When instructed perform the indicated' 'actual movement.  The fixation point' 'will move to show the systems' 'current prediction'};
 contFeedbackTrialDuration =10;
@@ -103,7 +104,7 @@ calibrateOpts ={};
 welch_width_ms=250; % width of welch window => spectral resolution
 step_ms=welch_width_ms/2;% N.B. welch defaults=.5 window overlap, use step=width/2 to simulate
 
-epochtrlen_ms =trialDuration*1000; % amount of data to apply classifier to in epoch feedback
+epochtrlen_ms =epochFeedbackTrialDuration*1000; % amount of data to apply classifier to in epoch feedback
 conttrlen_ms  =welch_width_ms; % amount of data to apply classifier to in continuous feedback
 
 % smoothing parameters for feedback in continuous feedback mode

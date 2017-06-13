@@ -281,6 +281,36 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'end');
 
     %---------------------------------------------------------------------------
+   case {'cybathalon'};
+    sendEvent('subject',subject);
+    %sleepSec(.1);
+    sendEvent(phaseToRun,'start');
+    % over-ride sig-proc mode
+    sigProcCmd='sigproc.epochfeedback';
+    sendEvent(sigProcCmd,'start'); % tell sig-proc what to do
+                             % wait for sig-processor startup acknowledgement
+    [devents,state]=buffer_newevents(buffhost,buffport,[],sigProcCmd,'ack',4000); 
+    if( isempty(devents) ) % mark as taking a long time
+      set(msgh,'string',{sprintf('Warning::%s is taking too long to start...',phaseToRun),'did it crash?'},'visible','on');
+    else % mark as running
+      set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Running...'},'visible','on');
+    end
+    
+    try
+       % run the main cybathalon control
+       imEpochFeedbackCybathalon;
+    catch
+       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	 if ( ~isempty(le.stack) )
+	  	   for i=1:numel(le.stack);
+	  	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	   end;
+	  	 end
+    end
+    sendEvent('test','end');
+    sendEvent(phaseToRun,'end');
+
+    %---------------------------------------------------------------------------
    case {'cybathalon_cont'};
     sendEvent('subject',subject);
     %sleepSec(.1);

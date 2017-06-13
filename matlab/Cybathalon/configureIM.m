@@ -56,7 +56,7 @@ rtbClass     ='';%'99 RTB';% if set, treat post-trial return-to-baseline phase a
 
 nSeq              =18*nSymbs; % 20 examples of each target
 epochDuration     =.75;
-trialDuration     =epochDuration*4*2; % 3*20 = 60 classification trials per class = 4.5s trials
+trialDuration     =epochDuration*6*2; % 3*20 = 60 classification trials per class = 4.5s trials
 baselineDuration  =epochDuration*2;   % = 1.5s baseline
 intertrialDuration=epochDuration*2; % = 1.5s post-trial
 feedbackDuration  =epochDuration*2;
@@ -88,9 +88,10 @@ animateStep  = diff(axLim)*.01; % amount by which to move point per-frame in fix
 calibrate_instruct ={'When instructed perform the indicated' 'actual movement'};
 
 epochfeedback_instruct={'When instructed perform the indicated' 'actual movement.  When trial is done ' 'classifier prediction with be shown' 'with a blue highlight'};
+epochFeedbackTrialDuration=3;
 
 contfeedback_instruct={'When instructed perform the indicated' 'actual movement.  The fixation point' 'will move to show the systems' 'current prediction'};
-contFeedbackTrialDuration =10;
+contFeedbackTrialDuration =3;
 
 neurofeedback_instruct={'Perform mental tasks as you would like.' 'The fixation point will move to' 'show the systems current prediction'};
 neurofeedbackTrialDuration=30;
@@ -102,15 +103,14 @@ offset_ms     =[0 0]; % give .25s for user to start/finish
 trlen_ms      = max(epochDuration*1000,500); % how much data to take to run the classifier on, min 500ms
 calibrateOpts ={};% {'offset_ms',offset_ms};
 
-welch_width_ms=250; % width of welch window => spectral resolution
+welch_width_ms=500; % width of welch window => spectral resolution
 step_ms=welch_width_ms/2;% N.B. welch defaults=.5 window overlap, use step=width/2 to simulate
 
-epochtrlen_ms =trialDuration*1000; % amount of data to apply classifier to in epoch feedback
-conttrlen_ms  =welch_width_ms; % amount of data to apply classifier to in continuous feedback
+epochtrlen_ms =epochFeedbackTrialDuration*1000;% amount of data to apply classifier to in epoch feedback
 
-% smoothing parameters for feedback in continuous feedback mode
-contFeedbackFiltLen=(trialDuration*1000/step_ms); % accumulate whole trials data before feedback
-contFeedbackFiltFactor=exp(log(.5)/contFeedbackFiltLen); % convert to exp-move-ave weighting factor
+% data parameters for continuous feedback
+conttrlen_ms  =welch_width_ms; % amount of data to apply classifier to in continuous feedback
+contFeedbackFiltLen=(contFeedbackTrialDuration*1000/step_ms); % accumulate whole trials data before feedback
 
 % paramters for on-line adaption to signal changes
 adaptHalfLife_ms = 30*1000; %30s amount of data to use for adapting spatialfilter/biasadapt
@@ -122,7 +122,7 @@ epochtrialAdaptFactor=exp(log(.5)/epochtrialAdaptHL); % convert to exp-move-ave 
 %-----------------------------------------------------------
 % Classifier training / application options
 %trainOpts={'width_ms',welch_width_ms,'badtrrm',0}; % default: 4hz res, stack of independent one-vs-rest classifiers
-trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','wht','objFn','mlr_cg','binsp',0,'spMx','1vR'}; % whiten + direct multi-class training
+trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','car+wht','objFn','mlr_cg','binsp',0,'spMx','1vR'}; % whiten + direct multi-class training
 %trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','trwht','adaptivespatialfilt',trialadaptfactor,'objFn','mlr_cg','binsp',0,'spMx','1vR'}; % adaptive-whiten + direct multi-class training
 %trainOpts = {'spType',{{1 3} {2 4}}}; % train 2 classifiers, 1=N vs S, 2=E vs W
 
@@ -137,9 +137,7 @@ epochFeedbackOpts={'trlen_ms',epochtrlen_ms,'predFilt',@(x,s,e) biasFilt(x,s,epo
 % Epoch feedback with early-stopping, config using the user feedback table
 userFeedbackTable={'epochFeedback_es' 'cont' {'predFilt',@(x,s,e) gausOutlierFilt(x,s,3.0,trialDuration*1000./step_ms),'trlen_ms',welch_width_ms}};
 % Epoch feedback with early-stopping, (cont-classifer, so update adaptive whitener constant)
-userFeedbackTable={'epochFeedback_es' 'cont' {'predFilt',@(x,s,e) gausOutlierFilt(x,s,3.0,trialDuration*1000./step_ms),'trlen_ms',welch_width_ms,'adaptivespatialfilt',conttrialAdaptHL}};
-
-% different feedback configs (should all give similar results)
+%userFeedbackTable={'epochFeedback_es' 'cont' {'predFilt',@(x,s,e) gausOutlierFilt(x,s,3.0,trialDuration*1000./step_ms),'trlen_ms',welch_width_ms,'adaptivespatialfilt',conttrialAdaptHL}};
 
 %-----------------------------------------------------------
 % continuous feedback options

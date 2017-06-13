@@ -70,13 +70,10 @@ for si=1:max(100000,nSeq);
 
   if ( ~ishandle(fig) || endTesting ) break; end;
   
-  sleepSec(intertrialDuration);
+  %sleepSec(intertrialDuration);
   % show the screen to alert the subject to trial start
   set(h(end),'facecolor',fixColor); % red fixation indicates trial about to start/baseline
   drawnow;% expose; % N.B. needs a full drawnow for some reason
-  sendEvent('stimulus.baseline','start');
-  sleepSec(baselineDuration);
-  sendEvent('stimulus.baseline','end');
   sendEvent('stimulus.trial','start');
   
   %------------------------------- trial interval --------------
@@ -114,7 +111,8 @@ for si=1:max(100000,nSeq);
 
     % convert from dv to normalised probability
     dv  =mean(preds,2); % feedback is average prediction since trial start
-    prob=exp((dv-max(dv))); prob=prob./sum(prob); % robust soft-max prob computation
+    if( numel(dv)==1 ) dv=[dv -dv]; end; % ensure min 1 decision values..
+    prob=exp(dv-max(dv)); prob=prob./sum(prob); % robust soft-max prob computation
 
     % feedback information... simply move in direction detected by the BCI
     if(numel(prob)>size(stimPos,2)) prob=[prob(1:size(stimPos,2)-1);sum(prob(size(stimPos,2):end))];end
@@ -153,13 +151,14 @@ for si=1:max(100000,nSeq);
 	 end
 
   end % if classifier prediction
-  sleepSec(feedbackDuration);
   
   % reset the cue and fixation point to indicate trial has finished  
+  set(h(end),'facecolor',bgColor);
   if ( ~isempty(predTgt) ) 
+   drawnow;
+   sleepSec(.1);
 	set(h(predTgt),'facecolor',cybathalon.cmdColors(:,predTgt)); % reset the feedback
   end
-  set(h(end),'facecolor',bgColor);
   if ( ~isempty(symbCue) ) set(txthdl,'visible','off'); end
   % also reset the position of the fixation point
   drawnow;

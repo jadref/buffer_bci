@@ -1,4 +1,7 @@
 configureIM;
+if ( ~exist('epochFeedbackTrialDuration') || isempty(epochFeedbackTrialDuration) )
+  epochFeedbackTrialDuration=trialDuration;
+end;
 
 
 cybathalon = struct('host','localhost','port',5555,'player',1,...
@@ -68,29 +71,15 @@ for si=1:max(100000,nSeq);
 
   if ( ~ishandle(fig) || endTesting ) break; end;
   
-  sleepSec(intertrialDuration);
   % show the screen to alert the subject to trial start
-  set(h(end),'facecolor',fixColor); % red fixation indicates trial about to start/baseline
+  set(h(end),'facecolor',tgtColor); % red fixation indicates trial about to start/baseline
   drawnow;% expose; % N.B. needs a full drawnow for some reason
-  sendEvent('stimulus.baseline','start');
-  sleepSec(baselineDuration);
-  sendEvent('stimulus.baseline','end');
-
-  % show the target
-  fprintf('%d) tgt=%d : ',si,find(tgtSeq(:,si)>0));
-  set(h(tgtSeq(:,si)>0),'facecolor',tgtColor);
-  if ( ~isempty(symbCue) )
-	 set(txthdl,'string',sprintf('%s ',symbCue{tgtSeq(:,si)>0}),'color',[.1 .1 .1],'visible','on');
-  end
-  set(h(end),'facecolor',tgtColor); % green fixation indicates trial running
-  drawnow;% expose; % N.B. needs a full drawnow for some reason
-  ev=sendEvent('stimulus.target',find(tgtSeq(:,si)>0));
   if ( earlyStopping )
 	 % cont-classifier, so tell it to clear the prediction filter for start new trial
-	 sendEvent('classifier.reset','now',ev.sample); 
+	 ev=sendEvent('classifier.reset','now'); 
   else
 	 % event-classifier, so send the event which triggers to classify this data-block
-	 sendEvent('classifier.apply','now',ev.sample); % tell the classifier to apply from now
+	 ev=sendEvent('classifier.apply','now'); % tell the classifier to apply from now
   end
   trlStartTime=getwTime();
   sendEvent('stimulus.trial','start',ev.sample);
@@ -101,17 +90,16 @@ for si=1:max(100000,nSeq);
   end;
   if ( earlyStopping )
 	 % wait for new prediction events to process *or* end of trial time
-	 [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],trialDuration*1000+1500);
+	 [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],epochFeedbackTrialDuration*1000+1500);
   else
-    sleepSec(trialDuration); 
+    sleepSec(epochFeedbackTrialDuration/2); 
 	 % wait for classifier prediction event
-	 [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],2000);
+	 [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],epochFeedbackTrialDuration*1000/2+2000);
   end
   trlEndTime=getwTime();
-  set(h(tgtSeq(:,si)>0),'facecolor',cybathalon.cmdColors(:,tgtSeq(:,si)>0)); % rest the target color
-
   
   % do something with the prediction (if there is one), i.e. give feedback
+  predTgt=[];
   if( isempty(devents) ) % extract the decision value
     fprintf(1,'Error! no predictions after %gs, continuing (%d samp, %d evt)\n',trlEndTime-trlStartTime,state.nSamples,state.nEvents);
     set(h(end),'facecolor',fbColor); % fix turns blue to show now pred recieved
@@ -119,15 +107,13 @@ for si=1:max(100000,nSeq);
   else
 	 fprintf(1,'Prediction after %gs : %s',trlEndTime-trlStartTime,ev2str(devents(end)));
     dv = devents(end).value;
-    if ( numel(dv)==1 )
-      if ( dv>0 && dv<=nSymbs && isinteger(dv) ) % dvicted symbol, convert to dv equivalent
-        tmp=dv; dv=zeros(nSymbs,1); dv(tmp)=1;
-      else % binary problem, convert to per-class
-        dv=[dv -dv];
-      end
+    % predicted symbol, convert to dv equivalent
+    if ( numel(dv)==1 && isinteger(dv) && dv>0 && dv<=nSymbs ) 
+       tmp=dv; dv=zeros(nSymbs,1); dv(tmp)=1;
     end    
     % give the feedback on the predicted class
-    prob=1./(1+exp(-dv)); prob=prob./sum(prob);
+    if( numel(dv)==1 ) dv=[dv -dv]; end; % ensure min 1 decision values..
+    prob=exp(dv-max(dv)); prob=prob./sum(prob); % robust soft-max prob computation
     if ( verb>=0 ) 
       fprintf('dv:');fprintf('%5.4f ',dv);fprintf('\t\tProb:');fprintf('%5.4f ',prob);fprintf('\n'); 
     end;  
@@ -146,14 +132,14 @@ for si=1:max(100000,nSeq);
     end
     
   end % if classifier prediction
-  sleepSec(feedbackDuration);
   
   % reset the cue and fixation point to indicate trial has finished  
+  set(h(end),'facecolor',bgColor);
   if ( ~isempty(predTgt) ) 
+   drawnow;
+   sleepSec(.1); % slight delay to see the feedback
 	set(h(predTgt),'facecolor',cybathalon.cmdColors(:,predTgt)); % reset the feedback
   end
-  set(h(end),'facecolor',bgColor);
-  if ( ~isempty(symbCue) ) set(txthdl,'visible','off'); end
   % also reset the position of the fixation point
   drawnow;
   sendEvent('stimulus.trial','end');
