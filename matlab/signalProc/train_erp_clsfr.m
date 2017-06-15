@@ -163,6 +163,7 @@ if( any(strfind(sftype,'wht')) || any(strfind(sftype,'whiten')) )
   X =tprod(X,[-1 2 3],Rw,[1 -1]); % filter the data
   R = Rw*R; % compose the combined filter for test time
 end
+if( isequal(R,1) ) R=[]; end; % if no-static filter then clear it
 if ( size(X,1)>=4 && ...
      (any(strcmpi(opts.spatialfilter,{'trwht','adaptspatialfilt','adaptspatialfiltFn'})) || ...
       ~isempty(opts.adaptspatialfiltFn) ) )
