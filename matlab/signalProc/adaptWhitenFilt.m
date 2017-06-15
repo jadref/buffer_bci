@@ -1,4 +1,4 @@
-function [X,state]=adaptWhitenFilt(X,state,alpha,verb);
+function [X,state]=adaptWhitenFilt(X,state,alpha,verb,varargin);
 % filter function implementing adaptive spatial whitening
 if( nargin<2 ) state=[]; end;
 if( nargin<3 ) alpha=[]; end; % default to single-trial whitener

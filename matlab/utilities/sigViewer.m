@@ -219,8 +219,8 @@ if ( isequal(opts.sigProcOptsGui,1) )
   try;
     optsFigh=sigProcOptsFig();
   % set defaults to match input options  
-  set(findobj(optsFig,'tag','lowcutoff'),'string',sprintf('%g',ppopts.freqbands(1)));
-  set(findobj(optsFig,'tag','highcutoff'),'string',sprintf('%g',ppopts.freqbands(end)));  
+  set(findobj(optsFigh,'tag','lowcutoff'),'string',sprintf('%g',ppopts.freqbands(1)));
+  set(findobj(optsFigh,'tag','highcutoff'),'string',sprintf('%g',ppopts.freqbands(end)));  
   % set the graphics objects to match the inputs
   fn=fieldnames(ppopts);
   for fi=1:numel(fn);
@@ -230,7 +230,9 @@ if ( isequal(opts.sigProcOptsGui,1) )
   ppopts=getSigProcOpts(optsFigh);
 
    % turn of the usersf option if no function name given in input options set
-  if( isempty(opts.useradaptspatfiltFn) ) set(findobj(optsFig,'tag','usersf'),'visible','off'); end;  
+  if( isempty(opts.useradaptspatfiltFn) ) 
+     set(findobj(optsFigh,'tag','usersf'),'visible','off'); 
+  end;  
   catch;
   end
 end
@@ -400,7 +402,7 @@ while ( ~endTraining )
       emgstate=[];
     end    
     if( ~isempty(opts.useradaptspatfiltFn) && isfield(ppopts,'usersf') && ppopts.usersf ) % user specified option
-      [ppdat,usersfstate]=feval(opts.useradaptspatfiltFn{1},ppdat,usersfstate,[],'covFilt',adaptAlpha,'ch_names',ch_names(iseeg),opts.useradaptspatfiltFn{2:end});
+      [ppdat,usersfstate]=feval(opts.useradaptspatfiltFn{1},ppdat,usersfstate,opts.useradaptspatfiltFn{2:end},'covFilt',adaptAlpha,'ch_names',ch_names(iseeg));
     else
       usersfstate=[];
     end    
@@ -595,4 +597,4 @@ function testCase();
 % start the buffer proxy
 % dataAcq/startSignalProxy
 sigViewer();
-sigViewer([],[],'useradaptspatfiltFn','adaptWhitenFilt'); % with user-specified adaptive filter function
+sigViewer([],[],'useradaptspatfiltFn',{'adaptWhitenFilt' 10 0}); % with user-specified adaptive filter function
