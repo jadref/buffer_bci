@@ -387,7 +387,7 @@ while ( ~endTraining )
 
                                 % adaptive spatial filter
     if( isfield(ppopts,'whiten') && ppopts.whiten ) % symetric-whitener
-      [ppdat,whtstate]=adaptWhitenFilt(ppdat,whtstate,adaptAlpha);
+      [ppdat,whtstate]=adaptWhitenFilt(ppdat,whtstate,'covFilt',adaptAlpha,'ch_names',ch_names(iseeg));
     else % clear state if turned off
       whtstate=[];
     end
@@ -597,4 +597,4 @@ function testCase();
 % start the buffer proxy
 % dataAcq/startSignalProxy
 sigViewer();
-sigViewer([],[],'useradaptspatfiltFn',{'adaptWhitenFilt' 10 0}); % with user-specified adaptive filter function
+sigViewer([],[],'useradaptspatfiltFn','adaptWhitenFilt'); % with user-specified adaptive filter function

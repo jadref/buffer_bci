@@ -182,9 +182,9 @@ if ( size(X,1)>=4 && ...
   fprintf('3) adpatFilt');
   % BODGE: re-write as a std adpative spatial filter call
   if ( strcmpi(opts.spatialfilter,'trwht') ) % single-trial whitening -> special adapt-whiten
-    opts.spatialfilter='adaptspatialfilt'; opts.adaptspatialfiltFn={'adaptWhitenFilt' 0};
+    opts.spatialfilter='adaptspatialfilt'; opts.adaptspatialfiltFn={'adaptWhitenFilt' 'dim',[1 2 3],'covFilt',0};
   end
-  if( isnumeric(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={'adaptWhitenFilt' opts.adaptspatialfiltFn}; end;
+  if( isnumeric(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={'adaptWhitenFilt' 'dim',[1 2 3],'covFilt',opts.adaptspatialfiltFn}; end;
   if( ~iscell(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={opts.adaptspatialfiltFn}; end;
   fprintf(' %s\n',opts.adaptspatialfiltFn{1});
   [X,adaptspatialfiltstate]=feval(opts.adaptspatialfiltFn{1},X,opts.adaptspatialfiltstate,opts.adaptspatialfiltFn{2:end},'ch_names',ch_names,'ch_pos',ch_pos);
