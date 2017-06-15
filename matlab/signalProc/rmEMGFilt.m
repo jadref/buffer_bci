@@ -170,8 +170,7 @@ for epi=1:nEp; % loop over epochs
   %Wall3 = eye(size(X,dim(1)))-Us(:,keeps)*diag(1./sqrt(Ds(keeps)))*Ue(:,keepe)*Ue(:,keepe)'*diag(sqrt(Ds(keeps)))*Us(:,keeps)';
   tmp=eig(Wall);
   if( sum(abs(tmp))>size(Wall,1) || max(abs(tmp))>1+eps*1e2 )
-    fprintf('%d) non-deflation solution!\n',epi);
-    keyboard;
+    fprintf('rmEMGFilt::Warning %d) non-deflation solution!\n',epi);
   end
   if( opts.verb>2 ) fprintf('%d) %d wht-comp, %d emg-comp\n',epi,sum(keeps),sum(keepe));end;
                                 % the final spatial filter

@@ -166,13 +166,9 @@ for si=1:nSeq;
 		  %fprintf('pred-evt=%s\n',ev2str(ev));
         pred=ev.value;
         % now do something with the prediction....
-        if ( numel(pred)==1 )
-          if ( pred>0 && pred<=nSymbs && isinteger(pred) ) % predicted symbol, convert to dv equivalent
-            tmp=pred; pred=zeros(nSymbs,1); pred(tmp)=1;
-          else % binary problem
-            pred=[pred -pred];
-          end
-        end
+        if ( numel(pred)==1 && isinteger(pred) && pred>0 && pred<=nSymbs ) 
+           tmp=pred; pred=zeros(nSymbs,1); pred(tmp)=1;
+        end    
 
 		  % additional prediction smoothing for display, if wanted
 		  if ( ~isempty(stimSmoothFactor) && isnumeric(stimSmoothFactor) && stimSmoothFactor>0 )
@@ -187,8 +183,9 @@ for si=1:nSeq;
 		  end
 
 										  % convert from dv to normalised probability
-		  if(~isempty(dvCalFactor)) prob=exp((dv-max(dv))*dvCalFactor);
-		  else                      prob=exp((dv-max(dv)));
+        curdv=dv; if( numel(curdv)==1 ) curdv=[curdv -curdv]; end; % ensure min 1 decision values..
+		  if(~isempty(dvCalFactor)) prob=exp((curdv-max(curdv))*dvCalFactor);
+		  else                      prob=exp((curdv-max(curdv)));
 		  end
 		  prob=prob./sum(prob); % robust soft-max prob computation
         if ( verb>=0 ) 

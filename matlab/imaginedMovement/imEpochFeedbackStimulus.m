@@ -1,6 +1,8 @@
 % per-epoch feedback when using an event triggered classifier
 if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) ) configureIM; end;
-if ( ~exist('epochFeedbackTrialDuration') || isempty(epochFeedbackTrialDuration) ) epochFeedbackTrialDuration=trialDuration; end;
+if ( ~exist('epochFeedbackTrialDuration') || isempty(epochFeedbackTrialDuration) ) 
+   epochFeedbackTrialDuration=trialDuration; 
+end;
 
 % make the target sequence
 if ( baselineClass ) % with rest targets
@@ -161,15 +163,13 @@ for si=1:nSeq;
   else
 	 fprintf(1,'Prediction after %gs : %s',trlEndTime-trlStartTime,ev2str(devents(end)));
     dv = devents(end).value;
-    if ( numel(dv)==1 )
-      if ( dv>0 && dv<=nSymbs && isinteger(dv) ) % dvicted symbol, convert to dv equivalent
-        tmp=dv; dv=zeros(nSymbs,1); dv(tmp)=1;
-      else % binary problem, convert to per-class
-        dv=[dv -dv];
-      end
+    % predicted symbol, convert to dv equivalent
+    if ( numel(dv)==1 && isinteger(dv) && dv>0 && dv<=nSymbs ) 
+       tmp=dv; dv=zeros(nSymbs,1); dv(tmp)=1;
     end    
     % give the feedback on the predicted class
-    prob=exp((dv-max(dv))); prob=prob./sum(prob); % robust soft-max prob computation
+    if( numel(dv)==1 ) dv=[dv -dv]; end; % ensure min 1 decision values..
+    prob=exp(dv-max(dv)); prob=prob./sum(prob); % robust soft-max prob computation
     if ( verb>=0 ) 
 		fprintf('%d) dv:[%s]\tPr:[%s]\n',ev.sample,sprintf('%5.4f ',dv),sprintf('%5.4f ',prob));
     end;  
