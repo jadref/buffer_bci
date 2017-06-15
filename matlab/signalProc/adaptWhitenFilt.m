@@ -1,39 +1,86 @@
-function [X,state]=adaptWhitenFilt(X,state,alpha,verb,varargin);
-% filter function implementing adaptive spatial whitening
+function [X,state,XXt]=adaptWhitenFilt(X,state,varargin);
+                    % filter function implementing adaptive spatial whitening
+% TODO: make consistent with the other spatial-filtering function to specify the covariance filter in the same way...
 if( nargin<2 ) state=[]; end;
-if( nargin<3 ) alpha=[]; end; % default to single-trial whitener
-if( nargin<4 || isempty(verb) ) verb=0; end;
+if( ~isempty(state) && isstruct(state) ) % ignore other arguments if state is given
+  opts =state;
+else
+  opts=struct('center',0,'detrend',0,'covFilt','','filtstate','','verb',1,...
+              'dim',[1 2 3],'ch_names','','ch_pos',[]);
+  [opts]=parseOpts(opts,varargin);
+end
+dim=opts.dim;
+szX=size(X); szX(end+1:max(dim))=1;
+if( numel(dim)<3 ) nEp=1; else nEp=szX(dim(3)); end;
 
-if( isempty(state) ) state=struct('N',0,'sXX',0,'W',[]); end;
-if( isempty(alpha) && isfield(state,'alpha') ) alpha=state.alpha; end;
-if( isempty(alpha) ) alpha=0; end;
+                                % set-up the covariance filtering function
+covFilt=opts.covFilt; filtstate=opts.filtstate; 
+if( ~isempty(covFilt) )
+  if( ~iscell(covFilt) ) covFilt={covFilt}; end;
+  if( isnumeric(covFilt{1}) ) % covFilt{1} is alpha for move-ave
+    if(covFilt{1}>1) covFilt{1}=exp(log(.5)./covFilt{1}); end; % convert half-life to alpha
+    if(isempty(filtstate) )    filtstate=struct('N',0,'sxx',0);    end;
+  end
+end
 
-if( alpha>1 ) alpha=exp(log(.5)./alpha); end;
+% N.B. index expressions with int32 or bool types are **much** faster (particularly on Octave)
+% make a index expression to extract the current epoch.
+xidx  ={}; for di=1:numel(szX); xidx{di}=int32(1:szX(di)); end;
 
-N=state.N; sXX=state.sXX;
-if( verb>=0 && size(X,3)>10 ) fprintf('adaptWhitenFilt:'); end;
-for ei=1:size(X,3); % auto-apply incrementally if given multiple epochs
-  if( verb>=0 && size(X,3)>10 ) textprogressbar(ei,size(X,3)); end;
-  Xei = X(:,:,ei);
-  % compute average spatial covariance for this trial
-  XXei= tprod(Xei,[1 -2 -3],[],[2 -2 -3])./size(Xei,2)./size(Xei,3); 
-  % update the running estimate statistics
-  N   = alpha.*N   + (1-alpha)*1;
-  sXX = alpha.*sXX + (1-alpha)*XXei;
+                % tprod-arguments for computing the channel-covariance matrix
+tpIdx  = -(1:ndims(X)); tpIdx(dim(1)) =1; 
+tpIdx2 = -(1:ndims(X)); tpIdx2(dim(1))=2; 
 
-                                % updated estimate, with startup-protection
-  XX  = sXX./N;
+if( opts.verb>=0 && nEp>10 ) fprintf('adaptWhitenFilt:'); end;
+for epi=1:nEp; % auto-apply incrementally if given multiple epochs
+  if( opts.verb>=0 && nEp>10 ) textprogressbar(epi,nEp); end;
+                                % extract the data for this epoch
+  if( numel(dim)>2 ) % per-epoch mode
+    xidx{dim(3)}=epi;
+    Xei   = X(xidx{:});
+  else % global mode
+    Xei   = X;
+  end;
+
+  % pre-process the data
+  if ( opts.center )       Xei = repop(Xei,'-',mean(Xei,dim(2))); end;
+  if ( opts.detrend )      Xei = detrend(Xei,dim(2)); end;
+
+                          % compute average spatial covariance for this trial
+  XXt  = tprod(Xei,tpIdx,[],tpIdx2)./size(Xei,2)./size(Xei,3); % cov of the artifact signal: [nArt x nArt]
+
+                           % smooth the covariance filter estimates if wanted
+  if( ~isempty(covFilt) )
+    if( isnumeric(covFilt{1}) ) % move-ave
+      alpha           = covFilt{1};
+      filtstate.N     = alpha.*filtstate.N     + (1-alpha).*1;       % update weight
+      filtstate.sxx   = alpha.*filtstate.sxx   + (1-alpha).*XXt;   % update move-ave                                
+      XXt             = filtstate.sxx./filtstate.N;   % move-ave with warmup-protection
+    else
+      [XXt,filtstate]  =feval(covFilt{1},XXt,filtstate,covFilt{2:end});
+    end
+  end    
+
   % compute the whitener from the local adapative covariance estimate
-  [U,s]=eig(double(XX)); s=diag(s); % N.B. force double to ensure precision with poor condition
+  [U,s]=eig(double(XXt)); s=diag(s); % N.B. force double to ensure precision with poor condition
   % select non-zero entries - cope with rank deficiency, numerical issues
   si = s>eps & ~isnan(s) & ~isinf(s) & abs(imag(s))<eps;
-  if ( verb>1 ) fprintf('New eig:');fprintf('%g ',s(si));fprintf('\n'); end;
-  W  = real(U(:,si))*diag(1./sqrt(s(si)))*real(U(:,si))'; % compute symetric whitener	 
-  X(:,:,ei) = tprod(Xei,[-1 2 3 4],W,[-1 1]); % apply it to the data
+  if ( opts.verb>1 ) fprintf('New eig:');fprintf('%g ',s(si));fprintf('\n'); end;
+  sf = real(U(:,si))*diag(1./sqrt(s(si)))*real(U(:,si))'; % compute symetric whitener	 
+                                % apply the filter to the data
+  if( nEp>1 ) % per-epoch mode, update in-place
+    X(xidx{:}) = tprod(sf,[-dim(1) dim(1)],Xei,[1:dim(1)-1 -dim(1) dim(1)+1:ndims(X)]);    
+  else % global regression mode
+    X = tprod(sf,[-dim(1) dim(1)],X,[1:dim(1)-1 -dim(1) dim(1)+1:ndims(X)]);
+  end
 end
-if( verb>=0 && size(X,3)>10 ) fprintf('\n'); end;
+if( opts.verb>=0 && size(X,3)>10 ) fprintf('\n'); end;
 % update the final return state
-state.N=N; state.sXX=sXX; state.R=W; state.alpha=alpha;
+state=opts;
+state.R=sf;
+state.dim=dim;
+state.covFilt=covFilt;
+state.filtstate=filtstate;
 return;
                                 %----------------------------------
 function testCase()
@@ -42,10 +89,11 @@ sf=randn(10,2);% per-electrode spatial filter
 X =S+reshape(sf*S(1:size(sf,2),:),size(S)); % source+propogaged noise
 
                                 % whiten-all-at-once
-[Y,state]=adaptWhitenFilt(X);
-[Y,state]=adaptWhitenFilt(X,[],10);
+[sf0,XX0,Y0]=whiten(X,1);
+[Y,state,XX]=adaptWhitenFilt(X,[],'dim',[1 2]);
+[Y,state]=adaptWhitenFilt(X,[],'covFilt',10);
                                 % whiten: incremental
-[Yi(:,:,1),state]=adaptWhitenFilt(X(:,:,1),[],10);
+[Yi(:,:,1),state]=adaptWhitenFilt(X(:,:,1),[],'covFilt',10);
 for epi=2:size(X,3);
   [Yi(:,:,epi),state]=adaptWhitenFilt(X(:,:,epi),state);
 end
