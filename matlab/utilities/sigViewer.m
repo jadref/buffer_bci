@@ -40,6 +40,7 @@ opts=struct('endType','end.training','verb',1,'timeOut_ms',1000,...
 				'trlen_ms',5000,'trlen_samp',[],'updateFreq',3,...
 				'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',[],'spatfilt','car',...
             'adaptspatialfiltFn','','whiten',0,'rmartch',0,'artCh',{{'EOG' 'AFz' 'EMG' 'AF3' 'FP1' 'FPz' 'FP2' 'AF4' '1'}},'rmemg',0,...
+            'useradaptspatfiltFn','',...
 				'badchrm',0,'badchthresh',3,'capFile',[],'overridechnms',0,...
 				'welch_width_ms',1000,'spect_width_ms',500,'spectBaseline',1,...
 				'noisebands',[45 47 53 55],'noiseBins',[0 1.75],...
@@ -135,7 +136,7 @@ start_s=-start_samp(end:-1:1)/hdr.fsample;
 chCov     = zeros(sum(iseeg),sum(iseeg));
 adaptHL   = opts.adapthalflife_s*opts.updateFreq; % half-life for updating the adaptive filters
 adaptAlpha= exp(log(.5)./adaptHL);
-whtstate=[]; eogstate=[]; emgstate=[];
+whtstate=[]; eogstate=[]; emgstate=[]; usersfstate=[];
 isbadch   = false(sum(iseeg),1);
 
 % pre-compute the SLAP spatial filter
@@ -145,6 +146,8 @@ if ( ~isempty(ch_pos) )
 else
   warning('Cant compute SLAP without channel positions!'); 
 end
+% check format of the useradapsfFn
+if( ~isempty(opts.useradaptspatfiltFn) && ~iscell(opts.useradaptspatfiltFn) ) opts.useradaptspatfiltFn={opts.useradaptspatfiltFn}; end;
 
 % make the figure window
 fig=figure(1);clf;
@@ -225,6 +228,9 @@ if ( isequal(opts.sigProcOptsGui,1) )
     if(ishandle(go)) set(go,'value',ppopts.(fn{fi})); end;
   end
   ppopts=getSigProcOpts(optsFigh);
+
+   % turn of the usersf option if no function name given in input options set
+  if( isempty(opts.useradaptspatfiltFn) ) set(findobj(optsFig,'tag','usersf'),'visible','off'); end;  
   catch;
   end
 end
@@ -392,7 +398,13 @@ while ( ~endTraining )
     else
       emgstate=[];
     end    
-           
+    if( ~isempty(opts.useradaptspatfiltFn) && isfield(ppopts,'usersf') && ppopts.usersf ) % user specified option
+      [ppdat,usersfstate]=feval(opts.useradaptspatfiltFn{1},ppdat,usersfstate,[],'covFilt',adaptAlpha,'ch_names',ch_names(iseeg),opts.useradaptspatfiltFn{2:end});
+    else
+      usersfstate=[];
+    end    
+
+    
   end
   
   %-------------------------------------------------------------------------------------
@@ -582,3 +594,4 @@ function testCase();
 % start the buffer proxy
 % dataAcq/startSignalProxy
 sigViewer();
+sigViewer([],[],'useradaptspatfiltFn','adaptWhitenFilt'); % with user-specified adaptive filter function
