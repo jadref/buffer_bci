@@ -38,12 +38,25 @@ dim=opts.dim; dim(dim<0)=ndims(X)+1+dim(dim<0);
 szX=size(X); szX(end+1:max(dim))=1;
 if( numel(dim)<3 ) nEp=1; else nEp=szX(dim(3)); end;
 
+% get the set of input channels to regress for each output channel
 xchInd=opts.xchInd;
 if( ~isnumeric(xchInd) || ~(ndims(xchInd)==2 && size(xchInd,1)==size(X,dim(1)) && size(xchInd,1)==size(xchInd,2) ) )
-  % numeric-row-vector => set of same channels to remove from every output channel
-  if( isnumeric(xchInd) && sum(size(xchInd)>1)==1 && (numel(xchInd)~=size(X,dim(1)) || size(xchInd,1)==1) ) 
-    tmp=xchInd; xchInd=false(size(X,dim(1))); xchInd(tmp,:)=true;
-  end;
+  if( isnumeric(xchInd) )    
+    if ( numel(xchInd)==2 && all(xchInd>=-1 & xchInd<=1) ) % 2-elements all in [-1 1] => angle-range to use
+      if( ~isempty(opts.ch_pos) )
+        src  = opts.ch_pos;
+        src  = repop(src,'./',sqrt(sum(src.^2)));      % map to the sphere
+        cosSS= src'*src;                               % compute the relative angles
+        xchInd=cosSS>min(xchInd) & cosSS<max(xchInd);  % apply the thresholds
+      else
+        error('Cant use angle-range without electrode positions...');
+      end
+
+    % numeric-row-vector => set of same channels to remove from every output channel
+    elseif ( sum(size(xchInd)>1)==1 && (numel(xchInd)~=size(X,dim(1)) || size(xchInd,1)==1) ) 
+      tmp=xchInd; xchInd=false(size(X,dim(1))); xchInd(tmp,:)=true;
+    end
+  end
 end
   
 % setup the spectral filter if needed
@@ -177,6 +190,7 @@ if( opts.verb>0 && size(X,dim(1)).*nEp>10 ) fprintf('\n'); end
 state         =opts;
 state.R       =sf;
 state.dim     =dim;
+state.xchInd  =xchInd;
 state.artFilt =artFilt;
 state.covFilt =covFilt;
 state.filtstate=filtstate;
@@ -206,6 +220,10 @@ mad(Y,Y0)
 Y0 =artChRegress(X,[],[1 2 3],[1 2]);
 [Y,state] =xchRegress(X,[],'dim',[1 2 3],'xchInd',[1 2]); 
 mad(Y,Y0)
+
+                         % specify the per-output  removal set by angle range
+ch_pos=randn(3,size(X,1));
+[Y,state] =xchRegress(X,[],'dim',[1 2 3],'xchInd',[-.5 .5],'ch_pos',ch_pos); 
 
 
                                 % incremental regress per-epoch
