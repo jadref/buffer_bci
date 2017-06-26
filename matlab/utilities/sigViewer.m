@@ -77,7 +77,7 @@ while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffe
 end;
 drawHead=opts.drawHead; if ( isempty(drawHead) ) drawHead=true; end;
 % extract channel info from hdr
-ch_names=hdr.channel_names; ch_pos=[]; iseeg=true(numel(ch_names),1);
+ch_names=hdr.channel_names; ch_pos=[]; ch_pos3d=[]; iseeg=true(numel(ch_names),1);
 % get capFile info for positions
 capFile=opts.capFile; overridechnms=opts.overridechnms; 
 if(isempty(opts.capFile)) 
@@ -392,17 +392,17 @@ while ( ~endTraining )
       whtstate=[];
     end
     if( isfield(ppopts,'rmartch') && ppopts.rmartch ) % artifact channel regression
-      [ppdat,eogstate]=artChRegress(ppdat,eogstate,[],opts.artCh,'covFilt',adaptAlpha,'ch_names',ch_names(iseeg));
+      [ppdat,eogstate]=artChRegress(ppdat,eogstate,[],opts.artCh,'covFilt',adaptAlpha,'ch_names',ch_names(iseeg),'ch_pos',ch_pos3d(:,iseeg));
     else
       eogstate=[];
     end
     if( isfield(ppopts,'rmemg') && ppopts.rmemg ) % artifact channel regression
-      [ppdat,emgstate]=rmEMGFilt(ppdat,emgstate,[],'covFilt',adaptAlpha,'ch_names',ch_names(iseeg));
+      [ppdat,emgstate]=rmEMGFilt(ppdat,emgstate,[],'covFilt',adaptAlpha,'ch_names',ch_names(iseeg),'ch_pos',ch_pos3d(:,iseeg));
     else
       emgstate=[];
     end    
     if( ~isempty(opts.useradaptspatfiltFn) && isfield(ppopts,'usersf') && ppopts.usersf ) % user specified option
-      [ppdat,usersfstate]=feval(opts.useradaptspatfiltFn{1},ppdat,usersfstate,opts.useradaptspatfiltFn{2:end},'covFilt',adaptAlpha,'ch_names',ch_names(iseeg));
+      [ppdat,usersfstate]=feval(opts.useradaptspatfiltFn{1},ppdat,usersfstate,opts.useradaptspatfiltFn{2:end},'covFilt',adaptAlpha,'ch_names',ch_names(iseeg),'ch_pos',ch_pos3d(:,iseeg));
     else
       usersfstate=[];
     end    
@@ -597,4 +597,7 @@ function testCase();
 % start the buffer proxy
 % dataAcq/startSignalProxy
 sigViewer();
-sigViewer([],[],'useradaptspatfiltFn','adaptWhitenFilt'); % with user-specified adaptive filter function
+
+% with user-specified adaptive filter function
+sigViewer([],[],'useradaptspatfiltFn','adaptWhitenFilt'); 
+sigViewer([],[],'useradaptspatfiltFn',{'xchRegress' 'xchInd',[-.5 .5]}); 
