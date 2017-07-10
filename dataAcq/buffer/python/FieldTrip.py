@@ -413,7 +413,8 @@ class Client:
                 offset += chunk_len
 
             if CHUNK_CHANNEL_NAMES in H.chunks:
-                L = H.chunks[CHUNK_CHANNEL_NAMES].split('\0')
+                labels = H.chunks[CHUNK_CHANNEL_NAMES].decode() #convert from byte->char
+                L = labels.split('\0')
                 numLab = len(L);
                 if numLab>=H.nChannels:
                     H.labels = L[0:H.nChannels]
@@ -615,12 +616,12 @@ if __name__ == "__main__":
         except:
             print('Error: second argument (%s) must be a valid (=integer) port number'%sys.argv[2])
             sys.exit(1)
-
-    ftc = Client()
-
+        
+    ftc = Client()        
+        
     print('Trying to connect to buffer on %s:%i ...'%(hostname,port))
     ftc.connect(hostname, port)
-
+    
     print('\nConnected - trying to read header...')
     H = ftc.getHeader()
 
@@ -643,5 +644,4 @@ if __name__ == "__main__":
                 print(e)
 
     print(ftc.poll())
-
     ftc.disconnect()
