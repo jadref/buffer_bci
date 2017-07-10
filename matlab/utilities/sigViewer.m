@@ -147,7 +147,9 @@ else
   warning('Cant compute SLAP without channel positions!'); 
 end
 % check format of the useradapsfFn
-if( ~isempty(opts.useradaptspatfiltFn) && ~iscell(opts.useradaptspatfiltFn) ) opts.useradaptspatfiltFn={opts.useradaptspatfiltFn}; end;
+if( ~isempty(opts.useradaptspatfiltFn) && ~iscell(opts.useradaptspatfiltFn) ) 
+   opts.useradaptspatfiltFn={opts.useradaptspatfiltFn}; 
+end
 
 % make the figure window
 fig=figure(1);clf;
