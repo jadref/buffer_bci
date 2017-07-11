@@ -67,7 +67,7 @@ wordSize = [1,1,2,4,8,1,2,4,8,4,8]
 # float32   11           9
 # float64   12           10
 
-dataType = [-1, 5, 1, 6, 2, 7, 3, 8, 4, -1, -1, 9, 10]
+dataTypesList = [-1, 5, 1, 6, 2, 7, 3, 8, 4, -1, -1, 9, 10]
 
 try:
     import numpy
@@ -78,9 +78,9 @@ try:
             return DATATYPE_CHAR
         if isinstance(A, numpy.ndarray):
             dt = A.dtype
-            if not(dt.isnative) or dt.num<1 or dt.num>=len(dataType):
+            if not(dt.isnative) or dt.num<1 or dt.num>=len(dataTypesList):
                 return DATATYPE_UNKNOWN
-            ft = dataType[dt.num]
+            ft = dataTypesList[dt.num]
             if ft == -1:
                 return DATATYPE_UNKNOWN
             else:
@@ -96,7 +96,10 @@ try:
     def serialize(A):
         """Returns Fieldtrip data type and string representation of the given object, if possible."""
         if isinstance(A, str):
-            return (0,A)
+            if sys.version_info[0]>=3 :
+                return (0,bytes(A,'utf8'))
+            else:
+                return (0,A)
 
         if isinstance(A, list) or isinstance(A,tuple):
             # check list has all the same type
@@ -113,10 +116,10 @@ try:
 
         if isinstance(A, numpy.ndarray):
             dt = A.dtype
-            if not(dt.isnative) or dt.num<1 or dt.num>=len(dataType):
+            if not(dt.isnative) or dt.num<1 or dt.num>=len(dataTypesList):
                 return (DATATYPE_UNKNOWN, None)
 
-            ft = dataType[dt.num]
+            ft = dataTypesList[dt.num]
             if ft == -1:
                 return (DATATYPE_UNKNOWN, None)
 
@@ -242,14 +245,13 @@ class Event:
         if isinstance(type,Event):
             self.deserialize(S)
         else:
-            if type is None: self.type = ''
-            if value is None: self.value = ''
+            self.type = type   if not type is None else ''
+            self.value = value if not value is None else ''
             self.sample = sample
             self.offset = offset
             self.duration = duration
 
     def __str__(self):
-        
         return '(t:%s v:%s s:%i o:%i d:%i)\n'%(str(self.type),str(self.value), self.sample, self.offset, self.duration)
 
     def deserialize(self, buf):
@@ -307,14 +309,7 @@ class Event:
         # S = struct.pack('IIIIiiiI', type_type, type_numel, value_type, value_numel, int(self.sample), int(self.offset), int(self.duration), bufsize)
         # mine:
         S = struct.pack('iiiiiiii', int(type_type), int(type_numel), int(value_type), int(value_numel), int(self.sample), int(self.offset), int(self.duration), bufsize)
-
-        # assert 0
-        # original:
-        # my code
-        t = S + bytearray(type_buf, 'UTF8') + bytearray(value_buf,'UTF8')
-        # original:
-        # return S + type_buf + value_buf
-        return t
+        return S + type_buf + value_buf
 
 
 class Client:
@@ -638,10 +633,22 @@ if __name__ == "__main__":
             print(D)
 
         if H.nEvents > 0:
-            print('\nTrying to read (all) events...')
-            E = ftc.getEvents()
+            print('\nTrying to read last 100 events...')
+            E = ftc.getEvents([max(0,H.nEvents-100), H.nEvents-1])
             for e in E:
                 print(e)
+
+        E=Event('test',1)
+        print('\nTrying to put an event:'+str(E))
+        ftc.putEvents(E)
+        E=Event('test','str')
+        print('\nTrying to put an event:'+str(E))
+        ftc.putEvents(E)
+        print('\n Reading sent event...')
+        (nSamp,nEvents)=ftc.poll()
+        E = ftc.getEvents([nEvents-2, nEvents-1])
+        for e in E:
+            print(e)
 
     print(ftc.poll())
     ftc.disconnect()
