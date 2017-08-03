@@ -64,7 +64,7 @@ maxOnScreenObjs=20;
 %---------------------------------------------------------------------------------------------------------
 % IM calibration config
 
-symbCue      ={'FT' 'LH' 'RH'}; % sybmol cue in addition to positional one. E,N,W,S for 4 symbs
+symbCue      ={'LH' 'RH'}; % sybmol cue in addition to positional one. E,N,W,S for 4 symbs
 nSymbs       =numel(symbCue); 
 baselineClass=[]; % if set, treat baseline phase as a separate class to classify
 rtbClass     =[];% if set, treat post-trial return-to-baseline phase as separate class to classify

@@ -45,7 +45,7 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
       ,'menubar','none'...
       ,'toolbar','none'...
       ,'doublebuffer','on'...
-      ,'Position',[0.5*gameCanvasXLims(2) 0.5*gameCanvasYLims(2) gameCanvasXLims(2) gameCanvasYLims(2)]);
+      ,'Position',[gameCanvasXLims(2) 100 gameCanvasXLims(2) gameCanvasYLims(2)]);
 
                                 % Make game axes:
   hAxes = axes('position',[0 0 1 1]...
@@ -127,18 +127,28 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
 
     % -- get the current user/BCI input
     curCharacter=[];
-    if ( useKeyboard )
-      curKeyLocal    = get(hFig,'userdata');
-      if ( ~isempty(curKeyLocal) )
-        curCharacter=curKeyLocal.Character;
-        fprintf('%d) key="%s"\n',nframe,curCharacter);
-        [cannonAction,cannonTrotFrac]=key2action(curCharacter);
-      end
-    end
+%     if ( useKeyboard )
+%       curKeyLocal    = get(hFig,'userdata');
+%       if ( ~isempty(curKeyLocal) )
+%         curCharacter=curKeyLocal.Character;
+%         fprintf('%d) key="%s"\n',nframe,curCharacter);
+%         [cannonAction,cannonTrotFrac]=key2action(curCharacter);
+%       end
+%     end
     if ( useBuffer )
       [dv,prob,buffstate,filtstate]=processNewPredictionEvents(buffhost,buffport,buffstate,predType,gameFrameDuration*1000/2,predFiltFn,filtstate,verb-1);
+      curKeyLocal = get(hFig,'userdata');
+      prob = [prob;0];
+      
+      %checks if shooting key is pressed
+      if ~isempty(curKeyLocal)
+          curCharacter = curKeyLocal.Character;
+          if curCharacter == 'k'
+            prob(3) = 100;
+          end
+      end
       if( ~isempty(dv) ) % only if events to process...
-        [cannonAction,cannonTrotFrac]=prediction2action(dv,prob);
+        [cannonAction,cannonTrotFrac]=prediction2action(prob);
       end
     end
     
@@ -151,7 +161,6 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
                             % flash cannon, N.B. cannon is always stim-seq #1
     nstim2obj(1)=hCannon.uid; % mark this stim-seq as used
     set(hCannon.hGraphic,'facecolor',stimColors(ss(1)+1,:)); % set the cannon color based on stim-state.
-    
     if strcmp(cannonAction,'fire') % Shoot cannonball if enough time has elapsed.
       if isempty(lastShotTime)||toc(lastShotTime)>=(1/maxCannonShotsPerSecond)
         newBall = CannonBall(hAxes,hCannon);
@@ -215,7 +224,7 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
                                 % Update bonus aliens
       if ( ~isempty(hbonusAliens) )
         hbonusAliens = BonusAlien.update(hbonusAliens);
-        if( any(strcmpi(curCharacter,{'i'})) ) % got the bonus alien
+        if( any(strcmpi(curCharacter,{'a'})) ) % got the bonus alien
           fprintf('%d) Got the bonus alien!\n',nframe) 
           for hi=1:numel(hbonusAliens);
             score.bonushits=score.bonushits+1;
