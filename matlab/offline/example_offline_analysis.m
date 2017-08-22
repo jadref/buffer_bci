@@ -32,7 +32,23 @@ run ../utilities/initPaths.m
 % 2) train a ERP (time-locked) classifier on this data.
 %        assuming that [events.value] contains a class indicator for each epoch
 capFile='1010'; % you should change this to represent whatever cap layout was used in your experiment
+
+% 2.1) get some help on the options when training the classifier
+help buffer_train_erp_clsfr
+help train_erp_clsfr
+% 2.3) Actually train an ERP classifier with sensible default settings, and a given frequency range
 [clsfr,res,X,Y]=buffer_train_erp_clsfr(data,devents,hdr,'freqband',[.1 .5 10 12],'capFile',capFile,'overridechnms',1);
+% N.B. res.opt.tstf contains the cross validated predictions for the training data.
+%  Thus, the training set performance could be computed as
+if ( isnumeric(Y) ) % only if Y is numeric
+  tstf=res.opt.tstf;
+  fprintf('Clsfr perf = %g\n',sum(sign(tstf)==Y)./numel(tstf))
+end
+
+% 2.5) train a ERsP (induced) classifier on this data.
+%        assuming that [events.value] contains a class indicator for each epoch
+capFile='1010'; % you should change this to represent whatever cap layout was used in your experiment
+[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'freqband',[8 10 28 30],'capFile',capFile,'overridechnms',1);
 % N.B. res.opt.tstf contains the cross validated predictions for the training data.
 %  Thus, the training set performance could be computed as
 if ( isnumeric(Y) ) % only if Y is numeric
