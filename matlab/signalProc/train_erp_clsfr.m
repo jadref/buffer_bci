@@ -164,7 +164,7 @@ if( any(strfind(sftype,'wht')) || any(strfind(sftype,'whiten')) )
   R = Rw*R; % compose the combined filter for test time
 end
 if( isequal(R,1) ) R=[]; end; % if no-static filter then clear it
-if ( size(X,1)>=4 && ...
+if ( size(X,1)>=3 && ...
      (any(strcmpi(opts.spatialfilter,{'trwht','adaptspatialfilt','adaptspatialfiltFn'})) || ...
       ~isempty(opts.adaptspatialfiltFn) ) )
   fprintf('3) adpatFilt');
@@ -184,7 +184,7 @@ end
 filt=[]; 
 fs=opts.fs;
 outsz=[size(X,2) size(X,2)];
-if(~isempty(opts.downsample)) outsz(2)=min(outsz(2),round(trlen_samp*opts.downsample/fs)); end;
+if(~isempty(opts.downsample)) outsz(2)=min(outsz(2),round(trlen_samp*opts.downsample/fs)); fs=opts.downsample; end;
 if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) ) 
   fprintf('4) filter\n');
   len=size(X,2);
