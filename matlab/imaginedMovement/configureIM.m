@@ -43,12 +43,14 @@ end
 verb         =1; % verbosity level for debug messages, 1=default, 0=quiet, 2=very verbose
 buffhost     ='localhost';
 buffport     =1972;
-% N.B. tgts *always* start from the top (12 o'clock=N) and run anti-clock
-% 3-[N,SW,SE], 4-[N,W,S,E], 6-[N,NW,SW,S,SE,NE], 8-[N,NW,W,SW,S,SE,E,NE]
-symbCue      ={'FT' 'LH' 'RH'}; % sybmol cue in addition to positional one. E,N,W,S for 4 symbs
+
+% N.B. start's on **RIGHT** (3 o'clock=East) and runs anti-clock-wise for *EVEN* numbers of targets
+%      start on **TOP** (12 o'clock=North) and run anti-clockwise for *ODD* numbers targets
+% 3-[N,SW,SE], 4-[E,N,W,S], 6-[E,NE,NW,W,SW,SE], 8-[E,NE,N,NW,W,SW,S,SE]
+symbCue      ={'FT' 'LH' 'RH'}; % sybmol cue / class name 
 nSymbs       =numel(symbCue); 
 baselineClass='99 Rest'; % if set, treat baseline phase as a separate class to classify
-rtbClass     ='99 RTB';% if set, treat post-trial return-to-baseline phase as separate class to classify
+rtbClass     ='99 RTB';  % if set, treat post-trial return-to-baseline phase as separate class to classify
 
 nSeq              =20*nSymbs; % 20 examples of each target
 epochDuration     =.75;% lots of short (750ms/trial) epochs for training the classifier

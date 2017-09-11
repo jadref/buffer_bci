@@ -44,6 +44,14 @@ h(nSymbs+1)=rectangle('curvature',[1 1],'position',[stimPos(:,end)-stimRadius/4;
                       'facecolor',bgColor); 
 set(gca,'visible','off');
 
+                                % mapping from class order to screen order
+% % TODO [] : remove the auto number prefix from calibrate so this is needed? 
+cls2tgt=[];
+%if ( ~isempty(symbCue) ) % given cue-text
+%  % compute inverse mapping from class-name-order -> input class order=display order
+%  cls2tgt=1:nSymbs; [ss,si]=sort(symbCue,'ascend'); cls2tgt(si)=1:numel(si);
+%end
+  
 %Create a text object with no text in it, center it, set font and color
 set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
 txthdl = text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),' ',...
@@ -51,12 +59,10 @@ txthdl = text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),' ',...
 				  'fontunits','pixel','fontsize',.05*wSize(4),...
 				  'color',txtColor,'visible','off');
 % text object for the experiment progress bar
-progresshdl=text(axLim(1),axLim(2),sprintf('%2d/%2d +%02d -%02d',0,nSeq,0,0),...
+progresshdl=text(axLim(1),axLim(2),sprintf('%2d/%2d +%02d -%02d (%02d)',0,nSeq,0,0,0),...
 				  'HorizontalAlignment', 'left', 'VerticalAlignment', 'top',...
 				  'fontunits','pixel','fontsize',.05*wSize(4),...
 				  'color',txtColor,'visible','on');
-
-
 
 set(txthdl,'string', {epochfeedback_instruct{:} '' 'Click mouse when ready'}, 'visible', 'on'); drawnow;
 waitforbuttonpress;
@@ -75,7 +81,7 @@ for si=1:nSeq;
   if ( ~ishandle(fig) || endTesting ) break; end;
 
   % update progress bar
-  set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d',si,nSeq,nCorrect,nWrong));
+  set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d  (%02d)',si,nSeq,nCorrect,nWrong,nMissed));
 
   % Give user a break if too much time has passed
   if ( getwTime() > waitforkeyTime )
@@ -169,6 +175,9 @@ for si=1:nSeq;
     end    
     % give the feedback on the predicted class
     if( numel(dv)==1 ) dv=[dv -dv]; end; % ensure min 1 decision values..
+    % map from class order to display / target order
+    if(~isempty(cls2tgt)) dv(1:numel(cls2tgt))=dv(cls2tgt); end;
+
     prob=exp(dv-max(dv)); prob=prob./sum(prob); % robust soft-max prob computation
     if ( verb>=0 ) 
 		fprintf('%d) dv:[%s]\tPr:[%s]\n',ev.sample,sprintf('%5.4f ',dv),sprintf('%5.4f ',prob));
@@ -178,11 +187,11 @@ for si=1:nSeq;
     set(h(min(numel(h),predTgt)),'facecolor',fbColor);
 
     if ( predTgt>nSymbs )         nMissed = nMissed+1; fprintf('missed!');
-    elseif(~any(predTgt~=tgtIdx)) nWrong  = nWrong+1;  fprintf('wrong!'); % wrong (and not 'rest') .... do the penalty
+    elseif(~any(predTgt==tgtIdx)) nWrong  = nWrong+1;  fprintf('wrong!'); % wrong (and not 'rest') .... do the penalty
     elseif(any(predTgt==tgtIdx))  nCorrect= nCorrect+1;fprintf('right!'); % correct
     end
     % update progress bar
-    set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d',si,nSeq,nCorrect,nWrong));
+    set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d  (%02d)',si,nSeq,nCorrect,nWrong,nMissed));
     drawnow;
     sendEvent('stimulus.predTgt',predTgt);
   end % if classifier prediction

@@ -18,7 +18,9 @@ ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','b
 stimPos=[]; h=[]; htxt=[];
 stimRadius=diff(axLim)/4;
 cursorSize=stimRadius/2;
-theta=linspace(0,2*pi,nSymbs+1)+pi/2; % N.B. pos1=N so always left-right symetric
+theta=linspace(0,2*pi,nSymbs+1);
+if ( mod(nSymbs,2)==1 ) theta=theta+pi/2; end; % ensure left-right symetric by making odd 0=up
+%theta=linspace(0,2*pi,nSymbs+1)+pi/2; % N.B. pos1=N so always left-right symetric
 theta=theta(1:end-1);
 stimPos=[cos(theta);sin(theta)];
 for hi=1:nSymbs; 
@@ -117,7 +119,8 @@ for si=1:nSeq;
   tgtIdx=find(tgtSeq(:,si)>0);
   set(h(tgtSeq(:,si)>0),'facecolor',tgtColor);
   set(h(tgtSeq(:,si)<=0),'facecolor',bgColor);
-  if ( ~isempty(symbCue) )
+  % ***WARNING*** Automatically adds position number to the target name!!
+  if ( ~isempty(symbCue) ) 
 	 set(txthdl,'string',sprintf('%s ',symbCue{tgtIdx}),'color',txtColor,'visible','on');
 	 tgtNm = '';
 	 for ti=1:numel(tgtIdx);

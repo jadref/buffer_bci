@@ -50,7 +50,7 @@ txthdl = text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),' ',...
 				  'fontunits','pixel','fontsize',.05*wSize(4),...
 				  'color',txtColor,'visible','off');
 % text object for the experiment progress bar
-progresshdl=text(axLim(1),axLim(2),sprintf('%2d/%2d +%02d -%02d',0,nSeq,0,0),...
+progresshdl=text(axLim(1),axLim(2),sprintf('%2d/%2d +%02d -%02d (%02d)',0,nSeq,0,0,0),...
 				  'HorizontalAlignment', 'left', 'VerticalAlignment', 'top',...
 				  'fontunits','pixel','fontsize',.05*wSize(4),...
 				  'color',txtColor,'visible','on');
@@ -74,7 +74,7 @@ for si=1:nSeq;
   if ( ~ishandle(fig) ) break; end;
   
   % update progress bar
-  set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d',si,nSeq,nCorrect,nWrong));
+  set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d  (%02d)',si,nSeq,nCorrect,nWrong,nMissed));
   
   % Give user a break if too much time has passed
   if ( getwTime() > waitforkeyTime )
@@ -144,7 +144,7 @@ for si=1:nSeq;
   prob   = ones(nSymbs,1)./nSymbs; % start with equal prob over everything
   trlStartTime=getwTime();
   timetogo = contFeedbackTrialDuration;
-  nevt=0;
+  nevt=0; nPred=0; sdv=zeros(size(dv));
   evtTime=trlStartTime+epochDuration; % N.B. already sent the 1st target event
   while (timetogo>0)
 	 curTime  = getwTime();
@@ -181,7 +181,9 @@ for si=1:nSeq;
 		  else
 			 dv=pred;
 		  end
-
+                           % accumulate info on the average dv for this trial
+        nPred=nPred+1; sdv=sdv+dv;
+        
 										  % convert from dv to normalised probability
         curdv=dv; if( numel(curdv)==1 ) curdv=[curdv -curdv]; end; % ensure min 1 decision values..
 		  if(~isempty(dvCalFactor)) prob=exp((curdv-max(curdv))*dvCalFactor);

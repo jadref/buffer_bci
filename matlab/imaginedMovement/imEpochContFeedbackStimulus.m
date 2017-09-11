@@ -40,7 +40,15 @@ h(nSymbs+1)=rectangle('curvature',[1 1],'position',[stimPos(:,end)-stimRadius/4;
                       'facecolor',bgColor); 
 set(gca,'visible','off');
 
-%Create a text object with no text in it, center it, set font and color
+                                % mapping from class order to screen order
+cls2tgt=[];
+%cls2tgt=1:nSymbs+1;
+%if ( ~isempty(symbCue) ) % given cue-text
+%  % compute inverse mapping from class-name-order -> input class order=display order
+%  [ss,si]=sort(symbCue,'rows'); cls2tgt(si)=1:numel(si);
+%end
+
+      %Create a text object with no text in it, center it, set font and color
 txthdl = text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),' ',...
 				  'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle',...
 				  'fontunits','pixel','fontsize',.05*wSize(4),...
@@ -132,6 +140,9 @@ for si=1:nSeq;
             pred=[pred -pred];
           end
         end
+        % map from class order to display / target order
+        if(~isempty(cls2tgt)) pred=pred(cls2tgt); end;
+        
         nPred=nPred+1;
         dvs(:,nPred)=pred;
         if ( verb>=0 ) 
