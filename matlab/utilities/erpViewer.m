@@ -33,6 +33,8 @@ opts=struct('cuePrefix','stimulus.target','endType','end.training','verb',1,...
 				'nSymbols',0,'maxEvents',[],...
 				'trlen_ms',1000,'trlen_samp',[],'offset_ms',[],'offset_samp',[],...
 				'detrend',1,'fftfilter',[],'freqbands',[],'downsample',128,'spatfilt','car',...
+            'adaptspatialfiltFn','','whiten',0,'rmartch',0,'artCh',{{'EOG' 'AFz' 'EMG' 'AF3' 'FP1' 'FPz' 'FP2' 'AF4' '1'}},'rmemg',0,...
+            'useradaptspatfiltFn','','adapthalflife_s',30,...
 				'badchrm',0,'badchthresh',3,'badtrthresh',3,...
 				'capFile',[],'overridechnms',0,'welch_width_ms',500,...
 				'redraw_ms',250,'lineWidth',1,'sigProcOptsGui',1,...
@@ -134,6 +136,9 @@ end
 rawIds   = 0;
 nTarget  = 0;
 erp      = zeros(sum(iseeg),outsz(2),max(1,nCls)); % stores the pre-proc data used in the figures
+adaptHL   = opts.adapthalflife_s./(times(end)-times(1)); % half-life for updating the adaptive filters
+adaptAlpha= exp(log(.5)./adaptHL);
+whtstate=[]; eogstate=[]; emgstate=[]; usersfstate=[];
 isbadch  = false(sum(iseeg),1);
 
 % pre-compute the SLAP spatial filter
@@ -165,24 +170,36 @@ drawnow; % make sure the figure is visible
 
 ppopts.badchrm=opts.badchrm;
 ppopts.badchthresh=opts.badchthresh;
-ppopts.preproctype='none';if(opts.detrend)ppopts.preproctype='detrend'; end;
-ppopts.spatfilttype=opts.spatfilt;
+if(opts.detrend); ppopts.detrend=1; end;
+if ( ischar(opts.spatfilt) && ~isempty(opts.spatfilt) ) ppopts.(opts.spatfilt)=1; end;
+if ( ischar(opts.adaptspatialfiltFn) && ~isempty(opts.adaptspatialfiltFn) ) 
+   ppopts.(opts.adaptspatialfiltFn)=1; 
+end;
+ppopts.whiten =opts.whiten;
+ppopts.rmartch=opts.rmartch;
+ppopts.rmemg  =opts.rmemg;
 ppopts.freqbands=opts.freqbands;
-optsFighandles=[];
+damage=false(5,1);	 
 if ( isequal(opts.sigProcOptsGui,1) )
-  optsFigh=sigProcOptsFig();
-  optsFighandles=guihandles(optsFigh);
-  set(optsFighandles.lowcutoff,'string',sprintf('%g',ppopts.freqbands(1)));
-  set(optsFighandles.highcutoff,'string',sprintf('%g',ppopts.freqbands(end)));  
-  for h=get(optsFighandles.spatfilt,'children')'; 
-    if ( strcmpi(get(h,'string'),ppopts.spatfilttype) ) set(h,'value',1); break;end; 
-  end;
-  for h=get(optsFighandles.preproc,'children')'; 
-    if ( strcmpi(get(h,'string'),ppopts.preproctype) ) set(h,'value',1); break;end; 
-  end;
-  set(optsFighandles.badchrm,'value',ppopts.badchrm);
-  set(optsFighandles.badchthresh,'value',ppopts.badchthresh);
-  ppopts=getSigProcOpts(optsFighandles);
+  try;
+    optsFigh=sigProcOptsFig();
+  % set defaults to match input options  
+  set(findobj(optsFigh,'tag','lowcutoff'),'string',sprintf('%g',ppopts.freqbands(1)));
+  set(findobj(optsFigh,'tag','highcutoff'),'string',sprintf('%g',ppopts.freqbands(end)));  
+  % set the graphics objects to match the inputs
+  fn=fieldnames(ppopts);
+  for fi=1:numel(fn);
+    go=findobj(optsFigh,'tag',fn{fi});
+    if(ishandle(go)) set(go,'value',ppopts.(fn{fi})); end;
+  end
+  ppopts=getSigProcOpts(optsFigh);
+
+   % turn of the usersf option if no function name given in input options set
+  if( isempty(opts.useradaptspatfiltFn) ) 
+     set(findobj(optsFigh,'tag','usersf'),'visible','off'); 
+  end;  
+  catch;
+  end
 end
 
 % pre-call buffer_waitData to cache its options
@@ -218,21 +235,27 @@ while ( ~endTraining )
     if ( ~isempty(modehdl) ) set(modehdl,'value',modekey); end;
   end
   % get updated sig-proc parameters if needed
-  if ( ~isempty(optsFighandles) && ishandle(optsFighandles.figure1) )
-    [ppopts,damage]=getSigProcOpts(optsFighandles,ppopts);
-    % compute updated spectral filter information, if needed
+  % get updated sig-proc parameters if needed
+  if ( ~isempty(optsFigh) && ishandle(optsFigh) )
+	 try
+		[ppopts,damage]=getSigProcOpts(optsFigh,ppopts);
+	 catch;
+	 end;
     if ( any(damage) ) % re-draw all
       fprintf('Redraw all detected\n');
       updateLines(1)=true; updateLines(:)=true; 
     end; 
-    if ( damage(4) )
+    % compute updated spectral filter information, if needed
+    if ( damage(4) ) % freq range changed
       filt=[];
       if ( ~isempty(ppopts.freqbands) ) % filter bands given
         filt=mkFilter(trlen_samp/2,ppopts.freqbands,fs/trlen_samp); 
       end
       freqIdx =getfreqIdx(freqs,ppopts.freqbands);
+		spectFreqIdx=getfreqIdx(spectFreqs,ppopts.freqbands);
     end
   end
+
   resetval=get(resethdl,'value');
   if ( resetval ) 
     fprintf('reset detected\n');
@@ -312,15 +335,15 @@ while ( ~endTraining )
       ppdat=rawEpochs;
       % common pre-processing which needs access to all the data
       % pre-process the data
-      switch(lower(ppopts.preproctype));
-       case 'none';   
-       case 'center'; ppdat=repop(ppdat,'-',mean(ppdat,2));
-       case 'detrend';ppdat=detrend(ppdat,2);
-       otherwise; warning(sprintf('Unrecognised pre-proc type: %s',lower(ppopts.preproctype)));
-      end
+      if( (isfield(ppopts,'center') && ppopts.center)  ) 
+         ppdat=repop(ppdat,'-',mean(ppdat,2)); 
+      end;
+      if( (isfield(ppopts,'detrend') && ppopts.detrend) ) 
+         ppdat=detrend(ppdat,2); 
+      end;
         
       % bad-channel identify and remove
-      if( ~isempty(ppopts.badchrm) && ppopts.badchrm>0 && ppopts.badchthresh>0 )
+      if( ( ppopts.badchrm>0 || strcmp(ppopts.badchrm,'1') ) && ppopts.badchthresh>0 )
         oisbadch = isbadch;
         isbadch=idOutliers(rawEpochs,1,ppopts.badchthresh);
         % set the data in this channel to 0
@@ -346,22 +369,42 @@ while ( ~endTraining )
         isbadtr=idOutliers(ppdat,3,opts.badtrthresh);
         ppdat(:,:,isbadtr)=0;
       end
+
+        % TODO: This can be more efficient.... as we run the full pre-processing on all the data every time it's updated.....
+        % spatial filter
+    if( (isfield(ppopts,'car') && ppopts.car) ) 
+		 if ( sum(~isbadch)>1 ) 
+			ppdat(~isbadch,:,:)=repop(ppdat(~isbadch,:,:),'-',mean(ppdat(~isbadch,:,:),1));
+		 end
+    end
+    if( (isfield(ppopts,'slap') && ppopts.slap) ) 
+      if ( ~isempty(slapfilt) ) % only use and update from the good channels
+        ppdat(~isbadch,:,:)=tprod(ppdat(~isbadch,:,:),[-1 2 3],slapfilt(~isbadch,~isbadch),[-1 1]); 
+      end;
+    end
+	 if ( isnumeric(opts.spatfilt) ) % use the user-specified spatial filter matrix
+		ppdat(~isbadch,:,:)=tprod(ppdat,[-1 2 3],opts.spatfilt,[-1 1]);      
+	 end
+                                % adaptive spatial filter
+    if( isfield(ppopts,'whiten') && ppopts.whiten ) % symetric-whitener
+      ppdat=adaptWhitenFilt(ppdat,[],'covFilt',adaptAlpha,'ch_names',ch_names(iseeg));
+    end
+    if( isfield(ppopts,'rmartch') && ppopts.rmartch ) % artifact channel regression
+      ppdat=artChRegress(ppdat,[],[],opts.artCh,'covFilt',adaptAlpha,'ch_names',ch_names(iseeg),'ch_pos',ch_pos3d(:,iseeg));
+    end
+    if( isfield(ppopts,'rmemg') && ppopts.rmemg ) % artifact channel regression
+      ppdat=rmEMGFilt(ppdat,[],[],'covFilt',adaptAlpha,'ch_names',ch_names(iseeg),'ch_pos',ch_pos3d(:,iseeg));
+    end    
+    if( ~isempty(opts.useradaptspatfiltFn) && isfield(ppopts,'usersf') && ppopts.usersf ) % user specified option
+      ppdat=feval(opts.useradaptspatfiltFn{1},ppdat,[],opts.useradaptspatfiltFn{2:end},'covFilt',adaptAlpha,'ch_names',ch_names(iseeg),'ch_pos',ch_pos3d(:,iseeg));
+    end    
       
+    %--------------------------------------
+    % re-plot the updated lines
       for mi=damagedLines(:)';
         ppdatmi=ppdat(:,:,rawIds==mi);
         if ( isempty(ppdatmi) ) erp(:,:,mi)=0; continue; end;
 
-        % spatial filter
-        switch(lower(ppopts.spatfilttype))
-         case 'none';
-         case 'car';    ppdatmi(~isbadch,:,:)=repop(ppdatmi(~isbadch,:,:),'-',mean(ppdatmi(~isbadch,:,:),1));
-         case 'slap';   
-          if ( ~isempty(slapfilt) ) % only use and update from the good channels
-            ppdatmi(~isbadch,:,:)=tprod(ppdatmi(~isbadch,:,:),[-1 2 3],slapfilt(~isbadch,~isbadch),[-1 1]); 
-          end;
-         case 'whiten'; [W,Sigma,ppdatmi(~isbadch,:,:)]=whiten(ppdatmi(~isbadch,:,:),1,'opt',1,0,1); %symetric whiten
-         otherwise; warning(sprintf('Unrecognised spatial filter type : %s',ppopts.spatfilttype));
-        end        
         
         % compute the visualisation
         switch (curvistype) 
