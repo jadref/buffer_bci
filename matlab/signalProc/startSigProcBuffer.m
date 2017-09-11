@@ -340,7 +340,7 @@ while ( true )
     %---------------------------------------------------------------------------------
    case {'loadtraining'};
      % load training data from previously saved training data file
-     [fn,pth]=uigetfile({[dname '.*']},'Pick training data file'); drawnow;
+     [fn,pth]=uigetfile({[dname '*.mat']},'Pick training data file'); drawnow;
 	  if ( ~isequal(fn,0) ); fname=fullfile(pth,fn); end; 
      if ( ~(exist([fname '.mat'],'file') || exist(fname,'file')) ) 
        warning(['Couldnt find a training data file to load file: ' fname]);
@@ -361,9 +361,12 @@ while ( true )
        if ( ~(exist([fname '.mat'],'file') || exist(fname,'file')) ) 
          warning(['Couldnt find a training data file to load file: ' fname]);
          % Not in default name -- ask user for file to load?
-         [fn,pth]=uigetfile({[dname '.*']},'Pick training data file'); drawnow;
-	      if ( ~isequal(fn,0) ); fname=fullfile(pth,fn); end; 
-         break;
+         [fn,pth]=uigetfile({[dname '*.mat']},'Pick training data file'); drawnow;
+	      if ( ~isequal(fn,0) );
+           fname=fullfile(pth,fn);
+         else
+           break;
+         end; 
        else
          fprintf('Loading training data from : %s\n',fname);
        end
@@ -455,7 +458,13 @@ while ( true )
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
       clsfrfile = [cname '_' subject '_' datestr];
       if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
-		  clsfrfile=[cname '_' subject]; 
+        % Not in default name -- ask user for file to load?
+        [fn,pth]=uigetfile({[cname '*.mat']},'Pick training data file'); drawnow;
+	      if ( ~isequal(fn,0) );
+           clsfrfile=fullfile(pth,fn);
+         else
+           break;
+         end; 
 	  end;
       if(opts.verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
       clsfr=load(clsfrfile);
