@@ -1,5 +1,6 @@
+  %==========================================================================
 function [cannonAction,cannonTrotFrac]=prediction2action(prob)
-  % assume class order: [left right fire] (if fire is present)
+           % assume class order: [left right fire] (if fire is present)
   cannonAction='';
   cannonTrotFrac=.4; % Meh speed
   if( isempty(prob) )  return; end;

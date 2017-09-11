@@ -53,7 +53,7 @@ else % normal option string call
       if( ~any(mi) ) mi=strncmpi(tmp{ii},opts.ch_names,numel(tmp{ii})); end; % prefix+case-insenstive
       if ( any(mi) ) mi=find(mi); idx=[idx;mi]; end
       if( opts.verb>=0 )
-        if( any(mi) ) fprintf('artChRegress:: %s -> %s\n',tmp{ii},opts.ch_names{mi});
+        if( any(mi) ) fprintf('artChRegress:: %s -> %s\n',tmp{ii},sprintf('%s,',opts.ch_names{mi}));
         else          fprintf('artChRegress:: %s unmatched\n',tmp{ii});
         end
       end;
@@ -79,6 +79,7 @@ if( numel(dim)<3 ) nEp=1; else nEp=szX(dim(3)); end;
 % compute the artifact signal and its forward propogation to the other channels
 if ( isempty(artFilt) && ~isempty(opts.bands) ) % smoothing filter applied to art-sig before we use it
   if( isempty(opts.fs) ) warning('Sampling rate not specified.... using default=100Hz'); opts.fs=100; end;
+  if( opts.verb>=0 ) fprintf('Filtering @%gHz with [%s]\n',opts.fs,sprintf('%g ',opts.bands)); end;
   artFilt = mkFilter(floor(szX(dim(2))./2),opts.bands,opts.fs/szX(dim(2)));
 end
 

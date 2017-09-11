@@ -38,10 +38,12 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %                 [X,state]=fname(X,state,args{:})
 %                where state is some arbitary internal state of the filter which is propogated between calls
 %                SEE ALSO: biasFilt, stdFilt, rbiasFilt
-%  badchrm   - [bool] do we do bad channel removal    (1)
+%  badchrm     - [bool] do we do bad channel removal    (1)
 %  badchthresh - [float] threshold in std-dev units to id channel as bad (3.5)
-%  badtrrm   - [bool] do we do bad trial removal      (1)
+%  badchscale  - [float] multiplier for the bad-ch-thresold for on-line bad-channel detection (4)
+%  badtrrm     - [bool] do we do bad trial removal      (1)
 %  badtrthresh - [float] threshold in std-dev units to id trial as bad (3)
+%  badtrscale  - [float] multiplier for the bad trial threshold for on-line bad-trial detectin (4)
 %  detrend   - [int] do we detrend/center the data          (1)
 %              0 - do nothing
 %              1 - detrend the data

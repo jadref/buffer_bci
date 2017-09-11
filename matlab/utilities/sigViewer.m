@@ -45,13 +45,13 @@ opts=struct('endType','end.training','verb',1,'timeOut_ms',1000,...
 				'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',[],'spatfilt','car',...
             'adapthalflife_s',15,...
             'adaptspatialfiltFn','','whiten',0,'rmemg',0,...
-            'rmartch',0,'artChBands',[.5 1 45 48],'artCh',{{'EOG' 'AFz' 'EMG' 'AF3' 'FP1' 'FPz' 'FP2' 'AF4' '1'}},'rmemg',0,...
+            'rmartch',0,'artChBands',[.5 1 45 48],...
+                        'artCh',{{'EOG' 'AFz' 'EMG' 'AF3' 'FP1' 'FPz' 'FP2' 'AF4' '1'}},...
             'useradaptspatfiltFn','',...
 				'badchrm',0,'badchthresh',3,'capFile',[],'overridechnms',0,...
 				'welch_width_ms',1000,'spect_width_ms',500,'spectBaseline',1,...
 				'noisebands',[45 47 53 55],'noiseBins',[0 1.75],...
-				'sigProcOptsGui',1,'dataStd',2.5,
-			  'drawHead',1);
+				'sigProcOptsGui',1,'dataStd',2.5,'drawHead',1);
 opts=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ); buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ); buffport=1972; end;
@@ -394,25 +394,27 @@ while ( ~endTraining )
 	 end
 
                                 % adaptive spatial filter
+    ch_nameseeg=ch_names(iseeg); 
+    ch_pos3deeg=[]; if (~isempty(ch_pos3d)) ch_pos3deeg=ch_pos3d(:,iseeg); end;
     if( isfield(ppopts,'whiten') && ppopts.whiten ) % symetric-whitener
-      [ppdat,whtstate]=adaptWhitenFilt(ppdat,whtstate,'covFilt',adaptAlpha(min(end,2)),'ch_names',ch_names(iseeg));
+      [ppdat,whtstate]=adaptWhitenFilt(ppdat,whtstate,'covFilt',adaptAlpha(min(end,2)),'ch_names',ch_nameseeg);
     else % clear state if turned off
       whtstate=[];
     end
     if( isfield(ppopts,'rmartch') && ppopts.rmartch ) % artifact channel regression
       % N.B. important for this regression to ensure only the pure artifact signal goes into the correlation hence
       %      set frequency bands to extract the artifact component of the signal
-      [ppdat,eogstate]=artChRegress(ppdat,eogstate,[],opts.artCh,'covFilt',adaptAlpha(min(end,3)),'bands',artChBands,'ch_names',ch_names(iseeg),'ch_pos',ch_pos3d(:,iseeg));
+      [ppdat,eogstate]=artChRegress(ppdat,eogstate,[],opts.artCh,'covFilt',adaptAlpha(min(end,3)),'bands',opts.artChBands,'fs',fs,'ch_names',ch_nameseeg,'ch_pos',ch_pos3deeg);
     else
       eogstate=[];
     end
     if( isfield(ppopts,'rmemg') && ppopts.rmemg ) % artifact channel regression
-      [ppdat,emgstate]=rmEMGFilt(ppdat,emgstate,[],'covFilt',adaptAlpha(min(end,4))),'ch_names',ch_names(iseeg),'ch_pos',ch_pos3d(:,iseeg));
+      [ppdat,emgstate]=rmEMGFilt(ppdat,emgstate,[],'covFilt',adaptAlpha(min(end,4)),'ch_names',ch_nameseeg,'ch_pos',ch_pos3deeg);
     else
       emgstate=[];
     end    
     if( ~isempty(opts.useradaptspatfiltFn) && isfield(ppopts,'usersf') && ppopts.usersf ) % user specified option
-      [ppdat,usersfstate]=feval(opts.useradaptspatfiltFn{1},ppdat,usersfstate,opts.useradaptspatfiltFn{2:end},'covFilt',adaptAlpha,'ch_names',ch_names(iseeg),'ch_pos',ch_pos3d(:,iseeg));
+      [ppdat,usersfstate]=feval(opts.useradaptspatfiltFn{1},ppdat,usersfstate,opts.useradaptspatfiltFn{2:end},'covFilt',adaptAlpha(min(end,5)),'ch_names',ch_nameseeg,'ch_pos',ch_pos3deeg);
     else
       usersfstate=[];
     end    

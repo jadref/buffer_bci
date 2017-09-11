@@ -81,7 +81,7 @@ for si=1:nSeq;
   if ( ~ishandle(fig) || endTesting ) break; end;
 
   % update progress bar
-  set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d  (%02d)',si,nSeq,nCorrect,nWrong,nMissed));
+  set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d (%02d)',si,nSeq,nCorrect,nWrong,nMissed));
 
   % Give user a break if too much time has passed
   if ( getwTime() > waitforkeyTime )
@@ -186,12 +186,13 @@ for si=1:nSeq;
     set(h(:),'facecolor',bgColor);
     set(h(min(numel(h),predTgt)),'facecolor',fbColor);
 
+    fprintf('tgtIdx=%d predTgt=%d\n',tgtIdx,predTgt);
     if ( predTgt>nSymbs )         nMissed = nMissed+1; fprintf('missed!');
     elseif(~any(predTgt==tgtIdx)) nWrong  = nWrong+1;  fprintf('wrong!'); % wrong (and not 'rest') .... do the penalty
     elseif(any(predTgt==tgtIdx))  nCorrect= nCorrect+1;fprintf('right!'); % correct
     end
     % update progress bar
-    set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d  (%02d)',si,nSeq,nCorrect,nWrong,nMissed));
+    set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d (%02d)',si,nSeq,nCorrect,nWrong,nMissed));
     drawnow;
     sendEvent('stimulus.predTgt',predTgt);
   end % if classifier prediction
