@@ -15,6 +15,8 @@ function []=startSigProcBuffer(varargin)
 %  (startPhase.cmd,erpviewcalibrate)  -- start calibration phase processing with simultaneous 
 %                                        erp viewing
 %  (calibrate,end)             -- end calibration phase
+%  (startPhase.cmd,sliceraw)   -- slice data from raw ftoffline save-file to generate traindata/traindevents for classifier training
+%  (startPhase.cmd,loadtraining)  -- load previously saved training data from use selected file
 %  (startPhase.cmd,train)      -- train a classifier based on the saved calibration data
 %  (startPhase.cmd,trainerp)   -- train a classifier based on the saved calibration data - force ERP (time-domain) classifier
 %  (startPhase.cmd,trainersp)  -- train a classifier based on the saved calibration data - force ERsP (frequency-domain) classifier
@@ -315,27 +317,60 @@ while ( true )
     trainSubj=subject;
 	 
    %---------------------------------------------------------------------------------
-   case {'calibrate','calibration'};
-    [traindata,traindevents,state]=buffer_waitData(opts.buffhost,opts.buffport,[],'startSet',opts.epochEventType,'exitSet',{{'calibrate' 'calibration' 'sigproc.reset'} 'end'},'verb',opts.verb,'trlen_ms',opts.trlen_ms,opts.calibrateOpts{:});
-    mi=matchEvents(traindevents,{'calibrate' 'calibration'},'end'); traindevents(mi)=[]; traindata(mi)=[];%remove exit event
+   case {'calibrate','calibration','calibrate_incremental'};
+    [ntraindata,ntraindevents,state]=buffer_waitData(opts.buffhost,opts.buffport,[],'startSet',opts.epochEventType,'exitSet',{{'calibrate' 'calibration' 'sigproc.reset'} 'end'},'verb',opts.verb,'trlen_ms',opts.trlen_ms,opts.calibrateOpts{:});
+    mi=matchEvents(ntraindevents,{'calibrate' 'calibration'},'end'); ntraindevents(mi)=[]; ntraindata(mi)=[];%remove exit event
+    if( isempty(strfind(phaseToRun,'inc')) ) % overwrite
+      traindata=ntraindata;                  traindevents=ntraindevents;
+    else % accumulate training data
+      traindata=cat(1,traindata,ntraindata); traindevents=cat(1,traindevents,ntraindevents);
+    end
     fname=[dname '_' subject '_' datestr];
     fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save([fname '.mat'],'traindata','traindevents','hdr');
     trainSubj=subject;
 
     %---------------------------------------------------------------------------------
+   case {'sliceraw'};
+     % extract training data for classifier from previously saved raw ftoffline save file
+       [fn,pth]=uigetfile({[rawsavedir '*header']},'Pick training data file'); drawnow;
+	    if ( ~isequal(fn,0) ); fname=fullfile(pth,fn); end; 
+		 % slice the saved data-file to load the training data
+		 [traindata,traindevents,hdr]=sliceraw(datadir,'startSet',,opts.epochEventType,'trlen_ms',opts.trlen_ms,opts.calibrateOpts{:});
+
+    %---------------------------------------------------------------------------------
+   case {'loadtraining'};
+     % load training data from previously saved training data file
+     [fn,pth]=uigetfile({[dname '.*']},'Pick training data file'); drawnow;
+	  if ( ~isequal(fn,0) ); fname=fullfile(pth,fn); end; 
+     if ( ~(exist([fname '.mat'],'file') || exist(fname,'file')) ) 
+       warning(['Couldnt find a training data file to load file: ' fname]);
+       break;
+     else
+       fprintf('Loading training data from : %s\n',fname);
+     end
+     chdr=hdr;
+     load(fname); 
+     if( ~isempty(chdr) ) hdr=chdr; end;
+     trainSubj=subject;
+    
+    %---------------------------------------------------------------------------------
    case {'train','training','trainerp','trainersp','train_subset','trainerp_subset','trainersp_subset','train_useropts','trainerp_useropts','trainersp_useropts'};
-     %try
-      if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
-        fname=[dname '_' subject '_' datestr];
-        fprintf('Loading training data from : %s\n',fname);
-        if ( ~(exist([fname '.mat'],'file') || exist(fname,'file')) ) 
-          warning(['Couldnt find a classifier to load file: ' fname]);
-          break;
-        end
-        chdr=hdr;
-        load(fname); 
-        if( ~isempty(chdr) ) hdr=chdr; end;
-        trainSubj=subject;
+     %try     
+     if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') ) 
+       fname=[dname '_' subject '_' datestr];
+       if ( ~(exist([fname '.mat'],'file') || exist(fname,'file')) ) 
+         warning(['Couldnt find a training data file to load file: ' fname]);
+         % Not in default name -- ask user for file to load?
+         [fn,pth]=uigetfile({[dname '.*']},'Pick training data file'); drawnow;
+	      if ( ~isequal(fn,0) ); fname=fullfile(pth,fn); end; 
+         break;
+       else
+         fprintf('Loading training data from : %s\n',fname);
+       end
+       chdr=hdr;
+       load(fname); 
+       if( ~isempty(chdr) ) hdr=chdr; end;
+       trainSubj=subject;
       end;
       if ( opts.verb>0 ) fprintf('%d epochs\n',numel(traindevents)); end;
 		
@@ -428,11 +463,11 @@ while ( true )
       clsSubj = subject;
     end;
 
-    event_applyClsfr(clsfr,'startSet',opts.testepochEventType,...
-							'predFilt',opts.epochPredFilt,...
-							'endType',{'testing','test','epochfeedback','eventfeedback','sigproc.reset'},'verb',opts.verb,...
-							'trlen_ms',opts.trlen_ms,...%default to trlen_ms data per prediction
-							opts.epochFeedbackOpts{:}); % allow override with epochFeedbackOpts
+    [testdata,testevents]=event_applyClsfr(clsfr,'startSet',opts.testepochEventType,...
+							                      'predFilt',opts.epochPredFilt,...
+							   'endType',{'testing','test','epochfeedback','eventfeedback','sigproc.reset'},'verb',opts.verb,...
+							   'trlen_ms',opts.trlen_ms,...%default to trlen_ms data per prediction
+							   opts.epochFeedbackOpts{:}); % allow override with epochFeedbackOpts
 % 	  catch
 %        fprintf('Error in : %s',phaseToRun);
 %        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
