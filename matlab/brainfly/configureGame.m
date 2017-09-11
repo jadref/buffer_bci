@@ -64,7 +64,7 @@ maxOnScreenObjs=20;
 %---------------------------------------------------------------------------------------------------------
 % IM calibration config
 
-symbCue      ={'LH' 'RH'}; % sybmol cue in addition to positional one. E,N,W,S for 4 symbs
+symbCue      ={'RH' 'LH'}; % sybmol cue in addition to positional one. N.B. start's on **RIGHT** and runs anti-clock-wise
 nSymbs       =numel(symbCue); 
 baselineClass=[]; % if set, treat baseline phase as a separate class to classify
 rtbClass     =[];% if set, treat post-trial return-to-baseline phase as separate class to classify
@@ -96,6 +96,7 @@ animateStep  = diff(axLim)*.01; % amount by which to move point per-frame in fix
 calibrate_instruct ={'When instructed perform the indicated' 'actual movement'};
 
 epochfeedback_instruct={'When instructed perform the indicated' 'actual movement.  When trial is done ' 'classifier prediction with be shown' 'with a blue highlight'};
+epochFeedbackTrialDuration=trialDuration;
 
 contfeedback_instruct={'When instructed perform the indicated' 'actual movement.  The fixation point' 'will move to show the systems' 'current prediction'};
 contFeedbackTrialDuration =10;
@@ -109,7 +110,7 @@ calibrateOpts ={};
 welch_width_ms=250; % width of welch window => spectral resolution
 step_ms=welch_width_ms/2;% N.B. welch defaults=.5 window overlap, use step=width/2 to simulate
 
-epochtrlen_ms =trialDuration*1000; % amount of data to apply classifier to in epoch feedback
+epochtrlen_ms =epochFeedbackTrialDuration*1000; % amount of data to apply classifier to in epoch feedback
 conttrlen_ms  =welch_width_ms; % amount of data to apply classifier to in continuous feedback
 
 % paramters for on-line adaption to signal changes
@@ -125,4 +126,4 @@ trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'spatialfilter','wht','objFn','
 earlyStopping = false;
 epochFeedbackOpts={'trlen_ms',epochtrlen_ms,'predFilt',@(x,s,e) biasFilt(x,s,epochtrialAdaptHL)}; % bias-adaption
 %%2) Classify every welch-window-width (default 250ms), prediction is average of full trials worth of data, bias adaptation on the result
-contFeedbackOpts ={'rawpredEventType','classifier.rawprediction','predFilt',@(x,s,e) biasFilt(x,s,conttrialAdaptHL),'trlen_ms',welch_width_ms};%trlDuration average
+contFeedbackOpts ={'rawpredEventType','classifier.rawprediction','predFilt',@(x,s,e) biasFilt(x,s,[conttrialAdaptHL contFeedbackFiltLen]),'trlen_ms',welch_width_ms};%trlDuration average
