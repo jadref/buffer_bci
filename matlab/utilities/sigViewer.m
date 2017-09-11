@@ -27,7 +27,11 @@ function []=sigViewer(buffhost,buffport,varargin);
 %  noisebands -- [2x1] frequency bands to display for the 50 Hz noise plot   ([45 47 53 55])
 %  sigProcOptsGui -- [bool] show the on-line option changing gui             (1)
 %  drawHead   -- [bool] flag if we should draw the background head           (true)
-
+%  adapthalflife_s -- [1x1] or [4x1] exp-smoothing half-life in seconds for the adaptive filtering functions  (15)
+%                      if 4 given then they are in order: [badchrm,whiten,artchrm,emgrm]
+%  artChBands -- [4x1] band-pass filter specification as additional pre-processing for the artifact channel ([.5 1 45 48])
+%                      removal code.
+%                      
 % TODO:
 %   [] - pre-process the raw-data including non-eeg channels, but only
 %   display eeg-channels..
@@ -39,12 +43,14 @@ end;
 opts=struct('endType','end.training','verb',1,'timeOut_ms',1000,...
 				'trlen_ms',5000,'trlen_samp',[],'updateFreq',4,...
 				'detrend',1,'fftfilter',[.1 .3 45 47],'freqbands',[],'downsample',[],'spatfilt','car',...
-            'adaptspatialfiltFn','','whiten',0,'rmartch',0,'artCh',{{'EOG' 'AFz' 'EMG' 'AF3' 'FP1' 'FPz' 'FP2' 'AF4' '1'}},'rmemg',0,...
+            'adapthalflife_s',15,...
+            'adaptspatialfiltFn','','whiten',0,'rmemg',0,...
+            'rmartch',0,'artChBands',[.5 1 45 48],'artCh',{{'EOG' 'AFz' 'EMG' 'AF3' 'FP1' 'FPz' 'FP2' 'AF4' '1'}},'rmemg',0,...
             'useradaptspatfiltFn','',...
 				'badchrm',0,'badchthresh',3,'capFile',[],'overridechnms',0,...
 				'welch_width_ms',1000,'spect_width_ms',500,'spectBaseline',1,...
 				'noisebands',[45 47 53 55],'noiseBins',[0 1.75],...
-				'sigProcOptsGui',1,'dataStd',2.5,'adapthalflife_s',15,...
+				'sigProcOptsGui',1,'dataStd',2.5,
 			  'drawHead',1);
 opts=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ); buffhost='localhost'; end;
@@ -134,7 +140,7 @@ ppspect=ppspect(:,spectFreqIdx(1):spectFreqIdx(2),:); % subset to freq range of 
 start_s=-start_samp(end:-1:1)/hdr.fsample;
 % and the data summary statistics
 chPow     = zeros(sum(iseeg),1);
-adaptHL   = opts.adapthalflife_s*opts.updateFreq; % half-life for updating the adaptive filters
+adaptHL   = opts.adapthalflife_s.*opts.updateFreq; % half-life for updating the adaptive filters
 adaptAlpha= exp(log(.5)./adaptHL);
 whtstate=[]; eogstate=[]; emgstate=[]; usersfstate=[];
 isbadch   = false(sum(iseeg),1);
@@ -333,7 +339,7 @@ while ( ~endTraining )
   covDat= rawdat(:,blkIdx+1:end); 
   % detrend and CAR to remove obvious external artifacts
   covDat=repop(covDat,'-',mean(covDat,2)); covDat=repop(covDat,'-',mean(covDat,1));
-  chPow = (adaptAlpha)*chPow    +     (1-adaptAlpha)*sum(covDat.*covDat,2)./(size(covDat,2));
+  chPow = (adaptAlpha(min(end,1)))*chPow    +     (1-adaptAlpha(min(end,1)))*sum(covDat.*covDat,2)./(size(covDat,2));
   
   %-------------------------------------------------------------------------------------
   % bad-channel removal + spatial filtering
@@ -389,17 +395,19 @@ while ( ~endTraining )
 
                                 % adaptive spatial filter
     if( isfield(ppopts,'whiten') && ppopts.whiten ) % symetric-whitener
-      [ppdat,whtstate]=adaptWhitenFilt(ppdat,whtstate,'covFilt',adaptAlpha,'ch_names',ch_names(iseeg));
+      [ppdat,whtstate]=adaptWhitenFilt(ppdat,whtstate,'covFilt',adaptAlpha(min(end,2)),'ch_names',ch_names(iseeg));
     else % clear state if turned off
       whtstate=[];
     end
     if( isfield(ppopts,'rmartch') && ppopts.rmartch ) % artifact channel regression
-      [ppdat,eogstate]=artChRegress(ppdat,eogstate,[],opts.artCh,'covFilt',adaptAlpha,'ch_names',ch_names(iseeg),'ch_pos',ch_pos3d(:,iseeg));
+      % N.B. important for this regression to ensure only the pure artifact signal goes into the correlation hence
+      %      set frequency bands to extract the artifact component of the signal
+      [ppdat,eogstate]=artChRegress(ppdat,eogstate,[],opts.artCh,'covFilt',adaptAlpha(min(end,3)),'bands',artChBands,'ch_names',ch_names(iseeg),'ch_pos',ch_pos3d(:,iseeg));
     else
       eogstate=[];
     end
     if( isfield(ppopts,'rmemg') && ppopts.rmemg ) % artifact channel regression
-      [ppdat,emgstate]=rmEMGFilt(ppdat,emgstate,[],'covFilt',adaptAlpha,'ch_names',ch_names(iseeg),'ch_pos',ch_pos3d(:,iseeg));
+      [ppdat,emgstate]=rmEMGFilt(ppdat,emgstate,[],'covFilt',adaptAlpha(min(end,4))),'ch_names',ch_names(iseeg),'ch_pos',ch_pos3d(:,iseeg));
     else
       emgstate=[];
     end    
