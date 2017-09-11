@@ -1,5 +1,5 @@
 function [x,s]=biasFilt(x,s,alpha)
-% bias removing filter (high-pass) removes slow drifts from inputs
+% bias removing filter (high-pass) removes slow drifts from inputs, with optional high-pass results
 %
 %   [x,s,mu,std]=biasFilt(x,s,alpha)
 %
@@ -17,6 +17,12 @@ function [x,s]=biasFilt(x,s,alpha)
 % Outputs:
 %   x - [nd x 1] filtered data,  x(t) = x(t) - fx(t)
 %   s - [struct] updated filter state
+%
+% Examples:
+%     [x,s]=biasFilt(x,s,100);      % bias-adapt with 100 calls half-life move ave bias est
+%     [x,s]=biasFilt(x,s,[100 20]); % bias-adapt with 100 calls half-life move ave bias est, and 20-call half-life smoothing of the result
+%     [x,s]=biasFilt(x,s,[100 -20]); % bias-adapt with 100 calls half-life move ave bias est, and average last 20-calls for output
+  
 if ( nargin<4 || isempty(verb) ) verb=0; end;
 if ( isempty(s) ) s=struct('sx',zeros(size(x)),'N',0,'x',0,'i',0); end;
 if ( any(alpha>1) ) alpha(alpha>0)=exp(log(.5)./alpha(alpha>0)); end; % convert to decay factor
