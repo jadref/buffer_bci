@@ -91,6 +91,22 @@ else
   step_samp = round(trlen_samp * opts.overlap);
 end
 
+                                % send info our our class mapping
+if ( numel(clsfr)==1 )
+  spKey=clsfr.spKey;
+  if(iscell(spKey)) % can't send cell-array's directly...
+    str='';
+    for ci=1:numel(spKey);
+      if( ischar(spKey{ci}) ) str=sprintf('%s\n%s',str,spKey{ci});
+      elseif( isnumeric(spKey{ci}) ) str=sprintf('%s\n%d',str,spKey{ci});
+      else str=sprintf('%s\n???',str);
+      end;
+    end
+    spKey=str;
+  end
+  sendEvent('classifier.spKey',spKey);
+end
+
 % for returning the data used by the classifier if wanted
 testdata={}; testevents={}; predevents={};%N.B. cell array to avoid expensive mem-realloc during execution loop
 
