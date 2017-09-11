@@ -3,6 +3,10 @@ function [X,state,info]=artChRegress(X,state,dim,idx,varargin);
 % 
 %   [X,state,info]=artChRegress(X,state,dim,idx,...);% incremental calling mode
 %
+% N.B. important for this regression to ensure only the **pure** artifact signal goes into removal.  Thus
+%      use the pre-processing options ('detrend','center','bands') to do some additional pre-processing
+%      before the removal
+%
 % Inputs:
 %  X   -- [n-d] the data to be deflated/art channel removed
 %  state -- [struct] internal state of the filter. Init-filter if empty.   ([])
@@ -26,6 +30,9 @@ function [X,state,info]=artChRegress(X,state,dim,idx,varargin);
 %  ch_names -- {'str' size(X,dim(1))} cell array of strings of the names of the channels in dim(1) of X
 %  ch_pos   -- [3 x size(X,dim(1))] physical positions of the channels in dim(1) of X
 %
+% TODO:
+%    [] Spatio-temporal learning - learn the optimal spectral filter as well as spatial
+%    [] Switching-mode removal   - for transient artifacts add artifact detector to only learn covariance function when artifact is present..
 opts=struct('detrend',0,'center',0,'bands',[],'fs',[],'verb',0,'covFilt',[],'filtstate',[],'ch_names',[],'ch_pos',[],'pushbackartsig',1);
 if( ~isempty(state) && isstruct(state) ) % called with a filter-state, incremental filtering mode
   % extract the arguments/state
