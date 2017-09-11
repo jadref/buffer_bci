@@ -10,11 +10,11 @@ classdef Alien < handle
         % screen width or height, these properties are used to generate the
         % actual sized at object instantiation:
         relStartLine      = 0.9;
-        relFallSpeed      = 0.01;
-        relAlienStartSize = 0.02;  % The start size of the alien.
-        relAlienGrowRate  = 0.01; % The growth rate of the alien.
+        relFallSpeed      = 0.1;
+        relAlienStartSize = 0.05;  % The start size of the alien.
+        relAlienGrowRate  = 0.015; % The growth rate of the alien.
         relSpawnDelta     = .3;   % fraction of screen to spawn the new alien
-        alienGrowExp      = 1.0;   % The time exponent of the growth rate.
+        alienGrowExp      = 1.5;   % The time exponent of the growth rate.
         
         % NOTE: Aliens sometimes grow exponentially, so their sizes are
         % calculated as:
