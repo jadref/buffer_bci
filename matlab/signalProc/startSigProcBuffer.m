@@ -174,6 +174,8 @@ dname='training_data';
 cname='clsfr';
 testname='testing_data';
 subject=opts.subject;
+rawsavedir='~/output'; if( ispc() ) rawsavedir='C:\output'; end;
+
 
 if ( opts.useGUI )
   % create the control window and execute the phase selection loop
@@ -204,11 +206,14 @@ if ( opts.useGUI )
   %        Instruct String            Phase-name
   menustr={'0) capfitting'             'capfitting';
            '1) eegviewer'              'eegviewer';
-			  '2) Calibrate + ERP Viewer' 'erpviewcalibrate'; 
+			  '2) Calibrate + ERP Viewer' 'erpviewcalibrate';
            '4) Train ERP Classifier'   'trainerp';
            '5) Train ERsP Classifier'  'trainersp';
 			  '6) Epoch Feedback'         'epochfeedback';
 			  '7) Continuous Feedback'    'contfeedback';
+           '' '';
+           'S) Slice ftoffline data'   'sliceraw';
+           'L) Load training data'     'loadtraining';
 			  'q) exit'                   'quit';
           };
   set(txth,'string',menustr(:,1));
@@ -328,19 +333,30 @@ while ( true )
     fname=[dname '_' subject '_' datestr];
     fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save([fname '.mat'],'traindata','traindevents','hdr');
     trainSubj=subject;
+    sendEvent(lower(phaseToRun),'end'); % indicate command finished
 
     %---------------------------------------------------------------------------------
    case {'sliceraw'};
      % extract training data for classifier from previously saved raw ftoffline save file
-       [fn,pth]=uigetfile({[rawsavedir '*header']},'Pick training data file'); drawnow;
-	    if ( ~isequal(fn,0) ); fname=fullfile(pth,fn); end; 
-		 % slice the saved data-file to load the training data
-		 [traindata,traindevents,hdr]=sliceraw(datadir,'startSet',,opts.epochEventType,'trlen_ms',opts.trlen_ms,opts.calibrateOpts{:});
-
+       [fn,datadir]=uigetfile('header','Pick ftoffline raw savefile header file.'); drawnow;
+       try
+		                  % slice the saved data-file to load the training data
+		   [traindata,traindevents,hdr]=sliceraw(datadir,'startSet',opts.epochEventType,'trlen_ms',opts.trlen_ms,opts.calibrateOpts{:});
+       catch
+         fprintf('Error in : %s',phaseToRun);
+         le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	   if ( ~isempty(le.stack) )
+	  	     for i=1:numel(le.stack);
+	  		    fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	     end;
+	  	   end
+	  	   msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+       end
+       
     %---------------------------------------------------------------------------------
    case {'loadtraining'};
      % load training data from previously saved training data file
-     [fn,pth]=uigetfile({[dname '*.mat']},'Pick training data file'); drawnow;
+     [fn,pth]=uigetfile([dname '*.mat'],'Pick training data file'); drawnow;
 	  if ( ~isequal(fn,0) ); fname=fullfile(pth,fn); end; 
      if ( ~(exist([fname '.mat'],'file') || exist(fname,'file')) ) 
        warning(['Couldnt find a training data file to load file: ' fname]);
@@ -361,7 +377,7 @@ while ( true )
        if ( ~(exist([fname '.mat'],'file') || exist(fname,'file')) ) 
          warning(['Couldnt find a training data file to load file: ' fname]);
          % Not in default name -- ask user for file to load?
-         [fn,pth]=uigetfile({[dname '*.mat']},'Pick training data file'); drawnow;
+         [fn,pth]=uigetfile([dname '*.mat'],'Pick training data file'); drawnow;
 	      if ( ~isequal(fn,0) );
            fname=fullfile(pth,fn);
          else
@@ -459,7 +475,7 @@ while ( true )
       clsfrfile = [cname '_' subject '_' datestr];
       if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
         % Not in default name -- ask user for file to load?
-        [fn,pth]=uigetfile({[cname '*.mat']},'Pick training data file'); drawnow;
+        [fn,pth]=uigetfile([cname '*.mat'],'Pick saved classifier file.'); drawnow;
 	      if ( ~isequal(fn,0) );
            clsfrfile=fullfile(pth,fn);
          else
@@ -495,9 +511,13 @@ while ( true )
     try % try to load the classifier from file (in case someone else made it for us)
       clsfrfile = [cname '_' subject '_' datestr];
       if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
-		  clsfrfile=[cname '_' subject]; 
-		end;
-      if(opts.verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
+        [fn,pth]=uigetfile([cname '*.mat'],'Pick saved classifier file.'); drawnow;
+	      if ( ~isequal(fn,0) );
+           clsfrfile=fullfile(pth,fn);
+         else
+           break;
+         end;
+      end
       clsfr=load(clsfrfile);
       if( isfield(clsfr,'clsfr') ) clsfr=clsfr.clsfr; end;
       clsSubj = subject;
@@ -564,9 +584,14 @@ while ( true )
      %try
 		 if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
 			clsfrfile = [cname '_' subject '_' datestr];
-			if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
-			  clsfrfile=[cname '_' subject]; 
-			end;
+         if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
+           [fn,pth]=uigetfile({[cname '*.mat']},'Pick saved classifier file.'); drawnow;
+	        if ( ~isequal(fn,0) );
+             clsfrfile=fullfile(pth,fn);
+           else
+             break;
+           end;
+         end
 			if(opts.verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
 			clsfr=load(clsfrfile);
 			clsSubj = subject;
