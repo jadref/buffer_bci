@@ -7,8 +7,8 @@ function [stimSeq,stimTime,eventSeq,colors,stimCode]=mkStimSeqRand(nSymb,duratio
 %  within mintti flashes of each other
 %
 % Inputs:
-%  nSymb -- [int] number of symbols to make the sequence for
-%  duration    -- [int] number of stimulus events to make the sequence for
+%  nSymb    -- [int] number of symbols to make the sequence for
+%  duration -- [int] number of stimulus events to make the sequence for
 %  isi      -- [float] inter-stimulus interval in seconds                (1)
 %  mintti   -- [int] minimum number of stimulus events before same symbol can flash again (nSymb/2)
 % Outputs:
@@ -20,7 +20,7 @@ function [stimSeq,stimTime,eventSeq,colors,stimCode]=mkStimSeqRand(nSymb,duratio
 %                   {type value} a cell array with the event type and value to send
 %  stimCode -- [1 x nStim] number of the symbol to be flashed at each time
 if ( nargin<3 || isempty(isi) ) isi=1; end;
-if ( nargin<4 || isempty(mintti) ) mintti=max(round(nSymb)/2,nSymb-2); end;
+if ( nargin<4 || isempty(mintti) ) mintti=max(floor(nSymb/2-eps),nSymb-2); end;
 colors=[1 1 1]'; % flash is white
 nStim = ceil(duration/isi);
 stimTime=(1:nStim)*isi(1);
