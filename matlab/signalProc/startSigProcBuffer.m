@@ -106,7 +106,7 @@ end;
 opts=struct('phaseEventType','startPhase.cmd',...
 				'epochEventType',[],'testepochEventType',[],...
             'erpEventType',[],'erpMaxEvents',[],'erpOpts',{{}},...
-				'clsfr_type','erp','trlen_ms',1000,'freqband',[.1 .5 10 12],...
+				'clsfr_type','erp','trlen_ms',1000,'freqband',[],'freqbanderp',[.5 1 12 16],'freqbandersp',[8 10 28 30],...
 				'calibrateOpts',{{}},'trainOpts',{{}},...
             'epochPredFilt',[],'epochFeedbackOpts',{{}},...
 				'contPredFilt',[],'contFeedbackOpts',{{}},...
@@ -162,6 +162,7 @@ end
 if ( isempty(opts.epochEventType) )     opts.epochEventType='stimulus.target'; end;
 if ( isempty(opts.testepochEventType) ) opts.testepochEventType='classifier.apply'; end;
 if ( isempty(opts.erpEventType) )       opts.erpEventType=opts.epochEventType; end;
+if ( ~isempty(opts.freqband) )          opts.freqbanderp=opts.freqbandk; opts.freqbandersp=opts.freqband; end;
 userPhaseNames={};
 if ( ~isempty(opts.userFeedbackTable) )
   userPhaseNames=opts.userFeedbackTable(:,1);
@@ -333,7 +334,6 @@ while ( true )
     fname=[dname '_' subject '_' datestr];
     fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save([fname '.mat'],'traindata','traindevents','hdr');
     trainSubj=subject;
-    sendEvent(lower(phaseToRun),'end'); % indicate command finished
 
     %---------------------------------------------------------------------------------
    case {'sliceraw'};
@@ -341,7 +341,12 @@ while ( true )
        [fn,datadir]=uigetfile('header','Pick ftoffline raw savefile header file.'); drawnow;
        try
 		                  % slice the saved data-file to load the training data
-		   [traindata,traindevents,hdr]=sliceraw(datadir,'startSet',opts.epochEventType,'trlen_ms',opts.trlen_ms,opts.calibrateOpts{:});
+		   [traindata,traindevents,hdr,allevents]=sliceraw(datadir,'startSet',opts.epochEventType,'trlen_ms',opts.trlen_ms,opts.calibrateOpts{:});
+         fprintf('Sliced %d epochs from : %s\n',numel(traindevents),fullfile(datadir,'header'));
+         % save the sliced data (like it was on-line)
+         fname=[dname '_' subject '_' datestr];
+         fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save([fname '.mat'],'traindata','traindevents','hdr','allevents');
+         trainSubj=subject; % mark this this data is valid for classifier training
        catch
          fprintf('Error in : %s',phaseToRun);
          le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
@@ -437,15 +442,15 @@ while ( true )
 		
       switch lower(clsfr_type);
        
-       case {'erp','evoked'};
+        case {'erp','evoked'};
          [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car',...
-                    'freqband',opts.freqband,'badchrm',1,'badtrrm',1,...
+                    'freqband',opts.freqbanderp,'badchrm',1,'badtrrm',1,...
 						  'capFile',capFile,'overridechnms',overridechnms,'verb',opts.verb,...
 						  opts.trainOpts{:},userOpts{:});
        
        case {'ersp','induced'};
          [clsfr,res]=buffer_train_ersp_clsfr(traindata,traindevents,hdr,'spatialfilter','car',...
-						   'freqband',opts.freqband,'badchrm',1,'badtrrm',1,...
+						   'freqband',opts.freqbandersp,'badchrm',1,'badtrrm',1,...
 							'capFile',capFile,'overridechnms',overridechnms,'verb',opts.verb,...
 							opts.trainOpts{:},userOpts{:});
        
