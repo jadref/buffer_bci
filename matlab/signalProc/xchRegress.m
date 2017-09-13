@@ -70,7 +70,7 @@ covFilt=opts.covFilt; filtstate=opts.filtstate;
 if( ~isempty(covFilt) )
   if( ~iscell(covFilt) ) covFilt={covFilt}; end;
   if( isnumeric(covFilt{1}) ) % covFilt{1} is alpha for move-ave
-    if(covFilt{1}>1) covFilt{1}=exp(log(.5)./covFilt{1}); end; % convert half-life to alpha
+    if(covFilt{1}>=1) covFilt{1}=exp(log(.5)./covFilt{1}); end; % convert half-life to alpha
     if(isempty(filtstate) )    filtstate=struct('N',0,'sxx',0);    end;
   end
 end
