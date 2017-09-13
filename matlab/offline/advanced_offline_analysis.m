@@ -29,13 +29,27 @@ capFile='1010'; % you should change this to represent whatever cap layout was us
 %                'freqband',[.1 .5 10 12]
 %      ii) sub-set to the time-range [0 1500]ms after filtering to avoid filtering artifacts
 %                'timeband_ms',[750 750+1500]  % N.B. DANGER! DANGER! start of data is time=0!!
-%      iii) turn off the spatial filter, i.e. *do not do CAR*
+%      iii) common average spatial filter, i.e. no CAR
 %                'spatialfilter','none'
 %      iii) eye-artifact removal from the channel Oz
 %                'adaptspatialfiltFn',{'artChRegress',{'Oz'}} 
 %      iv) no-bad trial removal
 %                'badtrrm',0
-[clsfr,res,X,Y]=buffer_train_erp_clsfr(data,devents,hdr,'freqband',[.1 .5 10 12],'capFile',capFile,'timeband_ms',[750 750+1500],'spatialfilter','none','adaptspatialfiltFn',{'artChRegress',[],{'Oz'}},'badtrrm',0);
+[clsfr,res,X,Y]=buffer_train_erp_clsfr(data,devents,hdr,'freqband',[.1 .5 10 12],'capFile',capFile,'timeband_ms',[750 750+1500],'spatialfilter','car','adaptspatialfiltFn',{'artChRegress',[],{'Oz'}},'badtrrm',0);
+
+% 2.4) Actually train an ERP classifier with:
+%      i)  a 5.-10hz frequency range : 
+%                'freqband',[.1 .5 10 12]
+%      ii) sub-set to the time-range [0 1500]ms after filtering to avoid filtering artifacts
+%                'timeband_ms',[750 750+1500]  % N.B. DANGER! DANGER! start of data is time=0!!
+%      iii) common average spatial filter
+%                'spatialfilter','car'
+%      iii) apply an adaptive filter pipeline with 2 stages.
+%             a) eye-artifact removal from the channel Oz +
+%             b) adaptive spatial whitening with 5 call exp-smoothing window
+%                'adaptspatialfiltFn',{'filtPipeline' {{'artChRegress',{'Oz'}} {'adaptWhitenFilt' 'covFilt',5}} 
+[clsfr,res,X,Y]=buffer_train_erp_clsfr(data,devents,hdr,'freqband',[.1 .5 10 12],'capFile',capFile,'timeband_ms',[750 750+1500],'spatialfilter','car','adaptspatialfiltFn',{'filtPipeline' {{'artChRegress',{'Oz'}} {'adaptWhitenFilt' 'covFilt',5}});
+
 
 % This analysis should generate two summary figures:
 %
