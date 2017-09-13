@@ -128,18 +128,25 @@ end
 %2) Bad channel identification & removal
 isbadch=[]; chthresh=[];
 if ( opts.badchrm || (~isempty(opts.badCh) && sum(opts.badCh)>0) )
-  fprintf('2) bad channel removal, ');
+  fprintf('2) bad/non-eeg channel removal, ');
   isbadch = false(size(X,1),1);
-  if ( ~isempty(ch_pos) ) isbadch(numel(ch_pos)+1:end)=true; end;
-  if ( ~isempty(opts.badCh) )
-    isbadch(opts.badCh(1:min(end,size(isbadch,1))))=true;
-    goodCh=find(~isbadch);
-    if ( opts.badchrm ) 
+  % pre-remove non-eeg or pre-specified to ignore channels
+  if ( ~isempty(ch_pos) )      isbadch(numel(ch_pos)+1:end)=true;
+  end;
+  if ( ~isempty(opts.badCh) )  isbadch(opts.badCh(1:min(end,size(isbadch,1))))=true;
+  end;
+  if( any(isbadch) )   fprintf('(%d noneeg) ',sum(isbadch));  end  
+
+                        % auto-threshold to determine additional bad channels
+  if( opts.badchrm ) 
+    if( ~any(isbadch) ) % remove using all channels
+      [isbadch,chstds,chthresh]=idOutliers(X,1,opts.badchthresh); 
+    else % only consider the good subset
+      goodCh=find(~isbadch);
       [isbad2,chstds,chthresh]=idOutliers(X(goodCh,:,:),1,opts.badchthresh);
       isbadch(goodCh(isbad2))=true;
-    end
-  elseif ( opts.badchrm ) [isbadch,chstds,chthresh]=idOutliers(X,1,opts.badchthresh); 
-  end;
+    end;
+  end
   X=X(~isbadch,:,:);
   if ( ~isempty(ch_names) ) % update the channel info
     if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names))); end;
@@ -380,9 +387,10 @@ if ( opts.visualize )
 		end
 	 else                         [ans,li]=find(clsfr.spMx>0); clabels=clsfr.spKey(li);
 	 end
-    imagesc(reshape(res.tstconf(:,1,res.opt.Ci),sqrt(size(res.tstconf,1)),[]));
+    cfMx=reshape(res.tstconf(:,1,res.opt.Ci),sqrt(size(res.tstconf,1)),[]);
+    imagesc(cfMx);
     set(gca,'xtick',1:numel(clabels),'xticklabel',clabels,...
-        'ytick',1:numel(clabels),'yticklabel',clabels);
+        'ytick',1:numel(clabels),'yticklabel',clabels,'clim',[0 max(sum(cfMx,1))]);
     xlabel('True Class'); ylabel('Predicted Class'); colorbar;
     title('Class confusion matrix');
   end
@@ -420,12 +428,12 @@ clsfr.dvstats.std = [std(tstf(res.Y(:,1)>0))  std(tstf(res.Y(:,1)<=0))  std(tstf
 if ( opts.visualize >= 1 ) 
   summary='';
   if ( clsfr.binsp ) % print individual classifier outputs with info about what problem it is
-     for spi=1:size(res.opt.tstbin,2);
-        summary = [summary sprintf('%-40s=\t\t%4.1f\n',clsfr.spDesc{spi},res.opt.tstbin(:,spi)*100)];
+     for spi=1:size(res.opt.tst,2);
+        summary = [summary sprintf('%-40s=\t\t%4.1f\n',clsfr.spDesc{spi},res.opt.tst(:,spi)*100)];
      end
      summary=[summary sprintf('---------------\n')];
   end
-  summary=[summary sprintf('\n%40s = %4.1f','<ave>',mean(res.opt.tstbin,2)*100)];
+  summary=[summary sprintf('\n%40s = %4.1f','<ave>',mean(res.opt.tst,2)*100)];
   b=msgbox({sprintf('Classifier performance :\n %s',summary) 'OK to continue!'},'Results');
   if ( opts.visualize > 1 )
      for i=0:.2:120; if ( ~ishandle(b) ) break; end; drawnow; pause(.2); end; % wait to close auc figure

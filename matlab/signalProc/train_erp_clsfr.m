@@ -309,9 +309,10 @@ if ( opts.visualize )
 		end
 	 else                         [ans,li]=find(clsfr.spMx>0); clabels=clsfr.spKey(li);
 	 end
-    imagesc(reshape(res.tstconf(:,1,res.opt.Ci),sqrt(size(res.tstconf,1)),[]));
+    cfMx=reshape(res.tstconf(:,1,res.opt.Ci),sqrt(size(res.tstconf,1)),[]);
+    imagesc(cfMx);
     set(gca,'xtick',1:numel(clabels),'xticklabel',clabels,...
-        'ytick',1:numel(clabels),'yticklabel',clabels);
+        'ytick',1:numel(clabels),'yticklabel',clabels,'clim',[0 max(sum(cfMx,1))]);
     xlabel('True Class'); ylabel('Predicted Class'); colorbar;
     title('Class confusion matrix');
   end
@@ -352,12 +353,12 @@ clsfr.dvstats.std = [std(tstf(res.Y(:,1)>0))  std(tstf(res.Y(:,1)<=0))  std(tstf
 if ( opts.visualize >= 1 ) 
   summary='';
   if ( clsfr.binsp ) % print individual classifier outputs with info about what problem it is
-     for spi=1:size(res.opt.tstbin,2);
-        summary = [summary sprintf('%-40s=\t\t%4.1f\n',clsfr.spDesc{spi},res.opt.tstbin(:,spi)*100)];
+     for spi=1:size(res.opt.tst,2);
+        summary = [summary sprintf('%-40s=\t\t%4.1f\n',clsfr.spDesc{spi},res.opt.tst(:,spi)*100)];
      end
      summary=[summary sprintf('---------------\n')];
   end
-  summary=[summary sprintf('\n%40s = %4.1f','<ave>',mean(res.opt.tstbin,2)*100)];
+  summary=[summary sprintf('\n%40s = %4.1f','<ave>',mean(res.opt.tst,2)*100)];
   b=msgbox({sprintf('Classifier performance :\n %s',summary) 'OK to continue!'},'Results');
   if ( opts.visualize > 1 )
      for i=0:.2:120; if ( ~ishandle(b) ) break; end; drawnow; pause(.2); end; % wait to close auc figure

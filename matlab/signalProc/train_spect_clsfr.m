@@ -260,6 +260,8 @@ end;
                   %4) welch to convert to spectrogram = time-frequency decomp
 % N.B. X = [ ch x freq x window x epoch ]
 fprintf('4) Spectrogram\n');
+if(isempty(opts.step_ms))opts.step_ms=opts.width_ms/2;end;
+[Xt]=subsample(X,ceil(size(X,2)./opts.fs*1000./opts.step_ms),2); % raw-subsampled in time
 [X,start_samp,freqs,winFn,wopts]=spectrogram(X,2,'width_ms',opts.width_ms,'windowType',opts.windowType,'fs',fs,...
                                              'step_ms',opts.step_ms,'detrend',1);
 times=start_samp*1000/fs;
@@ -290,6 +292,11 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
   X=X(:,fIdx,:,:); % sub-set to the interesting frequency range
   freqs=freqs(fIdx); % update labelling info
 end;
+
+                         % add the raw downsampled time to the frequency info
+Xt=reshape(Xt,[size(Xt,1),1,size(Xt,2),size(Xt,3)]); if(size(Xt,3)>size(X,3)) Xt=Xt(:,:,1:size(X,3),:); end;
+X=cat(2,Xt,X);
+freqs=[0 freqs]; % mark as the 0-hz signal
 
 % 5.9) Apply a feature filter post-processor if wanted
 featFiltFn=opts.featFiltFn; featFiltState=[];
