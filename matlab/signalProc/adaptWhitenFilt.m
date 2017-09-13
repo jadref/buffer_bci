@@ -1,6 +1,18 @@
 function [X,state,XXt]=adaptWhitenFilt(X,state,varargin);
-                    % filter function implementing adaptive spatial whitening
-% TODO: make consistent with the other spatial-filtering function to specify the covariance filter in the same way...
+% filter function implementing adaptive spatial whitening
+%
+% Options:
+%   dim     - [int] dimensions to work along
+%   center  - [bool]
+%   detrend - [bool]
+%   covFilt - [float] <1 = coefficient for the exp-weighted move average, >1 = half-life for the per-call smoothing filter 
+%                OR
+%             {func args} = function to call to do the smoothing filter
+%              SEE: biasFilt for example function format
+%   ch_names -- {nCh x 1 str} channel names
+%   ch_pos   -- [3 x nCh] positions of the channels
+% TODO:
+%   [] make consistent with the other spatial-filtering function to specify the covariance filter in the same way...
 if( nargin<2 ) state=[]; end;
 if( ~isempty(state) && isstruct(state) ) % ignore other arguments if state is given
   opts =state;
@@ -18,7 +30,7 @@ covFilt=opts.covFilt; filtstate=opts.filtstate;
 if( ~isempty(covFilt) )
   if( ~iscell(covFilt) ) covFilt={covFilt}; end;
   if( isnumeric(covFilt{1}) ) % covFilt{1} is alpha for move-ave
-    if(covFilt{1}>1) covFilt{1}=exp(log(.5)./covFilt{1}); end; % convert half-life to alpha
+    if(covFilt{1}>=1) covFilt{1}=exp(log(.5)./covFilt{1}); end; % convert half-life to alpha
     if(isempty(filtstate) )    filtstate=struct('N',0,'sxx',0);    end;
   end
 end
