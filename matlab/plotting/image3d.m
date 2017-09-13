@@ -169,7 +169,7 @@ switch dim  % setup the axes labels and finish index expression
      elseif (isnumeric(axscale{2}) )
        tmp=axscale{2};
        for i=1:prod(sizeA(4:end)); 
-         for j=1:numel(tmp); axscale{2}(j,i)=tmp(j) + 100*i; end;
+         for j=1:numel(tmp); axscale{2}(j,i)=tmp(j) + 10000*i; end;
        end
      end
      axscale{2}=axscale{2}(:)';
