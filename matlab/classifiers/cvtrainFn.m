@@ -88,22 +88,27 @@ function [res,Cs,fIdxs]=cvtrainFn(objFn,X,Y,Cs,fIdxs,varargin)
 % Cs - the ordering of the hyper-parameters used 
 %       (may be different than input, as we prefer high->low order for efficiency!)
 % fIdxs -- the fold structure used. (may be different from input if input is scalar)
-opts = struct('binsp',1,'aucNoise',0,'recSoln',0,'dim',[], 'reuseParms',1,...
+opts = struct('binsp',1,'aucNoise',0,'recSoln',0,'dim',[],'ydim',[],'reuseParms',1,...
               'seed',[],'seedNm','alphab','verb',0,'reorderC',1, ...
               'spDesc',[],'outerSoln',-1,'calibrate','bal',...
 				  'lossType',[],'lossFn','bal','dispType','bin', 'subIdx',[],'aucWght',.1);
 [opts,varargin]=parseOpts(opts,varargin);
 
+dim=opts.dim; if ( isempty(dim) ) dim=ndims(X); end;
+szX=size(X); szX(end+1:max(dim))=1;
+szY=size(Y); szY(end+1:numel(dim)+1)=1; % true size of Y, inc the sub-prob dim
+ydim=opts.ydim; 
 if ( ndims(Y)>2 || ~any(size(Y,1)==size(X)) ) 
    error('Y should be a matrix with N elements'); 
 end
-if ( opts.binsp && (~all(Y(:)==-1 | Y(:)==0 | Y(:)==1)) )
+if ( opts.binsp && (~all(Y(:)==-1 | Y(:)==0 | Y(:)==1 | isnan(Y(:)))) )
   error('Y should be matrix of -1/0/+1 label indicators.');
 end
+if ( isempty(opts.lossFn) && ~isempty(opts.lossType) ) opts.lossFn=opts.lossType; end;
 if ( nargin < 4 || isempty(Cs) ) Cs=[5.^(3:-1:-3) 0]; end;
-if ( nargin < 5 || isempty(fIdxs) ) 
-   nFolds=10; fIdxs = gennFold(Y,nFolds,'perm',1);
-elseif ( isscalar(fIdxs) ) 
+if ( nargin < 5 || isempty(fIdxs) ) fIdxs=10; end;
+
+if ( isscalar(fIdxs) ) 
    nFolds= fIdxs; 
    fIdxs = gennFold(Y,nFolds);
 elseif ( size(fIdxs,1)==size(Y,1) )
@@ -111,21 +116,20 @@ elseif ( size(fIdxs,1)==size(Y,1) )
 else
    error('fIdxs isnt compatiable with X,Y');
 end
-dim=opts.dim; if ( isempty(dim) ) dim=ndims(X); end;
 
 siCs=1:size(Cs,2);
 if ( opts.reuseParms && opts.reorderC ) 
    % works better if we go from lots reg to little
-   if ( opts.reorderC>0 )    [ans,siCs]= sort(Cs(1,:),'descend'); 
-   else                      [ans,siCs]= sort(Cs(1,:),'ascend'); 
+   if ( opts.reorderC>0 )    [ans,siCs]= sort(sum(Cs(:,:),1),'descend'); 
+   else                      [ans,siCs]= sort(sum(Cs(:,:),1),'ascend'); 
    end
    Cs=Cs(:,siCs);
    if( ~isequal(siCs,1:numel(Cs)) )
-     if ( opts.reorderC>0 )
-       warning(['Re-ordered Cs in *DECREASING* magnitude for efficiency']); 
-     else
-       warning(['Re-ordered Cs in *INCREASING* magnitude for efficiency']); 
-     end
+      if ( opts.reorderC>0 )
+         warning(['Re-ordered Cs in *DECREASING* magnitude for efficiency']); 
+      else
+         warning(['Re-ordered Cs in *INCREASING* magnitude for efficiency']); 
+      end
    end;
 end
 
@@ -209,10 +213,10 @@ for foldi=1:size(fIdxs,ndims(fIdxs));
       for ci=1:size(Cs,2);%siCs; % proc in sorted order
          if( ~opts.reuseParms ) seed=opts.seed; end;
          if( ~isempty(seed) ) 
-            [seed,f,J]=feval(objFn,X,Ytrn,Cs(:,ci),'verb',opts.verb-1,...
+            [seed,f,J]=feval(objFn,X,Ytrn,Cs(:,ci),'verb',opts.verb-1, ...
                              opts.seedNm,seed,'dim',opts.dim,varargin{:});
          else
-            [seed,f,J]=feval(objFn,X,Ytrn,Cs(:,ci),'verb',opts.verb-1,...
+            [seed,f,J]=feval(objFn,X,Ytrn,Cs(:,ci),'verb',opts.verb-1, ...
                              'dim',opts.dim,varargin{:});
          end
          
@@ -267,7 +271,7 @@ for foldi=1:size(fIdxs,ndims(fIdxs));
       end
    end
 end
-szRes=size(res.fold.trnbin); 
+szRes=size(res.fold.trn); 
 res.fold.di=mkDimInfo(szRes,'perf',[],[],'subProb',[],opts.spDesc,'C',[], ...
                       Cs,'fold',[],[],'dv');
 foldD=4;
@@ -276,12 +280,8 @@ if ( opts.recSoln ) res.fold.soln=soln; end; % record the solution for this fold
 res.di     = res.fold.di(setdiff(1:end,foldD)); % same as fold info but without fold dim
 res.trnconf= sum(res.fold.trnconf,foldD);
 res.tstconf= sum(res.fold.tstconf,foldD);
-res.trnbin = conf2loss(res.trnconf,1,opts.lossFn);%mean(res.fold.trnbin,foldD);
-res.trn    = res.trnbin;
-%res.trnbin_se=sqrt(abs(sum(res.fold.trnbin.^2,foldD)/nFolds-(res.trnbin.^2))/nFolds);
-res.tstbin = conf2loss(res.tstconf,1,opts.lossFn);%mean(res.fold.tstbin,foldD);
-res.tst    = res.tstbin;
-%res.tstbin_se=sqrt(abs(sum(res.fold.tstbin.^2,foldD)/nFolds-(res.tstbin.^2))/nFolds);
+res.trn    = conf2loss(res.trnconf,1,opts.lossFn);%mean(res.fold.trnbin,foldD);
+res.tst    = conf2loss(res.tstconf,1,opts.lossFn);%mean(res.fold.tstbin,foldD);
 if ( opts.binsp )
   res.trnauc = sum(res.fold.trnauc,foldD)./size(res.fold.trnauc,foldD);
   %res.trnauc_se=sqrt(abs(sum(res.fold.trnauc.^2,foldD)/nFolds-(res.trnauc.^2))/nFolds);
@@ -292,17 +292,20 @@ res.fIdxs  = fIdxs;
 res.Y      = Y;
 
 % record the optimal solution and it's parameters
-if ( opts.binsp ) 
-  % best hyper-parameter for all sub-probs
-  [opttstbin,optCi]=max(mean(res.tst,2)+opts.aucWght*mean(res.tstauc,2)); 
+if ( opts.binsp && isfield(res,'tstauc') )
+   % best hyper-parameter for all sub-probs
+   [opttstbin,optCi]=max(mean(res.tst,2)+opts.aucWght*mean(res.tstauc,2)); 
 else
-  [opttstbin,optCi]=max(mean(res.tst,2)); % best hyper-parameter for all sub-probs
+   [opttstbin,optCi]=max(mean(res.tst,2)); % best hyper-parameter for all sub-probs
 end
+% store per-info for the opt-parameter settings
 res.opt.Ci  =optCi;
-res.opt.C   =Cs(optCi);
-res.opt.tstbin=res.tstbin(:,:,optCi); 
-res.opt.trnbin=res.trnbin(:,:,optCi); 
-res.opt.tstf  =res.tstf(:,:,optCi);
+res.opt.C   =Cs(:,optCi);
+res.opt.trnconf=res.trnconf(:,:,optCi);
+res.opt.tstconf=res.tstconf(:,:,optCi);
+res.opt.tst   = res.tst(:,:,optCi); 
+res.opt.trn   = res.trn(:,:,optCi); 
+res.opt.tstf  = res.tstf(:,:,optCi);
 
 % print summary of the results
 if ( opts.verb > -2 && size(fIdxs,ndims(fIdxs))>1)
@@ -402,12 +405,17 @@ elseif( opts.outerSoln==0 ) % estimate from per fold solutions
       res.opt.f   =res.fold.f(:,:,optCi,optFold);
    end
 end
+% override tstf information for non-training data examples with those trained on all the data
+% now tstf contains val fold predictions in training set, and opt predictions for the rest
+% BODGE: doesn't allow for per-sub-problem folding
+trnexInd = all(all(fIdxs<=0,3),2); % trials which are only ever excluded points or training points
+res.opt.tstf(trnexInd,:,:)=res.opt.f(trnexInd,:,:);
 
 % Calibrate the optimal classifier output probabilities
 % N.B. only for linear classifiers!
 exInd = all(fIdxs<=0,3); % tst points
 if ( ~all(exInd) && opts.binsp && ~isempty(opts.calibrate) && ~isequal(opts.calibrate,0) ) 
-   cr=res.tstbin(:,:,optCi); % cv-estimated probability of being correct - target for calibration
+   cr=res.tst(:,:,optCi); % cv-estimated probability of being correct - target for calibration
    %if ( strcmp(opts.calibrate,'bal') ) cr = cr([1 1],:,:); end; % balanced calibration
    % correct the targets to prevent overfitting
    cwght=[];
@@ -502,8 +510,8 @@ for fi=1:size(outerfIdxs,2);
    end
    res.trnconf(:,fi)=dv2conf(Ytrn,res.outer(fi).f(:,:,optI));  
    res.tstconf(:,fi)=dv2conf(Ytst,res.outer(fi).f(:,:,optI));
-   res.trnbin(:,fi) =conf2loss(res.trnconf(:,fi),'cr');
-   res.tstbin(:,fi) =conf2loss(res.tstconf(:,fi),'cr');
+   res.trn(:,fi)    =conf2loss(res.trnconf(:,fi),'cr');
+   res.tst(:,fi)    =conf2loss(res.tstconf(:,fi),'cr');
 end
 
 
