@@ -17,6 +17,7 @@ function []=startSigProcBuffer(varargin)
 %  (calibrate,end)             -- end calibration phase
 %  (startPhase.cmd,sliceraw)   -- slice data from raw ftoffline save-file to generate traindata/traindevents for classifier training
 %  (startPhase.cmd,loadtraining)  -- load previously saved training data from use selected file
+%  (startPhase.cmd,cleartraining) -- clear the saved calibration data
 %  (startPhase.cmd,train)      -- train a classifier based on the saved calibration data
 %  (startPhase.cmd,trainerp)   -- train a classifier based on the saved calibration data - force ERP (time-domain) classifier
 %  (startPhase.cmd,trainersp)  -- train a classifier based on the saved calibration data - force ERsP (frequency-domain) classifier
@@ -108,7 +109,7 @@ opts=struct('phaseEventType','startPhase.cmd',...
 				'epochEventType',[],'testepochEventType',[],...
             'erpEventType',[],'erpMaxEvents',[],'erpOpts',{{}},...
 				'clsfr_type','erp','trlen_ms',1000,'freqband',[],'freqbanderp',[.5 1 12 16],'freqbandersp',[8 10 28 30],...
-				'calibrateOpts',{{}},'externalCalibrate',0,'trainOpts',{{}},...
+				'calibrateOpts',{{}},'externalCalibrate',1,'trainOpts',{{}},...
             'epochPredFilt',[],'epochFeedbackOpts',{{}},...
 				'contPredFilt',[],'contFeedbackOpts',{{}},...
 				'userFeedbackTable',{{}},...
@@ -172,7 +173,7 @@ end;
 
 
 datestr = datevec(now); datestr = sprintf('%02d%02d%02d',datestr(1)-2000,datestr(2:3));
-dname='training_data';
+dname='training_data'; traindata=[]; traindevents=[];
 cname='clsfr';
 testname='testing_data';
 subject=opts.subject;
@@ -286,8 +287,10 @@ while ( true )
       continue;
     elseif ( strcmp(devents(di).type,'sigproc.reset') )
            ; % ignore sig-proc reset
-    elseif ( strncmp(devents(di).type,'sigproc.',numel('sigproc.')) && strcmp(devents(di).value,'start') ) % start phase command
-      phaseToRun=devents(di).type(numel('sigproc.')+1:end);
+    elseif ( strncmp(devents(di).type,'sigproc.',numel('sigproc.')) ) % start phase command
+      if ( strcmp(devents(di).value,'start') ) 
+        phaseToRun=devents(di).type(numel('sigproc.')+1:end);
+      end
     else
       phaseToRun=devents(di).value;
       break;
@@ -324,14 +327,28 @@ while ( true )
     trainSubj=subject;
 	 
    %---------------------------------------------------------------------------------
-   case {'calibrate','calibration','calibrate_incremental'};
-     if( opts.externalCalibrate ) break; end;
+   case {'calibrate','calibration'};
+     if( opts.externalCalibrate ) continue; end;
     [ntraindata,ntraindevents,state]=buffer_waitData(opts.buffhost,opts.buffport,[],'startSet',opts.epochEventType,'exitSet',{{'calibrate' 'calibration' 'sigproc.reset'} 'end'},'verb',opts.verb,'trlen_ms',opts.trlen_ms,opts.calibrateOpts{:});
     mi=matchEvents(ntraindevents,{'calibrate' 'calibration'},'end'); ntraindevents(mi)=[]; ntraindata(mi)=[];%remove exit event
-    if( isempty(strfind(phaseToRun,'inc')) ) % overwrite
+    if(isempty(traindata))
       traindata=ntraindata;                  traindevents=ntraindevents;
-    else % accumulate training data
-      traindata=cat(1,traindata,ntraindata); traindevents=cat(1,traindevents,ntraindevents);
+    else
+      dsz=size(traindata(1).buf);
+      consistent=true;
+      for ei=1:numel(ntraindata);
+        dszei=size(ntraindata(1).buf);
+        if(~isequal(dszei,dsz))
+          fprintf('Warning:: data sizes are inconsistent!!!  [%s]~=[%s]\n',sprintf('%d ',dsz),sprintf('%d ',dszei));
+          consistent=false;
+          break;
+        end
+      end
+      if( consistent )
+        traindata=cat(1,traindata,ntraindata); traindevents=cat(1,traindevents,ntraindevents);
+      else
+        traindata=ntraindata;  traindevents=ntraindevents;
+      end
     end
     fname=[dname '_' subject '_' datestr];
     fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save([fname '.mat'],'traindata','traindevents','hdr');
@@ -339,6 +356,7 @@ while ( true )
 
     %---------------------------------------------------------------------------------
    case {'sliceraw'};
+     if( opts.externalCalibrate ) continue; end;
      % extract training data for classifier from previously saved raw ftoffline save file
        [fn,datadir]=uigetfile('header','Pick ftoffline raw savefile header file.'); drawnow;
        try
@@ -362,12 +380,13 @@ while ( true )
        
     %---------------------------------------------------------------------------------
    case {'loadtraining'};
+     if( opts.externalCalibrate ) continue; end;
      % load training data from previously saved training data file
      [fn,pth]=uigetfile([dname '*.mat'],'Pick training data file'); drawnow;
 	  if ( ~isequal(fn,0) ); fname=fullfile(pth,fn); end; 
      if ( ~(exist([fname '.mat'],'file') || exist(fname,'file')) ) 
        warning(['Couldnt find a training data file to load file: ' fname]);
-       break;
+       continue;
      else
        fprintf('Loading training data from : %s\n',fname);
      end
@@ -375,7 +394,11 @@ while ( true )
      load(fname); 
      if( ~isempty(chdr) ) hdr=chdr; end;
      trainSubj=subject;
-    
+
+    %---------------------------------------------------------------------------------
+   case {'cleartraining'};
+     traindata=[]; traindevents=[];
+     
     %---------------------------------------------------------------------------------
    case {'train','training','trainerp','trainersp','train_subset','trainerp_subset','trainersp_subset','train_useropts','trainerp_useropts','trainersp_useropts'};
      %try     
@@ -388,7 +411,7 @@ while ( true )
 	      if ( ~isequal(fn,0) );
            fname=fullfile(pth,fn);
          else
-           break;
+           continue;
          end; 
        else
          fprintf('Loading training data from : %s\n',fname);
@@ -421,7 +444,7 @@ while ( true )
           tgtClss =eval(['{' userOpts{:} '}']);
 		  catch;
 			 warning('invlald set of user options, ignored');
-			 break;
+			 continue;
 		  end
 		  % build the spType spec for 1vR from the list of classes
 		  spType={};
@@ -438,7 +461,7 @@ while ( true )
 			 userOpts=eval(userOpts);
 		  catch;
 			 warning('invlald set of user options, ignored');
-			 break;
+			 continue;
 		  end
 		end
 		
@@ -486,7 +509,7 @@ while ( true )
 	      if ( ~isequal(fn,0) );
            clsfrfile=fullfile(pth,fn);
          else
-           break;
+           continue;
          end; 
 	  end;
       if(opts.verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
@@ -522,7 +545,7 @@ while ( true )
 	      if ( ~isequal(fn,0) );
            clsfrfile=fullfile(pth,fn);
          else
-           break;
+           continue;
          end;
       end
       clsfr=load(clsfrfile);
@@ -596,7 +619,7 @@ while ( true )
 	        if ( ~isequal(fn,0) );
              clsfrfile=fullfile(pth,fn);
            else
-             break;
+             continue;
            end;
          end
 			if(opts.verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;

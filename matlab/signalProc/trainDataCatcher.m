@@ -97,8 +97,10 @@ while ( true )
       continue;
     elseif ( strcmp(devents(di).type,'sigproc.reset') )
            ; % ignore sig-proc reset
-    elseif ( strncmp(devents(di).type,'sigproc.',numel('sigproc.')) && strcmp(devents(di).value,'start') ) % start phase command
-      phaseToRun=devents(di).type(numel('sigproc.')+1:end);
+    elseif ( strncmp(devents(di).type,'sigproc.',numel('sigproc.')) ) % start phase command
+      if ( strcmp(devents(di).value,'start') )
+        phaseToRun=devents(di).type(numel('sigproc.')+1:end);
+      end
     else
       phaseToRun=devents(di).value;
       break;
@@ -125,7 +127,21 @@ while ( true )
       if(isempty(traindata))
         traindata=ntraindata;                  traindevents=ntraindevents;
       else
-        traindata=cat(1,traindata,ntraindata); traindevents=cat(1,traindevents,ntraindevents);
+        dsz=size(traindata(1).buf);
+        consistent=true;
+        for ei=1:numel(ntraindata);
+          dszei=size(ntraindata(1).buf);
+          if(~isequal(dszei,dsz))
+            fprintf('Warning:: data sizes are inconsistent!!!  [%s]~=[%s]\n',sprintf('%d ',dsz),sprintf('%d ',dszei));
+            consistent=false;
+            break;
+          end
+        end
+        if( consistent )
+          traindata=cat(1,traindata,ntraindata); traindevents=cat(1,traindevents,ntraindevents);
+        else
+          traindata=ntraindata;  traindevents=ntraindevents;
+        end
       end
       % save the combined training data-file
       fname=[dname '_' subject '_' datestr];
@@ -162,7 +178,7 @@ while ( true )
 	  if ( ~isequal(fn,0) ); fname=fullfile(pth,fn); end; 
      if ( ~(exist([fname '.mat'],'file') || exist(fname,'file')) ) 
        warning(['Couldnt find a training data file to load file: ' fname]);
-       break;
+       continue;
      else
        fprintf('Loading training data from : %s\n',fname);
      end

@@ -310,7 +310,7 @@ res.opt.tstf  = res.tstf(:,:,optCi);
 % print summary of the results
 if ( opts.verb > -2 && size(fIdxs,ndims(fIdxs))>1)
    if ( ~opts.binsp || strcmp(opts.dispType,'bin') )  
-      lab='ave'; trn=res.trnbin; tst=res.tstbin; 
+      lab='ave'; trn=res.trn; tst=res.tst; 
    else
       lab='auc';trn=res.trnauc; tst=res.tstauc;
    end
