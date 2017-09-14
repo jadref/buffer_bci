@@ -24,6 +24,8 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %  width_ms  - [float] width in millisecs for the windows in the welch spectrum (250)
 %              estimation.  
 %              N.B. the output frequency resolution = 1000/width_ms, so 4Hz with 250ms
+%  timefeat  - [bool] as a raw averaged response per-channel feature?                  (0)
+%                 N.B. this only makes sense if you *do not* center or detrend...
 %  spatialfilter -- [str] one of 'slap','car','none','csp','ssep','trwht'              ('slap')
 %       WARNING: CSP is particularly prone to *overfitting* so treat any performance estimates with care...
 %  adaptspatialfiltFn -- 'fname' or {fname args} function to call for adaptive spatial filtering, such as 'adaptWhitenFilt', or 'artChRegress'
@@ -79,7 +81,7 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %  X       -- [ppch x pptime x ppepoch] pre-processed data (N.B. may/will have different size to input X)
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
 opts=struct('classify',1,'fs',[],'timeband_ms',[],'freqband',[],...
-            'width_ms',500,'windowType','hamming','aveType','amp',...
+            'width_ms',500,'windowType','hamming','aveType','amp','timefeat',0,...
             'detrend',1,'spatialfilter','slap',...
             'adaptspatialfiltFn',[],'adaptspatialfiltstate',[],...
             'badchrm',1,'badchthresh',3.1,'badchscale',4,'eegonly',1,...
@@ -259,6 +261,7 @@ end;
 
 %4) welch to convert to power spectral density
 fprintf('4) Welch\n');
+if ( opts.timefeat ) Xt=mean(X,2);end % add a pure time feature
 [X,wopts,winFn]=welchpsd(X,2,'width_ms',opts.width_ms,'windowType',opts.windowType,'fs',fs,...
                          'aveType',opts.aveType,'detrend',1); 
 freqs=0:(1000/opts.width_ms):fs/2; % position of the frequency bins
@@ -288,6 +291,11 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
   X=X(:,fIdx,:); % sub-set to the interesting frequency range
   freqs=freqs(fIdx); % update labelling info
 end;
+
+if ( opts.timefeat )
+  X=cat(2,Xt,X);
+  freqs=[0 freqs];
+end
 
 % 5.9) Apply a feature filter post-processor if wanted
 featFiltFn=opts.featFiltFn; featFiltState=[];
@@ -327,6 +335,7 @@ if ( opts.visualize )
     end
   end
   % Compute the averages and per-sub-problem AUC scores
+  mu=[];
   for spi=1:size(Yidx,2);
     Yci=Yidx(:,spi);
     if( size(labels,1)==1 ) % plot sub-prob positive response only

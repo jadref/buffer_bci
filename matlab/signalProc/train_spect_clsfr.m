@@ -24,6 +24,8 @@ function [clsfr,res,X,Y]=train_spect_clsfr(X,Y,varargin)
 %  width_ms  - [float] width in millisecs for the windows in the welch spectrum (250)
 %              estimation.  
 %              N.B. the output frequency resolution = 1000/width_ms, so 4Hz with 250ms
+%  step_ms   - [float] time between spectrum computations                              (width_ms/2)
+%  timefeat  - [bool] as a raw averaged response per-channel feature?                  (0)
 %  spatialfilter -- [str] one of 'slap','car','none','csp','ssep','trwht'              ('slap')
 %       WARNING: CSP is particularly prone to *overfitting* so treat any performance estimates with care...
 %  adaptspatialfiltFn -- 'fname' or {fname args} function to call for adaptive spatial filtering, such as 'adaptWhitenFilt', or 'artChRegress'
@@ -79,7 +81,7 @@ function [clsfr,res,X,Y]=train_spect_clsfr(X,Y,varargin)
 %  X       -- [ppch x pptime x ppepoch] pre-processed data (N.B. may/will have different size to input X)
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
 opts=struct('classify',1,'fs',[],'timeband_ms',[],'freqband',[],...
-            'width_ms',500,'windowType','hamming','aveType',[],'step_ms',[],...
+            'width_ms',500,'windowType','hamming','aveType',[],'step_ms',[],'timefeat',0,...
             'detrend',1,'spatialfilter','slap',...
             'adaptspatialfiltFn',[],'adaptspatialfiltstate',[],...
             'badchrm',1,'badchthresh',3.1,'badchscale',4,'eegonly',1,...
@@ -294,9 +296,11 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
 end;
 
                          % add the raw downsampled time to the frequency info
-Xt=reshape(Xt,[size(Xt,1),1,size(Xt,2),size(Xt,3)]); if(size(Xt,3)>size(X,3)) Xt=Xt(:,:,1:size(X,3),:); end;
-X=cat(2,Xt,X);
-freqs=[0 freqs]; % mark as the 0-hz signal
+if ( opts.timefeat )
+  Xt=reshape(Xt,[size(Xt,1),1,size(Xt,2),size(Xt,3)]); if(size(Xt,3)>size(X,3)) Xt=Xt(:,:,1:size(X,3),:); end;
+  X=cat(2,Xt,X);
+  freqs=[0 freqs]; % mark as the 0-hz signal
+end
 
 % 5.9) Apply a feature filter post-processor if wanted
 featFiltFn=opts.featFiltFn; featFiltState=[];
@@ -336,6 +340,7 @@ if ( opts.visualize )
     end
   end
   % Compute the averages and per-sub-problem AUC scores
+  mu=[];
   for spi=1:size(Yidx,2);
     Yci=Yidx(:,spi);
     if( size(labels,1)==1 ) % plot sub-prob positive response only

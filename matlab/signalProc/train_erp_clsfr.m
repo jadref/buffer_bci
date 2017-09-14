@@ -251,6 +251,7 @@ if ( opts.visualize )
     end
   end
   % Compute the averages and per-sub-problem AUC scores
+  mu=[];
   for spi=1:size(Yidx,2);
     Yci=Yidx(:,spi);
     if( size(labels,1)==1 ) % plot sub-prob positive response only
