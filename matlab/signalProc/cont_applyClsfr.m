@@ -178,7 +178,7 @@ while( ~endTest )
     end
 
     % filter the raw predictions if wanted
-    if ( isempty(dv) && isempty(opts.predFilt) ) 
+    if ( isempty(dv) || isempty(opts.predFilt) ) 
       dv=f;
     else
       if ( isempty(dv) ) dv=zeros(size(f)); end;

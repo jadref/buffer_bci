@@ -144,7 +144,7 @@ for si=1:nSeq;
   prob   = ones(nSymbs,1)./nSymbs; % start with equal prob over everything
   trlStartTime=getwTime();
   timetogo = contFeedbackTrialDuration;
-  nevt=0; nPred=0; sdv=zeros(size(dv));
+  nevt=0; nPred=0; sdv=[];
   evtTime=trlStartTime+epochDuration; % N.B. already sent the 1st target event
   while (timetogo>0)
 	 curTime  = getwTime();
@@ -182,7 +182,7 @@ for si=1:nSeq;
 			 dv=pred;
 		  end
                            % accumulate info on the average dv for this trial
-        nPred=nPred+1; sdv=sdv+dv;
+        nPred=nPred+1; if(isempty(sdv))sdv=dv; else; sdv=sdv+dv; end;
         
 										  % convert from dv to normalised probability
         curdv=dv; if( numel(curdv)==1 ) curdv=[curdv -curdv]; end; % ensure min 1 decision values..

@@ -302,8 +302,6 @@ while ( true )
       break;
     end  
   end
-  if ( isempty(phaseToRun) ) continue; end;
-
                               % only phases we should process are caught here
   % TODO: filter the menustr also...
   catchPhase=true;
@@ -311,8 +309,11 @@ while ( true )
   if ( ~isempty(opts.ignorePhases)) catchPhase=catchPhase & ~any(strcmpi(phaseToRun,opts.ignorePhases)); end;
   if ( ~catchPhase  )
     fprintf('%d) Ignoring non-caught phase: %s\n',devents(di).sample,phaseToRun);
+    phaseToRun=[];
   end
   
+  if ( isempty(phaseToRun) ) continue; end;
+
   fprintf('%d) Starting phase : %s\n',devents(di).sample,phaseToRun);
   if ( opts.verb>0 ) ptime=getwTime(); end;
   % hide controller window while the phase is actually running
@@ -403,7 +404,13 @@ while ( true )
        fprintf('Loading training data from : %s\n',fname);
      end
      chdr=hdr;
-     load(fname); 
+     load(fname);
+
+                                % save the loaded data (like it was on-line)
+     fname=[dname '_' subject '_' datestr];
+     fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save([fname '.mat'],'traindata','traindevents','hdr','allevents');
+     trainSubj=subject; % mark this this data is valid for classifier training
+     
      if( ~isempty(chdr) ) hdr=chdr; end;
      trainSubj=subject;
 
@@ -560,6 +567,7 @@ while ( true )
            continue;
          end;
       end
+      if(opts.verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
       clsfr=load(clsfrfile);
       if( isfield(clsfr,'clsfr') ) clsfr=clsfr.clsfr; end;
       clsSubj = subject;
@@ -577,10 +585,10 @@ while ( true )
 		end;
 	 end
 
-	 try		
-    if ( ~any(strcmp(lower(opts.clsfr_type),{'ersp','induced'})) )
+    if ( ~any(strcmpi(clsfr.type,{'ersp','induced'})) )
       warning('Trying to use an ERP classifier in continuous application mode.\nAre you sure?');
     end
+	 try		
 	 % generate prediction every trlen_ms/2 seconds using trlen_ms data
 	 if ( ~opts.savetestdata )
 		cont_applyClsfr(clsfr,...
@@ -607,7 +615,7 @@ while ( true )
 		  traindevents=testdevents;
 		end
 	 end
-		 catch
+	catch
       fprintf('Error in : %s',phaseToRun);
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
 		if ( ~isempty(le.stack) )
