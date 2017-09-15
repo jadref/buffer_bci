@@ -44,6 +44,8 @@ function []=startSigProcBuffer(varargin)
 %   phaseEventType -- 'str' event type which says start a new phase                 ('startPhase.cmd')
 %   epochEventType -- 'str' event type which indicates start of calibration epoch.  ('stimulus.target')
 %                     This event's value is used as the class label
+%   catchPhases/ignorePhases -- {'str'} cell array of phase name to either explicitly catch or ignore.  ([])
+%                        if empty then all phases will be caught
 %   testepochEventType -- 'str' event type which start of data to generate a prediction for.  ('classifier.apply')
 %   clsfr_type     -- 'str' the type of classifier to train.  One of: 
 %                        'erp'  - train a time-locked response (evoked response) classifier
@@ -57,7 +59,7 @@ function []=startSigProcBuffer(varargin)
 %                     SEE: erpViewer for a list of options available
 %   calibrateOpts  -- {cell} addition options to pass to the calibration routine
 %                     SEE: buffer_waitData for information on th options available
-%   externalCalibrate -- [bool] flag if the calibration data slicing/saving is done by another process (0)
+%   calibrateExtraPhases -- {'str'} list of additional phases which result in the calibration event catcher being called
 %   trainOpts      -- {cell} cell array of additional options to pass to the classifier trainer, e.g.
 %                       'trainOpts',{'width_ms',1000} % sets the welch-window-width to 1000ms
 %                     SEE: buffer_train_clsfr for a list of options available
@@ -106,10 +108,11 @@ if ( isempty(wb) || isempty(strfind('dataAcq',wb)) )
   initsleepSec;
 end;
 opts=struct('phaseEventType','startPhase.cmd',...
+            'catchPhases',[],'ignorePhases',[],'calibrateExtraPhases',{{}},...
 				'epochEventType',[],'testepochEventType',[],...
             'erpEventType',[],'erpMaxEvents',[],'erpOpts',{{}},...
 				'clsfr_type','erp','trlen_ms',1000,'freqband',[],'freqbanderp',[.5 1 12 16],'freqbandersp',[8 10 28 30],...
-				'calibrateOpts',{{}},'externalCalibrate',1,'trainOpts',{{}},...
+				'calibrateOpts',{{}},'trainOpts',{{}},...
             'epochPredFilt',[],'epochFeedbackOpts',{{}},...
 				'contPredFilt',[],'contFeedbackOpts',{{}},...
 				'userFeedbackTable',{{}},...
@@ -120,6 +123,9 @@ opts=struct('phaseEventType','startPhase.cmd',...
 opts=parseOpts(opts,varargin);
 if ( ~iscell(opts.erpOpts) ) opts.erpOpts={opts.erpOpts}; end;
 if ( ~iscell(opts.trainOpts))opts.trainOpts={opts.trainOpts}; end;
+if ( ~iscell(opts.calibrateExtraPhases) )
+  if(isempty(opts.calibrateExtraPhases))opts.calibrateExtraPhases={};else opts.calibrateExtraPhases={opts.calibrateExtraPhases};end;
+end
 
 thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
 capFile=opts.capFile;
@@ -298,6 +304,15 @@ while ( true )
   end
   if ( isempty(phaseToRun) ) continue; end;
 
+                              % only phases we should process are caught here
+  % TODO: filter the menustr also...
+  catchPhase=true;
+  if ( ~isempty(opts.catchPhases) ) catchPhase=any(strcmpi(phaseToRun,opts.catchPhases)); end;
+  if ( ~isempty(opts.ignorePhases)) catchPhase=catchPhase & ~any(strcmpi(phaseToRun,opts.ignorePhases)); end;
+  if ( ~catchPhase  )
+    fprintf('%d) Ignoring non-caught phase: %s\n',devents(di).sample,phaseToRun);
+  end
+  
   fprintf('%d) Starting phase : %s\n',devents(di).sample,phaseToRun);
   if ( opts.verb>0 ) ptime=getwTime(); end;
   % hide controller window while the phase is actually running
@@ -327,9 +342,8 @@ while ( true )
     trainSubj=subject;
 	 
    %---------------------------------------------------------------------------------
-   case {'calibrate','calibration'};
-     if( opts.externalCalibrate ) continue; end;
-    [ntraindata,ntraindevents,state]=buffer_waitData(opts.buffhost,opts.buffport,[],'startSet',opts.epochEventType,'exitSet',{{'calibrate' 'calibration' 'sigproc.reset'} 'end'},'verb',opts.verb,'trlen_ms',opts.trlen_ms,opts.calibrateOpts{:});
+   case {'calibrate','calibration',opts.calibrateExtraPhases{:}};
+    [ntraindata,ntraindevents,state]=buffer_waitData(opts.buffhost,opts.buffport,[],'startSet',opts.epochEventType,'exitSet',{{'calibrate' 'calibration' 'sigproc.reset' phaseToRun ['sigproc.' phaseToRun]} 'end'},'verb',opts.verb,'trlen_ms',opts.trlen_ms,opts.calibrateOpts{:});
     mi=matchEvents(ntraindevents,{'calibrate' 'calibration'},'end'); ntraindevents(mi)=[]; ntraindata(mi)=[];%remove exit event
     if(isempty(traindata))
       traindata=ntraindata;                  traindevents=ntraindevents;
@@ -356,7 +370,6 @@ while ( true )
 
     %---------------------------------------------------------------------------------
    case {'sliceraw'};
-     if( opts.externalCalibrate ) continue; end;
      % extract training data for classifier from previously saved raw ftoffline save file
        [fn,datadir]=uigetfile('header','Pick ftoffline raw savefile header file.'); drawnow;
        try
@@ -380,7 +393,6 @@ while ( true )
        
     %---------------------------------------------------------------------------------
    case {'loadtraining'};
-     if( opts.externalCalibrate ) continue; end;
      % load training data from previously saved training data file
      [fn,pth]=uigetfile([dname '*.mat'],'Pick training data file'); drawnow;
 	  if ( ~isequal(fn,0) ); fname=fullfile(pth,fn); end; 
