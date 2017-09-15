@@ -304,9 +304,11 @@ while ( true )
   end
                               % only phases we should process are caught here
   % TODO: filter the menustr also...
-  catchPhase=true;
-  if ( ~isempty(opts.catchPhases) ) catchPhase=any(strcmpi(phaseToRun,opts.catchPhases)); end;
-  if ( ~isempty(opts.ignorePhases)) catchPhase=catchPhase & ~any(strcmpi(phaseToRun,opts.ignorePhases)); end;
+  catchPhase=true; % default to process everything
+  if ( ~isempty(opts.ignorePhases)) catchPhase=~any(strcmpi(phaseToRun,opts.ignorePhases)); end; % override if specific ignore given
+  if ( ~isempty(opts.catchPhases) ) % override if specific catch given
+    catchPhase= any(strcmpi(phaseToRun,opts.catchPhases)) | any(strcmpi(phaseToRun,{'quit' 'exit'}));
+  end;
   if ( ~catchPhase  )
     fprintf('%d) Ignoring non-caught phase: %s\n',devents(di).sample,phaseToRun);
     phaseToRun=[];
