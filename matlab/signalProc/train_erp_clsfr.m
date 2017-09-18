@@ -14,6 +14,10 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %  capFile   - 'filename' file from which to load the channel position information.
 %              *this overrides* ch_pos if given
 %  overridechnms - [bool] flag if channel order from 'capFile' overrides that from the 'ch_names' option
+%  capFileOnly - [bool] use the capFile info to specify the eeg subset and only use those channels
+%  clsfrCh   - {str} list of channel names which are given to the classifier
+%                OR
+%              'filename' cap file containing a list of channel names for the classifier
 %  fs        - sampling rate of the data
 %  timeband_ms- [2 x 1] band of times in milliseconds to use for classification, all if empty ([])
 %  freqband  - [2 x 1] or [3 x 1] or [4 x 1] band of frequencies to use
@@ -81,8 +85,9 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
               'adaptspatialfiltFn',[],'adaptspatialfiltstate',[],...
 				  'badchrm',1,'badchthresh',3.1,'badchscale',4,...
 				  'badtrrm',1,'badtrthresh',3,'badtrscale',4,...
+              'clsfrCh',[],...
 				  'featFiltFn',[],...
-				  'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
+				  'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,'eegonly',1,'capFileOnly',1,......
 				  'visualize',1,'badCh',[],'nFold',10,'class_names',[],'zeroLab',1);
 [opts,varargin]=parseOpts(opts,varargin);
 
@@ -93,6 +98,15 @@ if ( isempty(ch_pos) && ~isempty(opts.capFile) && (~isempty(ch_names) || opts.ov
   di = addPosInfo(ch_names,opts.capFile,opts.overridechnms); % get 3d-coords
   if ( any([di.extra.iseeg]) ) 
     ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names    
+    if( opts.capFileOnly || opts.eegonly )% add the non-eeg channels to the set of bad-channels to be removed
+      if( isempty(opts.badCh) )
+        opts.badCh=~[di.extra.iseeg];
+      else
+        if ( islogical(opts.badCh) )    opts.badCh = opts.badCh | ~[di.extra.iseeg];
+        elseif( isnumeric(opts.badCh) ) opts.badCh = [opts.badCh(:); find(~[di.extra.iseeg])];
+        end
+      end
+    end
   else % fall back on showing all data
     warning('Capfile didnt match any data channels -- no EEG?');
     ch_pos=[];
@@ -213,6 +227,32 @@ if ( opts.badtrrm )
   fprintf(' %d tr removed\n',sum(isbadtr));
 end;
 
+%3.6) classifier channel selection
+clsfrChi=[];
+if( ~isempty(opts.clsfrCh) )
+  fprintf('3.6) clsfr channel subset');
+  clsfrCh = opts.clsfrCh; 
+  if( ischar(clsfrCh) ) % capFile with the channel names.
+    clsfrCh = readCapInf(clsfrCh);
+  end
+                                % match clsfrCh with the current ch_names
+  clsfrChi=false(numel(ch_names));
+  for ci=1:numel(ch_names);
+    if( any(strcmpi(ch_names{ci},clsfrCh)) )
+      clsfrChi(ci)=true;
+    end
+  end
+  % sub-set to indicated channels
+  if( ~all(clsfrChi) )
+    X=X(clsfrChi,:,:);
+    if ( ~isempty(ch_names) ) % update the channel info
+      if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,clsfrChi); end;
+      ch_names=ch_names(clsfrChi);
+    end
+  end
+  fprintf('%d ch removed\n',sum(isbadch));  
+end
+
 % 5.9) Apply a feature filter post-processor if wanted
 featFiltFn=opts.featFiltFn; featFiltState=[];
 if ( ~isempty(featFiltFn) )
@@ -331,6 +371,7 @@ if( strncmpi(opts.spatialfilter,'adaptspatialfilt',numel('adaptspatialfilter')) 
 end
 clsfr.adaptspatialfiltFn=opts.adaptspatialfiltFn; % record the function to use
 clsfr.adaptspatialfiltstate=adaptspatialfiltstate;
+clsfr.clsfrChi    = clsfrChi;
 
 clsfr.filt         = filt; % filter weights for spectral filtering
 clsfr.outsz        = outsz; % info on size after spectral filter for downsampling
