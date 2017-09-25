@@ -287,7 +287,7 @@ if( ~isempty(opts.clsfrCh) )
       ch_names=ch_names(clsfrChi);
     end
   end
-  fprintf('%d ch removed\n',sum(isbadch));  
+  fprintf('%d ch removed\n',sum(~clsfrChi));  
 end
 
 
