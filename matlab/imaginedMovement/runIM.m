@@ -77,26 +77,9 @@ while (ishandle(contFig))
   switch phaseToRun;
     
    %---------------------------------------------------------------------------
-   case 'capfitting';
-    sendEvent('subject',subject);
-    sendEvent(sigProcCmd,'start'); % tell sig-proc what to do
-
-    % wait until sig-processor is finished
-    while (true) % N.B. use a loop as safer and matlab still responds on windows...
-       [devents]=buffer_newevents(buffhost,buffport,[],sigProcCmd,'end',1000); % wait until finished
-       drawnow;
-       if ( ~isempty(devents) ) break; end;
-    end
-    if( isempty(devents) ) % warn if taking too long
-      set(msgh,'string',{sprintf('Warning::%s is taking a long time....',phaseToRun),'did it crash?'},'visible','on');
-    else
-      set(msgh,'string','');
-      sigProcCmd='';
-    end
-    drawnow;
-
-   %---------------------------------------------------------------------------
-   case 'eegviewer';
+   % Simple forward to the sig-processor commands
+   %  sig-viewers, data-slicer/loader, classifier training
+   case {'capfitting','eegviewer','loadtraining','sliceraw','train','trainersp'};
     sendEvent('subject',subject);
     sendEvent(sigProcCmd,'start'); % tell sig-proc what to do
     [devents,state]=buffer_newevents(buffhost,buffport,[],sigProcCmd,'ack',4000); % wait for start acknowledgement
@@ -175,7 +158,6 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'end');
 
      %---------------------------------------------------------------------------
-   case {'loadtraining','sliceraw'}; % forward to the signal processor...
      sigProcCmd=['sigproc.' phaseToRun]; % command to send to the signal processor
      sendEvent(sigProcCmd,'start'); 
      % wait for sig-processor startup acknowledgement
@@ -185,33 +167,7 @@ while (ishandle(contFig))
      else % mark as running
        set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Running...'},'visible','on');
      end
-         
-   %---------------------------------------------------------------------------
-   case {'train','trainersp'};
-    sendEvent('subject',subject);
-    sendEvent(sigProcCmd,'start'); % tell sig-proc what to do
-    % wait for sig-processor startup acknowledgement
-    [devents,state]=buffer_newevents(buffhost,buffport,[],sigProcCmd,'ack',4000); 
-    if( isempty(devents) ) % mark as taking a long time
-      set(msgh,'string',{sprintf('Warning::%s is taking too long to start...',phaseToRun),'did it crash?'},'visible','on');
-    else % mark as running
-      set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Running...'},'visible','on');
-    end
-    drawnow;
-    % wait to finish
-    for i=1:20;
-      [devents,state]=buffer_newevents(buffhost,buffport,state,sigProcCmd,'end',1000); % wait until finished
-      drawnow;
-      if ( ~isempty(devents) ) break; end;
-    end
-    if( isempty(devents) ) % warn if taking too long
-      set(msgh,'string',{sprintf('Warning::%s is taking a long time....',phaseToRun),'did it crash?'},'visible','on'); 
-    else
-      set(msgh,'string','');
-      sigProcCmd='';
-    end
-    drawnow;
-    
+             
    %---------------------------------------------------------------------------
    case {'epochfeedback'};
     sendEvent('subject',subject);
