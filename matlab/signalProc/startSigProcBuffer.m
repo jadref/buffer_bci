@@ -107,7 +107,7 @@ if ( isempty(wb) || isempty(strfind('dataAcq',wb)) )
   initgetwTime;
   initsleepSec;
 end;
-opts=struct('phaseEventType','startPhase.cmd',...
+opts=struct('label','sigProc','phaseEventType','startPhase.cmd',...
             'catchPhases',[],'ignorePhases',[],'calibrateExtraPhases',{{}},...
 				'epochEventType',[],'testepochEventType',[],...
             'erpEventType',[],'erpMaxEvents',[],'erpOpts',{{}},...
@@ -142,11 +142,12 @@ end;
 if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4; end;
 
 if ( isempty(opts.epochEventType) && opts.useGUI )
-  try
+     try
 	 optsFig=bufferSignalProcOpts();
-  catch
+    %set(optsFig,'title',opts.label);
+    catch
 	 optsFig=[];
-  end
+    end
   if ( ~isempty(optsFig) && ishandle(optsFig) ) 
 	 uiwait(optsFig); 
 	 info=guidata(optsFig);
@@ -170,7 +171,7 @@ end
 if ( isempty(opts.epochEventType) )     opts.epochEventType='stimulus.target'; end;
 if ( isempty(opts.testepochEventType) ) opts.testepochEventType='classifier.apply'; end;
 if ( isempty(opts.erpEventType) )       opts.erpEventType=opts.epochEventType; end;
-if ( ~isempty(opts.freqband) )          opts.freqbanderp=opts.freqbandk; opts.freqbandersp=opts.freqband; end;
+if ( ~isempty(opts.freqband) )          opts.freqbanderp=opts.freqband; opts.freqbandersp=opts.freqband; end;
 userPhaseNames={};
 if ( ~isempty(opts.userFeedbackTable) )
   userPhaseNames=opts.userFeedbackTable(:,1);
@@ -190,7 +191,7 @@ if ( opts.useGUI )
   % create the control window and execute the phase selection loop
   contFig=figure(99); % use figure window number no-one else will use...
   clf;
-  set(contFig,'name','Signal Processing Controller : close to quit','color',[.3 .1 .1]);
+  set(contFig,'name',sprintf('%s Controller : close to quit',opts.label),'color',[.3 .1 .1]);
   axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
   set(contFig,'Units','pixel');wSize=get(contFig,'position');
   fontSize = .05*wSize(4);
