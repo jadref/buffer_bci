@@ -4,4 +4,4 @@ catchPhases={'calibrate','calibration','erpviewcalibrate','erpviewercalibrate','
              'train','training','trainerp','trainersp','train_subset','trainerp_subset','trainersp_subset','train_useropts','trainerp_useropts','trainersp_useropts'};
 % additionally catch training data events during these phases
 calibrateExtraPhases={'test','testing','epochfeedback','eventfeedback','contfeedback'};
-startSigProcBuffer(varargin{:},'catchPhases',{catchPhases{:},calibrateExtraPhases{:}},'calibrateExtraPhases',calibrateExtraPhases);
+startSigProcBuffer('label','batch',varargin{:},'catchPhases',{catchPhases{:},calibrateExtraPhases{:}},'calibrateExtraPhases',calibrateExtraPhases);
