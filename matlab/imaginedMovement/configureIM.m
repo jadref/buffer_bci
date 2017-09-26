@@ -151,7 +151,7 @@ userFeedbackTable={'epochFeedback_es' 'cont' {'predFilt',@(x,s,e) gausOutlierFil
 %contFeedbackOpts ={'step_ms',welch_width_ms}; % apply classifier more often
 %%   but also include a bias adaption system to cope with train->test transfer
 %contFeedbackOpts ={'predFilt',@(x,s,e) biasFilt(x,s,exp(log(.5)/100)),'step_ms',250};
-stimSmoothFactor= 0; % additional smoothing on the stimulus, not needed with 3s trlen
+dvFilt= 0; % additional filtering of the decision value smoothing on the stimulus, not needed with 3s trlen
 
 %%2) Classify every welch-window-width (default 250ms), prediction is average of full trials worth of data, no-bias adaptation
 %% N.B. this is numerically identical to option 1) above, but computationally *much* cheaper 
@@ -162,4 +162,4 @@ contFeedbackOpts ={'rawpredEventType','classifier.rawprediction','predFilt',@(x,
 
 %%3) Classify every welch-window-width (default 500ms), with bias-adaptation
 %contFeedbackOpts ={'predFilt',@(x,s,e) biasFilt(x,s,exp(log(.5)/400)),'trlen_ms',[]}; 
-%stimSmoothFactor= -(trlen_ms/500);% actual prediction is average of trail-length worth of predictions
+%dvFilt= -(trlen_ms/500);% actual prediction is average of trail-length worth of predictions

@@ -1,7 +1,7 @@
 % continous feedback within a cued trial based structure
 if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) ) configureIM; end;
 if ( ~exist('contFeedbackTrialDuration') || isempty(contFeedbackTrialDuration) ) contFeedbackTrialDuration=trialDuration; end;
-if ( ~exist('stimSmoothFactor') ) stimSmoothFactor=[]; end;
+if ( ~exist('dvFilt') ) dvFilt=[]; end; % additional filtering of the decison values for display/feedback
 if ( ~exist('dvCalFactor') ) dvCalFactor=[]; end;
 if ( ~exist('warpCursor') ) warpCursor=true; end;
 
@@ -68,6 +68,7 @@ set(txthdl,'visible', 'off'); drawnow; sleepSec(intertrialDuration);
 sendEvent('stimulus.testing','start');
 
 nWrong=0; nMissed=0; nCorrect=0; % performance recording
+dvstats=[]; % summary stats for the decision values
 waitforkeyTime=getwTime()+calibrateMaxSeqDuration;
 for si=1:nSeq;
 
@@ -97,6 +98,7 @@ for si=1:nSeq;
   set(h(end),'facecolor',fixColor); % red fixation indicates trial about to start/baseline
   drawnow;% expose; % N.B. needs a full drawnow for some reason
   sendEvent('stimulus.baseline','start');
+  % TODO: [] if using baseline reference then catch predictions during this period to get the baseline...
   if ( ~isempty(baselineClass) ) % treat baseline as a special class
 	 for ei=1:ceil(baselineDuration/epochDuration); % send base-line event every epoch duration
 		sendEvent('stimulus.target',baselineClass);
@@ -144,7 +146,7 @@ for si=1:nSeq;
   prob   = ones(nSymbs,1)./nSymbs; % start with equal prob over everything
   trlStartTime=getwTime();
   timetogo = contFeedbackTrialDuration;
-  nevt=0; nPred=0; sdv=[];
+  nevt=0; nPred=0; sdv=[]; baselinedv=[]; 
   evtTime=trlStartTime+epochDuration; % N.B. already sent the 1st target event
   while (timetogo>0)
 	 curTime  = getwTime();
@@ -171,23 +173,46 @@ for si=1:nSeq;
         end    
 
 		  % additional prediction smoothing for display, if wanted
-		  if ( ~isempty(stimSmoothFactor) && isnumeric(stimSmoothFactor) && stimSmoothFactor>0 )
-			 if ( stimSmoothFactor>=0 ) % exp weighted moving average
-				dv=dv*stimSmoothFactor + (1-stimSmoothFactor)*pred(:);
-			 else % store predictions in a ring buffer
-				fbuff(:,mod(nEpochs-1,abs(stimSmoothFactor))+1)=pred(:);% store predictions in a ring buffer
-				dv=mean(fbuff,2);
-			 end
+		  if ( ~isempty(dvFilt) )
+           if( isnumeric(dvFilt) )
+              if ( dvFilt>=0 ) % exp weighted moving average
+                 dv=dv*dvFilt + (1-dvFilt)*pred(:);
+              else % store predictions in a ring buffer
+                 fbuff(:,mod(nEpochs-1,abs(dvFilt))+1)=pred(:);% store predictions in a ring buffer
+                 dv=mean(fbuff,2);
+              end
+           elseif ( ischar(dvFilt) )
+              if( isempty(baselinedv) ) baselinedv=dv; end; % BODGE: seed baseline dv with 1st pred in the trial
+              if( strcmp(stimSmootFactor,'absbaseline') )
+                 dv = dv-baselinedv;
+              elseif ( strcmp(dvFilt,'relbaseline') )
+                 dv = dv./baselinedv;
+              end
+           end
 		  else
 			 dv=pred;
 		  end
                            % accumulate info on the average dv for this trial
-        nPred=nPred+1; if(isempty(sdv))sdv=dv; else; sdv=sdv+dv; end;
+        nPred=nPred+1; if(isempty(sdv))sdv=dv; sdv2=dv*dv; else; sdv=sdv+dv; sdv2=sdv2+dv*dv; end;
+        % update summary stats
+        if( isempty(dvstats) ) 
+           dvstats=struct(N,1,'sdv',dv,'sdv2',dv.*dv,'dvvar',0); 
+        else                   
+           dvstats.N=dvstats.N+1; dvstats.sdv=dvstats.sdv+dv; dvstats.sdv2=dvstats.sdv2+dv.*dv;
+           dvstats.dvvar  = max(0,(dvstats.sdv2-dvstats.sdv.^2/dvstats.N))./dvstats.N; % running variance estimate 
+        end
         
 										  % convert from dv to normalised probability
         curdv=dv; if( numel(curdv)==1 ) curdv=[curdv -curdv]; end; % ensure min 1 decision values..
-		  if(~isempty(dvCalFactor)) prob=exp((curdv-max(curdv))*dvCalFactor);
-		  else                      prob=exp((curdv-max(curdv)));
+		  if(~isempty(dvCalFactor))
+           if( isnumeric(dvCalFactor) )
+              prob=exp((curdv-max(curdv))*dvCalFactor);
+           elseif( ischar(dvCalFactor) && strcmp(dvCalFactor,'auto') )
+              calF=3./sqrt(dvstats.dvvar); % make range +/- 3
+              prob=exp((curdv-max(curdv))*dvcalFactor);
+           end
+		  else                      
+           prob=exp((curdv-max(curdv)));
 		  end
 		  prob=prob./sum(prob); % robust soft-max prob computation
         if ( verb>=0 ) 

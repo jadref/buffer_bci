@@ -50,7 +50,7 @@ opts=struct('endType','end.training','verb',1,'timeOut_ms',1000,...
             'useradaptspatfiltFn','',...
 				'badchrm',0,'badchthresh',3,'capFile',[],'overridechnms',0,...
 				'welch_width_ms',1000,'spect_width_ms',500,'spectBaseline',1,...
-				'noisebands',[45 47 53 55],'noiseBins',[],...%[0 1.75],...
+				'noisebands',[45 47 53 55],'noiseBins',[],'noisefracBins',[0 1],...%[0 1.75],...
 				'sigProcOptsGui',1,'dataStd',2.5,'drawHead',1);
 opts=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ); buffhost='localhost'; end;
@@ -159,7 +159,7 @@ end
 
 % make the figure window
 fig=figure(1);clf;
-set(fig,'Name','Sig-Viewer : t=Time, f=Freq, p=Power, 5=50Hz power, q=signal Quality, s=Spectrogram, o=Offset, close window=Exit','menubar','none','toolbar','none','doublebuffer','on');
+set(fig,'Name','Sig-Viewer : t=Time, f=Freq, p=Power, 5=50Hz power, n=Noise Fraction, s=Spectrogram, o=Offset, close window=Exit','menubar','none','toolbar','none','doublebuffer','on');
 axes('position',[0 0 1 1]);
 if( drawHead ) topohead(); end;
 set(gca,'visible','off','nextplot','add');
@@ -182,7 +182,7 @@ drawnow; % make sure the figure is visible
 % make popup menu for selection of TD/FD
 modehdl=[]; vistype=0; curvistype='time';
 try
-  modehdl=uicontrol(fig,'Style','popup','units','normalized','position',[.8 .9 .2 .1],'String','Time|Frequency|50Hz|Quality|Spect|Power|Offset');
+  modehdl=uicontrol(fig,'Style','popup','units','normalized','position',[.8 .9 .2 .1],'String','Time|Frequency|50Hz|Noisefrac|Spect|Power|Offset');
   set(modehdl,'value',1);
 catch
 end
@@ -286,11 +286,11 @@ while ( ~endTraining )
      case {1,'t'}; modekey=1;curvistype='time';
      case {2,'f'}; modekey=2;curvistype='freq';
      case {3,'5'}; modekey=3;curvistype='50hz';
-     case {4,'q'}; modekey=4;curvistype='quality';          
+     case {4,'n'}; modekey=4;curvistype='noisefrac';          
      case {5,'s'}; modekey=5;curvistype='spect';
 	  case {6,'p'}; modekey=6;curvistype='power';
 	  case {7,'o'}; modekey=7;curvistype='offset';
-     case {'x'};     break;
+     case {'x','q'};     break;
      otherwise;    modekey=1;
     end;
     set(fig,'userdata',[]);
@@ -345,7 +345,7 @@ while ( ~endTraining )
   %-------------------------------------------------------------------------------------
   % bad-channel removal + spatial filtering
   % BODGE: 50Hz power doesn't do any spatial filtering, or bad-channel removal
-  if ( ~any(strcmp(curvistype,{'50hz','offset','quality'})) ) 
+  if ( ~any(strcmp(curvistype,{'50hz','offset','noisefrac'})) ) 
 
     % bad channel removal
     oisbadch=isbadch;
@@ -449,10 +449,10 @@ while ( ~endTraining )
 
    case '50hz'; % 50Hz power, N.B. on the last 2s data only!  -----------------------------------
     ppdat = welchpsd(ppdat(:,find(times>-2,1):end),2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'detrend',1,'aveType','amp');
-    ppdat = mean(ppdat(:,noiseIdx(1):noiseIdx(2)),2); % ave power in this range
-    ppdat = 20*log(ppdat); % convert to db
+    ppdat = sum(ppdat(:,noiseIdx(1):noiseIdx(2)),2)./max(1,(noiseIdx(2)-noiseIdx(1))); % ave power in this range
+    ppdat = 20*log(max(ppdat,1e-12)); % convert to db
 
-   case 'quality'; % 50Hz power / total power, last 2s only
+   case 'noisefrac'; % 50Hz power / total power, last 2s only ---------------------------------------
     ppdat = welchpsd(ppdat(:,find(times>-2,1):end),2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'detrend',1,'aveType','amp');
     ppdat = sum(ppdat(:,noiseIdx(1):noiseIdx(2)),2)./sum(ppdat,2); % fractional power in 50hz band
     
@@ -476,7 +476,7 @@ while ( ~endTraining )
     datlim=datrange;
     if ( datlim(1)>=datlim(2) || any(isnan(datlim)) ); datlim=[-1 1]; end;
     switch ( vistype ) % do pre-work dependent on current mode, i.e. mode we're switching from
-     case {'50hz','power','offset','quality'}; % topo-plot mode, single color per electrode
+     case {'50hz','power','offset','noisefrac'}; % topo-plot mode, single color per electrode
       for hi=1:size(ppdat,1); % turn the tickmarks and label visible again
         ylabel('');
         if ( ~isempty(get(hdls(hi),'Xlabel')) && isequal(get(get(hdls(hi),'xlabel'),'visible'),'on') ) 
@@ -512,9 +512,12 @@ while ( ~endTraining )
       set(img_hdls,'visible','off'); % make the colors invisible        
       set(line_hdls,'xdata',freqs(freqIdx(1):freqIdx(2)),'visible','on');
       
-     case {'50hz','power','offset','quality'}; % 50Hz Power all the same axes -----------------------------------
+     case {'50hz','power','offset','noisefrac'}; % 50Hz Power all the same axes -----------------------------------
        if ( strcmp(curvistype,'50hz') && ~isempty(opts.noiseBins) ) % fix the color range for the 50hz power plots
          datlim=[opts.noiseBins(1) opts.noiseBins(end)];
+       end;
+       if ( strcmp(curvistype,'50hz') && ~isempty(opts.noisefracBins) ) % fix the color range for the 50hz power plots
+         datlim=[opts.noisefracBins(1) opts.noisefracBins(end)];
        end;
       set(hdls,'xlim',[.5 1.5],'ylim',[.5 1.5],'clim',datlim);
       set(line_hdls,'visible','off');
@@ -525,7 +528,7 @@ while ( ~endTraining )
         end
         switch curvistype;
 			 case '50hz';   xlabel(hdls(hi),'50Hz Power');
-			 case 'quality';xlabel(hdls(hi),'Noise Fraction');
+			 case 'noisefrac';xlabel(hdls(hi),'Noise Fraction');
 			 case 'power';  xlabel(hdls(hi),'Signal Amplitude');
 			 case 'offset'; xlabel(hdls(hi),'offset');
 		  end
@@ -577,7 +580,7 @@ while ( ~endTraining )
         datrange = opts.noiseBins;
       end
 		                          % spectrogram, power - datalim is color range
-      if ( any(strcmp(curvistype,{'spect','power','offset','50Hz','quality'})) )
+      if ( any(strcmp(curvistype,{'spect','power','offset','50Hz','noisefrac'})) )
         datlim=datrange; set(hdls(1:size(ppdat,1)),'clim',datlim);
                                 % update the colorbar info
         if ( ~isempty(cbarhdl) ); set(get(cbarhdl,'children'),'ydata',datlim);set(cbarhdl,'ylim',datlim); end;
@@ -595,7 +598,7 @@ while ( ~endTraining )
       set(line_hdls(hi),'ydata',ppdat(hi,:));
     end
     
-   case {'50hz','spect','power','offset','quality'}; % 50Hz/spectrogram -- update the image data
+   case {'50hz','spect','power','offset','noisefrac'}; % 50Hz/spectrogram -- update the image data
     % map from raw power into the colormap we're using, not needed as we use the auto-scaling function
     %ppdat=max(opts.noiseBins(1),min(ppdat,opts.noiseBins(end)))./(opts.noiseBins(end)-opts.noiseBins(1))*size(colormap,1);
     for hi=1:size(ppdat,1);
