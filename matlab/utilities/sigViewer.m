@@ -50,7 +50,7 @@ opts=struct('endType','end.training','verb',1,'timeOut_ms',1000,...
             'useradaptspatfiltFn','',...
 				'badchrm',0,'badchthresh',3,'capFile',[],'overridechnms',0,...
 				'welch_width_ms',1000,'spect_width_ms',500,'spectBaseline',1,...
-				'noisebands',[45 47 53 55],'noiseBins',[],'noisefracBins',[0 1],...%[0 1.75],...
+				'noisebands',[45 47 53 55],'noiseBins',[],'noisefracBins',[.2 1],...%[0 1.75],...
 				'sigProcOptsGui',1,'dataStd',2.5,'drawHead',1);
 opts=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ); buffhost='localhost'; end;
@@ -182,7 +182,7 @@ drawnow; % make sure the figure is visible
 % make popup menu for selection of TD/FD
 modehdl=[]; vistype=0; curvistype='time';
 try
-  modehdl=uicontrol(fig,'Style','popup','units','normalized','position',[.8 .9 .2 .1],'String','Time|Frequency|50Hz|Noisefrac|Spect|Power|Offset');
+  modehdl=uicontrol(fig,'Style','popup','units','normalized','position',[.01 .9 .2 .1],'String','Time|Frequency|50Hz|Noisefrac|Spect|Power|Offset');
   set(modehdl,'value',1);
 catch
 end
@@ -516,7 +516,7 @@ while ( ~endTraining )
        if ( strcmp(curvistype,'50hz') && ~isempty(opts.noiseBins) ) % fix the color range for the 50hz power plots
          datlim=[opts.noiseBins(1) opts.noiseBins(end)];
        end;
-       if ( strcmp(curvistype,'50hz') && ~isempty(opts.noisefracBins) ) % fix the color range for the 50hz power plots
+       if ( strcmp(curvistype,'noisefrac') && ~isempty(opts.noisefracBins) ) % fix the color range for the 50hz power plots
          datlim=[opts.noisefracBins(1) opts.noisefracBins(end)];
        end;
       set(hdls,'xlim',[.5 1.5],'ylim',[.5 1.5],'clim',datlim);
@@ -576,9 +576,13 @@ while ( ~endTraining )
 		elseif ( isnan(datrange(2)) || isinf(datrange(2)) )
 		  datrange(2) = datrange(1)+1;
 		end;         
-      if ( isequal(curvistype,'50hz') && ~isempty(opts.noiseBins) ) % fixed range for 50hz
-        datrange = opts.noiseBins;
-      end
+      if ( strcmp(curvistype,'50hz') && ~isempty(opts.noiseBins) ) % fix the color range for the 50hz power plots
+         datrange=[opts.noiseBins(1) opts.noiseBins(end)];
+      end;
+      if ( strcmp(curvistype,'noisefrac') && ~isempty(opts.noisefracBins) )% fix the color range for the 50hz power plots
+         datrange=[opts.noisefracBins(1) opts.noisefracBins(end)];
+      end;
+
 		                          % spectrogram, power - datalim is color range
       if ( any(strcmp(curvistype,{'spect','power','offset','50Hz','noisefrac'})) )
         datlim=datrange; set(hdls(1:size(ppdat,1)),'clim',datlim);
