@@ -1,9 +1,9 @@
 % continous feedback within a cued trial based structure
-if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) ) configureIM; end;
+%if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) ) configureIM; end;
 if ( ~exist('contFeedbackTrialDuration') || isempty(contFeedbackTrialDuration) ) contFeedbackTrialDuration=trialDuration; end;
-if ( ~exist('dvFilt') ) dvFilt=[]; end; % additional filtering of the decison values for display/feedback
-if ( ~exist('dvCalFactor') ) dvCalFactor=[]; end;
-if ( ~exist('warpCursor') ) warpCursor=true; end;
+if ( ~exist('dvFilt','var') ) dvFilt=[]; end; % additional filtering of the decison values for display/feedback
+if ( ~exist('dvCalFactor','var') ) dvCalFactor=[]; end;
+if ( ~exist('warpCursor','var') ) warpCursor=true; end;
 
 % make the target sequence
 if ( baselineClass ) % with rest targets
@@ -173,7 +173,7 @@ for si=1:nSeq;
         end    
 
 		  % additional prediction smoothing for display, if wanted
-		  if ( ~isempty(dvFilt) )
+		  if ( ~isempty(dvFilt) && ~isequal(dvFilt,0) )
            if( isnumeric(dvFilt) )
               if ( dvFilt>=0 ) % exp weighted moving average
                  dv=dv*dvFilt + (1-dvFilt)*pred(:);
@@ -183,7 +183,7 @@ for si=1:nSeq;
               end
            elseif ( ischar(dvFilt) )
               if( isempty(baselinedv) ) baselinedv=dv; end; % BODGE: seed baseline dv with 1st pred in the trial
-              if( strcmp(stimSmootFactor,'absbaseline') )
+              if( strcmp(dvFilt,'absbaseline') )
                  dv = dv-baselinedv;
               elseif ( strcmp(dvFilt,'relbaseline') )
                  dv = dv./baselinedv;
@@ -193,13 +193,15 @@ for si=1:nSeq;
 			 dv=pred;
 		  end
                            % accumulate info on the average dv for this trial
-        nPred=nPred+1; if(isempty(sdv))sdv=dv; sdv2=dv*dv; else; sdv=sdv+dv; sdv2=sdv2+dv*dv; end;
+        nPred=nPred+1; if(isempty(sdv))sdv=dv; sdv2=dv.*dv; else; sdv=sdv+dv; sdv2=sdv2+dv.*dv; end;
         % update summary stats
         if( isempty(dvstats) ) 
-           dvstats=struct(N,1,'sdv',dv,'sdv2',dv.*dv,'dvvar',0); 
+           dvstats=struct('N',1,'sdv',dv,'sdv2',dv.*dv,'dvvar',1); 
         else                   
-           dvstats.N=dvstats.N+1; dvstats.sdv=dvstats.sdv+dv; dvstats.sdv2=dvstats.sdv2+dv.*dv;
-           dvstats.dvvar  = max(0,(dvstats.sdv2-dvstats.sdv.^2/dvstats.N))./dvstats.N; % running variance estimate 
+           dvstats.N    = dvstats.N+1; 
+           dvstats.sdv  = dvstats.sdv+dv; 
+           dvstats.sdv2 = dvstats.sdv2+dv.*dv;
+           dvstats.dvvar= max(0,(dvstats.sdv2-dvstats.sdv.^2./dvstats.N))./dvstats.N; % running variance estimate 
         end
         
 										  % convert from dv to normalised probability
@@ -208,8 +210,14 @@ for si=1:nSeq;
            if( isnumeric(dvCalFactor) )
               prob=exp((curdv-max(curdv))*dvCalFactor);
            elseif( ischar(dvCalFactor) && strcmp(dvCalFactor,'auto') )
-              calF=3./sqrt(dvstats.dvvar); % make range +/- 3
-              prob=exp((curdv-max(curdv))*dvcalFactor);
+              calF=.5./sqrt(mean(dvstats.dvvar)); % make range +/- 3
+              if(verb>=1)
+                 fprintf('N=%g sdv=[%s] sdv2=[%s] calF=[%g]\n',...
+                         dvstats.N,sprintf('%g,',dvstats.sdv),sprintf('%g,',dvstats.sdv2),calF);
+              end
+              if( calF>0 && ~isnan(calF) && ~isinf(calF) ) 
+                 prob=exp((curdv-max(curdv))*calF);
+              end
            end
 		  else                      
            prob=exp((curdv-max(curdv)));
@@ -221,7 +229,8 @@ for si=1:nSeq;
       end
 
 	 end % if prediction events to process
-
+    
+    
     % feedback information... simply move in direction detected by the BCI
 	 if ( numel(prob)>=size(stimPos,2)-1 ) % per-target decomposition
       if ( numel(prob)>size(stimPos,2) ) prob=[prob(1:size(stimPos,2)-1);sum(prob(size(stimPos,2):end))];end;

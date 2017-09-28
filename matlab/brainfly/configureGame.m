@@ -100,6 +100,7 @@ epochFeedbackTrialDuration=trialDuration;
 
 contfeedback_instruct={'When instructed perform the indicated' 'actual movement.  The fixation point' 'will move to show the systems' 'current prediction'};
 contFeedbackTrialDuration =10;
+dvCalFactor='auto'; % auto-scale the continuous feedback size
 
 %----------------------------------------------------------------------------------------------
 % signal-processing configuration

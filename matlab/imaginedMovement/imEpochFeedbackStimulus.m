@@ -1,5 +1,5 @@
 % per-epoch feedback when using an event triggered classifier
-if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) ) configureIM; end;
+%if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) ) configureIM; end;
 if ( ~exist('epochFeedbackTrialDuration') || isempty(epochFeedbackTrialDuration) ) 
    epochFeedbackTrialDuration=trialDuration; 
 end;

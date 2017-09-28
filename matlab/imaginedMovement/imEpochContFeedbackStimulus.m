@@ -2,8 +2,7 @@
 % This version of imEpoch feedback works directly with at continuous classifier by accumulating the 
 % individual classifier prediction internally from the start until the end of the trial and then generating 
 % a prediction
-configureIM;
-
+%if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) ) configureIM; end;
 
 % make the target sequence
 tgtSeq=mkStimSeqRand(nSymbs,nSeq);

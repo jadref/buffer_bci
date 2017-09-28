@@ -1,5 +1,5 @@
 % continous feedback over a long duration without and subject cues
-if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) ) configureIM; end;
+%if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) ) configureIM; end;
 
 fig=figure(2);
 set(fig,'Name','Imagined Movement -- close window to stop.','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
