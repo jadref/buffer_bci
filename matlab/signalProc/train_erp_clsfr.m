@@ -45,6 +45,11 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %              0 - do nothing
 %              1 - detrend the data
 %              2 - center the data (i.e. subtract the mean)
+%  preFiltFn -- 'fname' or {fname args} function to for pre-filteringfiltering, (such as high-pass filtering)
+%                fname should be the name of a *filterfunction* to call.  This should have a prototype:
+%                 [X,state]=fname(X,state,args{:})
+%                where state is some arbitary internal state of the filter which is propogated between calls
+%                SEE ALSO: firFilt, iirFilt
 %  visualize - [int] visualize the data                     (1)
 %               0 - don't visualize
 %               1 - visualize, but don't wait
@@ -77,7 +82,7 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %  X      - [size(X)] the pre-processed data
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
   opts=struct('classify',1,'fs',[],...
-				  'timeband_ms',[],'freqband',[],'downsample',[],'detrend',1,'spatialfilter','car',...
+				  'timeband_ms',[],'freqband',[],'downsample',[],'prefiltFn',[],'detrend',1,'spatialfilter','car',...
               'adaptspatialfiltFn',[],'adaptspatialfiltstate',[],...
 				  'badchrm',1,'badchthresh',3.1,'badchscale',4,...
 				  'badtrrm',1,'badtrthresh',3,'badtrscale',4,...
@@ -109,6 +114,16 @@ if ( opts.detrend )
     X=repop(X,'-',mean(X,2));
   end
 end
+% 5.9) Apply a feature filter post-processor if wanted
+preFiltFn=opts.preFiltFn; preFiltState=[];
+if ( ~isempty(preFiltFn) )
+  fprintf('5.5) preFilter\n');
+  if ( ~iscell(preFiltFn) ) preFiltFn={preFiltFn}; end;
+  for ei=1:size(X,3);
+	 [X(:,:,ei),preFiltState]=feval(preFiltFn{1},X(:,:,ei),preFiltState,preFiltFn{2:end});
+  end
+end
+
 
 %2) Bad channel identification & removal
 isbadch=[]; chthresh=[];
@@ -323,6 +338,8 @@ end
 clsfr.type        = 'ERP';
 clsfr.fs          = fs;   % sample rate of training data
 clsfr.detrend     = opts.detrend; % detrend?
+clsfr.preFiltFn   = preFiltFn;     % pre-filter type
+clsfr.preFiltState= preFiltState;  % pre-filter state
 clsfr.isbad       = isbadch;% bad channels to be removed
 clsfr.spatialfilt = R;    % spatial filter used for surface laplacian
 % configure for apaptive use later
