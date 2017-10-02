@@ -47,6 +47,7 @@ end;
 x=x-s.sx./s.N(:,1); % bias adapt
 if ( verb>0 ) fprintf(' => x_new=[%s]\n',sprintf('%g ',x)); end;
 return;
+%-----------------------------------------------------------------------------
 function testCase()
 x=cumsum(randn(2,1000),2);
 
