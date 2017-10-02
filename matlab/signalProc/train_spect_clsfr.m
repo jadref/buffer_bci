@@ -447,6 +447,8 @@ end
 clsfr.type        = 'spect';
 clsfr.fs          = fs;   % sample rate of training data
 clsfr.detrend     = opts.detrend; % detrend?
+clsfr.preFiltFn   = preFiltFn;     % pre-filter type
+clsfr.preFiltState= preFiltState;  % pre-filter state
 clsfr.isbad       = isbadch;% bad channels to be removed
 clsfr.spatialfilt = R;    % spatial filter used for surface laplacian
 clsfr.adaptspatialfiltFn=opts.adaptspatialfiltFn; % record the function to use

@@ -84,7 +84,8 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %  res    - [struct] detailed results for each fold
 %  X       -- [ppch x pptime x ppepoch] pre-processed data (N.B. may/will have different size to input X)
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
-opts=struct('classify',1,'fs',[],'timeband_ms',[],'freqband',[],...
+  opts=struct('classify',1,'fs',[],'timeband_ms',[],'freqband',[],...
+              'preFiltFn',[],...
             'width_ms',500,'windowType','hamming','aveType','amp','timefeat',0,...
             'detrend',1,'spatialfilter','slap',...
             'adaptspatialfiltFn',[],'adaptspatialfiltstate',[],...
@@ -129,6 +130,15 @@ if ( opts.detrend )
   elseif ( isequal(opts.detrend,2) )
     fprintf('1) Center\n');
     X=repop(X,'-',mean(X,2));
+  end
+end
+% 5.9) Apply a pre-filter function if wanted
+preFiltFn=opts.preFiltFn; preFiltState=[];
+if ( ~isempty(preFiltFn) )
+  fprintf('5.5) preFilter\n');
+  if ( ~iscell(preFiltFn) ) preFiltFn={preFiltFn}; end;
+  for ei=1:size(X,3);
+	 [X(:,:,ei),preFiltState]=feval(preFiltFn{1},X(:,:,ei),preFiltState,preFiltFn{2:end});
   end
 end
 
@@ -442,6 +452,8 @@ end
 clsfr.type        = 'ERsP';
 clsfr.fs          = fs;   % sample rate of training data
 clsfr.detrend     = opts.detrend; % detrend?
+clsfr.preFiltFn   = preFiltFn;     % pre-filter type
+clsfr.preFiltState= preFiltState;  % pre-filter state
 clsfr.isbad       = isbadch;% bad channels to be removed
 clsfr.spatialfilt = R;    % spatial filter used for surface laplacian
 clsfr.adaptspatialfiltFn=opts.adaptspatialfiltFn; % record the function to use
