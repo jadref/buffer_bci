@@ -182,7 +182,7 @@ drawnow; % make sure the figure is visible
 % make popup menu for selection of TD/FD
 modehdl=[]; vistype=0; curvistype='time';
 try
-  modehdl=uicontrol(fig,'Style','popup','units','normalized','position',[.01 .9 .2 .1],'String','Time|Frequency|50Hz|Noisefrac|Spect|Power|Offset');
+   modehdl=uicontrol(fig,'Style','popup','units','normalized','position',[.01 .9 .2 .1],'String','Time|Frequency|50Hz|Noisefrac|Spect|Power|Offset');
   set(modehdl,'value',1);
 catch
 end
@@ -326,7 +326,7 @@ while ( ~endTraining )
   %------------------------------------------------------------------------
   % pre-process the data
   ppdat = rawdat;
-  if ( ~any(strcmp(curvistype,{'offset'})) ) % no detrend for offset comp
+  if ( ~any(strcmpi(curvistype,{'offset'})) ) % no detrend for offset comp
 	 if( (isfield(ppopts,'center') && ppopts.center)  ) 
             ppdat=repop(ppdat,'-',mean(ppdat,2)); 
     end;
@@ -345,7 +345,7 @@ while ( ~endTraining )
   %-------------------------------------------------------------------------------------
   % bad-channel removal + spatial filtering
   % BODGE: 50Hz power doesn't do any spatial filtering, or bad-channel removal
-  if ( ~any(strcmp(curvistype,{'50hz','offset','noisefrac'})) ) 
+  if ( ~any(strcmpi(curvistype,{'50hz','offset','noisefrac'})) ) 
 
     % bad channel removal
     oisbadch=isbadch;
@@ -372,9 +372,9 @@ while ( ~endTraining )
        if ( ~isempty(th) ) 
           tstr=get(th,'string'); 
           if(isbadch(hi))
-             if ( ~strcmp(tstr(max(end-5,1):end),' (bad)')) set(th,'string',[tstr ' (bad)']); end
+             if ( ~strcmpi(tstr(max(end-5,1):end),' (bad)')) set(th,'string',[tstr ' (bad)']); end
           elseif ( ~isbadch(hi) )
-             if (strcmp(tstr(max(end-5,1):end),' (bad)'));  set(th,'string',tstr(1:end-6)); end;
+             if (strcmpi(tstr(max(end-5,1):end),' (bad)'));  set(th,'string',tstr(1:end-6)); end;
           end
        end
     end
@@ -513,10 +513,10 @@ while ( ~endTraining )
       set(line_hdls,'xdata',freqs(freqIdx(1):freqIdx(2)),'visible','on');
       
      case {'50hz','power','offset','noisefrac'}; % 50Hz Power all the same axes -----------------------------------
-       if ( strcmp(curvistype,'50hz') && ~isempty(opts.noiseBins) ) % fix the color range for the 50hz power plots
+       if ( strcmpi(curvistype,'50hz') && ~isempty(opts.noiseBins) ) % fix the color range for the 50hz power plots
          datlim=[opts.noiseBins(1) opts.noiseBins(end)];
        end;
-       if ( strcmp(curvistype,'noisefrac') && ~isempty(opts.noisefracBins) ) % fix the color range for the 50hz power plots
+       if ( strcmpi(curvistype,'noisefrac') && ~isempty(opts.noisefracBins) ) % fix the color range for the 50hz power plots
          datlim=[opts.noisefracBins(1) opts.noisefracBins(end)];
        end;
       set(hdls,'xlim',[.5 1.5],'ylim',[.5 1.5],'clim',datlim);
@@ -576,18 +576,21 @@ while ( ~endTraining )
 		elseif ( isnan(datrange(2)) || isinf(datrange(2)) )
 		  datrange(2) = datrange(1)+1;
 		end;         
-      if ( strcmp(curvistype,'50hz') && ~isempty(opts.noiseBins) ) % fix the color range for the 50hz power plots
+      if ( strcmpi(curvistype,'50hz') && ~isempty(opts.noiseBins) ) % fix the color range for the 50hz power plots
          datrange=[opts.noiseBins(1) opts.noiseBins(end)];
       end;
-      if ( strcmp(curvistype,'noisefrac') && ~isempty(opts.noisefracBins) )% fix the color range for the 50hz power plots
+      if ( strcmpi(curvistype,'noisefrac') && ~isempty(opts.noisefracBins) )% fix the color range for the 50hz power plots
          datrange=[opts.noisefracBins(1) opts.noisefracBins(end)];
       end;
 
 		                          % spectrogram, power - datalim is color range
-      if ( any(strcmp(curvistype,{'spect','power','offset','50Hz','noisefrac'})) )
+      if ( any(strcmpi(curvistype,{'spect','power','offset','50Hz','noisefrac'})) )
         datlim=datrange; set(hdls(1:size(ppdat,1)),'clim',datlim);
                                 % update the colorbar info
-        if ( ~isempty(cbarhdl) ); set(get(cbarhdl,'children'),'ydata',datlim);set(cbarhdl,'ylim',datlim); end;
+        if ( ~isempty(cbarhdl) ); 
+           set(get(cbarhdl,'children'),'ydata',datlim);
+           set(cbarhdl,'ylim',datlim); 
+        end;
       else % lines - datalim is y-range
         datlim=datrange; set(hdls(1:size(ppdat,1)),'ylim',datlim);
       end
