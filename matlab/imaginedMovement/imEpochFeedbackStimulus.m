@@ -14,7 +14,7 @@ end
 % make the stimulus display
 fig=figure(2);
 clf;
-set(fig,'Name','Imagined Movement','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
+set(fig,'Name','Stimulus Display','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
 set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
@@ -79,9 +79,6 @@ waitforkeyTime=getwTime()+calibrateMaxSeqDuration;
 for si=1:nSeq;
 
   if ( ~ishandle(fig) || endTesting ) break; end;
-
-  % update progress bar
-  set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d (%02d)',si,nSeq,nCorrect,nWrong,nMissed));
 
   % Give user a break if too much time has passed
   if ( getwTime() > waitforkeyTime )
@@ -199,11 +196,12 @@ for si=1:nSeq;
     elseif(~any(predTgt==tgtIdx)) nWrong  = nWrong+1;  fprintf('wrong!'); % wrong (and not 'rest') .... do the penalty
     elseif(any(predTgt==tgtIdx))  nCorrect= nCorrect+1;fprintf('right!'); % correct
     end
-    % update progress bar
-    set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d (%02d)',si,nSeq,nCorrect,nWrong,nMissed));
-    drawnow;
     sendEvent('stimulus.predTgt',predTgt);
   end % if classifier prediction
+  
+  % update progress bar
+  set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d (%02d)',si,nSeq,nCorrect,nWrong,nMissed));
+  drawnow; % re-draw display
   sleepSec(feedbackDuration);
   
   % reset the cue and fixation point to indicate trial has finished  

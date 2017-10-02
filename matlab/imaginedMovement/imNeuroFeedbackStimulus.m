@@ -2,7 +2,7 @@
 %if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) ) configureIM; end;
 
 fig=figure(2);
-set(fig,'Name','Imagined Movement -- close window to stop.','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
+set(fig,'Name','Stimulus Display : Neurofeedback -- close window to stop.','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
 set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
 clf;
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
@@ -80,11 +80,11 @@ while (timetogo>0)
   if ( isempty(events) )
 	 if ( timetogo>.1 ) fprintf('%d) no predictions!\n',nsamples); drawnow; end;
   else
-    [ans,si]=sort([events.sample],'ascend'); % proc in *temporal* order
+    [ans,evtsi]=sort([events.sample],'ascend'); % proc in *temporal* order
     for ei=1:numel(events);
 		nEpochs=nEpochs+1;
 
-      ev=events(si(ei));% event to process
+      ev=events(evtsi(ei));% event to process
 		pred=ev.value;
 										  % now do something with the prediction....
 		if ( numel(pred)==1 )

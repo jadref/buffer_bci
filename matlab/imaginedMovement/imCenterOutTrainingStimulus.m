@@ -7,7 +7,7 @@ tgtSeq=mkStimSeqRand(nSymbs,nSeq);
 
 fig=figure(2);
 clf;
-set(fig,'Name','Imagined Movement','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
+set(fig,'Name','Stimulus Display','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
 set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
@@ -72,9 +72,6 @@ for si=1:nSeq;
 
   if ( ~ishandle(fig) ) break; end;
   
-  % update progress bar
-  set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d',si,nSeq,nCorrect,nWrong));
-
   % show the target
   tgtIdx=find(tgtSeq(:,si)>0);
   set(h(tgtSeq(:,si)>0),'facecolor',tgtColor);
@@ -112,9 +109,9 @@ for si=1:nSeq;
     if ( isempty(events) ) 
 		if ( timetogo>.1 ) fprintf('%d) no predictions!\n',nsamples); end;
     else
-		[ans,si]=sort([events.sample],'ascend'); % proc in *temporal* order
+		[ans,evtsi]=sort([events.sample],'ascend'); % proc in *temporal* order
       for ei=1:numel(events);
-        ev=events(si(ei));% event to process
+        ev=events(evtsi(ei));% event to process
 		  %fprintf('pred-evt=%s\n',ev2str(ev));
         pred=ev.value;
         % now do something with the prediction....
@@ -199,6 +196,8 @@ for si=1:nSeq;
 
   % reset the cue and fixation point to indicate trial has finished  
   set(h(:),'facecolor',bgColor);
+  % update progress bar
+  set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d',si,nSeq,nCorrect,nWrong));
   % also reset the position of the fixation point
   set(h(end),'position',[stimPos(:,end)-stimRadius/4;stimRadius/2*[1;1]]);
   drawnow;

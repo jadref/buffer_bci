@@ -14,7 +14,7 @@ end
 
 fig=figure(2);
 clf;
-set(fig,'Name','Imagined Movement','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
+set(fig,'Name','Stimulus Display','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
 set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
@@ -73,10 +73,7 @@ waitforkeyTime=getwTime()+calibrateMaxSeqDuration;
 for si=1:nSeq;
 
   if ( ~ishandle(fig) ) break; end;
-  
-  % update progress bar
-  set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d  (%02d)',si,nSeq,nCorrect,nWrong,nMissed));
-  
+    
   % Give user a break if too much time has passed
   if ( getwTime() > waitforkeyTime )
 	 set(txthdl,'string', {'Break between blocks.' 'Click mouse when ready to continue.'}, 'visible', 'on');
@@ -162,9 +159,9 @@ for si=1:nSeq;
     if ( isempty(events) ) 
 		if ( timetogo>.1 ) fprintf('%d) no predictions!\n',nsamples); end;
     else
-		[ans,si]=sort([events.sample],'ascend'); % proc in *temporal* order
+		[ans,evtsi]=sort([events.sample],'ascend'); % proc in *temporal* order
       for ei=1:numel(events);
-        ev=events(si(ei));% event to process
+        ev=events(evtsi(ei));% event to process
 		  %fprintf('pred-evt=%s\n',ev2str(ev));
         pred=ev.value;
         % now do something with the prediction....
@@ -271,6 +268,8 @@ for si=1:nSeq;
   set(h(min(numel(h),predTgt)),'facecolor',fbColor);
   % also reset the position of the fixation point
   set(h(end),'position',[stimPos(:,end)-stimRadius/4;stimRadius/2*[1;1]]);
+  % update progress bar
+  set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d  (%02d)',si,nSeq,nCorrect,nWrong,nMissed));
   drawnow;
   sendEvent('stimulus.trial','end');
 
