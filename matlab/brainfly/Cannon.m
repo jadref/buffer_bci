@@ -75,13 +75,13 @@ classdef Cannon < handle
             
             switch whereTo
                 
-                case 'left'
+                case 'right'
                     
                     % Move cannon left, but keep in in bounds.
                     obj.Xbase = max(obj.Xbase-curStepSize...
                                     ,axesXLim(1));
                     
-                case 'right'
+                case 'left'
                     % Move cannon right, but keep in in bounds.
                     obj.Xbase = min(obj.Xbase+curStepSize...
                         ,axesXLim(2)-obj.cannonWidth);
