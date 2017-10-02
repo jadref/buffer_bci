@@ -348,7 +348,7 @@ while ( true )
    %---------------------------------------------------------------------------------
    case {'calibrate','calibration',opts.calibrateExtraPhases{:}};
     [ntraindata,ntraindevents,state]=buffer_waitData(opts.buffhost,opts.buffport,[],'startSet',opts.epochEventType,'exitSet',{{'calibrate' 'calibration' 'sigproc.reset' phaseToRun ['sigproc.' phaseToRun]} 'end'},'verb',opts.verb,'trlen_ms',opts.trlen_ms,opts.calibrateOpts{:});
-    mi=matchEvents(ntraindevents,{'calibrate' 'calibration'},'end'); ntraindevents(mi)=[]; ntraindata(mi)=[];%remove exit event
+    mi=matchEvents(ntraindevents,{'calibrate' 'calibration' 'sigproc.reset' phaseToRun ['sigproc.' phaseToRun]},'end'); ntraindevents(mi)=[]; ntraindata(mi)=[];%remove exit event
     if(isempty(traindata))
       traindata=ntraindata;                  traindevents=ntraindevents;
     else
@@ -522,23 +522,33 @@ while ( true )
 
     %---------------------------------------------------------------------------------
    case {'test','testing','epochfeedback','eventfeedback'};
-    %try
-    if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
-      clsfrfile = [cname '_' subject '_' datestr];
-      if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
-        % Not in default name -- ask user for file to load?
-        [fn,pth]=uigetfile([cname '*.mat'],'Pick saved classifier file.'); drawnow;
-	      if ( ~isequal(fn,0) );
-           clsfrfile=fullfile(pth,fn);
-         else
-           continue;
-         end; 
-	  end;
-      if(opts.verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
-      clsfr=load(clsfrfile);
-      if( isfield(clsfr,'clsfr') ) clsfr=clsfr.clsfr; end;
-      clsSubj = subject;
-    end;
+     try % try to load the classifier from file (in case someone else made it for us)
+        clsfrfile = [cname '_' subject '_' datestr];
+        if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
+           [fn,pth]=uigetfile([cname '*.mat'],'Pick saved classifier file.'); drawnow;
+           if ( ~isequal(fn,0) );
+              clsfrfile=fullfile(pth,fn);
+           else
+              continue;
+           end;
+        end
+        if(opts.verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
+        clsfr=load(clsfrfile);
+        if( isfield(clsfr,'clsfr') ) clsfr=clsfr.clsfr; end;
+        clsSubj = subject;
+     catch
+        if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) % can't use the clsfr variable
+           fprintf('Error in : %s',phaseToRun);
+           le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+           if ( ~isempty(le.stack) )
+              for i=1:numel(le.stack);
+                 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+              end;
+           end
+           msgbox({sprintf('%s::ERROR loading classifier, %s',phaseToRun,clsfrfile) 'OK to continue!'},'Error');
+           sendEvent('testing','end');    
+        end
+     end;
 
     [testdata,testevents]=event_applyClsfr(clsfr,'startSet',opts.testepochEventType,...
 							                      'predFilt',opts.epochPredFilt,...
