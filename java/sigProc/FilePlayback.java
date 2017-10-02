@@ -1,6 +1,7 @@
 package nl.dcc.buffer_bci;
 import java.io.*;
 import java.nio.*;
+import javax.swing.JFileChooser;
 import nl.fcdonders.fieldtrip.bufferclient.*;
 
 public class FilePlayback {
@@ -36,7 +37,12 @@ public class FilePlayback {
 	
 		if (args.length==0 ){
 			 System.out.print(usage);
-			 System.exit(-1);
+          javax.swing.JFileChooser fc = new javax.swing.JFileChooser();
+          int returnVal = fc.showOpenDialog(null);
+          if (returnVal == javax.swing.JFileChooser.APPROVE_OPTION) {
+              File file = fc.getSelectedFile();
+              dataDir=file.getParent();
+          }
 		}
 		if (args.length>=1) {
 			hostname = args[0];
@@ -47,6 +53,7 @@ public class FilePlayback {
 			}			
 		}
 		System.out.println(TAG+" Host:port="+hostname+port);
+
 		if (args.length>=2) {
 			 dataDir=args[1];
 		}
