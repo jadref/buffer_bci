@@ -17,7 +17,10 @@ configureGame;
 			  '4) Epoch Feedback'         'epochfeedback';
 			  '5) Continuous Feedback'    'contfeedback';
            '6) Brainfly-game'          'brainfly';
-			  'q) quit'                   'quit';
+         '' '';
+         'S) Slice ftoffline data'   'sliceraw';
+         'L) Load training data'     'loadtraining';
+			'q) exit'                   'quit';
           };
   txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
 				'HorizontalAlignment','left','color',[1 1 1]);
@@ -70,22 +73,14 @@ while (ishandle(contFig))
   switch phaseToRun;
     
    %---------------------------------------------------------------------------
-   case 'capfitting';
+   % Simple forward to the sig-processor commands
+   %  sig-viewers, data-slicer/loader, classifier training         
+   case {'capfitting','eegviewer','loadtraining','sliceraw','trainersp'};
     sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
+    sigProcCmd=['sigproc.' phaseToRun]; % command to send to the signal processor
+    sendEvent(sigProcCmd,'start'); 
     for i=1:20; % N.B. use a loop as safer and matlab still responds on windows...
-       [devents]=buffer_newevents(buffhost,buffport,[],{phaseToRun,['sigproc.' phaseToRun]},'end',1000); % wait until finished
-       drawnow;
-       if ( ~isempty(devents) ) break; end;
-    end
-
-   %---------------------------------------------------------------------------
-   case 'eegviewer';
-    sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
-    % wait until capFitting is done
-    for i=1:20; % N.B. use a loop as safer and matlab still responds on windows...
-       [devents]=buffer_newevents(buffhost,buffport,[],{phaseToRun,['sigproc.' phaseToRun]},'end',1000); % wait until finished
+       [devents]=buffer_newevents(buffhost,buffport,[],sigProcCmd,'end',1000); % wait until finished
        drawnow;
        if ( ~isempty(devents) ) break; end;
     end
@@ -132,19 +127,11 @@ while (ishandle(contFig))
     sendEvent(phaseToRun,'end');
 
    %---------------------------------------------------------------------------
-   case {'train','trainersp'};
-    sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun); % tell sig-proc what to do
-    for i=1:20;
-      buffer_newevents(buffhost,buffport,[],{phaseToRun,['sigproc.' phaseToRun]},'end',1000); % wait until finished
-    end
-
-   %---------------------------------------------------------------------------
    case {'epochfeedback'};
     sendEvent('subject',subject);
     %sleepSec(.1);
     sendEvent(phaseToRun,'start');
-    %try
+    try
 		if ( earlyStopping ) % use the user-defined command
 		  sendEvent('startPhase.cmd',userFeedbackTable{1});
 		else
@@ -153,14 +140,14 @@ while (ishandle(contFig))
       preConfigured=true;
       imEpochFeedbackStimulus;
       preConfigured=false;
-    % catch
-    %    le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-	%  	 if ( ~isempty(le.stack) )
-	%  	   for i=1:numel(le.stack);
-	% 	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
-	%  	   end;
-	%  	 end
-    % end
+    catch
+       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	 if ( ~isempty(le.stack) )
+	  	   for i=1:numel(le.stack);
+	  	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	   end;
+	  	 end
+    end
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');
    
@@ -234,17 +221,17 @@ while (ishandle(contFig))
     sendEvent('subject',subject);
     %sleepSec(.1);
     sendEvent(phaseToRun,'start');
-    %try
+    try
       sendEvent('startPhase.cmd','contfeedback');
       brainfly;
-    %catch
-%        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-% 	  	 if ( ~isempty(le.stack) )
-% 	  	   for i=1:numel(le.stack);
-% 	  	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
-% 	  	   end;
-% 	  	 end
-%     end
+    catch
+       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	 if ( ~isempty(le.stack) )
+	  	   for i=1:numel(le.stack);
+	  	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	   end;
+	  	 end
+    end
     sendEvent('contfeedback','end');
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');

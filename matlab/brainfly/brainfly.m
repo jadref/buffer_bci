@@ -31,11 +31,14 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
   gameCanvasYLims         = [0 800];
   gameCanvasXLims         = [0 500];
   maxCannonShotsPerSecond = 5;               % RPS of cannon
+  autoFireMode            = 1;               % auto-fire or fire key?
   timeBeforeNextAlien     = 3;               % seconds
   killFlashTime           = .1;              % duration of the red-you've-been-killed flash
   bonusSpawnInterval      = [5 20];          % range in time between bonus alien spawns
   
-
+predictionMargin=0;
+  
+  
   %% Generate Figure:
 
                                 % Make the game window:
@@ -44,8 +47,8 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
       ,'color',winColor...
       ,'menubar','none'...
       ,'toolbar','none'...
-      ,'doublebuffer','on'...
-      ,'Position',[gameCanvasXLims(2) 100 gameCanvasXLims(2) gameCanvasYLims(2)]);
+      ,'doublebuffer','on');%...
+      %,'Position',[gameCanvasXLims(2) 100 gameCanvasXLims(2) gameCanvasYLims(2)]);
 
                                 % Make game axes:
   hAxes = axes('position',[0 0 1 1]...
@@ -94,6 +97,11 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
   hText = text(gameCanvasXLims(1),gameCanvasYLims(2)-5,genTextStr(score,curBalls,cannonKills)...
                ,'Color',txtColor);
 
+
+                       % wait for user to be ready before starting everything
+set(hText,'string', {'' 'Click mouse when ready to begin.'}, 'visible', 'on'); drawnow;
+waitforbuttonpress;
+set(hText,'visible', 'off'); drawnow; 
   
                                 % Loop while figure is active:
   killStartTime=0;
@@ -148,20 +156,20 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
           end
       end
       if( ~isempty(dv) ) % only if events to process...
-        [cannonAction,cannonTrotFrac]=prediction2action(prob);
+        [cannonAction,cannonTrotFrac]=prediction2action(prob,predictionMargin);
       end
     end
     
       %----------------------------------------------------------------------
                                 % Operate the cannon:
-    if ~isempty(cannonAction) % updat the cannon
+    if( ~isempty(cannonAction) ) % updat the cannon
       fprintf('%d) move %s %g\n',nframe,cannonAction,cannonTrotFrac);
       hCannon.move(cannonAction,cannonTrotFrac);      
     end
                             % flash cannon, N.B. cannon is always stim-seq #1
     nstim2obj(1)=hCannon.uid; % mark this stim-seq as used
     set(hCannon.hGraphic,'facecolor',stimColors(ss(1)+1,:)); % set the cannon color based on stim-state.
-    if strcmp(cannonAction,'fire') % Shoot cannonball if enough time has elapsed.
+    if ( strcmp(cannonAction,'fire') ||  autoFireMode>0 ) % Shoot cannonball if enough time has elapsed.
       if isempty(lastShotTime)||toc(lastShotTime)>=(1/maxCannonShotsPerSecond)
         newBall = CannonBall(hAxes,hCannon);
         score.shots = score.shots + 1;

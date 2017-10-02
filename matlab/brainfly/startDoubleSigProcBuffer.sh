@@ -2,6 +2,9 @@
 cd `dirname ${BASH_SOURCE[0]}`
 source ../../utilities/findMatlab.sh
 if [[ $matexe == *matlab ]]; then  args=-nodesktop; fi
+cat <<EOF | $matexe $args &
+configAndStartBatchSigProcBuffer($@);
+EOF
 cat <<EOF | $matexe $args
-batchSigProcBuffer('label','batch');
+configAndStartOnlineSigProcBuffer($@);
 EOF

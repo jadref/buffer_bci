@@ -2,8 +2,7 @@
 % This version of imEpoch feedback works directly with at continuous classifier by accumulating the 
 % individual classifier prediction internally from the start until the end of the trial and then generating 
 % a prediction
-configureIM;
-
+%if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) ) configureIM; end;
 
 % make the target sequence
 tgtSeq=mkStimSeqRand(nSymbs,nSeq);
@@ -11,7 +10,7 @@ tgtSeq=mkStimSeqRand(nSymbs,nSeq);
 % make the stimulus display
 fig=figure(2);
 clf;
-set(fig,'Name','Imagined Movement','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
+set(fig,'Name','Stimulus Display','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
 set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
@@ -74,9 +73,6 @@ endTesting=false; dvs=[];
 for si=1:nSeq;
 
   if ( ~ishandle(fig) || endTesting ) break; end;
-
-  % update progress bar
-  set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d',si,nSeq,nCorrect,nWrong));
 
   % Give user a break if too much time has passed
   if ( getwTime() > waitforkeyTime )
@@ -163,16 +159,15 @@ for si=1:nSeq;
   [ans,predTgt]=max(dv); % prediction is max classifier output
   set(h(:),'facecolor',bgColor);
   set(h(predTgt),'facecolor',tgtColor);
-  drawnow;
-  sendEvent('stimulus.predTgt',predTgt);
-
   % update the score
   if ( predTgt>nSymbs )      nMissed = nMissed+1; fprintf('missed!');
   elseif ( predTgt~=tgtIdx ) nWrong  = nWrong+1;  fprintf('wrong!'); % wrong (and not 'rest') .... do the penalty
   else                       nCorrect= nCorrect+1;fprintf('right!'); % correct
   end
-
-
+  % update progress bar
+  set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d',si,nSeq,nCorrect,nWrong));
+  drawnow;
+  sendEvent('stimulus.predTgt',predTgt);
 
   if ( ~isempty(rtbClass) ) % treat post-trial return-to-baseline as a special class		
 	 if ( ischar(rtbClass) && strcmp(rtbClass,'trialClass') ) % label as part of the trial

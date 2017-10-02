@@ -1,5 +1,5 @@
-if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) ) configureIM; end;
-
+% auto-configure if not done?
+%if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) ) configureIM; end;
 
 % make the target sequence
 tgtSeq=mkStimSeqRand(nSymbs,nSeq);
@@ -7,7 +7,7 @@ tgtSeq=mkStimSeqRand(nSymbs,nSeq);
 % make the stimulus
 %figure;
 fig=figure(2);
-set(fig,'Name','Imagined Movement','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
+set(fig,'Name','Stimulus Display','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
 set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
 clf;
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
@@ -66,9 +66,6 @@ waitforkeyTime=getwTime()+calibrateMaxSeqDuration;
 for si=1:nSeq;
 
   if ( ~ishandle(fig) ) break; end;
-
-  % update progress bar
-  set(progresshdl,'string',sprintf('%2d/%2d',si,nSeq));
 
   % Give user a break if too much time has passed
   if ( getwTime() > waitforkeyTime )
@@ -161,6 +158,8 @@ for si=1:nSeq;
   end
 		
   % reset the cue and fixation point to indicate trial has finished
+  % update progress bar
+  set(progresshdl,'string',sprintf('%2d/%2d',si,nSeq));
   % wait for the inter-trial
   set(h(:),'facecolor',bgColor);
   if ( ~isempty(symbCue) ) set(txthdl,'visible','off'); end

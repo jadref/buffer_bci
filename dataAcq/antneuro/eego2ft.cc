@@ -27,9 +27,6 @@ static int sampleRate=500;
 
 #if defined(__WIN32__) || defined(__WIN64__)
  #define SIGALRM -1
- #if defined(NOBACKGROUNDSCAN)
-    #include <wlanapi.h>
- #endif
 #endif
 
 
@@ -38,6 +35,7 @@ int port=1972, ctrlPort=8000;
 char hostname[256]="localhost";
 StringServer ctrlServ;
 ConsoleInput conIn;
+const double SCALE_raw2mV=1e6; // scale raw data so send in mV
 
 using namespace eemagine::sdk;
 amplifier* amp=NULL ; 
@@ -135,7 +133,7 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
         //copy the data from the amp-driver into the buffer-data-block
 			for (int i=0;i<nChannels;i++) {					
 				for (unsigned int j=0;j<nSamplesTaken;j++) {
-              dest[i + j*nChannels] = buf.getSample(i,j);
+              dest[i + j*nChannels] = buf.getSample(i,j)*SCALE_raw2mV;
 				}
 			}
          // tell the ODM to process this block of data

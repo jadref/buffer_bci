@@ -1,9 +1,9 @@
 % continous feedback within a cued trial based structure
-if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) ) configureIM; end;
+%if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) ) configureIM; end;
 if ( ~exist('contFeedbackTrialDuration') || isempty(contFeedbackTrialDuration) ) contFeedbackTrialDuration=trialDuration; end;
-if ( ~exist('stimSmoothFactor') ) stimSmoothFactor=[]; end;
-if ( ~exist('dvCalFactor') ) dvCalFactor=[]; end;
-if ( ~exist('warpCursor') ) warpCursor=true; end;
+if ( ~exist('dvFilt','var') ) dvFilt=[]; end; % additional filtering of the decison values for display/feedback
+if ( ~exist('dvCalFactor','var') ) dvCalFactor=[]; end;
+if ( ~exist('warpCursor','var') ) warpCursor=true; end;
 
 % make the target sequence
 if ( baselineClass ) % with rest targets
@@ -14,7 +14,7 @@ end
 
 fig=figure(2);
 clf;
-set(fig,'Name','Imagined Movement','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
+set(fig,'Name','Stimulus Display','color',winColor,'menubar','none','toolbar','none','doublebuffer','on');
 set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
@@ -68,14 +68,12 @@ set(txthdl,'visible', 'off'); drawnow; sleepSec(intertrialDuration);
 sendEvent('stimulus.testing','start');
 
 nWrong=0; nMissed=0; nCorrect=0; % performance recording
+dvstats=[]; % summary stats for the decision values
 waitforkeyTime=getwTime()+calibrateMaxSeqDuration;
 for si=1:nSeq;
 
   if ( ~ishandle(fig) ) break; end;
-  
-  % update progress bar
-  set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d  (%02d)',si,nSeq,nCorrect,nWrong,nMissed));
-  
+    
   % Give user a break if too much time has passed
   if ( getwTime() > waitforkeyTime )
 	 set(txthdl,'string', {'Break between blocks.' 'Click mouse when ready to continue.'}, 'visible', 'on');
@@ -97,6 +95,7 @@ for si=1:nSeq;
   set(h(end),'facecolor',fixColor); % red fixation indicates trial about to start/baseline
   drawnow;% expose; % N.B. needs a full drawnow for some reason
   sendEvent('stimulus.baseline','start');
+  % TODO: [] if using baseline reference then catch predictions during this period to get the baseline...
   if ( ~isempty(baselineClass) ) % treat baseline as a special class
 	 for ei=1:ceil(baselineDuration/epochDuration); % send base-line event every epoch duration
 		sendEvent('stimulus.target',baselineClass);
@@ -144,7 +143,7 @@ for si=1:nSeq;
   prob   = ones(nSymbs,1)./nSymbs; % start with equal prob over everything
   trlStartTime=getwTime();
   timetogo = contFeedbackTrialDuration;
-  nevt=0; nPred=0; sdv=[];
+  nevt=0; nPred=0; sdv=[]; baselinedv=[]; 
   evtTime=trlStartTime+epochDuration; % N.B. already sent the 1st target event
   while (timetogo>0)
 	 curTime  = getwTime();
@@ -160,9 +159,9 @@ for si=1:nSeq;
     if ( isempty(events) ) 
 		if ( timetogo>.1 ) fprintf('%d) no predictions!\n',nsamples); end;
     else
-		[ans,si]=sort([events.sample],'ascend'); % proc in *temporal* order
+		[ans,evtsi]=sort([events.sample],'ascend'); % proc in *temporal* order
       for ei=1:numel(events);
-        ev=events(si(ei));% event to process
+        ev=events(evtsi(ei));% event to process
 		  %fprintf('pred-evt=%s\n',ev2str(ev));
         pred=ev.value;
         % now do something with the prediction....
@@ -171,23 +170,54 @@ for si=1:nSeq;
         end    
 
 		  % additional prediction smoothing for display, if wanted
-		  if ( ~isempty(stimSmoothFactor) && isnumeric(stimSmoothFactor) && stimSmoothFactor>0 )
-			 if ( stimSmoothFactor>=0 ) % exp weighted moving average
-				dv=dv*stimSmoothFactor + (1-stimSmoothFactor)*pred(:);
-			 else % store predictions in a ring buffer
-				fbuff(:,mod(nEpochs-1,abs(stimSmoothFactor))+1)=pred(:);% store predictions in a ring buffer
-				dv=mean(fbuff,2);
-			 end
+		  if ( ~isempty(dvFilt) && ~isequal(dvFilt,0) )
+           if( isnumeric(dvFilt) )
+              if ( dvFilt>=0 ) % exp weighted moving average
+                 dv=dv*dvFilt + (1-dvFilt)*pred(:);
+              else % store predictions in a ring buffer
+                 fbuff(:,mod(nEpochs-1,abs(dvFilt))+1)=pred(:);% store predictions in a ring buffer
+                 dv=mean(fbuff,2);
+              end
+           elseif ( ischar(dvFilt) )
+              if( isempty(baselinedv) ) baselinedv=dv; end; % BODGE: seed baseline dv with 1st pred in the trial
+              if( strcmp(dvFilt,'absbaseline') )
+                 dv = dv-baselinedv;
+              elseif ( strcmp(dvFilt,'relbaseline') )
+                 dv = dv./baselinedv;
+              end
+           end
 		  else
 			 dv=pred;
 		  end
                            % accumulate info on the average dv for this trial
-        nPred=nPred+1; if(isempty(sdv))sdv=dv; else; sdv=sdv+dv; end;
+        nPred=nPred+1; if(isempty(sdv))sdv=dv; sdv2=dv.*dv; else; sdv=sdv+dv; sdv2=sdv2+dv.*dv; end;
+        % update summary stats
+        if( isempty(dvstats) ) 
+           dvstats=struct('N',1,'sdv',dv,'sdv2',dv.*dv,'dvvar',1); 
+        else                   
+           dvstats.N    = dvstats.N+1; 
+           dvstats.sdv  = dvstats.sdv+dv; 
+           dvstats.sdv2 = dvstats.sdv2+dv.*dv;
+           dvstats.dvvar= max(0,(dvstats.sdv2-dvstats.sdv.^2./dvstats.N))./dvstats.N; % running variance estimate 
+        end
         
 										  % convert from dv to normalised probability
         curdv=dv; if( numel(curdv)==1 ) curdv=[curdv -curdv]; end; % ensure min 1 decision values..
-		  if(~isempty(dvCalFactor)) prob=exp((curdv-max(curdv))*dvCalFactor);
-		  else                      prob=exp((curdv-max(curdv)));
+		  if(~isempty(dvCalFactor))
+           if( isnumeric(dvCalFactor) )
+              prob=exp((curdv-max(curdv))*dvCalFactor);
+           elseif( ischar(dvCalFactor) && strcmp(dvCalFactor,'auto') )
+              calF=.5./sqrt(mean(dvstats.dvvar)); % make range +/- 3
+              if(verb>=1)
+                 fprintf('N=%g sdv=[%s] sdv2=[%s] calF=[%g]\n',...
+                         dvstats.N,sprintf('%g,',dvstats.sdv),sprintf('%g,',dvstats.sdv2),calF);
+              end
+              if( calF>0 && ~isnan(calF) && ~isinf(calF) ) 
+                 prob=exp((curdv-max(curdv))*calF);
+              end
+           end
+		  else                      
+           prob=exp((curdv-max(curdv)));
 		  end
 		  prob=prob./sum(prob); % robust soft-max prob computation
         if ( verb>=0 ) 
@@ -196,7 +226,8 @@ for si=1:nSeq;
       end
 
 	 end % if prediction events to process
-
+    
+    
     % feedback information... simply move in direction detected by the BCI
 	 if ( numel(prob)>=size(stimPos,2)-1 ) % per-target decomposition
       if ( numel(prob)>size(stimPos,2) ) prob=[prob(1:size(stimPos,2)-1);sum(prob(size(stimPos,2):end))];end;
@@ -237,6 +268,8 @@ for si=1:nSeq;
   set(h(min(numel(h),predTgt)),'facecolor',fbColor);
   % also reset the position of the fixation point
   set(h(end),'position',[stimPos(:,end)-stimRadius/4;stimRadius/2*[1;1]]);
+  % update progress bar
+  set(progresshdl,'string',sprintf('%2d/%2d +%02d -%02d  (%02d)',si,nSeq,nCorrect,nWrong,nMissed));
   drawnow;
   sendEvent('stimulus.trial','end');
 

@@ -20,7 +20,9 @@ function [stimSeq,stimTime,eventSeq,colors,stimCode]=mkStimSeqRand(nSymb,duratio
 %                   {type value} a cell array with the event type and value to send
 %  stimCode -- [1 x nStim] number of the symbol to be flashed at each time
 if ( nargin<3 || isempty(isi) ) isi=1; end;
-if ( nargin<4 || isempty(mintti) ) mintti=max(floor(nSymb/2-eps),nSymb-2); end;
+if ( nargin<4 || isempty(mintti) ) 
+	mintti=max(floor(nSymb/2-eps),nSymb-2); 
+end;
 colors=[1 1 1]'; % flash is white
 nStim = ceil(duration/isi);
 stimTime=(1:nStim)*isi(1);

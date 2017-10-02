@@ -107,7 +107,7 @@ if ( isempty(wb) || isempty(strfind('dataAcq',wb)) )
   initgetwTime;
   initsleepSec;
 end;
-opts=struct('phaseEventType','startPhase.cmd',...
+opts=struct('label','sigProc','phaseEventType','startPhase.cmd',...
             'catchPhases',[],'ignorePhases',[],'calibrateExtraPhases',{{}},...
 				'epochEventType',[],'testepochEventType',[],...
             'erpEventType',[],'erpMaxEvents',[],'erpOpts',{{}},...
@@ -142,11 +142,12 @@ end;
 if ( ~isempty(strfind(capFile,'tmsi')) ) thresh=[.0 .1 .2 5]; badchThresh=1e-4; end;
 
 if ( isempty(opts.epochEventType) && opts.useGUI )
-  try
+     try
 	 optsFig=bufferSignalProcOpts();
-  catch
+    %set(optsFig,'title',opts.label);
+    catch
 	 optsFig=[];
-  end
+    end
   if ( ~isempty(optsFig) && ishandle(optsFig) ) 
 	 uiwait(optsFig); 
 	 info=guidata(optsFig);
@@ -170,7 +171,7 @@ end
 if ( isempty(opts.epochEventType) )     opts.epochEventType='stimulus.target'; end;
 if ( isempty(opts.testepochEventType) ) opts.testepochEventType='classifier.apply'; end;
 if ( isempty(opts.erpEventType) )       opts.erpEventType=opts.epochEventType; end;
-if ( ~isempty(opts.freqband) )          opts.freqbanderp=opts.freqbandk; opts.freqbandersp=opts.freqband; end;
+if ( ~isempty(opts.freqband) )          opts.freqbanderp=opts.freqband; opts.freqbandersp=opts.freqband; end;
 userPhaseNames={};
 if ( ~isempty(opts.userFeedbackTable) )
   userPhaseNames=opts.userFeedbackTable(:,1);
@@ -190,7 +191,7 @@ if ( opts.useGUI )
   % create the control window and execute the phase selection loop
   contFig=figure(99); % use figure window number no-one else will use...
   clf;
-  set(contFig,'name','Signal Processing Controller : close to quit','color',[.3 .1 .1]);
+  set(contFig,'name',sprintf('%s Controller : close to quit',opts.label),'color',[.3 .1 .1]);
   axes('position',[0 0 1 1],'visible','off','xlim',[0 1],'ylim',[0 1],'nextplot','add');
   set(contFig,'Units','pixel');wSize=get(contFig,'position');
   fontSize = .05*wSize(4);
@@ -347,7 +348,7 @@ while ( true )
    %---------------------------------------------------------------------------------
    case {'calibrate','calibration',opts.calibrateExtraPhases{:}};
     [ntraindata,ntraindevents,state]=buffer_waitData(opts.buffhost,opts.buffport,[],'startSet',opts.epochEventType,'exitSet',{{'calibrate' 'calibration' 'sigproc.reset' phaseToRun ['sigproc.' phaseToRun]} 'end'},'verb',opts.verb,'trlen_ms',opts.trlen_ms,opts.calibrateOpts{:});
-    mi=matchEvents(ntraindevents,{'calibrate' 'calibration'},'end'); ntraindevents(mi)=[]; ntraindata(mi)=[];%remove exit event
+    mi=matchEvents(ntraindevents,{'calibrate' 'calibration' 'sigproc.reset' phaseToRun ['sigproc.' phaseToRun]},'end'); ntraindevents(mi)=[]; ntraindata(mi)=[];%remove exit event
     if(isempty(traindata))
       traindata=ntraindata;                  traindevents=ntraindevents;
     else
@@ -521,23 +522,33 @@ while ( true )
 
     %---------------------------------------------------------------------------------
    case {'test','testing','epochfeedback','eventfeedback'};
-    %try
-    if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
-      clsfrfile = [cname '_' subject '_' datestr];
-      if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
-        % Not in default name -- ask user for file to load?
-        [fn,pth]=uigetfile([cname '*.mat'],'Pick saved classifier file.'); drawnow;
-	      if ( ~isequal(fn,0) );
-           clsfrfile=fullfile(pth,fn);
-         else
-           continue;
-         end; 
-	  end;
-      if(opts.verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
-      clsfr=load(clsfrfile);
-      if( isfield(clsfr,'clsfr') ) clsfr=clsfr.clsfr; end;
-      clsSubj = subject;
-    end;
+     try % try to load the classifier from file (in case someone else made it for us)
+        clsfrfile = [cname '_' subject '_' datestr];
+        if ( ~(exist([clsfrfile '.mat'],'file') || exist(clsfrfile,'file')) ) 
+           [fn,pth]=uigetfile([cname '*.mat'],'Pick saved classifier file.'); drawnow;
+           if ( ~isequal(fn,0) );
+              clsfrfile=fullfile(pth,fn);
+           else
+              continue;
+           end;
+        end
+        if(opts.verb>0)fprintf('Loading classifier from file : %s\n',clsfrfile);end;
+        clsfr=load(clsfrfile);
+        if( isfield(clsfr,'clsfr') ) clsfr=clsfr.clsfr; end;
+        clsSubj = subject;
+     catch
+        if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) % can't use the clsfr variable
+           fprintf('Error in : %s',phaseToRun);
+           le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+           if ( ~isempty(le.stack) )
+              for i=1:numel(le.stack);
+                 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+              end;
+           end
+           msgbox({sprintf('%s::ERROR loading classifier, %s',phaseToRun,clsfrfile) 'OK to continue!'},'Error');
+           sendEvent('testing','end');    
+        end
+     end;
 
     [testdata,testevents]=event_applyClsfr(clsfr,'startSet',opts.testepochEventType,...
 							                      'predFilt',opts.epochPredFilt,...

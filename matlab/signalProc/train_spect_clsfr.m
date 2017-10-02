@@ -417,11 +417,11 @@ end
 if ( opts.classify ) 
   fprintf('6) train classifier\n');
   [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',opts.zeroLab,'verb',opts.verb,varargin{:});  
+  res.isbadtr=isbadtr; % record the list of found bad trials
 else
   res=[];
   clsfr=struct();
 end
-res.isbadtr=isbadtr; % record the list of found bad trials
 
 if ( opts.visualize ) 
   if ( size(res.tstconf,2)==1 ) % confusion matrix is correct
@@ -467,11 +467,14 @@ clsfr.featFiltState= featFiltState;  % state of the feature filter
 clsfr.badtrthresh = []; if ( ~isempty(trthresh) && opts.badtrscale>0 ) clsfr.badtrthresh = trthresh(end)*opts.badtrscale; end
 clsfr.badchthresh = []; if ( ~isempty(chthresh) && opts.badchscale>0 ) clsfr.badchthresh = chthresh(end)*opts.badchscale; end
 % record some dv stats which are useful
-tstf = res.tstf(:,res.opt.Ci); % N.B. this *MUST* be calibrated to be useful
-clsfr.dvstats.N   = [sum(res.Y>0) sum(res.Y<=0) numel(res.Y)]; % [pos-class neg-class pooled]
-clsfr.dvstats.mu  = [mean(tstf(res.Y(:,1)>0)) mean(tstf(res.Y(:,1)<=0)) mean(tstf)];
-clsfr.dvstats.std = [std(tstf(res.Y(:,1)>0))  std(tstf(res.Y(:,1)<=0))  std(tstf)];
+if( ~isempty(res) ) 
+  tstf = res.tstf(:,res.opt.Ci); % N.B. this *MUST* be calibrated to be useful
+  %                   [pos-class    neg-class     pooled]
+  clsfr.dvstats.N  =[sum(res.Y>0) sum(res.Y<=0) numel(res.Y)]; 
+  clsfr.dvstats.mu =[mean(tstf(res.Y(:,1)>0)) mean(tstf(res.Y(:,1)<=0)) mean(tstf)];
+  clsfr.dvstats.std=[std(tstf(res.Y(:,1)>0))  std(tstf(res.Y(:,1)<=0))  std(tstf)];
 %  bins=[-inf -200:5:200 inf]; clf;plot([bins(1)-1 bins(2:end-1) bins(end)+1],[histc(tstf(Y>0),bins) histc(tstf(Y<=0),bins)]); 
+end
 
 if ( opts.visualize >= 1 ) 
   summary='';
