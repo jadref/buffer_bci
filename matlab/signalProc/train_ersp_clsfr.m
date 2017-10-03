@@ -14,7 +14,11 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %  capFile   - 'filename' file from which to load the channel position information.
 %              *this overrides* ch_pos if given
 %  overridechnms - [bool] flag if channel order from 'capFile' overrides that from the 'ch_names' option
-%  eegonly   - use the capFile info to specify the eeg subset and only use those channels
+%  eegonly   - [bool] use the capFile info to specify the eeg subset and only use those channels
+%  capFileOnly - [bool] use the capFile info to specify the eeg subset and only use those channels
+%  clsfrCh   - {str} list of channel names which are given to the classifier
+%                OR
+%              'filename' cap file containing a list of channel names for the classifier
 %  fs        - sampling rate of the data
 %  timeband_ms- [2 x 1] band of times in milliseconds to use for classification, all if empty ([])
 %  freqband  - [2 x 1] or [3 x 1] or [4 x 1] band of frequencies to use
@@ -80,14 +84,16 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %  res    - [struct] detailed results for each fold
 %  X       -- [ppch x pptime x ppepoch] pre-processed data (N.B. may/will have different size to input X)
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
-opts=struct('classify',1,'fs',[],'timeband_ms',[],'freqband',[],...
+  opts=struct('classify',1,'fs',[],'timeband_ms',[],'freqband',[],...
+              'preFiltFn',[],...
             'width_ms',500,'windowType','hamming','aveType','amp','timefeat',0,...
             'detrend',1,'spatialfilter','slap',...
             'adaptspatialfiltFn',[],'adaptspatialfiltstate',[],...
-            'badchrm',1,'badchthresh',3.1,'badchscale',4,'eegonly',1,...
+            'badchrm',1,'badchthresh',3.1,'badchscale',4,...
             'badtrrm',1,'badtrthresh',3,'badtrscale',4,...
+            'clsfrCh',[],...
 				'featFiltFn',[],...
-            'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
+            'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,'eegonly',1,'capFileOnly',1,...
             'visualize',1,'badCh',[],'nFold',10,'class_names',[],'zeroLab',1);
 [opts,varargin]=parseOpts(opts,varargin);
 
@@ -100,7 +106,7 @@ if ( isempty(ch_pos) && ~isempty(opts.capFile) && (~isempty(ch_names) || opts.ov
   di = addPosInfo(ch_names,opts.capFile,opts.overridechnms); % get 3d-coords
   if ( any([di.extra.iseeg]) ) 
     ch_pos=cat(2,di.extra.pos3d); ch_names=di.vals; % extract pos and channels names
-    if( opts.eegonly )% add the non-eeg channels to the set of bad-channels to be removed
+    if( opts.capFileOnly || opts.eegonly )% add the non-eeg channels to the set of bad-channels to be removed
       if( isempty(opts.badCh) )
         opts.badCh=~[di.extra.iseeg];
       else
@@ -124,6 +130,15 @@ if ( opts.detrend )
   elseif ( isequal(opts.detrend,2) )
     fprintf('1) Center\n');
     X=repop(X,'-',mean(X,2));
+  end
+end
+% 5.9) Apply a pre-filter function if wanted
+preFiltFn=opts.preFiltFn; preFiltState=[];
+if ( ~isempty(preFiltFn) )
+  fprintf('5.5) preFilter\n');
+  if ( ~iscell(preFiltFn) ) preFiltFn={preFiltFn}; end;
+  for ei=1:size(X,3);
+	 [X(:,:,ei),preFiltState]=feval(preFiltFn{1},X(:,:,ei),preFiltState,preFiltFn{2:end});
   end
 end
 
@@ -258,6 +273,33 @@ if ( opts.badtrrm )
   Y=Y(~isbadtr,:);
   fprintf(' %d tr removed\n',sum(isbadtr));
 end;
+
+%3.6) classifier channel selection
+clsfrChi=[];
+if( ~isempty(opts.clsfrCh) )
+  fprintf('3.6) clsfr channel subset');
+  clsfrCh = opts.clsfrCh; 
+  if( ischar(clsfrCh) ) % capFile with the channel names.
+    clsfrCh = readCapInf(clsfrCh);
+  end
+                                % match clsfrCh with the current ch_names
+  clsfrChi=false(numel(ch_names));
+  for ci=1:numel(ch_names);
+    if( any(strcmpi(ch_names{ci},clsfrCh)) )
+      clsfrChi(ci)=true;
+    end
+  end
+  % sub-set to indicated channels
+  if( ~all(clsfrChi) )
+    X=X(clsfrChi,:,:);
+    if ( ~isempty(ch_names) ) % update the channel info
+      if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,clsfrChi); end;
+      ch_names=ch_names(clsfrChi);
+    end
+  end
+  fprintf('%d ch removed\n',sum(~clsfrChi));  
+end
+
 
 %4) welch to convert to power spectral density
 fprintf('4) Welch\n');
@@ -410,10 +452,13 @@ end
 clsfr.type        = 'ERsP';
 clsfr.fs          = fs;   % sample rate of training data
 clsfr.detrend     = opts.detrend; % detrend?
+clsfr.preFiltFn   = preFiltFn;     % pre-filter type
+clsfr.preFiltState= preFiltState;  % pre-filter state
 clsfr.isbad       = isbadch;% bad channels to be removed
 clsfr.spatialfilt = R;    % spatial filter used for surface laplacian
 clsfr.adaptspatialfiltFn=opts.adaptspatialfiltFn; % record the function to use
 clsfr.adaptspatialfiltstate=adaptspatialfiltstate;
+clsfr.clsfrChi    = clsfrChi;
 
 clsfr.filt         = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
 clsfr.outsz        = []; % DUMMY -- so ERP and ERSP classifier have same structure fields

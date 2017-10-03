@@ -38,6 +38,13 @@ if ( isfield(clsfr,'detrend') && clsfr.detrend ) % detrend over time
     X=repop(X,'-',mean(X,2));
   end
 end 
+% 5.9) Apply a pre-filter function if wanted
+if ( isfield(clsfr,'preFiltFn') && ~isempty(clsfr.preFiltFn) )
+  if( ~iscell(clsfr.preFiltFn) ) clsfr.preFiltFn={clsfr.preFiltFn}; end;
+  for ei=1:size(X,3); % incrementall call the function
+	 [X(:,:,ei),clsfr.preFiltState]=feval(clsfr.preFiltFn{1},X(:,:,ei),clsfr.preFiltState,clsfr.preFiltFn{2:end});
+  end  
+end
 
 %2) check for bad channels
 isbadch=false;
@@ -99,7 +106,7 @@ end
 if ( isfield(clsfr,'featFiltFn') && ~isempty(clsfr.featFiltFn) )
   if( ~iscell(clsfr.featFiltFn) ) clsfr.featFiltFn={clsfr.featFiltFn}; end;
   for ei=1:size(X,3); % incrementall call the function
-	 [X(:,:,ei),clsfr.featFiltState]=feval(clsfr.featFilt{1},X(:,:,ei),clsfr.featFiltState,clsfr.featFilt{2:end});
+	 [X(:,:,ei),clsfr.featFiltState]=feval(clsfr.featFiltFn{1},X(:,:,ei),clsfr.featFiltState,clsfr.featFiltFn{2:end});
   end  
 end
 

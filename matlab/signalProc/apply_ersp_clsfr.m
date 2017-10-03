@@ -38,6 +38,13 @@ if ( isfield(clsfr,'detrend') && clsfr.detrend )
     X=repop(X,'-',mean(X,2));
   end
 end
+% 5.9) Apply a pre-filter function if wanted
+if ( isfield(clsfr,'preFiltFn') && ~isempty(clsfr.preFiltFn) )
+  if( ~iscell(clsfr.preFiltFn) ) clsfr.preFiltFn={clsfr.preFiltFn}; end;
+  for ei=1:size(X,3); % incrementall call the function
+	 [X(:,:,ei),clsfr.preFiltState]=feval(clsfr.preFiltFn{1},X(:,:,ei),clsfr.preFiltState,clsfr.preFiltFn{2:end});
+  end  
+end
 
 %2) check for new bad channels
 isbadch=false;
@@ -86,6 +93,11 @@ if ( isfield(clsfr,'badtrthresh') && ~isempty(clsfr.badtrthresh) )
     end
     fprintf('\n'); 
   end;
+end
+
+%3.6) classifier channel selection
+if( ~isempty(clsfr.clsfrChi) )
+  X=X(clsfrChi,:,:);
 end
 
 %3) convert to spectral
