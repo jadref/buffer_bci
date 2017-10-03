@@ -1,7 +1,7 @@
-function [f,fraw,p,Xpp]=buffer_apply_clsfr(X,clsfr,verb)
+function [clsfr,f,fraw,p,Xpp]=buffer_apply_clsfr(X,clsfr,verb)
 % apply a previously trained classifier to the input data
 % 
-%  f=buffer_apply_clsfr(X,clsfr,verb,varargin)
+%  [clsfr,f]=buffer_apply_clsfr(X,clsfr,verb,varargin)
 %  
 % Note: automatically detect and use ERP/ERsP pipeline as needed
 %
@@ -14,6 +14,7 @@ function [f,fraw,p,Xpp]=buffer_apply_clsfr(X,clsfr,verb)
 %  clsfr - [struct] classifier(s) structure
 %  verb  - [int] verbosity level (0)
 % Output:
+%  clsfr - [struct] updated classifier after application to this data
 %  f    - [size(X,epoch) x nCls] the classifier's raw decision value
 %  fraw - [size(X,dim) x nSp] set of pre-binary sub-problem decision values
 %  p     - [size(X,epoch) x nCls] the classifier's assessment of the probablility of each class
@@ -32,10 +33,10 @@ end
 for ci=1:numel(clsfr);
   if ( (isfield(clsfr(ci),'type') && any(strcmp(lower(clsfr(ci).type),{'erp','evoked'}))) || ...
        ~isempty(clsfr(ci).filt) && isempty(clsfr(ci).windowFn) ) % ERP
-    [f{ci}, fraw{ci}, p{ci}, Xpp{ci}]=apply_erp_clsfr(X,clsfr(ci),verb);
+    [clsfr(ci), f{ci}, fraw{ci}, p{ci}, Xpp{ci}]=apply_erp_clsfr(X,clsfr(ci),verb);
   elseif ( (isfield(clsfr(ci),'type') && any(strcmp(lower(clsfr(ci).type),{'ersp','induced'}))) || ...
            isempty(clsfr(ci).filt) && ~isempty(clsfr(ci).welchAveType) ) % ERsP
-    [f{ci}, fraw{ci}, p{ci}, Xpp{ci}]=apply_ersp_clsfr(X,clsfr(ci),verb);
+    [clsfr(ci), f{ci}, fraw{ci}, p{ci}, Xpp{ci}]=apply_ersp_clsfr(X,clsfr(ci),verb);
   end  
 end
 if ( numel(clsfr)==1 ) %BODGE: for single classifier return non-cell for legacy reasons

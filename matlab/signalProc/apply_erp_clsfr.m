@@ -1,13 +1,14 @@
-function [f,fraw,p,X,isbadch,isbadtr]=apply_erp_clsfr(X,clsfr,verb)
+function [clsfr,f,fraw,p,X,isbadch,isbadtr]=apply_erp_clsfr(X,clsfr,verb)
 % apply a previously trained classifier to the input data
 % 
-%  [f,fraw,p,X]=apply_erp_clsfr(X,clsfr,verb)
+%  [clsfr,f,fraw,p,X]=apply_erp_clsfr(X,clsfr,verb)
 %
 % Inputs:
 %  X - [ ch x time (x epoch) ] data set
-%  clsfr - [struct] trained classifier structure as given by train_1bitswitch
+%  clsfr - [struct] trained classifier structure 
 %  verb - [int] verbosity level
 % Output:
+%  clsfr- [struct] input classifier updated w.r.t. any adaptive changes over time
 %  f     - [size(X,epoch) x nCls] the classifier's raw decision value
 %  fraw  - [size(X,dim) x nSp] set of pre-binary sub-problem decision values
 %  p     - [size(X,epoch) x nCls] the classifier's assessment of the probablility of each class

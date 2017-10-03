@@ -486,7 +486,7 @@ z=jf_mksfToy('Y',sign(round(rand(600,1))-.5));
 [clsfr,res]=train_spect_clsfr(z.X,z.Y,'fs',z.di(2).info.fs,'ch_pos',[z.di(1).extra.pos3d],'ch_names',z.di(1).vals,'freqband',[0 .1 10 12],'visualize',0,'verb',1);
 % multi-class example
 [clsfr,res]=train_spect_clsfr(z.X,z.Y,'badtrrm',0,'capFile','cap_im_dense_subset.txt','overridechnms',0,'ch_names',z.di(1).vals,'fs',z.di(2).info.fs,'spatialfilter','car+wht','detrend',1,'freqband',[8 28],'objFn','mlr_cg','binsp',0)
-[fmc,f]=apply_spect_clsfr(z.X,clsfr);
+[clsfr,fmc,f]=apply_spect_clsfr(z.X,clsfr);
 mad(res.opt.f,f)
 
 % try with 3 class problem

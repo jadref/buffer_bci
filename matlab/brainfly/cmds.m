@@ -13,6 +13,7 @@ sessions={{
 '0912di/1624/raw_buffer/0001'
 '170925/1015AM/raw_buffer/0001'
 '170926/0424PM/raw_buffer/0001'
+'171002/1038AM/raw_buffer/0001'
 }};
 
 si=1; sessi=3;
@@ -34,7 +35,8 @@ for sessi=2:numel(sessions{si});
 
   if( 1 ) 
   % train classifier
-  [clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',1,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',50},'freqband',[6 8 28 30],'width_ms',250,'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
+  [clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',1,'badchrm',1,'detrend',1,'spatialfilter','wht','freqband',[6 8 28 30],'width_ms',250,'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
+  %  [clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',1,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',50},'freqband',[6 8 28 30],'width_ms',250,'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
   end
 
   clsfrs(sessi)=clsfr; ress(sessi)=res;

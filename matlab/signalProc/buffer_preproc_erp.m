@@ -70,4 +70,4 @@ function testcase();
 capFile='cap_tmsi_mobita_num';
 clsfr=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','freqband',[.1 .3 8 10],'objFn','lr_cg','compKernel',0,'dim',3,'capFile',capFile,'overridechnms',1);
 X=cat(3,traindata.buf);
-apply_erp_clsfr(X,clsfr)
+

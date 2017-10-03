@@ -111,14 +111,14 @@ for ei=1:numel(testdata); % bodge in and additional noise source
    testdata(ei).buf = testdata(ei).buf + randn(size(testdata(ei).buf))*5e-1; 
 end;
 
-of = buffer_apply_ersp_clsfr(traindata,oclsfr);
-c=oclsfr; c.adaptspatialfiltFn=1; nf = buffer_apply_ersp_clsfr(testdata,c); %non-adaptive clsfr
+[ans,of] = buffer_apply_ersp_clsfr(traindata,oclsfr);
+c=oclsfr; c.adaptspatialfiltFn=1; [nclsfr,nf] = buffer_apply_ersp_clsfr(testdata,c); %non-adaptive clsfr
 
 clsfr=oclsfr;clsfr.adaptspatialfiltFn=exp(log(.5)/30);
 f=[];p=[];
 for ei=1:numel(testdata);
    textprogressbar(ei,numel(testdata));
-   [f(ei,:),ans,p(ei,:),ans,clsfr]=buffer_apply_ersp_clsfr(testdata(ei),clsfr);
+   [clsfr,f(ei,:),ans,p(ei,:)]=buffer_apply_ersp_clsfr(testdata(ei),clsfr);
 end
 fprintf('\n');
 

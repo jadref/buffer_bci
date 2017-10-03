@@ -1,18 +1,18 @@
-function [f,fraw,p,X,clsfr]=apply_ersp_clsfr(X,clsfr,verb)
+function [clsfr,f,fraw,p,X]=apply_ersp_clsfr(X,clsfr,verb)
 % apply a previously trained classifier to the input data
 % 
-%  [f,fraw,p,X,clsfr]=apply_ersp_clsfr(X,clsfr,verb) 
+%  [clsfr,f,fraw,p,X]=apply_ersp_clsfr(X,clsfr,verb) 
 %
 % Inputs:
 %  X - [ ch x time x epoch ] data set
 %  clsfr - [struct] trained classifier structure as given by train_ersp_clsfr
 %  verb - [int] verbosity level
 % Output:
+%  clsfr- [struct] input classifier updated w.r.t. any adaptive changes over time
 %  f    - [size(X,epoch) x nCls] the classifier's raw decision value
 %  fraw - [size(X,dim) x nSp] set of pre-binary sub-problem decision values
 %  p    - [size(X,dim) x nSp] the classifiers predictions as probabilities
 %  X    - [n-d] the pre-processed data
-%  clsfr- [struct] input classifier updated w.r.t. any adaptive changes over time
 if( nargin<3 || isempty(verb) ) verb=0; end;
 
 if( isfield(clsfr,'type') && ~strcmpi(clsfr.type,'ersp') )
@@ -150,7 +150,7 @@ X=oz.X;
 fs=256; oz.di(2).info.fs;
 width_samp=fs*250/1000;
 wX=windowData(X,1:width_samp/2:size(X,2)-width_samp,width_samp,2); % cut into overlapping 250ms windows
-[ans,f2]=apply_ersp_clsfr(wX,fs,clsfr);
+[clsfr,ans,f2]=apply_ersp_clsfr(wX,fs,clsfr);
 f2=reshape(f2,[size(wX,3) size(wX,4) size(f2,2)]);
 
 % test adaptive whitening
@@ -169,8 +169,8 @@ ei=1;
 fprintf('apply:');
 f=[];fa=[];
 for ei=1:size(X,3);
-  f(ei) = apply_ersp_clsfr(X(:,:,ei),oclsfr);
-  [fa(ei),ans,ans,ans,clsfr]=apply_ersp_clsfr(X(:,:,ei),clsfr);
+  [ans,f(ei)] = apply_ersp_clsfr(X(:,:,ei),oclsfr);
+  [clsfr,fa(ei)]=apply_ersp_clsfr(X(:,:,ei),clsfr);
   textprogressbar(ei,size(X,3));
 end
 clf;plot([f;fa]','linewidth',2);legend('f','fa')
