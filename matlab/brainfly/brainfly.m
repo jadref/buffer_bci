@@ -94,14 +94,15 @@ predictionMargin=0;
   hbonusAliens=[];
 
                          % Make text disp (mostly for testing and debugging):
-  hText = text(gameCanvasXLims(1),gameCanvasYLims(2)-5,genTextStr(score,curBalls,cannonKills)...
-               ,'Color',txtColor);
+  hText = text(gameCanvasXLims(1),gameCanvasYLims(2),genTextStr(score,curBalls,cannonKills),...
+               'HorizontalAlignment', 'left', 'VerticalAlignment','top','Color',txtColor);
 
 
                        % wait for user to be ready before starting everything
 set(hText,'string', {'' 'Click mouse when ready to begin.'}, 'visible', 'on'); drawnow;
 waitforbuttonpress;
 set(hText,'visible', 'off'); drawnow; 
+sleepSec(5);
   
                                 % Loop while figure is active:
   killStartTime=0;
@@ -257,7 +258,8 @@ set(hText,'visible', 'off'); drawnow;
     end
     
                                 % Set score disp and loop:
-    set(hText,'String',genTextStr(score,curBalls,cannonKills));
+	fprintf('%s\n',genTextStr(score,curBalls,cannonKills));							
+    set(hText,'String',genTextStr(score,curBalls,cannonKills),'visible','on');
                % TODO: make this more accurate to take account of display/network lag
     drawnow;
                                 % update the stimulus state
