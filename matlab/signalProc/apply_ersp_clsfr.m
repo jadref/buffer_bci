@@ -23,11 +23,6 @@ if ( isa(X,'single') ) eps=1e-6; else eps=1e-10; end;
 %0) convert to singles (for speed)
 X=single(X);
 
-%0) bad channel removal
-if ( isfield(clsfr,'isbad') && ~isempty(clsfr.isbad) )
-  X=X(~clsfr.isbad,:,:,:);
-end
-
 %1) Detrend
 if ( isfield(clsfr,'detrend') && clsfr.detrend )
   if ( isequal(clsfr.detrend,1) )
@@ -43,9 +38,14 @@ if ( isfield(clsfr,'preFiltFn') && ~isempty(clsfr.preFiltFn) )
   if( ~iscell(clsfr.preFiltFn) ) clsfr.preFiltFn={clsfr.preFiltFn}; end;
   for ei=1:size(X,3); % incrementall call the function
 	 [X(:,:,ei),clsfr.preFiltState]=feval(clsfr.preFiltFn{1},X(:,:,ei),clsfr.preFiltState,clsfr.preFiltFn{2:end});
+    if( verb>1 && size(X,3)>100 ) textprogressbar(ei,size(X,3)); end;
   end  
 end
 
+%0) bad channel removal
+if ( isfield(clsfr,'isbad') && ~isempty(clsfr.isbad) )
+  X=X(~clsfr.isbad,:,:,:);
+end
 %2) check for new bad channels
 isbadch=false;
 if ( isfield(clsfr,'badchthresh') && ~isempty(clsfr.badchthresh) )
@@ -97,10 +97,11 @@ end
 
 %3.6) classifier channel selection
 if( ~isempty(clsfr.clsfrChi) )
-  X=X(clsfrChi,:,:);
+  X=X(clsfr.clsfrChi,:,:);
 end
 
 %3) convert to spectral
+if ( clsfr.timefeat ) Xt=mean(X,2);end % add a pure time feature
 if ( size(X,2)>numel(clsfr.windowFn) )
   X=welchpsd(X,2,'windowType',clsfr.windowFn(:),'aveType',clsfr.welchAveType,'detrend',1);
 else
@@ -127,13 +128,22 @@ end
 if ( isfield(clsfr,'freqIdx') && ~isempty(clsfr.freqIdx) )
   X=X(:,clsfr.freqIdx,:); % sub-set to the interesting frequency range
 end
+if ( clsfr.timefeat ) X=cat(2,Xt,X); end
+
 
 %5) feature post-processing filter
 if ( isfield(clsfr,'featFiltFn') && ~isempty(clsfr.featFiltFn) )
   if( ~iscell(clsfr.featFiltFn) ) clsfr.featFiltFn={clsfr.featFiltFn}; end;
-  for ei=1:size(X,3); % incrementall call the function
-	 [X(:,:,ei),clsfr.featFiltState]=feval(clsfr.featFilt{1},X(:,:,ei),clsfr.featFiltState,clsfr.featFilt{2:end});
-  end  
+  nX=[];
+  for ei=1:size(X,3);
+	 [Xei,featFiltState]=feval(featFiltFn{1},X(:,:,ei),featFiltState,featFiltFn{2:end});
+    if( isempty(nX) ) % init and allow for size changes
+       if(size(Xei,2)==size(X,2)) nX=X; else nX=zeros([size(Xei),size(X,3)]); end
+    end; 
+    nX(:,:,ei)=Xei; 
+    if( verb>1 && size(X,3)>100 ) textprogressbar(ei,size(X,3)); end;
+  end
+  X=nX;
 end
 
 %6) apply classifier

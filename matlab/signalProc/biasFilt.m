@@ -25,7 +25,8 @@ function [x,s]=biasFilt(x,s,alpha)
   
 if ( nargin<4 || isempty(verb) ) verb=0; end;
 if ( isempty(s) ) s=struct('sx',zeros(size(x)),'N',0,'x',0,'i',0); end;
-if ( any(alpha>1) ) alpha(alpha>0)=exp(log(.5)./alpha(alpha>0)); end; % convert to decay factor
+if ( any(alpha>1) ) alpha(alpha>1)=exp(log(.5)./alpha(alpha>1)); end; % convert to decay factor
+if ( any(alpha==1)) alpha(alpha==1)=0; end; % alpha=1 is special case...
 
 s.N = alpha.*s.N + (1-alpha).*1; % weight accumulated so far for each alpha, for warmup
 s.sx=alpha(:,1).*s.sx + (1-alpha(:,1)).*x; % weighted sum of x

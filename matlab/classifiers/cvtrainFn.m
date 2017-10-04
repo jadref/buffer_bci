@@ -186,7 +186,6 @@ szX=size(X);
 res.tstf=zeros([prod(szX(dim)) size(Y,2) size(Cs,2)],class(X));
 % Next compute the per-fold values
 for foldi=1:size(fIdxs,ndims(fIdxs));
-  if( opts.verb > 0 ) fprintf('Calibrate\n'); end; 
    for spi=1:nSubProbs; % loop over sub-problems get train/test split (possibly sub-prob specific)
       trnInd=fIdxs(:,min(end,spi),foldi)<0;  % training points
       tstInd=fIdxs(:,min(end,spi),foldi)>0;  % testing points
@@ -415,6 +414,7 @@ res.opt.tstf(trnexInd,:,:)=res.opt.f(trnexInd,:,:);
 % N.B. only for linear classifiers!
 exInd = all(fIdxs<=0,3); % tst points
 if ( ~all(exInd) && opts.binsp && ~isempty(opts.calibrate) && ~isequal(opts.calibrate,0) ) 
+   if(opts.verb>0)fprintf('Calibrating\n'); end;
    cr=res.tst(:,:,optCi); % cv-estimated probability of being correct - target for calibration
    %if ( strcmp(opts.calibrate,'bal') ) cr = cr([1 1],:,:); end; % balanced calibration
    % correct the targets to prevent overfitting

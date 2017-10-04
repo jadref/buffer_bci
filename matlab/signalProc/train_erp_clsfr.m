@@ -276,9 +276,15 @@ featFiltFn=opts.featFiltFn; featFiltState=[];
 if ( ~isempty(featFiltFn) )
   fprintf('5.5) Filter features\n');
   if ( ~iscell(featFiltFn) ) featFiltFn={featFiltFn}; end;
+  nX=[];
   for ei=1:size(X,3);
-	 [X(:,:,ei),featFiltState]=feval(featFiltFn{1},X(:,:,ei),featFiltState,featFiltFn{2:end});
+	 [Xei,featFiltState]=feval(featFiltFn{1},X(:,:,ei),featFiltState,featFiltFn{2:end});
+    if( isempty(nX) ) % init and allow for size changes
+       if(size(Xei,2)==size(X,2)) nX=X; else nX=zeros([size(Xei),size(X,3)]); end
+    end; 
+    nX(:,:,ei)=Xei; 
   end
+  X=nX;
 end
 
 %5.5) Visualise the input?
@@ -400,6 +406,7 @@ clsfr.timeIdx      = timeIdx; % time range to apply the classifer to
 clsfr.windowFn     = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
 clsfr.welchAveType = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
 clsfr.freqIdx      = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
+clsfr.timefeat     = 0; % include raw time feature?
 clsfr.featFiltFn   = featFiltFn; % feature normalization type
 clsfr.featFiltState= featFiltState;  % state of the feature filter
 

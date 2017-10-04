@@ -8,7 +8,7 @@ function [X,state]=filterFilt(X,state,varargin);
 %                name is one-of: 
 %                      'butter' -- butterworth, 'buttersos' -- butterworth with second-order-section imp
 %                     'fir' -- finite impuluse response, 'firmin' -- min-phase finite impluse response
-%                type is one of: 'low','high','stop','bandpass'
+%                type is one of: 'low'=lowpass,'high'=highpass,'stop'=bandstop,'bandpass'
 %                ord  is filter order : around fs for FIR or 6 for IIR (butter)
 %                cuttoff is: [1x1] for low/high pass, or [lowcutoff highcutoff] for bandpass/stop
 %               OR [nTaps x 1] a set of coefficients to use in a FIR filter
@@ -34,10 +34,10 @@ else
       B=opts.filter{1}(:); A=opts.filter{2}(:);
     elseif ( iscell(opts.filter) && ischar(opts.filter{1}) ) % filter name
       filttype=lower(opts.filter{1});
-      fs=opts.fs;
+      fs=opts.fs;if ( isempty(fs) ) warning('No sampling rate specified... assuming fs=250'); fs=250; end;
       ord=opts.filter{2};
       bands=opts.filter{3};
-      type=[]; if(numel(opts.filter)>3) type=opts.filter{4}; end;
+      type='high'; if(numel(opts.filter)>3) type=opts.filter{4}; end;
       switch filttype;
         case {'butter','buttersos'};
           [B,A]=butter(ord,bands*2/fs,type);

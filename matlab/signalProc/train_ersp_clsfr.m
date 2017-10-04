@@ -138,10 +138,11 @@ end
 % 5.9) Apply a pre-filter function if wanted
 preFiltFn=opts.preFiltFn; preFiltState=[];
 if ( ~isempty(preFiltFn) )
-  fprintf('5.5) preFilter\n');
+  fprintf('1.5) preFilter\n');
   if ( ~iscell(preFiltFn) ) preFiltFn={preFiltFn}; end;
-  for ei=1:size(X,3);
-	 [X(:,:,ei),preFiltState]=feval(preFiltFn{1},X(:,:,ei),preFiltState,preFiltFn{2:end});
+  for ei=1:size(X,3); % incrementall call the function
+	 [X(:,:,ei),preFiltState]=feval(preFiltFn{1},X(:,:,ei),preFiltState,'fs',fs,preFiltFn{2:end});
+    if( opts.verb>0 && size(X,3)>100 ) textprogressbar(ei,size(X,3)); end;
   end
 end
 
@@ -286,11 +287,9 @@ if( ~isempty(opts.clsfrCh) )
     clsfrCh = readCapInf(clsfrCh);
   end
                                 % match clsfrCh with the current ch_names
-  clsfrChi=false(numel(ch_names));
-  for ci=1:numel(ch_names);
-    if( any(strcmpi(ch_names{ci},clsfrCh)) )
-      clsfrChi(ci)=true;
-    end
+  clsfrChi=false(1,numel(ch_names));
+  for ci=1:numel(clsfrCh);
+    clsfrChi = clsfrChi | strncmpi(clsfrCh{ci},ch_names,numel(clsfrCh{ci})) ;
   end
   % sub-set to indicated channels
   if( ~all(clsfrChi) )
@@ -333,6 +332,7 @@ if ( ~isempty(opts.freqband) && ~isempty(fs) )
 end;
 
 if ( opts.timefeat )
+  fprintf('5.4) Time feature'); 
   X=cat(2,Xt,X);
   freqs=[0 freqs];
 end
@@ -342,9 +342,16 @@ featFiltFn=opts.featFiltFn; featFiltState=[];
 if ( ~isempty(featFiltFn) )
   fprintf('5.5) Filter features\n');
   if ( ~iscell(featFiltFn) ) featFiltFn={featFiltFn}; end;
+  nX=[];
   for ei=1:size(X,3);
-	 [X(:,:,ei),featFiltState]=feval(featFiltFn{1},X(:,:,ei),featFiltState,featFiltFn{2:end});
+	 [Xei,featFiltState]=feval(featFiltFn{1},X(:,:,ei),featFiltState,featFiltFn{2:end});
+    if( isempty(nX) ) % init and allow for size changes
+       if(size(Xei,2)==size(X,2)) nX=X; else nX=zeros([size(Xei),size(X,3)]); end
+    end; 
+    nX(:,:,ei)=Xei; 
+    if( opts.verb>1 && size(X,3)>100 ) textprogressbar(ei,size(X,3)); end;
   end
+  X=nX;
 end
 
 %5.5) Visualise the input?
@@ -465,6 +472,7 @@ clsfr.timeIdx      = timeIdx; % time range to apply the classifer to
 clsfr.windowFn     = winFn;% temporal window prior to fft
 clsfr.welchAveType = opts.aveType;% other options to pass to the welchpsd
 clsfr.freqIdx      = fIdx; % start/end index of frequencies to keep
+clsfr.timefeat     = opts.timefeat; % include raw time feature?
 clsfr.featFiltFn   = featFiltFn; % feature normalization type
 clsfr.featFiltState= featFiltState;  % state of the feature filter
 
