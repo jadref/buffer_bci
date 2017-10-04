@@ -70,7 +70,11 @@ end
 if ( isempty(opts.maxEval) ) opts.maxEval=5*sum(Y(:)~=0); end
 % Ensure all inputs have a consistent precision
 if(isa(X,'double') && isa(Y,'single') ) Y=double(Y); end;
-if(isa(X,'single')) eps=1e-7; else eps=1e-16; end;
+if(isa(X,'single')) % set numerical constants for convergence
+   eps=1e-7;  minp=1e-34;  maxf=single(-log(minp)); 
+else 
+   eps=1e-16; minp=1e-120; maxf=-log(minp); 
+end;
 opts.tol=max(opts.tol,eps); % gradient magnitude tolerence
 
 if ( ~isempty(opts.dim) && opts.dim<ndims(X) ) % permute X to make dim the last dimension
@@ -243,8 +247,14 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
       oodtdJ=odtdJ; odtdJ=dtdJ; % prev and 1 before grad values
       
 		f    = f0  + tstep*df;
-		dv   = f; if(opts.rescaledv) dv=repop(f,'-',max(f,[],1)); end;% re-scale for numerical stability
-		p    = exp(dv);
+      if(opts.rescaledv) 
+         if ( size(f,1)>1 )
+            f  = repop(f,'-',max(f,[],1)); % re-scale for numerical stability
+         else
+            f  = min(f,maxf); % clip the range of f for stability
+         end
+      end;% re-scale for numerical stability
+		p    = exp(f);
 		p    = repop(p,'/',sum(p,1)); % [L x N] =Pr(x|y_i) = exp(w_ix+b)./sum_y(exp(w_yx+b));
 		if ( onetrue ) 
 		  dLdf = Y-p;  % [LxN] = dp_y, i.e. gradient of the log probability of the true class
@@ -265,7 +275,9 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
       end
 
 		if ( ~opts.rescaledv && isnan(dtdJ) ) % numerical issues detected, restart
-		  fprintf('Numerical issues falling back on re-scaled dv');
+        if( opts.verb>1) 
+           fprintf('Numerical issues falling back on re-scaled dv');
+        end
 		  oodtdJ=odtdJ; dtdJ=odtdJ;%reset obj info
 		  opts.rescaledv=true; continue;
 		end;
