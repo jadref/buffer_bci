@@ -17,7 +17,7 @@ function [x,s,mu,std]=stdFilt(x,s,alpha)
 % Outputs:
 %   x - [nd x 1] filtered data
 %   s - [struct] updated filter state
-if ( isempty(s) ) s=struct('N',zeros(size(x)),'sx',zeros(size(x)),'sx2',zeros(size(x)),'x',zeros(size(x))); end;
+if ( isempty(s) ) s=struct('N',zeros(size(alpha)),'sx',zeros(size(x)),'sx2',zeros(size(x)),'x',zeros(size(x))); end;
 if ( any(alpha>1) ) alpha=exp(log(.5)./alpha); end; % convert to decay factor
 s.N  = alpha.*s.N  + (1-alpha).*1;
 if ( size(alpha,2)>1 ) 
@@ -33,8 +33,12 @@ std=sqrt(abs((s.sx2-s.sx.^2./s.N(:,1))./s.N(:,1)));
 std(std<eps)=1; % deal with 0-variance channels
 % standardize features for which we have enough weighting
 goodIdx=s.N(:,1)>(1-alpha(:,1));
-if( any(goodIdx) ) 
-  x(goodIdx)=(x(goodIdx)-mu(goodIdx))./std(goodIdx);
+if( size(alpha,1)>1 ) % per-feature 
+   if( any(goodIdx) ) 
+      x(goodIdx)=(x(goodIdx)-mu(goodIdx))./std(goodIdx);
+   end
+elseif( any(goodIdx) ) % global half-life
+   x = (x-mu)./std;
 end
 return;
 function testCase()
@@ -49,7 +53,7 @@ s=[]; for i=1:size(x,2); [fx(:,i),s,mu(:,i),std(:,i)]=stdFilt(x(:,i),s,100); end
 s=[]; for i=1:size(x,2); [fx(:,i),s,mu(:,i),std(:,i)]=stdFilt(x(:,i),s,[exp(log(.5)/100) exp(log(.5)/10)]); end;
 
 % test with different smoothers for different features
-s=[]; for i=1:size(x,2); [fx(:,i),s,mu(:,i),std(:,i)]=stdFilt(x(:,i),s,[exp(log(.5)/100) exp(log(.5)/10);exp(log(.5)/400) 1]); end;
+s=[]; for i=1:size(x,2); [fx(:,i),s,mu(:,i),std(:,i)]=stdFilt(x(:,i),s,[exp(log(.5)/100) exp(log(.5)/10);exp(log(.5)/400);1]); end;
 
 clf;
 for si=1:size(x,1); 
