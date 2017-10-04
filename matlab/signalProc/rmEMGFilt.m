@@ -50,7 +50,7 @@ function [X,state,info]=rmEMGFilt(X,state,dim,varargin);
 %            when it means the filter is applied to different data from what it was trained on. e.g. if big
 %            linear-trend in EMG channel and detrend before fit, then applying to the non-detrended data will
 %            result in moving this linear-trend into all the other channels!
-opts=struct('tau_samp',1,'tol',1e-7,'minCorr',.4,'corrStdThresh',6,...
+opts=struct('tau_samp',1,'tol',1e-7,'minCorr',.2,'corrStdThresh',inf,...
             'detrend',0,'center',0,'bands',[],'fs',[],...
             'covFilt','','filtstate',[],'filtstatetau',[],'verb',2,...
             'ch_names','','ch_pos','');
@@ -147,7 +147,7 @@ for epi=1:nEp; % loop over epochs
   % Now we've got the (lagged)-covariances, compute the spatial-filters
                                 % 1) Compute robust whitening transformation
   [Us,Ds]=eig(double(XXt));Ds=diag(Ds);
-  keeps=~(isinf(Ds) | isnan(Ds) | abs(Ds)<median(abs(Ds))*opts.tol | Ds<opts.tol);
+  keeps=~(isinf(Ds) | isnan(Ds) | abs(Ds)<median(abs(Ds))*opts.tol);
   Dss(1:numel(Ds),epi)=Ds;nWht(epi)=sum(keeps); % logging info
   R=1./sqrt(abs(Ds));
   W = repop(Us(:,keeps),'*',(1./sqrt(Ds(keeps)))'); % whitening matrix
@@ -168,11 +168,13 @@ for epi=1:nEp; % loop over epochs
   %Wall1 = W*(eye(size(Ue,1))-Ue(:,keepe)*Ue(:,keepe)')*iW';
   Wall = eye(size(X,dim(1)))-W*(Ue(:,keepe)*Ue(:,keepe)')*iW'; % numerically more stable
   %Wall3 = eye(size(X,dim(1)))-Us(:,keeps)*diag(1./sqrt(Ds(keeps)))*Ue(:,keepe)*Ue(:,keepe)'*diag(sqrt(Ds(keeps)))*Us(:,keeps)';
-  tmp=eig(Wall);
+  tmp=eig(Wall); % deflator should never increase magnitude in any direction...
   if( sum(abs(tmp))>size(Wall,1) || max(abs(tmp))>1+eps*1e2 )
     fprintf('rmEMGFilt::Warning %d) non-deflation solution!\n',epi);
   end
-  if( opts.verb>2 ) fprintf('%d) %d wht-comp, %d emg-comp\n',epi,sum(keeps),sum(keepe));end;
+  if( opts.verb>2 ) 
+     fprintf('%d) %d wht-comp, %d emg-comp\n',epi,sum(keeps),sum(keepe));
+  end;
                                 % the final spatial filter
   sf=Wall;
                                 % apply the filter to the data

@@ -12,13 +12,14 @@ function [X,state,XXt]=adaptWhitenFilt(X,state,varargin);
 %   ch_names -- {nCh x 1 str} channel names
 %   ch_pos   -- [3 x nCh] positions of the channels
 % TODO:
-%   [] make consistent with the other spatial-filtering function to specify the covariance filter in the same way...
+%   [X] make consistent with the other spatial-filtering function to specify the covariance filter in the same way...
+%   [] Add method use robust covariance estimator, e.g. lediot-wolf
 if( nargin<2 ) state=[]; end;
 if( ~isempty(state) && isstruct(state) ) % ignore other arguments if state is given
   opts =state;
 else
   opts=struct('center',0,'detrend',0,'covFilt','','filtstate','','verb',1,...
-              'dim',[1 2 3],'ch_names','','ch_pos',[]);
+              'dim',[1 2 3],'ch_names','','ch_pos',[],'fs',[]);
   [opts]=parseOpts(opts,varargin);
 end
 dim=opts.dim;

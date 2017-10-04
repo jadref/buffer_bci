@@ -130,6 +130,9 @@ if ( opts.detrend )
   elseif ( isequal(opts.detrend,2) )
     fprintf('1) Center\n');
     X=repop(X,'-',mean(X,2));
+  elseif ( isequal(opts.detrend,3) )
+    fprintf('1) median Center\n');
+    X=repop(X,'-',median(X,2));
   end
 end
 % 5.9) Apply a pre-filter function if wanted
@@ -214,7 +217,7 @@ if ( size(X,1)>=4 && ...
   if( isnumeric(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={'adaptWhitenFilt' 'dim',[1 2 3],'covFilt',opts.adaptspatialfiltFn}; end;
   if( ~iscell(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={opts.adaptspatialfiltFn}; end;
   fprintf(' %s\n',opts.adaptspatialfiltFn{1});
-  [X,adaptspatialfiltstate]=feval(opts.adaptspatialfiltFn{1},X,opts.adaptspatialfiltstate,opts.adaptspatialfiltFn{2:end},'ch_names',ch_names,'ch_pos',ch_pos);
+  [X,adaptspatialfiltstate]=feval(opts.adaptspatialfiltFn{1},X,opts.adaptspatialfiltstate,opts.adaptspatialfiltFn{2:end},'ch_names',ch_names,'ch_pos',ch_pos,'fs',fs);
   if( isfield(adaptspatialfiltstate,'R') ) R=adaptspatialfiltstate.R; end;
   fprintf('\n');
 end
@@ -310,25 +313,20 @@ freqs=0:(1000/opts.width_ms):fs/2; % position of the frequency bins
 
 %5) sub-select the range of frequencies we care about
 fIdx=[];
-if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) ) 
+if ( ~isempty(opts.freqband) && ~isempty(fs) ) 
   fprintf('5) Select frequencies\n');
-  if ( isnumeric(opts.freqband) )
-    if ( numel(opts.freqband)>2 ) % convert the diff band spects to upper/lower frequencies
-      if ( numel(opts.freqband)==3 ) opts.freqband=opts.freqband([1 3]);
-      elseif(numel(opts.freqband)==4 ) opts.freqband=[mean(opts.freqband([1 2])) mean(opts.freqband([3 4]))];
+  if ( isnumeric(opts.freqband) ) opts.freqband={opts.freqband}; end;
+  fIdx=false(size(X,2),1);
+  for bi=1:numel(opts.freqband) 
+     freqband=opts.freqband{bi};
+     if ( numel(freqband)>2 ) % convert the diff band spects to upper/lower frequencies
+        if ( numel(freqband)==3 ) freqband=freqband([1 3]);
+      elseif(numel(freqband)==4 ) freqband=[mean(freqband([1 2])) mean(freqband([3 4]))];
       end
     end
-    [ans,fIdx(1)]=min(abs(freqs-max(freqs(1),  opts.freqband(1)))); % lower frequency bin
-    [ans,fIdx(2)]=min(abs(freqs-min(freqs(end),opts.freqband(2)))); % upper frequency bin
-    fIdx = int32(fIdx(1):fIdx(2));
-  elseif ( iscell(opts.freqband) ) %set of discrete-frequencies to pick
-    freqband=[opts.freqband{:}]; % convert to vector
-    freqband=[freqband;2*freqband];%3*freqband]; % select higher harmonics also
-    fIdx=false(size(X,2),1);
-    for fi=1:numel(freqband);
-      [ans,tmp]=min(abs(freqs-freqband(fi))); % lower frequency bin
-      fIdx(tmp)=true;
-    end    
+    [ans,lb]=min(abs(freqs-max(freqs(1),  freqband(1)))); % lower frequency bin
+    [ans,ub]=min(abs(freqs-min(freqs(end),freqband(2)))); % upper frequency bin
+    fIdx(lb:ub)=true;
   end
   X=X(:,fIdx,:); % sub-set to the interesting frequency range
   freqs=freqs(fIdx); % update labelling info
