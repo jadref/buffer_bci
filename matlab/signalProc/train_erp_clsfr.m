@@ -112,6 +112,9 @@ if ( opts.detrend )
   elseif ( isequal(opts.detrend,2) )
     fprintf('1) Center\n');
     X=repop(X,'-',mean(X,2));
+  elseif ( isequal(opts.detrend,3) )
+    fprintf('1) median Center\n');
+    X=repop(X,'-',median(X,2));
   end
 end
 % 5.9) Apply a feature filter post-processor if wanted
