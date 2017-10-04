@@ -21,8 +21,11 @@ function [X,state,info]=artChRegress(X,state,dim,idx,varargin);
 %  bands   -- spectral filter (as for fftfilter) to apply to the artifact signal ([])
 %  fs  -- the sampling rate of this data for the time dimension ([])
 %         N.B. fs is only needed if you are using a spectral filter, i.e. bands.
-%  detrend -- detrend the artifact before removal                        (1)
-%  center  -- center in time (0-mean) the artifact signal before removal (0)
+%  detrend -- detrend the artifact before removal                        (0)
+%  center  -- [int] center in time (0-mean) the artifact signal before removal (2)
+%               center=1 : normal center, center=2 : median-center
+%       N.B. if using detrend/center please call with large enough time blocks
+%            that an artifact is a small part of the time...
 %  covFilt -- {str} function to apply to the computed covariances to smooth them prior to regression {''}
 %              SEE: biasFilt for example function format
 %            OR
@@ -31,9 +34,10 @@ function [X,state,info]=artChRegress(X,state,dim,idx,varargin);
 %  ch_pos   -- [3 x size(X,dim(1))] physical positions of the channels in dim(1) of X
 %
 % TODO:
+%    [] Correct state propogate over calls for the EOG data pre-processing..
 %    [] Spatio-temporal learning - learn the optimal spectral filter as well as spatial
 %    [] Switching-mode removal   - for transient artifacts add artifact detector to only learn covariance function when artifact is present..
-opts=struct('detrend',0,'center',0,'bands',[],'fs',[],'verb',0,'covFilt',[],'filtstate',[],'ch_names',[],'ch_pos',[],'pushbackartsig',1);
+opts=struct('detrend',0,'center',2,'bands',[],'fs',[],'verb',0,'covFilt',[],'filtstate',[],'ch_names',[],'ch_pos',[],'pushbackartsig',1);
 if( ~isempty(state) && isstruct(state) ) % called with a filter-state, incremental filtering mode
   % extract the arguments/state
   opts    =state;
@@ -119,7 +123,9 @@ for epi=1:nEp; % loop over epochs
   % extract the artifact signals for this epoch
   artSig=Xei(artIdx{:});
   % pre-process the artifact signals as wanted
-  if ( opts.center )       artSig = repop(artSig,'-',mean(artSig,dim(2))); end;
+  if(isequal(opts.center,1))     artSig= repop(artSig,'-',mean(artSig,dim(2))); 
+  elseif(isequal(opts.center,2)) artSig= repop(artSig,'-',median(artSig,dim(2))); 
+  end;
   if ( opts.detrend )      artSig = detrend(artSig,dim(2)); end;
   if ( ~isempty(artFilt) ) artSig = fftfilter(artSig,artFilt,[],dim(2),1); end % smooth the result  
 
