@@ -1,12 +1,17 @@
 function [X,state]=filtPipeline(X,state,varargin);
 % apply a sequence of filters in a pipeline to the data
 % apply a sequence of filters to the input data
+%
+% Example:
+%  % apply EMG removal then EOG removal
+%  [Y,pstate]=filtPipeline(X,[],{'rmEMGFilt',[1 2 3]},{'artChRegress',[1 2 3],[1 2]});
+
 opts={};
 if( isempty(state) )  % extract the pipeline from the state
   % BODGE: deal with the name/position options as a special case....
-  opts=struct('ch_names',[],'ch_pos',[]);
+  opts=struct('ch_names',[],'ch_pos',[],'fs',[]);
   [opts,varargin]=parseOpts(opts,varargin);
-  opts={'ch_names',opts.ch_names,'ch_pos',opts.ch_pos};
+  opts={'ch_names',opts.ch_names,'ch_pos',opts.ch_pos,'fs',opts.fs};
   pipeline     =varargin;
   pipelinestate=[];  
 else % extract the pipeline from the arguments
