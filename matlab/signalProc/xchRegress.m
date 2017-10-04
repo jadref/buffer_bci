@@ -30,7 +30,7 @@ if( ~isempty(state) && isstruct(state) ) % ignore other arguments if state is gi
   artFilt=state.artFilt;
 else
   opts=struct('xchInd',[],'center',0,'detrend',0,'bands',[],'covFilt','','filtstate','','verb',1,...
-              'dim',[1 2 3],'ch_names','','ch_pos',[],'tol',1e-8,'evwarn',.9);
+              'dim',[1 2 3],'ch_names','','ch_pos',[],'fs',[],'tol',1e-8,'evwarn',.9);
   [opts]=parseOpts(opts,varargin);
   artFilt=[];
 end
