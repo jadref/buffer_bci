@@ -74,14 +74,17 @@ while ( true )
     %---------------------------------------------------------------------------------
    case 'capfitting';
     capFitting('noiseThresholds',thresh,'badChThreshold',badchThresh,'verb',verb,'showOffset',0,'capFile',capFile,'overridechnms',overridechnms);
-
+    sendEvent(['sigproc.' phaseToRun],'end');
+    
     %---------------------------------------------------------------------------------
    case 'eegviewer';
     eegViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms);
-
+    sendEvent(['sigproc.' phaseToRun],'end');
+    
     %---------------------------------------------------------------------------------
    case {'erspvis','erpvis','erpviewer','erpvisptb'};	
     erpViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix','stimulus','endType',lower(phaseToRun),'trlen_ms',ersptrlen_ms,'freqbands',[.0 .3 45 47]);
+    sendEvent(['sigproc.' phaseToRun],'end');
     
    %---------------------------------------------------------------------------------
    %  Speller
