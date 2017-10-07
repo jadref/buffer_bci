@@ -7,8 +7,10 @@
 %  (startPhase.cmd,exit)       -- stop everything
 configureDemo;
 if( ~exist('capFile','var') || isempty(capFile) ) 
-  [fn,pth]=uigetfile('../../resources/caps/*.txt','Pick cap-file'); capFile=fullfile(pth,fn);
-  if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
+  [fn,pth]=uigetfile('../../resources/caps/*.txt','Pick cap-file'); 
+  if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; % 1010 default if not selected
+  else capFile=fullfile(pth,fn);
+  end; 
 end
 if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; % force default override
 thresh=[.5 3];  badchThresh=.5;
@@ -30,7 +32,8 @@ while ( true )
   
   % wait for a phase control event
   if ( verb>=0 ) fprintf('Waiting for phase command\n'); end;
-  [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,{'startPhase.cmd' 'subject'},[],1000);
+  [devents,state,nevents,nsamples]=buffer_newevents(buffhost,buffport,state,...
+																	 {'startPhase.cmd' 'subject' 'sigproc.*'},[],1000);
   fprintf('.');
   if ( numel(devents)==0 ) 
     continue;
@@ -49,6 +52,12 @@ while ( true )
       subject=devents(di).value; 
       if ( verb>0 ) fprintf('Setting subject to : %s\n',subject); end;
       continue; 
+    elseif ( strcmp(devents(di).type,'sigproc.reset') )
+           ; % ignore sig-proc reset
+    elseif ( strncmp(devents(di).type,'sigproc.',numel('sigproc.')) ) % start phase command
+      if ( strcmp(devents(di).value,'start') ) 
+        phaseToRun=devents(di).type(numel('sigproc.')+1:end);
+      end
     else
       phaseToRun=devents(di).value;
       break;
