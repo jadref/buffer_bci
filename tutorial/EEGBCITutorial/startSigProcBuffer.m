@@ -85,7 +85,7 @@ while ( true )
     
    %---------------------------------------------------------------------------------
    %  Speller
-   case {'spcalibrate','spcalibration'};
+   case {'spcalibrate','spcalibration','erpviewcalibrate','erpviewercalibrate','calibrateerp'};
      [traindata,traindevents]=erpViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix','stimulus.tgtFlash','endType',{'stimulus.training'},'trlen_ms',sptrlen_ms,'freqbands',[.0 .3 45 47]);
      %[traindata,traindevents]=buffer_waitData(buffhost,buffport,[],'startSet',{'stimulus.tgtFlash'},'exitSet',{'stimulus.training' 'end'},'verb',verb+1,'trlen_ms',sptrlen_ms);
      mi=matchEvents(traindevents,'stimulus.training','end'); traindevents(mi)=[]; traindata(mi)=[];%remove exit event
@@ -93,7 +93,7 @@ while ( true )
      save(['sp_' dname '_' subject '_' datestr],'traindata','traindevents','hdr');
      trainSubj=subject;
 
-   case {'sptrain','sptraining','spclassifier'};
+   case {'sptrain','sptraining','spclassifier','trainerp'};
     try
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
         fprintf('Loading training data from : %s\n',['sp_' dname '_' subject '_' datestr]);
@@ -102,7 +102,7 @@ while ( true )
       end;
       if ( verb>0 ) fprintf('%d epochs\n',numel(traindevents)); end;
 
-      [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','freqband',[.1 .3 8 10],'badchrm',1,'badtrrm',1,'objFn','lr_cg','compKernel',0,'dim',3,'capFile',capFile,'overridechnms',overridechnms);
+      [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','wht','freqband',[.1 .3 8 10],'badchrm',1,'badtrrm',0,'capFile',capFile,'overridechnms',overridechnms);
       clsSubj=subject;
       fprintf('Saving classifier to : %s\n',['sp_' cname '_' subject '_' datestr]);
       save(['sp_' cname '_' subject '_' datestr],'-struct','clsfr');
@@ -121,7 +121,11 @@ while ( true )
       clsSubj = subject;
     end;
 
-    spFeedbackSignals
+    event_applyClsfr(clsfr,'startSet',{{'stimulus.rowFlash' 'stimulus.colFlash'}},...
+                     'endType',{'stimulus.feedback' 'stimulus.test'},...
+                     'sendPredEventType','stimulus.sequence',...
+                     'trlen_ms',sptrlen_ms);
+    %spFeedbackSignals
     
     %---------------------------------------------------------------------------------
     % Movement BCI
@@ -133,7 +137,7 @@ while ( true )
     fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save(fname,'traindata','traindevents','hdr');
     trainSubj=subject;
 
-   case {'imtrain','imtraining','imclassifier'};
+   case {'imtrain','imtraining','imclassifier','trainersp'};
      try
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
         fprintf('Loading training data from : %s\n',['im_' dname '_' subject '_' datestr]);
@@ -142,7 +146,7 @@ while ( true )
       end;
       if ( verb>0 ) fprintf('%d epochs\n',numel(traindevents)); end;
 
-      clsfr=buffer_train_ersp_clsfr(traindata,traindevents,hdr,'spatialfilter','slap','freqband',[6 10 26 30],'badchrm',1,'badtrrm',1,'objFn','lr_cg','compKernel',0,'dim',3,'capFile',capFile,'overridechnms',overridechnms,'visualize',2);
+      clsfr=buffer_train_ersp_clsfr(traindata,traindevents,hdr,'spatialfilter','wht','freqband',[8 10 28 30],'badchrm',1,'badtrrm',0,'capFile',capFile,'overridechnms',overridechnms,'visualize',2);
       clsSubj=subject;
       fname=['im_' cname '_' subject '_' datestr];
       fprintf('Saving classifier to : %s\n',fname); save(fname,'-struct','clsfr');
@@ -158,8 +162,9 @@ while ( true )
       clsfr=load(clsfrfile);
       clsSubj = subject;
     end;
-
-    [testdata,testdevents]=imEpochFeedbackSignals(clsfr,'buffhost',buffhost,'buffport',buffport,'hdr',hdr,'trlen_ms',imtrlen_ms,'verb',verb)
+    
+    [testdata,testdevents]=event_applyClsfr(clsfr,'buffhost',buffhost,'buffport',buffport,'hdr',hdr,...
+                                            'startSet','stimulus.target','trlen_ms',imtrlen_ms,'verb',verb)
     fname=['im_' dname '_' subject '_' datestr '_test'];
     fprintf('Saving %d epochs to : %s\n',numel(testdevents),fname);save(fname,'testdata','testdevents');
     
