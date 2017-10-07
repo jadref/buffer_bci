@@ -14,6 +14,16 @@ if ( ~exist('nTestRepetitions','var') ) nTestRepetitions=nRepetitions; end;
 [stimSeqRow]=mkStimSeqRand(size(symbols,1),nTestRepetitions*size(symbols,1));
 [stimSeqCol]=mkStimSeqRand(size(symbols,2),nTestRepetitions*size(symbols,2));
 
+
+                                % Waik for key-press to being stimuli
+t=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'Freely choose which number to look at' 'after the stimulus finishes the' 'BCI predicted letter will be shown' 'in green' '' 'Click to continue'},...
+		 'HorizontalAlignment','center','color',[0 1 0],'fontunits','pixel','FontSize',.07*wSize(4));
+% wait for button press to continue
+waitforbuttonpress;
+set(t,'visible','off');
+delete(t);
+drawnow;
+
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
 set(h(:),'color',[.5 .5 .5]);
@@ -69,8 +79,20 @@ for si=1:nSeq;
   if ( 0 && isempty(devents) ) devents=mkEvent('prediction',randn(nFlash,1)); end; % testing code ONLY
   if ( ~isempty(devents) ) 
     % correlate the stimulus sequence with the classifier predictions to identify the most likely
-    % N.B. assume last prediction is one for prev sequence  
-    corr = reshape(stimSeq(:,:,1:nFlash),[numel(symbols) nFlash])*devents(end).value(:); 
+    % N.B. assume last prediction is one for prev sequence
+    pred = devents(end).value;
+    fprintf('Got %d predictions\n',numel(pred));
+    ss   = reshape(stimSeq(:,:,1:nFlash),[numel(symbols) nFlash]);
+    nPred= numel(pred);
+    if( nPred < nFlash )
+      fprintf('Warning missing predictionns');
+      corr = ss(:,1:nPred)*pred;
+    elseif ( nPred > nFlash )
+      fprintf('Warning: extra predictions');
+      core = ss*pred(1:nFlash);
+    else
+      corr = ss*pred;
+    end
     [ans,predTgt] = max(corr); % predicted target is highest correlation
   
     % show the classifier prediction
@@ -85,7 +107,3 @@ for si=1:nSeq;
 end % sequences
 % end training marker
 sendEvent('stimulus.feedback','end');
-if ( ishandle(fig) )
-  text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the training phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','normalized','FontSize',.1);
-  pause(3);
-end
