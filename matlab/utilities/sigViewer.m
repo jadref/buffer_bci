@@ -58,13 +58,14 @@ if ( nargin<2 || isempty(buffport) ); buffport=1972; end;
 if ( isempty(opts.freqbands) && ~isempty(opts.fftfilter) ); opts.freqbands=opts.fftfilter; end;
 
 if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics facility
+  opts.sigProcOptsGui=0;
   if ( ~isempty(strmatch('qt',available_graphics_toolkits())) )
 	 graphics_toolkit('qt'); 
+	 opts.sigProcOptsGui=1;
   elseif ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
     graphics_toolkit('qthandles'); % use fast rendering library
   elseif ( ~isempty(strmatch('fltk',available_graphics_toolkits())) )
     graphics_toolkit('fltk'); % use fast rendering library
-	 opts.sigProcOptsGui=0;
   end
 end
 if ( ischar(buffport) ) buffport=atoi(buffport); end;
@@ -88,8 +89,9 @@ ch_names=hdr.channel_names; ch_pos=[]; ch_pos3d=[]; iseeg=true(numel(ch_names),1
 capFile=opts.capFile; overridechnms=opts.overridechnms; 
 if(isempty(opts.capFile)) 
   [fn,pth]=uigetfile(fullfile(fileparts(mfilename('fullpath')),'../../resources/caps/*.txt'),'Pick cap-file'); drawnow;
-  if ( ~isequal(fn,0) ); capFile=fullfile(pth,fn); end;
-  %if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; end; % 1010 default if not selected
+  if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt';  % 1010 default if not selected
+  else                                   capFile=fullfile(pth,fn);
+  end; 
 end
 if ( ~isempty(capFile) ) 
   overridechnms=1; %default -- assume cap-file is mapping from wires->name+pos
@@ -173,7 +175,7 @@ if ( strcmpi(get(hdls(end),'Tag'),'colorbar') )
   cbarhdl=hdls(end); hdls(end)=[]; cbarpos=get(cbarhdl,'position');
   set(findobj(cbarhdl),'visible','off'); % store and make invisible
 end;
-if ( ~exist('OCTAVE_VERSION','builtin') ) zoomplots; end
+
 % install listener for key-press mode change
 set(fig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
 set(fig,'userdata',[]);
@@ -222,7 +224,8 @@ ppopts.whiten =opts.whiten;
 ppopts.rmartch=opts.rmartch;
 ppopts.rmemg  =opts.rmemg;
 ppopts.freqbands=opts.freqbands;
-damage=false(5,1);	 
+damage=false(5,1);
+optsFigh=[];
 if ( isequal(opts.sigProcOptsGui,1) )
   try;
     optsFigh=sigProcOptsFig();

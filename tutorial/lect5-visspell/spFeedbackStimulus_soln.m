@@ -36,8 +36,8 @@ flashColor=[1 1 1]; % the 'flash' color (white)
 tgtColor=[0 1 0]; % the target indication color (green)
 
 % the set of options the user will pick from
-symbols={'1' '2' '3';...
-         '4' '5' '6';...
+symbols={'1' '2' '3';
+         '4' '5' '6';
          '7' '8' '9'};
 
 % make the stimulus
@@ -103,8 +103,10 @@ for si=1:nSeq;
   [devents,state]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],500);
   if ( ~isempty(devents) ) 
     % correlate the stimulus sequence with the classifier predictions to identify the most likely letter
-    pred=[devents.value]; % get all the classifier predictions in order
-    corr = reshape(stimSeq(:,:,1:nFlash),[numel(symbols) nFlash])*pred(:); 
+    pred =[devents.value]; % get all the classifier predictions in order
+    nPred=numel(pred);
+    ss   = reshape(stimSeq(:,:,1:nFlash),[numel(symbols) nFlash]);
+    corr = ss(:,1:nPred)*pred(:);  % N.B. guard for missing predictions!
     [ans,predTgt] = max(corr); % predicted target is highest correlation
   
     % show the classifier prediction

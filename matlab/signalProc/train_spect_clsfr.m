@@ -416,7 +416,7 @@ end
 %6) train classifier
 if ( opts.classify ) 
   fprintf('6) train classifier\n');
-  [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',opts.zeroLab,'verb',opts.verb,varargin{:});  
+  [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',opts.zeroLab,'verb',opts.verb,'objFn','mlr_cg','binsp',0,'spMx','1vR',varargin{:});  
   res.isbadtr=isbadtr; % record the list of found bad trials
 else
   res=[];

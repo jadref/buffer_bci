@@ -60,6 +60,6 @@ while ( endTest==0 )
     end % devents 
   end % sequences
   if ( endSeq>0 ) % send the accumulated predictions
-    sendEvent('classifier.prediction',fs(:,1:nFlash),devents(endSeq).sample);
+    sendEvent('classifier.prediction',fs(:,1:nFlash));
   end
 end % feedback phase
