@@ -1,7 +1,7 @@
 function [clsfr,f,fraw,p,X]=apply_ersp_clsfr(X,clsfr,verb)
 % apply a previously trained classifier to the input data
-% 
-%  [clsfr,f,fraw,p,X]=apply_ersp_clsfr(X,clsfr,verb) 
+%
+%  [clsfr,f,fraw,p,X]=apply_ersp_clsfr(X,clsfr,verb)
 %
 % Inputs:
 %  X - [ ch x time x epoch ] data set
@@ -39,7 +39,7 @@ if ( isfield(clsfr,'preFiltFn') && ~isempty(clsfr.preFiltFn) )
   for ei=1:size(X,3); % incrementall call the function
 	 [X(:,:,ei),clsfr.preFiltState]=feval(clsfr.preFiltFn{1},X(:,:,ei),clsfr.preFiltState,clsfr.preFiltFn{2:end});
     if( verb>1 && size(X,3)>100 ) textprogressbar(ei,size(X,3)); end;
-  end  
+  end
 end
 
 %0) bad channel removal
@@ -51,10 +51,10 @@ isbadch=false;
 if ( isfield(clsfr,'badchthresh') && ~isempty(clsfr.badchthresh) )
   X2=sqrt(max(0,tprod(X,[1 -2 -3],[],[1 -2 -3])./size(X,2)./size(X,3)));
   isbadch = X2 > clsfr.badchthresh;
-  if ( verb>=0 && any(isbadch) ) 
-    fprintf('Bad channel >%5.3f:',clsfr.badchthresh); 
-    for i=1:numel(X2); 
-      fprintf('%5.3f',X2(i)); if(isbadch(i))fprintf('*');else fprintf(' '); end; fprintf(' ');  
+  if ( verb>=0 && any(isbadch) )
+    fprintf('Bad channel >%5.3f:',clsfr.badchthresh);
+    for i=1:numel(X2);
+      fprintf('%5.3f',X2(i)); if(isbadch(i))fprintf('*');else fprintf(' '); end; fprintf(' ');
     end
     fprintf('\n');
   end;
@@ -66,7 +66,7 @@ if ( isfield(clsfr,'badchthresh') && ~isempty(clsfr.badchthresh) )
 end
 
 %4.2) time range selection
-if ( ~isempty(clsfr.timeIdx) && clsfr.timeIdx(end)<=size(X,2) && clsfr.timeIdx(1)>=1 ) 
+if ( ~isempty(clsfr.timeIdx) && clsfr.timeIdx(end)<=size(X,2) && clsfr.timeIdx(1)>=1 )
   X    = X(:,clsfr.timeIdx,:);
 end
 
@@ -86,12 +86,12 @@ isbadtr=false;
 if ( isfield(clsfr,'badtrthresh') && ~isempty(clsfr.badtrthresh) )
   X2 = sqrt(max(0,tprod(X,[-1 -2 1],[],[-1 -2 1])./size(X,1)./size(X,2)));
   isbadtr = X2 > clsfr.badtrthresh;
-  if ( verb>=0 && any(isbadtr) ) 
-    fprintf('Bad tr >%5.3f:',clsfr.badtrthresh); 
-    for i=1:numel(X2); 
-      fprintf('%5.3f',X2(i)); if(isbadtr(i))fprintf('*');else fprintf(' '); end; fprintf(' ');  
+  if ( verb>=0 && any(isbadtr) )
+    fprintf('Bad tr >%5.3f:',clsfr.badtrthresh);
+    for i=1:numel(X2);
+      fprintf('%5.3f',X2(i)); if(isbadtr(i))fprintf('*');else fprintf(' '); end; fprintf(' ');
     end
-    fprintf('\n'); 
+    fprintf('\n');
   end;
 end
 
@@ -112,7 +112,7 @@ else
   %3.2.5 positive frequencies only
   X=X(:,1:ceil((size(X,2)-1)/2)+1,:);
   %3.3) convert to powers
-  X=2*(real(X).^2 + imag(X).^2); 
+  X=2*(real(X).^2 + imag(X).^2);
   %3.4) convert to output type
   switch ( lower(clsfr.welchAveType) )
    case 'db';
@@ -126,7 +126,15 @@ end
 
 %4) sub-select the range of frequencies we care about
 if ( isfield(clsfr,'freqIdx') && ~isempty(clsfr.freqIdx) )
-  X=X(:,clsfr.freqIdx,:); % sub-set to the interesting frequency range
+  if( size(clsfr.freqIdx,2)==1)
+    X=X(:,clsfr.freqIdx,:); % sub-set to the interesting frequency range
+  else % filter bank to apply
+    oX=X;
+    X=zeros([size(X,1),size(clsfr.freqIdx,2),size(X,3)]);
+    for bi=1:size(fIdx,2);
+      X(:,bi,:)=sum(oX(:,fIdx(:,bi)>0,:),2);
+    end
+  end
 end
 if ( clsfr.timefeat ) X=cat(2,Xt,X); end
 
@@ -139,8 +147,8 @@ if ( isfield(clsfr,'featFiltFn') && ~isempty(clsfr.featFiltFn) )
 	 [Xei,featFiltState]=feval(featFiltFn{1},X(:,:,ei),featFiltState,featFiltFn{2:end});
     if( isempty(nX) ) % init and allow for size changes
        if(size(Xei,2)==size(X,2)) nX=X; else nX=zeros([size(Xei),size(X,3)]); end
-    end; 
-    nX(:,:,ei)=Xei; 
+    end;
+    nX(:,:,ei)=Xei;
     if( verb>1 && size(X,3)>100 ) textprogressbar(ei,size(X,3)); end;
   end
   X=nX;
@@ -153,14 +161,14 @@ end
 if ( any(isbadtr) )
   %if ( isfield(clsfr,'dvstats') )
   %  f(isbadtr) = mean(clsfr.dvstats.mu(1:2)); % mean dv?
-  %else    
+  %else
     f(isbadtr) = 0;
   %end
 end
 
 % Pr(y==1|x,w,b), map to probability of the positive class
-if ( clsfr.binsp ) 
-   p = 1./(1+exp(-f)); 
+if ( clsfr.binsp )
+   p = 1./(1+exp(-f));
 else % direct multi-class softmax
    p = exp(f-max(f,2)); p=repop(p,'./',sum(p,2));
 end
