@@ -82,7 +82,7 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
 opts=struct('classify',1,'fs',[],'timeband_ms',[],'freqband',[],...
             'width_ms',500,'windowType','hamming','aveType','amp','timefeat',0,...
-            'detrend',1,'spatialfilter','slap',...
+            'detrend',1,'preFiltFn','','spatialfilter','slap',...
             'adaptspatialfiltFn',[],'adaptspatialfiltstate',[],...
             'badchrm',1,'badchthresh',3.1,'badchscale',4,'eegonly',1,...
             'badtrrm',1,'badtrthresh',3,'badtrscale',4,...
@@ -129,6 +129,16 @@ if ( opts.detrend )
     X=repop(X,'-',median(X,2));
   end
 end
+% 5.9) Apply a feature filter post-processor if wanted
+preFiltFn=opts.preFiltFn;preFiltState=[];
+if ( ~isempty(preFiltFn) )
+  fprintf('5.5) preFilter\n');
+  if ( ~iscell(preFiltFn) ) preFiltFn={preFiltFn}; end;
+  for ei=1:size(X,3);
+	 [X(:,:,ei),preFiltState]=feval(preFiltFn{1},X(:,:,ei),preFiltState,preFiltFn{2:end});
+  end
+end
+
 
 %2) Bad channel identification & removal
 isbadch=[]; chthresh=[];
