@@ -24,7 +24,7 @@ menustr={'0) EEG'                          'eegviewer';
          '' '';
          'q) quit'                         'quit';
 };
-txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
+menuh=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
 			  'HorizontalAlignment','left','color',[1 1 1]);
  msgh=text(.5,.1,'','fontunits','pixel','fontsize',.08*wSize(4),...
            'HorizontalAlignment','center','color',[1 1 1]);
@@ -35,22 +35,17 @@ txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
  drawnow; % make sure the figure is visible
  subject='test';
  
-% run the control handeling loop
-while (ishandle(contFig))
+                                % run the control handeling loop
+ endExpt=false;
+while (ishandle(contFig) && ~endExpt)
   if ( ~ishandle(contFig) ) break; end;
   set(contFig,'visible','on');
 
   phaseToRun=[];
-  if ( ~exist('OCTAVE_VERSION','builtin') ) 
-	 uiwait(contFig); % CPU hog on ver 7.4
-	 info=guidata(contFig); 
-	 subject=info.subject;
-	 phaseToRun=lower(info.phaseToRun);
-  else % give time to process the key presses
 	 % BODGE: move point to force key-processing
-	 fprintf('.');set(ph,'ydata',rand(1)*.01); drawnow; pause(.1);  
-	 if ( ~ishandle(contFig) ) break; end;
-  end
+  set(contFig,'visible','on');
+  fprintf('.');if(ishandle(ph))set(ph,'ydata',rand(1)*.01);else;ph=plot(1,0,'.');end; drawnow; pause(.1);  
+  if ( ~ishandle(contFig) ) break; end;
 
   % process any key-presses
   modekey=get(contFig,'userdata'); 
@@ -234,6 +229,10 @@ while (ishandle(contFig))
     end
     sendEvent('stimulus.test','end');
     sendEvent(phaseToRun,'end');
+
+   case {'quit'};
+     endExpt=true;
+     break;
   
   end
   
