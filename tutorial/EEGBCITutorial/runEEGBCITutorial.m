@@ -1,38 +1,40 @@
 configureDemo;
 
 % create the control window and execute the phase selection loop
-if ( ~exist('OCTAVE_VERSION','builtin') ) 
-  contFig=controller(); info=guidata(contFig); 
-else
-  contFig=figure(1);
-  set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
-  ax=axes('position',[0 0 1 1],'visible','off',...
-			 'xlim',[0 1],'XLimMode','manual','ylim',[0 1],'ylimmode','manual','nextplot','add');
-  set(contFig,'Units','pixel');wSize=get(contFig,'position');
-  fontSize = .05*wSize(4);
-  %        Key Instruct String                  Phase-name
-  menustr={'0) EEG'                          'eegviewer';
-			  '1) ERP Visualization'            'erpvis';
-           '2) ERP Viz PTB'                  'erpvisptb';
-           '3) Speller: Practice'            'sppractice';
-			  '4) Speller: Calibrate'           'spcalibrate'; 
-			  '5) Speller: Train Classifier'    'sptrain';
-			  '6) Speller: Testing'             'sptesting';
-			  '7) Movement: Practice'           'impractice';
-			  '8) Movement: Calibrate'          'imcalibrate';
-			  '9) Movement: Train Classifier'   'imtrain';
-			  't) Movement: Testing'            'imtesting';
-          };
-  txth=text(.25,.5,menustr(:,2),'fontunits','pixel','fontsize',.05*wSize(4),...
-				'HorizontalAlignment','left','color',[1 1 1]);
-  ph=plot(1,0,'k'); % BODGE: point to move around to update the plot to force key processing
-  % install listener for key-press mode change
-  set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
-  set(contFig,'userdata',[]);
-  drawnow; % make sure the figure is visible
-end
-subject='test';
-
+contFig=figure(1);
+set(contFig,'name','BCI Controller : close to quit','color',[0 0 0]);
+ax=axes('position',[0 0 1 1],'visible','off',...
+		  'xlim',[0 1],'XLimMode','manual','ylim',[0 1],'ylimmode','manual','nextplot','add');
+set(contFig,'Units','pixel');wSize=get(contFig,'position');
+fontSize = .05*wSize(4);
+                     %        Key Instruct String                  Phase-name
+menustr={'0) EEG'                          'eegviewer';
+			'1) ERP Visualization'            'erpvis';
+         '2) ERP Viz PTB'                  'erpvisptb';
+         '' '';
+         '3) Speller: Practice'            'sppractice';
+         '4) Speller: Calibrate'           'spcalibrate'; 
+         '5) Speller: Train Classifier'    'sptrain';
+         '6) Speller: Testing'             'sptesting';
+         '' '';
+         '7) Movement: Practice'           'impractice';
+         '8) Movement: Calibrate'          'imcalibrate';
+         '9) Movement: Train Classifier'   'imtrain';
+         't) Movement: Testing'            'imtesting';
+         '' '';
+         'q) quit'                         'quit';
+};
+txth=text(.25,.5,menustr(:,1),'fontunits','pixel','fontsize',.05*wSize(4),...
+			  'HorizontalAlignment','left','color',[1 1 1]);
+ msgh=text(.5,.1,'','fontunits','pixel','fontsize',.08*wSize(4),...
+           'HorizontalAlignment','center','color',[1 1 1]);
+ ph=plot(1,0,'k'); % BODGE: point to move around to update the plot to force key processing
+                   % install listener for key-press mode change
+ set(contFig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
+ set(contFig,'userdata',[]);
+ drawnow; % make sure the figure is visible
+ subject='test';
+ 
 % run the control handeling loop
 while (ishandle(contFig))
   if ( ~ishandle(contFig) ) break; end;
@@ -69,21 +71,39 @@ while (ishandle(contFig))
   fprintf('Start phase : %s\n',phaseToRun);  
   set(contFig,'visible','off');
   
+  drawnow;
+  sendEvent('sigproc.reset','end'); % reset the sig-processor just in case
+  sigProcCmd=['sigproc.' lower(phaseToRun)]; 
+  state=[]; % reset to ignore anything from before now...
   switch phaseToRun;
     
-   case 'capfitting';
+   %---------------------------------------------------------------------------
+   % Simple forward to the sig-processor commands
+   %  sig-viewers, data-slicer/loader, classifier training
+   case {'capfitting','eegviewer','loadtraining','sliceraw'};
     sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun);
-    % wait until capFitting is done
-    buffer_newevents(buffhost,buffport,[],phaseToRun,'end');    
-    %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);       
-
-   case 'eegviewer';
-    sendEvent('subject',subject);
-    sendEvent('startPhase.cmd',phaseToRun);
-    % wait until capFitting is done
-    buffer_newevents(buffhost,buffport,[],phaseToRun,'end');
-    %buffer_waitData(buffhost,buffport,[],'exitSet',{{phaseToRun} {'end'}},'verb',verb);           
+    sendEvent(sigProcCmd,'start'); % tell sig-proc what to do
+    [devents,state]=buffer_newevents(buffhost,buffport,[],sigProcCmd,'ack',4000); % wait for start acknowledgement
+    % mark as running
+    if( isempty(devents) )
+      set(msgh,'string',{sprintf('Warning::%s is taking too long to start...',phaseToRun),'did it crash?'},'visible','on');
+    else
+      set(msgh,'string',{sprintf('Phase: %s',phaseToRun),'Running...'},'visible','on');
+    end
+    drawnow;
+    % wait to finish
+    for i=1:20;
+      [devents,state]=buffer_newevents(buffhost,buffport,state,sigProcCmd,'end',1000); % wait until finished
+      drawnow;
+      if ( ~isempty(devents) ) break; end;
+    end
+    if( isempty(devents) ) % warn if taking too long
+      set(msgh,'string',{sprintf('Warning::%s is taking a long time....',phaseToRun),'did it crash?'},'visible','on');
+    else
+      set(msgh,'string','');
+      sigProcCmd='';
+    end
+    drawnow;
 
    %--------------------------------------------------------------
    % brain responses
@@ -215,7 +235,8 @@ while (ishandle(contFig))
     sendEvent('stimulus.test','end');
     sendEvent(phaseToRun,'end');
   
-  end  
+  end
+  
 end
 %uiwait(msgbox({'Thank you for participating in our experiment.'},'Thanks','modal'),10);
 pause(1);
