@@ -37,17 +37,10 @@ while (ishandle(contFig))
   set(msgh,'color',[1 1 1]*.5); % ensure status is grey
   
   phaseToRun=[];
-  if ( ~exist('OCTAVE_VERSION','builtin') && ~isempty(get(contFig,'tag')) ) % using the gui-figure-window
-	 uiwait(contFig);
-    if ( ~ishandle(contFig) ) break; end;    
-	 info=guidata(contFig); 
-	 subject=info.subject;
-	 phaseToRun=lower(info.phaseToRun);
-  else % give time to process the key presses
-	 % BODGE: move point to force key-processing
-	 fprintf('.');set(ph,'ydata',rand(1)*.01); drawnow;
-	 if ( ~ishandle(contFig) ) break; end;
-  end
+                                % BODGE: move point to force key-processing
+  set(contFig,'visible','on');
+  fprintf('.');set(ph,'ydata',rand(1)*.01); drawnow;
+  if ( ~ishandle(contFig) ) break; end;
 
   % process any key-presses
   modekey=get(contFig,'userdata'); 
