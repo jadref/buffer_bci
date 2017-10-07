@@ -34,9 +34,9 @@ flashColor=[1 1 1]; % the 'flash' color (white)
 tgtColor=[0 1 0]; % the target indication color (green)
 
 % the set of options the user will pick from
-symbols={'1' '2' '3';...
-         '4' '5' '6';...
-         '7' '8' '9'}';
+symbols={'1' '2' '3';
+         '4' '5' '6';
+         '7' '8' '9'};
 
 % make the stimulus
 clf;
@@ -88,7 +88,8 @@ for si=1:nSeq;
   % reset the cue and fixation point to indicate trial has finished  
   set(h(:),'color',bgColor);
   drawnow;
-  sendEvent('stimulus.sequence','end');  
+  sendEvent('stimulus.sequence','end');
+  fprintf('\n');
 end % sequences
 % end training marker
 sendEvent('stimulus.training','end');
