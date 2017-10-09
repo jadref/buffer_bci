@@ -147,7 +147,7 @@ sleepSec(5);
     if ( useBuffer )
       [dv,prob,buffstate,filtstate]=processNewPredictionEvents(buffhost,buffport,buffstate,predType,gameFrameDuration*1000/2,predFiltFn,filtstate,verb-1);
       curKeyLocal = get(hFig,'userdata');
-      prob = [prob;0];
+      prob = [prob(:);0];
       
       %checks if shooting key is pressed
       if ~isempty(curKeyLocal)

@@ -351,7 +351,7 @@ while ( true )
     mi=matchEvents(ntraindevents,{'calibrate' 'calibration' 'sigproc.reset' phaseToRun ['sigproc.' phaseToRun]},'end'); ntraindevents(mi)=[]; ntraindata(mi)=[];%remove exit event
     if(isempty(traindata))
       traindata=ntraindata;                  traindevents=ntraindevents;
-    else
+    elseif( ~isempty(ntraindevents) && numel(ntraindata)>0 )
       dsz=size(traindata(1).buf);
       consistent=true;
       for ei=1:numel(ntraindata);
@@ -411,7 +411,7 @@ while ( true )
 
                                 % save the loaded data (like it was on-line)
      fname=[dname '_' subject '_' datestr];
-     fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save([fname '.mat'],'traindata','traindevents','hdr','allevents');
+     fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save([fname '.mat'],'traindata','traindevents','hdr');
      trainSubj=subject; % mark this this data is valid for classifier training
      
      if( ~isempty(chdr) ) hdr=chdr; end;
