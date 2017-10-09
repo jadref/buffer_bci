@@ -131,9 +131,9 @@ thresh=[.5 3];  badchThresh=.5;   overridechnms=0;
 capFile=opts.capFile;
 if( isempty(capFile) ) 
   [fn,pth]=uigetfile(fullfile(mdir,'..','../resources/caps/*.txt'),'Pick cap-file'); 
-  if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt'; 
+  if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt';  % 1010 default if not selected
   else                                   capFile=fullfile(pth,fn);
-  end; % 1010 default if not selected
+  end; 
 end
 overridechnms=1; % default cap-file is wire->name+position mapping
 if ( ~isempty(strfind(capFile,'1010.txt')) || ~isempty(strfind(capFile,'subset')) ) 

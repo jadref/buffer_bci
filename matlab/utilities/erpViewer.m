@@ -50,21 +50,25 @@ elseif ( iscell(opts.endType) && numel(opts.endType)>0 && ~iscell(opts.endType{1
 end;
 wb=which('buffer'); if ( isempty(wb) || isempty(strfind('dataAcq',wb)) ); run(fullfile(fileparts(mfilename('fullpath')),'../utilities/initPaths.m')); end;
 if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics facility
+  opts.sigProcOptsGui=0;
   if ( ~isempty(strmatch('qt',available_graphics_toolkits())) )
 	 graphics_toolkit('qt'); 
+    opts.sigProcOptsGui=1;
   elseif ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
     graphics_toolkit('qthandles'); % use fast rendering library
   elseif ( ~isempty(strmatch('fltk',available_graphics_toolkits())) )
     graphics_toolkit('fltk'); % use fast rendering library
   end
-  opts.sigProcOptsGui=0;
 end
+if ( ischar(buffport) ) buffport=atoi(buffport); end;
+fprintf('Connection to buffer on %s : %d\n',buffhost,buffport);
 
 % to auto set the color of the lines
 linecols='brkgcmyk';
 
 % get channel info for plotting
 hdr=[];
+    hdr=buffer('get_hdr',[],buffhost,buffport); 
 while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffer to contain valid data
   try 
     hdr=buffer('get_hdr',[],buffhost,buffport); 
@@ -76,23 +80,27 @@ while ( isempty(hdr) || ~isstruct(hdr) || (hdr.nchans==0) ) % wait for the buffe
 end;
 
 % extract channel info from hdr
-ch_names=hdr.channel_names; ch_pos=[]; iseeg=true(numel(ch_names),1);
+ch_names=hdr.channel_names; ch_pos=[]; ch_pos3d=[]; iseeg=true(numel(ch_names),1);
 % get capFile info for positions
 capFile=opts.capFile; overridechnms=opts.overridechnms; 
 if(isempty(opts.capFile)) 
   [fn,pth]=uigetfile(fullfile(fileparts(mfilename('fullpath')),'../../resources/caps/*.txt'),'Pick cap-file');
   drawnow;
-  if ( ~isequal(fn,0) ) capFile=fullfile(pth,fn); end;
+  if ( isequal(fn,0) || isequal(pth,0) ) capFile='1010.txt';  % 1010 default if not selected
+  else                                   capFile=fullfile(pth,fn);
+  end; 
 end
 if ( ~isempty(capFile) ) 
-  % force default override
-  if ( ~isempty(strfind(capFile,'1010.txt')) ) overridechnms=0; else overridechnms=1; end; 
-  di = addPosInfo(ch_names,capFile,overridechnms); % get 3d-coords
+  overridechnms=1; %default -- assume cap-file is mapping from wires->name+pos
+  if ( ~isempty(strfind(capFile,'1010.txt')) || ~isempty(strfind(capFile,'subset')) ) 
+     overridechnms=0; % capFile is just position-info / channel-subset selection
+  end; 
+  di = addPosInfo(ch_names,capFile,overridechnms,0,1); % get 3d-coords
   ch_pos=cat(2,di.extra.pos2d); % extract pos and channels names
   ch_pos3d=cat(2,di.extra.pos3d);
   ch_names=di.vals; 
   iseeg=[di.extra.iseeg];
-  if ( ~any(iseeg) ) % fall back on showing all data
+  if ( ~any(iseeg) || ~isempty(strfind(capFile,'showAll.txt')) ) % fall back on showing all data
     warning('Capfile didnt match any data channels -- no EEG?');
     ch_names=hdr.channel_names;
     ch_pos=[];
@@ -100,7 +108,7 @@ if ( ~isempty(capFile) )
   end
 end
 
-if ( isfield(hdr,'fSample') ) fs=hdr.fSample; else fs=hdr.fsample; end;
+if ( isfield(hdr,'fSample') ); fs=hdr.fSample; else fs=hdr.fsample; end;
 trlen_samp=opts.trlen_samp;
 if ( isempty(trlen_samp) && ~isempty(opts.trlen_ms) ) trlen_samp=round(opts.trlen_ms*fs/1000); end;
 offset_samp=opts.offset_samp;
@@ -153,16 +161,16 @@ end
 fig=figure(1);clf;
 set(fig,'Name','ER(s)P Viewer : t=time, f=freq, r=rest, q,close window=quit','menubar','none','toolbar','none','doublebuffer','on');
 plotPos=ch_pos; if ( ~isempty(plotPos) ) plotPos=plotPos(:,iseeg); end;
-hdls=image3d(erp,1,'plotPos',plotPos,'Xvals',ch_names(iseeg),'Yvals',times,'ylabel','time (s)','disptype','plot','ticklabs','sw','legend','se','plotPosOpts.plotsposition',[.05 .08 .91 .85],'lineWidth',opts.lineWidth);
+% add number prefix to ch-names for display
+plot_nms={}; for ci=1:numel(ch_names); plot_nms{ci} = sprintf('%d %s',ci,ch_names{ci}); end;plot_nms=plot_nms(iseeg);
+hdls=image3d(erp,1,'plotPos',plotPos,'Xvals',plot_nms,'Yvals',times,'ylabel','time (s)','disptype','plot','ticklabs','sw','legend','se','plotPosOpts.plotsposition',[.05 .08 .91 .85],'lineWidth',opts.lineWidth);
 
 % make popup menu for selection of TD/FD
 modehdl=uicontrol(fig,'Style','popup','units','normalized','position',[.8 .9 .2 .1],'String','Time|Frequency');
 pos=get(modehdl,'position');
 resethdl=uicontrol(fig,'Style','togglebutton','units','normalized','position',[pos(1)-.2 pos(2)+pos(4)*.4 .2 pos(4)*.6],'String','Reset');
 vistype=1; ylabel='time (s)';  yvals=times; set(modehdl,'value',vistype);
-if ( ~exist('OCTAVE_VERSION','builtin') ) % in octave have to manually convert arrays..
-  zoomplots;
-end
+
 % install listener for key-press mode change
 set(fig,'keypressfcn',@(src,ev) set(src,'userdata',char(ev.Character(:)))); 
 set(fig,'userdata',[]);
@@ -180,6 +188,7 @@ ppopts.rmartch=opts.rmartch;
 ppopts.rmemg  =opts.rmemg;
 ppopts.freqbands=opts.freqbands;
 damage=false(5,1);	 
+optsFigh=[];
 if ( isequal(opts.sigProcOptsGui,1) )
   try;
     optsFigh=sigProcOptsFig();
@@ -232,9 +241,8 @@ while ( ~endTraining )
      otherwise;    modekey=1;
     end;
     set(fig,'userdata',[]);
-    if ( ~isempty(modehdl) ) set(modehdl,'value',modekey); end;
+    if ( ~isempty(modehdl) ); set(modehdl,'value',modekey); end;
   end
-  % get updated sig-proc parameters if needed
   % get updated sig-proc parameters if needed
   if ( ~isempty(optsFigh) && ishandle(optsFigh) )
 	 try
@@ -385,18 +393,31 @@ while ( ~endTraining )
 	 if ( isnumeric(opts.spatfilt) ) % use the user-specified spatial filter matrix
 		ppdat(~isbadch,:,:)=tprod(ppdat,[-1 2 3],opts.spatfilt,[-1 1]);      
 	 end
+
                                 % adaptive spatial filter
+    ch_nameseeg=ch_names(iseeg); 
+    ch_pos3deeg=[]; if (~isempty(ch_pos3d)) ch_pos3deeg=ch_pos3d(:,iseeg); end;
     if( isfield(ppopts,'whiten') && ppopts.whiten ) % symetric-whitener
-      ppdat=adaptWhitenFilt(ppdat,[],'covFilt',adaptAlpha,'ch_names',ch_names(iseeg));
+      [ppdat,whtstate]=adaptWhitenFilt(ppdat,whtstate,'covFilt',adaptAlpha(min(end,2)),'ch_names',ch_nameseeg);
+    else % clear state if turned off
+      whtstate=[];
     end
     if( isfield(ppopts,'rmartch') && ppopts.rmartch ) % artifact channel regression
-      ppdat=artChRegress(ppdat,[],[],opts.artCh,'covFilt',adaptAlpha,'ch_names',ch_names(iseeg),'ch_pos',ch_pos3d(:,iseeg));
+      % N.B. important for this regression to ensure only the pure artifact signal goes into the correlation hence
+      %      set frequency bands to extract the artifact component of the signal
+      [ppdat,eogstate]=artChRegress(ppdat,eogstate,[],opts.artCh,'covFilt',adaptAlpha(min(end,3)),'bands',opts.artChBands,'fs',fs,'ch_names',ch_nameseeg,'ch_pos',ch_pos3deeg);
+    else
+      eogstate=[];
     end
     if( isfield(ppopts,'rmemg') && ppopts.rmemg ) % artifact channel regression
-      ppdat=rmEMGFilt(ppdat,[],[],'covFilt',adaptAlpha,'ch_names',ch_names(iseeg),'ch_pos',ch_pos3d(:,iseeg));
+      [ppdat,emgstate]=rmEMGFilt(ppdat,emgstate,[],'covFilt',adaptAlpha(min(end,4)),'ch_names',ch_nameseeg,'ch_pos',ch_pos3deeg);
+    else
+      emgstate=[];
     end    
     if( ~isempty(opts.useradaptspatfiltFn) && isfield(ppopts,'usersf') && ppopts.usersf ) % user specified option
-      ppdat=feval(opts.useradaptspatfiltFn{1},ppdat,[],opts.useradaptspatfiltFn{2:end},'covFilt',adaptAlpha,'ch_names',ch_names(iseeg),'ch_pos',ch_pos3d(:,iseeg));
+      [ppdat,usersfstate]=feval(opts.useradaptspatfiltFn{1},ppdat,usersfstate,opts.useradaptspatfiltFn{2:end},'covFilt',adaptAlpha(min(end,5)),'ch_names',ch_nameseeg,'ch_pos',ch_pos3deeg);
+    else
+      usersfstate=[];
     end    
       
     %--------------------------------------
@@ -473,7 +494,10 @@ while ( ~endTraining )
                             if ( isempty(li) ) li=find(strcmp(sprintf('%d',mi),linenames),1); end;
                     end
                   else % line without key, turn it off
-                    if ( ishandle(line_hdls(mi)) ) set(line_hdls(mi),'visible','off','displayName',''); end;
+                    if ( size(line_hdls,1)>=mi && ishandle(line_hdls(mi)) )
+                      set(line_hdls(mi),'visible','off');
+                      set(line_hdls(mi),'displayName','');
+                    end;
                     continue;
                   end
 				  if( size(line_hdls,1)>=mi && ~isempty(li) && ishandle(line_hdls(li)) && ~isequal(line_hdls(li),0) )
@@ -487,13 +511,16 @@ while ( ~endTraining )
               end
 			 end
 		  end
-		  % update the legend
-		  if ( numel(hdls)>size(erp,1) && any(strcmp(get(hdls(end),'type'),{'axes','legend'})) ) % legend is a normal set of axes
+		                          % update the legend
+		  if ( numel(hdls)>size(erp,1) && ishandle(hdls(end)) && any(strcmp(get(hdls(end),'type'),{'axes','legend'})) ) % legend is a normal set of axes
            pos=get(hdls(end),'position');
            legend(hdls(end-1),'off'); hdls(end) = legend(hdls(end-1),'show'); set(hdls(end),'position',pos);
 		  end
 	else % redraw the whole from scratch
       hdls=image3d(erp,1,'handles',hdls,'Xvals',ch_names(iseeg),'Yvals',yvals,'ylabel',ylabel,'disptype','plot','ticklabs','sw','Zvals',label(1:numel(key)),'lineWidth',opts.lineWidth);
+      if ( numel(hdls)>size(erp,1) && ~ishandle(hdls(end)) )
+        hdls(end)=[];
+      end;  
     end
     vistype=curvistype;
     % redraw, but not too fast

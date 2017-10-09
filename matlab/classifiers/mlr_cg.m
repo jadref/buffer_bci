@@ -132,8 +132,11 @@ if ( isempty(wb) )
   w    = repop(w,'/',sum(w.*w,1));   % scale to unit magnitude output
   b    = -(w'*mean(Xmu,2))';         % offset to average 0 for global mean point
 else
-  if ( size(wb,1)==numel(wb) ) wb=reshape(wb,nf+1,L); end;
+  if ( size(wb,1)==numel(wb) && ~(binp && numel(wb)/(nf+1)==1) )
+    wb=reshape(wb,nf+1,L);
+  end;
   w=wb(1:end-1,:); b=wb(end,:);
+  if( binp && size(w,2)==1 ) w=cat(2,w,-w); b=cat(2,b,-b); end; % duplicate for binary
 end 
 
 % build index expression so can quickly get the predictions on the true labels
@@ -399,9 +402,13 @@ end
 % compute final decision values.
 if ( ~all(size(X)==size(oX)) ) f   = repop(w'*oX,'+',b'); end;
 f = reshape(f,size(oY));
-if ( binp && opts.compBinp ) f=f(1,:); end;
+if ( binp && opts.compBinp )
+  f=f(1,:);
+  w=w(:,1);
+  b=b(:,1);
+end;
 obj = [J Ew Ed];
-wb=[w;b];
+wb  = [w;b];
 return;
 
 %-----------------------------------------------------------------------------

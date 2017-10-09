@@ -53,7 +53,7 @@ function [testdata,testevents]=event_applyClsfr(clsfr,varargin)
 %   event_applyClsfr(clsfr,'startSet',{'stimulus.rowFlash','stimulus.colFlash},'sendPredEvent','classifier.sendprediction')
 opts=struct('buffhost','localhost','buffport',1972,'hdr',[],...
             'startSet',{{'classifier.apply'}},...
-            'endType',{{'stimulus.test' 'stimulus.testing' 'sigproc.reset'}},'endValue','end','verb',0,...
+            'endType',{{'stimulus.test' 'stimulus.testing' 'sigproc.reset'}},'endValue','end','verb',1,...
 				'resetType','classifier.reset',...				
             'sendPredEventType',[],...
             'predEventType','classifier.prediction',...
@@ -101,7 +101,7 @@ end
 
 % get startSet in the right format for buffer_waitdata
 startSet=opts.startSet;
-if ( ~iscell(startSet) || numel(startSet)~=2 ) startSet={startSet}; end;
+if ( ~iscell(startSet) || (numel(startSet)~=2 && ~iscell(startSet{1})) ) startSet={startSet}; end;
 
                                 % send info our our class mapping
 if ( numel(clsfr)==1 )
@@ -150,7 +150,7 @@ while ( ~endTest )
 		fprintf('Got reset event. Prediction filters reset');
 		filtstate=[]; fbuff(:)=0; dv(:)=0;
 
-    elseif ( matchEvents(devents(ei),opts.startSet) ) % apply the classifier event
+    elseif ( matchEvents(devents(ei),startSet{:}) ) % apply the classifier event
       if ( opts.verb>0 ) fprintf('Processing event: %s',ev2str(devents(ei))); end;      
 
       % save the data used by the classifier if wanted
