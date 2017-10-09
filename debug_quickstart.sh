@@ -8,7 +8,7 @@ sigproc=0;
 if [ $# -gt 1 ]; then sigproc=$2; fi
 
 echo Starting the non-saving java buffer server \(background\)
-dataAcq/startJavaNoSaveBuffer.sh &
+bash dataAcq/startJavaNoSaveBuffer.sh &
 bufferpid=$!
 echo buffpid=$bufferpid
 sleep 5
@@ -16,24 +16,24 @@ sleep 5
 
 echo Starting the data acquisation device $dataacq \(background\)
 if [ $dataacq == 'audio' ]; then
-  dataAcq/startJavaAudio.sh localhost 2 &
+  bash dataAcq/startJavaAudio.sh localhost 2 &
 elif [ $dataacq == 'matlab' ]; then
-  dataAcq/startMatlabSignalProxy.sh &
+  bash dataAcq/startMatlabSignalProxy.sh &
 else
-  dataAcq/startJavaSignalproxy.sh &
+  bash dataAcq/startJavaSignalproxy.sh &
 fi
 dataacqpid=$!
 echo dataacqpid=$dataacqpid
 
 if [ $sigproc -eq 1 ]; then
   echo Starting the default signal processing function \(background\)
-  matlab/signalProc/startSigProcBuffer.sh &
+  bash matlab/signalProc/startSigProcBuffer.sh &
   sigprocpid=$!
 fi
 
 
 echo Starting the event viewer
-dataAcq/startJavaEventViewer.sh
+bash dataAcq/startJavaEventViewer.sh
 kill $bufferpid
 kill $dataacqpid
 kill $sigprocpid
