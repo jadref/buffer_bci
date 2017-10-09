@@ -108,6 +108,7 @@ for epi=1:nEp; % loop over epochs
   if( ~isempty(covFilt) )
     if( isnumeric(covFilt{1}) ) % move-ave
       alpha           = covFilt{1};
+      alpha           = alpha.^size(Xei,dim(2)); % specified in data-packets
       filtstate.N     = alpha.*filtstate.N     + (1-alpha).*1;       % update weight
       filtstate.sxx   = alpha.*filtstate.sxx   + (1-alpha).*XXt;   % update move-ave
                                 % move-ave with warmup-protection
