@@ -41,7 +41,7 @@ for sessi=2:numel(sessions{si});
   %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','wht','freqband',[6 8 28 30],'width_ms',250,'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
 
   % adaptive wht
-  %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',3,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',50},'freqband',[6 8 38 30],'width_ms',250,'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
+  %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',3,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',50*750*250},'freqband',[6 8 38 30],'width_ms',250,'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
 
   % adaptive wht + adaptive EOG rm
   %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','adaptspatialfiltFn',{'filtPipeline' {'artChRegress',[],{'AF7' 'Fp1' 'Fpz' 'Fp2' 'AF8'},'covFilt',5} {'adaptWhitenFilt','covFilt',50}},'freqband',[6 8 28 30],'width_ms',250,'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
