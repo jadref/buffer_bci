@@ -59,7 +59,7 @@ eppow = sum(reshape(X,[],size(X,3)).^2,1);
 figure(1); clf; plot(eppow);
 % automatically identify the bad epochs
 badep = idOutliers(X,3,3);
-% show them one the power plot
+% show them on the power plot
 figure(1);hold on;plot(find(badep),zeros(size(find(badep))),'*','markersize',10); 
 
 %% store the bad examples and plot them
@@ -71,13 +71,13 @@ figure(1); clf;image3d(Xbad,1,'plotPos',Cpos,'Xvals',Cnames,'Zvals',find(badep),
 X=X(:,:,~badep);
 Y=Y(~badep); % don't forget to update labels!
 
-%%4) welch to convert to power spectral density
+%% 4) welch to convert to power spectral density
 fprintf('4) Welch\n');
 [X,wopts,winFn]=welchpsd(X,2,'width_ms',500,'fs',fs);
 freqs=0:(1000/500):fs; % position of the frequency bins
 yvals=freqs;
 
-%%5) sub-select the range of frequencies we care about
+%% 5) sub-select the range of frequencies we care about
 freqband = [8 28];
 fidx=[];
 fprintf('5) Select frequencies\n');
@@ -86,7 +86,7 @@ fprintf('5) Select frequencies\n');
 X=X(:,fidx(1):fidx(2),:); % sub-set to the interesting frequency range
 yvals=yvals(fidx(1):fidx(2)); % update so plots use correct info
 
-%%6) train classifier
+%% 6) train classifier
 fprintf('6) train classifier\n');
 [clsfr, res]=cvtrainLinearClassifier(X,Y,[],10);
 % show the classifier structure

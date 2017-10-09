@@ -70,7 +70,7 @@ eppow = sqrt(sum(reshape(X,[],size(X,3)).^2,1)./size(X,1)./size(X,2));
 figure(1); clf; plot(eppow); xlabel('epoch'); ylabel('amplitude');
 % automatically identify the bad epochs
 [badep,feat,threshs] = idOutliers(X,3,3);
-% show them one the power plot
+% show them on the power plot
 figure(1);hold on;plot(find(badep),ones(size(find(badep)))*threshs(end),'r*','markersize',10); 
 
 %% store the bad examples to plot them
@@ -82,12 +82,12 @@ figure(1); clf;image3d(Xbad,1,'plotPos',Cpos,'Xvals',Cnames,'Yvals',yvals,'Zvals
 X=X(:,:,~badep);
 Y=Y(~badep); % don't forget to update labels!
 
-%%6) train classifier
+%% 6) train classifier
 fprintf('6) train classifier\n');
 [clsfr, res]=cvtrainLinearClassifier(X,Y,[],10);
 %% Plot the trained classifier weight vector (only for linear classifiers)
 figure(1);clf;image3d(clsfr.W,1,'plotPos',Cpos,'Xvals',Cnames,'Yvals',yvals,'disptype','plot','ticklabs','sw','ylabel','time (s)','zlabel','clsfr','clabel','weight'); % plot bad info
 
-%---------------------------------------------------------------------------------------------------
+%% ---------------------------------------------------------------------------------------------------
 %%7) use train_erp_clsfr which does all this for you!
 [clsfr,res,X]=train_erp_clsfr(X,Y,'ch_pos',Cnames,'fs',fs);
