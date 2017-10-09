@@ -114,13 +114,14 @@ contFeedbackFiltLen=(trialDuration*1000/step_ms); % accumulate whole trials data
 contFeedbackFiltFactor=exp(log(.5)/contFeedbackFiltLen); % convert to exp-move-ave weighting factor
 
 % paramters for on-line adaption to signal changes
-adaptHalfLife_ms = 30*1000; %30s amount of data to use for adapting spatialfilter/biasadapt
+adaptHalfLife_m = 30; %30s amount of data to use for adapting spatialfilter/biasadapt
+adaptHalfLife_samp = adaptHalfLife_s * 250; % HL in samples
 % half-life in number called to apply-clsfr in epoch feedback, for epoch feedback
-epochtrialAdaptHL=max(adaptHalfLife_ms/epochtrlen_ms,2*nSymbs);  % HL should be enough to include at least 1 example each class
-epochtrialAdaptFactor=exp(log(.5)/epochtrialAdaptHL);% convert to exp-move-ave weight factor
+epochtrialAdaptHL_apply=max(adaptHalfLife_ms/epochtrlen_ms,2*nSymbs);  % HL should be enough to include at least 1 example each class
+epochtrialAdaptFactor=exp(log(.5)/epochtrialAdaptHL_apply);% convert to exp-move-ave weight factor
 % half-life in number of calls to apply clsfr for continuous feedback
-conttrialAdaptHL = max(adaptHalfLife_ms,contFeedbackTrialDuration*2*nSymbs*1000)/step_ms;         
-conttrialAdaptFactor=exp(log(.5)./conttrialAdaptHL) ;% convert to exp-move-ave weighting factor 
+conttrialAdaptHL_apply = max(adaptHalfLife_ms,contFeedbackTrialDuration*2*nSymbs*1000)/step_ms;         
+conttrialAdaptFactor=exp(log(.5)./conttrialAdaptHL_apply) ;% convert to exp-move-ave weighting factor 
 
 %-----------------------------------------------------------
 % Classifier training / application options
@@ -158,7 +159,7 @@ dvFilt= 0; % additional filtering of the decision value smoothing on the stimulu
 %% Also send all raw predictions out for use in, e.g. center-out training
 contFeedbackOpts ={'rawpredEventType','classifier.rawprediction','predFilt',-contFeedbackFiltLen,'trlen_ms',welch_width_ms}; % trlDuration average
 % as above but include an additional bias-adaption as well as classifier output smoothing
-contFeedbackOpts ={'rawpredEventType','classifier.rawprediction','predFilt',@(x,s,e) biasFilt(x,s,[conttrialAdaptFactor contFeedbackFiltFactor]),'trlen_ms',welch_width_ms}; % trlDuration average
+contFeedbackOpts ={'rawpredEventType','classifier.rawprediction','predFilt',@(x,s,e) biasFilt(x,s,[conttrialAdaptFactor_apply contFeedbackFiltFactor]),'trlen_ms',welch_width_ms}; % trlDuration average
 
 %%3) Classify every welch-window-width (default 500ms), with bias-adaptation
 %contFeedbackOpts ={'predFilt',@(x,s,e) biasFilt(x,s,exp(log(.5)/400)),'trlen_ms',[]}; 
