@@ -4,11 +4,13 @@ bufferpath = "../../dataAcq/buffer/python"
 sigProcPath = "../signalProc"
 import pygame, sys
 from pygame.locals import *
-from time import sleep, time
+import time
 import os
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),bufferpath))
 import FieldTrip
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),sigProcPath))
+import math
+import random
 
 ## CONFIGURABLE VARIABLES
 # Connection options of fieldtrip, hostname and port of the computer running the fieldtrip buffer.
@@ -31,7 +33,7 @@ while hdr is None :
 
     if hdr is None:
         print('Invalid Header... waiting')
-        sleep(1)
+        time.sleep(1)
     else:
         print(hdr)
         print((hdr.labels))
@@ -41,15 +43,15 @@ fSample = hdr.fSample
 verb=0;
 nSymbs=3;
 nSeq=15;
-nBlock=2;%10; % number of stim blocks to use
 trialDuration=3;
 baselineDuration=1;
 intertrialDuration=2;
 
-bgColor=(125, 125, 125);
-tgtColor=(0, 255, 0);
-fixColor=(255, 0, 0);
-
+bgColor=(125, 125, 125)
+tgtColor=(0, 255, 0)
+fixColor=(255, 0, 0)
+WHITE=(255,255,255)
+BLACK=(0,0,0)
 
 ## HELPER FUNCTIONS
 def drawString(string, big=False, center=True):
@@ -58,7 +60,7 @@ def drawString(string, big=False, center=True):
         string = [string]
 
     # draw the white background onto the surface
-    windowSurface.fill((0,0,0))
+    windowSurface.fill(BLACK)
 
     # render the text into a back-buffer
     if big:
@@ -81,29 +83,31 @@ def drawString(string, big=False, center=True):
         # draw the text onto the surface
         windowSurface.blit(t, textRect)
 
-def drawTrial(nSymb,tgtSeq=None):
+def drawTrial(nSymbs,tgtSeq=None):
+    # convert from tgt# to stim-seq
+    if not tgtSeq is None and nSymbs>1 and type(tgtSeq) is not list:
+        tgtId=tgtSeq;
+        tgtSeq=[0]*nSymbs
+        tgtSeq[tgtId]=1
+    
     # draw the white background onto the surface
     windowSurface.fill((0,0,0))
-
     winRect=windowSurface.get_rect()
 
-    t_radius = winRect.width *.1 # radius of the targets
+    t_radius = int(winRect.width *.07) # radius of the targets
     # draw each of the targets in turn with the right color
-    for ti in range(0,nSymb):
+    for ti in range(0,nSymbs):
         t_state = 0
         if not tgtSeq is None:
-            t_state = tgtSeq(ti)
-        t_theta=math.PI*ti/nSymbs
-        t_center=(math.cos(t_theta) math.sin(t_theta))
-        if t_state<=0 : t_color=bgcolor
-        if t_state>0 : t_color=tgtcolor
-        pygame.draw.circle(windowSurface,t_color,t_center,t_radius)
+            t_state = tgtSeq[ti]
+        t_theta=2*math.pi*ti/(nSymbs+1)
+        t_center=(int(math.cos(t_theta)*winRect.width*.3)+winRect.centerx,
+                  -int(math.sin(t_theta)*winRect.height*.3)+winRect.centery)
+        if t_state<=0 : t_color=bgColor
+        if t_state>0 : t_color=tgtColor
+        pygame.draw.circle(windowSurface,t_color,t_center,int(t_radius))
     # draw final fixation point
-    pygame.draw.circle(windowSurface,bgcolor,winRect.center,winRect.width*.05)
-
-def drawNow():
-    # draw the window onto the screen
-    
+    pygame.draw.circle(windowSurface,bgColor,winRect.center,int(winRect.width*.05))
     
 def waitForKey():
     """ Wait for the user to press a key and return the pressed key."""
@@ -131,11 +135,15 @@ basicFont = pygame.font.SysFont(None, 48)
 basicBigFont = pygame.font.SysFont(None, 48*2)
 
 ##--------------------- Start of the actual experiment loop ----------------------------------
-drawString(["Welcome to the Oddball Music Experiment"])
+drawString(["Welcome to the Motor Imagery Experiment"])
 pygame.display.update() # drawnow equivalent...
 
-sendEvent('stimulus.training','start');
-## STARTING PROGRAM LOOP
+# make the target sequence
+tgtSeq = range(0,nSymbs)*nSeq
+random.shuffle(tgtSeq)
+
+sendEvent('stimulus.training','start')
+## STARTING STIMULUS LOOP
 for si in range(0,nSeq):
     
     # reset the display
@@ -144,7 +152,7 @@ for si in range(0,nSeq):
     time.sleep(intertrialDuration)
 
     # reset with red fixation to alert to trial start
-    drawStim(0)
+    drawTrial(0)
     pygame.display.update()
     sendEvent('stimulus.baseline','start')
     time.sleep(baselineDuration)
@@ -153,7 +161,7 @@ for si in range(0,nSeq):
     # show the target cue
     drawTrial(nSymbs,tgtSeq[si])
     pygame.display.update()
-    sendEvent('stimulus.target',[i for i,x in enumerate(tgtSeq[si]) if x])
+    sendEvent('stimulus.target',tgtSeq[si])
     sendEvent('stimulus.trial','start')
     time.sleep(trialDuration)
 
