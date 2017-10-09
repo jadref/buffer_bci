@@ -47,8 +47,8 @@ fSample = hdr.fSample
 
 
 ## HELPER FUNCTIONS
-def updateframe(string, big=False, center=False):
-    ''' Display the given string on the display '''
+def updateFrame(string, big=False, center=True):
+    """ Display the given string on the display """
     if type(string) is not list:
         string = [string]
 
@@ -80,16 +80,19 @@ def updateframe(string, big=False, center=False):
     pygame.display.update()
 
 def waitForKey():
-    ''' Wait for the user to press a key and return the pressed key.'''
-  event = pygame.event.wait()
-  while not (event.type == KEYDOWN): 
+    """ Wait for the user to press a key and return the pressed key."""
     event = pygame.event.wait()
-  return event.key
+    while not (event.type == KEYDOWN): 
+        event = pygame.event.wait()
+    return event.key
 
 
 # Buffer interfacing functions 
-def sendEvent(event_type, event_value=1, offset=0):
+def sendEvent(event_type, event_value=1, sample=-1):
     e = FieldTrip.Event()
+    e.type=event_type
+    e.value=event_value 
+    e.sample=sample
     ftc.putEvents(e)
 
 # set  up pygame
@@ -105,27 +108,27 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
 ##--------------------- Start of the actual experiment loop ----------------------------------
-updateframe(["Welcome to the Oddball Music Experiment"])
+updateFrame(["Welcome to the Oddball Music Experiment"])
 
 sendEvent('stimulus.sentences','start');
 ## STARTING PROGRAM LOOP
-for (si,sentence) in enumerate(sentences):
+for si,sentence in enumerate(sentences):
     
     # reset the display
     updateFrame('')
     sendEvent('stimulus.sentence',sentence)
 
-    for (ci,char) in enumerate(sentence):
+    for ci,char in enumerate(sentence):
         sendEvent('stimulus.character',char)
-        updateFrame(sentence(range(0,ci)))
+        updateFrame(sentence[0:ci])
         sleep(interCharDuration)
     
     sleep(interSentenceDuration)
     
     #wait for key-press to continue
     updateFrame('Press key to continue')
-    waitKeyPress()
+    waitForKey()
 
 sendEvent('stimulus.sentences','end')
 updateFrame(['Thanks for taking part!' '' 'Press key to finish'])
-waitKeyPress()
+waitForKey()
