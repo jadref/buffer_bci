@@ -7,6 +7,7 @@ FieldTrip buffer (V1) client in pure Python
 # We need socket, struct, and numpy
 import socket
 import struct
+import sys
 
 VERSION = 1
 PUT_HDR = 0x101
@@ -162,7 +163,10 @@ except ImportError:
 
     def serialize(A):
         if isinstance(A, str):
-            return (DATATYPE_CHAR,A);
+            if sys.version_info[0]>=3 :
+                return (0,bytes(A,'utf8'))
+            else:
+                return (0,A)
 
         if isinstance(A, list) or isinstance(A,tuple):
             # check list has all the same type
