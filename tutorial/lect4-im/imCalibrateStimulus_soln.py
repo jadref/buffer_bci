@@ -135,8 +135,9 @@ basicFont = pygame.font.SysFont(None, 48)
 basicBigFont = pygame.font.SysFont(None, 48*2)
 
 ##--------------------- Start of the actual experiment loop ----------------------------------
-drawString(["Welcome to the Motor Imagery Experiment"])
+drawString(["Motor Imagery Experiment" "" "Perform the GREEN highlighted task" "for the entire time it's GREEN" "" "Key to continue"])
 pygame.display.update() # drawnow equivalent...
+waitForKey()
 
 # make the target sequence
 tgtSeq = range(0,nSymbs)*nSeq

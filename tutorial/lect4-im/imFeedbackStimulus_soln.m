@@ -101,7 +101,7 @@ for si=1:nSeq;
   else
     dv = devents(end).value;
     if ( numel(dv)==1 )
-      if ( dv>0 && dv<=nSymbs && isinteger(dv) ) % dvicted symbol, convert to dv equivalent
+      if ( dv>0 && dv<=nSymbs && isinteger(dv) ) % predicted symbol, convert to dv equivalent
         tmp=dv; dv=zeros(nSymbs,1); dv(tmp)=1;
       else % binary problem, convert to per-class
         dv=[dv -dv];
