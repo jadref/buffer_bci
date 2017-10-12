@@ -14,11 +14,10 @@ end
 load('ERPdata'); 
 
 %% plot the first 3 epochs of the data in a topo-graphic multi-plot
-figure(1);clf;image3d(X(:,:,1:3),1,'plotPos',Cpos,'Xvals',Cnames,'disptype','plot','ticklabs','sw');
+figure(1);set(gcf,'Name','Single Trials');clf;image3d(X(:,:,1:3),1,'plotPos',Cpos,'Xvals',Cnames,'disptype','plot','ticklabs','sw');
 %% plot the class averages
 erp = cat(3,mean(X(:,:,Y>0),3),mean(X(:,:,Y<=0),3));
-figure(2);clf;image3d(erp,1,'plotPos',Cpos,'Xvals',Cnames,'Zvals',{'pos','neg'},'disptype','plot','ticklabs','sw');
-
+figure(2);set(gcf,'Name','Class Average');clf;image3d(erp,1,'plotPos',Cpos,'Xvals',Cnames,'Zvals',{'pos','neg'},'disptype','plot','ticklabs','sw');
 zoomplots; % allow interactive zooming of the plots to see better what's going on
 
 
