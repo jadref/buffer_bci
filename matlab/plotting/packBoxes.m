@@ -26,9 +26,9 @@ end
 if( any(isinf(rX)) ) % any unconstrained?
    if( all(isinf(rX)) ) rX(:)=.5; % all unconstrained?
    else % some unconstrained, use constrained bits to set sizes
-      consX=~isinf(rX);
-      rX(~consX) = 0; minX = min(Xs-rX); maxX = max(Xs+rX);   
-      rX(~consX) = min(maxX-Xs(~consX),Xs(~consX)-minX); 
+      unconsX=isinf(rX);
+      rX(unconsX) = 0; minX = min(Xs-rX); maxX = max(Xs+rX);   
+      rX(unconsX) = min(maxX-Xs(unconsX),Xs(unconsX)-minX); 
    end;
 end
 if( any(isinf(rY)) ) % any unconstrained?
