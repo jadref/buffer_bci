@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from packBoxes import *
 
-def posplot(Xs=None,Ys=None,Idx=1,XYs=None,interplotgap=.003,plotsposition=[0.05,0.05,.93,.90],scaling='any',sizes='any',postype='position',emptySize=.05,*args):
+def posplot(XYs,Idx=None,Xs=None,Ys=None,interplotgap=.003,plotsposition=[0.05,0.05,.93,.90],scaling='any',sizes='any',postype='position',emptySize=.05,sizeOnly=False,*args):
     """  Function to generate sub-plots at given 2-d positions
     
     # [hs]=posPlot(Xs,Ys,Idx[,options])
@@ -32,46 +33,58 @@ def posplot(Xs=None,Ys=None,Idx=1,XYs=None,interplotgap=.003,plotsposition=[0.05
         error('Figure boundary gap should be 1 or 4 element vector')
     
     if not type(interplotgap) is np.ndarray :
+        tmp          = interplotgap
         interplotgap = np.zeros((4,1))
-        interplotgap[0:3]=interplotgap
+        interplotgap[0:3]=tmp
     elif len(interplotgap) == 1:
-        interplotgap = np.zeros(4,1)        
-        interplotgap[0:3]=interplotgap
+        tmp          = interplotgap
+        interplotgap = np.zeros((4,1))        
+        interplotgap[0:3]=tmp
     elif not (len(interplotgap) == 0 or len(interplotgap)==4):
         error('Interplot gap should be 1 or 4 element vector')
-    
+
+    # extract the separate Xs, Ys from XYs
+    if not XYs is None:
+        if not type(XYs) is np.ndarray: # assume list, convert to np.ndarray
+            XYs = np.array(XYs)
+            if XYs.ndim==1 : XYs=XYs.reshape(-1,1) # ensure 2d
+            if np.size(XYs,0)!=2 and np.size(XYs,1)==2 :
+                 XYs = XYs.T;
+        Xs = XYs[0,:]
+        Ys = XYs[1,:]
+        
     if len(Ys) != len(Xs):
         error('Xs and Ys *must* have same number of elements')
     
     if not Idx is None and not Idx in range(len(Xs)):
         error('Idx greater than the number of sub-plots')
     
-    Xs=ravel(Xs)[np.newaxis] # enusre 2-d row vector [1,nPlot]
-    Ys=ravel(Ys)[np.newaxis] # enusre 2-d row vector [1,nPlot]   
-    N=numel(Xs)
+    Xs=Xs.reshape(1,-1) # enusre 2-d row vector [1,nPlot]
+    Ys=Ys.reshape(1,-1) # enusre 2-d row vector [1,nPlot]   
+    N=len(Xs)
     # Compute the radius between the points
-    rX,rY=packBoxes(Xs,Ys,nargout=2)
+    rX,rY=packBoxes(Xs,Ys)
     if sizes == 'equal':
         rX[:]=np.min(rX)
         rY[:]=np.min(rY)
     
-    rX=np.concatenate((rX,rX)) # alow different left/right radii
-    rY=np.concatenate((rY,rY))
+    rX=np.tile(rX[:,np.newaxis],(1,2)) # alow different left/right radii
+    rY=np.tile(rY[:,np.newaxis],(1,2))
     
     # Next compute scaling for the input to the unit 0-1 square, centered on .5
-    minX=np.min(Xs - rX[:,1])
-    maxX=np.max(Xs + rX[:,2])
+    minX=np.min(Xs - rX[:,0])
+    maxX=np.max(Xs + rX[:,1])
     
-    minY=np.min(Ys - rY[:,1])
-    maxY=np.max(Ys + rY[:,2])
+    minY=np.min(Ys - rY[:,0])
+    maxY=np.max(Ys + rY[:,1])
     
     W=maxX - minX
-    W=W / plotsposition[3]
+    W=W / plotsposition[2]
     if W <= 0:
         W=1
     
     H=maxY - minY
-    H=H / plotsposition[4]
+    H=H / plotsposition[3]
     if H <= 0:
         H=1
     
@@ -81,35 +94,38 @@ def posplot(Xs=None,Ys=None,Idx=1,XYs=None,interplotgap=.003,plotsposition=[0.05
     
     Xs=(Xs - (maxX + minX) / 2) / W
     rX=rX / W
-    Xs=Xs + plotsposition[1] + .5*plotsposition[3]
+    Xs=Xs + plotsposition[0] + .5*plotsposition[2]
     Ys=(Ys - (maxY + minY) / 2) / H
     rY=rY / H
-    Ys=Ys + plotsposition[2] + .5*plotsposition[4]
+    Ys=Ys + plotsposition[1] + .5*plotsposition[3]
     # subtract the inter-plot gap if necessary.
+    rX[:,0]=rX[:,0] - interplotgap[0]
     rX[:,1]=rX[:,1] - interplotgap[1]
-    rX[:,2]=rX[:,2] - interplotgap[2]
+    rY[:,0]=rY[:,0] - interplotgap[2]
     rY[:,1]=rY[:,1] - interplotgap[3]
-    rY[:,2]=rY[:,2] - interplotgap[4]
     
     # Check if this is a reasonable layout
-    if emptySize > 0 and (np.any(np.ravel(rX) <= 0) or
-                          np.any(ravel(rY) <= 0) or
-                          np.any(isnan(ravel(rY))) or
-                          np.any(isnan(ravel(rX)))):
+    if emptySize > 0 and (np.any(rX <= 0) or
+                          np.any(rY <= 0) or
+                          np.any(np.isnan(rY)) or
+                          np.any(np.isnan(rX))):
         print('Not enough room between points to make plot')
-        rX[rX <= 0 | np.isnan(rX)]=emptySize(1)
-        rY[rY <= 0 | np.isnan(rY)]=emptySize(min(len(emptySize),2))
+        print(rX)
+        print(rY)
+        rX[rX <= 0 | np.isnan(rX)]=emptySize
+        rY[rY <= 0 | np.isnan(rY)]=emptySize#(min(len(emptySize),1))
     
     # generate all subplots if handles wanted
+    print(args)
     hs=[]
     if not sizeOnly:
         if Idx is None: 
-            for i in range(1,N):
-                hs[i]=plt.axes((Xs[i] - rX[i,1],Ys[i] - rY[i,1]),
-                               np.sum(rX[i,:]),np.sum(rY[i,:]),args)
+            for i in range(0,N):
+                hs[i]=plt.axes((Xs[i] - rX[i,0],Ys[i] - rY[i,0],
+                               np.sum(rX[i,:]),np.sum(rY[i,:])))#,args)
         else: # only make the Idx'th plot
-            hs[i]=plt.axes((Xs[Idx] - rX[Idx,1],Ys[Idx] - rY[Idx,1]),
-                           np.sum(rX[Idx,:]),np.sum(rY[Idx,:]),args)
+            hs[i]=plt.axes((Xs[Idx] - rX[Idx,0],Ys[Idx] - rY[Idx,0],
+                           np.sum(rX[Idx,:]),np.sum(rY[Idx,:])))#,args)
     if not Idx is None:
         Xs=Xs[Idx]
         Ys=Ys[Idx]
@@ -120,30 +136,23 @@ def posplot(Xs=None,Ys=None,Idx=1,XYs=None,interplotgap=.003,plotsposition=[0.05
     #----------------------------------------------------------------------------
     
 def testCase():
-    from posplot import *
-    clf;posplot([0,0])
-    hs=posplot(cat(1,2,3),cat(2,2,2))
-# posplot.m:100
-    posplot(cat([1,2,3],[2,2,2]))
+    import posplot
+    clf;posplot.posplot([0,0])
+    hs=posplot.posplot(cat(1,2,3),cat(2,2,2))
+    posplot.posplot(cat([1,2,3],[2,2,2]))
     clf
-    h=posplot(cat(1,2,3),cat(1,2,3))
-# posplot.m:102
+    h=posplot.posplot(cat(1,2,3),cat(1,2,3))
     clf
     h=posplot(rand(10,1),rand(10,1))
-# posplot.m:103
     clf
-    h=posplot(rand(10,1),rand(10,1),[],sizes='any')
-# posplot.m:104
+    h=posplot.posplot(rand(10,1),rand(10,1),[],sizes='any')
     clf
-    h=posplot(cat(1,2,3),cat(1,1.5,2),[],sizes='any')
-# posplot.m:105
+    h=posplot.posplot(cat(1,2,3),cat(1,1.5,2),[],sizes='any')
     clf
-    h=posplot(cat(0.2,0.6,0.7),cat(0.5,0.4,0.45),[],sizes='any')
-# posplot.m:107
+    h=posplot.posplot(cat(0.2,0.6,0.7),cat(0.5,0.4,0.45),[],sizes='any')
     clf
-    h=posplot(cat(0,sin(arange(0,dot(dot(2,pi),0.99),dot(2,pi) / 10))),cat(0,cos(arange(0,dot(dot(2,pi),0.99),dot(2,pi) / 10))),[],sizes='any')
-# posplot.m:109
+    h=posplot.posplot(cat(0,sin(arange(0,dot(dot(2,pi),0.99),dot(2,pi) / 10))),cat(0,cos(arange(0,dot(dot(2,pi),0.99),dot(2,pi) / 10))),[],sizes='any')
     for i in arange(1,11).reshape(-1):
-        posplot(cat(0,sin(arange(0,dot(dot(2,pi),0.99),dot(2,pi) / 10))),cat(0,cos(arange(0,dot(dot(2,pi),0.99),dot(2,pi) / 10))),i,sizes='any')
-        plot(sin(arange(0,dot(2,pi),dot(2,pi) / 10)))
+        posplot.posplot(cat(0,sin(arange(0,dot(dot(2,pi),0.99),dot(2,pi) / 10))),cat(0,cos(arange(0,dot(dot(2,pi),0.99),dot(2,pi) / 10))),i,sizes='any')
+        #plot(sin(arange(0,dot(2,pi),dot(2,pi) / 10)))
     
