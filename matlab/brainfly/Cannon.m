@@ -62,32 +62,38 @@ classdef Cannon < handle
         function move(obj,whereTo,howMuch)
             % Method to move the cannon.
             %
-            %   obj.move(whereTo,howMuch) The whereTo {'left' 'right'}
-            %   argument determines the direction of movement, and the
-            %   howMuch argument determines the fraction of the
-            %   moveStepSize that is taken (ideally: 0<howMuch<=1).
+            %   obj.move(whereTo,howMuch)
+            % Inputs:
+            %   whereTo: one-of {'left' 'right'}
+            %           the direction of movement
+            %     or
+            %            [float] direction position on the screen to warp cannon
+            %   howMuch: [float] fraction of the moveStepSize that is taken (ideally: 0<howMuch<=1).
             
             % Calculate the variable step size, taking account of draw lags
-            curStepSize = howMuch*obj.moveStepSize;
+          curStepSize = obj.moveStepSize;
+          if( ~isempty(howMuch) ) curStepSize=curStepSize*howMuch; end;
             if ( ~isempty(obj.lastDrawTime) ) curStepSize=curStepSize*toc(obj.lastDrawTime); end;
             axesXLim     = get(obj.hAxes,'XLim');
-            pos=get(obj.hGraphic,'position');
-            
-            switch whereTo
-                
-                case 'right'
+
+            if isnumeric(whereTo) % warp mode, but limit step size
+              obj.Xbase = max(min(whereTo,obj.Xbase+curStepSize),obj.Xbase-curStepSize);
+            else % string so step-size
+              switch whereTo                
+                case 'right'; % Move cannon left, but keep in in bounds.
+                    obj.Xbase = obj.Xbase+curStepSize;
                     
-                    % Move cannon left, but keep in in bounds.
-                    obj.Xbase = max(obj.Xbase-curStepSize...
-                                    ,axesXLim(1));
-                    
-                case 'left'
-                    % Move cannon right, but keep in in bounds.
-                    obj.Xbase = min(obj.Xbase+curStepSize...
-                        ,axesXLim(2)-obj.cannonWidth);
+                case 'left';  % Move cannon right, but keep in in bounds.
+                    obj.Xbase = obj.Xbase-curStepSize;
+              end
             end
-            pos(1)=obj.Xbase; set(obj.hGraphic,'position',pos);
-            obj.lastDrawTime=tic;     
+                                % display bounds check
+            obj.Xbase = min(max(obj.Xbase,axesXlim(1)),axesXlim(2)-obj.cannonWidth);
+            % update the object properties
+            pos=get(obj.hGraphic,'position');
+            pos(1)=obj.Xbase;
+            set(obj.hGraphic,'position',pos);
+            obj.lastDrawTime=tic; % record draw time
         end
         
     end
