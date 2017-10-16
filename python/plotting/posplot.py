@@ -59,8 +59,8 @@ def posplot(XYs,Idx=None,Xs=None,Ys=None,interplotgap=.003,plotsposition=[0.05,0
     if not Idx is None and not Idx in range(len(Xs)):
         error('Idx greater than the number of sub-plots')
     
-    Xs=Xs.reshape(1,-1) # enusre 2-d row vector [1,nPlot]
-    Ys=Ys.reshape(1,-1) # enusre 2-d row vector [1,nPlot]   
+    Xs=Xs.reshape(1,-1).T # enusre 2-d row vector [nPlot x 1]
+    Ys=Ys.reshape(1,-1).T # enusre 2-d row vector [nPlot x 1]   
     N=len(Xs)
     # Compute the radius between the points
     rX,rY=packBoxes(Xs,Ys)
@@ -68,7 +68,7 @@ def posplot(XYs,Idx=None,Xs=None,Ys=None,interplotgap=.003,plotsposition=[0.05,0
         rX[:]=np.min(rX)
         rY[:]=np.min(rY)
     
-    rX=np.tile(rX[:,np.newaxis],(1,2)) # alow different left/right radii
+    rX=np.tile(rX[:,np.newaxis],(1,2)) # allow different left/right radii [nPlot x 2]
     rY=np.tile(rY[:,np.newaxis],(1,2))
     
     # Next compute scaling for the input to the unit 0-1 square, centered on .5
@@ -110,22 +110,23 @@ def posplot(XYs,Idx=None,Xs=None,Ys=None,interplotgap=.003,plotsposition=[0.05,0
                           np.any(np.isnan(rY)) or
                           np.any(np.isnan(rX))):
         print('Not enough room between points to make plot')
-        print(rX)
-        print(rY)
         rX[rX <= 0 | np.isnan(rX)]=emptySize
         rY[rY <= 0 | np.isnan(rY)]=emptySize#(min(len(emptySize),1))
     
     # generate all subplots if handles wanted
-    print(args)
+    print(np.shape(Xs))
+    print(np.shape(rX))
     hs=[]
     if not sizeOnly:
         if Idx is None: 
             for i in range(0,N):
-                hs[i]=plt.axes((Xs[i] - rX[i,0],Ys[i] - rY[i,0],
-                               np.sum(rX[i,:]),np.sum(rY[i,:])))#,args)
+                pos=[Xs[i,0] - rX[i,0], Ys[i,0] - rY[i,0], np.sum(rX[i,:]), np.sum(rY[i,:])]
+                h=plt.axes(pos,*args)
+                hs.append(h)
         else: # only make the Idx'th plot
-            hs[i]=plt.axes((Xs[Idx] - rX[Idx,0],Ys[Idx] - rY[Idx,0],
-                           np.sum(rX[Idx,:]),np.sum(rY[Idx,:])))#,args)
+            pos=(Xs[Idx,0] - rX[Idx,0],Ys[Idx,0] - rY[Idx,0],
+                            np.sum(rX[Idx,:]),np.sum(rY[Idx,:]))
+            hs=plt.axes(pos,*args)
     if not Idx is None:
         Xs=Xs[Idx]
         Ys=Ys[Idx]
