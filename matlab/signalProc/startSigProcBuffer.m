@@ -411,7 +411,8 @@ while ( true )
 
                                 % save the loaded data (like it was on-line)
      fname=[dname '_' subject '_' datestr];
-     fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save([fname '.mat'],'traindata','traindevents','hdr','allevents');
+     fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);
+     save([fname '.mat'],'traindata','traindevents','hdr');
      trainSubj=subject; % mark this this data is valid for classifier training
      
      if( ~isempty(chdr) ) hdr=chdr; end;
@@ -604,7 +605,7 @@ while ( true )
 	 try		
 	 % generate prediction every trlen_ms/2 seconds using trlen_ms data
 	 if ( ~opts.savetestdata )
-		[]=cont_applyClsfr(clsfr,...
+		cont_applyClsfr(clsfr,...
 							 'endType',{'testing','test','contfeedback','sigproc.reset'},...
 							 'predFilt',opts.contPredFilt,'verb',opts.verb,...
 							 'trlen_ms',opts.trlen_ms,'overlap',.5,... %default to predict every trlen_ms/2 ms
