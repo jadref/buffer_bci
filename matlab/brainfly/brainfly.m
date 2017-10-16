@@ -82,7 +82,7 @@ score.shots  = 0;
 score.hits   = 0;
 score.bonushits=0;
                    % simple scoreing function, top-screen=10, bottom-screen=1
-height2score = @(height) 10*(height-gameCanvasYLims(1))./(gameCanvasYLims(2)-gameCanvasYLims(1)) + 1
+height2score = @(height) round(10*(height-gameCanvasYLims(1))./(gameCanvasYLims(2)-gameCanvasYLims(1)) + 1);
 cannonKills = 0;
 
                          % Initialize buffer-prediction processing variables:
@@ -104,14 +104,18 @@ hText = text(gameCanvasXLims(1),gameCanvasYLims(2),genTextStr(score,curBalls,can
                        % wait for user to be ready before starting everything
 set(hText,'string', {'' 'Click mouse when ready to begin.'}, 'visible', 'on'); drawnow;
 waitforbuttonpress;
+for i=0:5;
+   set(hText,'string',sprintf('Starting in: %ds',5-i),'visible','on');drawnow;
+   sleepSec(1);
+end
 set(hText,'visible', 'off'); drawnow; 
-sleepSec(5);
 
                                 % Loop while figure is active:
 killStartTime=0;
 bonusSpawnTime=bonusSpawnInterval(1)+rand(1)*diff(bonusSpawnInterval); % time-at which next bonus show occur
 cannonAction=[];cannonTrotFrac=0;
 t0=tic; stimi=1; nframe=0;
+ss=stimSeq(:,stimi); % starting stimulus state
 while ( toc(t0)<gameDuration && ishandle(hFig))
   nframe       = nframe+1;
   frameTime    = toc(t0);
@@ -134,7 +138,8 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
     end
     ss=stimSeq(:,stimi); % get the current stimulus state info
     nstim2obj=zeros(size(stim2obj)); % updated mapping between game-objects and stimulus sequences    
-    fprintf('%d) %g %d=>[%s]\n',nframe,frameTime,stimi,sprintf('%d=%d ',[stim2obj(stim2obj>0) ss(stim2obj>0)]'));
+   
+    %fprintf('%d) %g %d=>[%s]\n',nframe,frameTime,stimi,sprintf('%d=%d ',[stim2obj(stim2obj>0) ss(stim2obj>0)]'));
 
     % -- get the current user/BCI input
     curCharacter=[];
@@ -149,7 +154,8 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
     if ( useBuffer )
       [dv,prob,buffstate,filtstate]=processNewPredictionEvents(buffhost,buffport,buffstate,predType,gameFrameDuration*1000/2,predFiltFn,filtstate,verb-1);
       curKeyLocal = get(hFig,'userdata');
-      prob = [prob;0];
+      prob = [prob(:);0];
+      fprintf('%d) Pred: dv=[%s]  prob=[%s]\n',nframe,sprintf('%g,',dv),sprintf('%g,',prob));
       
       %checks if shooting key is pressed
       if ~isempty(curKeyLocal)
@@ -159,7 +165,7 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
           end
       end
       if( ~isempty(dv) ) % only if events to process...
-        [cannonAction,cannonTrotFrac]=prediction2action(prob,predictionMargin);
+        [cannonAction,cannonTrotFrac]=prediction2action(prob,predictionMargin,warpCursor);
       end
     end
     if( ~isempty(dv) ) % only if events to process...
@@ -170,7 +176,11 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
       %----------------------------------------------------------------------
       % Operate the cannon:
   if( ~isempty(cannonAction) ) % updat the cannon
-    fprintf('%d) move %s %g\n',nframe,cannonAction,cannonTrotFrac);
+     if(ischar(cannonAction) )
+        fprintf('%d) move %s %g\n',nframe,cannonAction,cannonTrotFrac);
+     else
+        fprintf('%d) warp %g\n',nframe,cannonAction);
+     end
     hCannon.move(cannonAction,cannonTrotFrac);      
   end
                             % flash cannon, N.B. cannon is always stim-seq #1
@@ -232,7 +242,7 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
       mi  =find(stim2obj==auid);
       if( isempty(mi) ) mi=find(stim2obj==0,1); end % pick an empty stim
                                    % update the tracking info
-      nstim2obj(mi) =auid; % new list of used stimulus
+      nstim2obj(mi,1) =auid; % new list of used stimulus, ensure col-vector
       alien2stim(i) =mi;
                                 % apply the stimulus
       set(hAliens(i).hGraphic,'facecolor',stimColors(ss(mi)+1,:));
@@ -267,7 +277,7 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
   end
   
                                 % Set score disp and loop:
-  fprintf('%s\n',genTextStr(score,curBalls,cannonKills));							
+  %fprintf('%s\n',genTextStr(score,curBalls,cannonKills));							
   set(hText,'String',genTextStr(score,curBalls,cannonKills),'visible','on');
        % TODO: make this more accurate to take account of display/network lag
   drawnow;

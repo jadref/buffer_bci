@@ -1,6 +1,6 @@
 function [cannonAction,cannonTrotFrac]=prediction2action(prob,margin,warpp)
   if( nargin<2 || isempty(margin) ) margin=.1; end;
-  if( nargin<3 || isempty(warp) ) warp=false; end;
+  if( nargin<3 || isempty(warpp) ) warpp=false; end;
   cannonAction=''; cannonTrotFrac=[];
   if( isempty(prob) )  return; end;
   % assume class order: [right left fire] (if fire is present)
