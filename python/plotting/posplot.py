@@ -3,11 +3,10 @@ import matplotlib.pyplot as plt
 from packBoxes import *
 
 def posplot(XYs,Idx=None,Xs=None,Ys=None,interplotgap=.003,plotsposition=[0.05,0.05,.93,.90],scaling='any',sizes='any',postype='position',emptySize=.05,sizeOnly=False,*args):
-    """  Function to generate sub-plots at given 2-d positions
+    """  
+    Function to generate sub-plots at given 2-d positions
     
-    # [hs]=posPlot(Xs,Ys,Idx[,options])
-    # OR
-    # [hs]=posPlot(XYs,Idx[,options])
+    # [hs,(Xs,Ys),(rX,rY)]=posPlot(XYs[,options])
     # Inputs:
     #  Xs -- X (horz) positions of the plots [1 x N]
     #  Ys -- Y (vert) positions of the plots [1 x N]
@@ -133,7 +132,7 @@ def posplot(XYs,Idx=None,Xs=None,Ys=None,interplotgap=.003,plotsposition=[0.05,0
         rX=sum(rX[Idx,:])
         rY=sum(rY[Idx,:])
     
-    return (hs,Xs,Ys,rX,rY)
+    return (hs,(Xs,Ys),(rX,rY))
     #----------------------------------------------------------------------------
     
 def testCase():
