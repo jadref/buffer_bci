@@ -75,7 +75,6 @@ def image3d(X,dim=0,plotpos=None,xvals=None,yvals=None,zvals=None,disptype='plot
             w = int(np.ceil(np.sqrt(nPlot)))
             h = int(np.ceil(nPlot / w))
             layout = (w,h)
-            print(layout)
         fig,h = plt.subplots(ncols=layout[0],nrows=layout[1],squeeze=False)
         h = h.reshape(-1) # ensure is 1-d list handles
         
@@ -87,7 +86,6 @@ def image3d(X,dim=0,plotpos=None,xvals=None,yvals=None,zvals=None,disptype='plot
         elif dim==1:  Xpi = X[:,pi,:].reshape((X.shape[0],-1))
         elif dim==2:  Xpi = X[:,:,pi].reshape((X.shape[0],-1))
 
-        print(h[pi])
         plt.axes(h[pi]) # get the right plot to update        
         if disptype=='plot':
             plt.plot(Xpi,*args)

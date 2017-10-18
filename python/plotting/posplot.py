@@ -113,8 +113,6 @@ def posplot(XYs,Idx=None,Xs=None,Ys=None,interplotgap=.003,plotsposition=[0.05,0
         rY[rY <= 0 | np.isnan(rY)]=emptySize#(min(len(emptySize),1))
     
     # generate all subplots if handles wanted
-    print(np.shape(Xs))
-    print(np.shape(rX))
     hs=[]
     if not sizeOnly:
         if Idx is None: 
