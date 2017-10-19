@@ -27,7 +27,7 @@ def posplot(XYs,Idx=None,Xs=None,Ys=None,interplotgap=.003,plotsposition=[0.05,0
     """
     
     if len(plotsposition) == 1:
-        plotsposition[1:4]=plotsposition
+        plotsposition[0:3]=plotsposition
     elif not (len(plotsposition) == 0 or len(plotsposition)==4):
         error('Figure boundary gap should be 1 or 4 element vector')
     
