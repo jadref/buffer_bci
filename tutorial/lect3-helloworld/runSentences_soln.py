@@ -7,25 +7,10 @@ bufhelpPath = "../../python/signalProc"
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),bufhelpPath))
 import bufhelp
 
-## CONFIGURABLE VARIABLES
-# Connection options of fieldtrip, hostname and port of the computer running the fieldtrip buffer.
-hostname='localhost'
-port=1972
-
-# make the target sequence
-sentences=['hello world','this is new!','BCI is fun!'];
-interSentenceDuration=3;
-interCharDuration=1;
-
-# set the display and the string for stimulus
-fig = plt.figure()
-fig.suptitle('bold figure suptitle', fontsize=14, fontweight='bold')
-ax = fig.add_subplot(111) # default full-screen ax
-h =ax.text(0, 0, 'This is some text', style='italic')
-
+## HELPER FUNCTIONS
 def drawnow(fig=None):
     "force a matplotlib figure to redraw itself, inside a compute loop"
-    if fig is None: fig=gcf()
+    if fig is None: fig=plt.gcf()
     fig.canvas.draw()
     #plt.pause(1e-3) # wait for draw.. 1ms
 
@@ -42,8 +27,24 @@ def waitforkey(fig=None,reset=True):
     if reset: currentKey=None
     while currentKey is None:
         plt.pause(1e-3) # allow gui event processing
+
+## CONFIGURABLE VARIABLES
+# Connection options of fieldtrip, hostname and port of the computer running the fieldtrip buffer.
+hostname='localhost'
+port=1972
+
+# make the target sequence
+sentences=['hello world','this is new!','BCI is fun!'];
+interSentenceDuration=3;
+interCharDuration=1;
     
 ##--------------------- Start of the actual experiment loop ----------------------------------
+# set the display and the string for stimulus
+fig = plt.figure()
+fig.suptitle('bold figure suptitle', fontsize=14, fontweight='bold')
+ax = fig.add_subplot(111) # default full-screen ax
+h =ax.text(0, 0, 'This is some text', style='italic')
+
 ## init connection to the buffer
 ftc,hdr=bufhelp.connect();
 
@@ -67,8 +68,8 @@ for si,sentence in enumerate(sentences):
     #wait for key-press to continue
     h.set_text('Press key to continue')
     drawnow()
-    waitForKey(fig)
+    waitforkey(fig)
 
 sendEvent('stimulus.sentences','end')
 h.set('string',['Thanks for taking part!' '' 'Press key to finish'])
-waitForKey(fig)
+waitforkey(fig)
