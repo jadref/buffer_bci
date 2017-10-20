@@ -1,19 +1,3 @@
-% The main game loop
-%
-% Control the cannon with the bottom row of keys on the keyboard, and
-% space:
-%
-% Go left, in order of descreasing speed:   'z'  'x'  'c'  'v'  'b'%
-%
-% Go right, in order of increasing speed:   'n'  'm'  ','  '.'  '/'
-%
-% Fire: 'Space'
-%
-%
-
-%% Prepare Workspace:
-
-                                %close all; clc; clear
 if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureGame; end
         
 %% Game Parameters:
@@ -29,8 +13,6 @@ bonusSpawnInterval      = [5 20];          % range in time between bonus alien s
 predictionMargin=0;
 warpCursor = true; % cannon position is directly classifier output
 
-<<<<<<< Updated upstream
-
 % make a simple odd-ball stimulus sequence, with targets mintti apart
 [stimSeq,stimTime,eventSeq] = mkStimSeqP300(3,gameDuration,isi,mintti,oddballp);
 stimColors = [bgColor;flashColor]; % map from stim-seq (0,1) to color to use [bg,flash] [nstimState x 3]
@@ -43,8 +25,6 @@ stim2obj(1)= 1; % 1st stim seq always mapps to the cannon
 tgtSeq=mkStimSeqRand(2,gameDuration*2./timeBeforeNextAlien);
 lrSeq =(tgtSeq(1,:)*.8+.1)+(rand(1,size(tgtSeq,2))-.5)*.4; % l/r with a little noise
 
-=======
->>>>>>> Stashed changes
 %% Generate Figure:
                                 % Make the game window:
 hFig = figure(2);
