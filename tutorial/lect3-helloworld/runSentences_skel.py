@@ -40,7 +40,7 @@ interCharDuration=1;
 
 # set the display and the string for stimulus
 fig = plt.figure()
-fig.suptitle('RunSentences-Stimulus', fontsize=14, fontweight='bold')
+fig.suptitle('RunSentences-Stimulus', fontsize=24, fontweight='bold')
 ax = fig.add_subplot(111) # default full-screen ax
 ax.set_xlim((-1,1))
 ax.set_ylim((-1,1))
