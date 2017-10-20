@@ -10,13 +10,11 @@ classdef Alien < handle
           % screen width or height, these properties are used to generate the
           % actual sized at object instantiation:
     relStartLine      = 0.9;
-    relFallSpeed      = 0.1;
+    fallDuration      = 9; % 9s to fall down the screen
     relAlienStartSize = 0.05;  % The start size of the alien.
     relAlienGrowRate  = 0.015; % The growth rate of the alien.
     relSpawnDelta     = .3;   % fraction of screen to spawn the new alien
     alienGrowExp      = 1.5;   % The time exponent of the growth rate.
-    lrSpawn           = True; % spawn in left/right screen only
-    spawnSeq          = [];   % sequence of spawn locations
     
            % NOTE: Aliens sometimes grow exponentially, so their sizes are
            % calculated as:
@@ -34,9 +32,15 @@ classdef Alien < handle
     hLineGraphic;
     hAxes;               % handle to axes.
     alienSpawnTime;      % logs the alien spawn time.
+    % linear equation for moving the aliens
+    relstartx;           % starting x/y postion
+    relstarty;
+    relvelx;             % relative movement velocity
+    relvely;
     shotsToKill;
     hCannon;
     uid; % unique identifier for this alien
+    spawnSeq          = [];   % sequence of spawn locations
   end
   
   %% Methods:
@@ -50,7 +54,9 @@ classdef Alien < handle
       
                                 % Save properties:
       Ylim=get(hAxes,'Ylim');
-      obj.y = Ylim(1)+obj.relStartLine*range(Ylim);
+      obj.relstarty = obj.relStartLine;
+      obj.relvely   = (obj.relStartLine-0)/obj.fallDuration;
+      obj.y         = Ylim(1) + (obj.relstarty + obj.relvely*0)*range(Ylim);
       obj.hAxes = hAxes;
       obj.hCannon = hCannon;
       
@@ -92,11 +98,16 @@ classdef Alien < handle
       
       relxloc= min(max(0,relxloc),1);
       Alien.getsetLastSpawnLoc(relxloc);
+      obj.relstartx = relxloc;
+
+                          % compute the ending location and movement velocity
+      relxend=.25; if( obj.relstartx>=.5 ) relendx = .75; end; % .25 or .75 end-pos
+      obj.relvelx   = (relxend-obj.relstartx)./obj.fallDuration;
+      
       
       obj.alienSize = obj.relAlienStartSize*range(get(obj.hAxes,'Ylim'));
       alienXLims = get(obj.hAxes,'Xlim')+obj.alienSize.*[1 -1];
-      alienX = alienXLims(1) + range(alienXLims)*relxloc;
-      obj.x = alienX;
+      obj.x      = alienXLims(1) + (obj.relstartx + obj.relvelx*0)*range(alienXLims);
       
       set(obj.hLineGraphic,'XData',get(obj.hAxes,'Xlim'));
       waistY = obj.y;
@@ -148,13 +159,16 @@ classdef Alien < handle
           continue
         end
         Ylim = get(obj.hAxes,'Ylim');
+        Xlim = get(obj.hAxes,'Xlim');
                                 % update the alien position and size
         obj.alienSize = (obj.relAlienStartSize...
                          +(toc(obj.alienSpawnTime)^obj.alienGrowExp)...
                           *obj.relAlienGrowRate)...
                         *range(Ylim);
-        obj.y = (obj.relStartLine - toc(obj.alienSpawnTime)*obj.relFallSpeed)*range(Ylim);
+        obj.y      = Ylim(1) + (obj.relstarty + obj.relvely*toc(obj.alienSpawnTime))*range(Ylim);
+        obj.x      = Xlim(1) + (obj.relstartx + obj.relvelx*toc(obj.alienSpawnTime))*range(Xlim);        
         waistY = obj.y;
+        
                                 % kill alien if hit cannon.....
         if obj.x+obj.alienSize>obj.hCannon.Xbase...
            && obj.x<obj.hCannon.Xbase+obj.hCannon.cannonWidth
