@@ -12,17 +12,17 @@ classdef Alien < handle
     relStartLine      = 0.9;
     fallDuration      = 9; % 9s to fall down the screen
     relAlienStartSize = 0.05;  % The start size of the alien.
-    relAlienGrowRate  = 0.015; % The growth rate of the alien.
-    relSpawnDelta     = .3;   % fraction of screen to spawn the new alien
     alienGrowExp      = 1.5;   % The time exponent of the growth rate.
+    %relAlienGrowRate  = (.5-Alien.relAlienStartSize)./(Alien.fallDuration.^Alien.alienGrowExp); % The growth rate of the alien, should be size .5 by end fall
+    relAlienGrowRate  = (.5-0.05)./(9.^1.5); % The growth rate of the alien, should be size .5 by end fall
+    relSpawnDelta     = .3;   % fraction of screen to spawn the new alien
     
            % NOTE: Aliens sometimes grow exponentially, so their sizes are
            % calculated as:
            %
            % alienSize = (startSize + alienAge^alienGrowExp)*relAlienGrowRate
     minuid = 256;
-  end
-  
+  end  
   
   properties
     x;                   % X pos of *center* of the alien.
@@ -40,14 +40,12 @@ classdef Alien < handle
     shotsToKill;
     hCannon;
     uid; % unique identifier for this alien
-    spawnSeq          = [];   % sequence of spawn locations
   end
   
   %% Methods:
   
   methods
-    
-    
+        
           %==================================================================
     function obj = Alien(hAxes,hCannon)
                                 % Constructs an alien.
@@ -55,7 +53,7 @@ classdef Alien < handle
                                 % Save properties:
       Ylim=get(hAxes,'Ylim');
       obj.relstarty = obj.relStartLine;
-      obj.relvely   = (obj.relStartLine-0)/obj.fallDuration;
+      obj.relvely   = (0-obj.relStartLine)/obj.fallDuration;
       obj.y         = Ylim(1) + (obj.relstarty + obj.relvely*0)*range(Ylim);
       obj.hAxes = hAxes;
       obj.hCannon = hCannon;
@@ -87,9 +85,10 @@ classdef Alien < handle
                 % randomly respawns the alien somwehere within the axes lims.
       
                                        % Set random size and position:
-      if( ~isempty(obj.spawnSeq) ) % use given sequence
-                                   % get next one from the sequence
-        relxloc = obj.spawnSeq(mod(obj.uid(),numel(obj.spawnSeq)-1)+1);
+      spawnSeq= Alien.getsetSpawnSeq();
+      if( ~isempty(spawnSeq) ) % use given sequence
+                               % get next one from the sequence
+        relxloc = spawnSeq(mod(obj.uid(),numel(spawnSeq)-1)+1);
       else % randomly spawn loc
         relxloc=Alien.getsetLastSpawnLoc();
         if ( isempty(relxloc) ) relxloc=rand(1); end;
@@ -101,20 +100,20 @@ classdef Alien < handle
       obj.relstartx = relxloc;
 
                           % compute the ending location and movement velocity
-      relxend=.25; if( obj.relstartx>=.5 ) relendx = .75; end; % .25 or .75 end-pos
+      relxend=.25; if( obj.relstartx>=.5 ) relxend = .75; end; % .25 or .75 end-pos
       obj.relvelx   = (relxend-obj.relstartx)./obj.fallDuration;
       
       
       obj.alienSize = obj.relAlienStartSize*range(get(obj.hAxes,'Ylim'));
-      alienXLims = get(obj.hAxes,'Xlim')+obj.alienSize.*[1 -1];
-      obj.x      = alienXLims(1) + (obj.relstartx + obj.relvelx*0)*range(alienXLims);
+      XLims      = get(obj.hAxes,'Xlim');
+      obj.x      = XLims(1) + (obj.relstartx + obj.relvelx*0)*range(XLims);
       
       set(obj.hLineGraphic,'XData',get(obj.hAxes,'Xlim'));
       waistY = obj.y;
       
                                 % update alien graphic, and spawn time:
       set(obj.hLineGraphic(1),'YData',[waistY waistY]);
-      set(obj.hGraphic,'position',[obj.x,obj.y-obj.alienSize/2,obj.alienSize,obj.alienSize]);
+      set(obj.hGraphic,'position',[obj.x-obj.alienSize/2,obj.y-obj.alienSize/2,obj.alienSize,obj.alienSize]);
       obj.alienSpawnTime = tic;
       
     end
@@ -135,11 +134,16 @@ classdef Alien < handle
   end
 
   methods(Static)
+    function spawnSeq=getsetSpawnSeq(ss)
+      % Yuck! horrible MATLAB hacks to get static values in a function...
+      persistent spawnSeq;
+      if(nargin>0) spawnSeq=ss; end;
+    end
+    
     function outxloc=getsetLastSpawnLoc(inxloc)
       persistent xloc; 
       if( nargin>0 ) xloc=inxloc; end; 
       outxloc=xloc;
-      return;
     end
 
           %==================================================================
@@ -148,7 +152,6 @@ classdef Alien < handle
       cannonKills = 0;
       if isempty(hAliensIn);
         hAliensOut = [];%Alien.empty;
-        return
       end
       
                                 % Loop through aliens:
@@ -164,7 +167,7 @@ classdef Alien < handle
         obj.alienSize = (obj.relAlienStartSize...
                          +(toc(obj.alienSpawnTime)^obj.alienGrowExp)...
                           *obj.relAlienGrowRate)...
-                        *range(Ylim);
+                        *range(Xlim);
         obj.y      = Ylim(1) + (obj.relstarty + obj.relvely*toc(obj.alienSpawnTime))*range(Ylim);
         obj.x      = Xlim(1) + (obj.relstartx + obj.relvelx*toc(obj.alienSpawnTime))*range(Xlim);        
         waistY = obj.y;
@@ -186,8 +189,8 @@ classdef Alien < handle
         end
 
                                 % update alien graphic, and spawn time:
-        set(obj.hLineGraphic(1),'YData',[waistY waistY]);
-        set(obj.hGraphic,'position',[obj.x,obj.y-obj.alienSize/2,obj.alienSize,obj.alienSize]);
+        set(obj.hLineGraphic(1),'YData',[obj.y obj.y]);
+        set(obj.hGraphic,'position',[obj.x-obj.alienSize/2,obj.y-obj.alienSize/2,obj.alienSize,obj.alienSize]);
 
       end
                                 % remove deleted objects
@@ -196,6 +199,7 @@ classdef Alien < handle
 
                           % get a unique idenification number for this object
     function nuid=getuid()
+      % Yuck! horrible MATLAB hacks to get static values in a function...
       persistent uid;
       if(isempty(uid))uid=256;end; % Aliens always >256 (bit 8 set)
       uid=uid+1;

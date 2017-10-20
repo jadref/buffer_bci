@@ -6,6 +6,7 @@ gameCanvasYLims         = [0 800];
 gameCanvasXLims         = [0 500];
 maxCannonShotsPerSecond = 5;               % RPS of cannon
 autoFireMode            = 1;               % auto-fire or fire key?
+useBuffer               = 1;
 timeBeforeNextAlien     = 3;               % seconds
 killFlashTime           = .1;              % duration of the red-you've-been-killed flash
 bonusSpawnInterval      = [5 20];          % range in time between bonus alien spawns
@@ -28,7 +29,7 @@ lrSeq =(tgtSeq(1,:)*.8+.1)+(rand(1,size(tgtSeq,2))-.5)*.4; % l/r with a little n
 %% Generate Figure:
                                 % Make the game window:
 hFig = figure(2);
-set(hFig,'Name','Imagined Movement -- close window to stop.'...
+set(hFig,'Name','Brainfly!'...
     ,'color',winColor...
     ,'menubar','none'...
     ,'toolbar','none'...
@@ -42,14 +43,14 @@ hAxes = axes('position',[0 0 1 1]...
              ,'xtick',[],'xticklabelmode','manual'...
              ,'ytick',[],'yticklabelmode','manual'...
              ,'color',winColor,'nextplot','replacechildren','DrawMode','fast'...
-             ,'xlim',gameCanvasXLims,'ylim',gameCanvasYLims+[-100 0],'Ydir','normal');
+             ,'xlim',gameCanvasXLims,'ylim',gameCanvasYLims,'Ydir','normal');
 
 drawnow;
 
                                 % Make cannon:
 hCannon = Cannon(hAxes);
 % make background for p3 stimuli
-hbackground = rectangle(hAxes,'position',[gameCanvasXlims,-100,diff(gameCanvasXlims),100))
+hbackground = rectangle(hAxes,'position',[gameCanvasXLims(1),gameCanvasYLims(1),diff(gameCanvasXLims),10]);
 
 
         % make a simple odd-ball stimulus sequence, with targets mintti apart
@@ -89,8 +90,8 @@ filtstate=[];
 predType =[];
 
                                 % Make an alien:
+Alien.getsetSpawnSeq(lrSeq);
 hAliens = Alien(hAxes,hCannon);
-Alien.spawnSeq=lrSeq;
                                 % list of bonus aliens
 hbonusAliens=[];
 
@@ -102,14 +103,17 @@ hText = text(gameCanvasXLims(1),gameCanvasYLims(2),genTextStr(score,curBalls,can
                        % wait for user to be ready before starting everything
 set(hText,'string', {'' 'Click mouse when ready to begin.'}, 'visible', 'on'); drawnow;
 waitforbuttonpress;
+for i=1:5;
+  set(hText,'string',sprintf('Starting in: %ds',5-i));drawnow;sleepSec(1);
+end
 set(hText,'visible', 'off'); drawnow; 
-sleepSec(5);
+
 
                                 % Loop while figure is active:
 killStartTime=0;
 bonusSpawnTime=bonusSpawnInterval(1)+rand(1)*diff(bonusSpawnInterval); % time-at which next bonus show occur
 cannonAction=[];cannonTrotFrac=0;
-t0=tic; stimi=1; nframe=0;
+t0=tic; stimi=1; nframe=0; ss=stimSeq(:,1);
 while ( toc(t0)<gameDuration && ishandle(hFig))
   nframe       = nframe+1;
   frameTime    = toc(t0);
@@ -120,7 +124,7 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
          % -- get the current user/BCI input
   if ( useBuffer )
     [dv,prob,buffstate,filtstate]=processNewPredictionEvents(buffhost,buffport,buffstate,predType,gameFrameDuration*1000/2,predFiltFn,filtstate,verb-1);
-    fprintf('%d) Pred: dv=[%s]\n',nframe,sprintf('%g,',dv));
+    if( ~isempty(dv) ) fprintf('%d) Pred: dv=[%s]\n',nframe,sprintf('%g,',dv)); end;
     
     if( ~isempty(dv) ) % only if events to process...
       [cannonAction,cannonTrotFrac]=prediction2action(prob,predictionMargin,warpCursor);
@@ -131,7 +135,7 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
     curKeyLocal    = get(hFig,'userdata');
     if ( ~isempty(curKeyLocal) )
       curCharacter=curKeyLocal.Character;
-      fprintf('%d) key="%s"\n',nframe,curCharacter);
+      if(verb>0) fprintf('%d) key="%s"\n',nframe,curCharacter);end
       [cannonAction,cannonTrotFrac]=key2action(curCharacter);
     end
   end
@@ -218,7 +222,7 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
     set(hAxes,'Color','k');
     killStartTime=0;
   end
-  cannonKills = cannonKills + newKills;d
+  cannonKills = cannonKills + newKills;
 
 
        %----------------------------- do the P300 type flashing -------------
@@ -270,23 +274,30 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
       
                        % send event saying what task the user should be doing
                        % get the lowest alien, this is the target alien
-    tgtAlien=hAliens(1);
-    for i=2:numel(hAliens);
-      if( hAliens(i).y < tgtAlien.y )
-        tgtAlien=hAliens(i);
-      end
-    end
+    if ( ~isempty(hAliens) )
+      if( ~exist('tgtAlien','var') ) tgtAlien=[]; end;
+      otgtAlien=tgtAlien;
+      tgtAlien=hAliens(1);
+      for i=2:numel(hAliens);
+        if( hAliens(i).y < tgtAlien.y )
+          tgtAlien=hAliens(i);
+        end
+      end                               
+      if( ~isequal(tgtAlien,otgtAlien) ) % new target
                                 % alien position tells us the target task
-    if tgtAlien.x > .5
-      sendEvent('stimulus.target',symbCue{1});
-    else
-      sendEvent('stimulus.target',symbCue{2});
+        if tgtAlien.x > mean(get(hAxes,'xlim'));     tgtDir=symbCue{1};
+        else                                         tgtDir=symbCue{2};
+        end
+        fprintf('%d) new tgt: %s\n',nframe,tgtDir); 
+        sendEvent('stimulus.target',tgtDir);
+      end
     end
   end
     
   ttg=frameEndTime-toc(t0);
-  if (ttg>0) pause(ttg); 
-  else 
+  if (ttg>0)
+    pause(ttg); 
+  elseif ( verb > 0 ) 
     fprintf('%d) frame-lagged %gs\n',nframe,ttg);
   end
 end
