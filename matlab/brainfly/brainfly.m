@@ -16,18 +16,8 @@
                                 %close all; clc; clear
 if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureGame; end
         
-
-
-        % make a simple odd-ball stimulus sequence, with targets mintti apart
-[stimSeq,stimTime,eventSeq] = mkStimSeqP300(maxOnScreenObjs,gameDuration,isi,mintti,oddballp);
-stimColors = [bgColor;flashColor]; % map from stim-seq (0,1) to color to use [bg,flash] [nstimState x 3]
-% game object UID used for each stimulus sequence, i.e. obj2stim(3)=apply stim seq 3 to game object with UID (stim2obj(3)): [nStim x 1]
-stim2obj   = zeros(size(stimSeq,1),1);
-stim2obj(1)= 1; % 1st stim seq always mapps to the cannon
-
 %% Game Parameters:
-
-                                % Game canvas size:
+% Game canvas size:
 gameCanvasYLims         = [0 800];
 gameCanvasXLims         = [0 500];
 maxCannonShotsPerSecond = 5;               % RPS of cannon
@@ -40,8 +30,19 @@ predictionMargin=0;
 warpCursor = true; % cannon position is directly classifier output
 
 
-%% Generate Figure:
+% make a simple odd-ball stimulus sequence, with targets mintti apart
+[stimSeq,stimTime,eventSeq] = mkStimSeqP300(3,gameDuration,isi,mintti,oddballp);
+stimColors = [bgColor;flashColor]; % map from stim-seq (0,1) to color to use [bg,flash] [nstimState x 3]
+% game object UID used for each stimulus sequence, i.e. obj2stim(3)=apply stim seq 3 to game object with UID (stim2obj(3)): [nStim x 1]
+stim2obj   = zeros(size(stimSeq,1),1);
+stim2obj(1)= 1; % 1st stim seq always mapps to the cannon
 
+                                % make a sequence of alien spawn locations
+% make the target sequence
+tgtSeq=mkStimSeqRand(2,gameDuration*2./timeBeforeNextAlien);
+lrSeq =(tgtSeq(1,:)*.8+.1)+(rand(1,size(tgtSeq,2))-.5)*.4; % l/r with a little noise
+
+%% Generate Figure:
                                 % Make the game window:
 hFig = figure(2);
 set(hFig,'Name','Imagined Movement -- close window to stop.'...
@@ -93,6 +94,7 @@ predType =[];
 
                                 % Make an alien:
 hAliens = Alien(hAxes,hCannon);
+Alien.spawnSeq=lrSeq;
                                 % list of bonus aliens
 hbonusAliens=[];
 
@@ -138,14 +140,14 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
 
     % -- get the current user/BCI input
     curCharacter=[];
-%     if ( useKeyboard )
-%       curKeyLocal    = get(hFig,'userdata');
-%       if ( ~isempty(curKeyLocal) )
-%         curCharacter=curKeyLocal.Character;
-%         fprintf('%d) key="%s"\n',nframe,curCharacter);
-%         [cannonAction,cannonTrotFrac]=key2action(curCharacter);
-%       end
-%     end
+    if ( useKeyboard )
+      curKeyLocal    = get(hFig,'userdata');
+      if ( ~isempty(curKeyLocal) )
+        curCharacter=curKeyLocal.Character;
+        fprintf('%d) key="%s"\n',nframe,curCharacter);
+        [cannonAction,cannonTrotFrac]=key2action(curCharacter);
+      end
+    end
     if ( useBuffer )
       [dv,prob,buffstate,filtstate]=processNewPredictionEvents(buffhost,buffport,buffstate,predType,gameFrameDuration*1000/2,predFiltFn,filtstate,verb-1);
       curKeyLocal = get(hFig,'userdata');
@@ -173,7 +175,8 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
     fprintf('%d) move %s %g\n',nframe,cannonAction,cannonTrotFrac);
     hCannon.move(cannonAction,cannonTrotFrac);      
   end
-                            % flash cannon, N.B. cannon is always stim-seq #1
+  
+  % flash cannon, N.B. cannon is always stim-seq #1
   nstim2obj(1)=hCannon.uid; % mark this stim-seq as used
   set(hCannon.hGraphic,'facecolor',stimColors(ss(1)+1,:)); % set the cannon color based on stim-state.
   if ( strcmp(cannonAction,'fire') ||  autoFireMode>0 ) % Shoot cannonball if enough time has elapsed.
@@ -185,15 +188,15 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
     
   end
   
-%----------------------------------------------------------------------        
-% Make a new alien if there are no aliens, or if it is time to spawn a
-% new one:
+  %----------------------------------------------------------------------
+  % Make a new alien if there are no aliens, or if it is time to spawn a
+  % new one:
   if isempty(hAliens) || toc(hAliens(end).alienSpawnTime)>timeBeforeNextAlien;
     hAliens(length(hAliens)+1) = Alien(hAxes,hCannon);
   end
 
-      %----------------------------------------------------------------------
-      % make new bonus alien if it's time.
+  %----------------------------------------------------------------------
+  % make new bonus alien if it's time.
   if( isempty(hbonusAliens) && frameTime > bonusSpawnTime )
     hbonusAliens=BonusAlien(hAxes,hCannon);
     if( useBuffer ) sendEvent('stimulus.bonusAlien',hbonusAliens.uid); end;
@@ -277,6 +280,21 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
     usedStim=nstim2obj>0;
     objstim=[stim2obj(usedStim) ss(usedStim)]'; % mapping from objid to current stim-state [2 x nstimObj]
     sendEvent('stimulus.stimState',objstim(:)); % event sequence of (uid,stimstate) pairs
+
+                       % send event saying what task the user should be doing
+    % get the lowest alien, this is the target alien
+    tgtAlien=hAliens(1);
+    for i=2:numel(hAliens);
+      if( hAliens(i).y < tgtAlien.y )
+        tgtAlien=hAliens(i);
+      end
+    end
+    % alien position tells us the target task
+    if tgtAlien.x > .5
+      sendEvent('stimulus.target',symbCue{1});
+    else
+      sendEvent('stimulus.target',symbCue{2});
+    end
   end
 
   ttg=frameEndTime-toc(t0);
