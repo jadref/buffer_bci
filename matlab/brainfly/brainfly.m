@@ -29,6 +29,7 @@ bonusSpawnInterval      = [5 20];          % range in time between bonus alien s
 predictionMargin=0;
 warpCursor = true; % cannon position is directly classifier output
 
+<<<<<<< Updated upstream
 
 % make a simple odd-ball stimulus sequence, with targets mintti apart
 [stimSeq,stimTime,eventSeq] = mkStimSeqP300(3,gameDuration,isi,mintti,oddballp);
@@ -42,6 +43,8 @@ stim2obj(1)= 1; % 1st stim seq always mapps to the cannon
 tgtSeq=mkStimSeqRand(2,gameDuration*2./timeBeforeNextAlien);
 lrSeq =(tgtSeq(1,:)*.8+.1)+(rand(1,size(tgtSeq,2))-.5)*.4; % l/r with a little noise
 
+=======
+>>>>>>> Stashed changes
 %% Generate Figure:
                                 % Make the game window:
 hFig = figure(2);
@@ -59,16 +62,29 @@ hAxes = axes('position',[0 0 1 1]...
              ,'xtick',[],'xticklabelmode','manual'...
              ,'ytick',[],'yticklabelmode','manual'...
              ,'color',winColor,'nextplot','replacechildren','DrawMode','fast'...
-             ,'xlim',gameCanvasXLims,'ylim',gameCanvasYLims,'Ydir','normal');
+             ,'xlim',gameCanvasXLims,'ylim',gameCanvasYLims+[-100 0],'Ydir','normal');
 
 drawnow;
 
                                 % Make cannon:
 hCannon = Cannon(hAxes);
+% make background for p3 stimuli
+hbackground = rectangle(hAxes,'position',[gameCanvasXlims,-100,diff(gameCanvasXlims),100))
+
+
+        % make a simple odd-ball stimulus sequence, with targets mintti apart
+% BODGE: stim-seq has 6 simuli.  4 of which are virtual to give good tgt rates
+[stimSeq,stimTime,eventSeq] = mkStimSeqP300(6,gameDuration,isi,mintti,oddballp);
+stimSeq=stimSeq(1:2,:);
+stimColors = [bgColor;flashColor]; 
+
+                                % make a sequence of alien spawn locations
+% make the target sequence
+tgtSeq=mkStimSeqRand(2,gameDuration*2./timeBeforeNextAlien);
+lrSeq =(tgtSeq(1,:)*.8+.1)+(rand(1,size(tgtSeq,2))-.5)*.4; % l/r with a little noise
 
 
 %% Game Loop:
-
                                 % Set callbacks to manage the key presses:
 set(hFig,'KeyPressFcn',@(hObj,evt) set(hObj,'userdata',evt)); %save the key; processKeys(hObj,evt,evt.Key));
 set(hFig,'KeyReleaseFcn',@(hObj,evt) set(hObj,'userdata','')); % clear on release
@@ -120,6 +136,7 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
   frameEndTime = frameTime+gameFrameDuration; % time this frame should end
   frameTimes(nframe)=frameTime;
 
+<<<<<<< Updated upstream
                  % get the position in the stim-sequence for this time.
                  % Note: stimulus rate may be slower than the display rate...
 % Note: stimTime(stimi) is the time this stimulus should **first** be on the screen
@@ -164,14 +181,32 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
         [cannonAction,cannonTrotFrac]=prediction2action(prob,predictionMargin);
       end
     end
+=======
+         %-------------------------------------------------------------------
+         % -- get the current user/BCI input
+  if ( useBuffer )
+    [dv,prob,buffstate,filtstate]=processNewPredictionEvents(buffhost,buffport,buffstate,predType,gameFrameDuration*1000/2,predFiltFn,filtstate,verb-1);
+    fprintf('%d) Pred: dv=[%s]\n',nframe,sprintf('%g,',dv));
+    
+>>>>>>> Stashed changes
     if( ~isempty(dv) ) % only if events to process...
       [cannonAction,cannonTrotFrac]=prediction2action(prob,predictionMargin,warpCursor);
+    end
+  end
+  curCharacter=[];
+  if ( useKeyboard )
+    curKeyLocal    = get(hFig,'userdata');
+    if ( ~isempty(curKeyLocal) )
+      curCharacter=curKeyLocal.Character;
+      fprintf('%d) key="%s"\n',nframe,curCharacter);
+      [cannonAction,cannonTrotFrac]=key2action(curCharacter);
     end
   end
   
       %----------------------------------------------------------------------
       % Operate the cannon:
   if( ~isempty(cannonAction) ) % updat the cannon
+<<<<<<< Updated upstream
     fprintf('%d) move %s %g\n',nframe,cannonAction,cannonTrotFrac);
     hCannon.move(cannonAction,cannonTrotFrac);      
   end
@@ -179,18 +214,34 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
   % flash cannon, N.B. cannon is always stim-seq #1
   nstim2obj(1)=hCannon.uid; % mark this stim-seq as used
   set(hCannon.hGraphic,'facecolor',stimColors(ss(1)+1,:)); % set the cannon color based on stim-state.
+=======
+    if(ischar(cannonAction) )
+      fprintf('%d) move %s %g\n',nframe,cannonAction,cannonTrotFrac);
+    else
+      fprintf('%d) warp %g\n',nframe,cannonAction);
+    end
+    hCannon.move(cannonAction,cannonTrotFrac);      
+  end
+
+>>>>>>> Stashed changes
   if ( strcmp(cannonAction,'fire') ||  autoFireMode>0 ) % Shoot cannonball if enough time has elapsed.
     if isempty(lastShotTime)||toc(lastShotTime)>=(1/maxCannonShotsPerSecond)
       newBall = CannonBall(hAxes,hCannon);
       score.shots = score.shots + 1;
       lastShotTime = tic;
     end
-    
   end
+<<<<<<< Updated upstream
   
   %----------------------------------------------------------------------
   % Make a new alien if there are no aliens, or if it is time to spawn a
   % new one:
+=======
+
+      %----------------------------------------------------------------------
+      % Make a new alien if there are no aliens, or if it is time to spawn a
+      % new one:
+>>>>>>> Stashed changes
   if isempty(hAliens) || toc(hAliens(end).alienSpawnTime)>timeBeforeNextAlien;
     hAliens(length(hAliens)+1) = Alien(hAxes,hCannon);
   end
@@ -203,9 +254,8 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
     bonusSpawnTime = frameTime + bonusSpawnInterval(1)+rand(1)*diff(bonusSpawnInterval); % time-at which next bonus show occur
   end
 
-  
-%----------------------------------------------------------------------        
-% Update cannonballs:
+         %-------------------------------------------------------------------
+         % Update cannonballs:
   if( isempty(balls) ) 
     curBalls=newBall; 
   elseif( isempty(newBall) ) 
@@ -221,12 +271,14 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
       score.hits = score.hits + height2score(hits(ai));
     end
   end
-  
-%----------------------------------------------------------------------        
-% Update aliens:
+
+            %----------------------------------------------------------------
+            % Update aliens:
   if ~isempty(hAliens)
     [hAliens, newKills] = Alien.updateAliens(hAliens);
+  end
 
+<<<<<<< Updated upstream
                                 % add the p3 code to the aliens
                                 % find the stim-seq to use for each alien
     alien2stim=zeros(numel(hAliens));
@@ -252,58 +304,120 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
           hbonusAliens(hi).deleteAlien();
         end;
       end
+=======
+           %-----------------------------------------------------------------
+           % Update bonus aliens
+  if ( ~isempty(hbonusAliens) )
+    hbonusAliens = BonusAlien.update(hbonusAliens);
+    if( any(strcmpi(curCharacter,{'a'})) ) % got the bonus alien
+      fprintf('%d) Got the bonus alien!\n',nframe) 
+      for hi=1:numel(hbonusAliens);
+        score.bonushits=score.bonushits+1;
+        hbonusAliens(hi).deleteAlien();
+      end;
+>>>>>>> Stashed changes
     end
+  end
 
             % ---------------------------------------------------------------
             % update Cannon
             % Die animation (currently doesn't pause the aliens' descent):
-    if newKills~=0
-      set(hAxes,'Color','r');
-      killStartTime=frameTime;
-    end
-    if ( killStartTime>0 && frameTime>killStartTime+killFlashTime ) % end kill-flash
-      set(hAxes,'Color','k');
-      killStartTime=0;
-    end
-    
-    cannonKills = cannonKills + newKills;
+  if newKills~=0
+    set(hAxes,'Color','r');
+    killStartTime=frameTime;
   end
+  if ( killStartTime>0 && frameTime>killStartTime+killFlashTime ) % end kill-flash
+    set(hAxes,'Color','k');
+    killStartTime=0;
+  end
+  cannonKills = cannonKills + newKills;d
+
+
+       %----------------------------- do the P300 type flashing -------------
+       % get the position in the stim-sequence for this time.
+       % Note: stimulus rate may be slower than the display rate...
+  % Note: stimTime(stimi) is time this stimulus should **first** be on screen
+  if( frameTime > stimTime(stimi) ) % next stimulus state
+    stimi=stimi+1; % next stimulus frame
+    if( stimi>=numel(stimTime) ) % wrap-arround the end of the stimulus sequence
+      stimi=1;
+    else
+                                % find next valid frame
+      tmp = stimi;for stimi=tmp:numel(stimTime); if ( frameTime<stimTime(stimi) ) break; end; end; 
+      if ( verb>=0 && stimi-tmp>5 ) % check for frame dropping
+        fprintf('%d) Dropped %d Frame(s)!!!\n',nframe,stimi-tmp);
+      end;        
+    end
+    ss=stimSeq(:,stimi); % get the current stimulus state info
+                 %fprintf('%d) %g %d=>[%s]\n',nframe,frameTime,stimi,...
+                 % sprintf('%d=%d ',[stim2obj(stim2obj>0) ss(stim2obj>0)]'));
+
+                            % flash cannon, N.B. cannon is always stim-seq #1
+    set(hCannon.hGraphic,'facecolor',stimColors(ss(1)+1,:));
+                                % flash the background
+    set(hbackground,'facecolor',stimColors(ss(2)+1,:));
+    %%                             % flash the aliens
+    %% alien2stim=zeros(numel(hAliens));
+    %% for i=1:numel(hAliens);
+    %%   auid=hAliens(i).uid;
+    %%   mi  =find(stim2obj==auid);
+    %%   if( isempty(mi) ) mi=find(stim2obj==0,1); end % pick an empty stim
+    %%                                % update the tracking info
+    %%   nstim2obj(mi,1) =auid; % new list of used stimulus, ensure col-vector
+    %%   alien2stim(i) =mi;
+    %%                             % apply the stimulus
+    %%   set(hAliens(i).hGraphic,'facecolor',stimColors(ss(mi)+1,:));
+    %% end
+  end
+<<<<<<< Updated upstream
   
                                 % Set score disp and loop:
   fprintf('%s\n',genTextStr(score,curBalls,cannonKills));							
+=======
+    
+                     % Set score disp and loop
+                     %fprintf('%s\n',genTextStr(score,curBalls,cannonKills));
+>>>>>>> Stashed changes
   set(hText,'String',genTextStr(score,curBalls,cannonKills),'visible','on');
        % TODO: make this more accurate to take account of display/network lag
   drawnow;
-                                % update the stimulus state
-  stim2obj=nstim2obj;
+                              % update the stimulus state
   if( useBuffer ) % send event describing the game stimulus state
+<<<<<<< Updated upstream
     usedStim=nstim2obj>0;
     objstim=[stim2obj(usedStim) ss(usedStim)]'; % mapping from objid to current stim-state [2 x nstimObj]
     sendEvent('stimulus.stimState',objstim(:)); % event sequence of (uid,stimstate) pairs
 
                        % send event saying what task the user should be doing
     % get the lowest alien, this is the target alien
+=======
+    sendEvent('stimulus.stimState',ss); % p3 stim state
+    sendEvent('stimulus.tgtFlash',ss(1)); % tgt-flash?
+      
+                       % send event saying what task the user should be doing
+                       % get the lowest alien, this is the target alien
+>>>>>>> Stashed changes
     tgtAlien=hAliens(1);
     for i=2:numel(hAliens);
       if( hAliens(i).y < tgtAlien.y )
         tgtAlien=hAliens(i);
       end
     end
+<<<<<<< Updated upstream
     % alien position tells us the target task
+=======
+                                % alien position tells us the target task
+>>>>>>> Stashed changes
     if tgtAlien.x > .5
       sendEvent('stimulus.target',symbCue{1});
     else
       sendEvent('stimulus.target',symbCue{2});
     end
   end
-
+    
   ttg=frameEndTime-toc(t0);
   if (ttg>0) pause(ttg); 
   else 
     fprintf('%d) frame-lagged %gs\n',nframe,ttg);
-  end;
-  
+  end
 end
-
-
-
