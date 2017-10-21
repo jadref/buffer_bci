@@ -4,7 +4,7 @@ import numpy as np
 def readCapInf(cap='1010.txt',capRoots=None):
     """     read a cap file
  
-    (Cname,latlong,xy,xyz)=readCapInf(cap,capDir)
+    Cname,latlong,xy,xyz,capfile=readCapInf(cap,capDir)
     
      Inputs:
     cap     -- file name of the cap-file
@@ -46,10 +46,9 @@ def readCapInf(cap='1010.txt',capRoots=None):
         raise ValueError('Couldnt find the capFile: '+cap)
     
     if 'xyz' in capExt:
-        fd = open(capFile,'r')
-        Cname,x,y,z= np.loadtxt(fd,
+        Cname,x,y,z= np.loadtxt(capFile,
                                 dtype={'names': ('Cname', 'x', 'y', 'z'),
-                                       'formats': ('U12', 'float', 'float', 'float')},
+                                       'formats': ('|S12', 'float', 'float', 'float')},
                                 unpack=True)
         #Cname,x,y,z=textread(capFile,'b'%s %f %f %f'',nargout=4)
         xyz=np.stack((x,y,z),1).T # [3 x nCh]
@@ -57,10 +56,9 @@ def readCapInf(cap='1010.txt',capRoots=None):
         latlong=xy2latlong(xy)
     else:
         if 'xy' in capExt:
-            fd = open(capFile,'r')
-            Cname,x,y,z= np.loadtxt(fd,
+            Cname,x,y,z= np.loadtxt(capFile,
                                     dtype={'names': ('Cname', 'x', 'y'),
-                                           'formats': ('U12', 'float', 'float')},
+                                           'formats': ('|S12', 'float', 'float')},
                                     unpack=True)
             #Cname,x,y=textread(capFile,'b'%s %f %f'',nargout=3)
             xy=np.stack((x,y),1).T #[2 x nCh]
@@ -68,10 +66,9 @@ def readCapInf(cap='1010.txt',capRoots=None):
             xyz=latlong2xyz(latlong)
         else:
             if 'lay' in capExt:
-                fd = open(capFile,'r')
-                tmp,x,y,w,h,Canme=np.loadtxt(fd,
+                tmp,x,y,w,h,Cname=np.loadtxt(capFile,
                                              dtype={'names': ('rownum', 'x', 'y', 'w','h','Cname'),
-                                                    'formats': ('float', 'float', 'float', 'float', 'float', 'U12')},
+                                                    'formats': ('float', 'float', 'float', 'float', 'float', '|S12')},
                                              unpack=True)
                 #ans,x,y,w,h,Cname=textread(capFile,'b'%d %f %f %f %f %s'',nargout=6)
                 xy=np.stack((x,y),1).T # [2 x nCh]
@@ -80,10 +77,9 @@ def readCapInf(cap='1010.txt',capRoots=None):
                 latlong=xy2latlong(xy)
                 xyz=latlong2xyz(latlong)
             else:
-                fd = open(capFile,'r')
-                Cname,lat,lng=np.loadtxt(fd,
+                Cname,lat,lng=np.loadtxt(capFile,
                                           dtype={'names': ('Cname','lat','lng'),
-                                                 'formats': ('U12', 'float', 'float')},
+                                                 'formats': ('|S12', 'float', 'float')},
                                              unpack=True)
                 #Cname,lat,lng=textread(capFile,'b'%s %f %f'',nargout=3)
                 latlong=np.stack((lat,lng),1).T # [2 x nCh]
@@ -91,7 +87,9 @@ def readCapInf(cap='1010.txt',capRoots=None):
                     latlong= latlong *np.pi / 180.0
                 xyz=latlong2xyz(latlong)
                 xy=latlong2xy(latlong)
-    
+
+    Cname = np.char.decode(Cname,'utf8')
+                
     return Cname,latlong,xy,xyz,capFile
     
 def xyz2xy(xyz):
