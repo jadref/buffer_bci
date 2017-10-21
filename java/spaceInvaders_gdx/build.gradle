@@ -1,0 +1,110 @@
+import groovy.json.JsonSlurper
+
+buildscript {
+
+    ant.get(src: 'http://libgdx.badlogicgames.com/libgdx-site/service/getVersions?release=false', dest: 'versions.json')
+    def versionFile = file('versions.json')
+    def json
+    if (versionFile.exists()) {
+        json = new JsonSlurper().parseText(versionFile.text)
+    } else throw new Exception("Unable to retrieve latest versions, please check your internet connection")
+
+    ext {
+        gdxVersion = json.libgdxSnapshot
+        roboVMVersion = json.robovmVersion
+        roboVMGradleVersion = json.robovmPluginVersion
+        androidToolsVersion = json.androidBuildtoolsVersion
+        androidSDKVersion = json.androidSDKVersion
+        androidGradleToolsVersion = json.androidGradleToolVersion
+        gwtVersion = json.gwtVersion
+        gwtGradleVersion = json.gwtPluginVersion
+    }
+
+    repositories {
+        jcenter()
+        mavenCentral()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+    }
+
+    dependencies {
+        classpath "de.richsource.gradle.plugins:gwt-gradle-plugin:$gwtGradleVersion"
+        classpath "com.android.tools.build:gradle:$androidGradleToolsVersion"
+        classpath "com.mobidevelop.robovm:robovm-gradle-plugin:$roboVMGradleVersion"
+    }
+}
+
+allprojects {
+    apply plugin: "eclipse"
+    apply plugin: "idea"
+
+    version = '1.0'
+    ext {
+        appName = 'libgdx-demo-invaders'
+    }
+
+    repositories {
+        mavenCentral()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+    }
+}
+
+project(":desktop") {
+    apply plugin: "java"
+
+
+    dependencies {
+        compile project(":core")
+        compile "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
+        compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+        compile "com.badlogicgames.gdx:gdx-controllers-desktop:$gdxVersion"
+        compile "com.badlogicgames.gdx:gdx-controllers-platform:$gdxVersion:natives-desktop"
+    }
+}
+
+//project(":android") {
+//    apply plugin: "android"
+//
+//    configurations { natives }
+//
+//    dependencies {
+//        compile project(":core")
+//        compile "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
+//        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi"
+//        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
+//        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86"
+//        compile "com.badlogicgames.gdx:gdx-controllers:$gdxVersion"
+//        compile "com.badlogicgames.gdx:gdx-controllers-android:$gdxVersion"
+//    }
+//}
+
+//project(":html") {
+//    apply plugin: "gwt"
+//    apply plugin: "war"
+//
+//
+//    dependencies {
+//        compile project(":core")
+//        compile "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion"
+//        compile "com.badlogicgames.gdx:gdx:$gdxVersion:sources"
+//        compile "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion:sources"
+//        compile "com.badlogicgames.gdx:gdx-controllers:$gdxVersion:sources"
+//        compile "com.badlogicgames.gdx:gdx-controllers-gwt:$gdxVersion"
+//        compile "com.badlogicgames.gdx:gdx-controllers-gwt:$gdxVersion:sources"
+//    }
+//}
+
+project(":core") {
+    apply plugin: "java"
+
+
+    dependencies {
+        compile "com.badlogicgames.gdx:gdx:$gdxVersion"
+        compile "com.badlogicgames.gdx:gdx-controllers:$gdxVersion"
+	compile fileTree( dir: '../../../dataAcq/buffer/java', include: 'BufferClient.jar')
+    }
+}
+
+tasks.eclipse.doLast {
+    delete ".project"
+}

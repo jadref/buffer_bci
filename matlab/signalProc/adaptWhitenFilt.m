@@ -5,7 +5,7 @@ function [X,state,XXt]=adaptWhitenFilt(X,state,varargin);
 %   dim     - [int] dimensions to work along
 %   center  - [bool]
 %   detrend - [bool]
-%   covFilt - [float] <1 = coefficient for the exp-weighted move average, >1 = half-life for the per-call smoothing filter 
+%   covFilt - [float] <1 = coefficient for the exp-weighted move average, >1 = half-life for the per-sample smoothing filter 
 %                OR
 %             {func args} = function to call to do the smoothing filter
 %              SEE: biasFilt for example function format
@@ -65,7 +65,8 @@ for epi=1:nEp; % auto-apply incrementally if given multiple epochs
                            % smooth the covariance filter estimates if wanted
   if( ~isempty(covFilt) )
     if( isnumeric(covFilt{1}) ) % move-ave
-      alpha           = covFilt{1};
+      alpha           = covFilt{1}; % specified in samples
+      alpha           = alpha.^size(Xei,dim(2)); % specified in data-packets
       filtstate.N     = alpha.*filtstate.N     + (1-alpha).*1;       % update weight
       filtstate.sxx   = alpha.*filtstate.sxx   + (1-alpha).*XXt;   % update move-ave                                
       XXt             = filtstate.sxx./filtstate.N;   % move-ave with warmup-protection

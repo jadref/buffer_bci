@@ -64,7 +64,6 @@ stimColors = [bgColor;flashColor];
 tgtSeq=mkStimSeqRand(2,gameDuration*2./timeBeforeNextAlien);
 lrSeq =(tgtSeq(1,:)*.8+.1)+(rand(1,size(tgtSeq,2))-.5)*.4; % l/r with a little noise
 
-
 %% Game Loop:
                                 % Set callbacks to manage the key presses:
 set(hFig,'KeyPressFcn',@(hObj,evt) set(hObj,'userdata',evt)); %save the key; processKeys(hObj,evt,evt.Key));
@@ -80,7 +79,7 @@ score.shots  = 0;
 score.hits   = 0;
 score.bonushits=0;
                    % simple scoreing function, top-screen=10, bottom-screen=1
-height2score = @(height) 10*(height-gameCanvasYLims(1))./(gameCanvasYLims(2)-gameCanvasYLims(1)) + 1
+height2score = @(height) round(10*(height-gameCanvasYLims(1))./(gameCanvasYLims(2)-gameCanvasYLims(1)) + 1);
 cannonKills = 0;
 
                          % Initialize buffer-prediction processing variables:
@@ -103,17 +102,18 @@ hText = text(gameCanvasXLims(1),gameCanvasYLims(2),genTextStr(score,curBalls,can
                        % wait for user to be ready before starting everything
 set(hText,'string', {'' 'Click mouse when ready to begin.'}, 'visible', 'on'); drawnow;
 waitforbuttonpress;
-for i=1:5;
-  set(hText,'string',sprintf('Starting in: %ds',5-i));drawnow;sleepSec(1);
+for i=0:5;
+   set(hText,'string',sprintf('Starting in: %ds',5-i),'visible','on');drawnow;
+   sleepSec(1);
 end
 set(hText,'visible', 'off'); drawnow; 
-
 
                                 % Loop while figure is active:
 killStartTime=0;
 bonusSpawnTime=bonusSpawnInterval(1)+rand(1)*diff(bonusSpawnInterval); % time-at which next bonus show occur
 cannonAction=[];cannonTrotFrac=0;
-t0=tic; stimi=1; nframe=0; ss=stimSeq(:,1);
+t0=tic; stimi=1; nframe=0; 
+ss=stimSeq(:,stimi); % starting stimulus state
 while ( toc(t0)<gameDuration && ishandle(hFig))
   nframe       = nframe+1;
   frameTime    = toc(t0);
@@ -235,7 +235,7 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
       stimi=1;
     else
                                 % find next valid frame
-      tmp = stimi;for stimi=tmp:numel(stimTime); if ( frameTime<stimTime(stimi) ) break; end; end; 
+      tmp=stimi;for stimi=tmp:numel(stimTime); if(frameTime<stimTime(stimi))break;end; end; 
       if ( verb>=0 && stimi-tmp>5 ) % check for frame dropping
         fprintf('%d) Dropped %d Frame(s)!!!\n',nframe,stimi-tmp);
       end;        

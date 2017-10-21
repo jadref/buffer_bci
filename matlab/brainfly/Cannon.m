@@ -77,6 +77,7 @@ classdef Cannon < handle
             axesXLim     = get(obj.hAxes,'XLim');
 
             if isnumeric(whereTo) % warp mode, but limit step size
+              whereTo=whereTo*abs(axesXLim(2)-axesXLim(1));
               obj.Xbase = max(min(whereTo,obj.Xbase+curStepSize),obj.Xbase-curStepSize);
             else % string so step-size
               switch whereTo                
