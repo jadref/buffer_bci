@@ -33,7 +33,6 @@ def packBoxes(Xs,Ys):
     N=len(Xs)
     # Now, Find the all plots pairwise distance matrix, w.r.t. this scaling
     Dx=np.abs(Xs[np.newaxis] - Xs[np.newaxis].T) #Note the 'hack' to transpose a 1d array
-    print(np.shape(Dx))
     Dy=np.abs(Ys[np.newaxis] - Ys[np.newaxis].T)
     rX=np.zeros(N) 
     rY=np.zeros(N)

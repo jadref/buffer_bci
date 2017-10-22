@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from posplot import *
 
-def image3d(X,dim=0,plotpos=None,xvals=None,yvals=None,zvals=None,disptype='plot',layout=None,ticklabs='sw',*args):
+def image3d(X,dim=0,plotpos=None,xvals=None,xlabel=None,yvals=None,ylabel=None,zvals=None,zlabel=None,disptype='plot',layout=None,ticklabs='sw',*args):
     """
     plot 3d matrix in the image style
  
@@ -85,26 +85,26 @@ def image3d(X,dim=0,plotpos=None,xvals=None,yvals=None,zvals=None,disptype='plot
     for pi,ax in enumerate(h):
         # extract the data for this plot
         if   dim==0:
-            Xpi = X[pi,:,:].reshape((X.shape[1],-1))
-            titlepi = xvals[pi]
+            Xpi     = X[pi,:,:].reshape((X.shape[1],-1))
+            titlepi = xvals[pi] if not xvals is None else None
             xticks  = yvals;
             xlab    = ylabel;
             linenms = zvals;
             linelab = zlabel;
         elif dim==1:
-            Xpi = X[:,pi,:].reshape((X.shape[0],-1))
+            Xpi     = X[:,pi,:].reshape((X.shape[0],-1))
             xticks  = xvals;
             xlab    = xlabel 
-            titlepi = yvals[pi]
+            titlepi = yvals[pi] if not yvals is None else None
             linenms = zvals
             linelab = zlabel
         elif dim==2:
-            Xpi = X[:,:,pi].reshape((X.shape[0],-1))
+            Xpi     = X[:,:,pi].reshape((X.shape[0],-1))
             xticks  = xvals;
             xlab    = xlabel
             linenms = yvals
             linelab = ylabel
-            titlepi = zvals[pi]
+            titlepi = zvals[pi] if not zvals is None else None
 
         # BODGE: if want transposed other axes then swap the axis info
         if disptype=='plott' or disptype=='imaget': 
@@ -115,7 +115,7 @@ def image3d(X,dim=0,plotpos=None,xvals=None,yvals=None,zvals=None,disptype='plot
                 linelab = ylabel;
                 xticks  = zvals;
                 xlab    = zlabel;
-           elif dim==1:
+            elif dim==1:
                 linenms = xvals
                 linelab = xlabel
                 xticks  = zvals;
@@ -125,42 +125,49 @@ def image3d(X,dim=0,plotpos=None,xvals=None,yvals=None,zvals=None,disptype='plot
                 linelab = xlabel
                 xticks  = yvals;
                 xlab    = ylabel
-            
+                
         plt.axes(ax) # get the right plot to update        
         if disptype=='plot':
-            plt.plot(xticks,Xpi,*args)
+            if xticks is None :
+                plt.plot(Xpi,*args)
+            else:
+                plt.plot(xticks,Xpi,*args)
         elif disptype=='image':
-            plt.imshow(xticks,linenms,Xpi,*args)
+            if xticks is None or linenms is None :
+                plt.imshow(Xpi,*args)
+            else:
+                plt.imshow(xticks,linenms,Xpi,*args)
 
         if not titlepi is None:
-            ax.set(title=titlepi,xlabel=xlab)
+            ax.set_title(titlepi,position=(.5,.4))
+        if not xlab is None:
+            ax.set_xlabel(xlab)
         if not showticklabs[pi]:
-            ax.xaxis.set(ticks=None)
-            ax.yaxis.set(ticks=None)
+            ax.xaxis.set_visible(False)
+            ax.yaxis.set_visible(False)
             
     return (h,fig)
 
 
 
-def setshowticklabs(h,showticklabs='all'):
+def setshowticklabs(h,ticklabs='all'):
     "find the set of plots which get tick-info"
-    showticklabs=np.array((nPlot),dtype=bool)
-    showticklabs[:]=True # default to show all
-    if ticklabs=='none':
-        showticklabs[:]=False
+    showticklabs=np.ndarray((len(h)),dtype=bool)
+    showticklabs[:]=False # default to show all
+    if ticklabs=='all':
+        showticklabs[:]=True
     else:
         # get the dir to search for extreem plot
-        if   ticklabs=='sw': sline=(-1,-1)
-        elif ticklabs=='se': sline=(1,-1)
-        elif ticklabs=='nw': sline=(1,1)
-        elif ticklabs=='ne': sline=(1,-1)
+        if   ticklabs=='sw': sline=np.array((-1,-1))
+        elif ticklabs=='se': sline=np.array((1,-1))
+        elif ticklabs=='nw': sline=np.array((1,1))
+        elif ticklabs=='ne': sline=np.array((1,-1))
         # find the most extreem plot
         d=None
         tickpi=None
         for pi,ax in enumerate(h):
-            pltpos = ax.get('position')
-            pltpos = (pltpos[0]+pltpos[3]/2,pltpos[1]+plotpos[4]/2) #(x,y) plot center
-            dpi    = sline[0]*plotpos[0] + sline[1]*plotpos[1]
+            pltpos = plt.get(ax,'position').get_points().mean(0) # get axis center
+            dpi    = np.dot(sline,pltpos)
             if d is None or dpi>d:
                 d=dpi
                 tickpi=pi
