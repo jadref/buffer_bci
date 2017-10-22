@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from posplot import *
 
-def image3d(X,dim=0,plotpos=None,xvals=None,yvals=None,zvals=None,disptype='plot',layout=None,*args):
+def image3d(X,dim=0,plotpos=None,xvals=None,yvals=None,zvals=None,disptype='plot',layout=None,ticklabs='sw',*args):
     """
     plot 3d matrix in the image style
  
@@ -41,8 +41,8 @@ def image3d(X,dim=0,plotpos=None,xvals=None,yvals=None,zvals=None,disptype='plot
                empty clim means let each plot have it's own color scaling
     showtitle-- [bool] show title on each plot                      (true)
     clabel   -- str with the label for the colors
-    ticklabs -- {'all','none','SW','SE','NW','NE'} put tick labels on plots
-              at these locations ('all')
+    ticklabs -- {'all','none','SW','SE','NW','NE'} put tick labels on plots        ('sw')
+              at these locations 
     varargin -- addition properties of the plot to set
     plotopts -- options to pass to the display function ([])
     plotposOpts -- options to pass to posPlots (if used)
@@ -77,27 +77,99 @@ def image3d(X,dim=0,plotpos=None,xvals=None,yvals=None,zvals=None,disptype='plot
             layout = (w,h)
         fig,h = plt.subplots(ncols=layout[0],nrows=layout[1],squeeze=False)
         h = h.reshape(-1) # ensure is 1-d list handles
-        
+
+    # find the set of plots which get tick-info
+    showticklabs=setshowticklabs(h,ticklabs)
 
     # loop over the plots making them
-    for pi in range(0,nPlot):
+    for pi,ax in enumerate(h):
         # extract the data for this plot
-        if   dim==0:  Xpi = X[pi,:,:].reshape((X.shape[1],-1))
-        elif dim==1:  Xpi = X[:,pi,:].reshape((X.shape[0],-1))
-        elif dim==2:  Xpi = X[:,:,pi].reshape((X.shape[0],-1))
+        if   dim==0:
+            Xpi = X[pi,:,:].reshape((X.shape[1],-1))
+            titlepi = xvals[pi]
+            xticks  = yvals;
+            xlab    = ylabel;
+            linenms = zvals;
+            linelab = zlabel;
+        elif dim==1:
+            Xpi = X[:,pi,:].reshape((X.shape[0],-1))
+            xticks  = xvals;
+            xlab    = xlabel 
+            titlepi = yvals[pi]
+            linenms = zvals
+            linelab = zlabel
+        elif dim==2:
+            Xpi = X[:,:,pi].reshape((X.shape[0],-1))
+            xticks  = xvals;
+            xlab    = xlabel
+            linenms = yvals
+            linelab = ylabel
+            titlepi = zvals[pi]
 
-        plt.axes(h[pi]) # get the right plot to update        
+        # BODGE: if want transposed other axes then swap the axis info
+        if disptype=='plott' or disptype=='imaget': 
+            Xpi     = Xpi.T # swap the data
+            # swap the meta-info
+            if   dim==0:
+                linenms = yvals;
+                linelab = ylabel;
+                xticks  = zvals;
+                xlab    = zlabel;
+           elif dim==1:
+                linenms = xvals
+                linelab = xlabel
+                xticks  = zvals;
+                xlab    = zlabel 
+            elif dim==2:
+                linenms = xvals
+                linelab = xlabel
+                xticks  = yvals;
+                xlab    = ylabel
+            
+        plt.axes(ax) # get the right plot to update        
         if disptype=='plot':
-            plt.plot(Xpi,*args)
-        elif disptype=='plott':
-            plt.plot(Xpi.T,*args)
+            plt.plot(xticks,Xpi,*args)
         elif disptype=='image':
-            plt.imshow(Xpi,*args)
-        elif disptype=='imaget':
-            plt.imshow(Xpi.T,*args)
+            plt.imshow(xticks,linenms,Xpi,*args)
 
-    
+        if not titlepi is None:
+            ax.set(title=titlepi,xlabel=xlab)
+        if not showticklabs[pi]:
+            ax.xaxis.set(ticks=None)
+            ax.yaxis.set(ticks=None)
+            
     return (h,fig)
+
+
+
+def setshowticklabs(h,showticklabs='all'):
+    "find the set of plots which get tick-info"
+    showticklabs=np.array((nPlot),dtype=bool)
+    showticklabs[:]=True # default to show all
+    if ticklabs=='none':
+        showticklabs[:]=False
+    else:
+        # get the dir to search for extreem plot
+        if   ticklabs=='sw': sline=(-1,-1)
+        elif ticklabs=='se': sline=(1,-1)
+        elif ticklabs=='nw': sline=(1,1)
+        elif ticklabs=='ne': sline=(1,-1)
+        # find the most extreem plot
+        d=None
+        tickpi=None
+        for pi,ax in enumerate(h):
+            pltpos = ax.get('position')
+            pltpos = (pltpos[0]+pltpos[3]/2,pltpos[1]+plotpos[4]/2) #(x,y) plot center
+            dpi    = sline[0]*plotpos[0] + sline[1]*plotpos[1]
+            if d is None or dpi>d:
+                d=dpi
+                tickpi=pi
+        # set to show tick info
+        showticklabs[tickpi]=True
+    return showticklabs
+
+
+
 
 def testCase():
     import image3d
