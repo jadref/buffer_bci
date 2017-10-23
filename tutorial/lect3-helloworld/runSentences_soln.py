@@ -12,7 +12,7 @@ def drawnow(fig=None):
     "force a matplotlib figure to redraw itself, inside a compute loop"
     if fig is None: fig=plt.gcf()
     fig.canvas.draw()
-    #plt.pause(1e-3) # wait for draw.. 1ms
+    plt.pause(1e-3) # wait for draw.. 1ms
 
 currentKey=None
 def keypressFn(event):
@@ -26,7 +26,7 @@ def waitforkey(fig=None,reset=True):
     fig.canvas.mpl_connect('key_press_event',keypressFn)
     if reset: currentKey=None
     while currentKey is None:
-        plt.pause(1e-3) # allow gui event processing
+        plt.pause(1e-2) # allow gui event processing
 
 ## CONFIGURABLE VARIABLES
 # Connection options of fieldtrip, hostname and port of the computer running the fieldtrip buffer.
@@ -60,12 +60,15 @@ for si,sentence in enumerate(sentences):
     drawnow()
     bufhelp.sendEvent('stimulus.sentence',sentence)
 
-    for ci,char in enumerate(sentence):
-        bufhelp.sendEvent('stimulus.character',char)
-        h.set_text(sentence[0:ci])
+    for ci in range(len(sentence)):
+        char = sentence[ci]
+        print("%d) char=%s sentence=%s"%(ci,char,sentence[0:ci+1]))
+        h.set_text(sentence[0:ci+1])
         drawnow()
+        bufhelp.sendEvent('stimulus.character',char)
         sleep(interCharDuration)
     
+    drawnow()
     sleep(interSentenceDuration)
     
     #wait for key-press to continue
@@ -73,6 +76,6 @@ for si,sentence in enumerate(sentences):
     drawnow()
     waitforkey(fig)
 
-sendEvent('stimulus.sentences','end')
+bufhelp.sendEvent('stimulus.sentences','end')
 h.set('string',['Thanks for taking part!' '' 'Press key to finish'])
 waitforkey(fig)
