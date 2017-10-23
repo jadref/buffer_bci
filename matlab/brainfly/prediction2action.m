@@ -14,6 +14,5 @@ function [cannonAction,cannonTrotFrac]=prediction2action(prob,margin,warpp)
     if( prob(1)>prob(2)+margin ) cannonAction='right'; end;
     if( prob(2)>prob(1)+margin ) cannonAction='left'; end;
   end
-  if( prob(3)==100) cannonAction='fire'; end;
-  %if( numel(prob)>2 && prob(3)>max(prob(1:2)) ) cannonAction='fire'; end;
+  if( numel(prob)>2 && prob(3)==100) cannonAction='fire'; end;
 end

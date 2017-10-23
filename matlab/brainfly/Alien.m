@@ -134,10 +134,11 @@ classdef Alien < handle
   end
 
   methods(Static)
-    function spawnSeq=getsetSpawnSeq(ss)
+    function ss=getsetSpawnSeq(ss)
       % Yuck! horrible MATLAB hacks to get static values in a function...
       persistent spawnSeq;
       if(nargin>0) spawnSeq=ss; end;
+      ss=spawnSeq;
     end
     
     function outxloc=getsetLastSpawnLoc(inxloc)

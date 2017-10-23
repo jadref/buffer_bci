@@ -89,7 +89,7 @@ classdef Cannon < handle
               end
             end
                                 % display bounds check
-            obj.Xbase = min(max(obj.Xbase,axesXlim(1)),axesXlim(2)-obj.cannonWidth);
+            obj.Xbase = min(max(obj.Xbase,axesXLim(1)),axesXLim(2)-obj.cannonWidth);
             % update the object properties
             pos=get(obj.hGraphic,'position');
             pos(1)=obj.Xbase;

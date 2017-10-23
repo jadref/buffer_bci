@@ -50,7 +50,7 @@ drawnow;
                                 % Make cannon:
 hCannon = Cannon(hAxes);
 % make background for p3 stimuli
-hbackground = rectangle(hAxes,'position',[gameCanvasXLims(1),gameCanvasYLims(1),diff(gameCanvasXLims),10]);
+hbackground = rectangle('position',[gameCanvasXLims(1),gameCanvasYLims(1),diff(gameCanvasXLims),10]);
 
 
         % make a simple odd-ball stimulus sequence, with targets mintti apart
@@ -84,7 +84,7 @@ cannonKills = 0;
 
                          % Initialize buffer-prediction processing variables:
 buffstate=[];
-predFiltFn=[]; % additional filter function for the classifier predictions? %-contFeedbackFiltLen; % average full-trials worth of predictions
+predFiltFn='gainFilt'; % additional filter function for the classifier predictions? %-contFeedbackFiltLen; % average full-trials worth of predictions
 filtstate=[];
 predType =[];
 
