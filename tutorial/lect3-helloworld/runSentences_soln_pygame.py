@@ -120,7 +120,7 @@ for si,sentence in enumerate(sentences):
 
     for ci,char in enumerate(sentence):
         sendEvent('stimulus.character',char)
-        updateFrame(sentence[0:ci])
+        updateFrame(sentence[0:ci+1])
         sleep(interCharDuration)
     
     sleep(interSentenceDuration)
