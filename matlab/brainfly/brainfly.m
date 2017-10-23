@@ -76,6 +76,7 @@ newBall      = [];
 curBalls     = [];
 lastShotTime = [];
 score.shots  = 0;
+score.score  = 0;
 score.hits   = 0;
 score.bonushits=0;
                    % simple scoreing function, top-screen=10, bottom-screen=1
@@ -188,7 +189,8 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
     if( useBuffer && ~isempty(hits) ) sendEvent('stimulus.hit',numel(hits)); end;
         % update the score, with higher score for aliens higher up the screen
     for ai=1:numel(hits)
-      score.hits = score.hits + height2score(hits(ai));
+	  score.score = score.score + height2score(hits(ai));
+      score.hits = score.hits + 1;
     end
   end
 
