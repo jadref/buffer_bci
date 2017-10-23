@@ -351,7 +351,7 @@ while ( true )
     mi=matchEvents(ntraindevents,{'calibrate' 'calibration' 'sigproc.reset' phaseToRun ['sigproc.' phaseToRun]},'end'); ntraindevents(mi)=[]; ntraindata(mi)=[];%remove exit event
     if(isempty(traindata))
       traindata=ntraindata;                  traindevents=ntraindevents;
-    else
+    elseif( ~isempty(ntraindevents) && numel(ntraindata)>0 )
       dsz=size(traindata(1).buf);
       consistent=true;
       for ei=1:numel(ntraindata);

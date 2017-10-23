@@ -1,0 +1,7 @@
+C:\Users\H.G. van den Boorn\Google Drive\buffer_bci\java\spaceInvaders_gdx\FakeController\FakeController\obj\Debug\FakeController.csprojResolveAssemblyReference.cache
+C:\Users\H.G. van den Boorn\Google Drive\buffer_bci\java\spaceInvaders_gdx\FakeController\FakeController\bin\Debug\FakeController.exe
+C:\Users\H.G. van den Boorn\Google Drive\buffer_bci\java\spaceInvaders_gdx\FakeController\FakeController\bin\Debug\FakeController.pdb
+C:\Users\H.G. van den Boorn\Google Drive\buffer_bci\java\spaceInvaders_gdx\FakeController\FakeController\bin\Debug\FieldTrip.Buffer.dll
+C:\Users\H.G. van den Boorn\Google Drive\buffer_bci\java\spaceInvaders_gdx\FakeController\FakeController\bin\Debug\FieldTrip.Buffer.pdb
+C:\Users\H.G. van den Boorn\Google Drive\buffer_bci\java\spaceInvaders_gdx\FakeController\FakeController\obj\Debug\FakeController.exe
+C:\Users\H.G. van den Boorn\Google Drive\buffer_bci\java\spaceInvaders_gdx\FakeController\FakeController\obj\Debug\FakeController.pdb

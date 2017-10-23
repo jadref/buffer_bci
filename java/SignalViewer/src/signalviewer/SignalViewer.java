@@ -9,15 +9,26 @@ import com.orsoncharts.marker.Marker;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import javax.swing.BoxLayout;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.border.EmptyBorder;
 import nl.fcdonders.fieldtrip.bufferclient.BufferClientClock;
 import nl.fcdonders.fieldtrip.bufferclient.Header;
 import nl.fcdonders.fieldtrip.bufferclient.SamplesEventsCount;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
@@ -26,7 +37,7 @@ import org.jfree.data.xy.XYSeriesCollection;
  *
  * @author H.G. van den Boorn
  */
-public class SignalViewer extends JFrame {
+public class SignalViewer extends JFrame implements ActionListener {
 //    protected static final String TAG = ContinuousClassifier.class.getSimpleName();
 
     public static int VERB = 0; // debugging verbosity level
@@ -48,7 +59,7 @@ public class SignalViewer extends JFrame {
 //    protected List<PreprocClassifier> classifiers = null;
     protected BufferClientClock C = null;
     protected int trialLength_ms = -1;
-    protected int trialLength_samp = 20;
+    protected int trialLength_samp;
     protected double overlap = .5;
     protected int step_ms = -1;
     protected int step_samp = -1;
@@ -58,13 +69,14 @@ public class SignalViewer extends JFrame {
     SamplesEventsCount status = null;
     int nEvents, nSamples;
     int max_bins = 500;
-    int max_plots = 4;
-    double[][] D = new double[max_plots][max_bins];
+    double[][] D;
     int index = 0;
-    ChartPanel[] panels = new ChartPanel[4];
+    int n_channels;
+    ChartPanel[] panels;
 
     /**
      * @param args the command line arguments
+     * @throws java.lang.InterruptedException
      */
     public static void main(String[] args) throws InterruptedException {
         SignalViewer S = new SignalViewer();
@@ -74,39 +86,86 @@ public class SignalViewer extends JFrame {
         C = new BufferClientClock();
 
         connect();
-        setNullFields();
+        //
+        int bins = (int) (5 * header.fSample);
+        n_channels = header.nChans;
+        panels = new ChartPanel[n_channels];
+        trialLength_samp = (int) (0.01 * header.fSample);
+        System.out.println(header.fSample);
+        D = new double[header.nChans][bins];
+
         nEvents = header.nEvents;
         nSamples = header.nSamples;
+        setNullFields();
         getPlot();
 
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        this.getContentPane().setLayout(new BoxLayout(getContentPane(), BoxLayout.PAGE_AXIS));
-        for (int i = 0; i < max_plots; i++) {
-            this.getContentPane().add(panels[i]);
+        JPanel collector = new JPanel();
+        collector.setLayout(new BoxLayout(collector, BoxLayout.PAGE_AXIS));
+        for (int i = 0; i < n_channels; i++) {
+            collector.add(panels[i]);
         }
+        JScrollPane view = new JScrollPane(collector);
+
+        JPanel container = new JPanel();
+        container.setLayout(new BoxLayout(container, BoxLayout.X_AXIS));
+        container.add(view);
+
+        JPanel boxes = new JPanel();
+        boxes.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0.0;
+        gbc.weighty = 0.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        for (int i = 0; i < n_channels; i++) {
+            CheckBox box = new CheckBox(i);
+            box.setSelected(true);
+            box.addActionListener(this);
+            if (i < n_channels - 1) {
+                boxes.add(box, gbc);
+            } else {
+                gbc.weightx = 1.0;
+                gbc.weighty = 1.0;
+                boxes.add(box, gbc);
+            }
+        }
+        container.add(boxes);
+
+        this.add(container);
         this.pack();
         this.setVisible(true);
 
         while (true) {
-//            for (int i = 0; i < max_plots; i++) {
-//                this.getContentPane().remove(panels[i]);
-//            }
             getPlot();
-            for (int i = 0; i < max_plots; i++) {
-                panels[i].setMaximumDrawHeight(400);
-            }
-//            this.pack();
+
             this.revalidate();
             this.repaint();
-//            Thread.sleep(50);
+        }
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        CheckBox c = (CheckBox) e.getSource();
+        panels[c.n].setVisible(c.isSelected());
+    }
+
+    private class CheckBox extends JCheckBox {
+
+        int n;
+
+        public CheckBox(int n) {
+            super(n + "");
+            this.n = n;
         }
     }
 
     /**
      * Connects to the buffer
      */
-    protected void connect() {
+    private void connect() {
         while (header == null && run) {
             try {
                 System.out.println("Connecting to " + hostname + ":" + port);
@@ -153,7 +212,7 @@ public class SignalViewer extends JFrame {
         return arr;
     }
 
-    protected void setNullFields() {
+    private void setNullFields() {
         // Set trial length
         if (header != null) {
             fs = header.fSample;
@@ -207,7 +266,7 @@ public class SignalViewer extends JFrame {
             try {
                 data = C.getDoubleData(fromId, toId);
                 for (int j = 0; j < data.length; j++) {
-                    for (int i = 0; i < max_plots; i++) {
+                    for (int i = 0; i < header.nChans; i++) {
                         D[i][index] = data[j][i];
                     }
                     index++;
@@ -267,17 +326,18 @@ public class SignalViewer extends JFrame {
         update_data();
 
 //        ChartPanel[] panels = new ChartPanel[max_plots];
-        for (int j = 0; j < max_plots; j++) {
+        for (int j = 0; j < header.nChans; j++) {
             XYSeries series = new XYSeries("Planned");
             for (int i = 0; i < max_bins; i++) {
-                series.add((double) i, D[j][i]);
+                series.add((double) i / ((double) fs), D[j][i]);
             }
 
             XYSeriesCollection dataset = new XYSeriesCollection();
             dataset.addSeries(series);
-            JFreeChart chart = ChartFactory.createXYLineChart("Line Chart Demo", "X", "Y", dataset);
-            chart.setTitle("");
+            JFreeChart chart = ChartFactory.createXYLineChart("Line Chart Demo", "", "", dataset);
+            chart.setTitle("Channel: " + j);
             chart.removeLegend();
+
             XYPlot plot = (XYPlot) chart.getPlot();
 
 // draw a horizontal line across the chart at y == 0
@@ -285,12 +345,20 @@ public class SignalViewer extends JFrame {
 //            ChartPanel panel = new ChartPanel(chart);
             if (panels[j] == null) {
                 panels[j] = new ChartPanel(chart);
+                panels[j].setMinimumSize(new Dimension(panels[j].getMaximumDrawWidth() / 2, 80));
+                panels[j].setPreferredSize(new Dimension(panels[j].getMaximumDrawWidth(),
+                        100));
+                ValueAxis range = plot.getRangeAxis();
+                range.setVisible(false);
             } else {
                 panels[j].setChart(chart);
 //                panels[j].setMaximumDrawHeight(200);
                 panels[j].revalidate();
                 panels[j].repaint();
+                ValueAxis range = plot.getRangeAxis();
+                range.setVisible(false);
             }
+//            panels[j].setMaximumDrawHeight(100);
 //            panels[j] = panel;
         }
 //        return panels;

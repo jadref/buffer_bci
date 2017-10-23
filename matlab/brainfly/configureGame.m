@@ -15,7 +15,7 @@ end
 
                          % if using the buffer the intialize the connection
 if ( useBuffer ...
- && ( ~exist('gameConfig','var') || ~isequal(gameConfig,true) )  ) 
+ && ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  ) 
   run ../utilities/initPaths.m;
   % wait for the buffer to return valid header information
   buffhost='localhost'; buffport=1972;
@@ -31,7 +31,7 @@ if ( useBuffer ...
   end;
   % set the RTC to use
   initgetwTime;  initsleepSec;
-  gameConfig=true;
+  preConfigured=true;
 end
 
 % add path where the standard IM stuff lives

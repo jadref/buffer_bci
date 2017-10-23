@@ -131,7 +131,8 @@ for epi=1:nEp; % loop over epochs
                            % smooth the covariance filter estimates if wanted
   if( ~isempty(covFilt) )
     if( isnumeric(covFilt{1}) ) % move-ave
-      alpha           = covFilt{1};
+      alpha           = covFilt{1}; % in-samples
+      alpha           = alpha.^size(Xei,dim(2)); % specified in data-packets
       filtstate.N     = alpha.*filtstate.N     + (1-alpha).*1;       % update weight
       filtstate.sxx   = alpha.*filtstate.sxx   + (1-alpha).*XXt;   % update move-ave
       filtstate.sxxtau= alpha.*filtstate.sxxtau+ (1-alpha).*XXtau; % update move-ave

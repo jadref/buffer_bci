@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.9.6
+Created-By: 1.8.0_66-internal-b17 (Oracle Corporation)
+Main-Class: nl.fcdonders.fieldtrip.bufferserver.BufferServer
+
