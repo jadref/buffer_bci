@@ -121,10 +121,12 @@ epochtrialAdaptHL=(adaptHalfLife_ms/epochtrlen_ms); % half-life in number called
 % smoothing parameters for feedback in continuous feedback mode
 contFeedbackFiltLen=(trialDuration*1000/step_ms); % accumulate whole trials data before feedback
 
-%trainOpts={'width_ms',welch_width_ms,'badtrrm',1,'badchrm',1,'spatialfilter','wht','objFn','mlr_cg','binsp',0,'spMx','1vR'}; % whiten + direct multi-class training
+
+% global-whiten + direct multi-class training
+trainOpts={'width_ms',welch_width_ms,'badtrrm',1,'badchrm',1,'spatialfilter','wht','objFn','mlr_cg','binsp',0,'spMx','1vR'}; 
 
 % adapt-whiten + direct multi-class training
-trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'badchrm',0,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt' 'covFilt',150},'objFn','mlr_cg','binsp',0,'spMx','1vR'}; 
+%trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'badchrm',0,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt' 'covFilt',150},'objFn','mlr_cg','binsp',0,'spMx','1vR'}; 
 % Epoch feedback opts
 %%0) Use exactly the same classification window for feedback as for training, but include bias adaption system to cope with train->test transfer
 earlyStopping = false;
