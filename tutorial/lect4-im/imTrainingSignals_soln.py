@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 # Set up imports and paths
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 import sys, os
 import numpy as np
-from time import sleep, time
-from random import shuffle
-bufhelpPath = "../../python/signalProc"
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),bufhelpPath))
+# Get the helper functions for connecting to the buffer
+try:     pydir=os.path.dirname(__file__)
+except:  pydir=os.getcwd()    
+sigProcPath = os.path.join(os.path.abspath(pydir),'../../python/signalProc')
+sys.path.append(sigProcPath)
 import bufhelp
 import preproc
 import pickle
@@ -51,11 +50,11 @@ data        = preproc.spectralfilter(data, (8,10,28,30), hdr.fSample)
 data, events, badtrials = preproc.badtrailremoval(data, events)
 # 7: train classifier, default is a linear-least-squares-classifier
 import linear
-mapping = {('stimulus.tgtFlash', '0'): 0, ('stimulus.tgtFlash', '1'): 1}
-classifier = linear.fit(data,events,mapping)
+#mapping = {('stimulus.target', 0): 0, ('stimulus.target', 1): 1}
+classifier = linear.fit(data,events)#,mapping)
 
 # save the trained classifer
-pickle.dump({'classifier':classifier,'mapping':mapping},open(cname+'.pk','wb'))
+pickle.dump({'classifier':classifier},open(cname+'.pk','wb'))
 # # Unfortunately doesn't work for objects...
 # # also as hdf5 / mat -v7.3
 # f = h5py.File(cname+'.mat','w')

@@ -13,7 +13,7 @@ import h5py
 # connect to the buffer, if no-header wait until valid connection
 ftc,hdr=bufhelp.connect()
 
-trlen_ms = 600
+trlen_ms = 3000
 dname  ='training_data';
 cname  ='clsfr';
 
