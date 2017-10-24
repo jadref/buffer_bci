@@ -24,7 +24,8 @@ stim2obj(1)= 1; % 1st stim seq always mapps to the cannon
                                 % make a sequence of alien spawn locations
 % make the target sequence
 tgtSeq=mkStimSeqRand(2,gameDuration*2./timeBeforeNextAlien);
-lrSeq =(tgtSeq(1,:)*.8+.1)+(rand(1,size(tgtSeq,2))-.5)*.4; % l/r with a little noise
+lrSeq =tgtSeq(1,:)+(rand(1,size(tgtSeq,2))-.5)*.2; % l/r with a little noise
+lrSeq =max(0,min(1,lrSeq)); % bounds check
 
 %% Generate Figure:
                                 % Make the game window:
