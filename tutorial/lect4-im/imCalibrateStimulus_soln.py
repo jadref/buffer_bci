@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 # Set up imports and paths
+import sys, os
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-import sys, os
 import numpy as np
 from time import sleep, time
 from random import shuffle
-bufhelpPath = "../../python/signalProc"
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),bufhelpPath))
+
+# add the buffer bits to the search path
+try:     pydir=os.path.dirname(__file__)
+except:  pydir=os.getcwd()    
+sigProcPath = os.path.join(os.path.abspath(pydir),'../../python/signalProc')
+sys.path.append(sigProcPath)
 import bufhelp
 
-DEBUG=False #True
+DEBUG=True # False #
 
 ## HELPER FUNCTIONS
 def drawnow(fig=None):
@@ -84,7 +88,6 @@ hdls.insert(nSymbs,hhi)
 
 ## init connection to the buffer
 ftc,hdr=bufhelp.connect();
-
 
 #wait for key-press to continue
 [_.set(facecolor=bgColor) for _ in hdls]
