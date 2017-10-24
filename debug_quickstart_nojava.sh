@@ -20,7 +20,7 @@ if [ $dataacq == 'audio' ]; then
 elif [ $dataacq == 'matlab' ]; then
   bash dataAcq/startMatlabSignalProxy.sh &
 else
-  bash dataAcq/startSignalproxy.sh &
+  bash -x dataAcq/startSignalproxy.sh &
 fi
 dataacqpid=$!
 echo dataacqpid=$dataacqpid

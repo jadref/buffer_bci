@@ -37,7 +37,7 @@ else
       fs=opts.fs;
       ord=opts.filter{2};
       bands=opts.filter{3};
-      type=[]; if(numel(opts.filter)>3) type=opts.filter{4}; end;
+      type='high'; if(numel(opts.filter)>3) type=opts.filter{4}; end;
       switch filttype;
         case {'butter','buttersos'};
           [B,A]=butter(ord,bands*2/fs,type);
