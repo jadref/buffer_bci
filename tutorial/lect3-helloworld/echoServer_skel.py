@@ -2,8 +2,6 @@
 # Set up imports and paths
 bufferpath = "../../dataAcq/buffer/python"
 sigProcPath = "../signalProc"
-import pygame, sys
-from pygame.locals import *
 from time import sleep, time
 import os
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),bufferpath))
@@ -38,22 +36,12 @@ def echoServer(hostname='localhost',port=1972,timeout=5000):
     endExpt=None;
     while endExpt is None :
         (curSamp,curEvents)=ftc.wait(-1,nEvents,timeout) # Block until there are new events to process
-        if curEvents>nEvents :
+        if curEvents>nEvents : # get any new events
             evts=ftc.getEvents([nEvents,curEvents-1]) 
             nEvents=curEvents # update record of which events we've seen
-            for evt in evts:
-                if evt.type == "exit": endExpt=1
-                if not evt.type == "echo": continue
-                print(evt)
-                # put the echo event
-                evt.type = "ack"
-                evt.sample = -1 #reset sample so autofills later
-                ftc.putEvents(evt)
-        else:
-            print("Wait timeout, waiting")
+            ftc.putEvents(evt)
     
     ftc.disconnect() # disconnect from buffer when done
-
 
 if __name__ == "__main__":
     hostname='localhost'

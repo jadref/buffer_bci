@@ -1,177 +1,133 @@
 #!/usr/bin/env python3
 # Set up imports and paths
-bufferpath = "../../dataAcq/buffer/python"
-sigProcPath = "../signalProc"
-import pygame, sys
-from pygame.locals import *
-import time
-import os
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),bufferpath))
-import FieldTrip
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),sigProcPath))
-import math
-import random
+import sys, os
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import numpy as np
+from time import sleep, time
+from random import shuffle
 
-## CONFIGURABLE VARIABLES
-# Connection options of fieldtrip, hostname and port of the computer running the fieldtrip buffer.
-hostname='localhost'
-port=1972
+# add the buffer bits to the search path
+try:     pydir=os.path.dirname(__file__)
+except:  pydir=os.getcwd()    
+sigProcPath = os.path.join(os.path.abspath(pydir),'../../python/signalProc')
+sys.path.append(sigProcPath)
+import bufhelp
 
-## init connection to the buffer
-timeout=5000
-ftc = FieldTrip.Client()
-# Wait until the buffer connects correctly and returns a valid header
-hdr = None;
-while hdr is None :
-    print(('Trying to connect to buffer on %s:%i ...'%(hostname,port)))
-    try:
-        ftc.connect(hostname, port)
-        print('\nConnected - trying to read header...')
-        hdr = ftc.getHeader()
-    except IOError:
-        pass
-
-    if hdr is None:
-        print('Invalid Header... waiting')
-        time.sleep(1)
-    else:
-        print(hdr)
-        print((hdr.labels))
-fSample = hdr.fSample
-
-#--------------------------------------------------------------
-verb=0;
-nSymbs=3;
-nSeq=15;
-trialDuration=3;
-baselineDuration=1;
-intertrialDuration=2;
-
-bgColor=(125, 125, 125)
-tgtColor=(0, 255, 0)
-fixColor=(255, 0, 0)
-WHITE=(255,255,255)
-BLACK=(0,0,0)
+DEBUG=False #True # 
 
 ## HELPER FUNCTIONS
-def drawString(string, big=False, center=True):
-    """ Display the given string on the display """
-    if type(string) is not list:
-        string = [string]
+def drawnow(fig=None):
+    "force a matplotlib figure to redraw itself, inside a compute loop"
+    if fig is None: fig=plt.gcf()
+    fig.canvas.draw()
+    plt.pause(1e-3) # wait for draw.. 1ms
 
-    # draw the white background onto the surface
-    windowSurface.fill(BLACK)
+currentKey=None
+def keypressFn(event):
+    "wait for keypress in a matplotlib figure, and store in the currentKey global"
+    global currentKey
+    currentKey=event.key
+def waitforkey(fig=None,reset=True,debug=DEBUG):
+    "wait for a key to be pressed in the given figure"
+    if debug: return
+    if fig is None: fig=gcf()
+    global currentKey
+    fig.canvas.mpl_connect('key_press_event',keypressFn)
+    if reset: currentKey=None
+    while currentKey is None:
+        plt.pause(1e-2) # allow gui event processing
 
-    # render the text into a back-buffer
-    if big:
-        text = [basicBigFont.render(x, True, WHITE, BLACK) for x in string]
-    else:
-        text = [basicFont.render(x, True, WHITE, BLACK) for x in string]
-    # get the size to position centrally on the screen
-    rects = [x.get_rect() for x in text]
-    h = sum([x.h for x in rects]) - rects[0].h
-    offset = h/2
+## CONFIGURABLE VARIABLES
+verb=0
+nSymbs=3
+nSeq=15
+nBlock=2 #10; # number of stim blocks to use
+trialDuration=3
+baselineDuration=1
+intertrialDuration=2
 
-    # move the text to the center and draw onto the screen
-    for t in text:
-        textRect = t.get_rect()
-        if center: textRect.centerx = windowSurface.get_rect().centerx
-
-        textRect.centery = windowSurface.get_rect().centery - offset
-        offset -= textRect.h
-
-        # draw the text onto the surface
-        windowSurface.blit(t, textRect)
-
-def drawTrial(nSymbs,tgtSeq=None):
-    # convert from tgt# to stim-seq
-    if not tgtSeq is None and nSymbs>1 and type(tgtSeq) is not list:
-        tgtId=tgtSeq;
-        tgtSeq=[0]*nSymbs
-        tgtSeq[tgtId]=1
-    
-    # draw the white background onto the surface
-    windowSurface.fill((0,0,0))
-    winRect=windowSurface.get_rect()
-
-    t_radius = int(winRect.width *.07) # radius of the targets
-    # draw each of the targets in turn with the right color
-    for ti in range(0,nSymbs):
-        t_state = 0
-        if not tgtSeq is None:
-            t_state = tgtSeq[ti]
-        t_theta=2*math.pi*ti/(nSymbs+1)
-        t_center=(int(math.cos(t_theta)*winRect.width*.3)+winRect.centerx,
-                  -int(math.sin(t_theta)*winRect.height*.3)+winRect.centery)
-        if t_state<=0 : t_color=bgColor
-        if t_state>0 : t_color=tgtColor
-        pygame.draw.circle(windowSurface,t_color,t_center,int(t_radius))
-    # draw final fixation point
-    pygame.draw.circle(windowSurface,bgColor,winRect.center,int(winRect.width*.05))
-    
-def waitForKey():
-    """ Wait for the user to press a key and return the pressed key."""
-    event = pygame.event.wait()
-    while not (event.type == KEYDOWN): 
-        event = pygame.event.wait()
-    return event.key
-
-
-# Buffer interfacing functions 
-def sendEvent(event_type, event_value=1, sample=-1):
-    e = FieldTrip.Event()
-    e.type=event_type
-    e.value=event_value 
-    e.sample=sample
-    ftc.putEvents(e)
-
-# set  up pygame
-pygame.init()
-# set up the window
-windowSurface = pygame.display.set_mode((640,480),  1, 32)
-pygame.display.set_caption('Sentences Example')
-# set up fonts
-basicFont = pygame.font.SysFont(None, 48)
-basicBigFont = pygame.font.SysFont(None, 48*2)
-
-##--------------------- Start of the actual experiment loop ----------------------------------
-drawString(["Motor Imagery Experiment" "" "Perform the GREEN highlighted task" "for the entire time it's GREEN" "" "Key to continue"])
-pygame.display.update() # drawnow equivalent...
-waitForKey()
+bgColor =(.5,.5,.5)
+tgtColor=(0,1,0)
+fixColor=(1,0,0)
+txtColor=(1,1,1)
 
 # make the target sequence
-tgtSeq = range(0,nSymbs)*nSeq
-random.shuffle(tgtSeq)
+tgtSeq=list(range(nSymbs))*int(nSeq/nSymbs +1) # sequence in sequential order
+shuffle(tgtSeq) # N.B. shuffle works in-place!
 
-sendEvent('stimulus.training','start')
-## STARTING STIMULUS LOOP
-for si in range(0,nSeq):
+##--------------------- Start of the actual experiment loop ----------------------------------
+# set the display and the string for stimulus
+if DEBUG:
+    plt.switch_backend('agg') # N.B. command to work in non-display mode
+fig = plt.figure(facecolor=(0,0,0))
     
+fig.suptitle('RunSentences-Stimulus', fontsize=14, fontweight='bold',color=txtColor)
+ax = fig.add_subplot(111) # default full-screen ax
+ax.set_xlim((-1.5,1.5))
+ax.set_ylim((-1.5,1.5))
+ax.set_axis_off()
+txthdl =ax.text(0, 0, 'This is some text', style='italic',color=txtColor)
+
+# setup the targets
+stimPos=[];
+hdls=[];
+stimRadius=.3;
+theta=np.linspace(0,np.pi,nSymbs)
+stimPos=np.stack((np.cos(theta),np.sin(theta))).T #[nSymbs x 2]
+for hi,pos in enumerate(stimPos):  #N.B. enumerate goes over 1st dim if stimPos is array
+    print('%d) stimPos=(%f,%f)'%(hi,pos[0],pos[1]))
+    circ=patches.Circle(pos,stimRadius,facecolor=bgColor)
+    hhi=ax.add_patch(circ)
+    hdls.insert(hi,hhi)
+# add symbol for the center of the screen
+spos   =np.array((0,0))#.reshape((1,-1))
+stimPos=np.vstack((stimPos,spos)) #[nSymbs+1 x 2]
+circ   =patches.Circle((0,0),stimRadius/4,facecolor=bgColor)
+hhi    =ax.add_patch(circ)
+hdls.insert(nSymbs,hhi)
+[ _.set(visible=False) for _ in hdls] # make all invisible
+
+
+## init connection to the buffer
+ftc,hdr=bufhelp.connect();
+
+#wait for key-press to continue
+[_.set(facecolor=bgColor) for _ in hdls]
+txthdl.set(text='Press key to start')
+drawnow()
+waitforkey(fig)
+txthdl.set(visible=False)
+
+bufhelp.sendEvent('stimulus.training','start');
+## STARTING stimulus loop
+for si,tgt in enumerate(tgtSeq):
+    
+    sleep(intertrialDuration)
+
+    # show the baseline
+    hdls[-1].set(visible=True,facecolor=fixColor)
+    drawnow()
+    bufhelp.sendEvent('stimulus.baseline','start')
+    sleep(baselineDuration)
+    bufhelp.sendEvent('stimulus.baseline','end')
+      
+    #show the target
+    print("%d) tgt=%d :"%(si,tgt))
+    [_.set(facecolor=bgColor,visible=True) for _ in hdls]
+    hdls[tgt].set(facecolor=tgtColor)
+    drawnow()
+    bufhelp.sendEvent('stimulus.target',tgt)
+    bufhelp.sendEvent('stimulus.trial','start')
+    sleep(trialDuration)
+      
     # reset the display
-    drawString('')
-    pygame.display.update() # drawnow equivalent...
-    time.sleep(intertrialDuration)
+    [ _.set(visible=False) for _ in hdls]
+    txthdl.set(visible=False)
+    drawnow()
+    bufhelp.sendEvent('stimulus.trial','end');
 
-    # reset with red fixation to alert to trial start
-    drawTrial(0)
-    pygame.display.update()
-    sendEvent('stimulus.baseline','start')
-    time.sleep(baselineDuration)
-    sendEvent('stimulus.baseline','end')
-
-    # show the target cue
-    drawTrial(nSymbs,tgtSeq[si])
-    pygame.display.update()
-    sendEvent('stimulus.target',tgtSeq[si])
-    sendEvent('stimulus.trial','start')
-    time.sleep(trialDuration)
-
-    # reset the cue and fixation point to indicate trial end
-    drawTrial(nSymbs)
-    pygame.display.update()    
-    sendEvent('stimulus.trial','end');
-
-sendEvent('stimulus.training','end')
-drawString(['Thanks for taking part!' '' 'Press key to finish'])
-pygame.display.update()    
-waitForKey()
+bufhelp.sendEvent('stimulus.training','end')
+txthdl.set(text=['Thanks for taking part!' '' 'Press key to finish'],visible=True)
+drawnow()
+waitforkey(fig)

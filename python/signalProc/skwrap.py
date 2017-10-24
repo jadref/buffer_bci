@@ -67,9 +67,9 @@ def fit(data, events, classifier, mapping=dict(), params = None, folds = 5, shuf
     if events is not None:
         if not isinstance(data,numpy.ndarray):
             if reducer is not None:
-                Y = createclasses(events, 1, mapping)
+                Y,mapping = createclasses(events, 1, mapping)
             else:
-                Y = createclasses(events, data[0].shape[0], mapping)
+                Y,mapping = createclasses(events, data[0].shape[0], mapping)
         else:
             Y = events
     else:
@@ -93,7 +93,7 @@ def fit(data, events, classifier, mapping=dict(), params = None, folds = 5, shuf
             raise Exception("folds should be an integer")
         
         folds = sklearn.cross_validation.KFold(X.shape[0], folds, shuffle=shuffle)
-        grid = sklearn.grid_search.GridSearchCV(classifier, params, cv=folds)
+        grid  = sklearn.grid_search.GridSearchCV(classifier, params, cv=folds)
         
         if Y is None:
             grid.fit(X)
@@ -106,6 +106,7 @@ def fit(data, events, classifier, mapping=dict(), params = None, folds = 5, shuf
         classifier.fit(X)
     else:               
         classifier.fit(X,Y)
+    
         
 def predict(data, classifier, mapping = None, reducerdata=None, reducerpred=None):
     '''Returns a prediction for each datapoint in data.
@@ -352,7 +353,7 @@ def createdata(data, reducer=None):
         
     return X
         
-def createclasses(events, nSample = 1, mapping = dict()):
+def createclasses(events, nSample = 1, mapping = None):
     '''Returns a numpy array of integers that describes the classes.
     
     The uniqueness of an event is based on the events type and value cast to a
@@ -377,7 +378,8 @@ def createclasses(events, nSample = 1, mapping = dict()):
     
     Returns
     -------
-    out : a numpy array of classes or if no mapping has been provided
+    out : a numpy array of classes 
+    mapping : the mapping used to generate these classes
     
     Examples
     --------
@@ -387,6 +389,7 @@ def createclasses(events, nSample = 1, mapping = dict()):
     >>> Y = skwrap.createclasses(events, 10, mapping)
     '''
     
+    if mapping is None: mapping=dict()
     Y = numpy.zeros(len(events)*nSample)
 
     if not isinstance(mapping,dict):
@@ -395,16 +398,16 @@ def createclasses(events, nSample = 1, mapping = dict()):
     if len(list(mapping.items())) > 0:            
         
         if any([not isinstance(x,tuple) for x in list(mapping.keys())]):
-            raise Exception("keys in mapping contains non tuples")
+            raise ValueException("keys in mapping contains non tuples")
         
         if any([len(x) != 2 for x in list(mapping.keys())]):
-            raise Exception("keys in mapping contains non lenght 2 tuples")
+            raise ValueException("keys in mapping contains non lenght 2 tuples")
         
         if any([not (isinstance(x[0],str) and isinstance(x[1],str)) for x in list(mapping.keys())]):
-            raise Exception("tuples in keys contains non strings")
+            raise ValueException("tuples in keys contains non strings")
             
         if any([not isinstance(x,int) for x in list(mapping.values())]):
-            raise Exception("values in mapping contains non integers")
+            raise ValueException("values in mapping contains non integers")
         
         j = 0
         for i in range(0,len(events)):
@@ -415,8 +418,9 @@ def createclasses(events, nSample = 1, mapping = dict()):
                     j = j + 1
             else:
                 raise Exception("event not found in mapping")
-        return Y
+        return (Y,mapping)
 
+    # auto-construct mapping based on unique event types
     n = 0
     j = 0
     for i in range(0,len(events)):
@@ -432,7 +436,7 @@ def createclasses(events, nSample = 1, mapping = dict()):
             mapping[key] = n
             n = n + 1
             
-    return Y
+    return (Y,mapping)
     
 def reduceArray(pred, data, reducerfunc):
     '''Reduced the predictions.

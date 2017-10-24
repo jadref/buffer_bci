@@ -1,182 +1,160 @@
 #!/usr/bin/env python3
 # Set up imports and paths
-bufferpath = "../../dataAcq/buffer/python"
-sigProcPath = "../signalProc"
-import pygame, sys, os
-from pygame.locals import *
-# Get the helper functions for connecting to the buffer
-sigProcPath = "../signalProc"
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),sigProcPath))
-import bufhelp 
+import sys, os
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import numpy as np
+from time import sleep, time
+from random import shuffle
 
-import math
-import random
+# add the buffer bits to the search path
+try:     pydir=os.path.dirname(__file__)
+except:  pydir=os.getcwd()    
+sigProcPath = os.path.join(os.path.abspath(pydir),'../../python/signalProc')
+sys.path.append(sigProcPath)
+import bufhelp
 
-# connect to the buffer, if no-header wait until valid connection
-bufhelp.connect()
-
-## CONFIGURABLE VARIABLES
-#--------------------------------------------------------------
-verb=0;
-nSymbs=3;
-nSeq=15;
-trialDuration=3;
-baselineDuration=1;
-intertrialDuration=2;
-feedbackDuration=2;
-
-bgColor=(125, 125, 125) # grey=background
-tgtColor=(0, 255, 0) # gree=cue
-fixColor=(255, 0, 0) # red=fix
-fbColor=(0,0,255) # blue=feedback
-WHITE=(255,255,255)
-BLACK=(0,0,0)
+DEBUG=True # False #
 
 ## HELPER FUNCTIONS
-def drawString(string, big=False, center=True):
-    """ Display the given string on the display """
-    if type(string) is not list:
-        string = [string]
+def drawnow(fig=None):
+    "force a matplotlib figure to redraw itself, inside a compute loop"
+    if fig is None: fig=plt.gcf()
+    fig.canvas.draw()
+    plt.pause(1e-3) # wait for draw.. 1ms
 
-    # draw the white background onto the surface
-    windowSurface.fill(BLACK)
+currentKey=None
+def keypressFn(event):
+    "wait for keypress in a matplotlib figure, and store in the currentKey global"
+    global currentKey
+    currentKey=event.key
+def waitforkey(fig=None,reset=True,debug=DEBUG):
+    "wait for a key to be pressed in the given figure"
+    if debug: return
+    if fig is None: fig=gcf()
+    global currentKey
+    fig.canvas.mpl_connect('key_press_event',keypressFn)
+    if reset: currentKey=None
+    while currentKey is None:
+        plt.pause(1e-2) # allow gui event processing
 
-    # render the text into a back-buffer
-    if big:
-        text = [basicBigFont.render(x, True, WHITE, BLACK) for x in string]
-    else:
-        text = [basicFont.render(x, True, WHITE, BLACK) for x in string]
-    # get the size to position centrally on the screen
-    rects = [x.get_rect() for x in text]
-    h = sum([x.h for x in rects]) - rects[0].h
-    offset = h/2
+## CONFIGURABLE VARIABLES
+verb=0
+nSymbs=3
+nSeq=15
+nBlock=2 #10; # number of stim blocks to use
+trialDuration=3
+baselineDuration=1
+intertrialDuration=2
 
-    # move the text to the center and draw onto the screen
-    for t in text:
-        textRect = t.get_rect()
-        if center: textRect.centerx = windowSurface.get_rect().centerx
-
-        textRect.centery = windowSurface.get_rect().centery - offset
-        offset -= textRect.h
-
-        # draw the text onto the surface
-        windowSurface.blit(t, textRect)
-    
-def drawTrial(t_center,tgtSeq=None):
-    # convert from tgt# to stim-seq
-    if not tgtSeq is None and len(t_center)>1 and type(tgtSeq) is not list:
-        tgtId=tgtSeq;
-        tgtSeq=[0]*len(t_center)
-        tgtSeq[tgtId]=1
-    
-    # draw the white background onto the surface
-    windowSurface.fill((0,0,0))
-    winRect=windowSurface.get_rect()
-
-    # draw each of the targets in turn with the right color
-    for ti in range(0,len(t_center)-1):
-        t_theta=2*math.pi*ti/(nSymbs+1)
-        t_center=(int(math.cos(t_theta)*winRect.width*.3)+winRect.centerx,
-                  -int(math.sin(t_theta)*winRect.height*.3)+winRect.centery)
-        t_state = 0
-        if not tgtSeq is None:
-            t_state = tgtSeq[ti]
-        if t_state<=0 : t_color=bgColor
-        if t_state==1 : t_color=tgtColor
-        if t_state==2 : t_color=fbColor
-        pygame.draw.circle(windowSurface,t_color,t_center[ti],int(t_radius))
-    # draw final fixation point
-    pygame.draw.circle(windowSurface,bgColor,t_center[nSymbs],int(winRect.width*.05))
-    
-def waitForKey():
-    """ Wait for the user to press a key and return the pressed key."""
-    event = pygame.event.wait()
-    while not (event.type == KEYDOWN): 
-        event = pygame.event.wait()
-    return event.key
-
-# set  up pygame
-pygame.init()
-# set up the window
-windowSurface = pygame.display.set_mode((640,480),  1, 32)
-pygame.display.set_caption('Sentences Example')
-# set up fonts
-basicFont = pygame.font.SysFont(None, 48)
-basicBigFont = pygame.font.SysFont(None, 48*2)
-
-# pre-compute the position of each target
-t_radius = int(winRect.width *.07) # radius of the targets
-for ti in range(0,nSymbs):
-    t_theta=2*math.pi*ti/(nSymbs+1)
-    t_center[ti]=(int(math.cos(t_theta)*winRect.width*.3)+winRect.centerx,
-                  -int(math.sin(t_theta)*winRect.height*.3)+winRect.centery)
-t_center[nSymbs]=winRect.center # fixation point
-
-##--------------------- Start of the actual experiment loop ----------------------------------
-drawString(["Motor Imagery Experiment" "Feedback phase" "" "Perform the Green cued task" "after trial feedback given in blue" "" "Key to continue"])
-pygame.display.update() # drawnow equivalent...
-waitForKey()
+bgColor =(.5,.5,.5)
+tgtColor=(0,1,0)
+fixColor=(1,0,0)
 
 # make the target sequence
-tgtSeq = range(0,nSymbs)*nSeq
-random.shuffle(tgtSeq)
+tgtSeq=list(range(nSymbs))*int(nSeq/nSymbs +1) # sequence in sequential order
+shuffle(tgtSeq) # N.B. shuffle works in-place!
 
-bufhelp.sendEvent('stimulus.testing','start')
-events,state = buffer_newevents(timeout_ms=0) # initialize event queue
-## STARTING STIMULUS LOOP
-for si in range(0,nSeq):
+##--------------------- Start of the actual experiment loop ----------------------------------
+# set the display and the string for stimulus
+plt.switch_backend('agg') # N.B. command to work in non-display mode
+fig = plt.figure()
     
-    # reset the display
-    drawString('')
-    pygame.display.update() # drawnow equivalent...
-    time.sleep(intertrialDuration)
+fig.suptitle('RunSentences-Stimulus', fontsize=14, fontweight='bold')
+ax = fig.add_subplot(111) # default full-screen ax
+ax.set_xlim((-1,1))
+ax.set_ylim((-1,1))
+ax.set_axis_off()
+txthdl =ax.text(0, 0, 'This is some text', style='italic')
 
-    # reset with red fixation to alert to trial start
-    drawTrial([t_center[-1]])
-    pygame.display.update()
+# setup the targets
+stimPos=[];
+hdls=[];
+stimRadius=.5;
+theta=np.linspace(0,np.pi,nSymbs)
+stimPos=np.stack((np.cos(theta),np.sin(theta))) #[2 x nSymbs]
+for hi,pos in enumerate(stimPos):
+    rect=patches.Rectangle((pos[0]-stimRadius/2,pos[1]-stimRadius/2),stimRadius/2,stimRadius/2,facecolor=bgColor)
+    hhi=ax.add_patch(rect)
+    hdls.insert(hi,hhi)
+# add symbol for the center of the screen
+spos = np.array((0,0)).reshape((-1,1))
+stimPos=np.hstack((stimPos,spos)) #[2 x nSymbs+1]
+rect = patches.Rectangle((0-stimRadius/4,0-stimRadius/4),stimRadius/2,stimRadius/2,facecolor=bgColor)
+hhi  =ax.add_patch(rect)
+hdls.insert(nSymbs,hhi)
+[ _.set(visible=False) for _ in hdls] # make all invisible
+
+
+## init connection to the buffer
+ftc,hdr=bufhelp.connect();
+
+#wait for key-press to continue
+[_.set(facecolor=bgColor) for _ in hdls]
+txthdl.set(text='Press key to start')
+drawnow()
+waitforkey(fig)
+
+bufhelp.sendEvent('stimulus.training','start')
+state=None
+## STARTING stimulus loop
+for si,tgt in enumerate(tgtSeq):
+    
+    sleep(intertrialDuration)
+
+    # show the baseline
+    hdls[-1].set(visible=True,facecolor=fixColor)
+    drawnow()
     bufhelp.sendEvent('stimulus.baseline','start')
-    time.sleep(baselineDuration)
+    sleep(baselineDuration)
     bufhelp.sendEvent('stimulus.baseline','end')
-
-    # show the target cue
-    drawTrial(t_center,tgtSeq[si])
-    pygame.display.update()
-    bufhelp.sendEvent('stimulus.target',tgtSeq[si])
+      
+    #show the target
+    print("%d) tgt=%d :"%(si,tgt))
+    [_.set(facecolor=bgColor) for _ in hdls]
+    hdls[tgt].set(facecolor=tgtColor)
+    drawnow()
+    bufhelp.sendEvent('stimulus.target',tgt)
     bufhelp.sendEvent('stimulus.trial','start')
-    time.sleep(trialDuration)
+    sleep(trialDuration)
 
-    # wait for predictions
+    #catch the prediction
     # N.B. use state to track which events processed so far
     events,state = bufhelp.buffer_newevents('classifier.prediction',1500,state)
     if events is None:
         print("Error! no predictions, continuing")
     else:
-        if len(events)>1 :
-            print("Warning: multiple predictions. Some ignored.");
+        if len(events)>1:
+            print("Warning: multiple predictions. Some ignored.") 
         evt=events[-1] # only use the last event
-        dv =evt.value
         if isinstance(dv,(int,long,float)):#binary problem, covert to per-class
-            dv=[dv -dv]
+            dv = np.array((evt.value,-evt.value))
+        else:
+            dv =np.array(evt.value) # extract decision values
         # convert to probability, using soft-max
-        prob = math.exp([x - max(dv) for x in dv])
-        prob = [x / sum(prob) for x in prob]
+        prob = np.exp(dv - np.max(dv))
+        prob = prop / np.sum(prob)
 
+    predIdx= np.argmax(prob,0) # predicted class
+
+    # give user feedback on the prediction
     # compute the position of the fixation point, weighted ave of rest
-    fixPos= ( sum([x(1)*w for x,y in zip(t_center,prob)]),
-              sum([x(2)*w for x,y in zip(t_center,prob)]) )
-    predIdx = list.index(max(prob)) # predicted class
-    drawTrial([t_center[0:-2] fixPos],predIdx) # update display
-    pygame.display.update()    
+    fixPos = np.dot(prob,stimPos)    
+    hdls[-1].set_xy(fixPos) # move the 
+    hdls[-1].set(color=fbColor)
+    hdls[predIdx].set(color=fbColor) # predicted target indication
+    drawnow()
+    
     bufhelp.sendEvent('stimulus.predTgt',predIdx)
-    time.sleep(feedbackDuration)
-
-    # reset the cue and fixation point to indicate trial end
-    drawTrial(t_center)
-    pygame.display.update()    
+    sleep(feedbackDuration)
+        
+    # reset the display
+    hdls[-1].set_xy(stimPos[-1,:])
+    [ _.set(visible=False) for _ in hdls]
+    txthdl.set(visible=False)
+    drawnow()
     bufhelp.sendEvent('stimulus.trial','end');
 
-bufhelp.sendEvent('stimulus.testing','end')
-drawString(['Thanks for taking part!' '' 'Press key to finish'])
-pygame.display.update()    
-waitForKey()
-quit()
+bufhelp.sendEvent('stimulus.training','end')
+txthdl.set(text=['Thanks for taking part!' '' 'Press key to finish'])
+waitforkey(fig)

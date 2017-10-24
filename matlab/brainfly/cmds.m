@@ -15,6 +15,8 @@ sessions={{
 '170926/0424PM/raw_buffer/0001'
 '171002/1038AM/raw_buffer/0001'
 '171003/0353PM/raw_buffer/0001'
+'171009/1055AM/raw_buffer/0001'
+'171023/1103AM/raw_buffer/0001'
 }};
 
 si=1; sessi=3;
@@ -23,12 +25,19 @@ sessdir=fullfile('~/data/bci',expt,subj{si},sessions{si}{sessi});
 [data,devents,hdr,allevents]=sliceraw(sessdir,'startSet',{'stimulus.target'},'trlen_ms',750,'offset_ms',[0 0]);
 
                                 % summary plots
-si=1; sessi=2;  avePow=[];
+si=1; sessi=2;  avePow=[]; perf=[]; clear clsfrs resss;
 for sessi=2:numel(sessions{si});
 
                                 % slice data
   sessdir=fullfile('~/data/bci',expt,subj{si},sessions{si}{sessi});
   [data,devents,hdr,allevents]=sliceraw(sessdir,'startSet',{'stimulus.target'},'trlen_ms',750,'offset_ms',[0 0]);
+
+  % tidy up the class labels if needed..
+  for ei=1:numel(devents);
+     if( strcmp(devents(ei).value,'LH') ) devents(ei).value='2 LH ';
+     elseif ( strcmp(devents(ei).value,'RH') ) devents(ei).value='1 RH ';
+     end
+  end
 
   if ( 0 )                               % pre-process
   %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[6 8 80 90],'width_ms',250,'aveType','abs','classify',0,'visualize',0);
@@ -41,7 +50,14 @@ for sessi=2:numel(sessions{si});
   %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','wht','freqband',[6 8 28 30],'width_ms',250,'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
 
   % adaptive wht
-  %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',3,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',50*750*250},'freqband',[6 8 38 30],'width_ms',250,'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
+  [clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',3,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',50},'freqband',[6 8 38 30],'width_ms',250,'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
+
+  % adaptive wht + prefilt
+  %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',0,'preFiltFn',{'filterFilt' 'filter' {'butter' 3 .2}},'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',50},'freqband',[6 8 38 30],'width_ms',250,'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
+
+  % adaptive wht + filterbank + hf
+  %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',0,'preFiltFn',{'filterFilt' 'filter' {'butter' 3 .2}},'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',50},'freqband',[6:4:32 36 54;10:4:36 48 78],'width_ms',250,'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
+
 
   % adaptive wht + adaptive EOG rm
   %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','adaptspatialfiltFn',{'filtPipeline' {'artChRegress',[],{'AF7' 'Fp1' 'Fpz' 'Fp2' 'AF8'},'covFilt',5} {'adaptWhitenFilt','covFilt',50}},'freqband',[6 8 28 30],'width_ms',250,'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
@@ -53,10 +69,19 @@ for sessi=2:numel(sessions{si});
   %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',50},'freqband',[6 8 28 30],'width_ms',250,'featFiltFn',{'biasFilt' 500},'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
 
   % adaptive wht + feature-std-fn
-  %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',50},'freqband',[6 8 70 78],'width_ms',250,'featFiltFn',{'stdFilt' 50},'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
+  %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',50},'freqband',[6 8 28 30],'width_ms',250,'featFiltFn',{'stdFilt' 50},'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
+
+  % adaptive wht + timefeat
+  %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',50},'freqband',[6 8 28 30],'width_ms',250,'timefeat',1,'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
+
+  % adaptive wht + temporal embedding
+  %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',50},'freqband',[6 8 28 30],'width_ms',250,'featFiltFn',{'temporalEmbeddingFilt' [1 25]},'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
 
   % adapt wht + EOGrm + EMGRm + feat-filt
-  [clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','adaptspatialfiltFn',{'filtPipeline' {'rmEMGFilt','covFilt',500} {'artChRegress',[],{'AF7' 'Fp1' 'Fpz' 'Fp2' 'AF8'},'covFilt',500} {'adaptWhitenFilt','covFilt',50}},'freqband',{[6 8 44 46] [54 56 70 78]},'width_ms',250,'featFiltFn',{'stdFilt' 50},'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
+  %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','adaptspatialfiltFn',{'filtPipeline' {'rmEMGFilt','covFilt',500} {'artChRegress',[],{'AF7' 'Fp1' 'Fpz' 'Fp2' 'AF8'},'covFilt',500} {'adaptWhitenFilt','covFilt',50}},'freqband',[6 8 28 30],'width_ms',250,'featFiltFn',{'stdFilt' 500},'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
+
+  % adapt wht + EOGrm + EMGRm + feat-filt + high-freq
+  %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','adaptspatialfiltFn',{'filtPipeline' {'rmEMGFilt','covFilt',500} {'artChRegress',[],{'AF7' 'Fp1' 'Fpz' 'Fp2' 'AF8'},'covFilt',500} {'adaptWhitenFilt','covFilt',50}},'freqband',{[6 8 44 46] [54 56 70 78]},'width_ms',250,'featFiltFn',{'stdFilt' 50},'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
 
   % adapt wht + EMGRm + feat-filt
   %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','adaptspatialfiltFn',{'filtPipeline' {'rmEMGFilt','covFilt',500} {'adaptWhitenFilt','covFilt',50}},'freqband',[6 8 70 78],'width_ms',250,'featFiltFn',{'stdFilt' 50},'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);

@@ -28,7 +28,7 @@ classdef CannonBall < handle
         %==================================================================
         function obj = CannonBall(hAxes,hCannon)
             % Constructs a cannonball.
-            disp('now a ball')
+          %disp('now a ball')
             
             % Save properties:
             obj.sizeBall = obj.relSizeBall*range(get(hAxes,'YLim'));
@@ -73,7 +73,7 @@ classdef CannonBall < handle
               hAlien = [];
            end
             
-           hits = 0;
+           hits = [];
            % Skip if there are no balls, return an empy object:
            if isempty(ballsIn);
               ballsOut = CannonBall.empty;
@@ -105,7 +105,7 @@ classdef CannonBall < handle
                            && obj.shotX <= hAlien.x + hAlien.alienSize
                        disp('You got it!');
                        hAlien.hit;
-                       hits = hits + 1;
+                       hits = [hits; hAlien.y];
                        obj.deleteBall;
                        continue
                     end
