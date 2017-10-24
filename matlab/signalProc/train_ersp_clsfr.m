@@ -135,7 +135,7 @@ if ( ~isempty(preFiltFn) )
   fprintf('5.5) preFilter\n');
   if ( ~iscell(preFiltFn) ) preFiltFn={preFiltFn}; end;
   for ei=1:size(X,3);
-	 [X(:,:,ei),preFiltState]=feval(preFiltFn{1},X(:,:,ei),preFiltState,preFiltFn{2:end});
+	 [X(:,:,ei),preFiltState]=feval(preFiltFn{1},X(:,:,ei),preFiltState,preFiltFn{2:end},'ch_names',ch_names,'ch_pos',ch_pos,'fs',fs);
   end
 end
 
