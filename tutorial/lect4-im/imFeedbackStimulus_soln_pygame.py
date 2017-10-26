@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 # Set up imports and paths
-bufferpath = "../../dataAcq/buffer/python"
-sigProcPath = "../signalProc"
 import pygame, sys, os
 from pygame.locals import *
 # Get the helper functions for connecting to the buffer
-sigProcPath = "../signalProc"
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),sigProcPath))
+try:     pydir=os.path.dirname(__file__)
+except:  pydir=os.getcwd()    
+sys.path.append(os.path.join(os.path.abspath(pydir),'../../python/signalProc'))
 import bufhelp 
 
 import math

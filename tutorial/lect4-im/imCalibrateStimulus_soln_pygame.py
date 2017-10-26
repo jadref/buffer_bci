@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # Set up imports and paths
-bufferpath = "../../dataAcq/buffer/python"
-sigProcPath = "../signalProc"
 import pygame, sys
 from pygame.locals import *
 import time
 import os
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),bufferpath))
+try:     pydir=os.path.dirname(__file__)
+except:  pydir=os.getcwd()    
+sys.path.append(os.path.join(os.path.abspath(pydir),'../../dataAcq/buffer/python'))
 import FieldTrip
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),sigProcPath))
+sys.path.append(os.path.join(os.path.abspath(pydir),'../../python/signalProc'))
+import bufhelp
 import math
 import random
 

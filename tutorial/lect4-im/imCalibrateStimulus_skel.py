@@ -6,8 +6,10 @@ import sys, os
 import numpy as np
 from time import sleep, time
 from random import shuffle
-bufhelpPath = "../../python/signalProc"
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),bufhelpPath))
+try:     pydir=os.path.dirname(__file__)
+except:  pydir=os.getcwd()    
+sigProcPath = os.path.join(os.path.abspath(pydir),'../../python/signalProc')
+sys.path.append(sigProcPath)
 import bufhelp
 
 ## HELPER FUNCTIONS
