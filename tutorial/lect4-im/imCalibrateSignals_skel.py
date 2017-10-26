@@ -2,7 +2,7 @@
 # Set up imports and paths
 import sys, os
 # Get the helper functions for connecting to the buffer
-sigProcPath = "../signalProc"
+sigProcPath = "../../python/signalProc"
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),sigProcPath))
 import bufhelp 
 
