@@ -22,11 +22,26 @@ end;
 % set the real-time-clock to use
 initsleepSec;
 
+trlen_ms=3000;
 
 %load the saved classifier
 clsfr=load('clsfr');
 if ( isfield(clsfr,'clsfr') ) clsfr=clsfr.clsfr; end; % check is saved variable or struc
 
-% call the feedback signals function to do the classifier application
-[testdata,testevt]=imFeedbackSignals(clsfr);
-
+state=[]; 
+endTest=false;
+while ( ~endTest )
+  % wait for data to apply the classifier to
+  [data,devents,state]=buffer_waitData(opts.buffhost,opts.buffport,state,'startSet',opts.startSet,'trlen_ms',trlen_ms,'exitSet',{'data' {opts.endType}});
+  
+  % process these events
+  for ei=1:numel(devents)
+    if ( strcmp(events.type,'training') )
+      endTest=True;
+    else
+      % apply classification pipeline to this events data
+      [f,fraw,p]=buffer_apply_ersp_clsfr(data(ei).buf,clsfr);
+      sendEvent('classifier.prediction',f,devents(ei).sample);
+    end
+  end % devents 
+end 
