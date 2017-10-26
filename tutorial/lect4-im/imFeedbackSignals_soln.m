@@ -32,11 +32,11 @@ state=[];
 endTest=false;
 while ( ~endTest )
   % wait for data to apply the classifier to
-  [data,devents,state]=buffer_waitData(opts.buffhost,opts.buffport,state,'startSet',opts.startSet,'trlen_ms',trlen_ms,'exitSet',{'data' {opts.endType}});
+  [data,devents,state]=buffer_waitData(opts.buffhost,opts.buffport,state,'startSet',{'stimulus.trial','start'},'trlen_ms',trlen_ms,'exitSet',{'data' {'stimulus.testing'}});
   
   % process these events
   for ei=1:numel(devents)
-    if ( strcmp(events.type,'training') )
+    if ( strcmp(events.type,'stimulus.training') )
       endTest=True;
     else
       % apply classification pipeline to this events data

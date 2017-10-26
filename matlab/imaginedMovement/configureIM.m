@@ -115,7 +115,7 @@ contFeedbackFiltFactor=exp(log(.5)/contFeedbackFiltLen); % convert to exp-move-a
 
 % paramters for on-line adaption to signal changes
 adaptHalfLife_s = 30; %30s amount of data to use for adapting spatialfilter/biasadapt
-adaptHalfLife_samp = adaptHalfLife_s * 250; % HL in samples
+adaptHalfLife_samp = adaptHalfLife_s * 250; % HL in samples, N.B. assuming 250hz sample rate!
 % half-life in number called to apply-clsfr in epoch feedback, for epoch feedback
 epochtrialAdaptHL_apply=max(adaptHalfLife_ms/epochtrlen_ms,2*nSymbs);  % HL should be enough to include at least 1 example each class
 epochtrialAdaptFactor=exp(log(.5)/epochtrialAdaptHL_apply);% convert to exp-move-ave weight factor
