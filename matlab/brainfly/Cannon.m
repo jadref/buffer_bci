@@ -8,7 +8,7 @@ classdef Cannon < handle
         % The following properties of fractions of the screen width or
         % height, these properties are used to generate the actual sized at
         % object instantiation:
-        relCannonWidth  = 0.05;   % The width of the cannon.
+        relCannonWidth  = 0.08;   % The width of the cannon.
         relCannonHeight = 0.1;    % The height of the cannon.
         relMoveStepSize = .5;     % The maximum cannon move in 1 second
         minuid=1;
@@ -81,10 +81,10 @@ classdef Cannon < handle
               obj.Xbase = max(min(whereTo,obj.Xbase+curStepSize),obj.Xbase-curStepSize);
             else % string so step-size
               switch whereTo                
-                case 'right'; % Move cannon left, but keep in in bounds.
+                case 'left'; % Move cannon left, but keep in in bounds.
                     obj.Xbase = obj.Xbase+curStepSize;
                     
-                case 'left';  % Move cannon right, but keep in in bounds.
+                case 'right';  % Move cannon right, but keep in in bounds.
                     obj.Xbase = obj.Xbase-curStepSize;
               end
             end
