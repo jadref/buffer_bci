@@ -40,8 +40,8 @@ classdef Cannon < handle
             % Calculate the cannon parameters:
             axesXLim     = get(hAxes,'XLim');
             axesYLim     = get(hAxes,'YLim');
-            obj.cannonWidth  = range(axesXLim)*obj.relCannonWidth;
-            obj.cannonHeight = range(axesYLim)*obj.relCannonHeight;
+            obj.cannonWidth  = diff(axesXLim)*obj.relCannonWidth;
+            obj.cannonHeight = diff(axesYLim)*obj.relCannonHeight;
             obj.Xbase    = mean(axesYLim)-0.5*obj.cannonWidth;
             obj.Ybase    = axesYLim(1);
             
@@ -53,7 +53,7 @@ classdef Cannon < handle
             
             % Save properties:
             obj.hAxes = hAxes;
-            obj.moveStepSize = obj.relMoveStepSize*range(axesXLim);
+            obj.moveStepSize = obj.relMoveStepSize*diff(axesXLim);
             obj.lastDrawTime = [];
             obj.uid = Cannon.getuid();
         end
