@@ -551,23 +551,29 @@ while ( true )
         end
      end;
 
-    [testdata,testevents]=event_applyClsfr(clsfr,'startSet',opts.testepochEventType,...
-							                      'predFilt',opts.epochPredFilt,...
-							   'endType',{'testing','test','epochfeedback','eventfeedback','sigproc.reset'},'verb',opts.verb,...
-							   'trlen_ms',opts.trlen_ms,...%default to trlen_ms data per prediction
-							   opts.epochFeedbackOpts{:}); % allow override with epochFeedbackOpts
-% 	  catch
-%        fprintf('Error in : %s',phaseToRun);
-%        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-% 	  	if ( ~isempty(le.stack) )
-% 	  	  for i=1:numel(le.stack);
-% 	  		 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
-% 	  	  end;
-% 	  	end
-%        msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
-%        sendEvent('testing','end');    
-%      end
-
+     try
+        clsfr=...
+            event_applyClsfr(clsfr,'startSet',opts.testepochEventType,...
+                             'predFilt',opts.epochPredFilt,...
+                             'endType',{'testing','test','epochfeedback','eventfeedback','sigproc.reset'},...
+                             'verb',opts.verb,...
+                             'trlen_ms',opts.trlen_ms,...%default to trlen_ms data per prediction
+                             opts.epochFeedbackOpts{:}); % allow override with epochFeedbackOpts
+        % save the updated classifier
+        clsSubj=subject;
+        fname=[cname '_' subject '_' datestr];
+        fprintf('Saving classifier to : %s\n',fname);save([fname '.mat'],'-struct','clsfr');
+     catch
+        fprintf('Error in : %s',phaseToRun);
+        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+        if ( ~isempty(le.stack) )
+           for i=1:numel(le.stack);
+              fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+           end;
+        end
+        msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+        sendEvent('testing','end');    
+     end
 
    %---------------------------------------------------------------------------------
    case {'contfeedback'};
@@ -603,44 +609,28 @@ while ( true )
       warning('Trying to use an ERP classifier in continuous application mode.\nAre you sure?');
     end
 	 try		
-	 % generate prediction every trlen_ms/2 seconds using trlen_ms data
-	 if ( ~opts.savetestdata )
-		cont_applyClsfr(clsfr,...
-							 'endType',{'testing','test','contfeedback','sigproc.reset'},...
-							 'predFilt',opts.contPredFilt,'verb',opts.verb,...
-							 'trlen_ms',opts.trlen_ms,'overlap',.5,... %default to predict every trlen_ms/2 ms
-							 opts.contFeedbackOpts{:}); % but override with contFeedbackOpts
-	 else
-		[testdata,testdevents]=...
-		cont_applyClsfr(clsfr,...
-							 'endType',{'testing','test','contfeedback','sigproc.reset'},...
-							 'predFilt',opts.contPredFilt,'verb',opts.verb,...
-							 'trlen_ms',opts.trlen_ms,'overlap',.5,... %default to predict every trlen_ms/2 ms
-							 opts.contFeedbackOpts{:}); % but override with contFeedbackOpts
-										  % save to disk and merge with training data
-		fname=['testingdata' '_' subject '_' datestr];
-		fprintf('Saving %d epochs to : %s\n',numel(testdevents),fname);save([fname '.mat'],'testdata','testdevents','hdr');
-		% concatenate with the training data so can re-train with the extended data-set
-		if ( ~isempty(traindata) )
-		  traindata   =cat(1,traindata,testdata);
-		  traindevents=cat(1,traindevents,testdevents);
-		else
-		  traindata   =testdata;
-		  traindevents=testdevents;
-		end
-	 end
-	catch
-      fprintf('Error in : %s',phaseToRun);
-      le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
-		if ( ~isempty(le.stack) )
-		  for i=1:numel(le.stack);
-			 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
-		  end;
-		end
-      msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
-      sendEvent('testing','end');    
-    end
-
+       % generate prediction every trlen_ms/2 seconds using trlen_ms data
+       clsfr=...
+           cont_applyClsfr(clsfr,...
+                           'endType',{'testing','test','contfeedback','sigproc.reset'},...
+                           'predFilt',opts.contPredFilt,'verb',opts.verb,...
+                           'trlen_ms',opts.trlen_ms,'overlap',.5,... %default to predict every trlen_ms/2 ms
+                           opts.contFeedbackOpts{:}); % but override with contFeedbackOpts
+        % save the updated classifier
+        clsSubj=subject;
+        fname=[cname '_' subject '_' datestr];
+        fprintf('Saving classifier to : %s\n',fname);save([fname '.mat'],'-struct','clsfr');
+    catch
+       fprintf('Error in : %s',phaseToRun);
+       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+       if ( ~isempty(le.stack) )
+          for i=1:numel(le.stack);
+             fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+          end;
+       end
+       msgbox({sprintf('Error in : %s',phaseToRun) 'OK to continue!'},'Error');
+       sendEvent('testing','end');    
+  end
 
    %---------------------------------------------------------------------------------
    case userPhaseNames;
@@ -662,12 +652,12 @@ while ( true )
 		 end;
 
 		 if( any(strcmp(opts.userFeedbackTable{phasei,2},{'event','epoch'})) )		 
-			event_applyClsfr(clsfr,'startSet',opts.testepochEventType,...
+			clsfr=event_applyClsfr(clsfr,'startSet',opts.testepochEventType,...
 								  'endType',{'testing','test','epochfeedback','eventfeedback',lower(phaseToRun),'sigproc.reset'},'verb',opts.verb,...
 								  'trlen_ms',opts.trlen_ms,...
 								  opts.userFeedbackTable{phasei,3}{:});
 		 elseif ( any(strcmp(opts.userFeedbackTable{phasei,2},'cont')) )
-			cont_applyClsfr(clsfr,...
+          clsfr=cont_applyClsfr(clsfr,...
 								 'endType',{'testing','test','contfeedback',lower(phaseToRun),'sigproc.reset'},'verb',opts.verb,...
 								 'trlen_ms',opts.trlen_ms,'overlap',.5,... %default to prediction every trlen_ms/2 ms
 								 opts.userFeedbackTable{phasei,3}{:}); 			
