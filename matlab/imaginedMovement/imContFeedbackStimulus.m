@@ -120,7 +120,7 @@ for si=1:nSeq;
 		tgtNm = '';
 		for ti=1:numel(tgtIdx);
 		  if(ti>1) tgtNm=[tgtNm ' + ']; end;
-		  tgtNm=sprintf('%s%d %s ',tgtNm,tgtIdx,symbCue{tgtIdx});
+		  tgtNm=sprintf('%s%d %s',tgtNm,tgtIdx,symbCue{tgtIdx});
 		end
 	 elseif ( tgtIdx==nSymbs+1 ) % rest class
 		tgtNm=baselineClass;
