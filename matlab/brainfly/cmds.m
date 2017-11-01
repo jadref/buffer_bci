@@ -1,8 +1,3 @@
-%z=jf_load('own_experiments/motor_imagery/cybathalon/imtest','S10','am_trn','170612/1330');
-%train_ersp_clsfr(z.X,z.Y,'capFile','cap_im_dense_subset.txt','overridechnms',0,'ch_names',z.di(1).vals,'fs',z.di(2).info.fs,'spatialfilter','car+wht','detrend',1,'freqband',[8 28],'objFn','mlr_cg','binsp',0,'spMx','1vR')
-
-
-                                % buffer_bci commands only...
 run ../utilities/initPaths
 expt='own_experiments/motor_imagery/brainfly';
 subj={'s1'};
@@ -26,11 +21,11 @@ si=1; sessi=3;
 sessdir=fullfile('~/data/bci',expt,subj{si},sessions{si}{sessi});
 [data,devents,hdr,allevents]=sliceraw(sessdir,'startSet',{'stimulus.target'},'trlen_ms',750,'offset_ms',[0 0]);
 
-trlen_ms=750
-ms2samp    = @(x) x*hdr.Fs/1000
-s2samp    = @(x) x*hdr.Fs
-calls2samp = @(x) x*hdr.Fs*1000/trlen_ms
-s2calls    = @(x) x*1000./trlen_ms
+trlen_ms=750;
+ms2samp    = @(x) x*hdr.Fs/1000;
+s2samp    = @(x) x*hdr.Fs;
+calls2samp = @(x) x*hdr.Fs*1000/trlen_ms;
+s2calls    = @(x) x*1000./trlen_ms;
 
                                 % summary plots
 si=1; sessi=2;  avePow=[]; perf=[]; clear clsfrs resss;
@@ -78,10 +73,10 @@ for sessi=2:numel(sessions{si});
   %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(70)},'freqband',[6 8 28 30],'width_ms',250,'featFiltFn',{'biasFilt' s2calls(70)},'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
 
   % adaptive wht + feature-std-fn
-  %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(70)},'freqband',[6 8 28 30],'width_ms',250,'featFiltFn',{'stdFilt' s2calls(35)},'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
+  [clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(70)},'freqband',[6 8 28 30],'width_ms',250,'featFiltFn',{'stdFilt' s2calls(35)},'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
 
   % adaptive wht + feature-rel-baseline
-  [clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(70)},'freqband',[6 8 28 30],'width_ms',250,'featFiltFn',{'relFilt' s2calls(35)},'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
+  %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(70)},'freqband',[6 8 28 30],'width_ms',250,'featFiltFn',{'relFilt' s2calls(35)},'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
 
   % adaptive wht + biasPredFilt
   %[clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(70)},'freqband',[6 8 28 30],'width_ms',250,'predFiltFn',{'biasFilt' s2calls(700)},'objFn','mlr_cg','binsp',0,'spMx','1vR','visualize',0);
@@ -117,7 +112,21 @@ clf;image3d(avePow,1,'disptype','plot','xvals',hdr.label(1:size(X,1)),'yvals',fr
 [freqs;sum(sum(avePow,1),3)]
 
 
-
+% validate applying the same classifier to the same data generates the same results.
+tstclsfr=clsfr;
+% clear any state in the current classifier
+fn=fieldnames(tstclsfr); 
+for fi=1:numel(fn);
+   if(regexp(fn{fi},'.*[sS]tate'))tstclsfr.(fn{fi})=[]; end;
+end
+% apply this test classifier to all the data
+f=[]; fraw=[]; Xtst=[];
+for ei=1:numel(data);
+   textprogressbar(ei,numel(data));
+   [tstclsfr,f(ei,:),fraw(ei,:),p,Xtst(:,:,ei)]=buffer_apply_clsfr(data(ei),tstclsfr);
+end
+mad(res.opt.f,f)
+[res.opt.f(1:10) f(1:10)]
 
 for sessi=1:size(avePow,3);
    apsi=avePow(:,:,sessi);
