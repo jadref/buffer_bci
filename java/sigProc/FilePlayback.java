@@ -24,6 +24,7 @@ public class FilePlayback {
 		  + "where:\n"
 		  + "\t buffersocket\t is a string of the form bufferhost:bufferport (localhost:1972)\n"
 		  + "\t dataDir\t is the directory which contains the saved data\n"
+		  + "\t start_time\t seconds from start of the file to start playback at    (0)\n"
 		  + "\t speedup\t is a speedup factor to play back at                       (1)\n"
 		  + "\t buffsamp\t is the number of file samples to put in each buffer packet (1)\n";
 
@@ -31,20 +32,12 @@ public class FilePlayback {
 		String hostname = "localhost";
 		int port = 1972;
 		int timeout = 5000;
+      double start_time=0;
 		double speedup=1;
 		int blockSize=1;
 		String dataDir=null;
 	
-		if (args.length==0 ){
-			 System.out.print(usage);
-          javax.swing.JFileChooser fc = new javax.swing.JFileChooser();
-          int returnVal = fc.showOpenDialog(null);
-          if (returnVal == javax.swing.JFileChooser.APPROVE_OPTION) {
-              File file = fc.getSelectedFile();
-              dataDir=file.getParent();
-          }
-		}
-		if (args.length>=1) {
+		if (args.length>=1 && !args[0].equals("-") ) {
 			hostname = args[0];
 			int sep = hostname.indexOf(':');
 			if ( sep>0 ) {
@@ -54,36 +47,50 @@ public class FilePlayback {
 		}
 		System.out.println(TAG+" Host:port="+hostname+port);
 
-		if (args.length>=2) {
-			 dataDir=args[1];
+		if (args.length<2 || args[1].equals("-") ){
+			 System.out.print(usage);
+          javax.swing.JFileChooser fc = new javax.swing.JFileChooser();
+          int returnVal = fc.showOpenDialog(null);
+          if (returnVal == javax.swing.JFileChooser.APPROVE_OPTION) {
+              File file = fc.getSelectedFile();
+              dataDir=file.getParent();
+          }
+		}else {
+          dataDir=args[1];
 		}
 		System.out.println(TAG+" dataDir="+dataDir);
 
 		if ( args.length>=3 ) {
 			try {
-				speedup = Integer.parseInt(args[2]);
+				start_time = Integer.parseInt(args[2]);
 			}
 			catch (NumberFormatException e) {
-				 speedup = 1;
+			}			 
+		}
+		System.out.println(TAG+" start_time="+start_time);
+
+		if ( args.length>=4 ) {
+			try {
+				speedup = Integer.parseInt(args[3]);
+			}
+			catch (NumberFormatException e) {
 			}			 
 		}
 		System.out.println(TAG+" speedup="+speedup);
 
-		if ( args.length>=4 ) {
+		if ( args.length>=5 ) {
 			try {
-				blockSize = Integer.parseInt(args[3]);
+				blockSize = Integer.parseInt(args[4]);
 			}
 			catch (NumberFormatException e) {
-				 blockSize = 1;
 			}			 
 		}
 		System.out.println(TAG+" blockSize="+blockSize);
 		FilePlayback sp=new FilePlayback(hostname,port,dataDir,speedup,blockSize);
-		sp.mainloop();
+		sp.mainloop(start_time);
 		sp.stop();		
 	 }
 	 
-
 	 public FilePlayback(String hostname, int port, 
 								InputStream dataReader, InputStream eventReader, InputStream headerReader, 
 								double speedup, int blockSize){
@@ -115,8 +122,10 @@ public class FilePlayback {
 	 }
 
 
-	 public void mainloop(){
-		
+    public void mainloop(){ mainloop(0); }
+	 public void mainloop(double start_time){
+        long start_samp;
+
 		while( !client.isConnected() && run ) {
 			 try {
 				  System.out.println("Connecting to "+hostname+":"+port);
@@ -154,6 +163,9 @@ public class FilePlayback {
             System.out.println(TAG+" Sending header: " + hdr.toString());
         }
         hdr.nSamples = 0; // reset number of samples to 0
+        // compute the start_samp from the header sample rate
+        start_samp = (long)(start_time * (double)(hdr.fSample)); 
+        System.out.println("Start samp = " + start_samp);
 
         try {
             client.putHeader(hdr);
@@ -195,6 +207,8 @@ public class FilePlayback {
                 print_ms = elapsed_ms;
                 System.out.println(TAG+ " " + nblk + " " + nsamp + " " + nevent + " " + (elapsed_ms / 1000)
 											  + " (blk,samp,event,sec)\r");
+                if ( nsamp > start_samp && nsamp < start_samp + hdr.fSample ) 
+                    System.out.println("Reached start-samp");
             }
 
 
@@ -219,7 +233,7 @@ public class FilePlayback {
             // update the sample count
             nsamp += blockSize;
             while (evtSample <= nsamp) {
-                if (evtSample > 0) { // send the current event
+                if (evtSample > start_samp) { // send the current event
                     try {
                         client.putRawEvent(evtRawBuf, 0, evtSz);
                     } catch (IOException e) {
@@ -264,7 +278,7 @@ public class FilePlayback {
 
             // sleep until the next packet should be send OR EOF
             /*when to send the next sample */
-            sample_ms = (long) ((float) (nsamp * 1000) / hdr.fSample / (float) speedup);
+            sample_ms = (long) ((float) ((nsamp-start_samp) * 1000) / hdr.fSample / (float) speedup);
             elapsed_ms = java.lang.System.currentTimeMillis() - starttime_ms; // current time
             if (sample_ms > elapsed_ms) try {
                 Thread.sleep(sample_ms - elapsed_ms);
