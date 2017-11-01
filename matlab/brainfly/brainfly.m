@@ -85,11 +85,7 @@ cannonKills = 0;
 
                          % Initialize buffer-prediction processing variables:
 buffstate=[];
-<<<<<<< HEAD
 predFiltFn=[];%'gainFilt'; % additional filter function for the classifier predictions? %-contFeedbackFiltLen; % average full-trials worth of predictions
-=======
-predFiltFn='gainFilt'; % additional filter function for the classifier predictions? %-contFeedbackFiltLen; % average full-trials worth of predictions
->>>>>>> 169c6e139f15708d40f65539c2ddb4d9ab76bf25
 filtstate=[];
 predType =[];
 
