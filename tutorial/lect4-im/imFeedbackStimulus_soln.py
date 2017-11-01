@@ -57,7 +57,8 @@ shuffle(tgtSeq) # N.B. shuffle works in-place!
 
 ##--------------------- Start of the actual experiment loop ----------------------------------
 # set the display and the string for stimulus
-plt.switch_backend('agg') # N.B. command to work in non-display mode
+if DEBUG:
+    plt.switch_backend('agg') # N.B. command to work in non-display mode
 fig = plt.figure()
     
 fig.suptitle('RunSentences-Stimulus', fontsize=14, fontweight='bold')
