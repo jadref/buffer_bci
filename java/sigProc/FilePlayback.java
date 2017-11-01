@@ -17,6 +17,7 @@ public class FilePlayback {
 	 final String dataDir;
 	 final double speedup;
 	 final int blockSize;
+    String[] excludedTypes=null;
 	 final BufferClient client;
 	 
 	 static final String usage=
@@ -26,7 +27,8 @@ public class FilePlayback {
 		  + "\t dataDir\t is the directory which contains the saved data\n"
 		  + "\t start_time\t seconds from start of the file to start playback at    (0)\n"
 		  + "\t speedup\t is a speedup factor to play back at                       (1)\n"
-		  + "\t buffsamp\t is the number of file samples to put in each buffer packet (1)\n";
+		  + "\t buffsamp\t is the number of file samples to put in each buffer packet (1)\n"
+        + "\t excluded_types\t the remaining arguments are treated as event types *not* to forward during the playback, e.g. 'classifier.prediction';
 
 	 public static void main(String[] args) throws IOException,InterruptedException {
 		String hostname = "localhost";
@@ -36,6 +38,7 @@ public class FilePlayback {
 		double speedup=1;
 		int blockSize=1;
 		String dataDir=null;
+      String[] excludedTypes=null;
 	
 		if (args.length>=1 && !args[0].equals("-") ) {
 			hostname = args[0];
@@ -86,8 +89,19 @@ public class FilePlayback {
 			}			 
 		}
 		System.out.println(TAG+" blockSize="+blockSize);
-		FilePlayback sp=new FilePlayback(hostname,port,dataDir,speedup,blockSize);
-		sp.mainloop(start_time);
+
+      if ( args.length>=6 ){ // remaining args are event types to exclude
+          excludedTypes = new String[args.length-6];
+          for ( int i=6; i<args.length; i++){
+              excludedTypes[i-6]=args[i];
+          }
+          System.out.print("Excluded Types ["+excludedTypes.length+"]:");
+          for ( int i=0; i < excludedTypes.length; i++) System.out.print(excludedTypes[i] + " ");
+          System.out.println();
+      }
+
+		FilePlayback sp=new FilePlayback(hostname,port,dataDir,speedup,blockSize);      
+		sp.mainloop(start_time,excludedTypes);
 		sp.stop();		
 	 }
 	 
@@ -122,8 +136,8 @@ public class FilePlayback {
 	 }
 
 
-    public void mainloop(){ mainloop(0); }
-	 public void mainloop(double start_time){
+    public void mainloop(){ mainloop(0,null); }
+	 public void mainloop(double start_time, String[] excludedTypes){
         long start_samp;
 
 		while( !client.isConnected() && run ) {
@@ -165,7 +179,11 @@ public class FilePlayback {
         hdr.nSamples = 0; // reset number of samples to 0
         // compute the start_samp from the header sample rate
         start_samp = (long)(start_time * (double)(hdr.fSample)); 
-        System.out.println("Start samp = " + start_samp);
+
+        System.out.println("Start: " + start_time + "s " + start_samp + " samp");
+        System.out.print("Excluded Types ["+excludedTypes.length+"]:");
+        for ( int i=0; i < excludedTypes.length; i++) System.out.print(excludedTypes[i] + " ");
+        System.out.println();
 
         try {
             client.putHeader(hdr);
@@ -184,6 +202,7 @@ public class FilePlayback {
         // Size of the event header: type,type_numel,val,val_numel,sample,offset,duration,bufsz
         int evtHdrSz = DataType.wordSize[DataType.INT32] * 8;
         byte[] evtRawBuf = new byte[BUFFERSIZE]; // buffer to hold complete event structure
+        BufferEvent evt=null;
 
         // Byte-buffer used to parse the byte-stream. Force native ordering
         ByteBuffer evtBuf = ByteBuffer.wrap(evtRawBuf);
@@ -233,11 +252,24 @@ public class FilePlayback {
             // update the sample count
             nsamp += blockSize;
             while (evtSample <= nsamp) {
+                boolean putEvt=true;
                 if (evtSample > start_samp) { // send the current event
-                    try {
-                        client.putRawEvent(evtRawBuf, 0, evtSz);
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    String evtType=evt.getType().toString();
+                    if( excludedTypes != null ){
+                        for ( int exi=0; exi<excludedTypes.length; exi++){
+                            if( evtType.equals(excludedTypes[exi]) ) {
+                                putEvt=false;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if( putEvt ) { // only send if not excluded
+                        try {
+                            client.putRawEvent(evtRawBuf, 0, evtSz);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                     nevent++;
                 }
@@ -252,6 +284,7 @@ public class FilePlayback {
                     eof = true;
                     break;
                 }
+                
                 evtSample = ((ByteBuffer) evtBuf.position(4 * 4)).getInt(); // sample index for this event
                 payloadSz = ((ByteBuffer) evtBuf.position(4 * 7)).getInt(); // payload size for this event
                 evtSz = evtHdrSz + payloadSz;
@@ -266,12 +299,13 @@ public class FilePlayback {
                     eof = true;
                     break;
                 }
+                // get the event we just read
+                ByteBuffer tmpev = ByteBuffer.wrap(evtRawBuf, 0, evtSz);
+                tmpev.order(evtBuf.order());
+                evt = new BufferEvent(tmpev);                
 
                 // print the event we just read
                 if (VERB > 1) {
-                    ByteBuffer tmpev = ByteBuffer.wrap(evtRawBuf, 0, evtSz);
-                    tmpev.order(evtBuf.order());
-                    BufferEvent evt = new BufferEvent(tmpev);
                     System.out.println(TAG+ " Read Event: " + evt);
                 }
             }
