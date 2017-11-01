@@ -221,7 +221,6 @@ if ( size(X,1)>=4 && ...
   if( ~iscell(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={opts.adaptspatialfiltFn}; end;
   fprintf(' %s\n',opts.adaptspatialfiltFn{1});
   [X,adaptspatialfiltstate]=feval(opts.adaptspatialfiltFn{1},X,opts.adaptspatialfiltstate,opts.adaptspatialfiltFn{2:end},'ch_names',ch_names,'ch_pos',ch_pos,'fs',fs);
-  if( isfield(adaptspatialfiltstate,'R') ) R=adaptspatialfiltstate.R; end;
   fprintf('\n');
 end
 
