@@ -121,7 +121,9 @@ ms2samp  = @(x) x.*hdr.fSample./1000;
 ms2calls_contfb = @(x) x./step_ms;
 ms2calls_epochfb= @(x) x./epochtrlen_ms;
 
-%trainOpts={'width_ms',welch_width_ms,'badtrrm',1,'badchrm',1,'spatialfilter','wht','objFn','mlr_cg','binsp',0,'spMx','1vR'}; % whiten + direct multi-class training
+
+% global-whiten + direct multi-class training
+trainOpts={'width_ms',welch_width_ms,'badtrrm',1,'badchrm',1,'spatialfilter','wht','objFn','mlr_cg','binsp',0,'spMx','1vR'}; 
 
 % adapt-whiten + direct multi-class training
 trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'badchrm',0,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt' 'covFilt',ms2samp(adaptHalfLife_ms)},'objFn','mlr_cg','binsp',0,'spMx','1vR'}; 

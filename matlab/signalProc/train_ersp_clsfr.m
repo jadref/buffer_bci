@@ -142,8 +142,8 @@ preFiltFn=opts.preFiltFn; preFiltState=[];
 if ( ~isempty(preFiltFn) )
   fprintf('1.5) preFilter\n');
   if ( ~iscell(preFiltFn) ) preFiltFn={preFiltFn}; end;
-  for ei=1:size(X,3); % incrementall call the function
-	 [X(:,:,ei),preFiltState]=feval(preFiltFn{1},X(:,:,ei),preFiltState,'fs',fs,preFiltFn{2:end});
+  for ei=1:size(X,3);
+	 [X(:,:,ei),preFiltState]=feval(preFiltFn{1},X(:,:,ei),preFiltState,preFiltFn{2:end},'ch_names',ch_names,'ch_pos',ch_pos,'fs',fs);
     if( opts.verb>0 && size(X,3)>100 ) textprogressbar(ei,size(X,3)); end;
   end
 end

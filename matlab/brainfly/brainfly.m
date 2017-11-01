@@ -4,7 +4,7 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
 % Game canvas size:
 gameCanvasYLims         = [0 800];
 gameCanvasXLims         = [0 500];
-maxCannonShotsPerSecond = 5;               % RPS of cannon
+maxCannonShotsPerSecond = 2;               % RPS of cannon
 autoFireMode            = 1;               % auto-fire or fire key?
 useBuffer               = 1;
 timeBeforeNextAlien     = 3;               % seconds
@@ -24,7 +24,8 @@ stim2obj(1)= 1; % 1st stim seq always mapps to the cannon
                                 % make a sequence of alien spawn locations
 % make the target sequence
 tgtSeq=mkStimSeqRand(2,gameDuration*2./timeBeforeNextAlien);
-lrSeq =(tgtSeq(1,:)*.8+.1)+(rand(1,size(tgtSeq,2))-.5)*.4; % l/r with a little noise
+lrSeq =tgtSeq(1,:)+(rand(1,size(tgtSeq,2))-.5)*.2; % l/r with a little noise
+lrSeq =max(0,min(1,lrSeq)); % bounds check
 
 %% Generate Figure:
                                 % Make the game window:
@@ -85,7 +86,7 @@ cannonKills = 0;
 
                          % Initialize buffer-prediction processing variables:
 buffstate=[];
-predFiltFn=[];%'gainFilt'; % additional filter function for the classifier predictions? %-contFeedbackFiltLen; % average full-trials worth of predictions
+predFiltFn='gainFilt'; % additional filter function for the classifier predictions? %-contFeedbackFiltLen; % average full-trials worth of predictions
 filtstate=[];
 predType =[];
 
@@ -287,8 +288,8 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
       end                               
       if( ~isequal(tgtAlien,otgtAlien) ) % new target
                                 % alien position tells us the target task
-        if tgtAlien.x > mean(get(hAxes,'xlim'));     tgtDir=symbCue{1};
-        else                                         tgtDir=symbCue{2};
+        if tgtAlien.x > mean(get(hAxes,'xlim'));     tgtDir=['1 ' symbCue{1}];
+        else                                         tgtDir=['2 ' symbCue{2}];
         end
         fprintf('%d) new tgt: %s\n',nframe,tgtDir); 
         sendEvent('stimulus.target',tgtDir);

@@ -8,7 +8,7 @@ classdef Cannon < handle
         % The following properties of fractions of the screen width or
         % height, these properties are used to generate the actual sized at
         % object instantiation:
-        relCannonWidth  = 0.05;   % The width of the cannon.
+        relCannonWidth  = 0.08;   % The width of the cannon.
         relCannonHeight = 0.1;    % The height of the cannon.
         relMoveStepSize = .5;     % The maximum cannon move in 1 second
         minuid=1;
@@ -40,8 +40,8 @@ classdef Cannon < handle
             % Calculate the cannon parameters:
             axesXLim     = get(hAxes,'XLim');
             axesYLim     = get(hAxes,'YLim');
-            obj.cannonWidth  = range(axesXLim)*obj.relCannonWidth;
-            obj.cannonHeight = range(axesYLim)*obj.relCannonHeight;
+            obj.cannonWidth  = diff(axesXLim)*obj.relCannonWidth;
+            obj.cannonHeight = diff(axesYLim)*obj.relCannonHeight;
             obj.Xbase    = mean(axesYLim)-0.5*obj.cannonWidth;
             obj.Ybase    = axesYLim(1);
             
@@ -53,7 +53,7 @@ classdef Cannon < handle
             
             % Save properties:
             obj.hAxes = hAxes;
-            obj.moveStepSize = obj.relMoveStepSize*range(axesXLim);
+            obj.moveStepSize = obj.relMoveStepSize*diff(axesXLim);
             obj.lastDrawTime = [];
             obj.uid = Cannon.getuid();
         end
@@ -81,10 +81,10 @@ classdef Cannon < handle
               obj.Xbase = max(min(whereTo,obj.Xbase+curStepSize),obj.Xbase-curStepSize);
             else % string so step-size
               switch whereTo                
-                case 'right'; % Move cannon left, but keep in in bounds.
+                case 'left'; % Move cannon left, but keep in in bounds.
                     obj.Xbase = obj.Xbase+curStepSize;
                     
-                case 'left';  % Move cannon right, but keep in in bounds.
+                case 'right';  % Move cannon right, but keep in in bounds.
                     obj.Xbase = obj.Xbase-curStepSize;
               end
             end

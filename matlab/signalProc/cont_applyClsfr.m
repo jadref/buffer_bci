@@ -252,7 +252,7 @@ return;
 function testCase()
 cont_applyClsfr(clsfr,'overlap',.1)
 % bias adapting output smoothing, such that mean=0 over last 100 predictions
-cont_applyClsfr(clsfr,'biasFilt',@(x,s) bialFilt(x,s,exp(log(.5)/100)));
+cont_applyClsfr(clsfr,'biasFilt',@(x,s) biasFilt(x,s,exp(log(.5)/100)));
 % smooth output with standardising filter, such that mean=0 and variance=1 over last 100 predictions
 cont_applyClsfr(clsfr,'predFilt',@(x,s) stdFilt(x,s,exp(log(.5)/100)));
 
