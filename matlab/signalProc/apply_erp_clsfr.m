@@ -76,6 +76,11 @@ if ( isfield(clsfr,'adaptspatialfiltFn') && ~isempty(clsfr.adaptspatialfiltFn) )
    [X,clsfr.adaptspatialfiltstate] = feval(clsfr.adaptspatialfiltFn{1},X,clsfr.adaptspatialfiltstate,clsfr.adaptspatialfiltFn{2:end});
 end
 
+%3.6) classifier channel selection
+if( isfield(clsfr,'clsfrChi') && ~isempty(clsfr.clsfrChi) )
+  X=X(clsfr.clsfrChi,:,:);
+end
+
 %4) spectral filter
 if ( isfield(clsfr,'filt') && ~isempty(clsfr.filt) )
   X=fftfilter(X,clsfr.filt,clsfr.outsz,2,2);

@@ -52,6 +52,10 @@ h =ax.text(0, 0, 'This is some text', style='italic')
 ftc,hdr=bufhelp.connect();
 
 bufhelp.sendEvent('stimulus.sentences','start');
+<<<<<<< HEAD
+=======
+
+>>>>>>> 169c6e139f15708d40f65539c2ddb4d9ab76bf25
 ## STARTING PROGRAM LOOP
 for si,sentence in enumerate(sentences):
     

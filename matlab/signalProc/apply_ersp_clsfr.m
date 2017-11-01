@@ -96,12 +96,12 @@ if ( isfield(clsfr,'badtrthresh') && ~isempty(clsfr.badtrthresh) )
 end
 
 %3.6) classifier channel selection
-if( ~isempty(clsfr.clsfrChi) )
+if( isfield(clsfr,'clsfrChi') && ~isempty(clsfr.clsfrChi) )
   X=X(clsfr.clsfrChi,:,:);
 end
 
 %3) convert to spectral
-if ( clsfr.timefeat ) Xt=mean(X,2);end % add a pure time feature
+Xt=[]; if ( isfield(clsfr,'timefeat') && clsfr.timefeat ) Xt=mean(X,2);end % add a pure time feature
 if ( size(X,2)>numel(clsfr.windowFn) )
   X=welchpsd(X,2,'windowType',clsfr.windowFn(:),'aveType',clsfr.welchAveType,'detrend',1);
 else
@@ -136,7 +136,7 @@ if ( isfield(clsfr,'freqIdx') && ~isempty(clsfr.freqIdx) )
     end
   end
 end
-if ( clsfr.timefeat ) X=cat(2,Xt,X); end
+if ( ~isempty(Xt) ) X=cat(2,Xt,X); end
 
 
 %5) feature post-processing filter
