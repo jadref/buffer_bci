@@ -54,6 +54,7 @@ import linear
 classifier = linear.fit(data,events)#,mapping)
 
 # save the trained classifer
+print('Saving clsfr to : %s'%(cname+'.pk'))
 pickle.dump({'classifier':classifier},open(cname+'.pk','wb'))
 # # Unfortunately doesn't work for objects...
 # # also as hdf5 / mat -v7.3

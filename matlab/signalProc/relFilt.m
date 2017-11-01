@@ -1,7 +1,9 @@
 function [x,s]=relFilt(x,s,alpha,accdim,verb)
-% relative filter (high-pass) removes slow drifts from inputs
+% relative filter 
 %
 %   [x,s,mu,std]=stdFilt(x,s,alpha,accdim,verb)
+%
+%    x(t) = x(t)./mu(x)
 %
 % Inputs:
 %   x - [nd x 1] the data to filter
