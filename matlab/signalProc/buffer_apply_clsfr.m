@@ -30,6 +30,7 @@ if ( iscell(X) )
 elseif ( isstruct(X) )
   X=cat(3,X.buf);
 end
+X=single(X);
 for ci=1:numel(clsfr);
   if ( (isfield(clsfr(ci),'type') && any(strcmp(lower(clsfr(ci).type),{'erp','evoked'}))) || ...
        ~isempty(clsfr(ci).filt) && isempty(clsfr(ci).windowFn) ) % ERP
