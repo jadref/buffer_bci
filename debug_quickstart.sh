@@ -19,6 +19,8 @@ if [ $dataacq == 'audio' ]; then
   bash dataAcq/startJavaAudio.sh localhost 2 &
 elif [ $dataacq == 'matlab' ]; then
   bash dataAcq/startMatlabSignalProxy.sh &
+elif [ $dataacq == 'file' ]; then
+  bash dataAcq/startJavaFileProxy.sh &
 else
   bash dataAcq/startJavaSignalproxy.sh &
 fi
