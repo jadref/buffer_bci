@@ -46,17 +46,18 @@ def initGrid(symbols,ax=None,txtColor=txtColor):
         ax=plt.gca()
     axw=ax.get_xlim()
     axh=ax.get_ylim()
-    w = (axw[1]-axw[0])/(len(symbols)+1)
-    h = (axh[1]-axh[0])/(max([len(r) for r in symbols]))
+    h = (axw[1]-axw[0])/(len(symbols)+1)
+    w = (axh[1]-axh[0])/(max([len(r) for r in symbols]))
     hdls=[]
     for row,i in enumerate(symbols):
-        y=i*h
+        y=i*h+h/2
         rowh=[]
         # TODO: ensure row is enumeratable...
         for symb,j in enumerate(row):
-            x=j*w
+            x=j*w+w/2
             txthdl =ax.text(x, y, symb, color=txtColor)
             rowh.append(txthdl)
+        if len(rowh)==1: rowh=rowh[0] # BODGE: ensure hdls has same structure as symbols
         hdls.append(rowh)
     return hdls
 
