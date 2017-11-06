@@ -96,7 +96,7 @@ for si=1:nSeq;
 		timetogo=animateDuration;
 		fixPos=[stimPos(:,end)-cursorSize/2;cursorSize*[1;1]];
 		while ( timetogo > 0 )
-		  dx=randn(2,1)*animateStep;
+		  dx=stimPos(:,1:end-1)*randn(size(stimPos,2)-1,1)*animateStep;
 		  fixPos(1:2) = fixPos(1:2)+dx;
 		  set(h(end),'position',fixPos);
 		  drawnow;		
