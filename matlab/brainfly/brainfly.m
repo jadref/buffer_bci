@@ -173,7 +173,7 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
   %----------------------------------------------------------------------
   % make new bonus alien if it's time.
   if bonusFlash < bonusFlashnr
-      set(hCannon.hGraphic,'facecolor','y');
+      set(hCannon.hGraphic,'facecolor','r');
       Alien.flashAlien(hAliens,bonusFlash+1)
       bonusFlash = bonusFlash + 1;
   end
