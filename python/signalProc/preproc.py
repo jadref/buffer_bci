@@ -89,7 +89,7 @@ def clonelist(original):
     
     return clone
 
-def spatialfilter(data, type="car",whitencutoff=1e-15):
+def spatialfilter(data, type="car",whitencutoff=1e-15, dim=1):
     '''Spatial filter for a list of datapoints.
     
     Applies a spatial filter to the data offers two types:
@@ -101,11 +101,12 @@ def spatialfilter(data, type="car",whitencutoff=1e-15):
     
     Parameters
     ----------
-    data : list of datapoints (numpy arrays) or a single numpy array.
+    data : list of datapoints (numpy arrays) or a single numpy array. [samples x channels x trials]
     type : a string that indicates the type of spatial filter should either 
     be "car" or "whitten"
     whittencutoff : Only used with the whitten transform, it specifies the 
     cut-off value as the fraction of the largest eigenvalue of D.
+    dim : the dimension along which the spatial filter is to be applied  (1)
     
     Returns
     -------
@@ -135,7 +136,7 @@ def spatialfilter(data, type="car",whitencutoff=1e-15):
         
     if type=="car":
         
-        X = numpy.dot(numpy.eye(X.shape[0])-(1.0/X.shape[0]),X)
+        X = numpy.dot(X,numpy.eye(X.shape[1])-(1.0/X.shape[1]))
         
     elif type=="whiten":
         
@@ -144,7 +145,7 @@ def spatialfilter(data, type="car",whitencutoff=1e-15):
             
         C = numpy.cov(X)
         e, E = numpy.linalg.eigh(C)
-        X = numpy.dot(reduce(numpy.dot,[E, numpy.diag(numpy.where(e > numpy.max(e) * whitencutoff, e, numpy.inf)**-.5), E.T]),X)
+        X = numpy.dot(X,reduce(numpy.dot,[E, numpy.diag(numpy.where(e > numpy.max(e) * whitencutoff, e, numpy.inf)**-.5), E.T]))
     
     if not isinstance(data,numpy.ndarray):
         return rebuilddata(X,data)
@@ -313,7 +314,7 @@ def spectralfilter(data, band, fSample, dim=0):
     return spectralfilteronly(data,band,fSample,dim)
     
         
-def spectralfilteronly(data, band, fSample, dim=1):
+def spectralfilteronly(data, band, fSample, dim=0):
     '''Applies a bandpass filter to the data.
     
     Applies a bandpass filter to the data, assumes it has already been 
@@ -340,7 +341,7 @@ def spectralfilteronly(data, band, fSample, dim=1):
     band : the band for the filter, should be a tuple or list containing either
     2 or 4 elements, or a function that maps numbers on numbers.
     fsample : the sampling frequency of the data
-    dim : the dimension over which the spectral filter has been applied
+    dim : the dimension over which the spectral filter has been applied  (0)
     
     Returns
     -------
@@ -418,7 +419,7 @@ def _bandfunc(x, band):
         return band(x)
         
      
-def timebandfiler(data, timeband, milliseconds=False, fSample=None):
+def timebandfilter(data, timeband, milliseconds=False, fSample=None):
     '''Applies a timeband filter to the data.
     
     Removes any samples that do not fall within the range defined by the 
@@ -490,16 +491,17 @@ def timebandfiler(data, timeband, milliseconds=False, fSample=None):
      
 
 
-def concatdata(data):
+def concatdata(data,dim=0):
     '''Concatenates a list of datapoints into a single numpy array.
     
     Parameters
     ----------
-    data : list of datapoints (numpy arrays).
+    data : list of datapoints (numpy arrays), assumed [nSamples x nChannels]
+    dim  : dimension along which to concatenate
     
     Returns
     -------
-    out : a numpy array containing the datapoints in data.
+    out : a numpy array containing the datapoints in data. [nSamples x nChannels x nTrials]
     
     Examples
     --------
@@ -519,8 +521,13 @@ def concatdata(data):
     
     if not all([x.shape[1] == data[0].shape[1] for x in data]):
         raise Exception("Inconsistent number of channels in data!")
-        
-    return numpy.concatenate(data)
+    
+    if dim<2:
+        cdata = numpy.concatenate(data,axis=dim)
+    elif dim==2: # make new dim
+        cdata = numpy.concatenate([x[:,:,np.newaxis] for x in data],axis=dim)
+
+    return cdata
     
 def badchannelremoval(data, badchannels = None, threshold = (-numpy.inf,3.1)):
     '''Removes bad channels from the data.
