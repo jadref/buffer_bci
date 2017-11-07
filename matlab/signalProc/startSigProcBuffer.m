@@ -440,7 +440,7 @@ while ( true )
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') ) 
          fname=fullfile(saveDir,[dname '_' subject '_' datestr]);
          if ( ~(exist([fname '.mat'],'file') || exist(fname,'file')) )
-			fname=[dname '_' subject '_' datestr];
+            fname=[dname '_' subject '_' datestr];
          end
          if ( ~(exist([fname '.mat'],'file') || exist(fname,'file')) ) 
             warning(['Couldnt find a training data file to load file: ' fname]);
