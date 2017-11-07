@@ -128,7 +128,7 @@ for si=1:nSeq;
 	 tgtNm = tgtIdx; % human-name is position number
   end
   set(h(end),'facecolor',tgtColor); % green fixation indicates trial running
-  fprintf('%d) tgt=%10s : ',si,tgtNm);
+  fprintf('%d) tgt="%10s" : ',si,tgtNm);
   sendEvent('stimulus.trial','start');
   for ei=1:ceil(trialDuration./epochDuration);
 	 sendEvent('stimulus.target',tgtNm);

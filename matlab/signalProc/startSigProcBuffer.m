@@ -438,7 +438,10 @@ while ( true )
     case {'train','training','trainerp','trainersp','train_subset','trainerp_subset','trainersp_subset','train_useropts','trainerp_useropts','trainersp_useropts'};
       %try     
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') ) 
-         fname=[dname '_' subject '_' datestr];
+         fname=fullfile(saveDir,[dname '_' subject '_' datestr]);
+         if ( ~(exist([fname '.mat'],'file') || exist(fname,'file')) )
+			fname=[dname '_' subject '_' datestr];
+         end
          if ( ~(exist([fname '.mat'],'file') || exist(fname,'file')) ) 
             warning(['Couldnt find a training data file to load file: ' fname]);
             % Not in default name -- ask user for file to load?
