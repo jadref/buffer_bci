@@ -143,7 +143,7 @@ def spatialfilter(data, type="car",whitencutoff=1e-15, dim=1):
         if not isinstance(whitencutoff, (int,float)):
             raise Exception("whitencutoff is not a number.") 
             
-        C = numpy.cov(X)
+        C = numpy.cov(X.T)
         e, E = numpy.linalg.eigh(C)
         X = numpy.dot(X,reduce(numpy.dot,[E, numpy.diag(numpy.where(e > numpy.max(e) * whitencutoff, e, numpy.inf)**-.5), E.T]))
     
