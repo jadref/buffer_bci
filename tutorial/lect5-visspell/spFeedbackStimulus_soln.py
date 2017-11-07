@@ -38,14 +38,40 @@ def waitforkey(fig=None,reset=True,debug=DEBUG):
     while currentKey is None:
         plt.pause(1e-2) # allow gui event processing
 
+
+
+def initGrid(symbols,ax=None,txtColor=txtColor):
+    "Initialize a grid of letters on the screen"
+    if ax is None: # default to using the current axes
+        ax=plt.gca()
+    axw=ax.get_xlim()
+    axh=ax.get_ylim()
+    h = (axw[1]-axw[0])/(len(symbols)+1)
+    w = (axh[1]-axh[0])/(max([len(r) for r in symbols]))
+    hdls=[]
+    for row,i in enumerate(symbols):
+        y=i*h+h/2
+        rowh=[]
+        # TODO: ensure row is enumeratable...
+        for symb,j in enumerate(row):
+            x=j*w+w/2
+            txthdl =ax.text(x, y, symb, color=txtColor)
+            rowh.append(txthdl)
+        if len(rowh)==1: rowh=rowh[0] # BODGE: ensure hdls has same structure as symbols
+        hdls.append(rowh)
+    return hdls
+
+        
 ## CONFIGURABLE VARIABLES
 verb=0
-nSymbs=3
-nSeq=15
-nBlock=2 #10; # number of stim blocks to use
-trialDuration=3
-baselineDuration=1
-intertrialDuration=2
+symbols=['a' 'b' 'c' 'd']
+nSymbs =sum([len(r) for r in symbols])
+nSeq=6
+nRep=5
+cueDuration=2
+epochDuration=.1
+interEpochDuration=.1;
+interSeqDuration=2
 
 bgColor =(.5,.5,.5)
 tgtColor=(0,1,0)
@@ -53,9 +79,10 @@ fixColor=(1,0,0)
 txtColor=(1,1,1)
 
 # make the target sequence
-tgtSeq=list(range(nSymbs))*int(nSeq/nSymbs +1) # sequence in sequential order
+tgtSeq=list(range(nSymbs)*int(nSeq/nSymbs +1) # sequence in sequential order
 shuffle(tgtSeq) # N.B. shuffle works in-place!
-
+tgtSeq=tgtSeq[1:nSeq]
+            
 ##--------------------- Start of the actual experiment loop ----------------------------------
 # set the display and the string for stimulus
 if DEBUG:
@@ -70,24 +97,8 @@ ax.set_axis_off()
 txthdl =ax.text(0, 0, 'This is some text', style='italic',color=txtColor)
 
 # setup the targets
-stimPos=[];
-hdls=[];
-stimRadius=.3;
-theta=np.linspace(0,np.pi,nSymbs)
-stimPos=np.stack((np.cos(theta),np.sin(theta))).T #[nSymbs x 2]
-for hi,pos in enumerate(stimPos):  #N.B. enumerate goes over 1st dim if stimPos is array
-    print('%d) stimPos=(%f,%f)'%(hi,pos[0],pos[1]))
-    circ=patches.Circle(pos,stimRadius,facecolor=bgColor)
-    hhi=ax.add_patch(circ)
-    hdls.insert(hi,hhi)
-# add symbol for the center of the screen
-spos   =np.array((0,0))#.reshape((1,-1))
-stimPos=np.vstack((stimPos,spos)) #[nSymbs+1 x 2]
-circ   =patches.Circle((0,0),stimRadius/4,facecolor=bgColor)
-hhi    =ax.add_patch(circ)
-hdls.insert(nSymbs,hhi)
+hdls=initGrid(symbols)
 [ _.set(visible=False) for _ in hdls] # make all invisible
-
 
 ## init connection to the buffer
 ftc,hdr=bufhelp.connect();
@@ -103,30 +114,48 @@ bufhelp.sendEvent('stimulus.training','start');
 ## STARTING stimulus loop
 for si,tgt in enumerate(tgtSeq):
     
-    sleep(intertrialDuration)
+    sleep(interSeqDuration)
+      
+    # start the scanning loop
+    for rep in range(nRep): 
+        for si in range(nSymbs):
+            # flash
+            hdls[si].set(color=flashColor)
+            drawnow()
+            bufhelp.sendEvent('stimulus.cue',si)
+            bufhelp.sendEvent('stimulus.tgtFlash',si==tgt)
+            sleep(stimDuration)                
+            # reset
+            hdls[si].set(color=bgColor)
+            drawnow()
+            sleep(stimDuration)
 
-    # show the baseline
-    hdls[-1].set(visible=True,facecolor=fixColor)
-    drawnow()
-    bufhelp.sendEvent('stimulus.baseline','start')
-    sleep(baselineDuration)
-    bufhelp.sendEvent('stimulus.baseline','end')
-      
-    #show the target
-    print("%d) tgt=%d :"%(si,tgt))
-    [_.set(facecolor=bgColor,visible=True) for _ in hdls]
-    hdls[tgt].set(facecolor=tgtColor)
-    drawnow()
-    bufhelp.sendEvent('stimulus.target',tgt)
-    bufhelp.sendEvent('stimulus.trial','start')
-    sleep(trialDuration)
-      
-    # reset the display
-    [ _.set(visible=False) for _ in hdls]
-    txthdl.set(visible=False)
-    drawnow()
     bufhelp.sendEvent('stimulus.trial','end');
 
+    #catch the prediction
+    # N.B. use state to track which events processed so far
+    events,state = bufhelp.buffer_newevents('classifier.prediction',1500,state)
+    if events is None:
+        print("Error! no predictions, continuing")
+    else:
+        # get all predictions into 1 numpy array
+        pred = np.array([e.value for e in events])
+        nPred= len(pred)
+        ss   = stimSeq[:,:nFlash]
+        corr = np.dot(ss,pred)        
+        predIdx= np.argmax(corr,0) # predicted class
+            
+    #show the feedback
+    print("%d) pred=%d :"%(si,predIdx))
+    hdls[predIdx].set(color=fbColor)
+    drawnow()
+    sleep(feedbackDuration)
+      
+    # reset the display
+    [ _.set(color=bgColor) for _ in hdls]
+    drawnow()
+
+            
 bufhelp.sendEvent('stimulus.training','end')
 txthdl.set(text=['Thanks for taking part!' '' 'Press key to finish'],visible=True)
 drawnow()

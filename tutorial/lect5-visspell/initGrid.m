@@ -27,7 +27,7 @@ fontSize = opts.fontSize*wSize(4);
 
 % init the symbols
 hdls   =zeros([size(symbols),1]);
-w = 1/(size(symbols,1)+1); h=1/(size(symbols,2)+1);
+h = 1/(size(symbols,1)+1); w=1/(size(symbols,2)+1);
 for i = 1:size(symbols,1)
   for j = 1:size(symbols,2)
     x=j*w; y=i*h;

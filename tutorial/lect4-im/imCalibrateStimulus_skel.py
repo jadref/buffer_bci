@@ -1,20 +1,16 @@
 #!/usr/bin/env python3
 # Set up imports and paths
-import sys, os
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import sys, os
 import numpy as np
 from time import sleep, time
 from random import shuffle
-
-# add the buffer bits to the search path
 try:     pydir=os.path.dirname(__file__)
 except:  pydir=os.getcwd()    
 sigProcPath = os.path.join(os.path.abspath(pydir),'../../python/signalProc')
 sys.path.append(sigProcPath)
 import bufhelp
-
-DEBUG=True # False #
 
 ## HELPER FUNCTIONS
 def drawnow(fig=None):
@@ -28,7 +24,7 @@ def keypressFn(event):
     "wait for keypress in a matplotlib figure, and store in the currentKey global"
     global currentKey
     currentKey=event.key
-def waitforkey(fig=None,reset=True,debug=DEBUG):
+def waitforkey(fig=None,reset=True,debug=False):
     "wait for a key to be pressed in the given figure"
     if debug: return
     if fig is None: fig=gcf()
@@ -57,8 +53,7 @@ shuffle(tgtSeq) # N.B. shuffle works in-place!
 
 ##--------------------- Start of the actual experiment loop ----------------------------------
 # set the display and the string for stimulus
-if DEBUG:
-    plt.switch_backend('agg') # N.B. command to work in non-display mode
+#plt.switch_backend('agg') # N.B. command to work in non-display mode
 fig = plt.figure()
     
 fig.suptitle('RunSentences-Stimulus', fontsize=14, fontweight='bold')
@@ -90,72 +85,14 @@ hdls.insert(nSymbs,hhi)
 ## init connection to the buffer
 ftc,hdr=bufhelp.connect();
 
+#---------------------------------------------------------------------------------------
+#                             YOUR CODE BELOW HERE
+#---------------------------------------------------------------------------------------
+
 #wait for key-press to continue
-[_.set(facecolor=bgColor) for _ in hdls]
-txthdl.set(text='Press key to start')
+[_.set(facecolor=bgColor) for _ in hdls] # set color for all boxes
+txthdl.set(text='Press key to start',visible=True) # set the text info and make visible
 drawnow()
-waitforkey(fig)
+waitforkey(fig) # wait for a keypress
 
-bufhelp.sendEvent('stimulus.training','start')
-state=None
-## STARTING stimulus loop
-for si,tgt in enumerate(tgtSeq):
-    
-    sleep(intertrialDuration)
-
-    # show the baseline
-    hdls[-1].set(visible=True,facecolor=fixColor)
-    drawnow()
-    bufhelp.sendEvent('stimulus.baseline','start')
-    sleep(baselineDuration)
-    bufhelp.sendEvent('stimulus.baseline','end')
-      
-    #show the target
-    print("%d) tgt=%d :"%(si,tgt))
-    [_.set(facecolor=bgColor) for _ in hdls]
-    hdls[tgt].set(facecolor=tgtColor)
-    drawnow()
-    bufhelp.sendEvent('stimulus.target',tgt)
-    bufhelp.sendEvent('stimulus.trial','start')
-    sleep(trialDuration)
-
-    #catch the prediction
-    # N.B. use state to track which events processed so far
-    events,state = bufhelp.buffer_newevents('classifier.prediction',1500,state)
-    if events is None:
-        print("Error! no predictions, continuing")
-    else:
-        if len(events)>1:
-            print("Warning: multiple predictions. Some ignored.") 
-        evt=events[-1] # only use the last event
-        if isinstance(dv,(int,long,float)):#binary problem, covert to per-class
-            dv = np.array((evt.value,-evt.value))
-        else:
-            dv =np.array(evt.value) # extract decision values
-        # convert to probability, using soft-max
-        prob = np.exp(dv - np.max(dv))
-        prob = prop / np.sum(prob)
-
-    predIdx= np.argmax(prob,0) # predicted class
-
-    # give user feedback on the prediction
-    # compute the position of the fixation point, weighted ave of rest
-    fixPos = np.dot(prob,stimPos)    
-    hdls[-1].set_xy(fixPos) # move the 
-    hdls[-1].set(color=fbColor)
-    hdls[predIdx].set(color=fbColor) # predicted target indication
-    drawnow()
-    
-    bufhelp.sendEvent('stimulus.predTgt',predIdx)
-    sleep(feedbackDuration)
-        
-    # reset the display
-    hdls[-1].set_xy(stimPos[-1,:])
-    [ _.set(visible=False) for _ in hdls]
-    txthdl.set(visible=False)
-    drawnow()
-    bufhelp.sendEvent('stimulus.trial','end');
-
-bufhelp.sendEvent('stimulus.training','end')
-txthdl.set(text=['Thanks for taking part!' '' 'Press key to finish'])
-waitforkey(fig)
+bufhelp.sendEvent('stimulus.training','start') # send an event

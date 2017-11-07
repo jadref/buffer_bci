@@ -1,6 +1,6 @@
 #!/bin/bash
-buffdir=`dirname $0`
 cd `dirname ${BASH_SOURCE[0]}`
+buffdir=`pwd`
 execname='csignalproxy'
 if [ `uname -s` == 'Linux' ]; then
 	 if  [ "`uname -a`" == 'armv6l' ]; then

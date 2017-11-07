@@ -1,7 +1,9 @@
 function [x,s,mu,std]=stdFilt(x,s,alpha)
-% standardising moving average filter
+% standardising (0-mean, unit-stddev) moving average filter
 %
 %   [x,s,mu,std]=stdFilt(x,s,alpha)
+%
+%   x(t) = (x(t)-mu(x))./std(x)
 %
 % Inputs:
 %   x - [nd x 1] the data to filter

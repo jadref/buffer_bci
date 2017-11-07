@@ -144,7 +144,7 @@ if ( isfield(clsfr,'featFiltFn') && ~isempty(clsfr.featFiltFn) )
   if( ~iscell(clsfr.featFiltFn) ) clsfr.featFiltFn={clsfr.featFiltFn}; end;
   nX=[];
   for ei=1:size(X,3);
-	 [Xei,featFiltState]=feval(featFiltFn{1},X(:,:,ei),featFiltState,featFiltFn{2:end});
+	 [Xei,clsfr.featFiltState]=feval(clsfr.featFiltFn{1},X(:,:,ei),clsfr.featFiltState,clsfr.featFiltFn{2:end});
     if( isempty(nX) ) % init and allow for size changes
        if(size(Xei,2)==size(X,2)) nX=X; else nX=zeros([size(Xei),size(X,3)]); end
     end;
@@ -167,7 +167,7 @@ if ( any(isbadtr) )
 end
 
 % Pr(y==1|x,w,b), map to probability of the positive class
-if ( clsfr.binsp )
+if ( clsfr.binsp || numel(f)==1 )
    p = 1./(1+exp(-f));
 else % direct multi-class softmax
    p = exp(f-max(f,2)); p=repop(p,'./',sum(p,2));

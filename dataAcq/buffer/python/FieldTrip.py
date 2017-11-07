@@ -223,12 +223,14 @@ except ImportError:
         if not(isinstance(array,list) and isinstance(array[0], list) and isinstance(datatype, int) and datatype >= 0 and datatype <= 10):
             raise ValueError('Data must be a python a tuple with (array, datatype), where array is a list of lists (samples by channels) of bools, ints or floats and 10 >= datatype >= 0.')
 
+        
 class Chunk:
     def __init__(self):
         self.type = 0
         self.size = 0
         self.buf = ''
 
+        
 class Header:
     """Class for storing header information in the FieldTrip buffer format"""
     def __init__(self):
@@ -243,6 +245,65 @@ class Header:
     def __str__(self):
         return 'Channels.: %i\nSamples..: %i\nEvents...: %i\nSampFreq.: %f\nDataType.: %s\n'%(self.nChannels, self.nSamples, self.nEvents, self.fSample, numpyType[self.dataType])
 
+
+    def deserialize(self,buf,bufsize=None):
+        "decode a binary buffer of data into a header spec"
+        if bufsize is None: bufsize = len(buf)
+        if bufsize < 32:
+            return 0
+        (nchans, nsamp, nevt, fsamp, dtype, bfsiz) = struct.unpack('IIIfII', buf[0:24])
+
+        self.nChannels = nchans
+        self.nSamples = nsamp
+        self.nEvents = nevt
+        self.fSample = fsamp
+        self.dataType = dtype
+
+        offset=24
+        if bfsiz > 0:
+            while offset + 8 < bufsize:
+                (chunk_type, chunk_len) = struct.unpack('II', buf[offset:offset+8])
+                offset+=8
+                if offset + chunk_len < bufsize:
+                   break
+                self.chunks[chunk_type] = buf[offset:offset+chunk_len]
+                offset += chunk_len
+
+            if CHUNK_CHANNEL_NAMES in self.chunks:
+                labels = self.chunks[CHUNK_CHANNEL_NAMES].decode() #convert from byte->char
+                L = labels.split('\0')
+                numLab = len(L);
+                if numLab>=self.nChannels:
+                    self.labels = L[0:self.nChannels]
+
+        return offset
+
+    def serialize(self):
+        """Returns the contents of this header as a string, ready to send over the network"""
+        haveLabels = False
+        extras = ''
+        if not(labels is None):
+            serLabels = ''
+            try:
+                for n in range(0,nChannels):
+                    serLabels+=labels[n] + '\0'
+            except:
+                raise ValueError('Channels names (labels), if given, must be a list of N=numChannels strings')
+
+            extras = struct.pack('II', CHUNK_CHANNEL_NAMES, len(serLabels)) + serLabels
+            haveLabels = True
+
+        if not(chunks is None):
+            for chunk_type, chunk_data in chunks:
+                if haveLabels and chunk_type==CHUNK_CHANNEL_NAMES:
+                    # ignore channel names chunk in case we got labels
+                    continue
+                extras += struct.pack('II', chunk_type, len(chunk_data)) + chunk_data
+
+
+        hdef = struct.pack('IIIfII', nChannels, 0, 0, fSample, dataType, sizeChunks)
+        return hdef + extras    
+    
 class Event:
     """Class for storing events in the FieldTrip buffer format"""
     def __init__(self, type = None, value=None, sample=-1, offset=0, duration=0):
@@ -258,8 +319,8 @@ class Event:
     def __str__(self):
         return '(t:%s v:%s s:%i o:%i d:%i)\n'%(str(self.type),str(self.value), self.sample, self.offset, self.duration)
 
-    def deserialize(self, buf):
-        bufsize = len(buf)
+    def deserialize(self, buf, bufsize=None):
+        if bufsize is None: bufsize = len(buf) 
         if bufsize < 32:
             return 0
 
@@ -392,33 +453,19 @@ class Client:
             self.disconnect()
             raise IOError('Invalid HEADER packet received (too few bytes) - disconnecting')
 
-        (nchans, nsamp, nevt, fsamp, dtype, bfsiz) = struct.unpack('IIIfII', payload[0:24])
-
-        H = Header()
-        H.nChannels = nchans
-        H.nSamples = nsamp
-        H.nEvents = nevt
-        H.fSample = fsamp
-        H.dataType = dtype
-
-        if bfsiz > 0:
-            offset = 24
-            while offset + 8 < bufsize:
-                (chunk_type, chunk_len) = struct.unpack('II', payload[offset:offset+8])
-                offset+=8
-                if offset + chunk_len < bufsize:
-                   break
-                H.chunks[chunk_type] = payload[offset:offset+chunk_len]
-                offset += chunk_len
-
-            if CHUNK_CHANNEL_NAMES in H.chunks:
-                labels = H.chunks[CHUNK_CHANNEL_NAMES].decode() #convert from byte->char
-                L = labels.split('\0')
-                numLab = len(L);
-                if numLab>=H.nChannels:
-                    H.labels = L[0:H.nChannels]
-
+        H     = Header()
+        bsize = H.deserialize(payload,bufsize)
         return H
+
+    # TODO: make this consistent
+    # def putHeader(self, H):
+    #     if isinstance(H,Header):
+    #         buf = h.serialize()
+    #     self.sendRequest(PUT_HDR,buf)
+    #     (status, bufsize, resp_buf) = self.receiveResponse()
+    #     if status != PUT_OK:
+    #         raise IOError('Header could not be written')
+        
 
     def putHeader(self, nChannels, fSample, dataType, labels = None, chunks = None):
         haveLabels = False
@@ -478,13 +525,13 @@ class Client:
             raise IOError('Invalid DATA packet received (too few bytes)')
 
         (nchans, nsamp, datype, bfsiz) = struct.unpack('IIII', payload[0:16])
-
+    
         if bfsiz < bufsize - 16 or datype >= len(numpyType):
             raise IOError('Invalid DATA packet received')
 
         raw = payload[16:bfsiz+16]
         D = rawtoarray((nsamp, nchans), datype, raw)
-
+    
         return D
 
 
@@ -508,7 +555,7 @@ class Client:
             request = struct.pack('HHIII', VERSION, GET_EVT, 8, indS, indE)
         self.sendRaw(request)
 
-        (status, bufsize, resp_buf) = self.receiveResponse()
+        (status, bufsize, payload) = self.receiveResponse()
         if status == GET_ERR:
             raise IOError('Bad response from buffer server')
             return []
@@ -517,18 +564,7 @@ class Client:
             self.disconnect()
             raise IOError('Bad response from buffer server - disconnecting')
 
-        offset = 0
-        E = []
-        while 1:
-            e = Event()
-            nextOffset = e.deserialize(resp_buf[offset:])
-            if nextOffset == 0:
-                break
-            E.append(e)
-            offset = offset + nextOffset
-
-        return E
-
+        return decodeEvents(payload,bufsize)
 
     def putEvents(self, E):
         """putEvents(E) -- writes a single or multiple events, depending on whether an 'Event'
@@ -546,7 +582,7 @@ class Client:
                 num = num + 1
 
         self.sendRequest(PUT_EVT, buf)
-        (status, bufsize, resp_buf) = self.receiveResponse()
+        (status, bufsize, payload) = self.receiveResponse()
 
         if status != PUT_OK:
             raise IOError('Events could not be written.')
@@ -570,7 +606,7 @@ class Client:
         dataDef = struct.pack('IIII', nChan, nSamp, dataType, dataBufSize)
         self.sendRaw(request + dataDef + dataBuf )
 
-        (status, bufsize, resp_buf) = self.receiveResponse()
+        (status, bufsize, payload) = self.receiveResponse()
         if status != PUT_OK:
             raise IOError('Samples could not be written.')
 
@@ -579,12 +615,12 @@ class Client:
         request = struct.pack('HHIIII', VERSION, WAIT_DAT, 12, 0, 0, 0)
         self.sendRaw(request)
 
-        (status, bufsize, resp_buf) = self.receiveResponse()
+        (status, bufsize, payload) = self.receiveResponse()
 
         if status != WAIT_OK or bufsize < 8:
             raise IOError('Polling failed.')
 
-        return struct.unpack('II', resp_buf[0:8])
+        return struct.unpack('II', payload[0:8])
 
     def wait(self, nsamples, nevents, timeout):
         if nsamples<0: nsamples=2**32-1 # convert -1 -> maxint
@@ -592,13 +628,67 @@ class Client:
         request = struct.pack('HHIIII', VERSION, WAIT_DAT, 12, int(nsamples), int(nevents), int(timeout))
         self.sendRaw(request)
 
-        (status, bufsize, resp_buf) = self.receiveResponse()
+        (status, bufsize, payload) = self.receiveResponse()
 
         if status != WAIT_OK or bufsize < 8:
             raise IOError('Wait request failed.')
 
-        return struct.unpack('II', resp_buf[0:8])
+        return struct.unpack('II', payload[0:8])
 
+
+def read_buffer_offline_header(fname):
+    """ read a header object from a ft_offline save file"""
+    if isinstance(fname,str):
+        fd = open(fname,'rb')
+    else:
+        fd = fname
+    buf = fd.read()
+    H   = Header()
+    bsize = H.deserialize(buf)
+    fd.close()
+    return H
+        
+def read_buffer_offline_events(fname):
+    """ read an event stream from a ft_offline save file"""
+    if isinstance(fname,str):
+        fd = open(fname,'rb')
+    else:
+        fd = fname
+    buf = fd.read()
+    
+    E = decodeEvents(buf)
+    fd.close()
+    return E
+
+def decodeEvents(payload,bufsize=None):
+    "decode and byte-buffer into a set of events"
+    if bufsize is None: bufsize=len(payload)
+    offset = 0
+    E = []
+    while 1:
+        e = Event()
+        nextOffset = e.deserialize(payload[offset:])
+        if nextOffset == 0:
+            break
+        E.append(e)
+        offset = offset + nextOffset
+        
+    return E
+
+def read_buffer_offline_data(fname,hdr):
+    """ read all data in a ft_offline save file into a data array"""
+    if isinstance(fname,str):
+        fd = open(fname,'rb')
+    else:
+        fd = fname
+    buf = fd.read() # read the whole file in
+    nsamp = len(buf)/wordSize[hdr.dataType]
+    nsamp = nsamp/hdr.nChannels
+    if nsamp-int(nsamp) > 0 :
+        raise ValueError("Non integer number of samples in file")
+    D = rawtoarray((int(nsamp), hdr.nChannels), hdr.dataType, buf)
+    return D
+    
 if __name__ == "__main__":
     # Just a small demo for testing purposes...
     # This should be moved to a separate file at some point

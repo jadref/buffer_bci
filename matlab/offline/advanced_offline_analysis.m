@@ -37,6 +37,22 @@ capFile='1010'; % you should change this to represent whatever cap layout was us
 %                'badtrrm',0
 [clsfr,res,X,Y]=buffer_train_erp_clsfr(data,devents,hdr,'freqband',[.1 .5 10 12],'capFile',capFile,'timeband_ms',[750 750+1500],'spatialfilter','car','adaptspatialfiltFn',{'artChRegress',[],{'Oz'}},'badtrrm',0);
 
+% validate applying the same classifier to the same data generates the same results.
+tstclsfr=clsfr;
+% clear any state in the current classifier
+fn=fieldnames(tstclsfr); 
+for fi=1:numel(fn);
+   if(regexp(fn{fi},'.*[sS]tate'))tstclsfr.(fn{fi})=[]; end;
+end
+% apply this test classifier to all the data
+f=[]; fraw=[]; Xtst=[];
+for ei=1:numel(data);
+   textprogressbar(ei,numel(data));
+   [tstclsfr,f(ei,:),fraw(ei,:),p,Xtst(:,:,ei)]=buffer_apply_clsfr(data(ei),tstclsfr);
+end
+mad(res.opt.f,f)
+[res.opt.f(1:10) f(1:10)]
+
 % 2.4) Actually train an ERP classifier with:
 %      i)  a 5.-10hz frequency range : 
 %                'freqband',[.1 .5 10 12]

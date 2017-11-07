@@ -385,9 +385,10 @@ if ( J > J0*(1+1e-4) || isnan(J) )
 end;
 
 % compute the final performance with untransformed input and solutions
+f    = repop(w'*X,'+',b');
 Rw   = R*w;
-dv   = f; if(opts.rescaledv) dv=repop(f,'-',max(f,[],1)); end;% re-scale for numerical stability
-dv   = repop(dv,'-',max(dv,[],1));  % re-scale for numerical stability
+dv   = f; 
+if(opts.rescaledv) dv=repop(f,'-',max(f,[],1)); end;% re-scale for numerical stability
 p    = exp(dv);
 p    = repop(p,'/',sum(p,1));       % [1xN] = Pr(y_true)
 Ed   = -log(max(p(:),eps))'*Y(:); % -ln P(D|w,b,fp)

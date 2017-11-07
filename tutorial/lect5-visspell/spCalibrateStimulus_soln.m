@@ -24,7 +24,7 @@ initgetwTime;
 initsleepSec;
 
 verb=0;
-nSeq=15;
+nSeq=6;
 nRepetitions=5;  % the number of complete row/col stimulus before sequence is finished
 cueDuration=2;
 stimDuration=.2; % the length a row/col is highlighted
@@ -34,19 +34,14 @@ flashColor=[1 1 1]; % the 'flash' color (white)
 tgtColor=[0 1 0]; % the target indication color (green)
 
 % the set of options the user will pick from
-symbols={'1' '2' '3';
-         '4' '5' '6';
-         '7' '8' '9'};
+symbols={'A' 'B' 'C' 'D'};
 
 % make the stimulus
 clf;
 [h]=initGrid(symbols);
 
-% make the target stimulus sequence
-[ans,ans,ans,ans,tgtSeq]=mkStimSeqRand(numel(symbols),nSeq);
-% make the row/col flash sequence for each sequence
-[stimSeqRow]=mkStimSeqRand(size(symbols,1),nRepetitions*size(symbols,1),2);
-[stimSeqCol]=mkStimSeqRand(size(symbols,2),nRepetitions*size(symbols,2),2);
+tgtSeq = repmat([1:numel(symbols)]',ceil(nSeq/numel(symbols)));
+tgtSeq = randperm(tgtSeq(1:nSeq));
 
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
@@ -57,32 +52,29 @@ for si=1:nSeq;
   sleepSec(interSeqDuration);
   sendEvent('stimulus.sequence','start');
   % show the subject cue where to attend
-  [tgtRow,tgtCol]=ind2sub(size(symbols),tgtSeq(si)); % convert to row/col index
-  set(h(tgtRow,tgtCol),'color',tgtColor);
+  tgtIdx=tgtSeq(si);
+  set(h(tgtIdx),'color',tgtColor);
   drawnow;% expose; % N.B. needs a full drawnow for some reason
-  sendEvent('stimulus.targetSymbol',symbols{tgtSeq(si)});
+  sendEvent('stimulus.targetSymbol',symbols{tgtIdx});
   fprintf('%d) tgt=%s : ',si,symbols{tgtSeq(si)}); % debug info
   sleepSec(cueDuration);  
   set(h(:),'color',bgColor); % rest all symbols to background color
   
-  % rows stimulus
-  for ei=1:size(stimSeqRow,2);
-    set(h(:),'color',bgColor);
-    set(h(stimSeqRow(:,ei)>0,:),'color',flashColor);
-    drawnow;
-    ev=sendEvent('stimulus.rowFlash',stimSeqRow(:,ei)); % indicate this row is 'flashed'
-    sendEvent('stimulus.tgtFlash',stimSeqRow(tgtRow,ei),ev.sample); % indicate if it was a 'target' flash
-    sleepSec(stimDuration);
-  end
-  
-  % cols stimulus
-  for ei=1:size(stimSeqCol,2);
-    set(h(:),'color',bgColor);
-    set(h(:,stimSeqCol(:,ei)>0),'color',flashColor);
-    drawnow;
-    ev=sendEvent('stimulus.colFlash',stimSeqCol(:,ei)); % indicate this row is 'flashed'
-    sendEvent('stimulus.tgtFlash',stimSeqCol(tgtCol,ei),ev.sample); % indicate if it was a 'target' flash
-    sleepSec(stimDuration);
+  for ri=1:nRep; % reps
+    for ei=1:numel(symbols); % symbs
+      flashIdx=ei;
+      % flash
+      set(h(:),'color',bgColor);
+      set(h(flashIdx),'color',flashColor);
+      drawnow;
+      ev=sendEvent('stimulus.flash',symbols{flashIdx}); % indicate this row is 'flashed'
+      sendEvent('stimulus.tgtFlash',flashIdx==tgtIdx,ev.sample); % indicate 'target' flashs
+      sleepSec(stimDuration);
+      % reset
+      set(h(:),'color',bgColor);
+      drawnow;
+      sleepSec(stimDuration);      
+    end
   end
    
   % reset the cue and fixation point to indicate trial has finished  

@@ -115,19 +115,25 @@ epochtrlen_ms =epochFeedbackTrialDuration*1000; % amount of data to apply classi
 conttrlen_ms  =welch_width_ms; % amount of data to apply classifier to in continuous feedback
 
 % paramters for on-line adaption to signal changes
-adaptHalfLife_ms = 30*1000; %30s amount of data to use for adapting spatialfilter/biasadapt
-conttrialAdaptHL =(adaptHalfLife_ms/step_ms); % half-life in number of calls to apply clsfr
-epochtrialAdaptHL=(adaptHalfLife_ms/epochtrlen_ms); % half-life in number called to apply-clsfr in epoch feedback
-% smoothing parameters for feedback in continuous feedback mode
-contFeedbackFiltLen=(trialDuration*1000/step_ms); % accumulate whole trials data before feedback
+adaptHalfLife_ms = 60*1000; %30s amount of data to use for adapting spatialfilter/biasadapt
+% converter helpers from time to other units
+ms2samp  = @(x) x.*hdr.fSample./1000;
+ms2calls_contfb = @(x) x./step_ms;
+ms2calls_epochfb= @(x) x./epochtrlen_ms;
 
-%trainOpts={'width_ms',welch_width_ms,'badtrrm',1,'badchrm',1,'spatialfilter','wht','objFn','mlr_cg','binsp',0,'spMx','1vR'}; % whiten + direct multi-class training
+
+% global-whiten + direct multi-class training
+trainOpts={'width_ms',welch_width_ms,'badtrrm',1,'badchrm',1,'spatialfilter','wht','objFn','mlr_cg','binsp',0,'spMx','1vR'}; 
 
 % adapt-whiten + direct multi-class training
-trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'badchrm',0,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt' 'covFilt',150},'objFn','mlr_cg','binsp',0,'spMx','1vR'}; 
+trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'badchrm',0,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt' 'covFilt',ms2samp(adaptHalfLife_ms)},'objFn','mlr_cg','binsp',0,'spMx','1vR'}; 
+% adapt wht + stdFeatFilt
+trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'badchrm',0,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt' 'covFilt',ms2samp(adaptHalfLife_ms)},'featFiltFn',{'stdFilt' ms2calls_contfb(adaptHalfLife_ms)},'objFn','mlr_cg','binsp',0,'spMx','1vR'}; 
 % Epoch feedback opts
 %%0) Use exactly the same classification window for feedback as for training, but include bias adaption system to cope with train->test transfer
 earlyStopping = false;
-epochFeedbackOpts={'trlen_ms',epochtrlen_ms,'predFilt',@(x,s,e) biasFilt(x,s,epochtrialAdaptHL)}; % bias-adaption
+epochFeedbackOpts={'trlen_ms',epochtrlen_ms,'predFilt',@(x,s,e) biasFilt(x,s,ms2calls_epochfb(adaptHalfLife_ms))}; % bias-adaption
+%%2) Classify every welch-window-width (default 250ms), prediction is average of full trials worth of data
+contFeedbackOpts ={'rawpredEventType','classifier.rawprediction','predFilt',@(x,s,e) aveFilt(x,s,ms2calls_contfb(3000)),'trlen_ms',welch_width_ms};
 %%2) Classify every welch-window-width (default 250ms), prediction is average of full trials worth of data, bias adaptation on the result
-contFeedbackOpts ={'rawpredEventType','classifier.rawprediction','predFilt',@(x,s,e) biasFilt(x,s,[conttrialAdaptHL contFeedbackFiltLen]),'trlen_ms',welch_width_ms};%trlDuration average
+%contFeedbackOpts ={'rawpredEventType','classifier.rawprediction','predFilt',@(x,s,e) biasFilt(x,s,ms2calls_contfb([adaptHalfLife_ms 3000])),'trlen_ms',welch_width_ms};%trlDuration average

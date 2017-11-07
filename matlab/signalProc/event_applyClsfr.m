@@ -1,7 +1,7 @@
-function [testdata,testevents]=event_applyClsfr(clsfr,varargin)
+function [clsfr,testdata,testevents]=event_applyClsfr(clsfr,varargin)
 % apply classifier to data after the indicated events
 %
-%  [testdata,testevents]=imContFeedbackSignals(clsfr,varargin)
+%  [clsfr,testdata,testevents]=imContFeedbackSignals(clsfr,varargin)
 %
 % Inputs:
 %  clsfr  -- [struct] a classifier(s) structure as returned by train_ersp_clsfr

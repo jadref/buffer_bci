@@ -34,11 +34,7 @@ tgtCol=[0 1 0]; % the target indication color (green)
 
 % the set of options the user will pick from
 % this is what they will see on the screen
-symbols={'1' '2' '3';...
-         '4' '5' '6';...
-         '7' '8' '9'}';
-% N.B. Note the transpose, as screen coordinates (x,y) are transposed relative to 
-%  matrix coordinates (row,col) we store the symbols such that row=x and col=y
+symbols={'A' 'B' 'C' 'D'};
 
 % ----------------------------------------------------------------------------
 %    FILL IN YOUR CODE BELOW HERE
@@ -48,22 +44,29 @@ symbols={'1' '2' '3';...
 % make the a stimulus grid with symbols in it, return the *text* handles
 [h,symbs]=initGrid(symbols);
 
-% make the row/col flash sequence for each sequence
-[stimSeqRow]=mkStimSeqRand(size(symbols,1),nRepetitions*size(symbols,1));
-[stimSeqCol]=mkStimSeqRand(size(symbols,2),nRepetitions*size(symbols,2));
+% initialize the buffer_newevents state so that will catch all predictions after this time
+[devents,state]=buffer_newevents(buffhost,buffport,[],'classifier.prediction',[],0);
+
 
 % build a logical version of the flash state at each time point --
 %  needed to decode the classifier predictions later
 stimSeq=zeros([size(symbols),nRepetitions*numel(symbols)]);
 nFlash=0;
-for ei=1:numel(stimSeqRow,2);
+
+for ei=1:size(stimSeq,2);
   nFlash=nFlash+1;
-  stimSeq(stimSeqRow(:,ei)>0,:,nFlash)=true;
+                                % flash the flashIdx letter
+  set(h(flashIdx),'color',flashCol);
+  stimSeq(flashIdx,nFlash)=true;
+  drawnow;
 end
-for ei=1:numel(stimSeqCol,2);
-  nFlash=nFlash+1;
-  stimSeq(:,stimSeqCol(:,ei)>0,nFlash)=true;
-end
+
+% get all prediction events which have happened since the last time
+% we called buffer-new events, i.e. since the start of this sequence
+[devents,state]=buffer_newevents(buffhost,buffport,state,'classifier.prediction',[],500);
+
+          % extract the classifer decision values from the predictions events
+clsfrpred=cat(2,devents.value);
 
 % given a vector of classifier predictions for each flash clsfrpred=[nFlash x 1]
 % compute the inner product (similarity) between classifier predictions
