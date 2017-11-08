@@ -11,38 +11,69 @@ algorithms_brainfly();
 % N.B. Basicially this is a standard ERSP analysis setup
 default_args={,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[6 8 80 90],'width_ms',250,'aveType','abs'};
 
-% summary results storage.  Format is 2-d cell array.  Each row is an algorithm run with 4 columns: {subj session algorithm_label performance}
+% summary results storage.  Format is 2-d cell array.  
+% Each row is an algorithm run with 4 columns: {subj session algorithm_label performance}
+resultsfn=fullfile(dataRootDir,expt,sprintf('analyse_res'));
 try % load the previously saved results if possible..
-  res=load(fullfile(dataRootDir,expt,sprintf('analyse_res')));
+   if ( ~exist('results','var') ) 
+      load(resultsfn);
+   end
 catch
-  res={};
+   results=cell(0,4);
 end
 
 % run the given analysis
 si=1; sessi=3;
 for si=1:numel(datasets);
   subj   =datasets{si}{1};
-  session=datasets{si}{1+sessi};
-  saveDir=session;
-  if(~isempty(stripFrom))
-    tmp=strfind(stripFrom,session);
-    if ( ~isempty(tmp) ) saveDir=session(1:tmp);  end
-  end
-                                % load the sliced data
-  dname = fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_sliced',subj,label));
-  if( ~exist(dname,'file') )
-    warning('Couldnt find sliced data for : %s.  skipping',dname);
-    continue;
-  end
-  load(dname);
+  for sessi=1:numel(datasets{si})-1;
+     session=datasets{si}{1+sessi};
+     saveDir=session;
+     if(~isempty(stripFrom))
+        tmp=strfind(session,stripFrom);
+        if ( ~isempty(tmp) ) saveDir=session(1:tmp-1);  end
+     end
 
-  % run the set of algorithms to test
-  for ai=1:numel(algorithms)
-    [clsfr{ai},res{ai}]=buffer_train_ersp_clsfr(data,devents,hdr,default_args{:},algorithms{ai}{2:end},'visualize',0);
-                                % save the summary results
-    res{end+1}={subj session algorithms{ai}{1} res{ai}.opt.tst};
-    fprintf('%d) %s %s %s = %f\n',res{end}{:});
-  end
-                                % save the updated summary results
-  save(fullfile(dataRootDir,expt,sprintf('analyse_res')),'res');    
-end
+     % load the sliced data
+     dname = fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_sliced',subj,label));
+     if( ~(exist(dname,'file') || exist([dname '.mat'],'file')) )
+        warning('Couldnt find sliced data for : %s.  skipping',dname);
+        continue;
+     end
+     fprintf('Loading: %s\n',dname);
+     load(dname);
+     fprintf('Loaded %d events',numel(devents));
+     if ( numel(devents)==0 ) continue; end;
+
+     % run the set of algorithms to test
+     for ai=1:numel(algorithms)
+        alg=algorithms{ai}{1};
+
+        % check if already been run
+        mi=strcmp(subj,results(:,1)) &strcmp(saveDir,results(:,2)) &strcmp(alg,results(:,3));
+        if( any(mi) ) 
+           fprintf('Skipping prev run analysis: %s\n',alg);
+        end
+
+        fprintf('Trying: %s %s\n',subj,alg);
+        %        try; % run in catch so 1 bad alg doesn't stop everything
+
+           [clsfr,res]=buffer_train_ersp_clsfr(data,devents,hdr,default_args{:},algorithms{ai}{2:end},'visualize',0);
+           % save the summary results
+           results(end+1,:)={subj saveDir alg res.opt.tst};
+           fprintf('%d) %s %s %s = %f\n',ai,results{end,:});
+
+%         catch;
+%            err=lasterror, err.stack(1)
+%            fprintf('Error in : %d=%s,    IGNORED\n',ai,alg);
+%         end
+
+     end
+
+     % save the updated summary results
+     save(resultsfn,'results');    
+  end % sessions
+end % subjects
+% show the final results set
+[results,si]=sort(results,'rows'); % canonical order... subj, session, alg
+results
