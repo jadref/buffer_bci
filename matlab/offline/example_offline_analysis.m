@@ -24,7 +24,7 @@ run ../utilities/initPaths.m
 %  1.3) read the data for the selected events
 % If you have a more complex criteria for which events to slice and return
 % then you should modify step 1.2 in the sliceraw.m file
-datadir='C:/output/test/171030/1015AM'
+datadir='example_data'
 
 [data,devents,hdr,allevents]=sliceraw(fullfile(datadir,'raw_buffer/0001'),'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500);
 
