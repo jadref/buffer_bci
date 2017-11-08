@@ -1,0 +1,20 @@
+expt='own_experiments/motor_imagery/brainfly';
+% dataset format: cell-array of cell-arrays.  1 sub-cell array per subject.  First entry is subject ID, rest of the entries are the subject sessions.
+datasets{1}={'s1'
+             '0606di/1308/raw_buffer/0002'
+             '0907do/1235/raw_buffer/0001'
+             '0911ma/1002/raw_buffer/0001'
+             '0912di/1624/raw_buffer/0001'
+             '170925/1015AM/raw_buffer/0001'
+             '170926/0424PM/raw_buffer/0001'
+             '171002/1038AM/raw_buffer/0001'
+             '171003/0353PM/raw_buffer/0001'
+             '171009/1055AM/raw_buffer/0001'
+             '171023/1103AM/raw_buffer/0001'
+             '171030/1015AM/raw_buffer/0001'
+             '171031/0345PM/raw_buffer/0001'
+            };
+stripFrom='raw_buffer'; % when saving ignore after this string in dataset directory
+%datasets{2}={'s2' }
+%datasets{3}={'s3' }
+%datasets{4}={'s4' }
