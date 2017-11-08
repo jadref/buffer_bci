@@ -677,35 +677,26 @@ def outlierdetection(X, dim=0, threshold=(None,3), maxIter=3, feat="var"):
             raise Exception("Unrecognised feature type.")
     else:        
         raise Exception("Unrecognised feature type.")
-    
-    outliers = []
-    inliers = numpy.array(list(range(0,max(feat.shape))))    
 
-    mufeat = numpy.zeros(maxIter)
-    stdfeat = numpy.zeros(maxIter)
+    inliers = numpy.ones(feat.shape[0], dtype=numpy.bool)
     for i in range(0,maxIter):
         mufeat = numpy.median(feat[inliers])
         stdfeat = numpy.std(feat[inliers])
-
-        if threshold[0] is None:
+        bad = numpy.zeros_like(inliers)
+        if threshold[1] is not None:
             high = mufeat+threshold[1]*stdfeat
-            bad = (feat > high)
-        elif threshold[1] is None:
+            bad = bad | (feat > high)
+        elif threshold[0] is not None:
             low = mufeat+threshold[0]*stdfeat
-            bad = (feat < low)
-        else:
-            high = mufeat+threshold[1]*stdfeat
-            low = mufeat+threshold[0]*stdfeat
-            bad = (feat > high) * (feat < low)
+            bad = bad | (feat < low)
 
-        if not any(bad):
+        if not bad.any():
             break
         else:
-            outliers = outliers + list(inliers[bad])
-            inliers = inliers[[ not x for x in bad]]
-    
-    return (list(inliers), outliers)
-    
+            inliers = inliers & ~bad
+
+    return (list(numpy.where(inliers)[0]), list(numpy.where(~inliers)[0]))
+
 
 def rebuilddata(X,data):
     '''Rebuilds a list of datapoints based on a large numpy array.

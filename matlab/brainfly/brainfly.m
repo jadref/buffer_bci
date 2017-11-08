@@ -9,8 +9,8 @@ autoFireMode            = 1;               % auto-fire or fire key?
 useBuffer               = 1;
 timeBeforeNextAlien     = 3;               % seconds
 killFlashTime           = .1;              % duration of the red-you've-been-killed flash
-bonusSpawnInterval      = [5 20];          % range in time between bonus alien spawns
-
+bonusSpawnInterval      = [30 50];          % range in time between bonus alien spawns
+bonusFlashnr            = 3;
 predictionMargin=0;
 warpCursor = true; % cannon position is directly classifier output
 
@@ -80,6 +80,8 @@ score.shots  = 0;
 score.score  = 0;
 score.hits   = 0;
 score.bonushits=0;
+score.totalBonusPoss = 0;
+bonusFlash = 3;
                    % simple scoreing function, top-screen=10, bottom-screen=1
 height2score = @(height) round(10*(height-gameCanvasYLims(1))./(gameCanvasYLims(2)-gameCanvasYLims(1)) + 1);
 cannonKills = 0;
@@ -170,8 +172,18 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
 
   %----------------------------------------------------------------------
   % make new bonus alien if it's time.
+  if bonusFlash < bonusFlashnr
+      set(hCannon.hGraphic,'facecolor','y');
+      Alien.flashAlien(hAliens,bonusFlash+1)
+      bonusFlash = bonusFlash + 1;
+  end
   if( isempty(hbonusAliens) && frameTime > bonusSpawnTime )
     hbonusAliens=BonusAlien(hAxes,hCannon);
+    bonusFlash = 0;
+    score.totalBonusPoss = score.totalBonusPoss +1;
+    if( useBuffer ) 
+        sendEvent('stimulus.redCannon', frameTime); 
+        sendEvent('stimulus.stimState',ss); end % p3 stim state 
     if( useBuffer ) sendEvent('stimulus.bonusAlien',hbonusAliens.uid); end;
     bonusSpawnTime = frameTime + bonusSpawnInterval(1)+rand(1)*diff(bonusSpawnInterval); % time-at which next bonus show occur
   end
@@ -206,7 +218,9 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
   if ( ~isempty(hbonusAliens) )
     hbonusAliens = BonusAlien.update(hbonusAliens);
     if( any(strcmpi(curCharacter,{'a'})) ) % got the bonus alien
+      sendEvent('key.hit',frameTime);
       fprintf('%d) Got the bonus alien!\n',nframe) 
+      curCharacter = 'l';
       for hi=1:numel(hbonusAliens);
         score.bonushits=score.bonushits+1;
         hbonusAliens(hi).deleteAlien();
@@ -250,7 +264,7 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
                             % flash cannon, N.B. cannon is always stim-seq #1
     set(hCannon.hGraphic,'facecolor',stimColors(ss(1)+1,:));
                                 % flash the background
-    set(hbackground,'facecolor',stimColors(ss(2)+1,:));
+    %set(hbackground,'facecolor',stimColors(ss(2)+1,:));
     %%                             % flash the aliens
     %% alien2stim=zeros(numel(hAliens));
     %% for i=1:numel(hAliens);

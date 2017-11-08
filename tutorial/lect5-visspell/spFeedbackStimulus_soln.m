@@ -23,79 +23,61 @@ end;
 initgetwTime;
 initsleepSec;
 
-verb=1;
-nSeq=15;
+verb=0;
+nSeq=6;
 nRepetitions=5;  % the number of complete row/col stimulus before sequence is finished
 cueDuration=2;
 stimDuration=.2; % the length a row/col is highlighted
-dataDuration=.6; % lenght of the data that the sig processing needs
 interSeqDuration=2;
-feedbackDuration=2; % length of time feedback is on the screen
 bgColor=[.5 .5 .5]; % background color (grey)
 flashColor=[1 1 1]; % the 'flash' color (white)
 tgtColor=[0 1 0]; % the target indication color (green)
 
 % the set of options the user will pick from
-symbols={'1' '2' '3';
-         '4' '5' '6';
-         '7' '8' '9'};
+symbols={'A' 'B' 'C' 'D'};
 
 % make the stimulus
 clf;
-[h,symbs]=initGrid(symbols);
+[h]=initGrid(symbols);
 
-% make the row/col flash sequence for each sequence
-[stimSeqRow]=mkStimSeqRand(size(symbols,1),nRepetitions*size(symbols,1));
-[stimSeqCol]=mkStimSeqRand(size(symbols,2),nRepetitions*size(symbols,2));
+tgtSeq = repmat([1:numel(symbols)]',ceil(nSeq/numel(symbols)));
+tgtSeq = randperm(tgtSeq(1:nSeq));
+
+
 
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
-state=hdr.nEvents; % ignore all prediction events before this time
 set(h(:),'color',[.5 .5 .5]);
 sendEvent('stimulus.training','start');
 for si=1:nSeq;
 
-  nFlash = 0; stimSeq=zeros(size(symbols));
-  set(h(:),'color',bgColor); % rest all symbols to background color
   sleepSec(interSeqDuration);
   sendEvent('stimulus.sequence','start');
-  
-  % reset the newevents function state to only return matching events after this time
-  [devents,state]=buffer_newevents(buffhost,buffport,[],'classifier.prediction',[],0);
+  set(h(:),'color',bgColor); % rest all symbols to background color
 
-  if( verb>0 ) fprintf(1,'Rows'); end;
-  % rows stimulus
-  for ei=1:size(stimSeqRow,2);
-    % record the stimulus state, needed for decoding the classifier predictions later
-    nFlash=nFlash+1;
-    stimSeq(stimSeqRow(:,ei)>0,:,nFlash)=true;
-    % set the stimulus state
-    set(h(:),'color',bgColor);
-    set(h(stimSeqRow(:,ei)>0,:),'color',flashColor);
-    drawnow;
-    sendEvent('stimulus.rowFlash',stimSeqRow(:,ei)); % indicate this row is 'flashed'    
-    sleepSec(stimDuration);
-  end
+  % initialize the buffer_newevents state so that will catch all predictions after this time
+  [ans,state]=buffer_newevents(buffhost,buffport,[],[],[],0);
 
-  if( verb>0 ) fprintf(1,'Cols');end
-  % cols stimulus
-  for ei=1:size(stimSeqCol,2);
-    % record the stimulus state, needed for decoding the classifier predictions later
-    nFlash=nFlash+1;
-    stimSeq(:,stimSeqCol(:,ei)>0,nFlash)=true;
-    % set the stimulus state
-    set(h(:),'color',bgColor);
-    set(h(:,stimSeqCol(:,ei)>0),'color',flashColor);
-    drawnow;
-    sendEvent('stimulus.colFlash',stimSeqCol(:,ei)); % indicate this row is 'flashed'
-    sleepSec(stimDuration);    
+  stimSeq=zeros(numel(symbols),nRep*numel(symbols)); % [nSyb x nFlash] used record what flashed when
+  nFlash=0;
+  for ri=1:nRep; % reps
+    for ei=1:numel(symbols); % symbs
+      nFlash=nFlash+1;
+      flashIdx=ei;
+      % flash
+      set(h(:),'color',bgColor);
+      set(h(flashIdx),'color',flashColor);
+      stimSeq(flashIdx,nFlash)=true; % record info about what was flashed at this time
+      drawnow;
+      ev=sendEvent('stimulus.flash',symbols{flashIdx}); % indicate this row is 'flashed'
+      sendEvent('stimulus.tgtFlash',flashIdx==tgtIdx,ev.sample); % indicate 'target' flashs
+      sleepSec(stimDuration);
+      % reset
+      set(h(:),'color',bgColor);
+      drawnow;
+      sleepSec(stimDuration);      
+    end
   end
-   
-  % reset the cue and fixation point to indicate trial has finished  
-  set(h(:),'color',bgColor);
-  drawnow;
-  sleepSec(dataDuration-stimDuration);    % wait enough extra time for the last brain-response to finish
-  sendEvent('stimulus.sequence','end');
 
   % combine the classifier predictions with the stimulus used
   % wait for the signal processing pipeline to return the set of predictions
@@ -105,7 +87,7 @@ for si=1:nSeq;
     % correlate the stimulus sequence with the classifier predictions to identify the most likely letter
     pred =[devents.value]; % get all the classifier predictions in order
     nPred=numel(pred);
-    ss   = reshape(stimSeq(:,:,1:nFlash),[numel(symbols) nFlash]);
+    ss   = reshape(stimSeq(:,1:nFlash),[numel(symbols) nFlash]);
     corr = ss(:,1:nPred)*pred(:);  % N.B. guard for missing predictions!
     [ans,predTgt] = max(corr); % predicted target is highest correlation
   

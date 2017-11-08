@@ -101,8 +101,8 @@ classdef CannonBall < handle
               if ~isempty(hAlien) && ishandle(hAlien.hGraphic)
                  allowableBallOverlap = 0.8;
                  if curY >= hAlien.y - allowableBallOverlap*obj.sizeBall
-                    if obj.shotX +obj.sizeBall >= hAlien.x ...
-                           && obj.shotX <= hAlien.x + hAlien.alienSize
+                    if obj.shotX + obj.sizeBall >= hAlien.x - 0.5*hAlien.alienSize ...
+                           && obj.shotX <= hAlien.x + hAlien.alienSize - 0.5*hAlien.alienSize
                        disp('You got it!');
                        hAlien.hit;
                        hits = [hits; hAlien.y];

@@ -6,9 +6,9 @@ classdef BonusAlien < handle
   properties (Constant)
     relSpawnBox = [.1 .1 .8 .8]; % [l b w h] rectangle for the spawn box for the bonus alien
     relSpawnSize= .1;
-    alienLifeTime = 1; % time-alien is on screen to be killed
+    alienLifeTime = 3; % time-alien is on screen to be killed
     minuid = 128;
-    color       = 'b'; 
+    color       = 'k'; 
   end
     
     
@@ -39,7 +39,7 @@ classdef BonusAlien < handle
                                ,'facecolor',obj.color...
                                ,'parent',hAxes...
                                ,'position',[obj.x-obj.alienSize/2,obj.y-obj.alienSize/2,obj.alienSize,obj.alienSize]...
-                               ,'visible','on');
+                               ,'visible','off');
       obj.uid = Alien.getuid();
       obj.alienSpawnTime = tic;
     end

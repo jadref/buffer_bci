@@ -129,7 +129,7 @@ for si=1:nSeq;
   else
 	 tgtNm = tgtIdx; % human-name is position number
   end
-  fprintf('%d) tgt=%10s : ',si,tgtNm);
+  fprintf('%d) tgt="%10s" : ',si,tgtNm);
   drawnow;% expose; % N.B. needs a full drawnow for some reason
   sendEvent('stimulus.target',tgtNm);
   sendEvent('stimulus.trial','start');
