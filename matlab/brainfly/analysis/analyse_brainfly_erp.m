@@ -3,15 +3,15 @@ datasets_brainfly();
 %dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
 dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
 trlen_ms=750;
-label   ='movement'; % generic label for this slice/analysis type
+label   ='p300'; % generic label for this slice/analysis type
 makePlots=1; % flag if we should make summary ERP/AUC plots whilst slicing
-analysisType='ersp';  % type of pre-processing / analsysi to do
+analysisType='erp';  % type of pre-processing / analsysi to do
 
 % get the set of algorithms to run
-algorithms_brainfly();
+algorithms_brainfly_erp();
 % list of default arguments to always use
-% N.B. Basicially this is a standard ERSP analysis setup
-default_args={,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[6 8 80 90],'width_ms',250,'aveType','abs'};
+% N.B. Basicially this is a standard ERP analysis setup
+default_args={'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[.1 .5 10 12]};
 
 % summary results storage.  Format is 2-d cell array.  
 % Each row is an algorithm run with 4 columns: {subj session algorithm_label performance}
@@ -98,6 +98,7 @@ for si=1:numel(datasets);
         figure(1); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_%s',subj,label,analysisType)));
         figure(2); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_%s_AUC',subj,label,analysisType)));
      end
+
   end % sessions
 end % subjects
 % show the final results set
