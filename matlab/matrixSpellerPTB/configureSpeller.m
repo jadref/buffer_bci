@@ -52,7 +52,15 @@ vnRows=max(size(symbols,1),ceil(tti/isi));
 vnCols=max(size(symbols,2),ceil(tti/isi));     
 symbSize=.1;
 
+% Signal processor options
 trlen_ms=600;
+%-----------------------------------------------------------
+% Classifier training / application options
+freqband=[.1 .5 10 12]; % filter range for analysis
+calibrateOpts={};
+trainOpts={'badtrrm',0,'spatialfilter','wht','objFn','mlr_cg','binsp',0,'spMx','1vR'}; % whiten + direct multi-class training
+epochFeedbackOpts={};
+contFeedbackOpts ={'rawpredEventType','classifier.rawprediction'}; 
 
 % PTB stuff
 windowPos=[0 0 500 500]; % in sub-window set to [] for full screen
