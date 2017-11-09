@@ -1,9 +1,9 @@
-fs         = 250
-trlen_ms   = 750
-ms2samp    = @(x) x*fs/1000
-s2samp     = @(x) x*fs
-calls2samp = @(x) x*fs*1000/trlen_ms
-s2calls    = @(x) x*1000./trlen_ms
+fs         = 250;
+trlen_ms   = 750;
+ms2samp    = @(x) x*fs/1000;
+s2samp     = @(x) x*fs;
+calls2samp = @(x) x*fs*1000/trlen_ms;
+s2calls    = @(x) x*1000./trlen_ms;
 
 % specify the analysis configuration options to pass to buffer_train_ersp_clsfr
 % format cell-array of cell-arrays.  For each sub-cell array 1st element is a unique label

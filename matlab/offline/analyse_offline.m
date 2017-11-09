@@ -5,6 +5,7 @@ dataRootDir = '~/data/bci'; % main directory the data is saved relative to in su
 trlen_ms=750;
 label   ='movement'; % generic label for this slice/analysis type
 makePlots=1; % flag if we should make summary ERP/AUC plots whilst slicing
+analysisType='ersp';  % type of pre-processing / analsysi to do
 
 % get the set of algorithms to run
 algorithms_brainfly();
@@ -58,10 +59,13 @@ for si=1:numel(datasets);
         fprintf('Trying: %s %s\n',subj,alg);
         try; % run in catch so 1 bad alg doesn't stop everything
 
-           [clsfr,res]=buffer_train_ersp_clsfr(data,devents,hdr,default_args{:},algorithms{ai}{2:end},'visualize',0);
-           % save the summary results
-           results(end+1,:)={subj saveDir alg res.opt.tst};
-           fprintf('%d) %s %s %s = %f\n',ai,results{end,:});
+           if( strcmp(lower(analysisType),'ersp') )
+              [clsfr,res]=buffer_train_ersp_clsfr(data,devents,hdr,default_args{:},algorithms{ai}{2:end},'visualize',0);
+           elseif( strcmp(lower(analysisType),'ersp') )
+              [clsfr,res]=buffer_train_erp_clsfr(data,devents,hdr,default_args{:},algorithms{ai}{2:end},'visualize',0);
+           else
+              error('Unrecognised analysis type: %s',analysisType)
+           end% save the summary results
 
         catch;
            err=lasterror, err.stack(1)
@@ -71,9 +75,11 @@ for si=1:numel(datasets);
      end
 
      % save the updated summary results
-     save(resultsfn,'results');    
+     results=sortrows(results,1:3); % canonical order... subj, session, alg
+     fprintf('Saving results to : %s\n',resultsfn);
+     save(resultsfn,'results');   
+     fid=fopen([resultsfn '.txt'],'w'); rr=results'; fprintf(fid,'%8s,\t%30s,\t%40s,\t%4.2f\n',rr{:}); fclose(fid);
   end % sessions
 end % subjects
 % show the final results set
-[results,si]=sort(results,'rows'); % canonical order... subj, session, alg
 results

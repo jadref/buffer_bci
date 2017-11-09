@@ -1,9 +1,11 @@
 run ../../utilities/initPaths
 datasets_brainfly();
-dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
+%dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
+dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
 trlen_ms=750;
 label   ='movement'; % generic label for this slice/analysis type
 makePlots=1; % flag if we should make summary ERP/AUC plots whilst slicing
+analysisType='ersp';  % type of pre-processing / analsysi to do
 
 % get the set of algorithms to run
 algorithms_brainfly();
@@ -24,7 +26,8 @@ end
 
 % run the given analysis
 si=1; sessi=3;
-for si=1:numel(datasets);
+for si=8:numel(datasets);
+   if ( isempty(datasets{si}) ) continue; end;
   subj   =datasets{si}{1};
   for sessi=1:numel(datasets{si})-1;
      session=datasets{si}{1+sessi};
@@ -42,7 +45,7 @@ for si=1:numel(datasets);
      end
      fprintf('Loading: %s\n',dname);
      load(dname);
-     fprintf('Loaded %d events',numel(devents));
+     fprintf('Loaded %d events\n',numel(devents));
      if ( numel(devents)==0 ) continue; end;
 
      % run the set of algorithms to test
@@ -53,27 +56,35 @@ for si=1:numel(datasets);
         mi=strcmp(subj,results(:,1)) &strcmp(saveDir,results(:,2)) &strcmp(alg,results(:,3));
         if( any(mi) ) 
            fprintf('Skipping prev run analysis: %s\n',alg);
+           continue;
         end
 
         fprintf('Trying: %s %s\n',subj,alg);
-        %        try; % run in catch so 1 bad alg doesn't stop everything
+        try; % run in catch so 1 bad alg doesn't stop everything
 
-           [clsfr,res]=buffer_train_ersp_clsfr(data,devents,hdr,default_args{:},algorithms{ai}{2:end},'visualize',0);
-           % save the summary results
+           if( strcmp(lower(analysisType),'ersp') )
+              [clsfr,res]=buffer_train_ersp_clsfr(data,devents,hdr,default_args{:},algorithms{ai}{2:end},'visualize',0);
+           elseif( strcmp(lower(analysisType),'ersp') )
+              [clsfr,res]=buffer_train_erp_clsfr(data,devents,hdr,default_args{:},algorithms{ai}{2:end},'visualize',0);
+           else
+              error('Unrecognised analysis type: %s',analysisType)
+           end% save the summary results
            results(end+1,:)={subj saveDir alg res.opt.tst};
            fprintf('%d) %s %s %s = %f\n',ai,results{end,:});
 
-%         catch;
-%            err=lasterror, err.stack(1)
-%            fprintf('Error in : %d=%s,    IGNORED\n',ai,alg);
-%         end
+        catch;
+           err=lasterror, err.stack(1)
+           fprintf('Error in : %d=%s,    IGNORED\n',ai,alg);
+        end
 
      end
 
      % save the updated summary results
-     save(resultsfn,'results');    
+     results=sortrows(results,1:3); % canonical order... subj, session, alg
+     fprintf('Saving results to : %s\n',resultsfn);
+     save(resultsfn,'results');   
+     fid=fopen([resultsfn '.txt'],'w'); rr=results'; fprintf(fid,'%8s,\t%30s,\t%40s,\t%4.2f\n',rr{:}); fclose(fid);
   end % sessions
 end % subjects
 % show the final results set
-[results,si]=sort(results,'rows'); % canonical order... subj, session, alg
 results
