@@ -81,7 +81,7 @@ while ( true )
     trainSubj=subject;
 
     %---------------------------------------------------------------------------------
-   case {'train','training'};
+   case {'train','training','trainerp'};
     try
       if ( ~isequal(trainSubj,subject) || ~exist('traindata','var') )
         fprintf('Loading training data from : %s\n',[dname '_' subject '_' datestr]);
@@ -100,7 +100,7 @@ while ( true )
     end
 
     %---------------------------------------------------------------------------------
-   case {'test','testing'};
+   case {'test','testing','eventseqfeedback'};
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
       clsfrfile = [cname '_' subject '_' datestr];
       if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=[cname '_' subject]; end;
@@ -114,7 +114,7 @@ while ( true )
     %spFeedbackSignals
     
     %---------------------------------------------------------------------------------
-   case {'contfeedback'};
+   case {'contfeedback','eventfeedback'};
     if ( ~isequal(clsSubj,subject) || ~exist('clsfr','var') ) 
       clsfrfile = [cname '_' subject '_' datestr];
       if ( ~exist([clsfrfile '.mat'],'file') ) clsfrfile=[cname '_' subject]; end;
