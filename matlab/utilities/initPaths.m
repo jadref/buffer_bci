@@ -22,7 +22,8 @@ if ( exist(dataAcq_dir,'dir') )
   if ( exist(fullfile(dataAcq_dir,'buffer'),'dir') ) 
     addpath(fullfile(dataAcq_dir,'buffer')); 
   end
-  if ( exist(fullfile(dataAcq_dir,'buffer','java'),'dir') ) % use java buffer if it's there
+  if ( usejava('jvm') && ...
+       exist(fullfile(dataAcq_dir,'buffer','java'),'dir') ) % use java buffer if it's there
     bufferjavaclassdir=fullfile(dataAcq_dir,'buffer','java');
     addpath(bufferjavaclassdir); 
     bufferjar = fullfile(bufferjavaclassdir,'BufferClient.jar');
