@@ -10,13 +10,13 @@ configure;
   fontSize = .05*wSize(4);
   %        Instruct String             Phase-name
   menustr={'0) EEG'                    'eegviewer';
-			  'a) Artifacts'              'artifact';
            '1) Practice'               'practice';
 			  '2) Calibrate'              'calibrate'; 
 			  '3) Train Classifier'       'trainersp';
 			  '4) Performance evaluation'         'epochfeedback';
-			  '5) Continuous Feedback'    'contfeedback';
+			  '5) Continuous Feedback (run 4x)'    'contfeedback';
               '6) Performance evaluation'         'epochfeedback';
+              'a) Artifacts'              'artifact';
          '' '';
          'S) Slice ftoffline data'   'sliceraw';
          'L) Load training data'     'loadtraining';
