@@ -385,34 +385,33 @@ if ( opts.visualize )
 end
 
 %6) train classifier
-if ( opts.classify ) 
-  fprintf('6) train classifier\n');
-  [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',opts.zeroLab,'verb',opts.verb,'objFn','mlr_cg','binsp',0,'spMx','1vR',varargin{:});  
-  res.isbadtr=isbadtr; % record the list of found bad trials
-else
+if ( ~opts.classify ) 
   res=[];
   clsfr=struct();
-end
+else
+   fprintf('6) train classifier\n');
+   [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',opts.zeroLab,'verb',opts.verb,'objFn','mlr_cg','binsp',0,'spMx','1vR',varargin{:});  
+   res.isbadtr=isbadtr; % record the list of found bad trials
 
-if ( opts.visualize ) 
-  if ( size(res.tstconf,2)==1 ) % confusion matrix is correct
-     % plot the confusion matrix
-    confMxFig=figure(4); set(confMxFig,'name','Class confusion matrix');	 
-	 if ( size(clsfr.spMx,1)==1 )
-		if ( iscell(clsfr.spKey) ) clabels={clsfr.spKey{clsfr.spMx>0} clsfr.spKey{clsfr.spMx<0}};
-		else                       clabels={sprintf('%g',clsfr.spKey(clsfr.spMx>0)) sprintf('%g',clsfr.spKey(clsfr.spMx<0))};
-		end
-	 else                         [ans,li]=find(clsfr.spMx>0); clabels=clsfr.spKey(li);
-	 end
-    cfMx=reshape(res.tstconf(:,1,res.opt.Ci),sqrt(size(res.tstconf,1)),[]);
-    imagesc(cfMx);
-    set(gca,'xtick',1:numel(clabels),'xticklabel',clabels,...
-        'ytick',1:numel(clabels),'yticklabel',clabels,'clim',[0 max(sum(cfMx,1))]);
-    xlabel('True Class'); ylabel('Predicted Class'); colorbar;
-    title('Class confusion matrix');
-  end
+   if ( opts.visualize ) 
+      if ( size(res.tstconf,2)==1 ) % confusion matrix is correct
+                                    % plot the confusion matrix
+         confMxFig=figure(4); set(confMxFig,'name','Class confusion matrix');	 
+         if ( size(clsfr.spMx,1)==1 )
+            if ( iscell(clsfr.spKey) ) clabels={clsfr.spKey{clsfr.spMx>0} clsfr.spKey{clsfr.spMx<0}};
+            else                       clabels={sprintf('%g',clsfr.spKey(clsfr.spMx>0)) sprintf('%g',clsfr.spKey(clsfr.spMx<0))};
+            end
+         else                         [ans,li]=find(clsfr.spMx>0); clabels=clsfr.spKey(li);
+         end
+         cfMx=reshape(res.tstconf(:,1,res.opt.Ci),sqrt(size(res.tstconf,1)),[]);
+         imagesc(cfMx);
+         set(gca,'xtick',1:numel(clabels),'xticklabel',clabels,...
+                 'ytick',1:numel(clabels),'yticklabel',clabels,'clim',[0 max(sum(cfMx,1))]);
+         xlabel('True Class'); ylabel('Predicted Class'); colorbar;
+         title('Class confusion matrix');
+      end
+   end
 end
-
 
 %7) combine all the info needed to apply this pipeline to testing data
 clsfr.type        = 'ERsP';
@@ -447,15 +446,17 @@ if( ~isempty(res) )
 end
 
 if ( opts.visualize >= 1 ) 
-  summary='';
-  if ( clsfr.binsp ) % print individual classifier outputs with info about what problem it is
-     for spi=1:size(res.opt.tst,2);
-        summary = [summary sprintf('%-40s=\t\t%4.1f\n',clsfr.spDesc{spi},res.opt.tst(:,spi)*100)];
-     end
-     summary=[summary sprintf('---------------\n')];
-  end
-  summary=[summary sprintf('\n%40s = %4.1f','<ave>',mean(res.opt.tst,2)*100)];
-  b=msgbox({sprintf('Classifier performance :\n %s',summary) 'OK to continue!'},'Results');
+   if( opts.classify ) 
+      summary='';
+      if ( clsfr.binsp ) % print individual classifier outputs with info about what problem it is
+         for spi=1:size(res.opt.tst,2);
+            summary = [summary sprintf('%-40s=\t\t%4.1f\n',clsfr.spDesc{spi},res.opt.tst(:,spi)*100)];
+         end
+         summary=[summary sprintf('---------------\n')];
+      end
+      summary=[summary sprintf('\n%40s = %4.1f','<ave>',mean(res.opt.tst,2)*100)];
+      b=msgbox({sprintf('Classifier performance :\n %s',summary) 'OK to continue!'},'Results');
+   end
   if ( opts.visualize > 1 )
      for i=0:.2:120; if ( ~ishandle(b) ) break; end; drawnow; pause(.2); end; % wait to close auc figure
      if ( ishandle(b) ) close(b); end;
