@@ -4,7 +4,7 @@ datasets_brainfly();
 dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
 trlen_ms=750;
 label   ='p300'; % generic label for this slice/analysis type
-makePlots=1; % flag if we should make summary ERP/AUC plots whilst slicing
+makePlots=0; % flag if we should make summary ERP/AUC plots whilst slicing
 analysisType='erp';  % type of pre-processing / analsysi to do
 
 % get the set of algorithms to run

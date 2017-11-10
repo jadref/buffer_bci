@@ -14,7 +14,8 @@ algorithms{1}={'wht_welch' 'spatialfilter','wht'};
 % example of how to add a new algorithm
 %algorithms{end+1}={};
 
-algorithms{end+1}={'adaptwht60s' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(60)}};
+algorithms{end+1}={'car_adaptwht60s' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(60)}};
 algorithms{end+1}={'adaptwht600s' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(600)}};
 algorithms{end+1}={'adaptwht60s_stdfilt60' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(60)},'featFiltFn',{'stdFilt' s2calls(60)}};
+algorithms{end+1}={'adaptwht600s_stdfilt600' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(600)},'featFiltFn',{'stdFilt' s2calls(600)}};
 algorithms{end+1}={'adaptwht60s_biasfilt60' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(60)},'featFiltFn',{'biasFilt' s2calls(60)}};

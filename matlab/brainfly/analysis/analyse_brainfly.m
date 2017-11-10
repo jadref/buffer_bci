@@ -4,7 +4,7 @@ datasets_brainfly();
 dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
 trlen_ms=750;
 label   ='movement'; % generic label for this slice/analysis type
-makePlots=1; % flag if we should make summary ERP/AUC plots whilst slicing
+makePlots=0; % flag if we should make summary ERP/AUC plots whilst slicing
 analysisType='ersp';  % type of pre-processing / analsysi to do
 
 % get the set of algorithms to run
@@ -108,5 +108,42 @@ algs=unique(results(:,3));
 for ai=1:numel(algs);
    mi=strcmp(results(:,3),algs{ai});
    resai = [results{mi,4}];
-   fprintf('%2d) %s = %5.3f (%5.3f)\n',ai,algs{ai},mean(resai),std(resai));
+   fprintf('%2d) %40s = %5.3f (%5.3f)\n',ai,algs{ai},mean(resai),std(resai));
+end
+
+
+% per-subject summary / also per-week
+algs=unique(results(:,3));
+subjs=unique(results(:,1));
+for ai=1:numel(algs);
+   alg=algs{ai};
+   fprintf('\n\nAlg: %s\n',alg);
+   for si=1:numel(subjs);
+      mi = strcmp(results(:,1),subjs{si}) & strcmp(results(:,3),alg);
+      resai = [results{mi,4}];
+      fprintf('%2d) %10s = %5.3f (%5.3f) ',si,subjs{si},mean(resai),std(resai));
+      fprintf(' / Wk = ');
+      for wki=1:6;
+         mi = strcmp(results(:,1),subjs{si}) & ...
+              strcmp(results(:,3),alg) & ...
+              (strncmp(results(:,2),sprintf('Week%d',wki),5) | strncmp(results(:,2),sprintf('Week %d',wki),6));
+         if( any(mi) )  fprintf('%5.2f  ',mean([results{mi,4}]));
+         else           fprintf(' -     '); 
+         end
+      end
+      fprintf('\n');
+   end
+   fprintf('---\n');
+   mi = strcmp(results(:,3),alg);
+   resai = [results{mi,4}];
+   fprintf('ave %10s = %5.3f (%5.3f) ','ave',mean(resai),std(resai));
+   fprintf(' / Wk = ');
+   for wki=1:6;
+      mi = strcmp(results(:,3),alg) & ...
+           (strncmp(results(:,2),sprintf('Week%d',wki),5) | strncmp(results(:,2),sprintf('Week %d',wki),6));
+      if( any(mi) )  fprintf('%5.2f  ',mean([results{mi,4}]));
+      else           fprintf(' -     '); 
+      end
+   end
+   fprintf('\n');
 end
