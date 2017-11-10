@@ -166,7 +166,8 @@ for si=1:nSeq;
      end
      score.timetogo = timetogo;
      if strcmp(condition,'timepressure')
-         score.pointspossible = maxpointspossible * pressurepoints(timetogo,contFeedbackTrialDuration);
+         % score.pointspossible = maxpointspossible * pressurepoints(timetogo,contFeedbackTrialDuration);
+         score.pointspossible = minpointspossible + pressurepoints(timetogo,contFeedbackTrialDuration)*diff([minpointspossible maxpointspossible]);
      end
       set(progresshdl,'string',genTextStr(score));
     % wait for new prediction events to process *or* end of trial time
@@ -274,6 +275,9 @@ for si=1:nSeq;
      drawnow; % update the display after all events processed    
   
   end % while time to go
+  if ~firsthit
+      score.curtrial = minpointspossible;
+  end
   score.total = score.total + score.curtrial;
     scorefeedback = sprintf('Trial: %4.0f\nTotal: %4.0f',score.curtrial,score.total);
 										  % turn off the text cue

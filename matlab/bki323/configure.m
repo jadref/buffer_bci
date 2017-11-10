@@ -48,8 +48,9 @@ bgColor  = [.5 .5 .5]; % backgroud color
 cueColor = [0 1 0];
 predColor= [0 1 0]; % prediction color
 txtColor     =[.9 .9 .9]; % color of the cue text
-condition = 'timepressure'; % 'nopressure'
+condition = 'timepressure'; %'nopressure';
 maxpointspossible = 100;
+minpointspossible = -10;
 hitThreshold      = .5;
 gameFrameDuration = 1/10; % 5hz screen update interval
 
