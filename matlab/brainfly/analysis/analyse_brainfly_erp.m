@@ -1,7 +1,11 @@
 run ../../utilities/initPaths
-datasets_brainfly();
-%dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
-dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
+if ( 1 ) 
+   dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
+   datasets_brainfly_local();
+else
+   dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
+   datasets_brainfly();
+end
 trlen_ms=750;
 label   ='p300'; % generic label for this slice/analysis type
 makePlots=0; % flag if we should make summary ERP/AUC plots whilst slicing
