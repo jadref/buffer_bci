@@ -128,11 +128,10 @@ contFeedbackFiltLen=(trialDuration*1000/step_ms); % accumulate whole trials data
 % global-whiten + direct multi-class training
 trainOpts={'width_ms',welch_width_ms,'badtrrm',1,'badchrm',1,'spatialfilter','wht','objFn','mlr_cg','binsp',0,'spMx','1vR'}; 
 
-% adapt-whiten + direct multi-class training
-%trainOpts={'width_ms',welch_width_ms,'badtrrm',0,'badchrm',0,'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt' 'covFilt',150},'objFn','mlr_cg','binsp',0,'spMx','1vR'}; 
 % Epoch feedback opts
 %%0) Use exactly the same classification window for feedback as for training, but include bias adaption system to cope with train->test transfer
 earlyStopping = false;
 epochFeedbackOpts={'trlen_ms',epochtrlen_ms,'predFilt',@(x,s,e) biasFilt(x,s,epochtrialAdaptHL)}; % bias-adaption
+
 %%2) Classify every welch-window-width (default 250ms), prediction is average of full trials worth of data, bias adaptation on the result
 contFeedbackOpts ={'rawpredEventType','classifier.rawprediction','predFilt',@(x,s,e) biasFilt(x,s,[conttrialAdaptHL contFeedbackFiltLen]),'trlen_ms',welch_width_ms};%trlDuration average
