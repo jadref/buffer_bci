@@ -1,6 +1,6 @@
 call ..\..\utilities\findMatlab.bat
 if %ismatlab%==1 (
-  start "Matlab" /b %matexe% -r "runBrainfly;quit;" %matopts%
+  start "Matlab" /b %matexe% -r "runbki323;quit;" %matopts%
 ) else (
-  echo runBrainfly;quit; | %matexe% %matopts%
+  echo runbki323;quit; | %matexe% %matopts%
 )
