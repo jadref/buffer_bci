@@ -12,6 +12,7 @@ classdef Cannon < handle
         relCannonHeight = 0.1;    % The height of the cannon.
         relMoveStepSize = .5;     % The maximum cannon move in 1 second
         minuid=1;
+		relcannonRange  = [.1 .9]; % min/max cannon position w.r.t. axes limits 
     end
     
     properties
@@ -42,7 +43,7 @@ classdef Cannon < handle
             axesYLim     = get(hAxes,'YLim');
             obj.cannonWidth  = diff(axesXLim)*obj.relCannonWidth;
             obj.cannonHeight = diff(axesYLim)*obj.relCannonHeight;
-            obj.Xbase    = mean(axesYLim)-0.5*obj.cannonWidth;
+            obj.Xbase    = mean(axesXLim)-0.5*obj.cannonWidth;
             obj.Ybase    = axesYLim(1);
             
             % Make cannon:
@@ -89,7 +90,9 @@ classdef Cannon < handle
               end
             end
                                 % display bounds check
-            obj.Xbase = min(max(obj.Xbase,axesXLim(1)),axesXLim(2)-obj.cannonWidth);
+			axXRange = (axesXLim(2)-axesXLim(1));
+            obj.Xbase = min(max(obj.Xbase,axesXLim(1)+obj.relcannonRange(1)*axXRange),...
+							axesXLim(1)+obj.relcannonRange(2)*axXRange-obj.cannonWidth);
             % update the object properties
             pos=get(obj.hGraphic,'position');
             pos(1)=obj.Xbase;

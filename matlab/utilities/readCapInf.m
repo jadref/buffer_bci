@@ -11,7 +11,8 @@ if ( nargin<2 || isempty(capRoots) )
    capRoots = {'.',mdir,fullfile(mdir,'./positions'),fullfile(mdir,'..','..','resources','caps'),''};
  end
  if ( ischar(capRoots) ) capRoots={capRoots}; end;
-[capDir capFn capExt]=fileparts(cap);
+Cname={}; latlong=[]; xy=[]; xyz=[];
+ [capDir capFn capExt]=fileparts(cap);
 % search given directories for the capfile
 for cr=1:numel(capRoots);
   capRoot=capRoots{cr};
@@ -49,6 +50,7 @@ elseif ( isequal(capExt,'lay') ) % fieldtrip layout file
    xy     = repop(xy,'./',sqrt(mean(xy.^2,2))); % map to unit circle and center
    latlong= xy2latlong(xy);
    xyz    = latlong2xyz(latlong);   
+elseif( strcmp(capFn,'showAll') )
 else % contains lat/long co-ords
    [Cname lat long]=textread(capFile,'%s %f %f');
    latlong = [lat long]';

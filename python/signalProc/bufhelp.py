@@ -286,7 +286,13 @@ def gatherdata(trigger, time, stoptrigger, milliseconds=False, verbose = True):
     milliseconds rather than samples.
     
     Note that this function assumes that at least half a second of data is
-    being stored in the buffer."""
+    being stored in the buffer.
+
+    Outputs:
+     data       - [[nSamp x nCh] x nEvent] list of lists of numpy-arrays of [nSamp x nCh] for each trigger
+     events     - [event] list of trigger events
+     stopevents - [event] list of events which caused us to stop gathering
+"""
 
     global fSample
     
@@ -342,7 +348,7 @@ def gatherdata(trigger, time, stoptrigger, milliseconds=False, verbose = True):
             event,endSample = point
             if nSamples > endSample:
                 events.append(event)
-                data.append(ftc.getData((event.sample, endSample -1)))
+                data.append(ftc.getData((event.sample, endSample -1))) # [ nSamples x nChannels ]
                 gather.remove(point)            
                 if verbose:
                     print(("Gathering " + str(event.type) + " " + str(event.value) + " data from " + str(event.sample) + " to " +str(endSample)))
