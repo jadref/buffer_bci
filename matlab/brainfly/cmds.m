@@ -1,27 +1,23 @@
 run ../utilities/initPaths
 expt='own_experiments/motor_imagery/brainfly';
-subj={'s1'};
-sessions={{ 
-'0606di/1308/raw_buffer/0002'
-'0907do/1235/raw_buffer/0001'
-'0911ma/1002/raw_buffer/0001'
-'0912di/1624/raw_buffer/0001'
-'170925/1015AM/raw_buffer/0001'
-'170926/0424PM/raw_buffer/0001'
-'171002/1038AM/raw_buffer/0001'
-'171003/0353PM/raw_buffer/0001'
-'171009/1055AM/raw_buffer/0001'
-'171023/1103AM/raw_buffer/0001'
-'171030/1015AM/raw_buffer/0001'
-'171031/0345PM/raw_buffer/0001'
-}};
-
-si=1; sessi=3;
-% slice data
-sessdir=fullfile('~/data/bci',expt,subj{si},sessions{si}{sessi});
-[data,devents,hdr,allevents]=sliceraw(sessdir,'startSet',{'stimulus.target'},'trlen_ms',750,'offset_ms',[0 0]);
-
+datasets_brainfly();
+dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
 trlen_ms=750;
+label   ='movement';
+                                % slice data
+si=1; sessi=3;
+subj   =datasets{si}{1};
+session=datasets{si}{1+sessi};
+saveDir=session;
+if(~isempty(stripFrom))
+  tmp=strfind(stripFrom,session);
+  if ( ~isempty(tmp) ) saveDir=session(1:tmp);  end
+end
+sessdir=fullfile(dataRootDir,expt,subj,session);
+[data,devents,hdr,allevents]=sliceraw(sessdir,'startSet',{'stimulus.target'},'trlen_ms',trlen_ms,'offset_ms',[0 0]);
+                                % save the sliced data
+save(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_sliced',subj,label)),'data','devents','hdr','allevents');
+
 ms2samp    = @(x) x*hdr.Fs/1000;
 s2samp    = @(x) x*hdr.Fs;
 calls2samp = @(x) x*hdr.Fs*1000/trlen_ms;
