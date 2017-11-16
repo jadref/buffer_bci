@@ -130,8 +130,9 @@ if ( ~isempty(opts.offset_samp) ) offset_samp = offset_samp+opts.offset_samp; en
 data=repmat(struct('buf',[]),size(devents));
 if ( opts.verb>=0 ) fprintf('Slicing %d epochs:',numel(devents));end;
 keep=true(numel(devents),1);
+if( isstruct(devents) ) bgns=[devents.sample]; else bgns=devents; end;
 for ei=1:numel(devents);
-  data(ei).buf=read_buffer_offline_data(datafname,hdr,devents(ei).sample+[offset_samp]);  
+  data(ei).buf=read_buffer_offline_data(datafname,hdr,bgns(ei)+[offset_samp]);  
   if ( size(data(ei).buf,2) < (offset_samp(2)-offset_samp(1)) ) keep(ei)=false; end;
   if ( subSampRatio>1 ) % sub-sample
     [data(ei).buf,idx] = subsample(data(ei).buf,size(data(ei).buf,2)./subSampRatio,2);

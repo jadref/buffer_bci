@@ -69,7 +69,7 @@ end
 %3.5) adaptive spatial filter
 if ( isfield(clsfr,'adaptspatialfiltFn') && ~isempty(clsfr.adaptspatialfiltFn) )
    if( ~iscell(clsfr.adaptspatialfiltFn) ) clsfr.adaptspatialfiltFn={clsfr.adaptspatialfiltFn}; end;
-   [X,clsfr.adaptspatialfiltstate] = feval(clsfr.adaptspatialfiltFn{1},X,clsfr.adaptspatialfiltstate,clsfr.adaptspatialfiltFn{2:end});
+   [X,clsfr.adaptspatialfiltstate] = feval(clsfr.adaptspatialfiltFn{1},X,clsfr.adaptspatialfiltstate,'verb',verb-1,clsfr.adaptspatialfiltFn{2:end});
 end
 
 %3.75) check for bad trials
@@ -88,7 +88,7 @@ end
 
 %3) convert to spectral
 if ( size(X,2)>numel(clsfr.windowFn) )
-  X=welchpsd(X,2,'windowType',clsfr.windowFn(:),'aveType',clsfr.welchAveType,'detrend',1);
+  X=welchpsd(X,2,'windowType',clsfr.windowFn(:),'aveType',clsfr.welchAveType,'detrend',1,'verb',verb-1);
 else
   %3.1) temporal window
   X=repop(X,'*',clsfr.windowFn(:)');

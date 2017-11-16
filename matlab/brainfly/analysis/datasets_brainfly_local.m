@@ -19,6 +19,7 @@ datasets{1}={'s1'
              '171031/0345PM/raw_buffer/0001'
              '171107/0356PM/raw_buffer/0001'
              '171110/1044AM/raw_buffer/0001'
+             '171115/1011am/raw_buffer/0001'
             };
 % example to add new subject datasets
 %datasets{end+1}={'s2' }

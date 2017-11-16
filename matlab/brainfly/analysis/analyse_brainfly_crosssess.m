@@ -1,7 +1,11 @@
 run ../../utilities/initPaths
-datasets_brainfly();
-%dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
-dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
+if ( 1 ) 
+   dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
+   datasets_brainfly_local();
+else
+   dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
+   datasets_brainfly();
+end
 label   ='movement_crosssess'; % generic label for this slice/analysis type
 analysisType='ersp';  % type of pre-processing / analsysi to do
 
@@ -27,7 +31,8 @@ si=1; sessi=3;
 for si=1:numel(datasets);
    if ( isempty(datasets{si}) ) continue; end;
    subj  = datasets{si}{1};
-   dname = fullfile(dataRootDir,expt,subj,sprintf('%s_%s_sliced',subj,label(1:find(label=='_'))));
+   saveDir=fullfile(expt,subj);
+   dname = fullfile(dataRootDir,saveDir,sprintf('%s_%s_sliced',subj,label(1:find(label=='_')-1)));
 
    if( ~(exist(dname,'file') || exist([dname '.mat'],'file')) )
      warning('Couldnt find sliced data for : %s.  skipping',dname);
@@ -35,10 +40,11 @@ for si=1:numel(datasets);
    end
    fprintf('Loading: %s\n',dname);
    load(dname);
-   fprintf('Loaded %d events\n',numel(devents));
-   if ( numel(devents)==0 ) continue; end;
+   fprintf('Loaded %d sessions\n',numel(alldata));
+   if ( numel(alldata)==0 ) continue; end;
 
-                                % run the set of algorithms to test
+   % run the set of algorithms to test
+   ai=1; sessi=1; tstd=2;
    for ai=1:numel(algorithms)
      alg=algorithms{ai}{1};
 
@@ -53,7 +59,7 @@ for si=1:numel(datasets);
      for sessi=1:numel(alldata); % leave session out algorithm
        d=alldata(sessi);
        if( strcmp(lower(analysisType),'ersp') )
-         [clsfr,res]=buffer_train_ersp_clsfr(d.data,d.devents,d.hdr,default_args{:},algorithms{ai}{2:end},'visualize',0);
+         [clsfr,res]=buffer_train_ersp_clsfr(d.data,d.devents,d.hdr,default_args{:},algorithms{ai}{2:end},'visualize',0,'verb',-1);
        elseif( strcmp(lower(analysisType),'erp') )
          [clsfr,res]=buffer_train_erp_clsfr(d.data,d.devents,d.hdr,default_args{:},algorithms{ai}{2:end},'visualize',0);
        else
@@ -64,13 +70,14 @@ for si=1:numel(datasets);
                                 % test on the rest of the data
        tstsess=[];
        for tstd=1:numel(alldata);
-         if(tstd==sessi); fprintf(' N/A  '); continue; end;
-         d=alldata(sessi);
-         f = buffer_apply_clsfr(clsfr,d.data,d.hdr); % predictions
-         y = lab2ind({d.devents.value},clsfr.spKey,clsfr.spMx); % true-labels
+         d=alldata(tstd);
+         f = buffer_apply_clsfr(d.data,clsfr); % predictions
+         y = lab2ind({d.devents.value},clsfr.spKey,clsfr.spMx); % map events->clsfr targets
          conf      = dv2conf(y,f); % confusion matrix
-         tstsess(tstd) = conf2loss(conf,'bal'); % performance
-         fprintf(' %4.2f ',tstses(tstd));
+         tst = conf2loss(conf,'bal'); % performance
+         if(tstd==sessi); fprintf(' %4.2ft',tst); continue;  end;
+         tstsess(tstd)=tst;
+         fprintf(' %4.2f ',tstsess(tstd));
        end
                                 % summary performance
        tst(sessi)=sum(tstsess)./(numel(alldata)-1);
