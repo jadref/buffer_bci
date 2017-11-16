@@ -24,7 +24,7 @@ run ../utilities/initPaths.m
 %  1.3) read the data for the selected events
 % If you have a more complex criteria for which events to slice and return
 % then you should modify step 1.2 in the sliceraw.m file
-datadir='C:/output/test/171030/1015AM'
+datadir='example_data'
 
 [data,devents,hdr,allevents]=sliceraw(fullfile(datadir,'raw_buffer/0001'),'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500);
 
@@ -87,6 +87,13 @@ end
 
 % 3) apply this classifier to the same data (or new data)
 [f]      =buffer_apply_clsfr(data,clsfr);  % f contains the classifier decision values
+
+%4) Evaluate performance on this data set
+y = lab2ind({d.devents.value},clsfr.spKey,clsfr.spMx); % map events->clsfr targets
+conf = dv2conf(y,f);          % confusion matrix
+perf = conf2loss(conf,'bal'); % performance
+
+
 % visualise the classifier output
 %figure(3);clf;plot([Y*10 f]);legend('true *10','prediction');
 

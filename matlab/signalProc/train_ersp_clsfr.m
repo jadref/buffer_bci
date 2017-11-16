@@ -308,7 +308,7 @@ end
 fprintf('4) Welch\n');
 if ( opts.timefeat ) Xt=mean(X,2);end % add a pure time feature
 [X,wopts,winFn]=welchpsd(X,2,'width_ms',opts.width_ms,'windowType',opts.windowType,'fs',fs,...
-                         'aveType',opts.aveType,'detrend',1);
+                         'aveType',opts.aveType,'detrend',1,'verb',opts.verb-1); 
 freqs=0:(1000/opts.width_ms):fs/2; % position of the frequency bins
 
 %5) sub-select the range of frequencies we care about
@@ -423,7 +423,7 @@ if ( opts.visualize )
    end
    % Actually plot the data and AUC scores
 	xy=ch_pos; if (size(xy,1)==3) xy = xyz2xy(xy); end
-   erpfig=figure(2);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');
+   erpfig=figure(2);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');figure(erpfig);
    yvals=freqs;
    try;
 	  image3d(mu(:,:,:),1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels(:),'disptype','plot','ticklabs','sw','clabel',opts.aveType);
@@ -432,8 +432,8 @@ if ( opts.visualize )
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
 	end;
    if ( ~(all(Yci(:)==Yci(1))) )
-    aucfig=figure(3);clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');
-    try;
+    aucfig=figure(3);clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');figure(aucfig);
+    try; 
 		image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
 		colormap ikelvin;
 		saveaspdf('AUC');
@@ -447,34 +447,33 @@ if ( opts.visualize )
 end
 
 %6) train classifier
-if ( opts.classify )
-  fprintf('6) train classifier\n');
-  [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',opts.zeroLab,'verb',opts.verb,varargin{:});
-  res.isbadtr=isbadtr; % record the list of found bad trials
-else
+if ( ~opts.classify ) 
   res=[];
   clsfr=struct();
-end
+else
+   fprintf('6) train classifier\n');
+   [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',opts.zeroLab,'verb',opts.verb,'objFn','mlr_cg','binsp',0,'spMx','1vR',varargin{:});  
+   res.isbadtr=isbadtr; % record the list of found bad trials
 
-if ( opts.visualize )
-  if ( size(res.tstconf,2)==1 ) % confusion matrix is correct
-     % plot the confusion matrix
-    confMxFig=figure(4); set(confMxFig,'name','Class confusion matrix');
-	 if ( size(clsfr.spMx,1)==1 )
-		if ( iscell(clsfr.spKey) ) clabels={clsfr.spKey{clsfr.spMx>0} clsfr.spKey{clsfr.spMx<0}};
-		else                       clabels={sprintf('%g',clsfr.spKey(clsfr.spMx>0)) sprintf('%g',clsfr.spKey(clsfr.spMx<0))};
-		end
-	 else                         [ans,li]=find(clsfr.spMx>0); clabels=clsfr.spKey(li);
-	 end
-    cfMx=reshape(res.tstconf(:,1,res.opt.Ci),sqrt(size(res.tstconf,1)),[]);
-    imagesc(cfMx);
-    set(gca,'xtick',1:numel(clabels),'xticklabel',clabels,...
-        'ytick',1:numel(clabels),'yticklabel',clabels,'clim',[0 max(sum(cfMx,1))]);
-    xlabel('True Class'); ylabel('Predicted Class'); colorbar;
-    title('Class confusion matrix');
-  end
+   if ( opts.visualize ) 
+      if ( size(res.tstconf,2)==1 ) % confusion matrix is correct
+                                    % plot the confusion matrix
+         confMxFig=figure(4); set(confMxFig,'name','Class confusion matrix');	 
+         if ( size(clsfr.spMx,1)==1 )
+            if ( iscell(clsfr.spKey) ) clabels={clsfr.spKey{clsfr.spMx>0} clsfr.spKey{clsfr.spMx<0}};
+            else                       clabels={sprintf('%g',clsfr.spKey(clsfr.spMx>0)) sprintf('%g',clsfr.spKey(clsfr.spMx<0))};
+            end
+         else                         [ans,li]=find(clsfr.spMx>0); clabels=clsfr.spKey(li);
+         end
+         cfMx=reshape(res.tstconf(:,1,res.opt.Ci),sqrt(size(res.tstconf,1)),[]);
+         imagesc(cfMx);
+         set(gca,'xtick',1:numel(clabels),'xticklabel',clabels,...
+                 'ytick',1:numel(clabels),'yticklabel',clabels,'clim',[0 max(sum(cfMx,1))]);
+         xlabel('True Class'); ylabel('Predicted Class'); colorbar;
+         title('Class confusion matrix');
+      end
+   end
 end
-
 
 %7) combine all the info needed to apply this pipeline to testing data
 clsfr.type        = 'ERsP';
@@ -512,16 +511,18 @@ if( ~isempty(res) )
 %  bins=[-inf -200:5:200 inf]; clf;plot([bins(1)-1 bins(2:end-1) bins(end)+1],[histc(tstf(Y>0),bins) histc(tstf(Y<=0),bins)]);
 end
 
-if ( opts.visualize >= 1 )
-  summary='';
-  if ( clsfr.binsp ) % print individual classifier outputs with info about what problem it is
-     for spi=1:size(res.opt.tst,2);
-        summary = [summary sprintf('%-40s=\t\t%4.1f\n',clsfr.spDesc{spi},res.opt.tst(:,spi)*100)];
-     end
-     summary=[summary sprintf('---------------\n')];
-  end
-  summary=[summary sprintf('\n%40s = %4.1f','<ave>',mean(res.opt.tst,2)*100)];
-  b=msgbox({sprintf('Classifier performance :\n %s',summary) 'OK to continue!'},'Results');
+if ( opts.visualize >= 1 ) 
+   if( opts.classify ) 
+      summary='';
+      if ( clsfr.binsp ) % print individual classifier outputs with info about what problem it is
+         for spi=1:size(res.opt.tst,2);
+            summary = [summary sprintf('%-40s=\t\t%4.1f\n',clsfr.spDesc{spi},res.opt.tst(:,spi)*100)];
+         end
+         summary=[summary sprintf('---------------\n')];
+      end
+      summary=[summary sprintf('\n%40s = %4.1f','<ave>',mean(res.opt.tst,2)*100)];
+      b=msgbox({sprintf('Classifier performance :\n %s',summary) 'OK to continue!'},'Results');
+   end
   if ( opts.visualize > 1 )
      for i=0:.2:120; if ( ~ishandle(b) ) break; end; drawnow; pause(.2); end; % wait to close auc figure
      if ( ishandle(b) ) close(b); end;

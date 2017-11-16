@@ -4,10 +4,10 @@ if ( ~exist('preConfigured','var') || ~isequal(preConfigured,true) )  configureG
 % Game canvas size:
 gameCanvasYLims         = [0 800];
 gameCanvasXLims         = [0 500];
-maxCannonShotsPerSecond = 2;               % RPS of cannon
+maxCannonShotsPerSecond = 1;               % RPS of cannon
 autoFireMode            = 1;               % auto-fire or fire key?
 useBuffer               = 1;
-timeBeforeNextAlien     = 3;               % seconds
+timeBeforeNextAlien     = 5;               % seconds
 killFlashTime           = .1;              % duration of the red-you've-been-killed flash
 bonusSpawnInterval      = [30 50];          % range in time between bonus alien spawns
 bonusFlashnr            = 3;
@@ -51,7 +51,7 @@ drawnow;
                                 % Make cannon:
 hCannon = Cannon(hAxes);
 % make background for p3 stimuli
-hbackground = rectangle('position',[gameCanvasXLims(1),gameCanvasYLims(1),diff(gameCanvasXLims),10]);
+%hbackground = rectangle('position',[gameCanvasXLims(1),gameCanvasYLims(1),diff(gameCanvasXLims),10]);
 
 
         % make a simple odd-ball stimulus sequence, with targets mintti apart
@@ -63,7 +63,7 @@ stimColors = [bgColor;flashColor];
                                 % make a sequence of alien spawn locations
 % make the target sequence
 tgtSeq=mkStimSeqRand(2,gameDuration*2./timeBeforeNextAlien);
-lrSeq =(tgtSeq(1,:)*.8+.1)+(rand(1,size(tgtSeq,2))-.5)*.4; % l/r with a little noise
+lrSeq =(tgtSeq(1,:)*.7+.15)+(rand(1,size(tgtSeq,2))-.5)*.1; % l/r with a little noise
 
 %% Game Loop:
                                 % Set callbacks to manage the key presses:
@@ -245,19 +245,23 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
        %----------------------------- do the P300 type flashing -------------
        % get the position in the stim-sequence for this time.
        % Note: stimulus rate may be slower than the display rate...
-  % Note: stimTime(stimi) is time this stimulus should **first** be on screen
-  if( frameTime > stimTime(stimi) ) % next stimulus state
+  % Note: stimTime(stimi) is time this stimulus **finish** being on screen
+  newstimState=false;
+  if( stimTime(stimi)>frameTime ) % end of this stimulus, move on to next one
     stimi=stimi+1; % next stimulus frame
     if( stimi>=numel(stimTime) ) % wrap-arround the end of the stimulus sequence
       stimi=1;
-    else
-                                % find next valid frame
-      tmp=stimi;for stimi=tmp:numel(stimTime); if(frameTime<stimTime(stimi))break;end; end; 
+      fprintf('Warning!!!! ran out of stimuli!!!!!');
+    else  % find next valid frame, i.e. first event for which stimTime > current time = frameTime
+      tmp=stimi;for stimi=tmp:numel(stimTime); if(stimTime(stimi)>frameTime)break;end; end; 
       if ( verb>=0 && stimi-tmp>5 ) % check for frame dropping
         fprintf('%d) Dropped %d Frame(s)!!!\n',nframe,stimi-tmp);
       end;        
     end
     ss=stimSeq(:,stimi); % get the current stimulus state info
+	% TODO: only send event when state *really* changes?
+	newstimState=true;
+
                  %fprintf('%d) %g %d=>[%s]\n',nframe,frameTime,stimi,...
                  % sprintf('%d=%d ',[stim2obj(stim2obj>0) ss(stim2obj>0)]'));
 
@@ -286,9 +290,10 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
   drawnow;
                               % update the stimulus state
   if( useBuffer ) % send event describing the game stimulus state
-    sendEvent('stimulus.stimState',ss); % p3 stim state
-    sendEvent('stimulus.tgtFlash',ss(1)); % tgt-flash?
-      
+	if ( newstimState ) % only send events when the cannon changes color...
+		sendEvent('stimulus.stimState',ss); % p3 stim state
+		sendEvent('stimulus.tgtFlash',ss(1)); % tgt-flash?
+	end
                        % send event saying what task the user should be doing
                        % get the lowest alien, this is the target alien
     if ( ~isempty(hAliens) )
