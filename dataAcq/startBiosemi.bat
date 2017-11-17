@@ -1,4 +1,5 @@
 set batdir=%~dp0
+cd %batdir%
 set drive=%~d0
 set bciroot=output\raw_buffer
 set subject=test

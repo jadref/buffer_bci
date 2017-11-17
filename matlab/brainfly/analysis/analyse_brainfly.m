@@ -1,7 +1,11 @@
 run ../../utilities/initPaths
-datasets_brainfly();
-%dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
-dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
+if ( 1 ) 
+   dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
+   datasets_brainfly_local();
+else
+   dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
+   datasets_brainfly();
+end
 trlen_ms=750;
 label   ='movement'; % generic label for this slice/analysis type
 makePlots=0; % flag if we should make summary ERP/AUC plots whilst slicing
@@ -122,13 +126,19 @@ for ai=1:numel(algs);
       mi = strcmp(results(:,1),subjs{si}) & strcmp(results(:,3),alg);
       resai = [results{mi,4}];
       fprintf('%2d) %10s = %5.3f (%5.3f) ',si,subjs{si},mean(resai),std(resai));
-      fprintf(' / Wk = ');
-      for wki=1:6;
-         mi = strcmp(results(:,1),subjs{si}) & ...
-              strcmp(results(:,3),alg) & ...
-              (strncmp(results(:,2),sprintf('Week%d',wki),5) | strncmp(results(:,2),sprintf('Week %d',wki),6));
-         if( any(mi) )  fprintf('%5.2f  ',mean([results{mi,4}]));
-         else           fprintf(' -     '); 
+      if( any(strcmp(results(mi,2),'Week')) )
+         fprintf(' / Wk = ');
+         for wki=1:6;
+            mi = strcmp(results(:,1),subjs{si}) & ...
+                 strcmp(results(:,3),alg) & ...
+                 (strncmp(results(:,2),sprintf('Week%d',wki),5) | strncmp(results(:,2),sprintf('Week %d',wki),6));
+            if( any(mi) )  fprintf('%5.2f  ',mean([results{mi,4}]));
+            else           fprintf(' -     '); 
+            end
+         end
+      else
+         for si=find(mi);
+            fprintf('%5.2f  ',results{si,4});
          end
       end
       fprintf('\n');

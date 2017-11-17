@@ -276,7 +276,7 @@ end;
 fprintf('4) Welch\n');
 if ( opts.timefeat ) Xt=mean(X,2);end % add a pure time feature
 [X,wopts,winFn]=welchpsd(X,2,'width_ms',opts.width_ms,'windowType',opts.windowType,'fs',fs,...
-                         'aveType',opts.aveType,'detrend',1); 
+                         'aveType',opts.aveType,'detrend',1,'verb',opts.verb-1); 
 freqs=0:(1000/opts.width_ms):fs/2; % position of the frequency bins
 
 %5) sub-select the range of frequencies we care about
@@ -361,7 +361,7 @@ if ( opts.visualize )
    end
    % Actually plot the data and AUC scores
 	xy=ch_pos; if (size(xy,1)==3) xy = xyz2xy(xy); end
-   erpfig=figure(2);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');
+   erpfig=figure(2);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');figure(erpfig);
    yvals=freqs;
    try; 
 	  image3d(mu(:,:,:),1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels(:),'disptype','plot','ticklabs','sw','clabel',opts.aveType);
@@ -370,7 +370,7 @@ if ( opts.visualize )
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
 	end;
    if ( ~(all(Yci(:)==Yci(1))) )
-    aucfig=figure(3);clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');
+    aucfig=figure(3);clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');figure(aucfig);
     try; 
 		image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
 		colormap ikelvin; 

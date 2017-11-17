@@ -1,7 +1,11 @@
 run ../../utilities/initPaths
-datasets_brainfly();
-%dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
-dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
+if ( 0 ) 
+   dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
+   datasets_brainfly_local();
+else
+   dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
+   datasets_brainfly();
+end
 trlen_ms=750;
 label   ='p300'; % generic label for this slice/analysis type
 makePlots=0; % flag if we should make summary ERP/AUC plots whilst slicing
@@ -11,7 +15,7 @@ analysisType='erp';  % type of pre-processing / analsysi to do
 algorithms_brainfly_erp();
 % list of default arguments to always use
 % N.B. Basicially this is a standard ERP analysis setup
-default_args={'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[.1 .5 10 12]};
+default_args={'badtrrm',1,'badchrm',1,'detrend',1,'spatialfilter','car','freqband',[.1 .5 12 14]};
 
 % summary results storage.  Format is 2-d cell array.  
 % Each row is an algorithm run with 4 columns: {subj session algorithm_label performance}
@@ -90,13 +94,13 @@ for si=1:numel(datasets);
      if( makePlots ) 
         % also make summary plots
         if( strcmp(lower(analysisType),'ersp') )
-           [clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[6 8 80 90],'width_ms',250,'aveType','abs','classify',0,'visualize',1);
+           [clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,default_args{:},'spatialfilter','wht','freqband',[6 8 80 90],'width_ms',250,'aveType','abs','classify',0,'visualize',1);
         elseif( strcmp(lower(analysisType),'erp') )
-           [clsfr,res,X,Y]=buffer_train_erp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[.1 .5 12 14],'classify',0,'visualize',1);
+           [clsfr,res,X,Y]=buffer_train_erp_clsfr(data,devents,hdr,default_args{:},'spatialfilter','wht','freqband',[.1 .5 12 14],'classify',0,'visualize',1);
         end
         % save plots
-        figure(1); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_%s',subj,label,analysisType)));
-        figure(2); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_%s_AUC',subj,label,analysisType)));
+        figure(2); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_%s',subj,label,analysisType)));
+        figure(3); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_%s_AUC',subj,label,analysisType)));
      end
 
   end % sessions

@@ -1,7 +1,11 @@
 run ../../utilities/initPaths
-dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
-dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
-datasets_brainfly();
+if ( 0 ) 
+   dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
+   datasets_brainfly_local();
+else
+   dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
+   datasets_brainfly();
+end
 
 trlen_ms=750;
 label   ='p300'; % generic label for this slice/analysis type
