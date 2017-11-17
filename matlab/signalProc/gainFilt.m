@@ -15,7 +15,7 @@ function [x,s]=stdFilt(x,s,alpha,scale)
 %   s - [struct] updated filter state
 if ( nargin<3 || isempty(alpha) ) alpha=1; end;
 if ( nargin<4 || isempty(scale) ) scale=1; end;
-if ( isempty(s) ) s=struct('N',zeros(size(alpha)),'scale',1,'alpha',alpha,'sx',zeros(size(x)),'sx2',zeros(size(x)),'x',zeros(size(x))); end;
+if ( isempty(s) ) s=struct('N',zeros(size(alpha)),'scale',.5,'alpha',alpha,'sx',zeros(size(x)),'sx2',zeros(size(x)),'x',zeros(size(x))); end;
 if ( any(alpha>1) ) alpha=exp(log(.5)./alpha); end; % convert to decay factor
 s.N  = s.alpha.*s.N  + 1;
 % moving average summary statistics for mu/std 

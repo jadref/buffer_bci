@@ -2,16 +2,16 @@ useBuffer=true;
 useKeyboard=true;
 
 if ( exist('OCTAVE_VERSION') ) debug_on_error(1); else dbstop if error; end;
-if ( exist('OCTAVE_VERSION') ) % use fast render pipeline in OCTAVE
-  page_output_immediately(1); % prevent buffering output
-  if ( ~isempty(strmatch('qt',available_graphics_toolkits())) )
-	 graphics_toolkit('qt'); 
-  elseif ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
-	 graphics_toolkit('qthandles'); 
-  elseif ( ~isempty(strmatch('fltk',available_graphics_toolkits())) )
-	 graphics_toolkit('fltk'); % use fast rendering library
+  if ( exist('OCTAVE_VERSION','builtin') ) 
+	 page_output_immediately(1); % prevent buffering output
+	 if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
+		graphics_toolkit('qthandles'); 
+	 elseif ( ~isempty(strmatch('qt',available_graphics_toolkits())) )
+		graphics_toolkit('qt'); 
+	 elseif ( ~isempty(strmatch('fltk',available_graphics_toolkits())) )
+		graphics_toolkit('fltk'); % use fast rendering library
+	 end
   end
-end
 
                          % if using the buffer the intialize the connection
 if ( useBuffer ...
