@@ -1,4 +1,4 @@
-function [x,s]=gausOutlierFilt(x,s,w,zscore,maxn)
+function [x,s]=gausOutlierFilt(x,s,w,zscore,priorvar,maxn)
 % send event when best accumulate prediction has zscore higher than threshold w.r.t. gaussian approx to dist of scores
 %
 %   [x,s]=gausOutlierFilt(x,s,zscore,maxn)
@@ -14,8 +14,9 @@ function [x,s]=gausOutlierFilt(x,s,w,zscore,maxn)
 %   s - [struct] updated filter state
 if ( nargin<3 ) w=1; end;
 if ( nargin<4 ) zscore=2; end;
-if ( nargin<5 ) maxn=inf; end;
-if ( isempty(s) ) s=struct('x',0,'n',0,'mu',0,'var',1); end;
+if ( nargin<5 || isempty(priorvar) ) priorvar=1; end;
+if ( nargin<6 ) maxn=inf; end;
+if ( isempty(s) ) s=struct('x',0,'n',0,'mu',0,'var',priorvar); end;
 % update internal state
 if ( ~isempty(w) ) x=x*w; end; % apply the decoding matrix
 s.x  =s.x  + x;
@@ -24,8 +25,10 @@ mux  =mean(x);
 s.mu =s.mu + mux;
 s.var=sqrt(s.var.^2 + mean((x-mux).^2));
 
-mx =max(s.x);
-if( mx > s.mu + zscore*s.var || s.n>maxn )
+[mx,mxi] =max(s.x); % best
+mx2=max(s.x([1:mxi-1 mxi+1:end])); % next-best
+if( (mx > s.mu + zscore(1)*s.var && mx> mx2 + zscore(min(end,2))*s.var) || ...
+   s.n>maxn )
   %if ( s.n>maxn ) fprintf('gausOutlierFilt: maxn pred'); else fprintf('gausOutlierFilt: outlier pred'); end;
   x     =s.x;
   % clear internal state
