@@ -12,7 +12,7 @@ classdef Cannon < handle
         relCannonHeight = 0.1;    % The height of the cannon.
         relMoveStepSize = .5;     % The maximum cannon move in 1 second
         minuid=1;
-		relcannonRange  = [.1 .9]; % min/max cannon position w.r.t. axes limits 
+        relcannonRange  = [.1 .9]; % min/max cannon position w.r.t. axes limits 
     end
     
     properties
@@ -76,10 +76,11 @@ classdef Cannon < handle
           if( ~isempty(howMuch) ) curStepSize=curStepSize*howMuch; end;
             if ( ~isempty(obj.lastDrawTime) ) curStepSize=curStepSize*toc(obj.lastDrawTime); end;
             axesXLim     = get(obj.hAxes,'XLim');
+            cannonLim    = axesXLim(1)+(axesXLim(2)-obj.cannonWidth-axesXLim(1))*obj.relcannonRange;
 
             if isnumeric(whereTo) % warp mode, but limit step size
-              whereTo=whereTo*abs(axesXLim(2)-axesXLim(1));
-              obj.Xbase = max(min(whereTo,obj.Xbase+curStepSize),obj.Xbase-curStepSize);
+              whereTo   = cannonLim(1) + whereTo*(cannonLim(2)-cannonLim(1));
+              obj.Xbase = max(min(whereTo,obj.Xbase+curStepSize),obj.Xbase-curStepSize); % step-size check
             else % string so step-size
               switch whereTo                
                 case 'left'; % Move cannon left, but keep in in bounds.
@@ -90,9 +91,7 @@ classdef Cannon < handle
               end
             end
                                 % display bounds check
-			axXRange = (axesXLim(2)-axesXLim(1));
-            obj.Xbase = min(max(obj.Xbase,axesXLim(1)+obj.relcannonRange(1)*axXRange),...
-							axesXLim(1)+obj.relcannonRange(2)*axXRange-obj.cannonWidth);
+            obj.Xbase = min(max(obj.Xbase,cannonLim(1)),cannonLim(2));
             % update the object properties
             pos=get(obj.hGraphic,'position');
             pos(1)=obj.Xbase;
