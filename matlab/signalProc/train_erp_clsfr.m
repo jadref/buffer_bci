@@ -288,7 +288,7 @@ if ( opts.visualize )
    end
    times=(1:size(mu,2))/opts.fs;
 	xy=ch_pos; if (size(xy,1)==3) xy = xyz2xy(xy); end
-   erpfig=figure(2); clf(erpfig);  set(erpfig,'Name','Data Visualisation: ERP');
+   erpfig=figure(2); clf(erpfig);  set(erpfig,'Name','Data Visualisation: ERP');figure(erpfig);
 	yvals=times;
    try; 
 	  image3d(mu,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',yvals,'zlabel','class','Zvals',labels(:),'disptype','plot','ticklabs','sw');
@@ -298,7 +298,7 @@ if ( opts.visualize )
 	  if ( ~isempty(le.stack) ) fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
 	end;
    if ( ~(all(Yci(:)==Yci(1))) ) % only if >1 class input
-     aucfig=figure(3); clf(aucfig); set(aucfig,'Name','Data Visualisation: ERP AUC');
+     aucfig=figure(3); clf(aucfig); set(aucfig,'Name','Data Visualisation: ERP AUC');figure(aucfig);
      try;  
 		 image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','time(s)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel',auc);
 		 colormap ikelvin;

@@ -245,15 +245,15 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
        %----------------------------- do the P300 type flashing -------------
        % get the position in the stim-sequence for this time.
        % Note: stimulus rate may be slower than the display rate...
-  % Note: stimTime(stimi) is time this stimulus should **first** be on screen
+  % Note: stimTime(stimi) is time this stimulus **finish** being on screen
   newstimState=false;
-  if( frameTime > stimTime(stimi) ) % next stimulus state
+  if( stimTime(stimi)>frameTime ) % end of this stimulus, move on to next one
     stimi=stimi+1; % next stimulus frame
     if( stimi>=numel(stimTime) ) % wrap-arround the end of the stimulus sequence
       stimi=1;
-    else
-                                % find next valid frame
-      tmp=stimi;for stimi=tmp:numel(stimTime); if(frameTime<stimTime(stimi))break;end; end; 
+      fprintf('Warning!!!! ran out of stimuli!!!!!');
+    else  % find next valid frame, i.e. first event for which stimTime > current time = frameTime
+      tmp=stimi;for stimi=tmp:numel(stimTime); if(stimTime(stimi)>frameTime)break;end; end; 
       if ( verb>=0 && stimi-tmp>5 ) % check for frame dropping
         fprintf('%d) Dropped %d Frame(s)!!!\n',nframe,stimi-tmp);
       end;        

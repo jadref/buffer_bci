@@ -3,6 +3,7 @@ expt='own_experiments/motor_imagery/brainfly';
 stripFrom='raw_buffer'; % when saving ignore after this string in dataset directory
 
 % dataset format: cell-array of cell-arrays.  1 sub-cell array per subject.  First entry is subject ID, rest of the entries are the subject sessions.
+datasets={};
 datasets{1}={'s1'
              '0606di/1233/raw_buffer/0001'
              '0907do/1235/raw_buffer/0001'
@@ -17,6 +18,8 @@ datasets{1}={'s1'
              '171030/1015AM/raw_buffer/0001'
              '171031/0345PM/raw_buffer/0001'
              '171107/0356PM/raw_buffer/0001'
+             '171110/1044AM/raw_buffer/0001'
+             '171115/1011am/raw_buffer/0001'
             };
 % example to add new subject datasets
 %datasets{end+1}={'s2' }
