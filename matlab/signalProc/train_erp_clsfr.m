@@ -388,7 +388,7 @@ if ( opts.visualize >= 1 )
       b=msgbox({sprintf('Classifier performance :\n %s',summary) 'OK to continue!'},'Results');
    end
   if ( opts.visualize > 1 )
-     for i=0:.2:120; if ( ~ishandle(b) ) break; end; drawnow; pause(.2); end; % wait to close auc figure
+     for i=0:.2:10; if ( ~ishandle(b) ) break; end; drawnow; pause(.2); end; % wait to close auc figure
      if ( ishandle(b) ) close(b); end;
    end
    drawnow;

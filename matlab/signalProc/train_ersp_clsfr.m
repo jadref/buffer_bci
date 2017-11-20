@@ -365,7 +365,7 @@ if ( opts.visualize )
    yvals=freqs;
    try; 
 	  image3d(mu(:,:,:),1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels(:),'disptype','plot','ticklabs','sw','clabel',opts.aveType);
-     saveaspdf('ERSP'); 
+      %saveaspdf('ERSP'); 
 	catch; 
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
 	end;
@@ -374,7 +374,7 @@ if ( opts.visualize )
     try; 
 		image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
 		colormap ikelvin; 
-		saveaspdf('AUC'); 
+		%saveaspdf('AUC'); 
 	 catch; 
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
 	  if ( ~isempty(le.stack) ) fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
@@ -458,7 +458,7 @@ if ( opts.visualize >= 1 )
       b=msgbox({sprintf('Classifier performance :\n %s',summary) 'OK to continue!'},'Results');
    end
   if ( opts.visualize > 1 )
-     for i=0:.2:120; if ( ~ishandle(b) ) break; end; drawnow; pause(.2); end; % wait to close auc figure
+     for i=0:.2:10; if ( ~ishandle(b) ) break; end; drawnow; pause(.2); end; % wait to close auc figure
      if ( ishandle(b) ) close(b); end;
    end
    drawnow;

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="nl.ru.dcc.buffer_bci.cursor_control.android"
+    package="nl.dcc.buffer_bci"
     android:versionCode="1"
     android:versionName="1.0" >
 
-    <uses-sdk android:minSdkVersion="8" android:targetSdkVersion="23" />
+    <uses-sdk android:minSdkVersion="9" android:targetSdkVersion="26" />
 
     <application
         android:allowBackup="true"
@@ -12,7 +12,7 @@
         android:label="@string/app_name"
         android:theme="@style/GdxTheme" >
         <activity
-            android:name="nl.ru.dcc.buffer_bci.cursor_control.android.AndroidLauncher"
+            android:name="nl.dcc.buffer_bci.AndroidLauncher"
             android:label="@string/app_name" 
             android:screenOrientation="landscape"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize">
