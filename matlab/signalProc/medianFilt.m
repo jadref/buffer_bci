@@ -1,4 +1,4 @@
-function [x,s]=rbiasFilt(x,s,alpha,scl)
+function [x,s]=medianFilt(x,s,alpha,scl)
 % robust-bias removing filter (high-pass) based on running median estimation
 %
 %   [x,s,mu,std]=rbiasFilt(x,s,alpha,scl)
