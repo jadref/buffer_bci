@@ -170,10 +170,9 @@ while( ~endTest )
       f=sum(f,2); fraw=sum(fraw,2);
     end
     % send raw prediction event if wanted
+    if(opts.verb>0) fprintf('%3d) s:%d->%d',fin(si),fin(si)-trlen_samp,fin(si)); end
     if ( ~isempty(opts.rawpredEventType) )
-	   if(opts.verb>0)
-          fprintf('%3d)  raw Pred: s:%d->%d v:[%s]\n',fin(si),fin(si)-trlen_samp,fin(si),sprintf('%5.2f ',f));
-       end
+	    if(opts.verb>0) fprintf('  raw_pred v:[%s]',sprintf('%5.3f ',f)); end
        sendEvent(opts.rawpredEventType,f,fin(si)-trlen_samp); %N.B. event sample is window-start!       
     end
 
@@ -197,9 +196,7 @@ while( ~endTest )
 	 % Send prediction event, if wanted
 	 if( ~isempty(dv) ) 
 		ev=sendEvent(opts.predEventType,dv,fin(si)-trlen_samp); %N.B. event sample is window-start!
-		if ( opts.verb>0 )
-		  fprintf('%3d) Clsfr Pred: s:%d->%d v:[%s]\n',fin(si),fin(si)-trlen_samp,fin(si),sprintf('%5.2f ',dv));
-		end
+		if ( opts.verb>0 ) fprintf('  pred v:[%s]\n',sprintf('%5.3f ',dv)); end
 		if( nargout>2 ) predevents{nEpochs}=ev; end;
 	 end
 	 if ( opts.verb>-1 )

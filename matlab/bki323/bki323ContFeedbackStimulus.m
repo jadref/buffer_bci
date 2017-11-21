@@ -327,6 +327,6 @@ end % loop over sequences in the experiment
 sendEvent('stimulus.testing','end');
 
 if ( ishandle(fig) ) % thanks message
-set(txthdl,'string',{'That ends the feedback phase.','Thanks for your patience'},'color',[0 1 0],'visible', 'on');
+   set(txthdl,'string',{sprintf('Final Score: %4.0f',score.total), '', 'That ends the feedback phase.','Thanks for your patience'},'color',[0 1 0],'visible', 'on');
 pause(3);
 end

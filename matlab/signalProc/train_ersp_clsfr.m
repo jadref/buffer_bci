@@ -291,10 +291,21 @@ if ( ~isempty(opts.freqband) && ~isempty(fs) )
       else                                freqbands(:,bi)=[mean(opts.freqband{bi}([1 2])) mean(opts.freqband([3 4]))];
       end
     end
-    [ans,lb]=min(abs(freqs-max(freqs(1),  freqband(1)))); % lower frequency bin
-    [ans,ub]=min(abs(freqs-min(freqs(end),freqband(2)))); % upper frequency bin
-    fIdx(lb:ub)=true;
+  else % standardize to band start,end
+    if(size(freqbands,1)==1)      freqbands=freqbands'; end;
+    if(size(freqbands,1)==3)      freqbands=freqbands([1 3],:);
+    elseif(size(freqbands,1)==4)  freqbands=[mean(freqbands([1 2],:),1); mean(freqbands([3 4],:),1)];
+    end
   end
+         % convert from freq-band spec in hz to weighting over frequency bins
+  fIdx=zeros(size(X,2),size(freqbands,2));
+  for bi=1:size(freqbands,2);
+    [ans,lb]=min(abs(freqs-max(freqs(1),  freqbands(1,bi)))); % lower frequency bin
+    [ans,ub]=min(abs(freqs-min(freqs(end),freqbands(2,bi)))); % upper frequency bin
+    fIdx(lb:ub,bi)=true;
+  end
+         % apply the weighting over frequency bins to get the filtered signal
+  fIdx=any(fIdx,2); % merge the different band-specs
   X=X(:,fIdx,:); % sub-set to the interesting frequency range
   freqs=freqs(fIdx); % update labelling info
 end;
