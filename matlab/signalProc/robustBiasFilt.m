@@ -26,7 +26,7 @@ s.N  = alpha.*s.N        + (1-alpha).*1;
 
                                 % outlier detection & thresholding
 % outlier criteria
-mu   = s.sx./s.N;
+mu   = s.sx./s.N(:,1);
 std=sqrt(abs((s.sx2-s.sx.^2./s.N(:,1))./s.N(:,1)));
 std(std<eps)=1;
                              % threshold, features for which have enough info
@@ -72,7 +72,7 @@ s=[];fs=[];for i=1:size(x,2); [fx(:,i),si]=rbiasFilt(x(:,i),s,100); fs(:,i)=si.s
 s=[];fs=[];for i=1:size(x,2); [fx(:,i),si]=rbiasFilt(x(:,i),s,[exp(log(.5)/100);exp(log(.5)/1000)]); fs(:,i)=si.sx/si.N; s=si; end;
 
 % double processing, output smoother + bias-adapt
-s=[];fs=[];ss=[];for i=1:size(x,2); [fx(:,i),si]=biasFilt(x(:,i),s,[100 20]); fs(:,i)=si.sx/si.N(:,1); ss(:,i)=si.x./si.N(:,2); s=si; end;
+s=[];fx=[];fs=[];ss=[];for i=1:size(x,2); [fx(:,i),si]=rbiasFilt(x(:,i),s,[100 20]); fs(:,i)=si.sx/si.N(:,1); ss(:,i)=si.x./si.N(:,2); s=si; end;
 
 clf;for si=1:size(x,1); subplot(size(x,1),1,si); plot([x(si,:);fx(si,:);fs(si,:)]','linewidth',2);legend('x','filt(x)','bias');end;
 
