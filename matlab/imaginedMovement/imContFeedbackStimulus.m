@@ -4,6 +4,8 @@ if ( ~exist('contFeedbackTrialDuration') || isempty(contFeedbackTrialDuration) )
 if ( ~exist('dvFilt','var') ) dvFilt=[]; end; % additional filtering of the decison values for display/feedback
 if ( ~exist('dvCalFactor','var') ) dvCalFactor=[]; end;
 if ( ~exist('warpCursor','var') ) warpCursor=true; end;
+if ( ~exist('moveScale','var') ) moveScale=1; end;
+if ( ~exist('twoDPred','var') ) twoDPred=0; end;
 
 % make the target sequence
 if ( baselineClass ) % with rest targets
@@ -232,8 +234,8 @@ for si=1:nSeq;
 	 if ( numel(prob)>=size(stimPos,2)-1 ) % per-target decomposition
       if ( numel(prob)>size(stimPos,2) ) prob=[prob(1:size(stimPos,2)-1);sum(prob(size(stimPos,2):end))];end;
 		dx = stimPos(:,1:numel(prob))*prob(:); % change in position is weighted by class probs
-	 elseif ( numel(prob)==2 ) % direct 2d decomposition
-		dx = prob;
+	 elseif ( twoDPred && numel(prob)==2 ) % direct 2d decomposition
+		dx = prob(:);
 	 elseif ( numel(prob)==1 )
 		dx = [prob;0];
 	 end

@@ -25,10 +25,10 @@ if ( ~exist('configRun','var') || isempty(configRun) )
 
   if ( exist('OCTAVE_VERSION','builtin') ) 
 	 page_output_immediately(1); % prevent buffering output
-	 if ( ~isempty(strmatch('qt',available_graphics_toolkits())) )
-		graphics_toolkit('qt'); 
-	 elseif ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
+	 if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
 		graphics_toolkit('qthandles'); 
+	 elseif ( ~isempty(strmatch('qt',available_graphics_toolkits())) )
+		graphics_toolkit('qt'); 
 	 elseif ( ~isempty(strmatch('fltk',available_graphics_toolkits())) )
 		graphics_toolkit('fltk'); % use fast rendering library
 	 end

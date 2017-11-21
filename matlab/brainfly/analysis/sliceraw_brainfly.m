@@ -1,15 +1,19 @@
 run ../../utilities/initPaths
-dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
-dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
-datasets_brainfly();
+if ( 0 ) 
+   dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
+   datasets_brainfly_local();
+else
+   dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
+   datasets_brainfly();
+end
 
 trlen_ms=750;
 label   ='movement'; % generic label for this slice/analysis type
-makePlots=0; % flag if we should make summary ERP/AUC plots whilst slicing
+makePlots=1; % flag if we should make summary ERP/AUC plots whilst slicing
 
                                 % slice data
 si=1; sessi=3;
-for si=9:numel(datasets);
+for si=1:numel(datasets);
   if( isempty(datasets{si}) ) continue; end;
   subj   =datasets{si}{1};
   for sessi=1:numel(datasets{si})-1;

@@ -206,7 +206,7 @@ while (ishandle(contFig))
     end
 
     try
-    drawnow;
+       drawnow;
       imContFeedbackStimulus;
     catch
        le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);

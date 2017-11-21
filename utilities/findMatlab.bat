@@ -23,6 +23,12 @@ rem	 exit /b
 	 set matopts="--line-editing"
 rem	 exit /b 
 	 )
+	if exist "%%f\bin\octave-gui.exe" ( 
+	 set matexe="%%f\bin\octave-gui.exe"
+	 set ismatlab=0
+	 set matopts="--no-gui"
+rem	 exit /b 
+	 )
 )
 
 

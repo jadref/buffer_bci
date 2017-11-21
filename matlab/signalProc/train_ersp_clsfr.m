@@ -119,20 +119,20 @@ fs=opts.fs; if ( isempty(fs) ) warning('No sampling rate specified... assuming f
 %1) Detrend
 if ( opts.detrend )
   if ( isequal(opts.detrend,1) )
-    fprintf('1) Detrend\n');
+    if( opts.verb>0) fprintf('1) Detrend\n'); end;
     X=detrend(X,2); % detrend over time
   elseif ( isequal(opts.detrend,2) )
-    fprintf('1) Center\n');
+    if( opts.verb>0) fprintf('1) Center\n'); end;
     X=repop(X,'-',mean(X,2));
   elseif ( isequal(opts.detrend,3) )
-    fprintf('1) median Center\n');
+    if( opts.verb>0) fprintf('1) median Center\n'); end;
     X=repop(X,'-',median(X,2));
   end
 end
 % 5.9) Apply a feature filter post-processor if wanted
 preFiltFn=opts.preFiltFn;preFiltState=[];
 if ( ~isempty(preFiltFn) )
-  fprintf('5.5) preFilter\n');
+  if( opts.verb>0) fprintf('1.5) preFilter\n'); end;
   if ( ~iscell(preFiltFn) ) preFiltFn={preFiltFn}; end;
   for ei=1:size(X,3);
 	 [X(:,:,ei),preFiltState]=feval(preFiltFn{1},X(:,:,ei),preFiltState,preFiltFn{2:end},'ch_names',ch_names,'ch_pos',ch_pos,'fs',fs);
@@ -143,14 +143,14 @@ end
 %2) Bad channel identification & removal
 isbadch=[]; chthresh=[];
 if ( opts.badchrm || (~isempty(opts.badCh) && sum(opts.badCh)>0) )
-  fprintf('2) bad/non-eeg channel removal, ');
+  if( opts.verb>0) fprintf('2) bad/non-eeg channel removal, '); end;
   isbadch = false(size(X,1),1);
   % pre-remove non-eeg or pre-specified to ignore channels
   if ( ~isempty(ch_pos) )      isbadch(numel(ch_pos)+1:end)=true;
   end;
   if ( ~isempty(opts.badCh) )  isbadch(opts.badCh(1:min(end,size(isbadch,1))))=true;
   end;
-  if( any(isbadch) )   fprintf('(%d noneeg) ',sum(isbadch));  end  
+  if( opts.verb>0 && any(isbadch) )   fprintf('(%d noneeg) ',sum(isbadch));  end
 
                         % auto-threshold to determine additional bad channels
   if( opts.badchrm ) 
@@ -167,7 +167,7 @@ if ( opts.badchrm || (~isempty(opts.badCh) && sum(opts.badCh)>0) )
     if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names))); end;
     ch_names=ch_names(~isbadch(1:numel(ch_names)));
   end
-  fprintf('%d ch removed\n',sum(isbadch));
+  if( opts.verb>0) fprintf('%d ch removed\n',sum(isbadch)); end;
 end
 
               %3.a) Spatial filter/re-reference (data-dependent-unsupervised)
@@ -175,14 +175,14 @@ sftype='';if( ischar(opts.spatialfilter) ) sftype=lower(opts.spatialfilter); end
 adaptspatialfiltstate=[];
 R=1; % the composed spatial filter to apply.  N.B. R is applied directly as: X = R*X
 if( strncmpi(opts.spatialfilter,'car',numel('car')))
-  fprintf('3) CAR\n');
+  if( opts.verb>0) fprintf('3) CAR\n');end;
   Rc=eye(size(X,1))-(1./size(X,1));
   X =tprod(X,[-1 2 3],Rc,[1 -1]); % filter the data
   R = Rc*R; % compose the combined filter for test time
 end;  
 if( any(strfind(sftype,'slap')) )
-  fprintf('3) Slap\n');
-  if ( ~isempty(ch_pos) )       
+  if( opts.verb>0) fprintf('3) Slap\n');end;
+  if ( ~isempty(ch_pos) )
     Rs=sphericalSplineInterpolate(ch_pos,ch_pos,[],[],'slap');%pre-compute the SLAP filter we'll use
     X =tprod(X,[-1 2 3],Rs,[1 -1]); % filter the data
     R = Rs*R; % compose the combined filter for test time
@@ -195,7 +195,7 @@ if ( isnumeric(opts.spatialfilter) ) % user gives exact filter to use
   X =tprod(X,[-1 2 3],R,[1 -1]); % filter the data
 end;
 if( any(strfind(sftype,'wht')) || any(strfind(sftype,'whiten')) )
-  fprintf('3) whiten\n');
+  if( opts.verb>0) fprintf('3) whiten\n'); end;
   Rw=whiten(X,1,1,0,0,1); % symetric whiten
   X =tprod(X,[-1 2 3],Rw,[1 -1]); % filter the data
   R = Rw*R; % compose the combined filter for test time
@@ -204,17 +204,16 @@ if( isequal(R,1) ) R=[]; end; % if no-static filter then clear it
 if ( size(X,1)>=4 && ...
      (any(strcmpi(opts.spatialfilter,{'trwht','adaptspatialfilt','adaptspatialfiltFn'})) || ...
       ~isempty(opts.adaptspatialfiltFn) ) )
-  fprintf('3) adpatFilt');
+  if( opts.verb>0) fprintf('3) adpatFilt'); end;
   % BODGE: re-write as a std adpative spatial filter call
   if ( strcmpi(opts.spatialfilter,'trwht') ) % single-trial whitening -> special adapt-whiten
     opts.spatialfilter='adaptspatialfilt'; opts.adaptspatialfiltFn={'adaptWhitenFilt' 'dim',[1 2 3],'covFilt',0};
   end
   if( isnumeric(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={'adaptWhitenFilt' 'dim',[1 2 3],'covFilt',opts.adaptspatialfiltFn}; end;
   if( ~iscell(opts.adaptspatialfiltFn) ) opts.adaptspatialfiltFn={opts.adaptspatialfiltFn}; end;
-  fprintf(' %s\n',opts.adaptspatialfiltFn{1});
-  [X,adaptspatialfiltstate]=feval(opts.adaptspatialfiltFn{1},X,opts.adaptspatialfiltstate,opts.adaptspatialfiltFn{2:end},'ch_names',ch_names,'ch_pos',ch_pos,'fs',fs);
-  if( isfield(adaptspatialfiltstate,'R') ) R=adaptspatialfiltstate.R; end;
-  fprintf('\n');
+  if( opts.verb>0) fprintf(' %s\n',opts.adaptspatialfiltFn{1}); end;
+  [X,adaptspatialfiltstate]=feval(opts.adaptspatialfiltFn{1},X,opts.adaptspatialfiltstate,opts.adaptspatialfiltFn{2:end},'ch_names',ch_names,'ch_pos',ch_pos,'fs',fs,'verb',opts.verb-1);
+  if( opts.verb>0) fprintf('\n');end;
 end
 
 %2.2) time range selection
@@ -230,7 +229,7 @@ end
 %3.b) Spatial filter/re-reference (data-independent / supervised)
 if ( size(X,1)>=4 ) % only spatial filter if enough channels
   if( any(strfind(sftype,'csp')) )
-    fprintf('3) csp\n');
+    if( opts.verb>0) fprintf('3) csp\n');end;
     nf=str2num(sftype(end)); if ( isempty(nf) ) nf=3; end;
     [Rc,d]=csp(X,Y,3,nf); % 3 comp for each class CSP [oldCh x newCh x nClass]
     Rc=Rc(:,:)'; % [ newCh x oldCh ], N.B. R is applied directly: X = R*X
@@ -242,7 +241,7 @@ if ( size(X,1)>=4 ) % only spatial filter if enough channels
     R = Rc*R; % compose the combined filter for test time    
   end
   if( any(strfind(sftype,'ssep')) )
-    fprintf('3) SSEP\n'); % est spatial filter using the SSEP approach
+     if( opts.verb>0) fprintf('3) SSEP\n'); end% est spatial filter using the SSEP approach
     nf=str2num(sftype(end)); if ( isempty(nf) ) nf=2; end;
     if ( iscell(opts.freqband) ) 
       periods = fs./[opts.freqband{:}];
@@ -264,32 +263,32 @@ end
 
 %3.5) Bad trial removal
 isbadtr=[]; trthresh=[];
-if ( opts.badtrrm ) 
-  fprintf('2.5) bad trial removal');
+if ( opts.badtrrm )
+  if( opts.verb>0) fprintf('2.5) bad trial removal');end
   [isbadtr,trstds,trthresh]=idOutliers(X,3,opts.badtrthresh);
   X=X(:,:,~isbadtr);
   Y=Y(~isbadtr,:);
-  fprintf(' %d tr removed\n',sum(isbadtr));
+  if( opts.verb>0) fprintf(' %d tr removed\n',sum(isbadtr));end;
 end;
 
 %4) welch to convert to power spectral density
-fprintf('4) Welch\n');
+if( opts.verb>0) fprintf('4) Welch\n');end;
 if ( opts.timefeat ) Xt=mean(X,2);end % add a pure time feature
 [X,wopts,winFn]=welchpsd(X,2,'width_ms',opts.width_ms,'windowType',opts.windowType,'fs',fs,...
-                         'aveType',opts.aveType,'detrend',1); 
+                         'aveType',opts.aveType,'detrend',1,'verb',opts.verb-1); 
 freqs=0:(1000/opts.width_ms):fs/2; % position of the frequency bins
 
 %5) sub-select the range of frequencies we care about
 fIdx=[];
-if ( ~isempty(opts.freqband) && ~isempty(fs) ) 
-  fprintf('5) Select frequencies\n');
-  if ( isnumeric(opts.freqband) ) opts.freqband={opts.freqband}; end;
-  fIdx=false(size(X,2),1);
-  for bi=1:numel(opts.freqband) 
-     freqband=opts.freqband{bi};
-     if ( numel(freqband)>2 ) % convert the diff band spects to upper/lower frequencies
-        if ( numel(freqband)==3 ) freqband=freqband([1 3]);
-      elseif(numel(freqband)==4 ) freqband=[mean(freqband([1 2])) mean(freqband([3 4]))];
+if ( ~isempty(opts.freqband) && ~isempty(fs) )
+   if( opts.verb>0) fprintf('5) Select frequencies\n');end;
+  freqbands=opts.freqband;
+  if ( iscell(opts.freqband) ) % specified as a set of pass-bands, convert to matrix version
+    freqbands=zeros(2,numel(opts.freqband))
+    for bi=1:numel(opts.freqband);
+      if(numel(opts.freqband{bi})==2)     freqbands(:,bi)=opts.freqband{bi};
+      elseif(numel(opts.freqband{bi})==3) freqbands(:,bi)=opts.freqband{bi}([1 3]);
+      else                                freqbands(:,bi)=[mean(opts.freqband{bi}([1 2])) mean(opts.freqband([3 4]))];
       end
     end
     [ans,lb]=min(abs(freqs-max(freqs(1),  freqband(1)))); % lower frequency bin
@@ -301,6 +300,7 @@ if ( ~isempty(opts.freqband) && ~isempty(fs) )
 end;
 
 if ( opts.timefeat )
+  if( opts.verb>0) fprintf('5.4) Time feature');end;
   X=cat(2,Xt,X);
   freqs=[0 freqs];
 end
@@ -308,7 +308,7 @@ end
 % 5.9) Apply a feature filter post-processor if wanted
 featFiltFn=opts.featFiltFn; featFiltState=[];
 if ( ~isempty(featFiltFn) )
-  fprintf('5.5) Filter features\n');
+   if( opts.verb>0) fprintf('5.5) Filter features\n');end;
   if ( ~iscell(featFiltFn) ) featFiltFn={featFiltFn}; end;
   for ei=1:size(X,3);
 	 [X(:,:,ei),featFiltState]=feval(featFiltFn{1},X(:,:,ei),featFiltState,featFiltFn{2:end});
@@ -361,20 +361,20 @@ if ( opts.visualize )
    end
    % Actually plot the data and AUC scores
 	xy=ch_pos; if (size(xy,1)==3) xy = xyz2xy(xy); end
-   erpfig=figure(2);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');
+   erpfig=figure(2);clf(erpfig);set(erpfig,'Name','Data Visualisation: ERSP');figure(erpfig);
    yvals=freqs;
    try; 
 	  image3d(mu(:,:,:),1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',labels(:),'disptype','plot','ticklabs','sw','clabel',opts.aveType);
-     saveaspdf('ERSP'); 
+      %saveaspdf('ERSP'); 
 	catch; 
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
 	end;
    if ( ~(all(Yci(:)==Yci(1))) )
-    aucfig=figure(3);clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');
+    aucfig=figure(3);clf(aucfig);set(aucfig,'Name','Data Visualisation: ERSP AUC');figure(aucfig);
     try; 
 		image3d(auc,1,'plotPos',xy,'Xvals',ch_names,'ylabel','freq(Hz)','Yvals',yvals,'zlabel','class','Zvals',auclabels,'disptype','imaget','ticklabs','sw','clim',[.2 .8],'clabel','auc');
 		colormap ikelvin; 
-		saveaspdf('AUC'); 
+		%saveaspdf('AUC'); 
 	 catch; 
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
 	  if ( ~isempty(le.stack) ) fprintf('%s>%s : %d',le.stack(1).file,le.stack(1).name,le.stack(1).line);end
@@ -389,7 +389,7 @@ if ( ~opts.classify )
   res=[];
   clsfr=struct();
 else
-   fprintf('6) train classifier\n');
+   if( opts.verb>0) fprintf('6) train classifier\n');end;
    [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',opts.zeroLab,'verb',opts.verb,'objFn','mlr_cg','binsp',0,'spMx','1vR',varargin{:});  
    res.isbadtr=isbadtr; % record the list of found bad trials
 
@@ -458,7 +458,7 @@ if ( opts.visualize >= 1 )
       b=msgbox({sprintf('Classifier performance :\n %s',summary) 'OK to continue!'},'Results');
    end
   if ( opts.visualize > 1 )
-     for i=0:.2:120; if ( ~ishandle(b) ) break; end; drawnow; pause(.2); end; % wait to close auc figure
+     for i=0:.2:10; if ( ~ishandle(b) ) break; end; drawnow; pause(.2); end; % wait to close auc figure
      if ( ishandle(b) ) close(b); end;
    end
    drawnow;
