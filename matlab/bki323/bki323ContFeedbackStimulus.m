@@ -264,7 +264,7 @@ for si=1:nSeq;
 	 set(h(end),'position',[fixPos-.5*cursorPos(3:4);cursorPos(3:4)]);
      % compute distance to all possible targets
      dTgts = stimPos - repmat(fixPos,[1,size(stimPos,2)]);
-     dTgts = sqrt(sum(dTgts.^2))
+     dTgts = sqrt(sum(dTgts.^2));
      % did we hit the target target...
      hit = dTgts(tgtIdx)<hitThreshold;
      if ( hit ) && ~firsthit %%% update the score...
