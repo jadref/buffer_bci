@@ -5,6 +5,6 @@ source ../../utilities/findMatlab.sh
 if [[ $matexe == *matlab ]]; then  args=-nodesktop; fi
 cat <<EOF | $matexe $args
 cd $scriptDir
-runBrainfly;
+runbki323;
 quit;
 EOF

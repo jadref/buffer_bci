@@ -134,4 +134,4 @@ earlyStopping = false;
 epochFeedbackOpts={'trlen_ms',epochtrlen_ms,'predFilt',@(x,s,e) biasFilt(x,s,epochtrialAdaptHL)}; % bias-adaption
 
 %%2) Classify every welch-window-width (default 250ms), prediction is average of full trials worth of data, bias adaptation on the result
-contFeedbackOpts ={'rawpredEventType','classifier.rawprediction','predFilt',@(x,s,e) biasFilt(x,s,[conttrialAdaptHL contFeedbackFiltLen]),'trlen_ms',welch_width_ms};%trlDuration average
+contFeedbackOpts ={'rawpredEventType','classifier.rawprediction','predFilt',@(x,s,e) robustBiasFilt(x,s,[conttrialAdaptHL contFeedbackFiltLen]),'trlen_ms',welch_width_ms};%trlDuration average
