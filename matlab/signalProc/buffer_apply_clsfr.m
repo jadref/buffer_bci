@@ -41,7 +41,7 @@ end
 if ( numel(clsfr)==1 ) %BODGE: for single classifier return non-cell for legacy reasons
   f=f{1}; fraw=fraw{1}; p=p{1}; Xpp=Xpp{1};
 end
-if( verb>0 ) fprintf('Classifier prediction:  f=[%s] p=[%s]\n',sprintf('%g ',f),sprintf('%g ',p)); end;
+if( verb>1 ) fprintf('Classifier prediction:  f=[%s] p=[%s]\n',sprintf('%g ',f),sprintf('%g ',p)); end;
 return;
 %------------------
 function testCase();
