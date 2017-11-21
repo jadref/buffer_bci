@@ -12,11 +12,12 @@ configureGame;
   menustr={'0) EEG'                    'eegviewer';
 			  'a) Artifacts'              'artifact';
            '1) Practice'               'practice';
-			  '2) Calibrate'              'calibrate'; 
+			  '2) Calibrate'              'calibrate';
 			  '3) Train Classifier'       'trainersp';
 			  '4) Epoch Feedback'         'epochfeedback';
 			  '5) Continuous Feedback'    'contfeedback';
            '6) Brainfly-game'          'brainfly';
+           '7) Brainfly-game P3'       'brainfly_p3'; 
          '' '';
          'S) Slice ftoffline data'   'sliceraw';
          'L) Load training data'     'loadtraining';
@@ -236,6 +237,22 @@ while (ishandle(contFig))
     sendEvent('test','end');
     sendEvent(phaseToRun,'end');
 
+   %---------------------------------------------------------------------------
+   case {'brainfly_p3'};
+    sendEvent('subject',subject);
+    %sleepSec(.1);
+    sendEvent(phaseToRun,'start');
+    %try
+      brainfly_p3;
+    %catch
+       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
+	  	 if ( ~isempty(le.stack) )
+	  	   for i=1:numel(le.stack);
+	  	 	 fprintf('%s>%s : %d\n',le.stack(i).file,le.stack(i).name,le.stack(i).line);
+	  	   end;
+	  	 end
+    %end
+    sendEvent(phaseToRun,'end');
     
    %---------------------------------------------------------------------------
    case {'quit','exit'};
