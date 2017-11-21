@@ -1,7 +1,7 @@
 configureSpeller;
 
 % make the stimulus
-fig=gcf;
+fig=figure(2);
 set(fig,'Name','Matrix Speller','color',[0 0 0],'menubar','none','toolbar','none','doublebuffer','on');
 clf;
 ax=axes('position',[0.025 0.025 .95 .95],'units','normalized','visible','off','box','off',...
