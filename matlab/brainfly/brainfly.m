@@ -13,6 +13,7 @@ bonusSpawnInterval      = [30 50];          % range in time between bonus alien 
 bonusFlashnr            = 3;
 predictionMargin=0;
 warpCursor = true; % cannon position is directly classifier output
+p300Flashing = false; % whether we do the p300 flashing or not
 
 % make a simple odd-ball stimulus sequence, with targets mintti apart
 [stimSeq,stimTime,eventSeq] = mkStimSeqP300(3,gameDuration,isi,mintti,oddballp);
@@ -176,6 +177,9 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
       set(hCannon.hGraphic,'facecolor','y');
       Alien.flashAlien(hAliens,bonusFlash+1)
       bonusFlash = bonusFlash + 1;
+  elseif bonusFlash == bonusFlashnr
+	set(hCannon.hGraphic,'facecolor',stimColors(1,:));
+    bonusFlash = bonusFlash + 1;
   end
   if( isempty(hbonusAliens) && frameTime > bonusSpawnTime )
     hbonusAliens=BonusAlien(hAxes,hCannon);
@@ -183,7 +187,7 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
     score.totalBonusPoss = score.totalBonusPoss +1;
     if( useBuffer ) 
         sendEvent('stimulus.redCannon', frameTime); 
-        sendEvent('stimulus.stimState',ss); end % p3 stim state 
+	end % p3 stim state 
     if( useBuffer ) sendEvent('stimulus.bonusAlien',hbonusAliens.uid); end;
     bonusSpawnTime = frameTime + bonusSpawnInterval(1)+rand(1)*diff(bonusSpawnInterval); % time-at which next bonus show occur
   end
@@ -245,15 +249,15 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
        %----------------------------- do the P300 type flashing -------------
        % get the position in the stim-sequence for this time.
        % Note: stimulus rate may be slower than the display rate...
-  % Note: stimTime(stimi) is time this stimulus should **first** be on screen
+  % Note: stimTime(stimi) is time this stimulus **finish** being on screen
   newstimState=false;
-  if( frameTime > stimTime(stimi) ) % next stimulus state
+  if( p300Flashing && stimTime(stimi)>frameTime ) % end of this stimulus, move on to next one
     stimi=stimi+1; % next stimulus frame
     if( stimi>=numel(stimTime) ) % wrap-arround the end of the stimulus sequence
       stimi=1;
-    else
-                                % find next valid frame
-      tmp=stimi;for stimi=tmp:numel(stimTime); if(frameTime<stimTime(stimi))break;end; end; 
+      fprintf('Warning!!!! ran out of stimuli!!!!!');
+    else  % find next valid frame, i.e. first event for which stimTime > current time = frameTime
+      tmp=stimi;for stimi=tmp:numel(stimTime); if(stimTime(stimi)>frameTime)break;end; end; 
       if ( verb>=0 && stimi-tmp>5 ) % check for frame dropping
         fprintf('%d) Dropped %d Frame(s)!!!\n',nframe,stimi-tmp);
       end;        
@@ -290,7 +294,7 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
   drawnow;
                               % update the stimulus state
   if( useBuffer ) % send event describing the game stimulus state
-	if ( newstimState ) % only send events when the cannon changes color...
+	if ( p300Flashing && newstimState ) % only send events when the cannon changes color...
 		sendEvent('stimulus.stimState',ss); % p3 stim state
 		sendEvent('stimulus.tgtFlash',ss(1)); % tgt-flash?
 	end

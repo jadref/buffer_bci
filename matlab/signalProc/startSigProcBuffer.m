@@ -187,6 +187,17 @@ subject=opts.subject;
 rawsavedir='~/output'; if( ispc() ) rawsavedir='C:\output'; end;
 
 
+if ( exist('OCTAVE_VERSION','builtin') ) 
+	 page_output_immediately(1); % prevent buffering output
+	 if ( ~isempty(strmatch('qthandles',available_graphics_toolkits())) )
+		graphics_toolkit('qthandles'); 
+	 elseif ( ~isempty(strmatch('qt',available_graphics_toolkits())) )
+		graphics_toolkit('qt'); 
+	 elseif ( ~isempty(strmatch('fltk',available_graphics_toolkits())) )
+		graphics_toolkit('fltk'); % use fast rendering library
+	 end
+end
+
 if ( opts.useGUI )
   % create the control window and execute the phase selection loop
   contFig=figure(99); % use figure window number no-one else will use...
@@ -268,7 +279,8 @@ while ( true )
 		sendEvent(opts.phaseEventType,phaseToRun); phaseToRun=[]; drawnow; pause(.2);
 	 end;
   else
-	 drawnow;
+	if ( exist('OCTAVE_VERSION','builtin') ) pause(.1); end;
+  drawnow;
   end
 
   % wait for a phase control event
@@ -342,8 +354,10 @@ while ( true )
     [traindata,traindevents]=erpViewer(opts.buffhost,opts.buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix',opts.erpEventType,'endType',{{lower(phaseToRun) 'calibrate' 'sigproc.reset'} 'end'},'trlen_ms',opts.trlen_ms,'freqbands',[.0 .3 45 47],'maxEvents',opts.erpMaxEvents,opts.erpOpts{:});
     mi=matchEvents(traindevents,{'calibrate' 'calibration'},'end'); traindevents(mi)=[]; traindata(mi)=[];%remove exit event
     fname=[dname '_' subject '_' datestr];
-    fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save([fname '.mat'],'traindata','traindevents','hdr');
+    fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);
+	save([fname '.mat'],'traindata','traindevents','hdr');
     trainSubj=subject;
+    fprintf('Saved %d epochs to : %s\n',numel(traindevents),fname);
 	 
    %---------------------------------------------------------------------------------
    case {'calibrate','calibration',opts.calibrateExtraPhases{:}};
@@ -371,6 +385,7 @@ while ( true )
     fname=[dname '_' subject '_' datestr];
     fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save([fname '.mat'],'traindata','traindevents','hdr');
     trainSubj=subject;
+    fprintf('Saved %d epochs to : %s\n',numel(traindevents),fname);
 
     %---------------------------------------------------------------------------------
    case {'sliceraw'};
@@ -413,6 +428,7 @@ while ( true )
      fname=[dname '_' subject '_' datestr];
      fprintf('Saving %d epochs to : %s\n',numel(traindevents),fname);save([fname '.mat'],'traindata','traindevents','hdr');
      trainSubj=subject; % mark this this data is valid for classifier training
+    fprintf('Saved %d epochs to : %s\n',numel(traindevents),fname);
      
      if( ~isempty(chdr) ) hdr=chdr; end;
      trainSubj=subject;
