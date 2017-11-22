@@ -1,4 +1,4 @@
-function [phaseSlice,hdr,events]=slicerawPhases(fname,varargin)
+function [phaseSlice,hdr,events]=slicePhases(fname,varargin)
 % Example of how to slice a raw recording file up epochs
 %
 % [phaseSlice,hdr,events]=sliceraw(outputdir,varargin)
@@ -33,7 +33,7 @@ function [phaseSlice,hdr,events]=slicerawPhases(fname,varargin)
 %  hdr   - [struct] the data header
 %  events- [struct 1xM] all events in this data file
 % Options:
-%  phaseType -- 'str' cell array of match strings/numbers for matching
+%  phaseStart -- 'str' cell array of match strings/numbers for matching
 %              events to indicate the start/end of an experiment phase
 %  startSet -- {2x1} cell array of match strings/numbers for matching 
 %              events based on their type and/or value as used in matchEvents.
@@ -68,7 +68,7 @@ function [phaseSlice,hdr,events]=slicerawPhases(fname,varargin)
 % See Also: buffer_waitData, buffer_train_erp_clsfr, buffer_train_ersp_clsfr, buffer_apply_erp_clsfr, buffer_apply_ersp_clsfr
 
 % set and parse the input options
-opts=struct('startSet',[],'trlen_ms',3000,'trlen_samp',[],'offset_ms',[],'offset_samp',[],'verb',0,'subsample',256,'hdr',[],'events',[]);
+opts=struct('phaseStart','startPhase.cmd','startSet','stimulus.target','trlen_ms',3000,'trlen_samp',[],'offset_ms',[],'offset_samp',[],'verb',0,'subsample',256,'hdr',[],'events',[]);
 opts=parseOpts(opts,varargin);
 
 % get the directory which contains the files
@@ -84,9 +84,12 @@ datafname =fullfile(fdir,'samples');
 
 										  % read the header and the events
 hdr=opts.hdr;
-if ( isempty(hdr) )    hdr   =read_buffer_offline_header(hdrfname); end;
-events=opts.events;
-if ( isempty(events) ) events=read_buffer_offline_events(eventfname,hdr); end;
+if ( isempty(hdr) )       hdr   =read_buffer_offline_header(hdrfname); end;
+allevents=opts.events;
+if ( isempty(allevents) )
+  if( opts.verb>0 ) fprintf('Reading all events\n'); end;
+  allevents=read_buffer_offline_events(eventfname,hdr);
+end;
 
 % extract sample-rate from the header and convert from ms->samples if needed
 if ( isfield(hdr,'SampleRate') ) fs=hdr.SampleRate; 
@@ -114,40 +117,46 @@ if ( ~isempty(opts.offset_samp) ) offset_samp = offset_samp+opts.offset_samp; en
 
 % select the events we want to slice on from the stream
 % Note: you can replace this with something more sophsicated
+if( opts.verb>0 ) fprintf('Getting trial events\n'); end;
 if ( iscell(opts.startSet) )
-  mi=matchEvents(events,opts.startSet{:});
+  mi=matchEvents(allevents,opts.startSet{:});
 elseif ( isstruct(opts.startSet) ) % already the set of events to slice on
-  events=opts.startSet; mi=true(numel(events),1);
+  allevents=opts.startSet; mi=true(numel(allevents),1);
 elseif ( isa(opts.startSet,'function_handle') || exist(opts.startSet)==2 )
-  mi=feval(opts.startSet,events);
+  mi=feval(opts.startSet,allevents);
 elseif ( ischar(opts.startSet) ) % just a type spec
-  mi=matchEvents(events,opts.startSet);
+  mi=matchEvents(allevents,opts.startSet);
 elseif ( isempty(opts.startSet) ) % return all events
-  mi=true(numel(events),1);
+  mi=true(numel(allevents),1);
 end
 
 % select the events which define start/end of the different experiment phases
+if( opts.verb>0 ) fprintf('Getting phase events\n'); end;
 phaseStarti=[];
 if iscell(opts.phaseStart) 
-   phaseStarti=matchEvents(events,opts.phaseSet{:});
+   phaseStarti=matchEvents(allevents,opts.phaseStart{:});
 elseif ischar(opts.phaseStart)
-   phaseStarti=matchEvents(events,opts.phaseSet);
+   phaseStarti=matchEvents(allevents,opts.phaseStart);
 end
 phaseStarti=find(phaseStarti);
 
 
 fprintf('Slicing in %d phases\n',numel(phaseStarti));
-phaseSlice=repmat(struct('data',[],'devents',[],'label',[]),numel(phaseStarti),1);
+phaseSlice=[];
 for phasei=1:numel(phaseStarti);
-   phaseStartEvt = events(phasei);
+  phaseStartEvt = allevents(phaseStarti(phasei));
+  fprintf('Phase: %s',ev2str(phaseStartEvt));
    phaseEvtsi = mi;
    phaseEvtsi(1:phaseStarti(phasei))=false; % nothing before phase start
    if( phasei<numel(phaseStarti) ) % nothing after start next phase
       phaseEvtsi(phaseStarti(phasei+1):end)=false; 
    end
    % select this set of events
-   devents=events(phaseEvtsi);
-
+   devents=allevents(phaseEvtsi);
+   if( isempty(devents) )
+     fprintf('No startSet events in this phase, skipping.\n'); continue;
+   end;
+   
    % Finally get the data segements we want
    data=repmat(struct('buf',[]),size(devents));
    if ( opts.verb>=0 ) fprintf('Slicing %d epochs:',numel(devents));end;
@@ -167,7 +176,11 @@ for phasei=1:numel(phaseStarti);
       data=data(keep);
       devents=devents(keep);
    end
-   phaseSlice(phasei)=struct('data',data,'devents',devents,'label',phaseStartEvt.value);
+   if( isempty(phaseSlice) )
+     phaseSlice = struct('data',data,'devents',devents,'label',phaseStartEvt.value);
+   else
+     phaseSlice(end+1)=struct('data',data,'devents',devents,'label',phaseStartEvt.value);
+   end
 end
 if ( subSampRatio>1 ) % update the sample rate stored in the header
   hdr.fSample=outfs;
