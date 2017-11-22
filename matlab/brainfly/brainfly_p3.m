@@ -49,32 +49,34 @@ hCannon = Cannon(hAxes);
 %hbackground = rectangle('position',[gameCanvasXLims(1),gameCanvasYLims(1),diff(gameCanvasXLims),10]);
 
 %% Game Loop:
-                                % Set callbacks to manage the key presses:
-set(hFig,'KeyPressFcn',@(hObj,evt) set(hObj,'userdata',evt)); %save the key; processKeys(hObj,evt,evt.Key));
-%set(hFig,'KeyReleaseFcn',@(hObj,evt) set(hObj,'userdata','')); % clear on release
-                                %  set(hFig,'KeyReleaseFcn',[]);
-
                          % Make text disp (mostly for testing and debugging):
 hText = text(gameCanvasXLims(1),gameCanvasYLims(2),'BrainFly P3','HorizontalAlignment', 'left', 'VerticalAlignment','top','Color',txtColor);
 
                        % wait for user to be ready before starting everything
 set(hText,'string', {'' 'Click mouse when ready to begin.'}, 'visible', 'on'); drawnow;
-waitforbuttonpress;
+%waitforbuttonpress;
 for i=3:-1:0;
-   set(hText,'string',sprintf('Starting in: %ds',i),'visible','on');drawnow;
-   sleepSec(1);
+   set(hText,'string',sprintf('Starting in: %ds',i),'visible','on');
+   pause(1);
 end
 set(hText,'visible', 'off'); drawnow; 
 
+
+                                % Set callbacks to manage the key presses:
+set(hFig,'KeyPressFcn',@(hObj,evt) set(hObj,'userdata',evt)); %save the key; processKeys(hObj,evt,evt.Key));
+%set(hFig,'KeyReleaseFcn',@(hObj,evt) set(hObj,'userdata','')); % clear on release
+                                %  set(hFig,'KeyReleaseFcn',[]);
+
                                 % Loop while figure is active:
-t0=tic; stimi=1; nframe=0; rtState=0;
+t0=getwTime(); stimi=1; nframe=0; rtState=0;
 ss=stimSeq(:,stimi); % starting stimulus state
 sendEvent('stimilus.brainfly_p3','start');
-while ( toc(t0)<gameDuration && ishandle(hFig))
+while ( getwTime()-t0<gameDuration && ishandle(hFig))
   nframe       = nframe+1;
-  frameTime    = toc(t0);
+  frameTime    = getwTime()-t0;
   frameEndTime = frameTime+gameFrameDuration; % time this frame should end
   frameTimes(nframe)=frameTime;
+  fprintf('%d) t=%g',nframe,frameTime);
 
   curKeyLocal    = get(hFig,'userdata');
   curCharacter   = [];
@@ -90,7 +92,7 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
        % Note: stimulus rate may be slower than the display rate...
   % Note: stimTime(stimi) is time this stimulus **finish** being on screen
   newstimState=false;
-  if( stimTime(stimi)>frameTime ) % end of this stimulus, move on to next one
+  if( frameTime>stimTime(stimi) ) % end of this stimulus, move on to next one
     stimi=stimi+1; % next stimulus frame
     if( stimi>=numel(stimTime) ) % wrap-arround the end of the stimulus sequence
       stimi=1;
@@ -104,13 +106,14 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
     ss=stimSeq(:,stimi); % get the current stimulus state info
 	% TODO: only send event when state *really* changes?
 	newstimState=true;
-                            % flash cannon, N.B. cannon is always stim-seq #1
-   if( ss(1)==0 ) 
-      set(hCannon.hGraphic,'facecolor',bgColor);
-   else
-      set(hCannon.hGraphic,'facecolor',stimColors(ss(1),:));
-   end
   end  
+  fprintf(' e=%d (%g)\n',stimi,stimTime(stimi));
+  % flash cannon, N.B. cannon is always stim-seq #1
+  if( ss(1)==0 ) 
+     set(hCannon.hGraphic,'facecolor',bgColor);
+  else
+     set(hCannon.hGraphic,'facecolor',stimColors(ss(1),:));
+  end
   drawnow;
 
                               % update the stimulus state
@@ -143,7 +146,7 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
     rtState=0; % non-running state
   end
       
-  ttg=frameEndTime-toc(t0);
+  ttg=frameEndTime-(getwTime()-t0);
   if (ttg>0)
     pause(ttg); 
   elseif ( verb > 0 ) 
