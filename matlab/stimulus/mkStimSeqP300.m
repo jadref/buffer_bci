@@ -10,7 +10,7 @@ function [stimSeq,stimTime,eventSeq,colors]=mkStimSeqP300(nSymb,duration,isi,tti
 %  nSymb -- [int] number of symbols to make the sequence for
 %  duration  -- [int] duration of the stimulus in seconds
 %  isi    -- [float] inter-stimulus interval in seconds                (1)
-%  tti    -- [float] target-to-target interval, add non-stim events to ensure this many seconds
+%  mintti -- [float] target-to-target interval, add non-stim events to ensure this many seconds
 %                on average between highlighing this symbol
 %  oddp   -- [bool] oddball, i.e. 3 stimulus types = target/standard/distractor, paradigm?
 %                   all non-flashed stimuli have distractor value.
@@ -25,7 +25,7 @@ function [stimSeq,stimTime,eventSeq,colors]=mkStimSeqP300(nSymb,duration,isi,tti
 if ( numel(nSymb)>1 ) nSymb=numel(nSymb); end;
 if ( nargin<2 || isempty(duration) ) duration=3; end; % default to 3sec
 if ( nargin<3 || isempty(isi) )  isi=1/5; end;        % default to 5hz
-if ( nargin<4 || isempty(tti) )  tti =1; end;         % default to ave target every second
+if ( nargin<4 || isempty(mintti) )  mintti =1; end;         % default to ave target every second
 if ( nargin<5 || isempty(oddp) ) oddp=false; end;
 % make a simple visual intermittent flash stimulus
 colors=[1  1  1]';   % flash - white
@@ -38,7 +38,7 @@ if ( oddp )
 			 .7 .7 .7]';   % std - gray approx iso-luminant
   stimSeq(:,2:2:end)=2; % every stimulus event starts as std
 end
-tti_ev = ceil(tti/isi);
+mintti_ev = ceil(mintti/isi);
 flashStim=zeros(nSymb,1);
 for stimi=1:nSymb;
   flashStim(:)=0; % everything is background color
@@ -46,8 +46,8 @@ for stimi=1:nSymb;
   flashStim(stimi)=1; % flash only has symbol 1 set
   si=0;
   while (si<numel(stimTime)) % loop to find a flash time not at the same time as another symbol
-	 if ( si==0 ) sstart=0; else sstart=si+ceil(tti_ev/2); end
-	 possIdx = sstart+(1:tti_ev);
+	 if ( si==0 ) sstart=0; else sstart=si+ceil(mintti_ev); end
+	 possIdx = sstart+(1:mintti_ev);
 	 if ( isempty(possIdx) || possIdx(1)>numel(stimTime) ) break; end
 	 emptyPos = stimSeq(:,possIdx(possIdx<numel(stimTime)));
 	 if ( oddp )  emptyPos = all(emptyPos==2,1); else emptyPos=all(emptyPos<=0,1); end;

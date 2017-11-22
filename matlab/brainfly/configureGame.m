@@ -43,11 +43,18 @@ buffhost='localhost'; buffport=1972;
 
 % BCI Stim Props
 flashColor=[1 1 1]; % the 'flash' color (white)
-tgtColor = [.8 .8 .8]; % target cue
-bgColor  = [.5 .5 .5]; % backgroud color
+tgtColor = [.8 .8 .8]; % target cue, light grey
+bgColor  = [.5 .5 .5]; % backgroud color, medium grey
 cueColor = [0 1 0];
 predColor= [0 1 0]; % prediction color
-txtColor     =[.9 .9 .9]; % color of the cue text
+txtColor = [.9 .9 .9]; % color of the cue text
+rtColor  = [1 0 0]; % reaction time cue = red
+stdColor = [.8 .8 .8]; % standard flash = light-grey
+p3tgtColor=[0 0 1]; % p3 target color
+
+rtMax = 2; % max time to react to reaction time task
+rtDuration = 1; % time reaction-time stimulus is on the screen
+rtInterval = [10 20];% range of times between reaction time tasks
 
 gameFrameDuration = 1/10; % 5hz screen update interval
 
