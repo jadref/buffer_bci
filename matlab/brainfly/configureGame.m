@@ -54,7 +54,7 @@ p3tgtColor=[0 0 1]; % p3 target color
 
 rtMax = 2; % max time to react to reaction time task
 rtDuration = 1; % time reaction-time stimulus is on the screen
-rtInterval = [10 20];% range of times between reaction time tasks
+rtInterval = [15 20];% range of times between reaction time tasks
 
 gameFrameDuration = 1/10; % 10hz screen update interval
 
@@ -62,7 +62,7 @@ gameFrameDuration = 1/10; % 10hz screen update interval
 gameDuration = 90;
 
 % P300 stimulus info
-isi   = 1/5;
+isi   = 1/4;
 mintti= [.6 2.5];
 oddballp=true; % standard/target type stimulus
 stimDuration=isi;

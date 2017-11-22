@@ -12,7 +12,7 @@ stimColors = [p3tgtColor;stdColor;rtColor]; % [targetFlash, standardFlash, react
 
                                 % add in the rt events
 rtTime=0; 
-while rtTime < gameDuration
+while rtTime < stimTime(end)
   rtTime = rtTime + rtInterval(1) + rand(1)*(rtInterval(2)-rtInterval(1));
   [ans,rtEi]=min(abs(stimTime-rtTime)); % find nearest stimulus epoch
   rtTime=stimTime(rtEi);
@@ -69,6 +69,7 @@ set(hText,'visible', 'off'); drawnow;
                                 % Loop while figure is active:
 t0=tic; stimi=1; nframe=0; rtState=0;
 ss=stimSeq(:,stimi); % starting stimulus state
+sendEvent('stimilus.brainfly_p3','start');
 while ( toc(t0)<gameDuration && ishandle(hFig))
   nframe       = nframe+1;
   frameTime    = toc(t0);
@@ -149,3 +150,4 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
     fprintf('%d) frame-lagged %gs\n',nframe,ttg);
   end
 end
+sendEvent('stimilus.brainfly_p3','end');
