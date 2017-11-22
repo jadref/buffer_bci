@@ -7,7 +7,7 @@ gameCanvasXLims         = [0 500];
 useBuffer               = 1;
 
 % make a simple odd-ball stimulus sequence, with targets mintti apart
-[stimSeq,stimTime,eventSeq] = mkStimSeqP300(4,gameDuration*2,isi,1,true);
+[stimSeq,stimTime,eventSeq] = mkStimSeqP300(1,gameDuration*2,isi,mintti,oddballp);
 stimColors = [p3tgtColor;stdColor;rtColor]; % [targetFlash, standardFlash, reactionTimeFlash]
 
                                 % add in the rt events
@@ -51,7 +51,7 @@ hCannon = Cannon(hAxes);
 %% Game Loop:
                                 % Set callbacks to manage the key presses:
 set(hFig,'KeyPressFcn',@(hObj,evt) set(hObj,'userdata',evt)); %save the key; processKeys(hObj,evt,evt.Key));
-set(hFig,'KeyReleaseFcn',@(hObj,evt) set(hObj,'userdata','')); % clear on release
+%set(hFig,'KeyReleaseFcn',@(hObj,evt) set(hObj,'userdata','')); % clear on release
                                 %  set(hFig,'KeyReleaseFcn',[]);
 
                          % Make text disp (mostly for testing and debugging):
@@ -75,6 +75,15 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
   frameEndTime = frameTime+gameFrameDuration; % time this frame should end
   frameTimes(nframe)=frameTime;
 
+  curKeyLocal    = get(hFig,'userdata');
+  curCharacter   = [];
+  if ( ~isempty(curKeyLocal) )
+     curCharacter=curKeyLocal.Character;
+     %if(verb>0) 
+       fprintf('%d) key="%s"\n',nframe,curCharacter);
+     %end
+     set(hFig,'userdata',[]);
+  end
        %----------------------------- do the P300 type flashing -------------
        % get the position in the stim-sequence for this time.
        % Note: stimulus rate may be slower than the display rate...
@@ -110,13 +119,6 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
   end
   
   % ---------- reaction time task -----------------------
-  curKeyLocal    = get(hFig,'userdata');
-  curCharacter   = [];
-  if ( ~isempty(curKeyLocal) )
-     curCharacter=curKeyLocal.Character;
-     if(verb>0) fprintf('%d) key="%s"\n',nframe,curCharacter);end
-     set(hFig,'userdata',[]);
-  end
                                 % process the reaction time task presses
   if( ss(1)==3 && rtState==0 )
     rtStart = frameTime;
@@ -126,14 +128,17 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
   if( rtState==1 && strcmpi(curCharacter,'a') ) 
     if( useBuffer ) sendEvent('response.rtTask',curCharacter); end;
     set(hText,'string',sprintf('You got it!\n%4.2fs',frameTime-rtStart),'color','g','visible','on');
+    drawnow;
     rtState=2; % post button press state
   end
   if ( rtState==1 && frameTime > rtStart + rtMax ) % end-rt window no button
     set(hText,'string',sprintf('Tooo sloooow!\n%4.2fs',frameTime-rtStart),'color','r','visible','on');
+    drawnow;
     rtState=2; % post-button press state
   end;
   if ( rtState>0 && frameTime > rtStart + 2*rtMax ) % remove feedback
     set(hText,'string','','visible','off');
+    drawnow;
     rtState=0; % non-running state
   end
       

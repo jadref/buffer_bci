@@ -56,17 +56,16 @@ rtMax = 2; % max time to react to reaction time task
 rtDuration = 1; % time reaction-time stimulus is on the screen
 rtInterval = [10 20];% range of times between reaction time tasks
 
-gameFrameDuration = 1/10; % 5hz screen update interval
+gameFrameDuration = 1/10; % 10hz screen update interval
 
 % how long 1 game level lasts
 gameDuration = 90;
 
 % P300 stimulus info
 isi   = 1/5;
-mintti= .6;
-oddballp=false;
+mintti= [.6 2.5];
+oddballp=true; % standard/target type stimulus
 stimDuration=isi;
-maxOnScreenObjs=20;
 
 %---------------------------------------------------------------------------------------------------------
 % IM calibration config

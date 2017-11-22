@@ -1,4 +1,4 @@
-function [stimSeq,stimTime,eventSeq,colors]=mkStimSeqP300(nSymb,duration,isi,tti,oddp)
+function [stimSeq,stimTime,eventSeq,colors]=mkStimSeqP300(nSymb,duration,isi,mintti,oddp)
 % make a P300/oddball type of stimulus sequence
 %
 % [stimSeq,stimTime,eventSeq,colors]=mkStimSeqP300(nSymb,duration,isi,mintti,oddp)
@@ -12,6 +12,7 @@ function [stimSeq,stimTime,eventSeq,colors]=mkStimSeqP300(nSymb,duration,isi,tti
 %  isi    -- [float] inter-stimulus interval in seconds                (1)
 %  mintti -- [float] target-to-target interval, add non-stim events to ensure this many seconds
 %                on average between highlighing this symbol
+%            [2x1] min and max target to target interval.
 %  oddp   -- [bool] oddball, i.e. 3 stimulus types = target/standard/distractor, paradigm?
 %                   all non-flashed stimuli have distractor value.
 % Outputs:
@@ -39,6 +40,12 @@ if ( oddp )
   stimSeq(:,2:2:end)=2; % every stimulus event starts as std
 end
 mintti_ev = ceil(mintti/isi);
+if ( numel(mintti_ev)>1 ) 
+   maxtti_ev = mintti_ev(2); 
+   mintti_ev=mintti_ev(1);
+else
+   maxtti_ev = max(mintti_ev,nSymb)*2;
+end
 flashStim=zeros(nSymb,1);
 for stimi=1:nSymb;
   flashStim(:)=0; % everything is background color
@@ -47,7 +54,7 @@ for stimi=1:nSymb;
   si=0;
   while (si<numel(stimTime)) % loop to find a flash time not at the same time as another symbol
 	 if ( si==0 ) sstart=0; else sstart=si+ceil(mintti_ev); end
-	 possIdx = sstart+(1:mintti_ev);
+	 possIdx = sstart+(1:maxtti_ev);
 	 if ( isempty(possIdx) || possIdx(1)>numel(stimTime) ) break; end
 	 emptyPos = stimSeq(:,possIdx(possIdx<numel(stimTime)));
 	 if ( oddp )  emptyPos = all(emptyPos==2,1); else emptyPos=all(emptyPos<=0,1); end;

@@ -77,11 +77,7 @@ balls        = [];%CannonBall.empty;
 newBall      = [];
 curBalls     = [];
 lastShotTime = [];
-score.shots  = 0;
-score.score  = 0;
-score.hits   = 0;
-score.bonushits=0;
-score.totalBonusPoss = 0;
+score        = struct('shots',0,'hits',0,'bonushits',0,'totalBonusPoss',0,'score',0);
 bonusFlash = 3;
                    % simple scoreing function, top-screen=10, bottom-screen=1
 height2score = @(height) round(10*(height-gameCanvasYLims(1))./(gameCanvasYLims(2)-gameCanvasYLims(1)) + 1);
@@ -140,7 +136,9 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
     curKeyLocal    = get(hFig,'userdata');
     if ( ~isempty(curKeyLocal) )
       curCharacter=curKeyLocal.Character;
-      if(verb>0) fprintf('%d) key="%s"\n',nframe,curCharacter);end
+      %if(verb>0) 
+         fprintf('%d) key="%s"\n',nframe,curCharacter);
+         %end
       [cannonAction,cannonTrotFrac]=key2action(curCharacter);
     end
   end
