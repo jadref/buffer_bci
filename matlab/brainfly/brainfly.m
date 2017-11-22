@@ -249,7 +249,7 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
        % Note: stimulus rate may be slower than the display rate...
   % Note: stimTime(stimi) is time this stimulus **finish** being on screen
   newstimState=false;
-  if( p300Flashing && stimTime(stimi)>frameTime ) % end of this stimulus, move on to next one
+  if( p300Flashing && stimTime(stimi)<frameTime ) % end of this stimulus, move on to next one
     stimi=stimi+1; % next stimulus frame
     if( stimi>=numel(stimTime) ) % wrap-arround the end of the stimulus sequence
       stimi=1;

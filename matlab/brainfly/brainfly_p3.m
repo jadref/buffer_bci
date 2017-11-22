@@ -76,17 +76,8 @@ while ( getwTime()-t0<gameDuration && ishandle(hFig))
   frameTime    = getwTime()-t0;
   frameEndTime = frameTime+gameFrameDuration; % time this frame should end
   frameTimes(nframe)=frameTime;
-  fprintf('%d) t=%g',nframe,frameTime);
+  if( verb>0 ) fprintf('%d) t=%g',nframe,frameTime); end
 
-  curKeyLocal    = get(hFig,'userdata');
-  curCharacter   = [];
-  if ( ~isempty(curKeyLocal) )
-     curCharacter=curKeyLocal.Character;
-     %if(verb>0) 
-       fprintf('%d) key="%s"\n',nframe,curCharacter);
-     %end
-     set(hFig,'userdata',[]);
-  end
        %----------------------------- do the P300 type flashing -------------
        % get the position in the stim-sequence for this time.
        % Note: stimulus rate may be slower than the display rate...
@@ -107,7 +98,7 @@ while ( getwTime()-t0<gameDuration && ishandle(hFig))
 	% TODO: only send event when state *really* changes?
 	newstimState=true;
   end  
-  fprintf(' e=%d (%g)\n',stimi,stimTime(stimi));
+  if( verb>0 ) fprintf(' e=%d (%g)\n',stimi,stimTime(stimi)); end;
   % flash cannon, N.B. cannon is always stim-seq #1
   if( ss(1)==0 ) 
      set(hCannon.hGraphic,'facecolor',bgColor);
@@ -123,11 +114,21 @@ while ( getwTime()-t0<gameDuration && ishandle(hFig))
   end
   
   % ---------- reaction time task -----------------------
+  curKeyLocal    = get(hFig,'userdata');
+  curCharacter   = [];
+  if ( ~isempty(curKeyLocal) )
+     curCharacter=curKeyLocal.Character;
+     %if(verb>0) 
+       fprintf('%d) key="%s"\n',nframe,curCharacter);
+     %end
+     set(hFig,'userdata',[]);
+  end
                                 % process the reaction time task presses
   if( ss(1)==3 && rtState==0 )
     rtStart = frameTime;
     rtState = 1; % waiting for key-press state
     sendEvent('stimulus.rtTask',1);
+    fprintf('%d) t=%g rt frame',nframe,frameTime);
   end
   if( rtState==1 && strcmpi(curCharacter,'a') ) 
     if( useBuffer ) sendEvent('response.rtTask',curCharacter); end;

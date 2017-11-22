@@ -63,7 +63,7 @@ gameDuration = 90;
 
 % P300 stimulus info
 isi   = 1/5;
-mintti= [.6 2.5];
+mintti= [.6 2.0];
 oddballp=true; % standard/target type stimulus
 stimDuration=isi;
 
