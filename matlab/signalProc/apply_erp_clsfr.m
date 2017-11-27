@@ -96,7 +96,7 @@ end
 if ( isfield(clsfr,'featFiltFn') && ~isempty(clsfr.featFiltFn) )
   if( ~iscell(clsfr.featFiltFn) ) clsfr.featFiltFn={clsfr.featFiltFn}; end;
   for ei=1:size(X,3); % incrementall call the function
-	 [X(:,:,ei),clsfr.featFiltState]=feval(clsfr.featFilt{1},X(:,:,ei),clsfr.featFiltState,clsfr.featFilt{2:end});
+	 [X(:,:,ei),clsfr.featFiltState]=feval(clsfr.featFiltFn{1},X(:,:,ei),clsfr.featFiltState,clsfr.featFiltFn{2:end});
   end  
 end
 
