@@ -1,7 +1,7 @@
-function [phaseSlice,hdr,events]=slicePhases(fname,varargin)
+function [phaseSlice,hdr,allevents]=slicePhases(fname,varargin)
 % Example of how to slice a raw recording file up epochs
 %
-% [phaseSlice,hdr,events]=sliceraw(outputdir,varargin)
+% [phaseSlice,hdr,allevents]=sliceraw(outputdir,varargin)
 %
 % Roughly this file consists of 3 steps
 %  1) read the header information
