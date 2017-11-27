@@ -90,8 +90,13 @@ for si=1:numel(datasets);
            aucphase=[]; tstphase=[];
            for phasei=[1:numel(phases)];
              d=phases(phasei);
-              % apply the trained classifier
-             [ans,f] = buffer_apply_clsfr(d.data,clsfr); % predictions
+             % apply the trained classifier
+             if( 1 ) % propogate updated clasifier between phases 
+                oclsfr=clsfr;
+                [f,fraw,p,Xpp,clsfr] = buffer_apply_clsfr(d.data,clsfr); % predictions
+             else
+                f = buffer_apply_clsfr(d.data,clsfr);
+             end
              y = lab2ind({d.devents.value},clsfr.spKey,clsfr.spMx); %map events->clsfr targets
              conf    = dv2conf(y,f); % confusion matrix
              tst     = conf2loss(conf,'bal'); % performance
@@ -104,10 +109,9 @@ for si=1:numel(datasets);
              aucphase(phasei)=auc;  tstphase(phasei)=tst;
              fprintf('%20s:%2.0f(%2.0f)  \n',d.label,tstphase(phasei)*100,aucphase(phasei)*100);
            end
-           fprintf('\n');
            meantstphase = sum(tstphase)./(numel(tstphase)-1);
            meanaucphase = sum(aucphase)./(numel(aucphase)-1);
-           fprintf('%20s:%2.0f(%2.0f)\n','<ave>',meantstphase*100,meanaucphase*100);
+           fprintf('%20s:%2.0f(%2.0f)\n\n','<ave>',meantstphase*100,meanaucphase*100);
            
            % record the summary results
            results(end+1,1:5)={subj saveDir alg mean(tstphase) mean(aucphase)};
@@ -171,36 +175,16 @@ for ai=1:numel(algs);
    fprintf('\n\nAlg: %s\n',alg);
    for si=1:numel(subjs);
       mi = strcmp(results(:,1),subjs{si}) & strcmp(results(:,3),alg);
-      resai = [results{mi,4}];
-      fprintf('%2d) %10s = %5.3f (%5.3f) ',si,subjs{si},mean(resai),std(resai));
-      if( any(strcmp(results(mi,2),'Week')) )
-         fprintf(' / Wk = ');
-         for wki=1:6;
-            mi = strcmp(results(:,1),subjs{si}) & ...
-                 strcmp(results(:,3),alg) & ...
-                 (strncmp(results(:,2),sprintf('Week%d',wki),5) | strncmp(results(:,2),sprintf('Week %d',wki),6));
-            if( any(mi) )  fprintf('%5.2f  ',mean([results{mi,4}]));
-            else           fprintf(' -     '); 
-            end
-         end
-      else
-         for si=find(mi);
-            fprintf('%5.2f  ',results{si,4});
-         end
+      resai = [[results{mi,4}]' [results{mi,5}]'];
+      fprintf('%2d) %10s = %5.3f (%5.3f) ',si,subjs{si},mean(resai,1));
+      for si=find(mi);
+         fprintf('%5.2f  ',results{si,4});
       end
       fprintf('\n');
    end
    fprintf('---\n');
    mi = strcmp(results(:,3),alg);
-   resai = [results{mi,4}];
-   fprintf('ave %10s = %5.3f (%5.3f) ','ave',mean(resai),std(resai));
-   fprintf(' / Wk = ');
-   for wki=1:6;
-      mi = strcmp(results(:,3),alg) & ...
-           (strncmp(results(:,2),sprintf('Week%d',wki),5) | strncmp(results(:,2),sprintf('Week %d',wki),6));
-      if( any(mi) )  fprintf('%5.2f  ',mean([results{mi,4}]));
-      else           fprintf(' -     '); 
-      end
-   end
+   resai = [[results{mi,4}]' [results{mi,5}]'];
+   fprintf('ave %10s = %5.3f (%5.3f) ','ave',mean(resai,1));
    fprintf('\n');
 end
