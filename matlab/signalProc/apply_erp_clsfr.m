@@ -1,7 +1,7 @@
-function [f,fraw,p,X,isbadch,isbadtr]=apply_erp_clsfr(X,clsfr,verb)
+function [f,fraw,p,X,clsfr,isbadch,isbadtr]=apply_erp_clsfr(X,clsfr,verb)
 % apply a previously trained classifier to the input data
 % 
-%  [f,fraw,p,X]=apply_erp_clsfr(X,clsfr,verb)
+%  [f,fraw,p,X,clsfr]=apply_erp_clsfr(X,clsfr,verb)
 %
 % Inputs:
 %  X - [ ch x time (x epoch) ] data set

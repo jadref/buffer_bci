@@ -86,7 +86,7 @@ opts=struct('classify',1,'fs',[],'timeband_ms',[],'freqband',[],...
             'adaptspatialfiltFn',[],'adaptspatialfiltstate',[],...
             'badchrm',1,'badchthresh',3.1,'badchscale',0,'eegonly',1,...
             'badtrrm',1,'badtrthresh',3,'badtrscale',0,...
-				'featFiltFn',[],...
+				'featFiltFn',[],'predFiltFn',[],...
             'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
             'visualize',1,'badCh',[],'nFold',10,'class_names',[],'zeroLab',1);
 [opts,varargin]=parseOpts(opts,varargin);
@@ -403,7 +403,7 @@ else
    if( opts.verb>0) fprintf('6) train classifier\n');end;
    [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',opts.zeroLab,'verb',opts.verb,'objFn','mlr_cg','binsp',0,'spMx','1vR',varargin{:});  
    res.isbadtr=isbadtr; % record the list of found bad trials
-
+  
    if ( opts.visualize ) 
       if ( size(res.tstconf,2)==1 ) % confusion matrix is correct
                                     % plot the confusion matrix
@@ -424,6 +424,16 @@ else
    end
 end
 
+%7) post-process the predictions if wanted
+predFiltFn=opts.predFiltFn; predFiltState=[];
+if ( ~isempty(predFiltFn) )
+   if( ~iscell(predFiltFn) ) predFiltFn={predFiltFn}; end;
+   f=res.opt.tstf;
+   for ei=1:size(f,1);
+      [f(ei,:),predFiltState]=feval(predFiltFn{1},f(ei,:),predFiltState,predFiltFn{2:end});
+   end  
+end
+
 %7) combine all the info needed to apply this pipeline to testing data
 clsfr.type        = 'ERsP';
 clsfr.fs          = fs;   % sample rate of training data
@@ -442,6 +452,8 @@ clsfr.welchAveType = opts.aveType;% other options to pass to the welchpsd
 clsfr.freqIdx      = fIdx; % start/end index of frequencies to keep
 clsfr.featFiltFn   = featFiltFn; % feature normalization type
 clsfr.featFiltState= featFiltState;  % state of the feature filter
+clsfr.predFiltFn   = predFiltFn; % feature normalization type
+clsfr.predFiltState= predFiltState;  % state of the feature filter
 
 clsfr.badtrthresh = []; if ( ~isempty(trthresh) && opts.badtrscale>0 ) clsfr.badtrthresh = trthresh(end)*opts.badtrscale; end
 clsfr.badchthresh = []; if ( ~isempty(chthresh) && opts.badchscale>0 ) clsfr.badchthresh = chthresh(end)*opts.badchscale; end
