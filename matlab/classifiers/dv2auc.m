@@ -21,7 +21,7 @@ function [res,sidx]=dv2auc(Y,dv,dim,sidx,dvnoise,verb)
 MAXEL=2e6;
 if ( nargin < 5 || isempty(dvnoise) ) dvnoise=0; end;
 if ( nargin < 6 || isempty(verb) ) verb=1; end;
-if ( nargin < 3 || isempty(dim) ) dim=find(size(dv)>1,1); end;
+if ( nargin < 3 || isempty(dim) ) dim=find(size(dv)>1,1); if(isempty(dim))dim=1;end; end;
 if ( dim < 0 ) dim = ndims(dv)+dim+1; end;
 if ( nargin < 4 || isempty(sidx) )
    if ( numel(dv) <= MAXEL ) % Small enough to do in 1 pass

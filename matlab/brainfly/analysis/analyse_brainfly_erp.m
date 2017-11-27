@@ -1,5 +1,5 @@
 run ../../utilities/initPaths
-if ( 0 ) 
+if ( 1 ) 
    dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
    datasets_brainfly_local();
 else
@@ -8,7 +8,7 @@ else
 end
 trlen_ms=750;
 label   ='p300'; % generic label for this slice/analysis type
-makePlots=0; % flag if we should make summary ERP/AUC plots whilst slicing
+makePlots=1; % flag if we should make summary ERP/AUC plots whilst slicing
 analysisType='erp';  % type of pre-processing / analsysi to do
 
 % get the set of algorithms to run
@@ -33,7 +33,7 @@ si=1; sessi=3;
 for si=1:numel(datasets);
    if ( isempty(datasets{si}) ) continue; end;
   subj   =datasets{si}{1};
-  for sessi=1:numel(datasets{si})-1;
+  for sessi=17:numel(datasets{si})-1;
      session=datasets{si}{1+sessi};
      saveDir=session;
      if(~isempty(stripFrom))
