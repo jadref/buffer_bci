@@ -156,14 +156,14 @@ for si=1:numel(datasets);
   end % sessions
 end % subjects
 % show the final results set
-results
+%results
 
 % some simple algorithm summary info
 algs=unique(results(:,3));
 for ai=1:numel(algs);
    mi=strcmp(results(:,3),algs{ai});
-   resai = [results{mi,4}];
-   fprintf('%2d) %40s = %5.3f (%5.3f)\n',ai,algs{ai},mean(resai),std(resai));
+   resai = [[results{mi,4}]' [results{mi,5}]'];
+   fprintf('%2d) %40s = %5.3f (%5.3f)\n',ai,algs{ai},mean(resai,1));
 end
 
 

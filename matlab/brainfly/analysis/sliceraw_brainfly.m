@@ -81,11 +81,13 @@ for si=1:numel(datasets);
            for ei=1:numel(devents);
               val = devents(ei).value; 
               for ri=1:size(subistuteVals,1);
-                 if strcmp(val,subistuteVals{ri,1}) val = subistuteVals{ri,2}; end
+                 if strcmp(val,subistuteVals{ri,1}) 
+                    val = subistuteVals{ri,2}; 
+                 end
               end
               devents(ei).value = val;
            end
-           phasese(phi).devents=devents;
+           phases(phi).devents=devents;
         end
         fprintf('Saving %d phases to: %s',numel(phases),savefn);
         save(savefn,'phases','hdr','allevents');
