@@ -9,23 +9,14 @@ autoFireMode            = 1;               % auto-fire or fire key?
 useBuffer               = 1;
 timeBeforeNextAlien     = 5;               % seconds
 killFlashTime           = .1;              % duration of the red-you've-been-killed flash
-bonusSpawnInterval      = [30 50];          % range in time between bonus alien spawns
-bonusFlashnr            = 3;
 predictionMargin=0;
 warpCursor = true; % cannon position is directly classifier output
 p300Flashing = false; % whether we do the p300 flashing or not
 
-% make a simple odd-ball stimulus sequence, with targets mintti apart
-[stimSeq,stimTime,eventSeq] = mkStimSeqP300(3,gameDuration,isi,mintti,oddballp);
-stimColors = [bgColor;flashColor]; % map from stim-seq (0,1) to color to use [bg,flash] [nstimState x 3]
-% game object UID used for each stimulus sequence, i.e. obj2stim(3)=apply stim seq 3 to game object with UID (stim2obj(3)): [nStim x 1]
-stim2obj   = zeros(size(stimSeq,1),1);
-stim2obj(1)= 1; % 1st stim seq always mapps to the cannon
-
                                 % make a sequence of alien spawn locations
 % make the target sequence
 tgtSeq=mkStimSeqRand(2,gameDuration*2./timeBeforeNextAlien);
-lrSeq =tgtSeq(1,:)+(rand(1,size(tgtSeq,2))-.5)*.2; % l/r with a little noise
+lrSeq =tgtSeq(1,:)+(rand(1,size(tgtSeq,2))-.5)*.0; % l/r with a little noise
 lrSeq =max(0,min(1,lrSeq)); % bounds check
 
 %% Generate Figure:
@@ -47,8 +38,6 @@ hAxes = axes('position',[0 0 1 1]...
              ,'color',winColor,'nextplot','replacechildren','DrawMode','fast'...
              ,'xlim',gameCanvasXLims,'ylim',gameCanvasYLims,'Ydir','normal');
 
-drawnow;
-
                                 % Make cannon:
 hCannon = Cannon(hAxes);
 % make background for p3 stimuli
@@ -56,15 +45,25 @@ hCannon = Cannon(hAxes);
 
 
         % make a simple odd-ball stimulus sequence, with targets mintti apart
-% BODGE: stim-seq has 6 simuli.  4 of which are virtual to give good tgt rates
-[stimSeq,stimTime,eventSeq] = mkStimSeqP300(6,gameDuration,isi,mintti,oddballp);
-stimSeq=stimSeq(1:2,:);
-stimColors = [bgColor;flashColor]; 
+[stimSeq,stimTime,eventSeq] = mkStimSeqP300(1,gameDuration*2,isi,mintti,oddballp);
+stimColors = [p3tgtColor;stdColor;rtColor]; % [targetFlash, standardFlash, reactionTimeFlash]
+
+                                % add in the rt events
+rtTimes=[];rtTime=0; 
+while rtTime < stimTime(end)
+  rtTime = rtTime + rtInterval(1) + rand(1)*(rtInterval(2)-rtInterval(1));
+  [ans,rtEi]=min(abs(stimTime-rtTime)); % find nearest stimulus epoch
+  rtTime=stimTime(rtEi);
+  rtTimes=[rtTimes; rtTime]; % record all planned rt-task times
+                                % set a block of 1s to rt stimulus color
+  stimSeq(1,rtEi+(0:ceil(rtDuration/isi)))=3; % stim3 = rtColor
+end
+% stimSeq is now complete with P3 and Rt stim events
 
                                 % make a sequence of alien spawn locations
 % make the target sequence
 tgtSeq=mkStimSeqRand(2,gameDuration*2./timeBeforeNextAlien);
-lrSeq =(tgtSeq(1,:)*.7+.15)+(rand(1,size(tgtSeq,2))-.5)*.1; % l/r with a little noise
+lrSeq =(tgtSeq(1,:)*.9+.05)+(rand(1,size(tgtSeq,2))-.5)*0; % l/r with a little noise
 
 %% Game Loop:
                                 % Set callbacks to manage the key presses:
@@ -78,7 +77,7 @@ newBall      = [];
 curBalls     = [];
 lastShotTime = [];
 score        = struct('shots',0,'hits',0,'bonushits',0,'totalBonusPoss',0,'score',0);
-bonusFlash = 3;
+
                    % simple scoreing function, top-screen=10, bottom-screen=1
 height2score = @(height) round(10*(height-gameCanvasYLims(1))./(gameCanvasYLims(2)-gameCanvasYLims(1)) + 1);
 cannonKills = 0;
@@ -89,20 +88,14 @@ predFiltFn='gainFilt'; % additional filter function for the classifier predictio
 filtstate=[];
 predType =[];
 
-                                % Make an alien:
-Alien.getsetSpawnSeq(lrSeq);
-hAliens = Alien(hAxes,hCannon);
-                                % list of bonus aliens
-hbonusAliens=[];
-
                          % Make text disp (mostly for testing and debugging):
 hText = text(gameCanvasXLims(1),gameCanvasYLims(2),genTextStr(score,curBalls,cannonKills),...
              'HorizontalAlignment', 'left', 'VerticalAlignment','top','Color',txtColor);
 
 
                        % wait for user to be ready before starting everything
-set(hText,'string', {'' 'Click mouse when ready to begin.'}, 'visible', 'on'); drawnow;
-waitforbuttonpress;
+set(hText,'string', {'' 'Click mouse when ready to begin.'}, 'visible', 'on'); drawnow; pause(1);
+%waitforbuttonpress;
 for i=0:5;
    set(hText,'string',sprintf('Starting in: %ds',5-i),'visible','on');drawnow;
    sleepSec(1);
@@ -110,10 +103,12 @@ end
 set(hText,'visible', 'off'); drawnow; 
 
                                 % Loop while figure is active:
+                                % Make the first Alien
+Alien.getsetSpawnSeq(lrSeq);
+hAliens = [];
 killStartTime=0;
-bonusSpawnTime=bonusSpawnInterval(1)+rand(1)*diff(bonusSpawnInterval); % time-at which next bonus show occur
 cannonAction=[];cannonTrotFrac=0;
-t0=tic; stimi=1; nframe=0; 
+t0=tic; stimi=1; nframe=0;  rtState=0; rtId=1;
 ss=stimSeq(:,stimi); % starting stimulus state
 while ( toc(t0)<gameDuration && ishandle(hFig))
   nframe       = nframe+1;
@@ -165,30 +160,12 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
       %----------------------------------------------------------------------
       % Make a new alien if there are no aliens, or if it is time to spawn a
       % new one:
-  if isempty(hAliens) || toc(hAliens(end).alienSpawnTime)>timeBeforeNextAlien;
+  if isempty(hAliens)
+    hAliens = Alien(hAxes,hCannon);
+  elseif toc(hAliens(end).alienSpawnTime)>timeBeforeNextAlien;
     hAliens(length(hAliens)+1) = Alien(hAxes,hCannon);
   end
 
-  %----------------------------------------------------------------------
-  % make new bonus alien if it's time.
-  if bonusFlash < bonusFlashnr
-      set(hCannon.hGraphic,'facecolor','y');
-      Alien.flashAlien(hAliens,bonusFlash+1)
-      bonusFlash = bonusFlash + 1;
-  elseif bonusFlash == bonusFlashnr
-	set(hCannon.hGraphic,'facecolor',stimColors(1,:));
-    bonusFlash = bonusFlash + 1;
-  end
-  if( isempty(hbonusAliens) && frameTime > bonusSpawnTime )
-    hbonusAliens=BonusAlien(hAxes,hCannon);
-    bonusFlash = 0;
-    score.totalBonusPoss = score.totalBonusPoss +1;
-    if( useBuffer ) 
-        sendEvent('stimulus.redCannon', frameTime); 
-	end % p3 stim state 
-    if( useBuffer ) sendEvent('stimulus.bonusAlien',hbonusAliens.uid); end;
-    bonusSpawnTime = frameTime + bonusSpawnInterval(1)+rand(1)*diff(bonusSpawnInterval); % time-at which next bonus show occur
-  end
 
          %-------------------------------------------------------------------
          % Update cannonballs:
@@ -215,29 +192,14 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
     [hAliens, newKills] = Alien.updateAliens(hAliens);
   end
 
-           %-----------------------------------------------------------------
-           % Update bonus aliens
-  if ( ~isempty(hbonusAliens) )
-    hbonusAliens = BonusAlien.update(hbonusAliens);
-    if( any(strcmpi(curCharacter,{'a'})) ) % got the bonus alien
-      sendEvent('key.hit',frameTime);
-      fprintf('%d) Got the bonus alien!\n',nframe) 
-      curCharacter = 'l';
-      for hi=1:numel(hbonusAliens);
-        score.bonushits=score.bonushits+1;
-        hbonusAliens(hi).deleteAlien();
-      end;
-    end
-  end
-
             % ---------------------------------------------------------------
             % update Cannon
             % Die animation (currently doesn't pause the aliens' descent):
-  if newKills~=0
+  if killFlashTime>0 && newKills~=0
     set(hAxes,'Color','r');
     killStartTime=frameTime;
   end
-  if ( killStartTime>0 && frameTime>killStartTime+killFlashTime ) % end kill-flash
+  if ( killStartTime>0 && killFlashTime>0 && frameTime>killStartTime+killFlashTime ) % end kill-flash
     set(hAxes,'Color','k');
     killStartTime=0;
   end
@@ -285,6 +247,36 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
     %% end
   end
     
+
+    % ---------- reaction time task -----------------------
+                                % process the reaction time task presses
+  if( rtState==0 && rtId<numel(rtTimes) && frameTime > rtTimes(rtId) )
+    rtStart = frameTime;
+    rtState = 1; % waiting for key-press state
+    set(hCannon.hGraphic,'facecolor',stimColors(3,:)); % set as rt color
+    score.totalBonusPoss = score.totalBonusPoss+1;
+    drawnow;
+    sendEvent('stimulus.rtTask',1);
+    fprintf('%d) t=%g rt frame',nframe,frameTime);
+  end
+  if( rtState==1 && strcmpi(curCharacter,'a') ) % fast enough for RT task
+    if( useBuffer ) sendEvent('response.rtTask',curCharacter); end;
+    %set(hText,'string',sprintf('You got it!\n%4.2fs',frameTime-rtStart),'color','g','visible','on'); drawnow;
+    set(hCannon.hGraphic,'facecolor',tgtColor); % set as rt color
+    score.bonushits=score.bonushits+1;
+    rtState=2; % post button press state
+  end
+  if ( rtState==1 && frameTime > rtStart + rtMax ) % end-rt window no button
+    %set(hText,'string',sprintf('Tooo sloooow!\n%4.2fs',frameTime-rtStart),'color','r','visible','on'); drawnow;
+    rtState=2; % post-button press state
+  end;
+  if ( rtState>0 && frameTime > rtStart + 2*rtMax ) % remove feedback
+    %set(hText,'string','','visible','off'); drawnow;
+    set(hCannon.hGraphic,'facecolor',bgColor); % set as rt color
+    rtState=0; % back to non-running state
+    rtId   = rtId+1; % set to next rt start time..
+  end
+
                      % Set score disp and loop
                      %fprintf('%s\n',genTextStr(score,curBalls,cannonKills));
   set(hText,'String',genTextStr(score,curBalls,cannonKills),'visible','on');
