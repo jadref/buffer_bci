@@ -338,6 +338,18 @@ else
   end
 end
 
+%7) post-process the predictions if wanted
+predFiltFn=opts.predFiltFn; predFiltState=[];
+if ( ~isempty(predFiltFn) )
+   if( ~iscell(predFiltFn) ) predFiltFn={predFiltFn}; end;
+   f=res.opt.tstf;
+   for ei=1:size(f,1);
+      [f(ei,:),predFiltState]=feval(predFiltFn{1},f(ei,:),predFiltState,predFiltFn{2:end});
+   end  
+end
+
+
+
 %7) combine all the info needed to apply this pipeline to testing data
 clsfr.type        = 'ERP';
 clsfr.fs          = fs;   % sample rate of training data
@@ -362,6 +374,8 @@ clsfr.welchAveType = []; % DUMMY -- so ERP and ERSP classifier have same structu
 clsfr.freqIdx      = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
 clsfr.featFiltFn   = featFiltFn; % feature normalization type
 clsfr.featFiltState= featFiltState;  % state of the feature filter
+clsfr.predFiltFn   = predFiltFn; % feature normalization type
+clsfr.predFiltState= predFiltState;  % state of the feature filter
 
 clsfr.badtrthresh = []; if ( ~isempty(trthresh) && opts.badtrscale>0 ) clsfr.badtrthresh = trthresh(end)*opts.badtrscale; end
 clsfr.badchthresh = []; if ( ~isempty(chthresh) && opts.badchscale>0 ) clsfr.badchthresh = chthresh(end)*opts.badchscale; end

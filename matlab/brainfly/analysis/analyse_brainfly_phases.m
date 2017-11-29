@@ -188,3 +188,34 @@ for ai=1:numel(algs);
    fprintf('ave %10s = %5.3f (%5.3f) ','ave',mean(resai,1));
    fprintf('\n');
 end
+
+
+printphases={'contfeedback','brainfly'};
+ai=1;si=1;mii=1;ppi=1;
+for ai=1:numel(algs);
+   alg=algs{ai};
+   fprintf('\n\nAlg: %s\n',alg);
+   for si=1:numel(subjs);
+      mi = find(strcmp(results(:,1),subjs{si}) & strcmp(results(:,3),alg));
+      ressubj=zeros(2,numel(mi),numel(printphases));
+      for mii=1:numel(mi); % loop over sesions for this subj+alg
+         sas=mi(mii);
+         ressas = results(sas,:);
+         fprintf('%7s %20s | ',ressas{1},ressas{2});
+         for ppi=1:numel(printphases); % loop over phases for this session
+            pp    = find(strcmp(ressas,printphases{ppi}));
+            if( isempty(pp) ) continue; end;
+            resai = [mean([ressas{pp+1}]) mean([ressas{pp+2}])];
+            fprintf(' %15s %4.2f (%4.2f) \t',printphases{ppi},resai);
+            ressubj(:,mii,ppi)=resai; % record cross-session summary
+         end
+         fprintf('\n');         
+      end
+      fprintf('---\n');         
+      fprintf('%7s %20s | ',ressas{1},'<ave>');
+      for ppi=1:numel(printphases); % loop over phases for this session
+         fprintf(' %15s %4.2f (%4.2f) \t',printphases{ppi},sum(ressubj(:,:,ppi),2)./sum(ressubj(:,:,ppi)>0,2));
+      end
+      fprintf('\n');
+   end
+end

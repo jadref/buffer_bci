@@ -24,13 +24,13 @@ else % fields call type
     if ( nargin<5 ) evt.duration=0; else evt.duration=duration;end;
     if ( nargin<4 ) evt.offset=0;   else evt.offset=offset; end;
     if ( nargin<3 ) evt.sample=-1;  else evt.sample=sample; end;
-    if ( nargin<2 ) evt.value =[];  else evt.value =value;  end;
+    if ( nargin<2 ) evt.value =false;else evt.value =value;  end;
     evt.type=type;
     if ( nargin<6 ) host=[]; port=[]; end;
 end
 %if ( evt.sample<0 ) evt.sample=round(getsampTime()); end;
 % value type conversions for sending
-if ( iscell(evt.value) && ischar(evt.value{1}) ) evt.value=str2buff(evt.value); 
+if ( iscell(evt.value) && ischar(evt.value{1}) ) evt.value=strvcat(evt.value{:});
 elseif ( islogical(evt.value) ) evt.value=int8(evt.value); %logical conversion
 elseif ( isempty(evt.value) )   evt.value=''; % empty string, can't send empty matrices
 end
