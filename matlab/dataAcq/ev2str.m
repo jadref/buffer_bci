@@ -11,6 +11,6 @@ for i=1:numel(events);
     if ( numel(val)>1) vstr=['[' vstr sprintf(' %g',val(2:end)) ']']; end;
     val=vstr;
   end;
-  str=[str sprintf('(sample=%d type=%s value=%s)\n',int32(event.sample),event.type,val)];
+  str=[str sprintf('{s:%d t:%s v:%s}\n',int32(event.sample),event.type,val)];
 end
 return

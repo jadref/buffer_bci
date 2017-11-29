@@ -1,5 +1,5 @@
 run ../../utilities/initPaths
-if ( 0 ) 
+if ( 1 ) 
    dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
    datasets_brainfly_local();
 else

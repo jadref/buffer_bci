@@ -23,6 +23,8 @@ resultsfn=fullfile(dataRootDir,expt,sprintf('analyse_%s',label));
 try % load the previously saved results if possible..
    if ( ~exist('results','var') ) 
       load(resultsfn);
+   elseif( isempty(results) ) 
+      results=cell(0,4);
    end
 catch
    results=cell(0,4);
@@ -95,22 +97,25 @@ for si=1:numel(datasets);
              tst     = conf2loss(conf,'bal'); % performance
              auc     = dv2auc(y,f); % auc -scor
              if(phasei==calphasei);
-               fprintf(' 20%s:%2.0f(%2.0f)T \t',d.label,tst*100,auc*100); 
+               fprintf('%20s:%2.0f(%2.0f)T \n',d.label,tst*100,auc*100); 
                aucsess(phasei)=0; tstsess(phasei)=0;
                continue;  
              end;
              aucphase(phasei)=auc;  tstphase(phasei)=tst;
-             fprintf('%20s:%2.0f(%2.0f)  \t',d.label,tstphase(phasei)*100,aucphase(phasei)*100);
+             fprintf('%20s:%2.0f(%2.0f)  \n',d.label,tstphase(phasei)*100,aucphase(phasei)*100);
            end
            fprintf('\n');
+           meantstphase = sum(tstphase)./(numel(tstphase)-1);
+           meanaucphase = sum(aucphase)./(numel(aucphase)-1);
+           fprintf('%20s:%2.0f(%2.0f)\n','<ave>',meantstphase*100,meanaucphase*100);
            
            % record the summary results
-           results(end+1,1:3)={subj saveDir alg};
-           for phasei=1:numel(phases);
-             results(end,3+(phasei-1)*3+[1:3])=...
+           results(end+1,1:5)={subj saveDir alg mean(tstphase) mean(aucphase)};
+           for phasei=1:numel(phases); % add per-phase results
+             results(end,5+(phasei-1)*3+[1:3])=...
                 {phases(phasei).label tstphase(phasei) aucphase(phasei)};
            end;
-           results(end,:)
+           %results(end,:)
            
         %catch;
         %   err=lasterror, err.message, err.stack(1)

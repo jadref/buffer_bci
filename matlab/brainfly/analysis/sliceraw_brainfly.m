@@ -13,6 +13,14 @@ makePlots=1; % flag if we should make summary ERP/AUC plots whilst slicing
 sliceInPhases=1; % slice preserving phase info
 sliceAll=0; % slice in one big dataset
 
+% set of sourec->dest target class mappings to ensure all classes have the same labels
+subistuteVals={'1 LH ' '2 LH';
+               '2 RH ' '1 RH';
+               '2 LH ' '2 LH';
+               '1 RH ' '1 RH';
+               'LH'   '2 LH';
+               'RH'   '1 RH'};
+
                                 % slice data
 si=1; sessi=3;
 for si=1:numel(datasets);
@@ -29,15 +37,25 @@ for si=1:numel(datasets);
      savefn = fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_sliced',subj,label));
      fprintf('Trying : %s\n',sessdir);
 
+     
+     % do the actual slicing now
+     if( sliceAll )
      if( exist(savefn,'file') ||  exist([savefn '.mat'],'file') ) %don't re-slice already done
         fprintf('Skipping already sliced file: %s\n',savefn);
         continue;
      end
-     
-     % do the actual slicing now
-     if( sliceAll )
      try;
         [data,devents,hdr,allevents]=sliceraw(sessdir,'startSet',{'stimulus.target'},'trlen_ms',trlen_ms,'offset_ms',[0 0]);
+
+        % BODGE: fix-up the labels to remove annoying training whitespace
+        for ei=1:numel(devents);
+           val = devents(ei).value; 
+           for ri=1:size(subistuteVals,1);
+              if strcmp(val,subistuteVals{ri,1}) val = subistuteVals{ri,2}; end
+           end
+           devents(ei).value = val;
+        end
+
         % save the sliced data
         fprintf('Saving to: %s',savefn);
         save(savefn,'data','devents','hdr','allevents');
@@ -49,12 +67,28 @@ for si=1:numel(datasets);
      end
 
      if( sliceInPhases ) 
+     savefn=sprintf('%s_phases',savefn);
+     if( exist(savefn,'file') ||  exist([savefn '.mat'],'file') ) %don't re-slice already done
+        fprintf('Skipping already sliced file: %s\n',savefn);
+        %continue;
+     end
      try;
                                      % now slice into phases
-        [phases,hdr,allevents]=slicePhases(sessdir,'startSet',{'stimulus.target'},'trlen_ms',trlen_ms,'offset_ms',[0 0]);
-        fn=sprintf('%s_phases',savefn);
-        fprintf('Saving %d phases to: %s',numel(phases),fn);
-        save(fn,'phases','hdr','allevents');
+        [phases,hdr,allevents]=slicePhases(sessdir,'phaseStart',{{'calibrate' 'epochfeedback' 'contfeedback' 'brainfly'} 'start'},'startSet',{'stimulus.target'},'trlen_ms',trlen_ms,'offset_ms',[0 0]);
+        % BODGE: fix-up the labels to remove annoying training whitespace
+        for phi=1:numel(phases);
+           devents=phases(phi).devents;
+           for ei=1:numel(devents);
+              val = devents(ei).value; 
+              for ri=1:size(subistuteVals,1);
+                 if strcmp(val,subistuteVals{ri,1}) val = subistuteVals{ri,2}; end
+              end
+              devents(ei).value = val;
+           end
+           phasese(phi).devents=devents;
+        end
+        fprintf('Saving %d phases to: %s',numel(phases),savefn);
+        save(savefn,'phases','hdr','allevents');
         fprintf('done.\n');
      catch
         le=lasterror, fprintf('%s: %s:%d\n',le.message,le.stack(1).file,le.stack(1).line)

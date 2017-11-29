@@ -68,7 +68,7 @@ function [phaseSlice,hdr,allevents]=slicePhases(fname,varargin)
 % See Also: buffer_waitData, buffer_train_erp_clsfr, buffer_train_ersp_clsfr, buffer_apply_erp_clsfr, buffer_apply_ersp_clsfr
 
 % set and parse the input options
-opts=struct('phaseStart','startPhase.cmd','startSet','stimulus.target','trlen_ms',3000,'trlen_samp',[],'offset_ms',[],'offset_samp',[],'verb',0,'subsample',256,'hdr',[],'events',[]);
+opts=struct('phaseStart','startPhase.cmd','startSet','stimulus.target','trlen_ms',3000,'trlen_samp',[],'offset_ms',[],'offset_samp',[],'verb',0,'subsample',256,'hdr',[],'events',[],'minPhaseEvents',10);
 opts=parseOpts(opts,varargin);
 
 % get the directory which contains the files
@@ -137,15 +137,33 @@ if iscell(opts.phaseStart)
    phaseStarti=matchEvents(allevents,opts.phaseStart{:});
 elseif ischar(opts.phaseStart)
    phaseStarti=matchEvents(allevents,opts.phaseStart);
+else
+   error('Dont understand the phaseStart info');
 end
 phaseStarti=find(phaseStarti);
+
+% construct phase labels
+ptypes=unique({allevents(phaseStarti).type});
+pvals =unique({allevents(phaseStarti).value});
+if( numel(pvals)==1 ) 
+   phaseLabelInf='type';
+elseif( numel(ptypes)==1 ) 
+   phaseLabelInf='value';
+else
+   phaseLabelInf='event';
+end
 
 
 fprintf('Slicing in %d phases\n',numel(phaseStarti));
 phaseSlice=[];
 for phasei=1:numel(phaseStarti);
   phaseStartEvt = allevents(phaseStarti(phasei));
-  fprintf('Phase: %s',ev2str(phaseStartEvt));
+   if(     strcmp(phaseLabelInf,'value') )  phaseLabel=phaseStartEvt.value;
+   elseif( strcmp(phaseLabelInf,'type') )   phaseLabel=phaseStartEvt.type;   
+   elseif( strcmp(phaseLabelInf,'event') )    phaseLabel=ev2str(phaseStartEvt);
+   else error('Dont understand the phase label');
+   end
+   fprintf('Phase: %s    evt=%s\n',phaseLabel,ev2str(phaseStartEvt));
    phaseEvtsi = mi;
    phaseEvtsi(1:phaseStarti(phasei))=false; % nothing before phase start
    if( phasei<numel(phaseStarti) ) % nothing after start next phase
@@ -155,6 +173,8 @@ for phasei=1:numel(phaseStarti);
    devents=allevents(phaseEvtsi);
    if( isempty(devents) )
      fprintf('No startSet events in this phase, skipping.\n'); continue;
+   elseif( numel(devents) < opts.minPhaseEvents ) 
+      fprintf('Only %d events in phase, skipping\n',numel(devents)); continue;  
    end;
    
    % Finally get the data segements we want
@@ -176,10 +196,11 @@ for phasei=1:numel(phaseStarti);
       data=data(keep);
       devents=devents(keep);
    end
+      
    if( isempty(phaseSlice) )
-     phaseSlice = struct('data',data,'devents',devents,'label',phaseStartEvt.value);
+     phaseSlice = struct('data',data,'devents',devents,'trigger',phaseStartEvt,'label',phaseLabel);
    else
-     phaseSlice(end+1)=struct('data',data,'devents',devents,'label',phaseStartEvt.value);
+     phaseSlice(end+1)=struct('data',data,'devents',devents,'trigger',phaseStartEvt,'label',phaseLabel);
    end
 end
 if ( subSampRatio>1 ) % update the sample rate stored in the header
