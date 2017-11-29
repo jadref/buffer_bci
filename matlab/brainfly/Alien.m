@@ -10,11 +10,11 @@ classdef Alien < handle
           % screen width or height, these properties are used to generate the
           % actual sized at object instantiation:
     relStartLine      = 0.9;
-    fallDuration      = 9; % 9s to fall down the screen
+    fallDuration      = 6; % 9s to fall down the screen
     relAlienStartSize = 0.05;  % The start size of the alien.
     alienGrowExp      = 1.5;   % The time exponent of the growth rate.
     %relAlienGrowRate  = (.5-Alien.relAlienStartSize)./(Alien.fallDuration.^Alien.alienGrowExp); % The growth rate of the alien, should be size .5 by end fall
-    relAlienGrowRate  = (.5-0.05)./(9.^1.5); % The growth rate of the alien, should be size .5 by end fall
+    relAlienGrowRate  = .5./(6*(.9/1).^1.5); % The growth rate of the alien, should be size .5 by end fall
     relSpawnDelta     = .3;   % fraction of screen to spawn the new alien
            % NOTE: Aliens sometimes grow exponentially, so their sizes are
            % calculated as:
@@ -175,7 +175,7 @@ classdef Alien < handle
                           *obj.relAlienGrowRate)...
                         *range(Xlim);
         obj.y      = Ylim(1) + (obj.relstarty + obj.relvely*toc(obj.alienSpawnTime))*range(Ylim);
-        %obj.x      = Xlim(1) + (obj.relstartx + obj.relvelx*toc(obj.alienSpawnTime))*range(Xlim);        
+        obj.x      = Xlim(1) + (obj.relstartx + obj.relvelx*toc(obj.alienSpawnTime))*range(Xlim);        
         waistY = obj.y;
         
                                 % kill alien if hit cannon.....

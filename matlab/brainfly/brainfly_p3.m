@@ -11,15 +11,15 @@ useBuffer               = 1;
 stimColors = [p3tgtColor;stdColor;rtColor]; % [targetFlash, standardFlash, reactionTimeFlash]
 
                                 % add in the rt events
-rtTime=0; 
+rtTimes=[]; rtTime=0; 
 while rtTime < stimTime(end)
   rtTime = rtTime + rtInterval(1) + rand(1)*(rtInterval(2)-rtInterval(1));
   [ans,rtEi]=min(abs(stimTime-rtTime)); % find nearest stimulus epoch
   rtTime=stimTime(rtEi);
+  rtTimes=[rtTimes; rtTime]; % record all planned rt-task times
                                 % set a block of 1s to rt stimulus color
   stimSeq(1,rtEi+(0:ceil(rtDuration/isi)))=3; % stim3 = rtColor
 end
-
 % stimSeq is now complete with P3 and Rt stim events
 
 %% Generate Figure:
@@ -54,7 +54,7 @@ hText = text(gameCanvasXLims(1),gameCanvasYLims(2),'BrainFly P3','HorizontalAlig
 
                        % wait for user to be ready before starting everything
 set(hText,'string', {'' 'Click mouse when ready to begin.'}, 'visible', 'on'); drawnow;
-%waitforbuttonpress;
+waitforbuttonpress;
 for i=3:-1:0;
    set(hText,'string',sprintf('Starting in: %ds',i),'visible','on');
    pause(1);
@@ -133,6 +133,7 @@ while ( getwTime()-t0<gameDuration && ishandle(hFig))
   if( rtState==1 && strcmpi(curCharacter,'a') ) 
     if( useBuffer ) sendEvent('response.rtTask',curCharacter); end;
     set(hText,'string',sprintf('You got it!\n%4.2fs',frameTime-rtStart),'color','g','visible','on');
+    set(hCannon.hGraphic,'facecolor',tgtColor); % set as rt color
     drawnow;
     rtState=2; % post button press state
   end
