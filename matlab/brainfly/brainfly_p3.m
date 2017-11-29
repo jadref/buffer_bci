@@ -54,7 +54,7 @@ hText = text(gameCanvasXLims(1),gameCanvasYLims(2),'BrainFly P3','HorizontalAlig
 
                        % wait for user to be ready before starting everything
 set(hText,'string', {'' 'Click mouse when ready to begin.'}, 'visible', 'on'); drawnow;
-%waitforbuttonpress;
+waitforbuttonpress;
 for i=3:-1:0;
    set(hText,'string',sprintf('Starting in: %ds',i),'visible','on');
    pause(1);
