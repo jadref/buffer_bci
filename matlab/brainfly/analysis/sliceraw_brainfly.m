@@ -8,6 +8,8 @@ else
 end
 
 trlen_ms=750;
+maxtrlen_ms=5000;
+fs      =250;
 label   ='movement'; % generic label for this slice/analysis type
 makePlots=1; % flag if we should make summary ERP/AUC plots whilst slicing
 sliceInPhases=1; % slice preserving phase info
@@ -36,7 +38,8 @@ for si=1:numel(datasets);
      sessdir=fullfile(dataRootDir,expt,subj,session);
      savefn = fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_sliced',subj,label));
      fprintf('Trying : %s\n',sessdir);
-
+     if ( ~exist(sessdir,'file') ) fprintf('Dir not found, Skipped\n'); continue; end;
+         
      
      % do the actual slicing now
      if( sliceAll )
@@ -74,8 +77,12 @@ for si=1:numel(datasets);
      end
      try;
                                      % now slice into phases
-        [phases,hdr,allevents]=slicePhases(sessdir,'phaseStart',{{'calibrate' 'epochfeedback' 'contfeedback' 'brainfly'} 'start'},'startSet',{'stimulus.target'},'trlen_ms',trlen_ms,'offset_ms',[0 0]);
-        % BODGE: fix-up the labels to remove annoying training whitespace
+%        [phases,hdr,allevents]=slicePhases(sessdir,'phaseStart',{{'calibrate' 'epochfeedback' 'contfeedback' 'brainfly'} 'start'},'startSet',{'stimulus.target'},'trlen_ms',trlen_ms,'offset_ms',[0 0]);
+       trlen_samp   = ceil(trlen_ms*fs/1000);
+       maxtrlen_samp= ceil(maxtrlen_ms*fs/1000);
+        [phases,hdr,allevents]=slicePhases(sessdir,'phaseStart',{{'calibrate' 'epochfeedback' 'contfeedback' 'brainfly'} 'start'},'startSet',@(devents) upsampleEvents(devents,{'stimulus.target'},maxtrlen_samp,trlen_samp,trlen_samp),'trlen_ms',trlen_ms,'offset_ms',[0 0]);
+
+            % BODGE: fix-up the labels to remove annoying training whitespace
         for phi=1:numel(phases);
            devents=phases(phi).devents;
            for ei=1:numel(devents);

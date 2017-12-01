@@ -20,14 +20,14 @@ default_args={,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqb
 % summary results storage.  Format is 2-d cell array.  
 % Each row is an algorithm run with 4 columns: {subj session algorithm_label performance}
 resultsfn=fullfile(dataRootDir,expt,sprintf('analyse_%s',label));
-try % load the previously saved results if possible..
-   if ( ~exist('results','var') ) 
-      load(resultsfn);
-   elseif( isempty(results) ) 
-      results=cell(0,4);
-   end
-catch
-   results=cell(0,4);
+if ( ~exist('results','var') ) 
+  try % load the previously saved results if possible..
+    load(resultsfn);
+  catch
+    results=cell(0,4);
+  end
+elseif( isempty(results) ) 
+  results=cell(0,4);
 end
 
 % run the given analysis
