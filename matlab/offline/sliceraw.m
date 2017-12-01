@@ -1,7 +1,7 @@
-function [data,devents,hdr,events]=sliceraw(fname,varargin)
+function [data,devents,hdr,allevents]=sliceraw(fname,varargin)
 % Example of how to slice a raw recording file up epochs
 %
-% [data,devents,hdr,events]=sliceraw(outputdir,varargin)
+% [data,devents,hdr,allevents]=sliceraw(outputdir,varargin)
 %
 % Roughly this file consists of 3 steps
 %  1) read the header information
@@ -31,16 +31,16 @@ function [data,devents,hdr,events]=sliceraw(fname,varargin)
 %         Each of these structures is a normal event structure as made by mkEvent.  The basic format it:
 %          devent=struct('type',*type-string*,'sample',*eventSample*,'value',*value*)
 %  hdr   - [struct] the data header
-%  events- [struct 1xM] all events in this data file
+%  allevents- [struct 1xM] all events in this data file
 % Options:
 %  startSet -- {2x1} cell array of match strings/numbers for matching 
 %              events based on their type and/or value as used in matchEvents.
 %              {type value} OR {{types} {values}}
 %               See matchEvents for details
 %             OR
-%               {str} [function_handle] handle to a function which takes in all events and returns
-%                   a logical or index expression saying which should be sliced.  e.g.
-%                    [matchedEvents] = myMatchEvents(events); % events is struct array of all events
+%               {str} [function_handle] handle to a function which takes in all events and
+%                   returns the set of events on which to slice e.g.
+%                    [triggerEvents] = myMatchEvents(events); % events is struct array of all events
 %             OR
 %               (struct) struct array of event's already selected/filtered to slice on
 %  trlen_ms/trlen_samp - [1x1] length of data to get for each epoch in milliseconds or samples (3000ms)
@@ -82,9 +82,9 @@ datafname =fullfile(fdir,'samples');
 
 										  % read the header and the events
 hdr=opts.hdr;
-if ( isempty(hdr) )    hdr   =read_buffer_offline_header(hdrfname); end;
-events=opts.events;
-if ( isempty(events) ) events=read_buffer_offline_events(eventfname,hdr); end;
+if ( isempty(hdr) )       hdr      =read_buffer_offline_header(hdrfname); end;
+allevents=opts.events;
+if ( isempty(allevents) ) allevents=read_buffer_offline_events(eventfname,hdr); end;
 
 % extract sample-rate from the header and convert from ms->samples if needed
 if ( isfield(hdr,'SampleRate') ) fs=hdr.SampleRate; 
@@ -108,18 +108,19 @@ end
 % select the events we want to slice on from the stream
 % Note: you can replace this with something more sophsicated, e.g. to only return 
 % matching events between a given phase start and phase end event, if that is useful
+devents=allevents; % default is take all events
 if ( iscell(opts.startSet) )
-  mi=matchEvents(events,opts.startSet{:});
-elseif ( isstruct(opts.startSet) ) % already the set of events to slice on
-  events=opts.startSet; mi=true(numel(events),1);
-elseif ( isa(opts.startSet,'function_handle') || exist(opts.startSet)==2 )
-  mi=feval(opts.startSet,events);
+  mi=matchEvents(allevents,opts.startSet{:});
+  devents=allevents(mi); 
 elseif ( ischar(opts.startSet) ) % just a type spec
-  mi=matchEvents(events,opts.startSet);
-elseif ( isempty(opts.startSet) ) % return all events
-  mi=true(numel(events),1);
+  mi=matchEvents(allevents,opts.startSet);
+  devents=allevents(mi); % select the set of events for which we want data
+elseif ( isstruct(opts.startSet) ) % already the set of events to slice on
+  devents=opts.startSet;
+elseif ( isa(opts.startSet,'function_handle') || exist(opts.startSet)==2 )
+  devents=feval(opts.startSet,allevents); % assume event matching mode
+  if( islogical(devents) || isnumeric(devents) ) devents=allevents(mi); end % match-mode
 end
-devents=events(mi); % select the set of events for which we want data
 
 % Compute relative start/end sample for the data we want to get
 % Include the offset
