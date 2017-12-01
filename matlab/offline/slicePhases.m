@@ -115,21 +115,6 @@ end
 offset_samp=[0 opts.trlen_samp-1];
 if ( ~isempty(opts.offset_samp) ) offset_samp = offset_samp+opts.offset_samp; end;
 
-% select the events we want to slice on from the stream
-% Note: you can replace this with something more sophsicated
-if( opts.verb>0 ) fprintf('Getting trial events\n'); end;
-if ( iscell(opts.startSet) )
-  mi=matchEvents(allevents,opts.startSet{:});
-elseif ( isstruct(opts.startSet) ) % already the set of events to slice on
-  allevents=opts.startSet; mi=true(numel(allevents),1);
-elseif ( isa(opts.startSet,'function_handle') || exist(opts.startSet)==2 )
-  mi=feval(opts.startSet,allevents);
-elseif ( ischar(opts.startSet) ) % just a type spec
-  mi=matchEvents(allevents,opts.startSet);
-elseif ( isempty(opts.startSet) ) % return all events
-  mi=true(numel(allevents),1);
-end
-
 % select the events which define start/end of the different experiment phases
 if( opts.verb>0 ) fprintf('Getting phase events\n'); end;
 phaseStarti=[];
@@ -155,34 +140,50 @@ end
 
 
 fprintf('Slicing in %d phases\n',numel(phaseStarti));
+samples=[allevents.sample];
 phaseSlice=[];
 for phasei=1:numel(phaseStarti);
   phaseStartEvt = allevents(phaseStarti(phasei));
    if(     strcmp(phaseLabelInf,'value') )  phaseLabel=phaseStartEvt.value;
    elseif( strcmp(phaseLabelInf,'type') )   phaseLabel=phaseStartEvt.type;   
-   elseif( strcmp(phaseLabelInf,'event') )    phaseLabel=ev2str(phaseStartEvt);
+   elseif( strcmp(phaseLabelInf,'event') )  phaseLabel=ev2str(phaseStartEvt);
    else error('Dont understand the phase label');
    end
-   fprintf('Phase: %s    evt=%s\n',phaseLabel,ev2str(phaseStartEvt));
-   phaseEvtsi = mi;
-   phaseEvtsi(1:phaseStarti(phasei))=false; % nothing before phase start
+   phaseBgn = phaseStartEvt.sample;
    if( phasei<numel(phaseStarti) ) % nothing after start next phase
-      phaseEvtsi(phaseStarti(phasei+1):end)=false; 
+     phaseEvents = allevents(phaseStartEvt.sample <= samples & samples < allevents(phaseStarti(phasei+1)).sample);
+   else
+     phaseEvents = allevents(phaseStartEvt.sample <= samples);
    end
-   % select this set of events
-   devents=allevents(phaseEvtsi);
+   fprintf('Phase: %s evt=%s  %devents\n',phaseLabel,ev2str(phaseStartEvt),numel(phaseEvents));
+
+                 % select tigger events in this range
+   if ( iscell(opts.startSet) )
+     mi=matchEvents(phaseEvents,opts.startSet{:});
+     devents=phaseEvents(mi); 
+   elseif ( ischar(opts.startSet) ) % just a type spec
+     mi=matchEvents(phaseEvents,opts.startSet);
+     devents=phaseEvents(mi); % select the set of events for which we want data
+   elseif ( isstruct(opts.startSet) ) % already the set of events to slice on
+     devents=opts.startSet;
+   elseif ( isa(opts.startSet,'function_handle') || exist(opts.startSet)==2 )
+     devents=feval(opts.startSet,phaseEvents); % assume event generation
+     if( islogical(devents) || isnumeric(devents) )% match-mode
+       devents=phaseEvents(devents);
+     end 
+   end
    if( isempty(devents) )
-     fprintf('No startSet events in this phase, skipping.\n'); continue;
+     fprintf('No trigger events in this phase, skipping.\n'); continue;
    elseif( numel(devents) < opts.minPhaseEvents ) 
-      fprintf('Only %d events in phase, skipping\n',numel(devents)); continue;  
+      fprintf('Only %d trigger events in phase, skipping\n',numel(devents)); continue;  
    end;
-   
+
    % Finally get the data segements we want
    data=repmat(struct('buf',[]),size(devents));
    if ( opts.verb>=0 ) fprintf('Slicing %d epochs:',numel(devents));end;
    keep=true(numel(devents),1);
    if( isstruct(devents) ) bgns=[devents.sample]; else bgns=devents; end;
-   for ei=1:numel(devents);
+   for ei=1:numel(bgns);
       data(ei).buf=read_buffer_offline_data(datafname,hdr,bgns(ei)+[offset_samp]);  
       if ( size(data(ei).buf,2) < (offset_samp(2)-offset_samp(1)) ) keep(ei)=false; end;
       if ( subSampRatio>1 ) % sub-sample
