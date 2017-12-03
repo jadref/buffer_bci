@@ -155,7 +155,7 @@ for phasei=1:numel(phaseStarti);
    else
      phaseEvents = allevents(phaseStartEvt.sample <= samples);
    end
-   fprintf('Phase: %s evt=%s  %devents\n',phaseLabel,ev2str(phaseStartEvt),numel(phaseEvents));
+   fprintf('Phase %d: %s evt=%s  %devents\n',phasei,phaseLabel,ev2str(phaseStartEvt),numel(phaseEvents));
 
                  % select tigger events in this range
    if ( iscell(opts.startSet) )
