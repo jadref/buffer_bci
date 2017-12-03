@@ -1,4 +1,4 @@
-function [x,s,b]=percFilt(x,s,alpha,pr)
+function [x,s,b]=percentialFilt(x,s,alpha,pr)
 % percential bias removing filter removes slow drifts from inputs
 %
 %   [x,s,b]=biasFilt(x,s,alpha,pr)
