@@ -62,8 +62,8 @@ gameFrameDuration = 1/10; % 10hz screen update interval
 gameDuration = 90;
 
 % P300 stimulus info
-isi   = 1/5;
-mintti= [.6 2.0];
+isi   = 1/2;
+mintti= [1.5 3.0];
 oddballp=true; % standard/target type stimulus
 stimDuration=isi;
 
@@ -121,7 +121,7 @@ epochtrlen_ms =epochFeedbackTrialDuration*1000; % amount of data to apply classi
 conttrlen_ms  =welch_width_ms; % amount of data to apply classifier to in continuous feedback
 
 % paramters for on-line adaption to signal changes
-adaptHalfLife_ms = 30*1000; %30s amount of data to use for adapting spatialfilter/biasadapt
+adaptHalfLife_ms = 15*1000; %30s amount of data to use for adapting spatialfilter/biasadapt
 conttrialAdaptHL =(adaptHalfLife_ms/step_ms); % half-life in number of calls to apply clsfr
 epochtrialAdaptHL=(adaptHalfLife_ms/epochtrlen_ms); % half-life in number called to apply-clsfr in epoch feedback
 % smoothing parameters for feedback in continuous feedback mode

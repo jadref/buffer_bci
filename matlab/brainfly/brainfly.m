@@ -96,8 +96,8 @@ hText = text(gameCanvasXLims(1),gameCanvasYLims(2),genTextStr(score,curBalls,can
                        % wait for user to be ready before starting everything
 set(hText,'string', {'' 'Click mouse when ready to begin.'}, 'visible', 'on'); drawnow; pause(1);
 waitforbuttonpress;
-for i=0:5;
-   set(hText,'string',sprintf('Starting in: %ds',5-i),'visible','on');drawnow;
+for i=3:-1:0;
+   set(hText,'string',sprintf('Starting in: %ds',i),'visible','on');drawnow;
    sleepSec(1);
 end
 set(hText,'visible', 'off'); drawnow; 

@@ -1,4 +1,4 @@
-function [x,s]=rbiasFilt(x,s,alpha,stdthresh)
+function [x,s]=robustBiasFilt(x,s,alpha,stdthresh)
 % robust-bias removing filter (high-pass) based on outlier detection & limiting
 %
 %   [x,s,mu,std]=rbiasFilt(x,s,alpha,stdthresh)
