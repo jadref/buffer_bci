@@ -52,7 +52,7 @@ rtColor  = [1 0 0]; % reaction time cue = red
 stdColor = [.8 .8 .8]; % standard flash = light-grey
 p3tgtColor=[0 0 1]; % p3 target color
 
-rtMax = 2; % max time to react to reaction time task
+rtMax = 3; % max time to react to reaction time task
 rtDuration = 1; % time reaction-time stimulus is on the screen
 rtInterval = [15 20];% range of times between reaction time tasks
 
@@ -62,7 +62,7 @@ gameFrameDuration = 1/10; % 10hz screen update interval
 gameDuration = 90;
 
 % P300 stimulus info
-isi   = 1/2;
+isi   = 1/4;
 mintti= [1.5 3.0];
 oddballp=true; % standard/target type stimulus
 stimDuration=isi;

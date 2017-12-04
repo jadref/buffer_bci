@@ -10,14 +10,14 @@ configureGame;
   fontSize = .05*wSize(4);
   %        Instruct String             Phase-name
   menustr={'0) EEG'                    'eegviewer';
-			  'a) Artifacts'              'artifact';
-           '1) Practice'               'practice';
 			  '2) Calibrate'              'calibrate';
 			  '3) Train Classifier'       'trainersp';
 			  '4) Epoch Feedback'         'epochfeedback';
 			  '5) Continuous Feedback'    'contfeedback';
            '6) Brainfly-game'          'brainfly';
            '7) Brainfly-game P3'       'brainfly_p3'; 
+		   '8) eyes-open'              'eyesopen';
+		   '9) eyes-closed'            'eyesclosed';
          '' '';
          'S) Slice ftoffline data'   'sliceraw';
          'L) Load training data'     'loadtraining';
@@ -87,11 +87,14 @@ while (ishandle(contFig))
     end
     
    %---------------------------------------------------------------------------
-   case 'artifact';
+   case {'eyesopen','eyesclosed'};
     sendEvent('subject',subject);
     sendEvent(phaseToRun,'start');
 	 try;
-		artifactCalibrationStimulus;
+		fig2=figure(2); 
+		clf; set(fig2,'color',[0 0 0],'menubar','none'); ax=axes('position',[0 0 1 1],'xlim',[-1 1],'ylim',[-1 1],'visible','off','box','off');
+		h=text(0,0,{'+',phaseToRun},'color',[1 1 1],'HorizontalAlignment','center','visible','on','fontunits','pixel','fontsize',.1*wSize(4));
+		while ( ishandle(h) ) pause(1); end;
 	catch
       fprintf('Error in : %s',phaseToRun);
       le=lasterror;fprintf('ERROR Caught:\n %s\n%s\n',le.identifier,le.message);
