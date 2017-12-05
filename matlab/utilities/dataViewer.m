@@ -23,7 +23,7 @@ function [data,devents]=dataViewer(data,varargin);
 %if ( exist('OCTAVE_VERSION','builtin') ) debug_on_error(1); else dbstop if error; end;
 opts=struct('hdr',[],'fs',[],'ch_names',[],'verb',1,...
 				'nSymbols',0,'maxEvents',[],'dataStd',3,...
-				'trlen_ms',1000,'trlen_samp',[],'offset_ms',[],'offset_samp',[],...
+				'trlen_ms',10000,'trlen_samp',[],'offset_ms',[],'offset_samp',[],...
 				'detrend',1,'fftfilter',[],'freqbands',[],'downsample',128,'spatfilt','car',...
             'adaptspatialfiltFn','','whiten',0,'rmartch',0,'artCh',{{'EOG' 'AFz' 'EMG' 'AF3' 'FP1' 'FPz' 'FP2' 'AF4' '1'}},'rmemg',0,...
             'useradaptspatfiltFn','','adapthalflife_s',30,...
@@ -180,6 +180,8 @@ chPow = covDat(:,:)*covDat(:,:)'./size(covDat,2)./size(covDat,3);
 whtstate=[]; eogstate=[]; emgstate=[]; usersfstate=[];
 isbadch   = false(sum(iseeg),1);
 
+adaptHL   = opts.adapthalflife_s.*trlen_samp; % half-life for updating the adaptive filters
+adaptAlpha= exp(log(.5)./adaptHL);
 
 
 % make the figure window
@@ -206,7 +208,7 @@ for hi=1:numel(hdls);
         yhdl=get(hdls(hi),'ylabel'); if(~isempty(yhdl))set(yhdl,'visible','off');end
     end
 end; 
-for hi=1:size(ppdat,1); 
+for hi=1:numel(hdls); 
   cldhdls = get(hdls(hi),'children');
   img_hdls(hi)=findobj(cldhdls,'type','image');%set(line_hdls(hi),'linewidth',1);
   %img_hdls(hi)=line(hdls(hi),'xdata',[1 1],'ydata',[1 1],'cdata',1,'CDataMapping','scaled','parent',hdls(hi),'visible','off');
@@ -218,7 +220,8 @@ for hi=1:size(ppdat,1);
   %end
   datlimi=get(hdls(hi),'ylim');datlim(1)=min(datlim(1),datlimi(1)); datlim(2)=max(datlim(2),datlimi(2));
 end;
-
+axes('position',[0.25 .9 .5 .1],'units','normalized','visible','off','box','off','xlim',[-1 1],'ylim',[-1 1]);
+titlehdl=text(0,0,sprintf('%d t=%10.1f s',0,0),'horizontalalignment','center','verticalalignment','bottom');
 
 % make popup menu for selection of TD/FD
 % make popup menu for selection of TD/FD
@@ -230,8 +233,8 @@ catch
 end
 colormap trafficlight; % red-green colormap for 50Hz pow
 pos=get(modehdl,'position');
-bwdhdl=uicontrol(fig,'Style','togglebutton','units','normalized','position',[pos(1)-.2 pos(2)+pos(4)*.4 .2 pos(4)*.6],'String','<');
-fwdhdl=uicontrol(fig,'Style','togglebutton','units','normalized','position',[pos(1)-.4 pos(2)+pos(4)*.4 .2 pos(4)*.6],'String','>');
+bwdhdl=uicontrol(fig,'Style','togglebutton','units','normalized','position',[pos(1)+pos(3)     pos(2)+pos(4)*.4 .05 pos(4)*.6],'String','<');
+fwdhdl=uicontrol(fig,'Style','togglebutton','units','normalized','position',[pos(1)+pos(3)+.05 pos(2)+pos(4)*.4 .05 pos(4)*.6],'String','>');
 vistype=1; ylabel='time (s)';  yvals=times; set(modehdl,'value',vistype);
 
 % install listener for key-press mode change
@@ -277,7 +280,7 @@ end
 curvistype=vistype;
 endTraining=false;
 nepoch = 1; deltaEpoch=0;
-rawdat = data(:,:,1);
+rawdat = data(iseeg,:,1);
 tic;
 while ( ~endTraining )
 
@@ -294,11 +297,13 @@ while ( ~endTraining )
     switch ( modekey(1) );
      case {1,'t'}; modekey=1;curvistype='time';
      case {2,'f'}; modekey=2;curvistype='freq';
-     case {5,'s'}; modekey=5;curvistype='spect';
-	  case {6,'p'}; modekey=6;curvistype='power';
-	  case {7,'o'}; modekey=7;curvistype='offset';
+     case {3,'s'}; modekey=3;curvistype='spect';
+	  case {4,'p'}; modekey=4;curvistype='power';
+	  case {5,'o'}; modekey=5;curvistype='offset';
      case {'<',','};   deltaEpoch=-1; modekey=[];
      case {'>','.'};   deltaEpoch= 1; modekey=[];
+       case {'m' };    deltaEpoch=-10; modekey=[];
+         case {'/'};   deltaEpoch=+10; modekey=[];
      case {'x','q'};     break;
      otherwise;    modekey=1;
     end;
@@ -307,8 +312,8 @@ while ( ~endTraining )
       set(modehdl,'value',modekey);
     end;
   end
-  if( get(fwdhdl,'value')>0 ) deltaEpoch = +1; end;
-  if( get(bwdhdl,'value')>0 ) deltaEpoch = -1; end;
+  if( get(fwdhdl,'value')>0 ) deltaEpoch = +1; set(fwdhdl,'value',0); end;
+  if( get(bwdhdl,'value')>0 ) deltaEpoch = -1; set(bwdhdl,'value',0); end;
   % get updated sig-proc parameters if needed
   if ( ~isempty(optsFigh) && ishandle(optsFigh) )
 	 try
@@ -332,8 +337,9 @@ while ( ~endTraining )
 
                                 % get the next data-segment
   if( deltaEpoch ~=0 )
-    nepoch = nepoch+deltaEpoch;
-    rawdat = data(:,:,nepoch);
+    nepoch = min(size(data,3),max(1,nepoch+deltaEpoch));
+    rawdat = data(iseeg,:,nepoch);
+    set(titlehdl,'string',sprintf('%d t=%10.1f s',nepoch,nepoch*size(data,2)./fs));
     updateLines(:) = true;
     damage(4)      = true;
   end
@@ -486,12 +492,13 @@ while ( ~endTraining )
     switch ( vistype ) % do pre-work dependent on current mode, i.e. mode we're switching from
      case {'50hz','power','offset','noisefrac'}; % topo-plot mode, single color per electrode
       for hi=1:size(ppdat,1); % turn the tickmarks and label visible again
-        set(hdls(hi),'ylabel','');
+        axes(hdls(hi));
+        ylabel('');
         if ( ~isempty(get(hdls(hi),'Xlabel')) && isequal(get(get(hdls(hi),'xlabel'),'visible'),'on') ) 
           set(hdls(hi),'xticklabelmode','auto','yticklabelmode','auto');
-          xlabel(hdls(hi),'time (s)','visible','on');
+          xlabel('time (s)','visible','on');
         else
-          xlabel(hdls(hi),'time (s)','visible','off');
+          xlabel('time (s)','visible','off');
         end
       end        
       if ( ~isempty(cbarhdl) ); set(findobj(cbarhdl),'visible','off'); end
@@ -503,19 +510,19 @@ while ( ~endTraining )
     switch ( curvistype )       
 
      case 'time'; % time-domain -----------------------------------
-      for hi=1:size(ppdat,1);
-        set(hdls(hi),'xlabel','time (s)');
-        set(hdls(hi),'ylabel','');
-        set(hdls(hi),'xlim',[times(1) times(size(ppdat,2))],'ylim',datlim);            
+      for hi=1:numel(hdls);
+        set(hdls(hi),'xlim',[times(1) times(size(ppdat,2))],'ylim',datlim);
+        xlabel('time (s)');
+        ylabel('');
       end
       set(img_hdls,'visible','off'); % make the colors invisible        
       set(line_hdls,'xdata',times(1:size(ppdat,2)),'visible','on');
       
      case 'freq'; % frequency domain -----------------------------------
-      for hi=1:size(ppdat,1);
-        set(hdls(hi),'xlabel','freq (hz)');
-        set(hdls(hi),'ylabel','');
+      for hi=1:numel(hdls);
         set(hdls(hi),'xlim',freqs([freqIdx(1) freqIdx(2)]),'ylim',datlim);
+        xlabel('freq (hz)');
+        ylabel('');        
       end
       set(img_hdls,'visible','off'); % make the colors invisible        
       set(line_hdls,'xdata',freqs(freqIdx(1):freqIdx(2)),'visible','on');
@@ -530,17 +537,18 @@ while ( ~endTraining )
       set(hdls,'xlim',[.5 1.5],'ylim',[.5 1.5],'clim',datlim);
       set(line_hdls,'visible','off');
       set(img_hdls,'cdata',1,'xdata',[1 1],'ydata',[1 1],'visible','on'); %make the color images visible
-      for hi=1:size(ppdat,1); % make the tickmarks and axes label invisible
+      for hi=1:numel(hdls); % make the tickmarks and axes label invisible
+        axes(hdls(hi));
         if ( ~isempty(get(hdls(hi),'Xlabel')) && isequal(get(get(hdls(hi),'xlabel'),'visible'),'on') ) 
           set(hdls(hi),'xticklabel',[],'yticklabel',[]);
         end
         switch curvistype;
-			 case '50hz';   xlabel(hdls(hi),'50Hz Power');
-			 case 'noisefrac';xlabel(hdls(hi),'Noise Fraction');
-			 case 'power';  xlabel(hdls(hi),'Signal Amplitude');
-			 case 'offset'; xlabel(hdls(hi),'offset');
+			 case '50hz';   xlabel('50Hz Power');
+			 case 'noisefrac';xlabel('Noise Fraction');
+			 case 'power';  xlabel('Signal Amplitude');
+			 case 'offset'; xlabel('offset');
 		  end
-        set(hdls(hi),'ylabel','');
+        ylabel('');
       end
       if ( ~isempty(cbarhdl) ) 
         set(cbarhdl,'position',cbarpos); % ARGH! octave moves the cbar if axes are changed!
@@ -558,7 +566,12 @@ while ( ~endTraining )
    			       'ydata',spectFreqs([spectFreqIdx(1) spectFreqIdx(2)]),...
 			          'visible','on');      
       for hi=1:numel(hdls);
-        set(hdls(hi),'xlabel','time (s)','ylabel','freq (hz)');
+        axes(hdls(hi));
+        try;
+            xlabel('time (s)');
+            ylabel('freq (hz)');
+        catch;
+        end;
       end;
       if ( ~isempty(cbarhdl) ) 
         set(cbarhdl,'position',cbarpos); % ARGH! octave moves the cbar if axes are changed!
@@ -772,12 +785,13 @@ while ( ~endTraining )
     switch ( vistype ) % do pre-work dependent on current mode, i.e. mode we're switching from
      case {'50hz','power','offset','noisefrac'}; % topo-plot mode, single color per electrode
       for hi=1:size(ppdat,1); % turn the tickmarks and label visible again
-        set(hdls(hi),'ylabel','');
+        axes(hdls(hi));
+        ylabel('');
         if ( ~isempty(get(hdls(hi),'Xlabel')) && isequal(get(get(hdls(hi),'xlabel'),'visible'),'on') ) 
           set(hdls(hi),'xticklabelmode','auto','yticklabelmode','auto');
-          xlabel(hdls(hi),'time (s)','visible','on');
+          xlabel('time (s)');set(hdls(hi),'visible','on');
         else
-          xlabel(hdls(hi),'time (s)','visible','off');
+          xlabel('time (s)');set(hdls(hi),'visible','off');
         end
       end        
       if ( ~isempty(cbarhdl) ); set(findobj(cbarhdl),'visible','off'); end
@@ -789,15 +803,17 @@ while ( ~endTraining )
     switch ( curvistype )       
 
      case 'time'; % time-domain -----------------------------------
-      for hi=1:size(ppdat,1);
-        set(hdls(hi),'xlabel','time (s)','ylabel','');
+       for hi=1:size(ppdat,1);
+         axes(hdls(hi));
+        xlabel('time (s)');ylabel('');
         set(hdls(hi),'xlim',[times(1) times(size(ppdat,2))],'ylim',datlim);          end
       set(img_hdls,'visible','off'); % make the colors invisible        
       set(line_hdls,'xdata',times(1:size(ppdat,2)),'visible','on');
       
      case 'freq'; % frequency domain -----------------------------------
-      for hi=1:size(ppdat,1);
-        set(hdls(hi),'xlabel','freq (hz)','ylabel','');
+       for hi=1:size(ppdat,1);
+         axes(hdls(hi));
+        xlabel('freq (hz)');ylabel('');
         set(hdls(hi),'xlim',freqs([freqIdx(1) freqIdx(2)]),'ylim',datlim);
       end
       set(img_hdls,'visible','off'); % make the colors invisible        
@@ -814,16 +830,17 @@ while ( ~endTraining )
       set(line_hdls,'visible','off');
       set(img_hdls,'cdata',1,'xdata',[1 1],'ydata',[1 1],'visible','on'); %make the color images visible
       for hi=1:size(ppdat,1); % make the tickmarks and axes label invisible
+        axes(hdls(hi));
         if ( ~isempty(get(hdls(hi),'Xlabel')) && isequal(get(get(hdls(hi),'xlabel'),'visible'),'on') ) 
           set(hdls(hi),'xticklabel',[],'yticklabel',[]);
         end
         switch curvistype;
-			 case '50hz';   xlabel(hdls(hi),'50Hz Power');
-			 case 'noisefrac';xlabel(hdls(hi),'Noise Fraction');
-			 case 'power';  xlabel(hdls(hi),'Signal Amplitude');
-			 case 'offset'; xlabel(hdls(hi),'offset');
+			 case '50hz';   xlabel('50Hz Power');
+			 case 'noisefrac';xlabel('Noise Fraction');
+			 case 'power';  xlabel('Signal Amplitude');
+			 case 'offset'; xlabel('offset');
 		  end
-        set(hdls(hi),'ylabel','');
+        ylabel('');
       end
       if ( ~isempty(cbarhdl) ) 
         set(cbarhdl,'position',cbarpos); % ARGH! octave moves the cbar if axes are changed!
@@ -841,7 +858,7 @@ while ( ~endTraining )
    			       'ydata',spectFreqs([spectFreqIdx(1) spectFreqIdx(2)]),...
 			          'visible','on');      
       for hi=1:numel(hdls);
-          set(hdls(hi),'xlabel','time (s)','ylabel','freq (hz)');
+        axes(hdls(hi));try; xlabel('time (s)');ylabel('freq (hz)'); catch; end;
       end;
       if ( ~isempty(cbarhdl) ) 
         set(cbarhdl,'position',cbarpos); % ARGH! octave moves the cbar if axes are changed!
@@ -905,10 +922,9 @@ while ( ~endTraining )
       set(img_hdls(hi),'cdata',shiftdim(ppdat(hi,:,:)));
     end
   end
-  drawnow;
     vistype=curvistype;
     % redraw, but not too fast
-    if ( toc < opts.redraw_ms/1000 ) continue; else drawnow; tic; end;
+    if ( toc < opts.redraw_ms/1000 ) continue; else pause(.005); tic; end;
   end
 if ( opts.closeFig && ishandle(fig) ) close(fig); end;
 % close the options figure as well
