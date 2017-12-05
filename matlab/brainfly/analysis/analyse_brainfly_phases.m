@@ -1,15 +1,22 @@
 run ../../utilities/initPaths
-if ( 1 ) 
+if ( 0 ) 
    dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
    datasets_brainfly_local;
-else
+   postfix='_local';
+elseif ( 0 ) 
    dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
    datasets_brainfly;
+   postfix='';
+else
+   dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
+   datasets_brainfly_flight;
+   postfix='_flight';
 end
 trlen_ms=750;
 label   ='movement_phases'; % generic label for this slice/analysis type
 makePlots=0; % flag if we should make summary ERP/AUC plots whilst slicing
 analysisType='ersp';  % type of pre-processing / analsysi to do
+nsessions=2;
 
 % get the set of algorithms to run
 algorithms_brainfly;
@@ -19,7 +26,7 @@ default_args={,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqb
 
 % summary results storage.  Format is 2-d cell array.  
 % Each row is an algorithm run with 4 columns: {subj session algorithm_label performance}
-resultsfn=fullfile(dataRootDir,expt,sprintf('analyse_%s',label));
+resultsfn=fullfile(dataRootDir,expt,sprintf('analyse_%s%s',label,postfix));
 if ( ~exist('results','var') ) 
   try % load the previously saved results if possible..
     load(resultsfn);
@@ -35,8 +42,10 @@ si=1; sessi=3;
 for si=1:numel(datasets);
    if ( isempty(datasets{si}) ) continue; end;
   subj   =datasets{si}{1};
-  for sessi=1:numel(datasets{si})-1;
-     session=datasets{si}{1+sessi};
+  for sessi=1:nsessions:numel(datasets{si})-1;
+    alldata={}; alldevents={};
+    for ssi=1:nsessions;
+     session=datasets{si}{sessi+ssi};
      saveDir=session;
      if(~isempty(stripFrom))
         tmp=strfind(session,stripFrom);
@@ -51,8 +60,11 @@ for si=1:numel(datasets);
      end
      fprintf('Loading: %s\n',dname);
      load(dname);
+     allphases{ssi}=phases; 
      fprintf('Loaded %d phases\n',numel(phases));
      if ( numel(phases)==0 ) continue; end;
+    end
+    phases=cat(2,allphases{:});
 
      % run the set of algorithms to test
      for ai=1:numel(algorithms)
@@ -157,6 +169,14 @@ for si=1:numel(datasets);
 end % subjects
 % show the final results set
 %results
+
+
+% raw verbose save
+for ri=1:size(results,1);
+  fprintf('%8s %30s \t%40s\n',results{ri,1:3});
+  fprintf('         %30s \t%4.2f \t%4.3f\n',results{ri,4:end});
+  fprintf('\n');
+end
 
 % some simple algorithm summary info
 algs=unique(results(:,3));

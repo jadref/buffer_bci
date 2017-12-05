@@ -1,25 +1,33 @@
 run ../../utilities/initPaths
-if ( 1 ) 
+if ( 0 ) 
    dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
-   datasets_brainfly_local();
-else
+   datasets_brainfly_local;
+   postfix='_local';
+elseif ( 0 ) 
    dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
-   datasets_brainfly();
+   datasets_brainfly;
+   postfix='';
+else
+   dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
+   datasets_brainfly_flight;
+   postfix='_flight';
 end
 trlen_ms=750;
 label   ='movement'; % generic label for this slice/analysis type
 makePlots=0; % flag if we should make summary ERP/AUC plots whilst slicing
 analysisType='ersp';  % type of pre-processing / analsysi to do
+nsessions=2;
+
 
 % get the set of algorithms to run
-algorithms_brainfly();
+algorithms_brainfly;
 % list of default arguments to always use
 % N.B. Basicially this is a standard ERSP analysis setup
 default_args={,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[6 8 80 90],'width_ms',250,'aveType','abs'};
 
 % summary results storage.  Format is 2-d cell array.  
 % Each row is an algorithm run with 4 columns: {subj session algorithm_label performance}
-resultsfn=fullfile(dataRootDir,expt,sprintf('analyse_%s',label));
+resultsfn=fullfile(dataRootDir,expt,sprintf('analyse_%s%s',label,postfix));
 try % load the previously saved results if possible..
    if ( ~exist('results','var') ) 
       load(resultsfn);
@@ -33,8 +41,10 @@ si=1; sessi=3;
 for si=1:numel(datasets);
    if ( isempty(datasets{si}) ) continue; end;
   subj   =datasets{si}{1};
-  for sessi=1:numel(datasets{si})-1;
-     session=datasets{si}{1+sessi};
+  for sessi=1:nsessions:numel(datasets{si})-1;
+    alldata={}; alldevents={};
+    for ssi=1:nsessions;
+     session=datasets{si}{sessi+ssi};
      saveDir=session;
      if(~isempty(stripFrom))
         tmp=strfind(session,stripFrom);
@@ -49,9 +59,16 @@ for si=1:numel(datasets);
      end
      fprintf('Loading: %s\n',dname);
      load(dname);
+     alldata{ssi}=data; alldevents{ssi}=devents;
+     
      fprintf('Loaded %d events\n',numel(devents));
+    end
+    data=cat(1,alldata{:}); devents=cat(1,alldevents{:});
+    
      if ( numel(devents)==0 ) continue; end;
 
+
+     
      % run the set of algorithms to test
      for ai=1:numel(algorithms)
         alg=algorithms{ai}{1};

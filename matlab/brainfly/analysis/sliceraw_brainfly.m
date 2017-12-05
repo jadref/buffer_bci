@@ -1,10 +1,13 @@
 run ../../utilities/initPaths
-if ( 1 ) 
+if ( 0 ) 
    dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
    datasets_brainfly_local;
-else
+elseif ( 0 ) 
    dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
    datasets_brainfly;
+else
+   dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
+   datasets_brainfly_flight;  
 end
 
 trlen_ms=750;
@@ -63,6 +66,17 @@ for si=1:numel(datasets);
         fprintf('Saving to: %s',savefn);
         save(savefn,'data','devents','hdr','allevents');
         fprintf('done\n');        
+
+
+        if( makePlots ) 
+                                % also make summary plots
+          [clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[6 8 80 90],'width_ms',250,'aveType','abs','classify',0,'visualize',1);
+        % save plots
+          figure(1); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_ERP',subj,label));
+          figure(2); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_AUC',subj,label));
+        end        
+
+
      catch
         le=lasterror, le.stack(1)
         fprintf('Couldnt slice: %s,  IGNORED',sessdir)
@@ -73,7 +87,7 @@ for si=1:numel(datasets);
      savefn=sprintf('%s_phases',savefn);
      if( exist(savefn,'file') ||  exist([savefn '.mat'],'file') ) %don't re-slice already done
         fprintf('Skipping already sliced file: %s\n',savefn);
-        %continue;
+        continue;
      end
      try;
                                      % now slice into phases
@@ -99,6 +113,19 @@ for si=1:numel(datasets);
         fprintf('Saving %d phases to: %s',numel(phases),savefn);
         save(savefn,'phases','hdr','allevents');
         fprintf('done.\n');
+
+        if( makePlots ) 
+                                % also make summary plots
+          for phi=1:numel(phases);
+            data=phases(phi).data; devents=phases(phi).devents;
+          [clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[6 8 80 90],'width_ms',250,'aveType','abs','classify',0,'visualize',1);
+        % save plots
+          figure(1); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_ERP_%s%d',subj,label,phase(phi).label,phi)));
+          figure(2); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_AUC_%s%d',subj,label,phase(phi).label,phi)));
+          end
+        end        
+
+
      catch
         le=lasterror, fprintf('%s: %s:%d\n',le.message,le.stack(1).file,le.stack(1).line)
         fprintf('Couldnt slice: %s,  IGNORED\n',sessdir)

@@ -1,10 +1,16 @@
 run ../../utilities/initPaths
-if ( 1 ) 
+if ( 0 ) 
    dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
-   datasets_brainfly_local();
-else
+   datasets_brainfly_local;
+   postfix='_local';
+elseif ( 0 ) 
    dataRootDir = '/Volumes/Wrkgrp/STD-Donders-ai-BCI_shared'; % main directory the data is saved relative to in sub-dirs
-   datasets_brainfly();
+   datasets_brainfly;
+   postfix='';
+else
+   dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
+   datasets_brainfly_flight;
+   postfix='_flight';
 end
 trlen_ms=750;
 label   ='p300'; % generic label for this slice/analysis type
@@ -12,7 +18,7 @@ makePlots=1; % flag if we should make summary ERP/AUC plots whilst slicing
 analysisType='erp';  % type of pre-processing / analsysi to do
 
 % get the set of algorithms to run
-algorithms_brainfly_erp();
+algorithms_brainfly_erp;
 % list of default arguments to always use
 % N.B. Basicially this is a standard ERP analysis setup
 default_args={'badtrrm',1,'badchrm',1,'detrend',1,'spatialfilter','car','freqband',[.1 .5 12 14]};
@@ -33,7 +39,7 @@ si=1; sessi=3;
 for si=1:numel(datasets);
    if ( isempty(datasets{si}) ) continue; end;
   subj   =datasets{si}{1};
-  for sessi=17:numel(datasets{si})-1;
+  for sessi=1:numel(datasets{si})-1;
      session=datasets{si}{1+sessi};
      saveDir=session;
      if(~isempty(stripFrom))
@@ -106,7 +112,8 @@ for si=1:numel(datasets);
   end % sessions
 end % subjects
 % show the final results set
-results
+rr=results'; fprintf('%8s,\t%30s,\t%40s,\t%4.2f\n',rr{:});
+
 
 % some simple algorithm summary info
 algs=unique(results(:,3));
