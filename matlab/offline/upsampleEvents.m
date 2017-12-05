@@ -23,8 +23,12 @@ if( isempty(triggerEvents) ) return; end;
 triggerSamp = [triggerEvents.sample];
 dtriggerSamp= [diff(triggerSamp) inf];
                     %BODGE: trigger test, to avoid up-sampling when uncessary
-if( ustest>0 )
-  ustest = abs(median(dtriggerSamp(1:end-1))-step_samp)<ustest;%most triggers around step_samp
+if( ustest>0  )
+  if( numel(triggerEvents)<=1 )
+    ustest = 0;
+  else 
+    ustest = abs(median(dtriggerSamp(1:end-1))-step_samp)<ustest;%most triggers ~= step_samp
+  end
   if( ~ustest ) fprintf('Upsampling triggers\n'); else fprintf('Not upsampling triggers\n'); end;
 else
   ustest = false;
