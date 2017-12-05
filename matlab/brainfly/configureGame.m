@@ -52,7 +52,7 @@ rtColor  = [1 0 0]; % reaction time cue = red
 stdColor = [.8 .8 .8]; % standard flash = light-grey
 p3tgtColor=[0 0 1]; % p3 target color
 
-rtMax = 3; % max time to react to reaction time task
+rtMax = 2; % max time to react to reaction time task
 rtDuration = 1; % time reaction-time stimulus is on the screen
 rtInterval = [15 20];% range of times between reaction time tasks
 
@@ -62,7 +62,7 @@ gameFrameDuration = 1/10; % 10hz screen update interval
 gameDuration = 90;
 
 % P300 stimulus info
-isi   = 1/2;
+isi   = 1/4;
 mintti= [1.5 3.0];
 oddballp=true; % standard/target type stimulus
 stimDuration=isi;
@@ -121,7 +121,7 @@ epochtrlen_ms =epochFeedbackTrialDuration*1000; % amount of data to apply classi
 conttrlen_ms  =welch_width_ms; % amount of data to apply classifier to in continuous feedback
 
 % paramters for on-line adaption to signal changes
-adaptHalfLife_ms = 15*1000; %30s amount of data to use for adapting spatialfilter/biasadapt
+adaptHalfLife_ms = 30*1000; %30s amount of data to use for adapting spatialfilter/biasadapt
 conttrialAdaptHL =(adaptHalfLife_ms/step_ms); % half-life in number of calls to apply clsfr
 epochtrialAdaptHL=(adaptHalfLife_ms/epochtrlen_ms); % half-life in number called to apply-clsfr in epoch feedback
 % smoothing parameters for feedback in continuous feedback mode
