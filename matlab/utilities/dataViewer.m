@@ -48,11 +48,16 @@ if ( exist('OCTAVE_VERSION','builtin') ) % use best octave specific graphics fac
 end
 hdr=opts.hdr;
 
+if ( nargin<1 ) data=[]; end;
+
 % to auto set the color of the lines
 linecols='brkgcmyk';
 
 
                            % get the data into a [ch x time (x epochs) ] format
+if ( isempty(data) ) % ask for a file to open
+  [fn,data]=uigetfile('header','Pick ftoffline raw savefile header file.'); drawnow;
+end
 if ( isstruct(data) ) % assume data.buf format
   if( isfield(data,'buf') ) data = cat(3,data.buf)
   else fprintf('expected data.buf format!\n');
