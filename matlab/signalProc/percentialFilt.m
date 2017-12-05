@@ -15,7 +15,7 @@ function [x,s,b]=percentialFilt(x,s,alpha,pr)
 if ( nargin<4 || isempty(pr) ) pr=.5; end;
 if ( isempty(s) ) s=struct('x',0,'i',0); end;
 
-if ( isscalar(s.x) ) s.x = zeros(numel(x),alpha); s.i=0; end;
+if ( isscalar(s.x) ) s.x = zeros(numel(x),ceil(alpha)); s.i=0; end;
 s.x(:,mod(s.i,size(s.x,2))+1) = x(:); % insert in ring buffer
 s.i = s.i+1;
 nf  = min(s.i,size(s.x,2)); % num valid entries in window

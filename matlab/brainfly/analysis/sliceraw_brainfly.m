@@ -1,5 +1,5 @@
 run ../../utilities/initPaths
-if ( 1 ) 
+if ( 0 ) 
    dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
    datasets_brainfly_local;
 else
@@ -25,7 +25,7 @@ subistuteVals={'1 LH ' '2 LH';
 
                                 % slice data
 si=1; sessi=3;
-for si=1:numel(datasets);
+for si=9:numel(datasets);
   if( isempty(datasets{si}) ) continue; end;
   subj   =datasets{si}{1};
   for sessi=1:numel(datasets{si})-1;
@@ -73,7 +73,7 @@ for si=1:numel(datasets);
      savefn=sprintf('%s_phases',savefn);
      if( exist(savefn,'file') ||  exist([savefn '.mat'],'file') ) %don't re-slice already done
         fprintf('Skipping already sliced file: %s\n',savefn);
-        %continue;
+        continue;
      end
      try;
                                      % now slice into phases

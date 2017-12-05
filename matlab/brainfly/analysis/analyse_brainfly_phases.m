@@ -1,5 +1,5 @@
 run ../../utilities/initPaths
-if ( 1 ) 
+if ( 0 ) 
    dataRootDir = '~/data/bci'; % main directory the data is saved relative to in sub-dirs
    datasets_brainfly_local;
 else
@@ -66,7 +66,7 @@ for si=1:numel(datasets);
         end
 
         fprintf('Trying: %s %s\n',subj,alg);
-        %try; % run in catch so 1 bad alg doesn't stop everything
+        try; % run in catch so 1 bad alg doesn't stop everything
 
           % train on the calibrate phase & test on the rest
           calphasei = strcmp({phases.label},'calibrate');
@@ -121,10 +121,10 @@ for si=1:numel(datasets);
            end;
            %results(end,:)
            
-        %catch;
-        %   err=lasterror, err.message, err.stack(1)
-        %   fprintf('Error in : %d=%s,    IGNORED\n',ai,alg);
-        %end
+           catch;
+           err=lasterror, err.message, err.stack(1)
+           fprintf('Error in : %d=%s,    IGNORED\n',ai,alg);
+           end
 
      end
 
@@ -191,7 +191,7 @@ end
 
 
 printphases={'contfeedback','brainfly'};
-ai=1;si=1;mii=1;ppi=1;
+ai=1;si=1;mii=1;ppi=1; resphase={};
 for ai=1:numel(algs);
    alg=algs{ai};
    fprintf('\n\nAlg: %s\n',alg);
@@ -201,7 +201,7 @@ for ai=1:numel(algs);
       for mii=1:numel(mi); % loop over sesions for this subj+alg
          sas=mi(mii);
          ressas = results(sas,:);
-         fprintf('%7s %20s | ',ressas{1},ressas{2});
+         fprintf('%8s %40s | ',ressas{1},ressas{2});
          for ppi=1:numel(printphases); % loop over phases for this session
             pp    = find(strcmp(ressas,printphases{ppi}));
             if( isempty(pp) ) continue; end;
@@ -212,10 +212,33 @@ for ai=1:numel(algs);
          fprintf('\n');         
       end
       fprintf('---\n');         
-      fprintf('%7s %20s | ',ressas{1},'<ave>');
-      for ppi=1:numel(printphases); % loop over phases for this session
-         fprintf(' %15s %4.2f (%4.2f) \t',printphases{ppi},sum(ressubj(:,:,ppi),2)./sum(ressubj(:,:,ppi)>0,2));
+      resphase{1,si,ai}=alg; resphase{2,si,ai}=subjs{si};
+      fprintf('%8s %40s | ',ressas{1},'<ave>');
+      for ppi=1:numel(printphases); % loop over phases for this session         
+         ave = sum(ressubj(:,:,ppi),2)./sum(ressubj(:,:,ppi)>0,2);
+         fprintf(' %15s %4.2f (%4.2f) \t',printphases{ppi},ave);
+         resphase{2+ppi,si,ai}={printphases{ppi} ave};
+      end
+      fprintf('\n\n');
+   end
+end
+
+% cross-session summary
+for ai=1:size(resphase,3); % alg
+   fprintf('\n\nAlg: %s\n',algs{ai});
+   gave=zeros(2,numel(printphases),size(resphase,2));
+   for si=1:size(resphase,2); % subj
+      fprintf('%8s <ave> :',resphase{2,si,ai});
+      for ppi=1:numel(printphases); % phases
+         fprintf(' %15s %4.2f (%4.2f) \t',resphase{2+ppi,si,ai}{1},resphase{2+ppi,si,ai}{2});
+         gave(:,ppi,si)=resphase{2+ppi,si,ai}{2};
       end
       fprintf('\n');
    end
+   fprintf('----\n');
+   fprintf('%8s <ave> :','<ave>');
+   for ppi=1:numel(printphases); % phases
+      fprintf(' %15s %4.2f (%4.2f) \t',printphases{ppi},mean(gave(:,ppi,:),3));
+   end
+   fprintf('\n');
 end
