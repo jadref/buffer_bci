@@ -8,7 +8,7 @@ maxCannonShotsPerSecond = 1;               % RPS of cannon
 autoFireMode            = 1;               % auto-fire or fire key?
 useBuffer               = 1;
 timeBeforeNextAlien     = 5;               % seconds
-killFlashTime           = .1;              % duration of the red-you've-been-killed flash
+killFlashTime           = 0;              % duration of the red-you've-been-killed flash
 predictionMargin=0;
 warpCursor = true; % cannon position is directly classifier output
 p300Flashing = false; % whether we do the p300 flashing or not
@@ -68,7 +68,6 @@ lrSeq =(tgtSeq(1,:)*.9+.05)+(rand(1,size(tgtSeq,2))-.5)*0; % l/r with a little n
 %% Game Loop:
                                 % Set callbacks to manage the key presses:
 set(hFig,'KeyPressFcn',@(hObj,evt) set(hObj,'userdata',evt)); %save the key; processKeys(hObj,evt,evt.Key));
-set(hFig,'KeyReleaseFcn',@(hObj,evt) set(hObj,'userdata','')); % clear on release
                                 %  set(hFig,'KeyReleaseFcn',[]);
 
                                 % Initialize game loop variables:
@@ -96,8 +95,8 @@ hText = text(gameCanvasXLims(1),gameCanvasYLims(2),genTextStr(score,curBalls,can
                        % wait for user to be ready before starting everything
 set(hText,'string', {'' 'Click mouse when ready to begin.'}, 'visible', 'on'); drawnow; pause(1);
 waitforbuttonpress;
-for i=0:5;
-   set(hText,'string',sprintf('Starting in: %ds',5-i),'visible','on');drawnow;
+for i=3:-1:0;
+   set(hText,'string',sprintf('Starting in: %ds',i),'visible','on');drawnow;
    sleepSec(1);
 end
 set(hText,'visible', 'off'); drawnow; 
@@ -124,17 +123,6 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
     
     if( ~isempty(dv) ) % only if events to process...
       [cannonAction,cannonTrotFrac]=prediction2action(prob,predictionMargin,warpCursor);
-    end
-  end
-  curCharacter=[];
-  if ( useKeyboard )
-    curKeyLocal    = get(hFig,'userdata');
-    if ( ~isempty(curKeyLocal) )
-      curCharacter=curKeyLocal.Character;
-      %if(verb>0) 
-         fprintf('%d) key="%s"\n',nframe,curCharacter);
-         %end
-      [cannonAction,cannonTrotFrac]=key2action(curCharacter);
     end
   end
   
@@ -255,9 +243,19 @@ while ( toc(t0)<gameDuration && ishandle(hFig))
     rtState = 1; % waiting for key-press state
     set(hCannon.hGraphic,'facecolor',stimColors(3,:)); % set as rt color
     score.totalBonusPoss = score.totalBonusPoss+1;
-    drawnow;
+    %drawnow;
     sendEvent('stimulus.rtTask',1);
     fprintf('%d) t=%g rt frame',nframe,frameTime);
+  end
+  curKeyLocal    = get(hFig,'userdata');
+  curCharacter   = [];
+  if ( ~isempty(curKeyLocal) )
+     curCharacter=curKeyLocal.Character;
+     %if(verb>0) 
+       fprintf('%d) key="%s"\n',nframe,curCharacter);
+     %end
+     [cannonAction,cannonTrotFrac]=key2action(curCharacter);
+     set(hFig,'userdata',[]);
   end
   if( rtState==1 && strcmpi(curCharacter,'a') ) % fast enough for RT task
     if( useBuffer ) sendEvent('response.rtTask',curCharacter); end;

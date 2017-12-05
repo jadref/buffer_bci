@@ -14,7 +14,7 @@ classdef Alien < handle
     relAlienStartSize = 0.05;  % The start size of the alien.
     alienGrowExp      = 1.5;   % The time exponent of the growth rate.
     %relAlienGrowRate  = (.5-Alien.relAlienStartSize)./(Alien.fallDuration.^Alien.alienGrowExp); % The growth rate of the alien, should be size .5 by end fall
-    relAlienGrowRate  = .5./(6*(.9/1).^1.5); % The growth rate of the alien, should be size .5 by end fall
+    relAlienGrowRate  = .5./(6.^1.5); % The growth rate of the alien, should be size .5 by end fall
     relSpawnDelta     = .3;   % fraction of screen to spawn the new alien
            % NOTE: Aliens sometimes grow exponentially, so their sizes are
            % calculated as:

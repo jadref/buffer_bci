@@ -62,8 +62,8 @@ gameFrameDuration = 1/10; % 10hz screen update interval
 gameDuration = 90;
 
 % P300 stimulus info
-isi   = 1/5;
-mintti= [.6 2.0];
+isi   = 1/4;
+mintti= [1.5 3.0];
 oddballp=true; % standard/target type stimulus
 stimDuration=isi;
 
