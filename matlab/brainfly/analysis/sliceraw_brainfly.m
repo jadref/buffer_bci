@@ -28,7 +28,7 @@ subistuteVals={'1 LH ' '2 LH';
 
                                 % slice data
 si=1; sessi=3;
-for si=1:numel(datasets);
+for si=9:numel(datasets);
   if( isempty(datasets{si}) ) continue; end;
   subj   =datasets{si}{1};
   for sessi=1:numel(datasets{si})-1;

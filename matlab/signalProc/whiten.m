@@ -122,6 +122,7 @@ end
 if ( unitCov )  
   unitCov=median(diag(sum(Sigma,3)./size(Sigma,3)));
   if ( unitCov>1e-1 && unitCov<1e1 ) unitCov=1; end;
+  if ( unitCov<eps ) unitCov=1; end;
   Sigma=Sigma./unitCov; 
 end;
 

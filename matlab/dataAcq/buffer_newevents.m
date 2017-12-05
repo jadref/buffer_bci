@@ -5,14 +5,19 @@ function [events,state,nevents,nsamples]=buffer_newevents(host,port,state,mtype,
 % Inputs:
 %  host -- buffer host name
 %  port -- buffer port
-%  state -- current state of the newevents, use this between subsequent calls to buffer_newevents
+%  state -- current state of buffer_newevents.  Basically, this is a cursor recording which events ([])
+%            have allready been processed.  Events before state.nevents are **Ignored**.  
+%            Use this between subsequent calls to buffer_newevents
 %            to resume processing events from when the previous call finished
 %       Format:
-%           [1x1 int]   - count of the number of events processed so far
+%          []        - empty matrix.  Ignore all events which occured before the time of this call
+%               Effectively, internally we have: state = buffer('wait_dat',[-1 -1 -1]);
+%       OR
+%          [1x1 int] - count of the number of events processed so far
 %       OR 
-%           [int 3x1] = [numSamples numEvents timeout_ms]
+%          [int 3x1] - [numSamples numEvents timeout_ms]
 %               set of counts idicating how many samples/events have been processed so far 
-%               in the same format as for buffer('wait_dat',state), i.e.
+%               in the same format as for buffer('wait_dat')
 %       OR
 %          [struct] - This contains 3 fields:
 %           .nevents -- [int] number of events processed so far
