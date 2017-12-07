@@ -17,6 +17,10 @@ label   ='movement_phases'; % generic label for this slice/analysis type
 makePlots=0; % flag if we should make summary ERP/AUC plots whilst slicing
 analysisType='ersp';  % type of pre-processing / analsysi to do
 nsessions=2;
+trnPhases = {'calibrate' 'contfeedback'};
+ntrn      = 2;
+postfix   = sprintf('%s_trn%d',postfix,ntrn);
+
 
 % get the set of algorithms to run
 algorithms_brainfly;
@@ -43,7 +47,7 @@ for si=1:numel(datasets);
    if ( isempty(datasets{si}) ) continue; end;
   subj   =datasets{si}{1};
   for sessi=1:nsessions:numel(datasets{si})-1;
-    alldata={}; alldevents={};
+    allphases={};
     for ssi=1:nsessions;
      session=datasets{si}{sessi+ssi};
      saveDir=session;
@@ -60,9 +64,9 @@ for si=1:numel(datasets);
      end
      fprintf('Loading: %s\n',dname);
      load(dname);
-     allphases{ssi}=phases; 
+     allphases{ssi}=phases;
+     
      fprintf('Loaded %d phases\n',numel(phases));
-     if ( numel(phases)==0 ) continue; end;
     end
     phases=cat(2,allphases{:});
 
@@ -78,18 +82,22 @@ for si=1:numel(datasets);
         end
 
         fprintf('Trying: %s %s\n',subj,alg);
-        try; % run in catch so 1 bad alg doesn't stop everything
+        %try; % run in catch so 1 bad alg doesn't stop everything
 
           % train on the calibrate phase & test on the rest
-          calphasei = strcmp({phases.label},'calibrate');
+        calphasei = false(numel(phases),1);
+        for phi=1:numel(phases);
+          calphasei(phi)= calphasei(phi) |  any(strcmp(phases(phi).label,trnPhases));
+        end;
           if( ~any(calphasei) )
             calphasei=1;
           else
-            calphasei=find(calphasei); calphasei=calphasei(1);
+            calphasei=find(calphasei); calphasei=calphasei(1:ntrn);
           end
           calphase=phases(calphasei);
-          data=calphase.data; devents=calphase.devents;
-          fprintf('Training on: %s,  %d events\n',calphase.label,numel(calphase.devents));
+          data=cat(1,phases(calphasei).data);
+          devents=cat(1,phases(calphasei).devents);
+          fprintf('Training on: %s,  %d events\n',phases(calphasei(1)).label,numel(devents));
           if( strcmp(lower(analysisType),'ersp') )
               [clsfr,res]=buffer_train_ersp_clsfr(data,devents,hdr,default_args{:},algorithms{ai}{2:end},'visualize',0);
            elseif( strcmp(lower(analysisType),'erp') )
@@ -113,7 +121,7 @@ for si=1:numel(datasets);
              conf    = dv2conf(y,f); % confusion matrix
              tst     = conf2loss(conf,'bal'); % performance
              auc     = dv2auc(y,f); % auc -scor
-             if(phasei==calphasei);
+             if(any(phasei==calphasei));
                fprintf('%20s:%2.0f(%2.0f)T \n',d.label,tst*100,auc*100); 
                aucsess(phasei)=0; tstsess(phasei)=0;
                continue;  
@@ -121,8 +129,8 @@ for si=1:numel(datasets);
              aucphase(phasei)=auc;  tstphase(phasei)=tst;
              fprintf('%20s:%2.0f(%2.0f)  \n',d.label,tstphase(phasei)*100,aucphase(phasei)*100);
            end
-           meantstphase = sum(tstphase)./(numel(tstphase)-1);
-           meanaucphase = sum(aucphase)./(numel(aucphase)-1);
+           meantstphase = sum(tstphase)./(numel(tstphase)-numel(calphasei));
+           meanaucphase = sum(aucphase)./(numel(aucphase)-numel(calphasei));
            fprintf('%20s:%2.0f(%2.0f)\n\n','<ave>',meantstphase*100,meanaucphase*100);
            
            % record the summary results
@@ -133,10 +141,10 @@ for si=1:numel(datasets);
            end;
            %results(end,:)
            
-           catch;
-           err=lasterror, err.message, err.stack(1)
-           fprintf('Error in : %d=%s,    IGNORED\n',ai,alg);
-           end
+        %catch;
+        %   err=lasterror, err.message, err.stack(1)
+        %   fprintf('Error in : %d=%s,    IGNORED\n',ai,alg);
+        %end
 
      end
 
@@ -170,11 +178,9 @@ end % subjects
 % show the final results set
 %results
 
-
-% raw verbose save
 for ri=1:size(results,1);
-  fprintf('%8s %30s \t%40s\n',results{ri,1:3});
-  fprintf('         %30s \t%4.2f \t%4.3f\n',results{ri,4:end});
+  fprintf('%8s,\t%30s,\t%40s,\t',results{ri,1:3});
+  fprintf('        %20s,\t%4.2f,\t%4.3f',results{ri,4:end});
   fprintf('\n');
 end
 
@@ -211,7 +217,7 @@ end
 
 
 printphases={'contfeedback','brainfly'};
-ai=1;si=1;mii=1;ppi=1; resphase={};
+ai=1;si=1;mii=1;ppi=1;
 for ai=1:numel(algs);
    alg=algs{ai};
    fprintf('\n\nAlg: %s\n',alg);
@@ -221,7 +227,7 @@ for ai=1:numel(algs);
       for mii=1:numel(mi); % loop over sesions for this subj+alg
          sas=mi(mii);
          ressas = results(sas,:);
-         fprintf('%8s %40s | ',ressas{1},ressas{2});
+         fprintf('%7s %20s | ',ressas{1},ressas{2});
          for ppi=1:numel(printphases); % loop over phases for this session
             pp    = find(strcmp(ressas,printphases{ppi}));
             if( isempty(pp) ) continue; end;
@@ -232,33 +238,10 @@ for ai=1:numel(algs);
          fprintf('\n');         
       end
       fprintf('---\n');         
-      resphase{1,si,ai}=alg; resphase{2,si,ai}=subjs{si};
-      fprintf('%8s %40s | ',ressas{1},'<ave>');
-      for ppi=1:numel(printphases); % loop over phases for this session         
-         ave = sum(ressubj(:,:,ppi),2)./sum(ressubj(:,:,ppi)>0,2);
-         fprintf(' %15s %4.2f (%4.2f) \t',printphases{ppi},ave);
-         resphase{2+ppi,si,ai}={printphases{ppi} ave};
-      end
-      fprintf('\n\n');
-   end
-end
-
-% cross-session summary
-for ai=1:size(resphase,3); % alg
-   fprintf('\n\nAlg: %s\n',algs{ai});
-   gave=zeros(2,numel(printphases),size(resphase,2));
-   for si=1:size(resphase,2); % subj
-      fprintf('%8s <ave> :',resphase{2,si,ai});
-      for ppi=1:numel(printphases); % phases
-         fprintf(' %15s %4.2f (%4.2f) \t',resphase{2+ppi,si,ai}{1},resphase{2+ppi,si,ai}{2});
-         gave(:,ppi,si)=resphase{2+ppi,si,ai}{2};
+      fprintf('%7s %20s | ',ressas{1},'<ave>');
+      for ppi=1:numel(printphases); % loop over phases for this session
+         fprintf(' %15s %4.2f (%4.2f) \t',printphases{ppi},sum(ressubj(:,:,ppi),2)./sum(ressubj(:,:,ppi)>0,2));
       end
       fprintf('\n');
    end
-   fprintf('----\n');
-   fprintf('%8s <ave> :','<ave>');
-   for ppi=1:numel(printphases); % phases
-      fprintf(' %15s %4.2f (%4.2f) \t',printphases{ppi},mean(gave(:,ppi,:),3));
-   end
-   fprintf('\n');
 end

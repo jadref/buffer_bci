@@ -28,7 +28,7 @@ subistuteVals={'1 LH ' '2 LH';
 
                                 % slice data
 si=1; sessi=3;
-for si=9:numel(datasets);
+for si=4:numel(datasets);
   if( isempty(datasets{si}) ) continue; end;
   subj   =datasets{si}{1};
   for sessi=1:numel(datasets{si})-1;
@@ -72,8 +72,8 @@ for si=9:numel(datasets);
                                 % also make summary plots
           [clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[6 8 80 90],'width_ms',250,'aveType','abs','classify',0,'visualize',1);
         % save plots
-          figure(1); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_ERP',subj,label));
-          figure(2); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_AUC',subj,label));
+          figure(2); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_ERP',subj,label)));
+          figure(3); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_AUC',subj,label)));
         end        
 
 
@@ -120,8 +120,8 @@ for si=9:numel(datasets);
             data=phases(phi).data; devents=phases(phi).devents;
           [clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[6 8 80 90],'width_ms',250,'aveType','abs','classify',0,'visualize',1);
         % save plots
-          figure(1); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_ERP_%s%d',subj,label,phase(phi).label,phi)));
-          figure(2); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_AUC_%s%d',subj,label,phase(phi).label,phi)));
+          figure(2); tmpfn=fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_ERP_%s%d',subj,label,phases(phi).label,phi)); fprintf('Saving fig(2) to: %s\n',tmpfn); saveaspdf(tmpfn);
+          figure(3); tmpfn=fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_AUC_%s%d',subj,label,phases(phi).label,phi)); fprintf('Saving fig(3) to: %s\n',tmpfn); saveaspdf(tmpfn);
           end
         end        
 

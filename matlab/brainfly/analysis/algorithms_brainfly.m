@@ -18,21 +18,21 @@ algorithms{1}={'wht_welch' 'spatialfilter','wht'};
 %algorithms{end+1}={'adaptwht3s_predbiasfilt3' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(3)},'predFiltFn',{'robustBiasFilt' s2calls(3)}};
 
 algorithms{end+1}={'adaptwht7s' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(7)}};
-algorithms{end+1}={'adaptwht7s_stdfilt7' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(7)},'featFiltFn',{'stdFilt' s2calls(7)}};
-algorithms{end+1}={'adaptwht7s_biasfilt7' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(7)},'featFiltFn',{'robustBiasFilt' s2calls(7)}};
+%algorithms{end+1}={'adaptwht7s_stdfilt7' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(7)},'featFiltFn',{'stdFilt' s2calls(7)}};
+%algorithms{end+1}={'adaptwht7s_biasfilt7' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(7)},'featFiltFn',{'robustBiasFilt' s2calls(7)}};
 algorithms{end+1}={'adaptwht7s_predbiasfilt7' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(7)},'predFiltFn',{'robustBiasFilt' s2calls(7)}};
-algorithms{end+1}={'adaptwht7s_predbiasfilt30' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(7)},'predFiltFn',{'robustBiasFilt' s2calls(30)}};
-algorithms{end+1}={'adaptwht30s_predbiasfilt7' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(30)},'predFiltFn',{'robustBiasFilt' s2calls(7)}};
+%algorithms{end+1}={'adaptwht7s_predbiasfilt30' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(7)},'predFiltFn',{'robustBiasFilt' s2calls(30)}};
+%algorithms{end+1}={'adaptwht30s_predbiasfilt7' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(30)},'predFiltFn',{'robustBiasFilt' s2calls(7)}};
 
-algorithms{end+1}={'adaptwht7s_predprecfilt30' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(7)},'predFiltFn',{'percentialFilt' s2calls(30)}};
+%algorithms{end+1}={'adaptwht7s_predprecfilt30' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(7)},'predFiltFn',{'percentialFilt' s2calls(30)}};
 algorithms{end+1}={'adaptwht7s_predprecfilt15' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(7)},'predFiltFn',{'percentialFilt' s2calls(15)}};
 
 
-algorithms{end+1}={'adaptwht15s_stdfilt15' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(15)},'featFiltFn',{'stdFilt' s2calls(15)}};
-algorithms{end+1}={'adaptwht15s_predbiasfilt15' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(15)},'predFiltFn',{'robustBiasFilt' s2calls(15)}};
+%algorithms{end+1}={'adaptwht15s_stdfilt15' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(15)},'featFiltFn',{'stdFilt' s2calls(15)}};
+%algorithms{end+1}={'adaptwht15s_predbiasfilt15' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(15)},'predFiltFn',{'robustBiasFilt' s2calls(15)}};
 
 %% algorithms{end+1}={'adaptwht30s_stdfilt30' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(30)},'featFiltFn',{'stdFilt' s2calls(30)}};
-algorithms{end+1}={'adaptwht30s_predbiasfilt30' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(30)},'predFiltFn',{'robustBiasFilt' s2calls(30)}};
+%algorithms{end+1}={'adaptwht30s_predbiasfilt30' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(30)},'predFiltFn',{'robustBiasFilt' s2calls(30)}};
 
 %% algorithms{end+1}={'adaptwht60s' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(60)}};
 %% algorithms{end+1}={'adaptwht60s_stdfilt60' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(60)},'featFiltFn',{'stdFilt' s2calls(60)}};
@@ -44,25 +44,25 @@ algorithms{end+1}={'adaptwht30s_predbiasfilt30' 'spatialfilter','none','adaptspa
 
 %% algorithms{end+1}={'adaptwht600s' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(600)}};
 
-algorithms{end+1}={'wht_biasfilt7' 'spatialfilter','wht','featFiltFn',{'robustBiasFilt' s2calls(60)}};
+%algorithms{end+1}={'wht_biasfilt7' 'spatialfilter','wht','featFiltFn',{'robustBiasFilt' s2calls(60)}};
 
 %% algorithms{end+1}={'wht_stdfilt60' 'spatialfilter','wht','featFiltFn',{'stdFilt' s2calls(60)}};
-algorithms{end+1}={'wht_stdfilt15' 'spatialfilter','wht','featFiltFn',{'stdFilt' s2calls(60)}};
+%algorithms{end+1}={'wht_stdfilt15' 'spatialfilter','wht','featFiltFn',{'stdFilt' s2calls(15)}};
 
-algorithms{end+1}={'wht_stdfilt15_predbiasfilt7' 'spatialfilter','wht','featFiltFn',{'stdFilt' s2calls(300)},'predFiltFn',{'robustBiasFilt' s2calls(60)}};
+%algorithms{end+1}={'wht_stdfilt15_predbiasfilt7' 'spatialfilter','wht','featFiltFn',{'stdFilt' s2calls(15)},'predFiltFn',{'robustBiasFilt' s2calls(7)}};
 
 %% algorithms{end+1}={'wht_stdfilt300_predbiasfilt60' 'spatialfilter','wht','featFiltFn',{'stdFilt' s2calls(300)},'predFiltFn',{'robustBiasFilt' s2calls(60)}};
 %% algorithms{end+1}={'wht_stdfilt30_predbiasfilt30' 'spatialfilter','wht','featFiltFn',{'stdFilt' s2calls(30)},'predFiltFn',{'robustBiasFilt' s2calls(30)}};
 
-algorithms{end+1}={'wht_medwelch_predbiasfilt7s' 'spatialfilter','wht','aveType','medianabs','predFiltFn',{'robustBiasFilt' s2calls(7)}};
+%algorithms{end+1}={'wht_medwelch_predbiasfilt7s' 'spatialfilter','wht','aveType','medianabs','predFiltFn',{'robustBiasFilt' s2calls(7)}};
 
 algorithms{end+1}={'wht_predbiasfilt7s' 'spatialfilter','wht','predFiltFn',{'robustBiasFilt' s2calls(7)}};
-algorithms{end+1}={'wht_predbiasfilt15s' 'spatialfilter','wht','predFiltFn',{'robustBiasFilt' s2calls(15)}};
+%algorithms{end+1}={'wht_predbiasfilt15s' 'spatialfilter','wht','predFiltFn',{'robustBiasFilt' s2calls(15)}};
 algorithms{end+1}={'wht_predbiasfilt30s' 'spatialfilter','wht','predFiltFn',{'robustBiasFilt' s2calls(30)}};
 %% algorithms{end+1}={'wht_predbiasfilt60' 'spatialfilter','wht','predFiltFn',{'robustBiasFilt' s2calls(60)}};
 
 
-algorithms{end+1}={'wht_predpercilt7s' 'spatialfilter','wht','predFiltFn',{'percentialFilt' s2calls(7)}};
+%algorithms{end+1}={'wht_predpercilt7s' 'spatialfilter','wht','predFiltFn',{'percentialFilt' s2calls(7)}};
 algorithms{end+1}={'wht_predpercfilt15s' 'spatialfilter','wht','predFiltFn',{'percentialFilt' s2calls(15)}};
-algorithms{end+1}={'wht_predpercfilt30s' 'spatialfilter','wht','predFiltFn',{'percentialFilt' s2calls(30)}};
+%algorithms{end+1}={'wht_predpercfilt30s' 'spatialfilter','wht','predFiltFn',{'percentialFilt' s2calls(30)}};
 %% algorithms{end+1}={'wht_predbiasfilt60' 'spatialfilter','wht','predFiltFn',{'percentialFilt' s2calls(60)}};
