@@ -50,7 +50,7 @@ opts=struct('endType','end.training','verb',1,'timeOut_ms',1000,...
             'useradaptspatfiltFn','',...
 				'badchrm',0,'badchthresh',3,'capFile',[],'overridechnms',0,...
 				'welch_width_ms',1000,'spect_width_ms',500,'spectBaseline',1,...
-				'noisebands',[45 47 53 55],'noiseBins',[],'noisefracBins',[.2 1],...%[0 1.75],...
+				'noisebands',{{[23 24 26 27] [45 47 53 55] [97 98 102 103]}},'noiseBins',[],'noisefracBins',[.2 1],...%[0 1.75],...
 				'sigProcOptsGui',1,'dataStd',2.5,'drawHead',1);
 opts=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ); buffhost='localhost'; end;
@@ -125,8 +125,8 @@ else
     times=(-ceil((trlen_samp+1)*opts.downsample/fs):0)/opts.downsample;
 end
 freqs=0:1000/opts.welch_width_ms:fs/2;
-freqIdx =getfreqIdx(freqs,opts.freqbands);
-noiseIdx=getfreqIdx(freqs,opts.noisebands);
+freqInd =getfreqInd(freqs,opts.freqbands);
+noiseInd=getfreqInd(freqs,opts.noisebands);
 
 % make the spectral filter
 filt=[]; if ( ~isempty(opts.freqbands)); filt=mkFilter(trlen_samp/2,opts.freqbands,fs/trlen_samp);end
@@ -137,7 +137,7 @@ rawdat    = zeros(sum(iseeg),outsz(1));
 ppdat     = zeros(sum(iseeg),outsz(2));
 % and the spectrogram version
 [ppspect,start_samp,spectFreqs]=spectrogram(rawdat,2,'width_ms',opts.spect_width_ms,'fs',hdr.fsample);
-spectFreqIdx =getfreqIdx(spectFreqs,opts.freqbands);
+spectFreqIdx =getfreqInd(spectFreqs,opts.freqbands);
 ppspect=ppspect(:,spectFreqIdx(1):spectFreqIdx(2),:); % subset to freq range of interest
 start_s=-start_samp(end:-1:1)/hdr.fsample;
 % and the data summary statistics
@@ -263,7 +263,7 @@ while ( ~endTraining )
     pause(1);
     cursamp=status.nSamples;
     if ( ~ishandle(fig) ); break; else continue; end;
-  elseif ( status.nSamples > cursamp+5*fs) % missed a 5 seconds of data
+  elseif ( status.nSamples > cursamp+1*fs) % missed a 1 seconds of data
 	 fprintf('Warning: Cant keep up with the data!\n%d Dropped samples...\n',status.nSamples-update_samp-1-cursamp);
     cursamp=status.nSamples - update_samp-1; % jump to the current time
   end;
@@ -321,8 +321,8 @@ while ( ~endTraining )
       if ( ~isempty(ppopts.freqbands) ) % filter bands given
         filt=mkFilter(trlen_samp/2,ppopts.freqbands,fs/trlen_samp); 
       end
-      freqIdx =getfreqIdx(freqs,ppopts.freqbands);
-		spectFreqIdx=getfreqIdx(spectFreqs,ppopts.freqbands);
+      freqInd =getfreqInd(freqs,ppopts.freqbands);
+		spectFreqIdx=getfreqInd(spectFreqs,ppopts.freqbands);
     end
   end
 
@@ -424,7 +424,7 @@ while ( ~endTraining )
     end    
 
     
-  end
+  end % if 50Hz, offset, noisefrac
   
   %-------------------------------------------------------------------------------------
   % Spectral filter and feature extraction
@@ -443,21 +443,21 @@ while ( ~endTraining )
     
    case 'freq'; % freq-domain  -----------------------------------
     ppdat = welchpsd(ppdat,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'aveType','db');
-    ppdat = ppdat(:,freqIdx(1):freqIdx(2)); % select the target frequencies
+    ppdat = ppdat(:,freqInd); % select the target frequencies
 
    case 'power'; % power in the passed range  -----------------------------------
     ppdat = welchpsd(ppdat,2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'aveType','amp');
-    ppdat = ppdat(:,freqIdx(1):freqIdx(2)); % select the target frequencies
+    ppdat = ppdat(:,freqInd); % select the target frequencies
 	 ppdat = sum(ppdat,2)/size(ppdat,2); % average over all the frequencies
 
    case '50hz'; % 50Hz power, N.B. on the last 2s data only!  -----------------------------------
     ppdat = welchpsd(ppdat(:,find(times>-2,1):end),2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'detrend',1,'aveType','amp');
-    ppdat = sum(ppdat(:,noiseIdx(1):noiseIdx(2)),2)./max(1,(noiseIdx(2)-noiseIdx(1))); % ave power in this range
+    ppdat = sum(ppdat(:,noiseInd),2)./sum(noiseInd); % ave power in this range
     ppdat = 20*log(max(ppdat,1e-12)); % convert to db
 
    case 'noisefrac'; % 50Hz power / total power, last 2s only ---------------------------------------
     ppdat = welchpsd(ppdat(:,find(times>-2,1):end),2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'detrend',1,'aveType','amp');
-    ppdat = sum(ppdat(:,noiseIdx(1):noiseIdx(2)),2)./sum(ppdat,2); % fractional power in 50hz band
+    ppdat = sum(ppdat(:,noiseInd),2)./sum(ppdat,2); % fractional power in 50hz band
     
    case 'spect'; % spectrogram  -----------------------------------
     ppdat = spectrogram(ppdat,2,'width_ms',opts.spect_width_ms,'fs',hdr.fsample);
@@ -510,10 +510,10 @@ while ( ~endTraining )
       for hi=1:size(ppdat,1);
         xlabel(hdls(hi),'freq(hz)');
         ylabel(hdls(hi),'');
-        set(hdls(hi),'xlim',freqs([freqIdx(1) freqIdx(2)]),'ylim',datlim);
+        set(hdls(hi),'xlim',freqs([find(freqInd,1) find(freqInd,1,'last')]),'ylim',datlim);
       end
       set(img_hdls,'visible','off'); % make the colors invisible        
-      set(line_hdls,'xdata',freqs(freqIdx(1):freqIdx(2)),'visible','on');
+      set(line_hdls,'xdata',freqs([find(freqInd,1) find(freqInd,1,'last')]),'visible','on');
       
      case {'50hz','power','offset','noisefrac'}; % 50Hz Power all the same axes -----------------------------------
        if ( strcmpi(curvistype,'50hz') && ~isempty(opts.noiseBins) ) % fix the color range for the 50hz power plots
@@ -615,17 +615,22 @@ while ( ~endTraining )
       set(img_hdls(hi),'cdata',shiftdim(ppdat(hi,:,:)));
     end
   end
-  drawnow;
+  pause(.001); %drawnow;
 end
 % close the options figure as well
 if ( exist('optsFigh') && ishandle(optsFigh) ); close(optsFigh); end;
 drawnow;
 return;
 
-function freqIdx=getfreqIdx(freqs,freqbands)
+function freqInd=getfreqInd(freqs,freqbands)
 if ( nargin<1 || isempty(freqbands) ); freqIdx=[1 numel(freqs)]; return; end;
-[ans,freqIdx(1)]=min(abs(freqs-max(freqs(1),freqbands(1)))); 
-[ans,freqIdx(2)]=min(abs(freqs-min(freqs(end),freqbands(end))));
+if( ~iscell(freqbands) ) freqbands={freqbands}; end;
+freqInd=false(size(freqs));
+for bi=1:numel(freqbands);
+  [ans,lb]=min(abs(freqs-max(freqs(1),freqbands{bi}(1)))); 
+  [ans,ub]=min(abs(freqs-min(freqs(end),freqbands{bi}(end))));
+  freqInd(lb:ub)=true;
+end
 
 %-----------------------
 function testCase();
