@@ -81,6 +81,12 @@ Y  = -ones(size(Y,1),size(Yu,1));
 for ci=1:size(Y,2); Y(idx==ci,ci)=1; end;
 if ( ~opts.zeroLab ); Y(:,all(Yu==0,2))=[]; Yu(all(Yu==0,2),:)=[]; end; % remove zero labelled points
 
+if ( nFold > size(Y,1) );
+  Warning('More folds than datapoints! -- switching to leave-one-out');
+  nFold=size(Y,1);
+end;
+
+
 % deal with special types of call
 
 % #1: independent sub-problems are treated as set of calls
@@ -118,8 +124,6 @@ else
   else
     fSize = sum(Y>0,1)./nFold; % compute per-lab fold size
   end
-
-  if ( nFold > size(Y,1) ); error('More folds than datapoints!'); end;
   
   foldIdxs=genFold(Y(perm,:),nFold,fSize); % generate the first repeat
   foldIdxs(perm,:)=foldIdxs;         % undo perm to, store in orginal order
