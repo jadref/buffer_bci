@@ -513,7 +513,7 @@ while ( ~endTraining )
         set(hdls(hi),'xlim',freqs([find(freqInd,1) find(freqInd,1,'last')]),'ylim',datlim);
       end
       set(img_hdls,'visible','off'); % make the colors invisible        
-      set(line_hdls,'xdata',freqs([find(freqInd,1) find(freqInd,1,'last')]),'visible','on');
+      set(line_hdls,'xdata',freqs(freqInd),'visible','on');
       
      case {'50hz','power','offset','noisefrac'}; % 50Hz Power all the same axes -----------------------------------
        if ( strcmpi(curvistype,'50hz') && ~isempty(opts.noiseBins) ) % fix the color range for the 50hz power plots
