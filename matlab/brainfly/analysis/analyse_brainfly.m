@@ -16,14 +16,14 @@ trlen_ms=750;
 label   ='movement'; % generic label for this slice/analysis type
 makePlots=0; % flag if we should make summary ERP/AUC plots whilst slicing
 analysisType='ersp';  % type of pre-processing / analsysi to do
-nsessions=2;
+nsessions=1;
 
 
 % get the set of algorithms to run
 algorithms_brainfly;
 % list of default arguments to always use
 % N.B. Basicially this is a standard ERSP analysis setup
-default_args={,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[6 8 80 90],'width_ms',250,'aveType','abs'};
+default_args={,'badtrrm',1,'badchrm',1,'detrend',2,'spatialfilter','none','freqband',[6 8 28 30],'width_ms',250,'aveType','abs'};
 
 % summary results storage.  Format is 2-d cell array.  
 % Each row is an algorithm run with 4 columns: {subj session algorithm_label performance}
@@ -84,14 +84,19 @@ for si=1:numel(datasets);
         try; % run in catch so 1 bad alg doesn't stop everything
 
            if( strcmp(lower(analysisType),'ersp') )
-              [clsfr,res]=buffer_train_ersp_clsfr(data,devents,hdr,default_args{:},algorithms{ai}{2:end},'visualize',0);
+              [clsfr,res]=buffer_train_ersp_clsfr(data,devents,hdr,default_args{:},algorithms{ai}{2:end},'visualize',makePlots);
            elseif( strcmp(lower(analysisType),'erp') )
-              [clsfr,res]=buffer_train_erp_clsfr(data,devents,hdr,default_args{:},algorithms{ai}{2:end},'visualize',0);
+              [clsfr,res]=buffer_train_erp_clsfr(data,devents,hdr,default_args{:},algorithms{ai}{2:end},'visualize',makePlots);
            else
               error('Unrecognised analysis type: %s',analysisType)
            end% save the summary results
            results(end+1,:)={subj saveDir alg res.opt.tst};
            fprintf('%d) %s %s %s = %f\n',ai,results{end,:});
+
+          if( makePlots )
+            figure(2); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_%s_ERP%s',subj,label,alg,postfix)));
+            figure(3); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_%s_AUC%s',subj,label,alg,postfix)));
+          end
 
         catch;
            err=lasterror, err.message, err.stack(1)
@@ -105,20 +110,6 @@ for si=1:numel(datasets);
      fprintf('Saving results to : %s\n',resultsfn);
      save(resultsfn,'results');   
      fid=fopen([resultsfn '.txt'],'w'); rr=results'; fprintf(fid,'%8s,\t%30s,\t%40s,\t%4.2f\n',rr{:}); fclose(fid);
-
-
-     % ----------- generate summary plots ------------------
-     if( makePlots ) 
-        % also make summary plots
-        if( strcmp(lower(analysisType),'ersp') )
-           [clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[6 8 80 90],'width_ms',250,'aveType','abs','classify',0,'visualize',1);
-        elseif( strcmp(lower(analysisType),'erp') )
-           [clsfr,res,X,Y]=buffer_train_erp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[.1 .5 12 14],'classify',0,'visualize',1);
-        end
-        % save plots
-        figure(1); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_%s',subj,label,analysisType)));
-        figure(2); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_%s_AUC',subj,label,analysisType)));
-     end
   end % sessions
 end % subjects
 % show the final results set

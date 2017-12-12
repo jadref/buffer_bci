@@ -17,18 +17,34 @@ datasets{3}={'f3'
              '0512Tue/0929AM/raw_buffer/0001'
             };
 datasets{4}={'f4'
-             '0612Wed/0642AM/raw_buffer/0001'
-             '0612Wed/0824AM/raw_buffer/0001'             
-             '0612Wed/1259PM/raw_buffer/0001'
-            };
-datasets{5}={'f5'
              '171206/0710AM/raw_buffer/0001'
              '171206/0828AM/raw_buffer/0001'             
              '171206/1257PM/raw_buffer/0001'
             };
-datasets{6}={'f6'
+datasets{5}={'f5'
              '0612Wed/0653AM/raw_buffer/0001'
              '0612Wed/1259PM/raw_buffer/0001'
+            };
+datasets{6}={'f6'
+             '0612Wed/0642AM/raw_buffer/0001'
+             '0612Wed/0824AM/raw_buffer/0001'             
+             '0612Wed/1259PM/raw_buffer/0001'
+            };
+datasets{7}={'f7'
+             '171207/0652AM/raw_buffer/0001'
+             '171207/0751AM/raw_buffer/0001'             
+             '171207/0926AM/raw_buffer/0001'
+            };
+datasets{8}={'f8'
+             '0712Thu/0715AM/raw_buffer/0001'
+             '0712Thu/0929AM/raw_buffer/0001'             
+             '0712Thu/0959AM/raw_buffer/0001'
+             '0712Thu/1046AM/raw_buffer/0001'             
+            };
+datasets{9}={'f9'
+             '0712Thu/0652AM/raw_buffer/0001'
+             '0712Thu/0751AM/raw_buffer/0001'
+             '0712Thu/0924AM/raw_buffer/0001'
             };
 % example to add new subject datasets
 %datasets{end+1}={'s2' }

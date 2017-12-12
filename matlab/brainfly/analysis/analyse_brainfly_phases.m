@@ -14,11 +14,11 @@ else
 end
 trlen_ms=750;
 label   ='movement_phases'; % generic label for this slice/analysis type
-makePlots=0; % flag if we should make summary ERP/AUC plots whilst slicing
+makePlots=1; % flag if we should make summary ERP/AUC plots whilst slicing
 analysisType='ersp';  % type of pre-processing / analsysi to do
-nsessions=2;
+nsessions = 3;
 trnPhases = {'calibrate' 'contfeedback'};
-ntrn      = 2;
+ntrn      = 3;
 postfix   = sprintf('%s_trn%d',postfix,ntrn);
 
 
@@ -26,7 +26,7 @@ postfix   = sprintf('%s_trn%d',postfix,ntrn);
 algorithms_brainfly;
 % list of default arguments to always use
 % N.B. Basicially this is a standard ERSP analysis setup
-default_args={,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[6 8 80 90],'width_ms',250,'aveType','abs'};
+default_args={,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[6 8 28 30],'width_ms',250,'aveType','abs'};
 
 % summary results storage.  Format is 2-d cell array.  
 % Each row is an algorithm run with 4 columns: {subj session algorithm_label performance}
@@ -43,12 +43,13 @@ end
 
 % run the given analysis
 si=1; sessi=3;
-for si=1:numel(datasets);
+for si=4:numel(datasets);
    if ( isempty(datasets{si}) ) continue; end;
   subj   =datasets{si}{1};
   for sessi=1:nsessions:numel(datasets{si})-1;
     allphases={};
     for ssi=1:nsessions;
+      if( sessi+ssi > numel(datasets{si}) ) break; end;
      session=datasets{si}{sessi+ssi};
      saveDir=session;
      if(~isempty(stripFrom))
@@ -92,20 +93,24 @@ for si=1:numel(datasets);
           if( ~any(calphasei) )
             calphasei=1;
           else
-            calphasei=find(calphasei); calphasei=calphasei(1:ntrn);
+            calphasei=find(calphasei); calphasei=calphasei(1:min(end,ntrn));
           end
           calphase=phases(calphasei);
           data=cat(1,phases(calphasei).data);
           devents=cat(1,phases(calphasei).devents);
           fprintf('Training on: %s,  %d events\n',phases(calphasei(1)).label,numel(devents));
           if( strcmp(lower(analysisType),'ersp') )
-              [clsfr,res]=buffer_train_ersp_clsfr(data,devents,hdr,default_args{:},algorithms{ai}{2:end},'visualize',0);
+              [clsfr,res]=buffer_train_ersp_clsfr(data,devents,hdr,default_args{:},algorithms{ai}{2:end},'visualize',makePlots);
            elseif( strcmp(lower(analysisType),'erp') )
-              [clsfr,res]=buffer_train_erp_clsfr(data,devents,hdr,default_args{:},algorithms{ai}{2:end},'visualize',0);
+              [clsfr,res]=buffer_train_erp_clsfr(data,devents,hdr,default_args{:},algorithms{ai}{2:end},'visualize',makePlots);
            else
               error('Unrecognised analysis type: %s',analysisType)
-           end% save the summary results
-
+          end% save the summary results
+          if( makePlots )
+                    figure(2); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_%s_ERP%s',subj,label,alg,postfix)));
+                    figure(3); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_%s_AUC%s',subj,label,alg,postfix)));
+          end
+          
                                 % test on the other phases
            aucphase=[]; tstphase=[];
            for phasei=[1:numel(phases)];
@@ -160,19 +165,6 @@ for si=1:numel(datasets);
      end
      fclose(fid);
 
-
-     % ----------- generate summary plots ------------------
-     if( makePlots ) 
-        % also make summary plots
-        if( strcmp(lower(analysisType),'ersp') )
-           [clsfr,res,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[6 8 80 90],'width_ms',250,'aveType','abs','classify',0,'visualize',1);
-        elseif( strcmp(lower(analysisType),'erp') )
-           [clsfr,res,X,Y]=buffer_train_erp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','none','freqband',[.1 .5 12 14],'classify',0,'visualize',1);
-        end
-        % save plots
-        figure(1); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_%s',subj,label,analysisType)));
-        figure(2); saveaspdf(fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_%s_AUC',subj,label,analysisType)));
-     end
   end % sessions
 end % subjects
 % show the final results set

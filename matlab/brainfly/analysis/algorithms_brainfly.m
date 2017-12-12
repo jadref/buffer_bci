@@ -25,7 +25,7 @@ algorithms{end+1}={'adaptwht7s_predbiasfilt7' 'spatialfilter','none','adaptspati
 %algorithms{end+1}={'adaptwht30s_predbiasfilt7' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(30)},'predFiltFn',{'robustBiasFilt' s2calls(7)}};
 
 %algorithms{end+1}={'adaptwht7s_predprecfilt30' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(7)},'predFiltFn',{'percentialFilt' s2calls(30)}};
-algorithms{end+1}={'adaptwht7s_predprecfilt15' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(7)},'predFiltFn',{'percentialFilt' s2calls(15)}};
+%algorithms{end+1}={'adaptwht7s_predprecfilt15' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(7)},'predFiltFn',{'percentialFilt' s2calls(15)}};
 
 
 %algorithms{end+1}={'adaptwht15s_stdfilt15' 'spatialfilter','none','adaptspatialfiltFn',{'adaptWhitenFilt','covFilt',s2samp(15)},'featFiltFn',{'stdFilt' s2calls(15)}};
@@ -58,11 +58,11 @@ algorithms{end+1}={'adaptwht7s_predprecfilt15' 'spatialfilter','none','adaptspat
 
 algorithms{end+1}={'wht_predbiasfilt7s' 'spatialfilter','wht','predFiltFn',{'robustBiasFilt' s2calls(7)}};
 %algorithms{end+1}={'wht_predbiasfilt15s' 'spatialfilter','wht','predFiltFn',{'robustBiasFilt' s2calls(15)}};
-algorithms{end+1}={'wht_predbiasfilt30s' 'spatialfilter','wht','predFiltFn',{'robustBiasFilt' s2calls(30)}};
+%algorithms{end+1}={'wht_predbiasfilt30s' 'spatialfilter','wht','predFiltFn',{'robustBiasFilt' s2calls(30)}};
 %% algorithms{end+1}={'wht_predbiasfilt60' 'spatialfilter','wht','predFiltFn',{'robustBiasFilt' s2calls(60)}};
 
 
 %algorithms{end+1}={'wht_predpercilt7s' 'spatialfilter','wht','predFiltFn',{'percentialFilt' s2calls(7)}};
-algorithms{end+1}={'wht_predpercfilt15s' 'spatialfilter','wht','predFiltFn',{'percentialFilt' s2calls(15)}};
+%algorithms{end+1}={'wht_predpercfilt15s' 'spatialfilter','wht','predFiltFn',{'percentialFilt' s2calls(15)}};
 %algorithms{end+1}={'wht_predpercfilt30s' 'spatialfilter','wht','predFiltFn',{'percentialFilt' s2calls(30)}};
 %% algorithms{end+1}={'wht_predbiasfilt60' 'spatialfilter','wht','predFiltFn',{'percentialFilt' s2calls(60)}};
