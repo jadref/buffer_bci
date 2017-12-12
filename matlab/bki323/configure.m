@@ -131,7 +131,6 @@ trainOpts={'width_ms',welch_width_ms,'badtrrm',1,'badchrm',1,'spatialfilter','wh
 % Epoch feedback opts
 %%0) Use exactly the same classification window for feedback as for training, but include bias adaption system to cope with train->test transfer
 earlyStopping = false;
-epochFeedbackOpts={'trlen_ms',epochtrlen_ms,'predFilt',@(x,s,e) biasFilt(x,s,epochtrialAdaptHL)}; % bias-adaption
-
+epochFeedbackOpts={'trlen_ms',epochtrlen_ms,'predFilt',@(x,s,e) robustBiasFilt(x,s,epochtrialAdaptHL)}; % bias-adaption
 %%2) Classify every welch-window-width (default 250ms), prediction is average of full trials worth of data, bias adaptation on the result
 contFeedbackOpts ={'rawpredEventType','classifier.rawprediction','predFilt',@(x,s,e) robustBiasFilt(x,s,[conttrialAdaptHL contFeedbackFiltLen]),'trlen_ms',welch_width_ms};%trlDuration average
