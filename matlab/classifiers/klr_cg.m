@@ -59,7 +59,7 @@ opts=struct('alphab',[],'dim',[],'mu',[],'Jconst',0,...
 opts.ridge=opts.ridge(:);
 if ( isempty(opts.maxEval) ) opts.maxEval=5*sum(Y(:)~=0); end
 % Ensure all inputs have a consistent precision
-if(isa(K,'double') & isa(Y,'single') ) Y=double(Y); end;
+if(isa(K,'double') && isa(Y,'single') ) Y=double(Y); end;
 if(isa(K,'single')) eps=1e-7; else eps=1e-16; end;
 opts.tol=max(opts.tol,eps); % gradient magnitude tolerence
 
@@ -258,7 +258,7 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
 
       % convergence test, and numerical res test
       if(iter>1|j>3) % Ensure we do decent line search for 1st step size!
-         if ( abs(dtdJ) < opts.lstol0*abs(dtdJ0) | ... % Wolfe 2, gradient enough smaller
+         if ( abs(dtdJ) < opts.lstol0*abs(dtdJ0) || ... % Wolfe 2, gradient enough smaller
               abs(dtdJ*step) <= opts.tol )              % numerical resolution
             break;
          end
@@ -266,8 +266,8 @@ for iter=1:min(opts.maxIter,2e6);  % stop some matlab versions complaining about
       
       % now compute the new step size
       % backeting check, so it always decreases
-      if ( oodtdJ*odtdJ < 0 & odtdJ*dtdJ > 0 ...      % oodtdJ still brackets
-           & abs(step*dtdJ) > abs(odtdJ-dtdJ)*(abs(ostep+step)) ) % would jump outside 
+      if ( oodtdJ*odtdJ < 0 && odtdJ*dtdJ > 0 ...      % oodtdJ still brackets
+           && abs(step*dtdJ) > abs(odtdJ-dtdJ)*(abs(ostep+step)) ) % would jump outside 
         step = ostep + step; % make as if we jumped here directly.
         % but prev points gradient, this is necessary stop very steep orginal gradient preventing decent step sizes
         odtdJ = -sign(odtdJ)*sqrt(abs(odtdJ))*sqrt(abs(oodtdJ)); % geometric mean
