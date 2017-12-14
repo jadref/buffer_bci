@@ -47,7 +47,7 @@ function [classifier,res,Y]=cvtrainLinearClassifier(X,Y,Cs,fIdxs,varargin)
 %
 % See also: cvtrainFn, cv2trainFn, lr_cg, klr_cg, l2svm_cg, rls_cg
 opts=struct('objFn','lr_cg','dim',-1,'spType','1vR','spKey',[],'spMx',[],'zeroLab',0,...
-            'balYs',0,'verb',0,'Cscale',[],'compKernel',0,'binsp',1,'rawdv',0,'cv2',0);
+            'balYs',0,'verb',0,'Cscale',[],'compKernel',[],'binsp',1,'rawdv',0,'cv2',0);
 [opts,varargin]=parseOpts(opts,varargin);
 if( nargin < 3 ) Cs=[]; end;
 if( nargin < 4 || isempty(fIdxs) ) fIdxs=10; end;
@@ -105,7 +105,15 @@ elseif ( isequal(Cscale,'l1') )                 Cscale=sqrt(CscaleEst(X,2,[],0))
 end
 if ( isempty(Cs) ) Cs=[5.^(3:-1:-3)]; end;
 
-% compute the kernel if needed for kernel methods
+                            % compute the kernel if needed for kernel methods
+if ( isempty(opts.compKernel) )
+                          % Guess if we need to do the kernel computation....
+  if( any(strcmpi(opts.objFn,{'l2svm_cg','l1svm_cg','l2svm','klr_cg','rkls_cg'})))
+    opts.compKernel = 1 ;
+  else
+    opts.compKernel=0;
+  end
+end
 if ( ~isempty(opts.compKernel) && ~isequal(opts.compKernel,0) ) 
    % compute kernel
    if ( opts.verb>0 ) fprintf('CompKernel..');  end;
