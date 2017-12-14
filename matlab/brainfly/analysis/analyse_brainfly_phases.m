@@ -70,6 +70,7 @@ for si=4:numel(datasets);
      fprintf('Loaded %d phases\n',numel(phases));
     end
     phases=cat(2,allphases{:});
+    if( isempty(phases) ) continue; end;
 
      % run the set of algorithms to test
      for ai=1:numel(algorithms)

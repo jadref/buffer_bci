@@ -1,6 +1,5 @@
 % experiment name / directory
 expt='own_experiments/motor_imagery/brainfly';
-expt='BrainFly/BF';
 stripFrom='raw_buffer'; % when saving ignore after this string in dataset directory
 
 % dataset format: cell-array of cell-arrays.  1 sub-cell array per subject.  First entry is subject ID, rest of the entries are the subject sessions.

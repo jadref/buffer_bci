@@ -41,7 +41,7 @@ for si=1:numel(datasets);
      sessdir=fullfile(dataRootDir,expt,subj,session);
      savefn = fullfile(dataRootDir,expt,subj,saveDir,sprintf('%s_%s_sliced',subj,label));
      fprintf('Trying : %s\n',sessdir);
-     if ( ~exist(sessdir,'file') ) fprintf('Dir not found, Skipped\n'); continue; end;
+     if ( ~exist(sessdir,'dir') ) fprintf('Dir not found, Skipped\n'); continue; end;
          
      
      % do the actual slicing now
