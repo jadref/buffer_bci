@@ -16,7 +16,11 @@
 %  2) run it -- possibly changing the analysis pipeline if you want
 %  3) Collect the results to perform your statistical tests.
 %
-% Note: This script only computes classifier performances.  If you wish to compute a direct signal strength (e.g. ERD strength), then you should modify it to extract the preprocessed data (which is in [channels x frequencies x trials] format and stored in the variable Xpp.  This is generated and returned when looping over the phases around line 101 below.
+% Note: This script only computes classifier performances.  If you wish to
+% compute a direct signal strength (e.g. ERD strength), then you should
+% modify it to extract the preprocessed data (which is in [channels x
+% frequencies x trials] format and stored in the variable Xpp.  This is
+% generated and returned when looping over the phases around line 101 below.
 
                            % setup the paths for the other analysis functions
 run ../utilities/initPaths
@@ -24,19 +28,33 @@ run ../utilities/initPaths
 % experiment config parameters, analysis configuration parameters
 trlen_ms=750;  % length of 1 anaysis period.  This is correct for the BKI323 experiment
 makePlots=0; % flag if we should make summary ERP/AUC plots
+capFile  ='cap_tmsi_mobita_im'; % the file which says where the electrodes are on the head
+overridechnms = 1 ; % flag to say to trust the capFile information rather than the save info
+
 
 % First is the experiment  root directory where all data is stored below --
 % this points to the root directory where within which all the subject
 % specific data directories lie.
 rootdir='bki323';
 
-%Then there is a list of nested cell-array of cell-arrays.  Each entry corrosponds to a different subject.  Within this each entry consists firstly of the subject directoryname, and then a series of sub-directory names where the data for this subject can be found.
-% This information is used in combination to find the directory where the data for each subject for each session exists.
-% E.G. for subject S1, whos 1st session data is in the sub-directory `20171106/1345/raw_buffer/0001` and 2nd session is in directory `20171113/1345/raw_buffer/0001`  we would have:
-%  datasets{1} = {'s1' '20171106/1345/raw_buffer/0001' 20171106/1345/raw_buffer/0001'}
-% You will need to modify this information to reflect the directory structure you have used in your experiment.
+%Then there is a list of nested cell-array of cell-arrays.  Each entry
+%corrosponds to a different subject.  Within this each entry consists firstly
+%of the subject directoryname, and then a series of sub-directory names where
+%the data for this subject can be found.
+%This information is used in combination to find the directory where the data
+%for each subject for each session exists.
+% E.G. for subject S1, whos 1st session data is in the sub-directory
+% `20171106/1345/raw_buffer/0001` and 2nd session is in directory
+% `20171113/1345/raw_buffer/0001` we would have:
+%  datasets{1} = {'s1'
+%                 '20171106/1345/raw_buffer/0001'
+%                 '20171106/1345/raw_buffer/0001'}
+% N.B. put the different sessions on different lines othersise you may get a
+% matrix size error You will need to modify this information to reflect the
+% directory structure you have used in your experiment.
 
-% dataset format: cell-array of cell-arrays.  1 sub-cell array per subject.  First entry is subject ID, rest of the entries are the subject sessions.
+% dataset format: cell-array of cell-arrays.  1 sub-cell array per subject.
+% First entry is subject ID, rest of the entries are the subject sessions.
 
 % Change these to reflect the directory struture you have used!
 datasets{1}={'s1' % first subject directory
@@ -64,13 +82,16 @@ for si=1:numel(datasets); % loop over data-sets = subjects  to process
               
 % 1) Slice the data into 'trials' grouped by the phases that the experiment was run in.
 % to get help on what is computed used : help slicePhases
-% Basically; this returns an array of structures, 1 element for each phase.  For each phase this tructure contains the data and trigger events from that phase.  This can then be used to train a classifier or analyssi the data..
-     [phases,hdr,allevents]=slicePhases(sessdir,'phaseStart',{{'calibrate' 'epochfeedback' 'contfeedback'} 'start'},'startSet',{'stimulus.target'},'trlen_ms',trlen_ms);
+% Basically; this returns an array of structures, 1 element for each phase.
+% For each phase this tructure contains the data and trigger events from that
+% phase.  This can then be used to train a classifier or analyssi the data..
+     [phases,hdr,allevents]=
+     slicePhases(sessdir,'phaseStart',{{'calibrate' 'epochfeedback' 'contfeedback'} 'start'},'startSet',{'stimulus.target'},'trlen_ms',trlen_ms);
      if( isempty(phases) )
        fprintf('Warning: no phases found in : %s...\n SKIPPING\n',sessdir);
        continue;
      end
-                                % save the sliced data     
+                                % save the sliced data
      fprintf('Saving %d phases to: %s',numel(phases),savefn);
      save(savefn,'phases','hdr','allevents');
      fprintf('done.\n');
@@ -90,7 +111,7 @@ for si=1:numel(datasets); % loop over data-sets = subjects  to process
 % Feel free to change these settings if you want to try different training options
 %
      % N.B. pre-processed calibration phase data is output here!
-     [clsfr,res,Xpp,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','wht','freqband',[6 8 28 30],'width_ms',250,'aveType','abs','visualize',makePlots);     
+     [clsfr,res,Xpp,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'capFile',capFile,'overridechnms',overridechnms,'badtrrm',0,'badchrm',0,'detrend',2,'spatialfilter','wht','freqband',[6 8 28 30],'width_ms',250,'aveType','abs','visualize',makePlots);     
 
 
      if( makePlots ) % save a copy of the visualization plots if wanted
@@ -150,11 +171,12 @@ end % subjects
 savefn = fullfile(rootdir,sprintf('results'));
 save(savefn,'results');
 
-% log summary results to screen
+                                % log summary results to screen
 for ri=1:size(results,1);
   fprintf('%s %s\n',results{ri,1},results{ri,2});
+  fprintf('       %30s = tstbin (tstauc)\n','session');
   for pi=3:3:size(results,2);
-    fprintf('       %30s = %4.2f\n',results{ri,pi},results{ri,pi+1});
+    fprintf('       %30s = %4.2f  (%4.2f)\n',results{ri,pi},results{ri,pi+1},results{ri,pi+2});
   end
   fprintf('\n\n');
 end
