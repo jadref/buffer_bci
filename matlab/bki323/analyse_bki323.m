@@ -36,6 +36,7 @@ overridechnms = 1 ; % flag to say to trust the capFile information rather than t
 % this points to the root directory where within which all the subject
 % specific data directories lie.
 rootdir='bki323';
+rootdir='C:\output';
 
 %Then there is a list of nested cell-array of cell-arrays.  Each entry
 %corrosponds to a different subject.  Within this each entry consists firstly
@@ -57,7 +58,8 @@ rootdir='bki323';
 % First entry is subject ID, rest of the entries are the subject sessions.
 
 % Change these to reflect the directory struture you have used!
-datasets{1}={'s1' % first subject directory
+datasets{1}={'test' % first subject directory
+             '1208do\1459\raw_buffer\0001'
              '20171116/0224PM/raw_buffer/0001' % session 1 directory
             };                                
 datasets{2}={'s2' % second subject directory
@@ -85,8 +87,7 @@ for si=1:numel(datasets); % loop over data-sets = subjects  to process
 % Basically; this returns an array of structures, 1 element for each phase.
 % For each phase this tructure contains the data and trigger events from that
 % phase.  This can then be used to train a classifier or analyssi the data..
-     [phases,hdr,allevents]=
-     slicePhases(sessdir,'phaseStart',{{'calibrate' 'epochfeedback' 'contfeedback'} 'start'},'startSet',{'stimulus.target'},'trlen_ms',trlen_ms);
+     [phases,hdr,allevents]=slicePhases(sessdir,'phaseStart',{{'calibrate' 'epochfeedback' 'contfeedback'} 'start'},'startSet',{'stimulus.target'},'trlen_ms',trlen_ms);
      if( isempty(phases) )
        fprintf('Warning: no phases found in : %s...\n SKIPPING\n',sessdir);
        continue;
@@ -134,11 +135,15 @@ for si=1:numel(datasets); % loop over data-sets = subjects  to process
        [f,fraw,p,Xpp,clsfr] = buffer_apply_clsfr(phases(phasei).data,clsfr); % predictions
        %map events->clsfr targets, so can compute performance
        y = lab2ind({phases(phasei).devents.value},clsfr.spKey,clsfr.spMx);
+       if( ndims(y)>2 ) y=shiftdim(y,1); end;
        % Compute performance information
        conf    = dv2conf(y,f);          % confusion matrix
        tst     = conf2loss(conf,'bal'); % binary performance
-       auc     = dv2auc(y,f);           % auc -scorce
-
+       auc=[];
+       if( numel(clsfr.spKey)<3 ) 
+           auc     = dv2auc(y,f);           % auc-score (only if binary)
+       end
+           
                                 % log the performance information:
        if(any(phasei==calphasei)) % Training phase, mark with T yo indicate this in the log
          fprintf('%20s:%2.0f(%2.0f)T \n',phases(phasei).label,tst*100,auc*100); 
