@@ -36,15 +36,15 @@ datadir='example_data'
 capFile='1010'; % you should change this to represent whatever cap layout was used in your experiment
 
 % 2.1) get some help on the options when training the classifier
-help buffer_train_erp_clsfr
-help train_erp_clsfr
+%help buffer_train_erp_clsfr
+%help train_erp_clsfr
 % 2.3) Actually train an ERP classifier with sensible default settings, and a given frequency range
 [clsfr,res,X,Y]=buffer_train_erp_clsfr(data,devents,hdr,'freqband',[.1 .5 10 12],'capFile',capFile,'overridechnms',1);
 % N.B. res.opt.tstf contains the cross validated predictions for the training data.
 %  Thus, the training set performance could be computed as
 if ( isnumeric(Y) ) % only if Y is numeric
   tstf=res.opt.tstf;
-  fprintf('Clsfr perf = %g\n',sum(sign(tstf)==Y)./numel(tstf))
+  fprintf('Clsfr perf = %g\n',(sum(tstf(Y==clsfr.spKey(1))>0)+sum(tstf(Y==clsfr.spKey(2))<0))./numel(tstf))
 end
 
 % 2.5) train a ERsP (induced) classifier on this data.
@@ -55,7 +55,7 @@ capFile='1010'; % you should change this to represent whatever cap layout was us
 %  Thus, the training set performance could be computed as
 if ( isnumeric(Y) ) % only if Y is numeric
   tstf=res.opt.tstf;
-  fprintf('Clsfr perf = %g\n',sum(sign(tstf)==Y)./numel(tstf))
+  fprintf('Clsfr perf = %g\n',(sum(tstf(Y==clsfr.spKey(1))>0)+sum(tstf(Y==clsfr.spKey(2))<0))./numel(tstf))
 end
 
 % This analysis should generate two summary figures:
@@ -86,13 +86,14 @@ end
 % N.B. X now contains the pre-processed data which can be used for other purposes, e.g. making better plots.
 
 % 3) apply this classifier to the same data (or new data)
-[f]      =buffer_apply_clsfr(data,clsfr);  % f contains the classifier decision values
+% Note: as this is the same data the classifier is trained on this gives an unreasonably
+%       high performance estimate -- it's the training performance!
+f    = buffer_apply_clsfr(data,clsfr);  % f contains the classifier decision values
 
 %4) Evaluate performance on this data set
-y = lab2ind({d.devents.value},clsfr.spKey,clsfr.spMx); % map events->clsfr targets
+y    = lab2ind(cat(1,devents.value),clsfr.spKey,clsfr.spMx); % map events->clsfr targets
 conf = dv2conf(y,f);          % confusion matrix
 perf = conf2loss(conf,'bal'); % performance
-
 
 % visualise the classifier output
 %figure(3);clf;plot([Y*10 f]);legend('true *10','prediction');
