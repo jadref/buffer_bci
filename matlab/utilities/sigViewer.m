@@ -137,8 +137,8 @@ rawdat    = zeros(sum(iseeg),outsz(1));
 ppdat     = zeros(sum(iseeg),outsz(2));
 % and the spectrogram version
 [ppspect,start_samp,spectFreqs]=spectrogram(rawdat,2,'width_ms',opts.spect_width_ms,'fs',hdr.fsample);
-spectFreqIdx =getfreqInd(spectFreqs,opts.freqbands);
-ppspect=ppspect(:,spectFreqIdx(1):spectFreqIdx(2),:); % subset to freq range of interest
+spectFreqInd =getfreqInd(spectFreqs,opts.freqbands);
+ppspect=ppspect(:,spectFreqInd,:); % subset to freq range of interest
 start_s=-start_samp(end:-1:1)/hdr.fsample;
 % and the data summary statistics
 chPow     = zeros(sum(iseeg),1);
@@ -169,7 +169,7 @@ plotPos=ch_pos; if ( ~isempty(plotPos) ); plotPos=plotPos(:,iseeg); end;
 % add number prefix to ch-names for display
 plot_nms={}; for ci=1:numel(ch_names); plot_nms{ci} = sprintf('%d %s',ci,ch_names{ci}); end;plot_nms=plot_nms(iseeg);
 
-hdls=image3d(ppspect,1,'plotPos',plotPos,'Xvals',plot_nms,'yvals',spectFreqs(spectFreqIdx(1):spectFreqIdx(2)),'ylabel','freq (hz)','zvals',start_s,'zlabel','time (s)','disptype','imaget','colorbar',1,'ticklabs','sw','legend',0,'plotPosOpts.plotsposition',[.05 .08 .91 .85]);
+hdls=image3d(ppspect,1,'plotPos',plotPos,'Xvals',plot_nms,'yvals',spectFreqs(spectFreqInd),'ylabel','freq (hz)','zvals',start_s,'zlabel','time (s)','disptype','imaget','colorbar',1,'ticklabs','sw','legend',0,'plotPosOpts.plotsposition',[.05 .08 .91 .85]);
 cbarhdl=[]; 
 if ( strcmpi(get(hdls(end),'Tag'),'colorbar') ) 
   cbarhdl=hdls(end); hdls(end)=[]; cbarpos=get(cbarhdl,'position');
@@ -322,7 +322,7 @@ while ( ~endTraining )
         filt=mkFilter(trlen_samp/2,ppopts.freqbands,fs/trlen_samp); 
       end
       freqInd =getfreqInd(freqs,ppopts.freqbands);
-		spectFreqIdx=getfreqInd(spectFreqs,ppopts.freqbands);
+		spectFreqInd=getfreqInd(spectFreqs,ppopts.freqbands);
     end
   end
 
@@ -461,7 +461,7 @@ while ( ~endTraining )
     
    case 'spect'; % spectrogram  -----------------------------------
     ppdat = spectrogram(ppdat,2,'width_ms',opts.spect_width_ms,'fs',hdr.fsample);
-    ppdat = ppdat(:,spectFreqIdx(1):spectFreqIdx(2),:);    
+    ppdat = ppdat(:,spectFreqInd,:);    
     % subtract the 'common-average' spectrum
     if ( opts.spectBaseline ); ppdat=repop(ppdat,'-',mean(mean(ppdat,3),1)); end
 
@@ -545,12 +545,12 @@ while ( ~endTraining )
       
      case 'spect'; % spectrogram -----------------------------------
       set(hdls,'xlim',start_s([1 end]),...
-			      'ylim',spectFreqs([spectFreqIdx(1) spectFreqIdx(2)]),...
+			      'ylim',spectFreqs([find(spectFreqInd,1) find(spectFreqInd,1,'last')]),...
 			      'clim',datlim); % all the same axes
       set(line_hdls,'visible','off');
       % make the color images visible, in the right place with the right axes positions
       set(img_hdls,'xdata',start_s([1 end]),...
-   			       'ydata',spectFreqs([spectFreqIdx(1) spectFreqIdx(2)]),...
+   			       'ydata',spectFreqs([find(spectFreqInd,1) find(spectFreqInd,1,'last')]),...
 			          'visible','on');      
       for hi=1:numel(hdls); xlabel(hdls(hi),'time (s)'); ylabel(hdls(hi),'freq (hz)');end;
       if ( ~isempty(cbarhdl) ) 
