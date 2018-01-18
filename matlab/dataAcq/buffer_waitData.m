@@ -276,7 +276,11 @@ while( ~exitEvent )
         if ( opts.verb>0 ) fprintf('%d) saving event: %s\n',nsamples,ev2str(pending.events(ei))); end
         dat=[];
         if ( pending.bgns(ei)<pending.ends(ei) ) % only get dat if want data
-          dat=buffer('get_dat',[pending.bgns(ei) pending.ends(ei)-1],host,port);
+          try
+            dat=buffer('get_dat',[pending.bgns(ei) pending.ends(ei)-1],host,port);
+          catch
+            warning('Missed data!!!!!!!!!!');            
+          end
         end
         if ( isempty(data) )
           data   =dat;
