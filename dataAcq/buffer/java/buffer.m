@@ -230,17 +230,21 @@ end
 function [bufClient,host,port]=reconnect(host,port)
 global bufferClient;
 clientIdx=[];
-if ( isempty(host) && isempty(port) ) % use first existing connection or defaults
-  host='localhost'; port=1972;
-  if ( ~isempty(bufferClient) ) clientIdx=1; end;
-else % search for matching client connection
-  for bi=1:numel(bufferClient);
-    try; buffhost=bufferClient{bi}.getHost(); catch; buffhost=[]; end;
-    try; buffport=bufferClient{bi}.getPort(); catch; buffport=1972; end;
-    if ( (isempty(host) || isempty(buffhost) || strcmp(host,buffhost)) ...
-         && (isempty(port) || port==buffport) ) 
-      clientIdx=bi; break; % found a match
-    end;
+if( isempty(bufferClient) )
+  if( isempty(host) ) host='localhost' end;
+  if( isempty(port) ) port=1972; end;
+else % search for matching client connection  
+  if ( isempty(host) && isempty(port) ) % use first existing connection or defaults
+    clientIdx=1;
+  else % match client
+    for bi=1:numel(bufferClient);
+      try; buffhost=bufferClient{bi}.getHost(); catch; buffhost=[]; end;
+      try; buffport=bufferClient{bi}.getPort(); catch; buffport=1972; end;
+      if ( (isempty(host) || isempty(buffhost) || strcmp(host,buffhost)) ...
+           && (isempty(port) || port==buffport) ) 
+        clientIdx=bi; break; % found a match
+      end;
+    end
   end
 end
 if ( isempty(clientIdx) ) % make a new connection
