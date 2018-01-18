@@ -196,11 +196,16 @@ while( ~exitEvent )
 
   % scan the new events for ones we are interested in
   if ( status.nevents>nevents ) % new events to process
-    if ( nevents < status.nevents-50 ) 
+    try % guard against old events drapped from the buffer
+      events=buffer('get_evt',[nevents status.nevents-1],host,port); 
+    catch
       warning(sprintf('Potentially lost %d events due to long gap between calls!',status.nevents-50-nevents));
-      nevents=status.nevents-50;
+      nevents=max(nevents,status.nevents-50);
+      events=buffer('get_evt',[nevents status.nevents-1],host,port);
     end
-    events=buffer('get_evt',[nevents status.nevents-1],host,port);   
+    if( numel(events) < status.nevents-1-nevents )
+       warning(sprintf('Missing %d events!',status.nevents-nevents));      
+    end
     events=events(:);% get the new events
     mi    =matchEvents(events,startSet{:});
     startevents=[];
