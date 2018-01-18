@@ -108,12 +108,16 @@ def buffer_newevents(evttype=None,timeout_ms=500,state=True,verbose=False):
     nEvents = state[1]
     events=[]
     while len(events)==0 and elapsed_ms<timeout_ms:
+        # N.B. this may return no matching events, hence keep waiting.
         nSamples,curEvents=ftc.wait(-1,nEvents, int(timeout_ms - elapsed_ms))
         if curEvents>nEvents:
-            if nEvents<curEvents-MAXEVENTHISTORY:
+            try: # guard against old events dropped from the buffer
+                events = ftc.getEvents([nEvents,curEvents-1])
+            except:
                 print("Warning: long delay means missed events")
-                nEvents = curEvents-MAXEVENTHISTORY
-            events = ftc.getEvents([nEvents,curEvents-1])
+                nEvents= curEvents-MAXEVENTHISTORY
+                events = ftc.getEvents([nEvents,curEvents-1])
+            
             if not evttype is None and not events is None:
                 events = [x for x in events if x.type in evttype]
         nEvents = curEvents # update starting number events (allow for buffer restarts)
