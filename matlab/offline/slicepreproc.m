@@ -91,8 +91,10 @@ function [data,devents,hdr,allevents]=slicepreproc(fname,varargin)
 %  clf;image3d(tfr,'xlabel','ch','ylabel','freq','zlabel','time'); plot the TFR
 %
 %  % 6: apply minimal pre-processing consisting of, band-pass (1-10hz) -> CAR -> subsample@20Hz
-%  [data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',5000,'width_raw_ms',5000,'width_ms',250,'step_ms',100,'preprocFn',{'minimalPreprocFilter' 'bands',[1 10],'subsample',20});
-
+%  [data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',5000,'width_raw_ms',5000,'width_ms',50,'preprocFn',{'minimalPreprocFilter' 'bands',[1 10],'subsample',20});
+%
+% TODO: [] assume dim-2 after pre-proc is still time, and sub-select to get sample accurate event slicing
+%       [] test the offset_ms code..
 
 % set and parse the input options
 opts=struct('startSet',[],'trlen_ms',3000,'trlen_samp',[],'offset_ms',[],'offset_samp',[],...
@@ -132,8 +134,8 @@ trlen_samp = opts.trlen_samp; if ( isempty(trlen_samp) ) trlen_samp = ceil(opts.
 offset_samp= opts.offset_samp;
 if ( isempty(offset_samp) && ~isempty(opts.offset_ms) )  offset_samp = ceil(opts.offset_ms*fs/1000); end;
 % Include the trial length to get the true event relative start/end
-if ( isempty(offset_samp) ) offset_samp = [0 trlen_samp-1];
-else                        offset_samp = offset_samp+[0 trlen_samp-1];
+if ( isempty(offset_samp) ) offset_samp = [0 trlen_samp];
+else                        offset_samp = offset_samp+[0 trlen_samp];
 end;
 trlen_samp = offset_samp(2)-offset_samp(1); % and the *true* size of the event data in samples
 
@@ -234,6 +236,9 @@ while( ~eof )  % process all packets
       curppdat  = windat;
     else % apply the given function
       [curppdat,filtstate]  = feval(preprocFn{1},windat,filtstate,preprocFn{2:end},'hdr',hdr);
+      if( any(isnan(curppdat)) ) 
+         warning('NaNs!!!');
+      end
     end
       
                                 % update the pre-processed data buffer
@@ -275,6 +280,7 @@ if ( ~all(keep) )
 end
 
 % update the sample rate for the pre-processed data
+if( isfield(filtstate,'hdr') ) hdr=filtstate.hdr; end; % use updated header from the filter-function
 hdr.fSample = outfs;
 if ( isfield(hdr,'SampleRate') ) hdr.SampleRate=outfs; 
 elseif ( isfield(hdr,'Fs') )     hdr.Fs=outfs; 
