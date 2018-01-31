@@ -80,8 +80,19 @@ function [data,devents,hdr,allevents]=slicepreproc(fname,varargin)
 %  bands=.5;
 %  [B,A]=butter(6,bands*2/100,'high'); % get filter coefficients for butter IIR high-pass at .5hz, assume sample rate = 100hz
 %  [data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'width_raw_ms',5000,'preprocFn',@(x,s) filter(B,A,x,s,2));
-%  
-% See Also: buffer_waitData, buffer_train_erp_clsfr, buffer_train_ersp_clsfr, buffer_apply_erp_clsfr, buffer_apply_ersp_clsfr
+%
+%  % 5: alternative way of doing a high-pass filter using the signalProc/filterFilt function
+%  [data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'width_raw_ms',5000,'preprocFn',{'filterFilt' 'filter',{'butter',6,10,'low'}});
+%
+%  % 6: transformation to time-frequencey representation with welch + downsample->10hz
+%  [data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',5000,'width_raw_ms',5000,'width_ms',250,'step_ms',100,'preprocFn',@(x,s) welchpsd(x,2,'width_samp',25));
+%  % Note: data.buf is not [ ch x  ( freqs * times ) ]
+%  tfr = reshape(data(1).buf,[size(data(1).buf,1) size(data(1).buf,2)/50 50]);
+%  clf;image3d(tfr,'xlabel','ch','ylabel','freq','zlabel','time'); plot the TFR
+%
+%  % 6: apply minimal pre-processing consisting of, band-pass (1-10hz) -> CAR -> subsample@20Hz
+%  [data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',5000,'width_raw_ms',5000,'width_ms',250,'step_ms',100,'preprocFn',{'minimalPreprocFilter' 'bands',[1 10],'subsample',20});
+
 
 % set and parse the input options
 opts=struct('startSet',[],'trlen_ms',3000,'trlen_samp',[],'offset_ms',[],'offset_samp',[],...
@@ -179,15 +190,17 @@ bgns       = bgns+offset_samp(1); % move bgn to first sample in the event info
 %  output data for event ei is pp-packets ii such that:  bgns(ei)  < packet(ii).start < bgns(ei)+trlen
 %  that is, when the 1st sample in a prep-processor input pack is inside the event range
 
-    % prime the pump, get 1st packets worth of data and run the pre-processor
-rawbuf_samp = ceil(width_samp/width_raw_samp)*width_raw_samp; % raw data buffer big-enough for one call to preprocFn
+% prime the pump, get 1st packets worth of data and run the pre-processor
+% raw data buffer big-enough for one call to preprocFn,
+% N.B. always with 1 extra window in case when pp-window overlaps the raw_packet boundaries
+rawbuf_samp = (ceil(width_samp/width_raw_samp)+1)*width_raw_samp; 
 rawdat      = read_buffer_offline_data(datafname,hdr,[1 rawbuf_samp]); % Warning: inclusive range, 1st sample has index 1
 rawend_samp = rawbuf_samp; % move the cursor on, cursamp is last sample *in* rawdat
 windat      = rawdat(:,1:width_samp,:); % extract the raw-data window for this pp-call
 if( isempty(preprocFn) )
   curppdat  = windat;
 else
-  [curppdat,filtstate]  = feval(preprocFn{1},windat,filtstate,preprocFn{2:end},'hdr',hdr);
+  [curppdat,filtstate]  = feval(preprocFn{1},windat,filtstate,preprocFn{2:end},'fs',fs,'hdr',hdr);
 end
 szppwin     = size(curppdat); % size of 1 block of pre-processed data
 subsampratio= szppwin(2) / step_samp; % estimate the ratio of raw-to-preprocessed samples, every step_samp -> szppwin(2) samples
@@ -270,33 +283,54 @@ return;
 
 %-------------------------------------------------------
 function testCase();
-datadir='example_data'
+run ../utilities/initPaths.m
+datadir=fullfile('example_data','raw_buffer','0001');
 
 % compare non-preprocesed pure slicing
-[data0,devents0,hdr,allevents]=sliceraw(fullfile(datadir,'raw_buffer/0001'),'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500);
+[data0,devents0,hdr,allevents]=sliceraw(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500);
 
                                 % single sample windows
-[data,devents,hdr,allevents]=slicepreproc(fullfile(datadir,'raw_buffer/0001'),'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'width_ms',10); 
+[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'width_ms',10); 
 % big raw blocks, more disk efficient
-[data,devents,hdr,allevents]=slicepreproc(fullfile(datadir,'raw_buffer/0001'),'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'width_raw_ms',5000,'width_ms',10); 
+[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'width_raw_ms',5000,'width_ms',10); 
 
 % sub-sampling preprocessing
                                 % subsample to 50hz
-[data0,devents0,hdr,allevents]=sliceraw(fullfile(datadir,'raw_buffer/0001'),'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'subsample',50); 
+[data0,devents0,hdr,allevents]=sliceraw(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'subsample',50); 
                                 % average pairs of samples
-[data,devents,hdr,allevents]=slicepreproc(fullfile(datadir,'raw_buffer/0001'),'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'width_raw_ms',5000,'width_ms',20,'preprocFn',@(x,s) mean(x,2)); 
+[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'width_raw_ms',5000,'width_ms',20,'preprocFn',@(x,s) mean(x,2)); 
 
                                 % slice the 1st 5000ms data
-[data0,devents0,hdr,allevents]=sliceraw(fullfile(datadir,'raw_buffer/0001'),'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'subsample',50); 
-[data,devents,hdr,allevents]=slicepreproc(fullfile(datadir,'raw_buffer/0001'),'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'width_raw_ms',5000,'width_ms',20,'preprocFn',@(x,s) mean(x,2));
+[data0,devents0,hdr,allevents]=sliceraw(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'subsample',50); 
+[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'width_raw_ms',5000,'width_ms',20,'preprocFn',@(x,s) mean(x,2));
 
 % evaluation
 mad(data0(1).buf,data(1).buf) % single epoch
 mad(cat(3,data0.buf),cat(3,data.buf)) % all epochs
 
                                 % high-pass filtering
+[data0,devents0,hdr,allevents]=sliceraw(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000);
                                 % get filter coefficients
-bands=.5;
+bands=1;
 [B,A]=butter(6,bands*2/100,'high'); % get filter coefficients for butter IIR high-pass at .5hz
-[data,devents,hdr,allevents]=slicepreproc(fullfile(datadir,'raw_buffer/0001'),'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'width_raw_ms',5000,'width_ms',20,'preprocFn',@(x,s) filter(B,A,x,s,2));
+bands=10;
+[B,A]=butter(6,bands*2/100,'low'); % get filter coefficients for butter IIR hi
+[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'width_raw_ms',5000,'width_ms',20,'preprocFn',@(x,s) filter(B,A,x,s,2));
+
+                                % alternative calling convention
+[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'width_raw_ms',5000,'preprocFn',{'filterFilt' 'filter',{'butter',6,10,'low'}});
+
+
+figure(1);clf;mcplot([data0(1).buf(2,:);data(1).buf(2,:);data0(1).buf(3,:);data(1).buf(3,:)]');
+
+                                % minimal standard pre-processing
+[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'width_raw_ms',5000,'preprocFn',{'minimalPreprocFilter' 'bands',[1 10],'subsample',10});
+
+
+% time-frequency decomposition, 4hz resolution, 10hz feature rate
+% N.B. we assume a 100hz sample rate
+[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'width_raw_ms',5000,'width_ms',250,'step_ms',100,'preprocFn',@(x,s) welchpsd(x,2,'width_samp',25));
+
+% plot the resulting sliced TFR
+clf;image3d(reshape(data(1).buf,[size(data(1).buf,1) size(data(1).buf,2)/50 50]),'xlabel','ch','ylabel','freq','zlabel','time');
 

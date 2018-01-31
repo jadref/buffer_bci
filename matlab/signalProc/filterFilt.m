@@ -10,7 +10,7 @@ function [X,state]=filterFilt(X,state,varargin);
 %                     'fir' -- finite impuluse response, 'firmin' -- min-phase finite impluse response
 %                type is one of: 'low','high','stop','bandpass'
 %                ord  is filter order : around fs for FIR or 6 for IIR (butter)
-%                cuttoff is: [1x1] for low/high pass, or [lowcutoff highcutoff] for bandpass/stop
+%                cuttoff in hz is: [1x1] for low/high pass, or [lowcutoff highcutoff] for bandpass/stop
 %               OR [nTaps x 1] a set of coefficients to use in a FIR filter
 %               OR {[nTaps1 x 1] [nTaps2 x 1]} set of IIR coeffients
 %  N.B. see FIR1 for how to make an FIR filter, e.g. B=fir1(30,fcutOff*2/fSample,'low');
@@ -23,8 +23,12 @@ if( ~isempty(state) && isstruct(state) ) % ignore other arguments if state is gi
   opts =state;
 else
   opts=struct('dim',2,'filter',[],'A',[],'B',[],'filtstate',[],...
-              'fs',[],'ch_names','','ch_pos',[],'verb',0);
+              'hdr',[],'fs',[],'ch_names','','ch_pos',[],'verb',0);
   [opts]=parseOpts(opts,varargin);
+  fs =opts.fs;
+  if(isempty(fs) && ~isempty(opts.hdr))
+    if(isfield(opts.hdr,'fSample')) fs=opts.hdr.fSample; elseif(isfield(opts.hdr,'Fs')) fs=opts.hdr.Fs; end;
+  end;
 
                            % intialize the filter coefficients if not set yet
   if( isempty(opts.A) || isempty(opts.B) )
@@ -34,7 +38,6 @@ else
       B=opts.filter{1}(:); A=opts.filter{2}(:);
     elseif ( iscell(opts.filter) && ischar(opts.filter{1}) ) % filter name
       filttype=lower(opts.filter{1});
-      fs=opts.fs;
       ord=opts.filter{2};
       bands=opts.filter{3};
       type='high'; if(numel(opts.filter)>3) type=opts.filter{4}; end;
