@@ -112,8 +112,10 @@ function state=initState(x,varargin)
   
                                 % re-sample
   if( ~isempty(opts.subsample) )
-    subsampleratio = ceil(fs/opts.subsample);
-    fprintf('Subsampling: %g -> %g hz\n',fs,fs/subsampleratio);
-    state.subsampleStep = subsampleratio;
+    subsampleratio = ceil(fs/opts.subsample);    
+    if( subsampleratio>1 ) % only if needed
+       fprintf('Subsampling: %g -> %g hz\n',fs,fs/subsampleratio);
+       state.subsampleStep = subsampleratio;
+    end
   end
 

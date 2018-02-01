@@ -1,10 +1,12 @@
-function E = read_buffer_offline_events(eventfile, hdr)
+function [E,hdr] = read_buffer_offline_events(eventfile, hdr)
 % function E = read_buffer_offline_events(eventfile, header)
 %
 % This function reads FCDC buffer-type events from a binary file.
 
 % (C) 2010 S. Klanke
-if ( nargin<2 ) hdr=[]; end
+if ( nargin<2 || isempty(hdr))
+   hdr=read_buffer_offline_header(fullfile(fileparts(eventfile),'header'));
+end
 
 type = {
   'char'   'b'

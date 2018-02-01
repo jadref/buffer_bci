@@ -121,6 +121,9 @@ elseif ( isa(opts.startSet,'function_handle') || exist(opts.startSet)==2 )
   devents=feval(opts.startSet,allevents); % assume event matching mode
   if( islogical(devents) || isnumeric(devents) ) devents=allevents(mi); end % match-mode
 end
+% ensure it's in sorted sample order
+if( isstruct(devents) ) bgns=[devents.sample]; else bgns=devents; end;
+[bgns,si]=sort(bgns,'ascend'); devents=devents(si);
 
 % Compute relative start/end sample for the data we want to get
 % Include the offset
@@ -131,7 +134,6 @@ if ( ~isempty(opts.offset_samp) ) offset_samp = offset_samp+opts.offset_samp; en
 data=repmat(struct('buf',[]),size(devents));
 if ( opts.verb>=0 ) fprintf('Slicing %d epochs:',numel(devents));end;
 keep=true(numel(devents),1);
-if( isstruct(devents) ) bgns=[devents.sample]; else bgns=devents; end;
 for ei=1:numel(devents);
   data(ei).buf=read_buffer_offline_data(datafname,hdr,bgns(ei)+[offset_samp]);  
   if ( size(data(ei).buf,2) < (offset_samp(2)-offset_samp(1)) ) keep(ei)=false; end;

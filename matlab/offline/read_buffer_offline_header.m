@@ -50,7 +50,7 @@ nameFlag = 0;
 txt=[];
 finfo=dir([headerfile '.txt']);
 if ( isempty(finfo) || finfo.bytes==0 )
-  warning(sprintf('Couldnt open text header file : %s',headerfile));
+  fprintf('Warning: Couldnt open text header file : %s',headerfile);
 else  
   txt.nSamples=0;
   FA = fopen([headerfile '.txt'], 'r');
@@ -113,7 +113,7 @@ end
 bin=[];
 finfo=dir(headerfile);
 if ( isempty(finfo) || finfo.bytes==0 )
-  warning(sprintf('Couldnt open binary header file : %s',headerfile));
+  fprintf('Warning: Couldnt open binary header file : %s',headerfile);
   hdr=txt;
 else  
   if ( ~isfield(hdr.orig,'endianness') )
