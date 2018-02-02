@@ -13,10 +13,21 @@ if( isempty(state) )
 end
 issing=isa(x,'single');
 
+                                % spatial-filter
+if( ~isempty(state.R) )
+  if( isnumeric(state.R) )
+     x = state.R*reshape(x,size(x,1),[]);
+  elseif( strcmpi(state.R,'robust') ) % median CAR
+     mu = median(x,1);
+     x  = x - repmat(mu,[size(x,1),1]);
+  end
+end
+
                                 % channel selection
 if( ~isempty(state.chseln) )
    x=x(state.chseln,:,:);
 end
+
                                 % spectral-filter
 if( ~isempty(state.B) )
    % use double for internal filter processing, IIR filter is very very sensitive to precision used...
@@ -24,14 +35,11 @@ if( ~isempty(state.B) )
   [x,state.spectfiltstate]=filter(state.B,state.A,x,state.spectfiltstate,2);
   if( issing ) x=single(x); end;
 end
-                                % spatial-filter
-if( ~isempty(state.R) )
-  if( isnumeric(state.R) )
-     x = state.R*reshape(x,size(x,1),[]);
-  elseif( isequal(state.R,'robustCAR') ) % median CAR
-     mu= median(x,1);
-     x = x - repmat(mu,[size(x,1),1]);
-  end
+                                % artifact removal
+if( ~isempty(state.artfiltstate) )
+   ox=x;
+   [x,state.artfiltstate]=artChRegress(x,state.artfiltstate);
+   %mad(ox,x)
 end
                                 % downsample
 if( ~isempty(state.subsampleStep) ) % averaging downsampler, to reduce aliasing effects
@@ -47,56 +55,83 @@ end
 return
 
 
-function state=initState(x,varargin)
+function [state]=initState(x,varargin)
   % parse the configuration options and initialize the filter state
-  state=struct('chseln',[],'R',[],'B',[],'A',[],'spectfiltstate',[],'subsampleStep',[]);
+  state=struct('chseln',[],'R',[],'artfiltstate',[],'B',[],'A',[],'spectfiltstate',[],'subsampleStep',[],'hdr',[]);
                                 % argument processing
-  opts=struct('chseln',[],'capFile',[],'overridechnms',0,'spatialFilter','car','subsample',[],'bands',[.5 30],'spectfilttype',[],...
+  opts=struct('chseln',[],'capFile',[],'overridechnms',0,'spatialFilter','car','artifactCh',[],'subsample',[],'bands',[.5 30],'spectfilttype',[],...
               'hdr',[],'fs',[],'ch_names','','ch_pos',[],'verb',0);
   opts=parseOpts(opts,varargin);
 
                                 % parameter setup
-
-                                % channel selection
-  chseln=opts.chseln;
-  if( ~isempty(chseln) && isnumeric(chseln) && any(chseln>1) ) % get logical indicator of keeping channels
-     tmp=chseln; chseln=false(size(x,1),1); chseln(tmp)=true; 
-  end; 
-  if( ~isempty(opts.capFile) ) % additionally only pick channels which match capfile names
-     if( isempty(opts.ch_names) && ~isempty(opts.hdr) ) opts.ch_names=opts.hdr.label; end;
-     di = addPosInfo(opts.ch_names,opts.capFile,opts.overridechnms); % get 3d-coords
-     if( any([di.extra.iseeg]) )
-        if( isempty(chseln) ) chseln=true(size(x,1),1); end; % default to include all
-        chseln(~[di.extra.iseeg])=false; % remove non-eeg
-     end
+  hdr=opts.hdr;
+  fs=opts.fs;
+  if(isempty(fs) && ~isempty(opts.hdr) )
+     if(isfield(opts.hdr,'fSample')) fs=opts.hdr.fSample;
+     elseif(isfield(opts.hdr,'Fs'))  fs=opts.hdr.Fs;
+     end;
   end
-  state.chseln=chseln;
-  if( ~isempty(state.chseln) ) % apply the selection
-     x=x(state.chseln,:,:);
+  ch_names=opts.ch_names; if( isempty(ch_names) && ~isempty(opts.hdr) ) ch_names=opts.hdr.label; end;
+  iseeg=[]; 
+  if( ~isempty(opts.capFile) ) % additionally only pick channels which match capfile names     
+     di = addPosInfo(ch_names,opts.capFile,opts.overridechnms); % get 3d-coords
+     ch_names(1:numel(di.vals)) = di.vals; % update channel names
+     iseeg=[di.extra.iseeg];
   end
   
                                 % spatial filter
   if( ~isempty(opts.spatialFilter) )
     R=[];
                                 % make the fixed spatial filter matrix
-    if(strcmpi(opts.spatialFilter,'car'))
-      R = eye(size(x,1)) - ones(size(x,1),size(x,1))/size(x,1);
-    elseif( any(strcmpi(opts.spatialFilter,{'robust','robustcar'})) )
-      R = 'robust';
+    if( any(strcmpi(opts.spatialFilter,{'robust','robustcar'})) )
+       R = 'robust';
+    elseif(strcmpi(opts.spatialFilter,'car'))
+       wght=zeros(size(x,1),1); if(~isempty(iseeg)) wght(iseeg)=1; end;
+       R = eye(size(x,1)) - repmat(wght./sum(wght),[1 size(x,1)]);
+    elseif( iscell(opts.spatialFilter) ) % set channel names to use as average reference
+       wght=zeros(size(x,1),1);
+       for ci=1:numel(ch_names);
+          if( any(strcmpi(ch_names{ci},opts.spatialFilter)) ) 
+             fprintf('SpatialFilter: Matched %s\n',ch_names{ci});
+             wght(ci)=1; 
+          end;
+       end
+       R = eye(size(x,1)) - repmat(wght./sum(wght),[1,size(x,1)]);
+    elseif( isnumeric(opts.spatialFilter) && size(opts.spatialFilter,2)==1 ) % set channel numbers to use as average reference
+       wght=zeros(size(x,1),1); wght(opts.spatialFilter)=1;
+       R= eye(size(x,1)) - repmat(wght./sum(wght),[1 size(x,1)]);
     else
       warning('spatial filter type not supported yet');
     end
     state.R=R;
   end
+
+                                % channel selection
+  chseln=opts.chseln;
+  if( ~isempty(chseln) )
+     if ( isnumeric(chseln) && any(chseln>1) ) % get logical indicator of keeping channels
+        tmp=chseln; chseln=false(size(x,1),1); chseln(tmp)=true; 
+     elseif( iscell(chseln) )
+        tmp=chseln; chseln=false(size(x,1),1); 
+        for ci=1:numel(ch_names);
+           if( any(strcmpi(ch_names{ci},tmp)) ) 
+              chseln(ci)=true; 
+           end;
+        end
+     elseif( strcmp(chseln,'eegonly') && ~isempty(iseeg) && any(iseeg) )
+        chseln = false(size(x,1),1); 
+        chseln(iseeg)=true;
+     end
+  end; 
+  state.chseln=chseln;
+  if( ~isempty(state.chseln) ) % apply the selection
+     fprintf('ChannelSeln:'); fprintf('%s,',ch_names{chseln});fprintf('\n');
+     x=x(state.chseln,:,:);
+  end
+
   
                                 % spectral fitler
   if( ~isempty(opts.bands) )
-    fs=opts.fs;
-    if(isempty(fs) && ~isempty(opts.hdr) )
-      if(isfield(opts.hdr,'fSample')) fs=opts.hdr.fSample;
-      elseif(isfield(opts.hdr,'Fs'))  fs=opts.hdr.Fs;
-      end;
-    end
     bands=opts.bands;
     type =opts.spectfilttype;
     if( bands(1)==0 )      type='low';  bands=bands(2);  fprintf('low-pass %gHz\n',bands); % low-pass
@@ -109,13 +144,33 @@ function state=initState(x,varargin)
     state.B=B;
     state.A=A;
   end
+
+  % eog removal
+  if( ~isempty(opts.artifactCh) ) 
+     artHalfLife_s = 30; artHalfLife_samp = artHalfLife_s* fs; 
+     artBands      = [];%[.2 inf];
+     [ans,artfiltstate]=artChRegress(x,[],[1 2 3],opts.artifactCh,'ch_names',ch_names,'fs',fs,'bands',artBands,'covFilt',artHalfLife_samp);
+     state.artfiltstate = artfiltstate;
+  end
   
                                 % re-sample
+  ofs=fs;
   if( ~isempty(opts.subsample) )
     subsampleratio = ceil(fs/opts.subsample);    
     if( subsampleratio>1 ) % only if needed
-       fprintf('Subsampling: %g -> %g hz\n',fs,fs/subsampleratio);
+       ofs=fs/subsampleratio;
+       fprintf('Subsampling: %g -> %g hz\n',fs,ofs);
        state.subsampleStep = subsampleratio;
     end
   end
 
+  % update the hdr info
+  if(isempty(hdr)) hdr=struct('fs',ofs,'label',ch_names,'iseeg',iseeg);
+  else 
+     hdr.fs=ofs; 
+     if(isfield(opts.hdr,'fSample')) fs=opts.hdr.fSample;
+     elseif(isfield(opts.hdr,'Fs'))  fs=opts.hdr.Fs;
+     end;
+     hdr.label=ch_names;
+  end
+  state.hdr=hdr;

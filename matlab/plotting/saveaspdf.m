@@ -48,11 +48,19 @@ set(fig, 'renderer', 'painters');
 if ( ispc() ) tfname='saveaspdf'; else tfname='/tmp/saveaspdf'; end;
 if ( exist([tfname '.pdf'],'file') ) delete([tfname '.pdf']); end;
 print(fig,'-dpdf','-r300',tfname);
-if ( ispc() ) % hack round file-name limitation of ghostscript
-  system(['move "' tfname '.pdf' '" "' fname '.pdf"']);
-else
-  system(['mv "' tfname '.pdf"' ' "' fname '.pdf"']);
+try
+   copyfile([tfname '.pdf'],[fname '.pdf'],'f');
+catch
+   fprintf('couldnt copy the temp file to destination!: %s -> %s\n',[tfname '.pdf'],[fname '.pdf']);
 end
+% if ( ispc() ) % hack round file-name limitation of ghostscript
+%    cmd=sprintf('copy "%s.pdf" "%s.pdf"',tfname,fname);
+% else
+%    cmd=sprintf('cp   "%s.pdf" "%s.pdf"',tfname,fname);  
+% end
+% tmp=dir([tfname '.*'])
+% %fprintf('%s\n',cmd);
+% system(cmd);
 
 % Restore the previous state
 set(fig,fp);

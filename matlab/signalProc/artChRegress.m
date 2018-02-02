@@ -30,11 +30,12 @@ function [X,state,info]=artChRegress(X,state,dim,idx,varargin);
 %              SEE: biasFilt for example function format
 %            OR
 %             [float] half-life to use for simple exp-moving average filter
+%                   Note: alpha = exp(log(.5)./(half-life)), half-life = log(.5)/log(alpha)
 %  ch_names -- {'str' size(X,dim(1))} cell array of strings of the names of the channels in dim(1) of X
 %  ch_pos   -- [3 x size(X,dim(1))] physical positions of the channels in dim(1) of X
 %
 % TODO:
-%    [] Correct state propogate over calls for the EOG data pre-processing..
+%    [] Correct state propogate over calls for the EOG data pre-processing, i.e. convert to IIR/Butter for band-pass
 %    [] Spatio-temporal learning - learn the optimal spectral filter as well as spatial
 %    [] Switching-mode removal   - for transient artifacts add artifact detector to only learn covariance function when artifact is present..
 opts=struct('detrend',0,'center',2,'bands',[],'fs',[],'verb',0,'covFilt',[],'filtstate',[],'ch_names',[],'ch_pos',[],'pushbackartsig',1);
@@ -81,6 +82,7 @@ szX=size(X); szX(end+1:max(dim))=1;
 if( numel(dim)<3 ) nEp=1; else nEp=szX(dim(3)); end;
 
 % compute the artifact signal and its forward propogation to the other channels
+% N.B. convert to use IIR to allow high-pass between calls with small windows...
 if ( isempty(artFilt) && ~isempty(opts.bands) ) % smoothing filter applied to art-sig before we use it
   if( isempty(opts.fs) ) warning('Sampling rate not specified.... using default=100Hz'); opts.fs=100; end;
   if( opts.verb>=0 ) fprintf('Filtering @%gHz with [%s]\n',opts.fs,sprintf('%g ',opts.bands)); end;

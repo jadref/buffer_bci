@@ -74,7 +74,8 @@ function [data,devents,hdr,allevents]=slicepreproc(fname,varargin)
 %  [data,devents,hdr]=slicepreproc(datadir,'startSet',myMatchFn,'trlen_ms',1000);
 %
 %  % 3: sub-sampled data by averaging 20ms blocks to a single output, load data in big-blocks for speed
-%  [data,devents,hdr]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'width_raw_ms',5000,'width_ms',20,'preprocFn',@(x,s) mean(x,2)); 
+%  [data,devents,hdr]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'width_raw_ms',5000,'width_ms',20,'preprocFn',@(x,s,varargin) deal(mean(x,2),[]))); 
+%    N.B. need to use @(x,s,varargin) deal(fn,[]) to match the function signature of 2-or-more inputs and 2 outputs
 %
 %  % 4: high-pass the data with a butterworth IIR with high-pass @.5hz
 %  bands=.5;
@@ -207,13 +208,15 @@ end
 szppwin     = size(curppdat); % size of 1 block of pre-processed data
 subsampratio= szppwin(2) / step_samp; % estimate the ratio of raw-to-preprocessed samples, every step_samp -> szppwin(2) samples
 outfs       = fs*subsampratio; % estimate the new sample rate
+trlen_window= trlen_samp/step_samp;
+trlen_ppsamp= ceil(trlen_samp * subsampratio);
 
 % setup a ring-buffer for the pre-processed data, this should be at least 1 packet bigger than
 % needed for the sliced event info
-ppbuf_window = ceil(trlen_samp / step_samp); % number windows of preprocessed data for event data
+ppbuf_window = ceil(trlen_window) + 1; % number windows of preprocessed data for event data
 ppdat        = zeros([szppwin(1),szppwin(2)*ppbuf_window,szppwin(3:end)]);
 ppdat(:,end-szppwin(2)+1:end,:) = curppdat; % insert into the ring-buffer, N.B. ppdat is lagged w.r.t. rawdat!
-windowend_samp = ceil(width_samp/2);  % sample number for the last window in the pre-proc data buffer
+ppbuf_samp   = ppbuf_window * step_samp; % number of raw samples in preprocessed data buffer
 ppend_samp   = step_samp;  % last sample *in* the pre-processed data buffer
 
 
@@ -244,13 +247,16 @@ while( ~eof )  % process all packets
                                 % update the pre-processed data buffer
     ppdat(:,1:end-szppwin(2),:)    = ppdat(:,szppwin(2)+1:end,:); % shift
     ppdat(:,end-szppwin(2)+1:end,:)= curppdat; % insert
-    windowend_samp                 = windowend_samp + step_samp; % sample number for the current pre-proc call, used to matche event sample info
+    %windowend_samp                 = windowend_samp + step_samp; % sample number for the current pre-proc call, used to matche event sample info
     ppend_samp                     = ppend_samp + step_samp; % update the end of ppdat marker
     
     % check if there is a trigger event we should slice out the pre-processed data for
     % TODO: [] update to *not* assume ppdat is contains *exactly* trlen_samp preprocessed data
-    while( bgns(curevt)+trlen_samp <= windowend_samp )
-      data(curevt).buf = ppdat;    % slice out the data from the pre-processed data, N.B. assumes size(ppdat) = trlen_samp
+    ppstart_samp       = ppend_samp - ppbuf_samp; % 1st sample in the pre-proc data buffer
+    while( bgns(curevt)+trlen_samp <= ppend_samp )
+      eventstart_ppsamp= (bgns(curevt)-ppstart_samp) * subsampratio; % samples from start ppbuf in pp-samples
+      eventIdx         = ceil(eventstart_ppsamp) -1 + (1:trlen_ppsamp);
+      data(curevt).buf = ppdat(:,eventIdx);  
       keep(curevt)     = true;
       curevt           = curevt+1; % move on to the next event
       fprintf('.');
@@ -299,20 +305,25 @@ datadir=fullfile('example_data','raw_buffer','0001');
 [data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'width_ms',10); 
 % big raw blocks, more disk efficient
 [data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'width_raw_ms',5000,'width_ms',10); 
+% big raw blocks, big-preproc-windows -- more comp efficient
+[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'width_raw_ms',5000,'width_ms',2000); 
+
+% evaluation
+mad(data0(1).buf,data(1).buf) % single epoch
+mad(cat(3,data0.buf),cat(3,data.buf)) % all epochs
+
 
 % sub-sampling preprocessing
                                 % subsample to 50hz
 [data0,devents0,hdr,allevents]=sliceraw(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'subsample',50); 
                                 % average pairs of samples
-[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'width_raw_ms',5000,'width_ms',20,'preprocFn',@(x,s) mean(x,2)); 
+[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'width_raw_ms',5000,'width_ms',20,'preprocFn',@(x,s,varargin) deal(mean(x,2),[])); 
 
                                 % slice the 1st 5000ms data
 [data0,devents0,hdr,allevents]=sliceraw(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'subsample',50); 
-[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'width_raw_ms',5000,'width_ms',20,'preprocFn',@(x,s) mean(x,2));
+[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'width_raw_ms',5000,'width_ms',20,'preprocFn',@(x,s,varargin) deal(mean(x,2),[]));
+[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'width_raw_ms',5000,'width_ms',1000,'preprocFn',@(x,s,varargin) deal(squeeze(mean(reshape(x,[size(x,1),2,size(x,2)/2]),2)),[]));
 
-% evaluation
-mad(data0(1).buf,data(1).buf) % single epoch
-mad(cat(3,data0.buf),cat(3,data.buf)) % all epochs
 
                                 % high-pass filtering
 [data0,devents0,hdr,allevents]=sliceraw(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000);
@@ -321,7 +332,7 @@ bands=1;
 [B,A]=butter(6,bands*2/100,'high'); % get filter coefficients for butter IIR high-pass at .5hz
 bands=10;
 [B,A]=butter(6,bands*2/100,'low'); % get filter coefficients for butter IIR hi
-[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'width_raw_ms',5000,'width_ms',20,'preprocFn',@(x,s) filter(B,A,x,s,2));
+[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'width_raw_ms',5000,'width_ms',20,'preprocFn',@(x,s,varargin) deal(filter(B,A,x,s,2),[]));
 
                                 % alternative calling convention
 [data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'width_raw_ms',5000,'preprocFn',{'filterFilt' 'filter',{'butter',6,10,'low'}});
