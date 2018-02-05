@@ -3,9 +3,9 @@ function [X,state,info]=artChRegress(X,state,dim,idx,varargin);
 % 
 %   [X,state,info]=artChRegress(X,state,dim,idx,...);% incremental calling mode
 %
-% N.B. important for this regression to ensure only the **pure** artifact signal goes into removal.  Thus
-%      use the pre-processing options ('detrend','center','bands') to do some additional pre-processing
-%      before the removal
+% N.B. important for this regression to ensure only the **pure** artifact signal goes into removal.  
+%      Thus use the pre-processing options ('detrend','center','bands') to do some additional 
+%      pre-processing before the removal
 %
 % Inputs:
 %  X   -- [n-d] the data to be deflated/art channel removed
@@ -18,7 +18,11 @@ function [X,state,info]=artChRegress(X,state,dim,idx,varargin);
 %         {'str' 1 x nArt} names of the artifact channels.  These will be matched with the 'ch_names' option.
 %           with any missing names ignored.  Note: in the absence of an exact match *any* channel with the same prefix will be matched
 % Options:
+%  artFiltType -- type of additional temporal filter to apply to the artifact signals before ('fft')
+%                 regressing them out. one-of 'fft'=fftfilter, 'iir'=butterworth filter
 %  bands   -- spectral filter (as for fftfilter) to apply to the artifact signal ([])
+%             N.B. this should be such that the filtered artifact channel as as close to the pure
+%                  propogated artifact as you can get..
 %  fs  -- the sampling rate of this data for the time dimension ([])
 %         N.B. fs is only needed if you are using a spectral filter, i.e. bands.
 %  detrend -- detrend the artifact before removal                        (0)
@@ -30,6 +34,9 @@ function [X,state,info]=artChRegress(X,state,dim,idx,varargin);
 %              SEE: biasFilt for example function format
 %            OR
 %             [float] half-life to use for simple exp-moving average filter
+%                   N.B. this time-constant needs to be *long* enough to get a robust cross-channel
+%                   covariance estimate, but *short* enough to respond to transient artifacts which 
+%                   appear and disappear.  For eye-artifacts a number of about .5-1s works well.
 %                   Note: alpha = exp(log(.5)./(half-life)), half-life = log(.5)/log(alpha)
 %  ch_names -- {'str' size(X,dim(1))} cell array of strings of the names of the channels in dim(1) of X
 %  ch_pos   -- [3 x size(X,dim(1))] physical positions of the channels in dim(1) of X
@@ -38,7 +45,7 @@ function [X,state,info]=artChRegress(X,state,dim,idx,varargin);
 %    [] Correct state propogate over calls for the EOG data pre-processing, i.e. convert to IIR/Butter for band-pass
 %    [] Spatio-temporal learning - learn the optimal spectral filter as well as spatial
 %    [] Switching-mode removal   - for transient artifacts add artifact detector to only learn covariance function when artifact is present..
-opts=struct('detrend',0,'center',2,'bands',[],'fs',[],'verb',0,'covFilt',[],'filtstate',[],'ch_names',[],'ch_pos',[],'pushbackartsig',1);
+opts=struct('detrend',0,'center',2,'bands',[],'artfilttype','iir','fs',[],'verb',0,'covFilt',[],'filtstate',[],'ch_names',[],'ch_pos',[],'pushbackartsig',1);
 if( ~isempty(state) && isstruct(state) ) % called with a filter-state, incremental filtering mode
   % extract the arguments/state
   opts    =state;
@@ -80,13 +87,31 @@ if( isempty(dim) ) dim=[1 2 3]; end;
 if( numel(dim)<2 ) dim(2)=dim(1)+1; end;
 szX=size(X); szX(end+1:max(dim))=1;
 if( numel(dim)<3 ) nEp=1; else nEp=szX(dim(3)); end;
+issingle=isa(X,'single'); % is x single precision?
 
 % compute the artifact signal and its forward propogation to the other channels
 % N.B. convert to use IIR to allow high-pass between calls with small windows...
 if ( isempty(artFilt) && ~isempty(opts.bands) ) % smoothing filter applied to art-sig before we use it
-  if( isempty(opts.fs) ) warning('Sampling rate not specified.... using default=100Hz'); opts.fs=100; end;
-  if( opts.verb>=0 ) fprintf('Filtering @%gHz with [%s]\n',opts.fs,sprintf('%g ',opts.bands)); end;
-  artFilt = mkFilter(floor(szX(dim(2))./2),opts.bands,opts.fs/szX(dim(2)));
+  fs=opts.fs;
+  if( isempty(fs) ) warning('Sampling rate not specified.... using default=100Hz'); fs=100; end;
+  if( strcmpi(opts.artfilttype,'fft') )
+     if( opts.verb>=0 ) fprintf('artChRegress::Filtering @%gHz with [%s]\n',fs,sprintf('%g ',opts.bands)); end;
+     artFilt = mkFilter(floor(szX(dim(2))./2),opts.bands,fs/szX(dim(2)));
+  else % setup an IIR filter, so allows filter state propogation between calls
+     type=opts.artfilttype;
+     bands=opts.bands;
+     fprintf('artChRegress::');
+     if( numel(bands)>2 ) bands=bands(2:3); end;
+     if( bands(1)<=0 )      type='low';  bands=bands(2);  fprintf('low-pass %gHz\n',bands); % low-pass
+     elseif( bands(2)>=fs ) type='high'; bands=bands(1);  fprintf('high-pass %gHz\n',bands);% high-pass
+     else                                                 fprintf('band-pass [%g-%g]Hz\n',bands);
+     end
+     if( any(strcmpi(type,{'bandpass','iir'})) ) type=[]; end;
+     if( isempty(type) )    [B,A]=butter(4,bands*2/fs); % arg, weird bug in octave for pass
+     else                   [B,A]=butter(4,bands*2/fs,type);
+     end
+     artFilt=struct('B',B,'A',A,'filtstate',[]);
+  end
 end
 
                                 % set-up the covariance filtering function
@@ -124,13 +149,26 @@ for epi=1:nEp; % loop over epochs
   
   % extract the artifact signals for this epoch
   artSig=Xei(artIdx{:});
+  if(issingle) artSig=double(artSig); end;
   % pre-process the artifact signals as wanted
   if(isequal(opts.center,1))     artSig= repop(artSig,'-',mean(artSig,dim(2))); 
   elseif(isequal(opts.center,2)) artSig= repop(artSig,'-',median(artSig,dim(2))); 
   end;
   if ( opts.detrend )      artSig = detrend(artSig,dim(2)); end;
-  if ( ~isempty(artFilt) ) artSig = fftfilter(artSig,artFilt,[],dim(2),1); end % smooth the result  
-
+  if ( ~isempty(artFilt) ) % smooth the result  
+     if( isstruct(artFilt) ) % IIR
+        if( isempty(artFilt.filtstate) ) % pre-warm the filter state
+           [ans,artFilt.filtstate]=filter(B,A,repmat(mean(artSig,2),[1,size(artSig,2)]),[],dim(2));
+        end
+        [artSig,artFilt.filtstate]=filter(artFilt.B,artFilt.A,artSig,artFilt.filtstate,dim(2));
+     else % fftFilter
+        artSig = fftfilter(artSig,artFilt,[],dim(2),1); 
+     end
+  end 
+  % push-back pre-processing changes
+  if(opts.pushbackartsig&&(opts.detrend||opts.center||~isempty(artFilt)))  
+     Xei(artIdx{:})=artSig;  
+  end 
                                           % compute the artifact covariance
   BXXtB  = tprod(artSig,tpIdx,[],tpIdx2); % cov of the artifact signal: [nArt x nArt]
                                 % get the artifact/channel cross-covariance
@@ -142,7 +180,7 @@ for epi=1:nEp; % loop over epochs
       alpha        = covFilt{1};
       alpha        = alpha.^size(Xei,dim(2)); % specified in data-packets
 
-      filtstate.N  = alpha.*filtstate.N + (1-alpha).*1;      % update weight
+      filtstate.N  = alpha.*filtstate.N  + (1-alpha).*1;      % update weight
       filtstate.sxx= alpha.*filtstate.sxx+ (1-alpha).*BXXtB; 
       filtstate.sxy= alpha.*filtstate.sxy+ (1-alpha).*BXYt;  
       BXXtB        = filtstate.sxx./filtstate.N; % move-ave with warmup-protection
@@ -156,19 +194,22 @@ for epi=1:nEp; % loop over epochs
   % regression solution for estimateing X from the artifact channels: w_B = (B^TXX^TB)^{-1} B^TXY^T = (BX)\Y
   %w_B    = BXXtB\BXYt; % slower, min-norm, low-rank robust(ish) [nArt x nCh]
   w_B    = pinv(BXXtB)*BXYt; % slower, min-norm, low-rank robust(ish) [nArt x nCh]
+  w_B(:,idx)=0; % don't modify the art-channels..
   
-       % make a single spatial filter to remove the artifact signal in 1 step
-       %  X-w*X = X*(I-w)
-  sf     = eye(size(X,dim(1))); % [nCh x nCh]
-  sf(idx,:)=sf(idx,:)-w_B; % [nCh x nCh] % insert in place to get a full-channel-set spatial filter
+  % make a single spatial filter to remove the artifact signal in 1 step
+  %  X-w*X = X*(I-w)
+  sf       = eye(size(X,dim(1))); % [nCh x nCh]
+  sf(idx,:)= sf(idx,:)-w_B; % [nCh x nCh] % insert in place to get a full-channel-set spatial filter
 
                                 % apply the deflation
   if( nEp>1 ) % per-epoch mode, update in-place
-    if(opts.pushbackartsig&&(opts.detrend||opts.center||~isempty(artFilt)))  Xei(artIdx{:})=artSig;  end % push-back pre-processing changes
     X(xidx{:}) = tprod(sf,[-dim(1) dim(1)],Xei,[1:dim(1)-1 -dim(1) dim(1)+1:ndims(X)]);    
   else % global regression mode
-    if(opts.pushbackartsig&&(opts.detrend||opts.center||~isempty(artFilt)))  X(artIdx{:})=artSig; end % push-back pre-processing changes
+    if(opts.pushbackartsig&&(opts.detrend||opts.center||~isempty(artFilt)))  
+       X(artIdx{:})=artSig; % push-back pre-processing changes
+    end 
     X = tprod(sf,[-dim(1) dim(1)],X,[1:dim(1)-1 -dim(1) dim(1)+1:ndims(X)]);
+    if(issingle) X=single(X); end; % get back to single precision
   end
 end %epoch loop
 if ( opts.verb>=0 && nEp>10 ) fprintf('\n'); end;
@@ -185,12 +226,16 @@ info = struct('artSig',artSig);
 return;
 %--------------------------------------------------------------------------
 function testCase()
-S=randn(10,1000,100);% sources
+S =randn(10,1000,100);% sources
 sf=randn(10,2);% per-electrode spatial filter
+%S(1:size(sf,2),:)=cumsum(S(1:size(sf,2),:),2); % artifact is 'high-frequency'
+N =cumsum(randn(size(sf,2),size(S,2),size(S,3)),2); % additional non-propogated artifact noise, 'low-frequency'
 X =S+reshape(sf*S(1:size(sf,2),:),size(S)); % source+propogaged noise
+X(1:size(sf,2),:,:)=X(1:size(sf,2),:,:)+N;
 
-Y =artChRegress(X,[],1,[1 2]); % global mode
-clf;mimage(S,X-S,Y-S,'clim','cent0','colorbar',1,'title',{'S','S-X','S-Y'}); colormap ikelvin
+Y =artChRegress(X,[],1,[1 2],'center',0); % global mode
+tmp=cat(4,S,S-X,Y-S);clf;mimage(squeeze(mean(abs(tmp(size(sf,2)+1:end,:,:,:)),3)),'clim',[0 mean(abs(tmp(:)))],'colorbar',1,'title',{'S','S-X','S-Y'}); colormap ikelvin
+clf;mimage(squeeze(tmp(:,:,1,:)),'title',{'S','S-X','S-Y'},'colorbar',1)
 Y2=artChRm(X,1,[1 2]);
 clf;mimage(S,Y2-S,'clim','cent0','colorbar',1); colormap ikelvin
 
@@ -204,6 +249,11 @@ for epi=2:size(X,3);
   [Yi(:,:,epi),state]=artChRegress(X(:,:,epi),state);
 end
 mad(Y,Yi)
+
+% with additional artifact channel pre-filtering
+Y =artChRegress(X,[],1,[1 2],'fs',100,'center',0,'bands',[0 10 inf inf],'artfilttype','fft'); % fft-prefilter
+Y =artChRegress(X,[],1,[1 2],'fs',100,'center',0,'bands',[0 10 inf inf],'artfilttype','iir'); % iir
+
 
                                 % specify channels with names mode
 [Y,info]=artChRegress(X,[],[],{'C1','C2'},'ch_names',{'C1','C2','C3','C4','C5','C6','C7','C8','C9','C10'});
