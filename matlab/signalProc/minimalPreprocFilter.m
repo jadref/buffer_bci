@@ -11,7 +11,7 @@ function [x,state]=minimalPreprocFilter(x,state,varargin)
 if( isempty(state) ) 
   state=initState(x,varargin);
 end
-issing=isa(x,'single');
+issingle=isa(x,'single');
 
                                 % spatial-filter
 if( ~isempty(state.R) )
@@ -31,9 +31,9 @@ end
                                 % spectral-filter
 if( ~isempty(state.B) )
    % use double for internal filter processing, IIR filter is very very sensitive to precision used...
-  if(issing)   x=double(x); end;
+  if(issingle)   x=double(x); end;
   [x,state.spectfiltstate]=filter(state.B,state.A,x,state.spectfiltstate,2);
-  if( issing ) x=single(x); end;
+  if( issingle ) x=single(x); end;
 end
                                 % artifact removal
 if( ~isempty(state.artfiltstate) )
@@ -78,7 +78,8 @@ function [state]=initState(x,varargin)
      ch_names(1:numel(di.vals)) = di.vals; % update channel names
      iseeg=[di.extra.iseeg];
   end
-  
+  issingle=isa(x,'single');
+
                                 % spatial filter
   if( ~isempty(opts.spatialFilter) )
     R=[];
@@ -87,7 +88,7 @@ function [state]=initState(x,varargin)
        R = 'robust';
     elseif(strcmpi(opts.spatialFilter,'car'))
        wght=zeros(size(x,1),1); if(~isempty(iseeg)) wght(iseeg)=1; end;
-       R = eye(size(x,1)) - repmat(wght./sum(wght),[1 size(x,1)]);
+       R = eye(size(x,1)) - repmat(wght'./sum(wght),[size(x,1) 1]);
     elseif( iscell(opts.spatialFilter) ) % set channel names to use as average reference
        wght=zeros(size(x,1),1);
        for ci=1:numel(ch_names);
@@ -96,14 +97,22 @@ function [state]=initState(x,varargin)
              wght(ci)=1; 
           end;
        end
-       R = eye(size(x,1)) - repmat(wght./sum(wght),[1,size(x,1)]);
+       R = eye(size(x,1)) - repmat(wght'./sum(wght),[size(x,1) 1]);
     elseif( isnumeric(opts.spatialFilter) && size(opts.spatialFilter,2)==1 ) % set channel numbers to use as average reference
        wght=zeros(size(x,1),1); wght(opts.spatialFilter)=1;
-       R= eye(size(x,1)) - repmat(wght./sum(wght),[1 size(x,1)]);
+       % WARNING: watch the transpose.....
+       R= eye(size(x,1)) - repmat(wght'./sum(wght),[size(x,1) 1]);
     else
       warning('spatial filter type not supported yet');
     end
     state.R=R;
+    % apply
+    if( isnumeric(state.R) )
+       x = state.R*reshape(x,size(x,1),[]);
+    elseif( strcmpi(state.R,'robust') ) % median CAR
+       mu = median(x,1);
+       x  = x - repmat(mu,[size(x,1),1]);
+    end    
   end
 
                                 % channel selection
@@ -143,13 +152,22 @@ function [state]=initState(x,varargin)
     end
     state.B=B;
     state.A=A;
+    % pre-warm the filter state, reduce startup artifacts
+    if( issingle ) x=double(x); end;
+    [ans,state.spectfiltstate]=filter(state.B,state.A,repmat(mean(x,2),[1,size(x,2)]),[],2);
+    % apply
+    x = filter(state.B,state.A,x,state.spectfiltstate,2);
+    if( issingle ) x=single(x); end;
   end
 
   % eog removal
   if( ~isempty(opts.artifactCh) ) 
-     artHalfLife_s = 30; artHalfLife_samp = artHalfLife_s* fs; 
-     artBands      = [];%[.2 inf];
-     [ans,artfiltstate]=artChRegress(x,[],[1 2 3],opts.artifactCh,'ch_names',ch_names,'fs',fs,'bands',artBands,'covFilt',artHalfLife_samp);
+     % N.B. needs to be fast enough to respond to transient artifacts, like eye-blinks...
+     artHalfLife_s = .5; 
+     artHalfLife_samp = artHalfLife_s* fs; 
+     artBands      = [.1 30];%[.2 inf];
+     % initialize and apply
+     [x,artfiltstate]=artChRegress(x,[],[1 2 3],opts.artifactCh,'ch_names',ch_names,'fs',fs,'bands',artBands,'center',0,'covFilt',artHalfLife_samp);
      state.artfiltstate = artfiltstate;
   end
   
