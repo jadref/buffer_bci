@@ -32,6 +32,15 @@ elseif( ~isempty(state.sos) )
    end
    if( issingle ) x=single(x); end;
 end
+                                % downsample
+if( ~isempty(state.subsampleStep) ) % averaging downsampler, to reduce aliasing effects
+  nsubsamp = floor(size(x,2)/state.subsampleStep);
+  if( nsubsamp*state.subsampleStep < size(x,2) ) % need to pad
+     x = cat(2,x,repmat(x(:,end,:),[1,(nsubsamp+1)*state.subsampleStep-size(x,2),1]));
+  end;
+  x = mean(reshape(x,[size(x,1),state.subsampleStep,nsubsamp,size(x,3)]),2); % average samples
+  x = reshape(x,[size(x,1),size(x,3),size(x,4)]); % remove averaged dim
+end
                                 % spatial-filter
 if( ~isempty(state.R) )
   if( isnumeric(state.R) )
@@ -52,7 +61,7 @@ if( ~isempty(state.artfiltstate) )
    %mad(ox,x)
 end
                                 % downsample
-if( ~isempty(state.subsampleStep) ) % averaging downsampler, to reduce aliasing effects
+if( 0 && ~isempty(state.subsampleStep) ) % averaging downsampler, to reduce aliasing effects
   nsubsamp = floor(size(x,2)/state.subsampleStep);
   if( nsubsamp*state.subsampleStep < size(x,2) ) % need to pad
      x = cat(2,x,repmat(x(:,end,:),[1,(nsubsamp+1)*state.subsampleStep-size(x,2),1]));
@@ -67,9 +76,9 @@ return
 
 function [state]=initState(x,varargin)
   % parse the configuration options and initialize the filter state
-  state=struct('chseln',[],'R',[],'artfiltstate',[],'B',[],'A',[],'spectfiltstate',[],'biasfilt',[],'biasfiltstate',[],'subsampleStep',[],'hdr',[]);
+  state=struct('chseln',[],'R',[],'artfiltstate',[],'B',[],'A',[],'sos',[],'spectfiltstate',[],'biasfilt',[],'biasfiltstate',[],'subsampleStep',[],'hdr',[]);
                                 % argument processing
-  opts=struct('chseln',[],'capFile',[],'overridechnms',0,'spatialFilter','car','artifactCh',[],'subsample',[],'bands',[.5 30],'spectfilttype',[],'spectfiltorder',[],'biasfilt',[],...
+  opts=struct('chseln',[],'capFile',[],'overridechnms',0,'spatialFilter',[],'artifactCh',[],'subsample',[],'bands',[],'spectfilttype',[],'spectfiltorder',[],'biasfilt',[],...
               'hdr',[],'fs',[],'ch_names','','ch_pos',[],'verb',0);
   opts=parseOpts(opts,varargin);
 
@@ -103,23 +112,32 @@ function [state]=initState(x,varargin)
     R=[];
                                 % make the fixed spatial filter matrix
     if( any(strcmpi(opts.spatialFilter,{'robust','robustcar'})) )
+      fprintf('Robust-CAR\n');
        R = 'robust';
-    elseif(strcmpi(opts.spatialFilter,'car'))
-       wght=zeros(size(x,1),1); if(~isempty(iseeg)) wght(iseeg)=1; end;
-       R = eye(size(x,1)) - repmat(wght'./sum(wght),[size(x,1) 1]);
-    elseif( iscell(opts.spatialFilter) ) % set channel names to use as average reference
-       wght=zeros(size(x,1),1);
-       for ci=1:numel(ch_names);
-          if( any(strcmpi(ch_names{ci},opts.spatialFilter)) ) 
-             fprintf('SpatialFilter: Matched %s\n',ch_names{ci});
-             wght(ci)=1; 
-          end;
-       end
-       R = eye(size(x,1)) - repmat(wght'./sum(wght),[size(x,1) 1]);
-    elseif( isnumeric(opts.spatialFilter) && size(opts.spatialFilter,2)==1 ) % set channel numbers to use as average reference
-       wght=zeros(size(x,1),1); wght(opts.spatialFilter)=1;
-       % WARNING: watch the transpose.....
-       R= eye(size(x,1)) - repmat(wght'./sum(wght),[size(x,1) 1]);
+    elseif(strcmpi(opts.spatialFilter,'car')) % common-average
+      fprintf('CAR\n');
+      wght=zeros(size(x,1),1); if(~isempty(iseeg)) wght(iseeg)=1; else wght(:)=1; end;
+      R = eye(size(x,1)) - repmat(wght'./sum(wght),[size(x,1) 1]);
+    elseif( iscell(opts.spatialFilter) ) % list channel names to use for reference
+      wght=zeros(size(x,1),1); 
+      for ci=1:numel(ch_names);
+        if( any(strcmpi(ch_names{ci},opts.spatialFilter)) )
+          fprintf('SpatialFilter: Matched %s\n',ch_names{ci});
+          wght(ci)=true;          
+        end;
+      end
+      R = eye(size(x,1)) - repmat(wght'./sum(wght),[size(x,1) 1]);
+    elseif( isnumeric(opts.spatialFilter) )
+      if ( size(opts.spatialFilter,2)==1 ) % set channel numbers to use as average reference
+        wght=zeros(size(x,1),1); wght(opts.spatialFilter)=1;
+        fprintf('SpatialFilter: Matched %s\n',sprintf('%s ',ch_names{wght>0}));
+        % WARNING: watch the transpose.....
+        R= eye(size(x,1)) - repmat(wght'./sum(wght),[size(x,1) 1]);
+      elseif( size(opts.spatialfilter,2)==size(x,1) )
+        R= opts.spatialfilter;
+      else
+        warning('dont understand spatial filter ');
+      end
     else
       warning('spatial filter type not supported yet');
     end
@@ -175,28 +193,50 @@ function [state]=initState(x,varargin)
 %     end
 %     state.B=B;
 %     state.A=A;
-%     % pre-warm the filter state, reduce startup artifacts
-%     if( issingle ) x=double(x); end;
-%     [ans,state.spectfiltstate]=filter(state.B,state.A,repmat(mean(x,2),[1,size(x,2)]),[],2);
+%     % estimate an initial filter state to reduce startup artifacts
+%     % From: Likhterov & Kopeika, 2003. "Hardware-efficient technique for
+%             minimizing startup transients in Direct Form II digital filters"
+%     kdc = sum(state.B) / sum(state.A);
+%     if (abs(kdc) < inf) # neither NAN nor +/- Inf
+%       si = fliplr(cumsum(fliplr(state.B - kdc * state.A)));
+%     else
+%       si = zeros(size(state.A)); # fall back to zero initialization
+%     endif
+%     si(1) = [];
+%     state.spectfiltstate= si(:)*x(:,1);
 %     % apply
-%     [x,state.spectfiltstate] = filter(state.B,state.A,x,state.spectfiltstate,2);
+%     if( issingle ) x=double(x); end;
+%     N.B. don't update the state, as will re-run this data later...
+%     x = filter(state.B,state.A,x,state.spectfiltstate,2);
 %     if( issingle ) x=single(x); end;    
 
 
     % get the filter parametres we need
     Rp=1; % max pass-band attenuation in db (1 = ~75%max)
     Rs=30;% min stop-band attenuation in db (30= ~.01%max)
+    ord=opts.spectfiltorder;
     if( bands(3)>=fs ) % high-pass
-       [ord,wN]=buttord(bands(2)*2/fs,bands(1)*2/fs,Rp,Rs);     type='high';  fprintf('high-pass [%g-inf]Hz',bands(2)); % high-pass
+      if( isempty(ord) )
+        [ord,wN]=buttord(bands(2)*2/fs,bands(1)*2/fs,Rp,Rs); % auto-order est
+      else
+        wN=bands(2)*2/fs;
+      end
+      type='high';  fprintf('%d order high-pass [%g-inf]Hz\n',ord,bands(2)); % high-pass
     elseif( bands(2)==0 ) % low-pass
-       [ord,wN]=buttord(bands(3)*2/fs,bands(4)*2/fs,Rp,Rs);     type='low';   fprintf('low-pass [0-%g]Hz',bands(3)); % low-pass
+      if( isempty(ord) )
+        [ord,wN]=buttord(bands(3)*2/fs,bands(4)*2/fs,Rp,Rs);
+      else
+        wN=bands(3)*2/fs;
+      end
+      type='low';   fprintf('%d order low-pass [0-%g]Hz\n',ord,bands(3)); % low-pass
     else % pass band
-       [ord,wN]=buttord(bands([2 3])*2/fs,bands([1 4])*2/fs,Rp,Rs); type=[];  fprintf('bandpass [%g-%g]Hz',bands(2:3)); % low-pass
+      if( isempty(ord) ) 
+        [ord,wN]=buttord(bands([2 3])*2/fs,bands([1 4])*2/fs,Rp,Rs); 
+      else
+        wN=bands(2:3)*2/fs;
+      end      
+      type=[];  fprintf('%d order bandpass [%g-%g]Hz\n',ord,bands(2:3)); % low-pass
     end
-    if( ~isempty(opts.spectfiltorder) ) % override order
-       ord=opts.spectfiltorder;       
-    end
-    fprintf(' %d order\n',ord);
     % get the filter coefficients
     if( ~isempty(type) ) 
        [z,p,k]=butter(ord,wN,type); %low/high
@@ -204,8 +244,10 @@ function [state]=initState(x,varargin)
        [z,p,k]=butter(ord,wN); % pass
     end        
     state.sos = zp2sos(z,p,k); % convert to second-order-section, i.e. cascade of 2nd-order filters, representation
+    % estimate the filter properties    
+    %N=2024; Fs=256; mf=1; [G,Wn]=freqz(sos,N,Fs); [D]=grpdelay(sos,N,Fs); [Wn(Wn<mf), abs(G(Wn<mf)), D(Wn<mf)]
 
-    % pre-warm the filter
+    % pre-warm the filter, by applying to time-reversed data.
     if( issingle ) x=double(x); end;
     ox=x;
     tmp=x(:,end:-1:1); % warm-up on time-reversed signal..
@@ -217,12 +259,10 @@ function [state]=initState(x,varargin)
     state.spectfiltstate=spectfiltstate;
     clear tmp
 
-    % estimate the filter properties    
-    %N=2024; Fs=256; mf=1; [G,Wn]=freqz(sos,N,Fs); [D]=grpdelay(sos,N,Fs); [Wn(Wn<mf), abs(G(Wn<mf)), D(Wn<mf)]
-
     % apply the pre-warmed sos filter cascade
     for li=1:size(state.sos,1); % apply the filter cascade
-       [x,state.spectfiltstate(:,:,li)]=filter(state.sos(li,1:3),state.sos(li,4:6),x,state.spectfiltstate(:,:,li),2);       
+      % N.B. DONT update state as will re-do this filtering later...
+       x=filter(state.sos(li,1:3),state.sos(li,4:6),x,state.spectfiltstate(:,:,li),2);       
     end
     if( issingle ) x=single(x); end;    
     end
@@ -237,19 +277,7 @@ function [state]=initState(x,varargin)
        end       
     end
   end
-
-  % eog removal
-  if( ~isempty(opts.artifactCh) ) 
-     % N.B. needs to be fast enough to respond to transient artifacts, like eye-blinks...
-     artHalfLife_s = .5; 
-     artHalfLife_samp = artHalfLife_s* fs; 
-     artBands      = [.1 30];%[.2 inf];
-     % initialize and apply
-     [x,artfiltstate]=artChRegress(x,[],[1 2 3],opts.artifactCh,'ch_names',ch_names,'fs',fs,'bands',artBands,'center',0,'covFilt',artHalfLife_samp);
-     state.artfiltstate = artfiltstate;
-  end
-  
-                                % re-sample
+                                  % re-sample
   ofs=fs;
   if( ~isempty(opts.subsample) )
     subsampleratio = ceil(fs/opts.subsample);    
@@ -259,6 +287,18 @@ function [state]=initState(x,varargin)
        state.subsampleStep = subsampleratio;
     end
   end
+
+  % eog removal
+  if( ~isempty(opts.artifactCh) ) 
+     % N.B. needs to be fast enough to respond to transient artifacts, like eye-blinks...
+     artHalfLife_s = .5; 
+     artHalfLife_samp = artHalfLife_s* ofs; 
+     artBands      = [.1 30];%[.2 inf];
+     % initialize and apply
+     [x,artfiltstate]=artChRegress(x,[],[1 2 3],opts.artifactCh,'ch_names',ch_names,'fs',ofs,'bands',artBands,'center',0,'covFilt',artHalfLife_samp);
+     state.artfiltstate = artfiltstate;
+  end
+  
 
   % update the hdr info
   if(isempty(hdr)) hdr=struct('fs',ofs,'label',ch_names,'iseeg',iseeg);
