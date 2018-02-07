@@ -45,7 +45,7 @@ function [X,state,info]=artChRegress(X,state,dim,idx,varargin);
 %    [] Correct state propogate over calls for the EOG data pre-processing, i.e. convert to IIR/Butter for band-pass
 %    [] Spatio-temporal learning - learn the optimal spectral filter as well as spatial
 %    [] Switching-mode removal   - for transient artifacts add artifact detector to only learn covariance function when artifact is present..
-opts=struct('detrend',0,'center',2,'bands',[],'artfilttype','iir','fs',[],'verb',0,'covFilt',[],'filtstate',[],'ch_names',[],'ch_pos',[],'pushbackartsig',1);
+opts=struct('detrend',0,'center',2,'bands',[],'step_samp',[],'artfilttype','iir','fs',[],'verb',0,'covFilt',[],'filtstate',[],'ch_names',[],'ch_pos',[],'pushbackartsig',1);
 if( ~isempty(state) && isstruct(state) ) % called with a filter-state, incremental filtering mode
   % extract the arguments/state
   opts    =state;
@@ -89,6 +89,32 @@ szX=size(X); szX(end+1:max(dim))=1;
 if( numel(dim)<3 ) nEp=1; else nEp=szX(dim(3)); end;
 issingle=isa(X,'single'); % is x single precision?
 
+
+                                % set-up the covariance filtering function
+covFilt=opts.covFilt; filtstate=opts.filtstate;
+if( ~isempty(covFilt) )
+  if( ~iscell(covFilt) ) covFilt={covFilt}; end;
+  if( isnumeric(covFilt{1}) ) % covFilt{1} is alpha for move-ave
+    if(covFilt{1}>=1) % convert half-life to alpha
+      covFilt{1}=exp(log(.5)./covFilt{1});
+    end; 
+    if( isempty(opts.step_samp) ) opts.step_samp=ceil(log(.5)/log(covFilt{1}))*2; end;
+    if(isempty(filtstate) ) filtstate=struct('N',0,'sxx',0,'sxy',0); end;
+  else
+    filtstate=struct('XX',[],'XY',[]); % 2 states for the 2 filters we use
+  end
+end
+                        % re-shape X into smaller steps if wanted/possible...
+step_samp=opts.step_samp;
+if( ~isempty(step_samp) )
+  if( szX(dim(2))>opts.step_samp*1.5 ) 
+    step_samp = ceil(szX(dim(2))./ceil(szX(dim(2))/step_samp)); % round to nearest even split
+  else
+    step_samp = [];
+  end
+end
+
+
 % compute the artifact signal and its forward propogation to the other channels
 % N.B. convert to use IIR to allow high-pass between calls with small windows...
 if ( isempty(artFilt) && ~isempty(opts.bands) ) % smoothing filter applied to art-sig before we use it
@@ -115,18 +141,6 @@ if ( isempty(artFilt) && ~isempty(opts.bands) ) % smoothing filter applied to ar
   end
 end
 
-                                % set-up the covariance filtering function
-covFilt=opts.covFilt; filtstate=opts.filtstate;
-if( ~isempty(covFilt) )
-  if( ~iscell(covFilt) ) covFilt={covFilt}; end;
-  if( isnumeric(covFilt{1}) ) % covFilt{1} is alpha for move-ave
-    if(covFilt{1}>=1) covFilt{1}=exp(log(.5)./covFilt{1}); end; % convert half-life to alpha
-    if(isempty(filtstate) ) filtstate=struct('N',0,'sxx',0,'sxy',0); end;
-  else
-    filtstate=struct('XX',[],'XY',[]); % 2 states for the 2 filters we use
-  end
-end
-
 % make a index expression to extract the current epoch
 xidx  ={}; for di=1:numel(szX); xidx{di}=int32(1:szX(di)); end;
 % index expression to extract the artifact channels
@@ -137,16 +151,35 @@ tpIdx2 = -(1:ndims(X)); tpIdx2(dim(1))=2;
 
 sf=[];
 if ( opts.verb>=0 && nEp>10 ) fprintf('artChRegress:'); end;
-for epi=1:nEp; % loop over epochs
-  if ( opts.verb>=0 && nEp>10 ) textprogressbar(epi,nEp); end;
+epi=1; sampi=1;
+while epi<=nEp; % loop over epochs  
 
-                                % extract the data for this epoch
-  if( numel(dim)>2 ) % per-epoch mode
-    xidx{dim(3)}=epi;
+  % get the piece of data to work on this time
+  if ( numel(dim)<=2 && isempty(step_samp) ) % global mode
+    Xei=X;
+  else % extract the data for this epoch
+    xidx{dim(3)}=epi; % get the current epoch
+    if( ~isempty(step_samp) ) % step within the epoch
+      sampidx = sampi:min(szX(dim(2)),sampi+step_samp-1);
+      xidx{dim(2)}  =sampidx;
+      artIdx{dim(2)}=1:numel(sampidx);
+    end
+    % update for next round
+    if( ~isempty(step_samp) )
+      if ( sampidx(end)<szX(dim(2)) )
+        sampi=sampi+step_samp;
+      else
+        sampi=1;
+        epi=epi+1;
+        if ( opts.verb>=0 && nEp>10 ) textprogressbar(epi,nEp); end;
+      end
+    else % step directly over epochs
+      epi=epi+1;
+      if ( opts.verb>=0 && nEp>10 ) textprogressbar(epi,nEp); end;
+    end
+    % extract the current data bit to work on
     Xei   = X(xidx{:});
-  else % global mode
-    Xei   = X;
-  end;
+  end
   
   % extract the artifact signals for this epoch
   artSig=Xei(artIdx{:});
@@ -159,7 +192,7 @@ for epi=1:nEp; % loop over epochs
   if ( ~isempty(artFilt) ) % smooth the result  
      if( isstruct(artFilt) ) % IIR
         if( isempty(artFilt.filtstate) ) % pre-warm the filter state
-           [ans,artFilt.filtstate]=filter(B,A,repmat(mean(artSig,2),[1,size(artSig,2)]),[],dim(2));
+           [ans,artFilt.filtstate]=filter(B,A,artSig(:,end:-1:1),[],dim(2));
         end
         [artSig,artFilt.filtstate]=filter(artFilt.B,artFilt.A,artSig,artFilt.filtstate,dim(2));
      else % fftFilter
