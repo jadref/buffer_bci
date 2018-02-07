@@ -288,9 +288,8 @@ end
 % update the sample rate for the pre-processed data
 if( isfield(filtstate,'hdr') ) hdr=filtstate.hdr; end; % use updated header from the filter-function
 hdr.fSample = outfs;
-if ( isfield(hdr,'SampleRate') ) hdr.SampleRate=outfs; 
-elseif ( isfield(hdr,'Fs') )     hdr.Fs=outfs; 
-end
+if ( isfield(hdr,'SampleRate') ) hdr.SampleRate=outfs;  end
+if ( isfield(hdr,'Fs') )         hdr.Fs=outfs;  end;
 return;
 
 %-------------------------------------------------------

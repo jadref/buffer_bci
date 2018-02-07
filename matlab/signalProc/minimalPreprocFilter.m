@@ -13,6 +13,25 @@ if( isempty(state) )
 end
 issingle=isa(x,'single');
 
+if ( ~isempty(state.biasfilt) ) % pre-high-pas with FIR
+   [x,state.biasfiltstate]=filter(state.biasfilt,1,x,state.biasfiltstate,2);
+end
+
+
+                                % spectral-filter
+if( ~isempty(state.B) )
+   % use double for internal filter processing, IIR filter is very very sensitive to precision used...
+  if(issingle)   x=double(x); end;
+  [x,state.spectfiltstate]=filter(state.B,state.A,x,state.spectfiltstate,2);
+  if( issingle ) x=single(x); end;
+elseif( ~isempty(state.sos) )
+   % apply the sos filter cascade
+   if(issingle)   x=double(x); end;
+   for li=1:size(state.sos,1); % apply the filter cascade
+      [x,state.spectfiltstate(:,:,li)]=filter(state.sos(li,1:3),state.sos(li,4:6),x,state.spectfiltstate(:,:,li),2);       
+   end
+   if( issingle ) x=single(x); end;
+end
                                 % spatial-filter
 if( ~isempty(state.R) )
   if( isnumeric(state.R) )
@@ -22,18 +41,9 @@ if( ~isempty(state.R) )
      x  = x - repmat(mu,[size(x,1),1]);
   end
 end
-
                                 % channel selection
 if( ~isempty(state.chseln) )
    x=x(state.chseln,:,:);
-end
-
-                                % spectral-filter
-if( ~isempty(state.B) )
-   % use double for internal filter processing, IIR filter is very very sensitive to precision used...
-  if(issingle)   x=double(x); end;
-  [x,state.spectfiltstate]=filter(state.B,state.A,x,state.spectfiltstate,2);
-  if( issingle ) x=single(x); end;
 end
                                 % artifact removal
 if( ~isempty(state.artfiltstate) )
@@ -57,9 +67,9 @@ return
 
 function [state]=initState(x,varargin)
   % parse the configuration options and initialize the filter state
-  state=struct('chseln',[],'R',[],'artfiltstate',[],'B',[],'A',[],'spectfiltstate',[],'subsampleStep',[],'hdr',[]);
+  state=struct('chseln',[],'R',[],'artfiltstate',[],'B',[],'A',[],'spectfiltstate',[],'biasfilt',[],'biasfiltstate',[],'subsampleStep',[],'hdr',[]);
                                 % argument processing
-  opts=struct('chseln',[],'capFile',[],'overridechnms',0,'spatialFilter','car','artifactCh',[],'subsample',[],'bands',[.5 30],'spectfilttype',[],...
+  opts=struct('chseln',[],'capFile',[],'overridechnms',0,'spatialFilter','car','artifactCh',[],'subsample',[],'bands',[.5 30],'spectfilttype',[],'spectfiltorder',[],'biasfilt',[],...
               'hdr',[],'fs',[],'ch_names','','ch_pos',[],'verb',0);
   opts=parseOpts(opts,varargin);
 
@@ -79,6 +89,14 @@ function [state]=initState(x,varargin)
      iseeg=[di.extra.iseeg];
   end
   issingle=isa(x,'single');
+
+  % bias-remove
+  if( ~isempty(opts.biasfilt) )
+     len = opts.biasfilt*fs;
+     state.biasfilt = -ones(len+1,1)./len; state.biasfilt(1)=1;
+     state.biasfiltstate=[];
+  end
+
 
                                 % spatial filter
   if( ~isempty(opts.spatialFilter) )
@@ -143,21 +161,81 @@ function [state]=initState(x,varargin)
   if( ~isempty(opts.bands) )
     bands=opts.bands;
     type =opts.spectfilttype;
-    if( bands(1)==0 )      type='low';  bands=bands(2);  fprintf('low-pass %gHz\n',bands); % low-pass
-    elseif( bands(2)>=fs ) type='high'; bands=bands(1);  fprintf('high-pass %gHz\n',bands);% high-pass
-    else                                                 fprintf('band-pass [%g-%g]Hz\n',bands);
-    end       
-    if( isempty(type) )    [B,A]=butter(4,bands*2/fs); % arg, weird bug in octave for pass
-    else                   [B,A]=butter(4,bands*2/fs,type);
+    Rp=1; % max pass-band attenuation in db (1 = ~75%max)
+    Rs=30;% min stop-band attenuation in db (30= ~.01%max)
+    if( 1 ) 
+%     if( bands(1)==0 )      type='low';  bands=bands(2);  fprintf('low-pass %gHz\n',bands); % low-pass
+%     elseif( bands(2)>=fs ) type='high'; bands=bands(1);  fprintf('high-pass %gHz\n',bands);% high-pass
+%     else                                                 fprintf('band-pass [%g-%g]Hz\n',bands);
+%     end       
+    
+
+%     if( isempty(type) )    [B,A]=butter(4,bands*2/fs); % arg, weird bug in octave for pass
+%     else                   [B,A]=butter(4,bands*2/fs,type);
+%     end
+%     state.B=B;
+%     state.A=A;
+%     % pre-warm the filter state, reduce startup artifacts
+%     if( issingle ) x=double(x); end;
+%     [ans,state.spectfiltstate]=filter(state.B,state.A,repmat(mean(x,2),[1,size(x,2)]),[],2);
+%     % apply
+%     [x,state.spectfiltstate] = filter(state.B,state.A,x,state.spectfiltstate,2);
+%     if( issingle ) x=single(x); end;    
+
+
+    % get the filter parametres we need
+    Rp=1; % max pass-band attenuation in db (1 = ~75%max)
+    Rs=30;% min stop-band attenuation in db (30= ~.01%max)
+    if( bands(3)>=fs ) % high-pass
+       [ord,wN]=buttord(bands(2)*2/fs,bands(1)*2/fs,Rp,Rs);     type='high';  fprintf('high-pass [%g-inf]Hz',bands(2)); % high-pass
+    elseif( bands(2)==0 ) % low-pass
+       [ord,wN]=buttord(bands(3)*2/fs,bands(4)*2/fs,Rp,Rs);     type='low';   fprintf('low-pass [0-%g]Hz',bands(3)); % low-pass
+    else % pass band
+       [ord,wN]=buttord(bands([2 3])*2/fs,bands([1 4])*2/fs,Rp,Rs); type=[];  fprintf('bandpass [%g-%g]Hz',bands(2:3)); % low-pass
     end
-    state.B=B;
-    state.A=A;
-    % pre-warm the filter state, reduce startup artifacts
+    if( ~isempty(opts.spectfiltorder) ) % override order
+       ord=opts.spectfiltorder;       
+    end
+    fprintf(' %d order\n',ord);
+    % get the filter coefficients
+    if( ~isempty(type) ) 
+       [z,p,k]=butter(ord,wN,type); %low/high
+    else
+       [z,p,k]=butter(ord,wN); % pass
+    end        
+    state.sos = zp2sos(z,p,k); % convert to second-order-section, i.e. cascade of 2nd-order filters, representation
+
+    % pre-warm the filter
     if( issingle ) x=double(x); end;
-    [ans,state.spectfiltstate]=filter(state.B,state.A,repmat(mean(x,2),[1,size(x,2)]),[],2);
-    % apply
-    x = filter(state.B,state.A,x,state.spectfiltstate,2);
-    if( issingle ) x=single(x); end;
+    ox=x;
+    tmp=x(:,end:-1:1); % warm-up on time-reversed signal..
+    [tmp,spectfiltstate]=filter(state.sos(1,1:3),state.sos(1,4:6),tmp,[],2);
+    spectfiltstate=repmat(spectfiltstate,[1 1 size(state.sos,1)]);
+    for li=2:size(state.sos,1); % apply the filter cascade
+       [tmp,spectfiltstate(:,:,li)]=filter(state.sos(li,1:3),state.sos(li,4:6),tmp,[],2);
+    end
+    state.spectfiltstate=spectfiltstate;
+    clear tmp
+
+    % estimate the filter properties    
+    %N=2024; Fs=256; mf=1; [G,Wn]=freqz(sos,N,Fs); [D]=grpdelay(sos,N,Fs); [Wn(Wn<mf), abs(G(Wn<mf)), D(Wn<mf)]
+
+    % apply the pre-warmed sos filter cascade
+    for li=1:size(state.sos,1); % apply the filter cascade
+       [x,state.spectfiltstate(:,:,li)]=filter(state.sos(li,1:3),state.sos(li,4:6),x,state.spectfiltstate(:,:,li),2);       
+    end
+    if( issingle ) x=single(x); end;    
+    end
+    if( 0 ) % FIR filter
+       error('Not implemented yet!');
+       if( bands(3)>=fs ) % high-pass
+          [ord,wN]=firpmord(bands(2)*2/fs,bands(1)*2/fs,Rp,Rs);     type='high';  fprintf('%d order high-pass [%g-inf]Hz\n',ord,bands(2)); % high-pass
+       elseif( bands(2)==0 ) % low-pass
+          [ord,wN]=firpmord(bands(3)*2/fs,bands(4)*2/fs,Rp,Rs);     type='low';   fprintf('%d order low-pass [0-%g]Hz\n',ord,bands(3)); % low-pass
+       else % pass band
+          [ord,wN]=firpmord(bands([2 3])*2/fs,bands([1 4])*2/fs,Rp,Rs); type=[];      fprintf('%d order bandpass [%g-%g]Hz\n',ord,bands(2:3)); % low-pass
+       end       
+    end
   end
 
   % eog removal

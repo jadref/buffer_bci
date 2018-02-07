@@ -50,7 +50,7 @@ otherAxes = setdiff(findobj(fig, 'type', 'axes'), [h;keyHandle(:)]);
 set(0, 'showhiddenhandles', 'off');
 if up
 	props = getappdata(fig, 'axsettings'); if ~iscell(props), props = {}; end
-	props = {'units', 'normalized', 'position', [0.1 0.1 0.8 0.8] props{:}'};
+	props = {'units', 'normalized', 'position', [0.1 0.1 0.8 0.8] props{:}};
 	saveProps = get(h, props(1:2:end));
 	set(h, props{:})
 	props(2:2:end) = saveProps;

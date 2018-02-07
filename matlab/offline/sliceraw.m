@@ -150,5 +150,7 @@ if ( ~all(keep) )
 end
 if ( subSampRatio>1 ) % update the sample rate stored in the header
   hdr.fSample=outfs;
+  if ( isfield(hdr,'SampleRate') ) hdr.SampleRate=outfs;  end
+  if ( isfield(hdr,'Fs') )         hdr.Fs=outfs;  end;
 end
 return;

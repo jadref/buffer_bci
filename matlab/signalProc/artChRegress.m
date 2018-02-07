@@ -106,9 +106,10 @@ if ( isempty(artFilt) && ~isempty(opts.bands) ) % smoothing filter applied to ar
      elseif( bands(2)>=fs ) type='high'; bands=bands(1);  fprintf('high-pass %gHz\n',bands);% high-pass
      else                                                 fprintf('band-pass [%g-%g]Hz\n',bands);
      end
+     % N.B. we use a low-order butterworth to minimise the phase-lags introduced...
      if( any(strcmpi(type,{'bandpass','iir'})) ) type=[]; end;
-     if( isempty(type) )    [B,A]=butter(4,bands*2/fs); % arg, weird bug in octave for pass
-     else                   [B,A]=butter(4,bands*2/fs,type);
+     if( isempty(type) )    [B,A]=butter(3,bands*2/fs); % arg, weird bug in octave for pass
+     else                   [B,A]=butter(3,bands*2/fs,type);
      end
      artFilt=struct('B',B,'A',A,'filtstate',[]);
   end
