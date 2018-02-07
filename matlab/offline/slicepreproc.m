@@ -1,4 +1,4 @@
-function [data,devents,hdr,allevents]=slicepreproc(fname,varargin)
+function [data,devents,hdr,allevents,filtstate]=slicepreproc(fname,varargin)
 % load a ftbuffer_offline save file, apply the given pre-processing function, and slice out data w.r.t. the given trigger events
 %
 % [data,devents,hdr,allevents]=slicepreproc(outputdir,varargin)
