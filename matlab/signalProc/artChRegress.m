@@ -124,7 +124,7 @@ if ( isempty(artFilt) && ~isempty(opts.bands) ) % smoothing filter applied to ar
      if( opts.verb>=0 ) fprintf('artChRegress::Filtering @%gHz with [%s]\n',fs,sprintf('%g ',opts.bands)); end;
      artFilt = mkFilter(floor(szX(dim(2))./2),opts.bands,fs/szX(dim(2)));
   else % setup an IIR filter, so allows filter state propogation between calls
-     type=opts.artfilttype;
+     type =opts.artfilttype;
      bands=opts.bands;
      fprintf('artChRegress::');
      if( numel(bands)>2 ) bands=bands(2:3); end;
@@ -137,7 +137,7 @@ if ( isempty(artFilt) && ~isempty(opts.bands) ) % smoothing filter applied to ar
      if( isempty(type) )    [B,A]=butter(3,bands*2/fs); % arg, weird bug in octave for pass
      else                   [B,A]=butter(3,bands*2/fs,type);
      end
-     artFilt=struct('B',B,'A',A,'filtstate',[]);
+     artFilt=struct('B',B,'A',A,'filtstate',[],'type',opts.artfilttype);
   end
 end
 
@@ -191,10 +191,29 @@ while epi<=nEp; % loop over epochs
   if ( opts.detrend )      artSig = detrend(artSig,dim(2)); end;
   if ( ~isempty(artFilt) ) % smooth the result  
      if( isstruct(artFilt) ) % IIR
-        if( isempty(artFilt.filtstate) ) % pre-warm the filter state
-           [ans,artFilt.filtstate]=filter(B,A,artSig(:,end:-1:1),[],dim(2));
+        A = artFilt.A; B=artFilt.B;
+        artfiltstate=artFilt.filtstate;
+        if( isempty(artfiltstate) ) % pre-warm the filter state, with seed values and intial time-reversed data
+          lrefl=3*max(numel(A),numel(B));
+          kdc = sum(B) / sum(A);
+          if (abs(kdc) < inf) % neither NAN nor +/- Inf
+            artfiltstate = fliplr(cumsum(fliplr(B - kdc * A)));
+          else
+            artfiltstate = zeros(size(A)); % fall back to zero initialization
+          end
+          artfiltstate(1) = [];
+          artfiltstate=artfiltstate(:)*reshape(artSig(:,1,:),1,[]);
+          artfiltstate=reshape(artfiltstate,[size(artfiltstate,1),size(artSig,1),size(artSig,3)]);
+          % pre-warm on the reversed initial signal...
+          [ans,artfiltstate]=filter(B,A,double(repop(2*artSig(:,1,:,:),'-',artSig(:,min(size(X,2),lrefl):-1:2,:,:))),artfiltstate,2);
         end
-        [artSig,artFilt.filtstate]=filter(artFilt.B,artFilt.A,artSig,artFilt.filtstate,dim(2));
+        % apply the filter
+        [artSig,artfiltstate]=filter(artFilt.B,artFilt.A,artSig,artfiltstate,dim(2));
+        % update the filter state, for next call if wanted
+        if(strncmp(artFilt.type(end:-1:1),fliplr('epoch'),4)) artFilt.filtstate=[]; 
+        else                                                  artFilt.filtstate=artfiltstate; 
+        end;
+
      else % fftFilter
         artSig = fftfilter(artSig,artFilt,[],dim(2),1); 
      end
