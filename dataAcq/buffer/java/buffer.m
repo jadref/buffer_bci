@@ -231,7 +231,7 @@ function [bufClient,host,port]=reconnect(host,port)
 global bufferClient;
 clientIdx=[];
 if( isempty(bufferClient) )
-  if( isempty(host) ) host='localhost' end;
+  if( isempty(host) ) host='localhost'; end;
   if( isempty(port) ) port=1972; end;
 else % search for matching client connection  
   if ( isempty(host) && isempty(port) ) % use first existing connection or defaults
