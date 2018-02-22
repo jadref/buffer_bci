@@ -1,5 +1,5 @@
 function [res,sidx]=dv2auc(Y,dv,dim,sidx,dvnoise,verb)
-% Compute the AUC values
+% Compute the Area-Under-the-r.o.Curve (AUC) measure of separability of features for binary class pair 
 %
 % [auc,sidx]=dv2auc(labels,pred,[dim,sidx,dvnoise,verb])
 %
