@@ -50,7 +50,7 @@ opts=struct('endType','end.training','verb',1,'timeOut_ms',1000,...
             'useradaptspatfiltFn','',...
 				'badchrm',0,'badchthresh',3,'capFile',[],'overridechnms',0,...
 				'welch_width_ms',1000,'spect_width_ms',500,'spectBaseline',1,...
-				'noisebands',{{[23 24 26 27] [45 47 53 55] [97 98 102 103]}},'noiseBins',[],'noisefracBins',[.2 1],...%[0 1.75],...
+				'noisebands',{{[23 24 26 27] [45 47 53 55] [97 98 102 103]}},'noiseBins',[],'noisefracBins',[.5 10],...%[0 1.75],...
 				'sigProcOptsGui',1,'dataStd',2.5,'drawHead',1);
 opts=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ); buffhost='localhost'; end;
@@ -126,7 +126,15 @@ else
 end
 freqs=0:1000/opts.welch_width_ms:fs/2;
 freqInd =getfreqInd(freqs,opts.freqbands);
-noiseInd=getfreqInd(freqs,opts.noisebands);
+noisebands=opts.noisebands; if ( ~iscell(opts.noisebands) ) opts.noisebands={opts.noisebands}; end;
+noiseInd  =false(numel(freqInd),numel(noisebands)); noiseNormInd=false(size(noiseInd));
+for ni=1:numel(opts.noisebands); % noise ind for each of the noise bands.
+   noiseInd(:,ni)=getfreqInd(freqs,noisebands{ni});
+   nWidth=ceil(sum(noiseInd(:,ni))/2);
+   nIdx=[find(noiseInd(:,ni)>0,1,'first') find(noiseInd(:,ni)>0,1,'last')]; % start/end of the noise band
+   noiseNormInd( max(1,   nIdx(1)-(1:nWidth))) =true; % nWidth bins before
+   noiseNormInd( min(end, nIdx(2)+(1:nWidth))) =true; % nWidth bins after
+end
 
 % make the spectral filter
 filt=[]; if ( ~isempty(opts.freqbands)); filt=mkFilter(trlen_samp/2,opts.freqbands,fs/trlen_samp);end
@@ -452,12 +460,17 @@ while ( ~endTraining )
 
    case '50hz'; % 50Hz power, N.B. on the last 2s data only!  -----------------------------------
     ppdat = welchpsd(ppdat(:,find(times>-2,1):end),2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'detrend',1,'aveType','amp');
-    ppdat = sum(ppdat(:,noiseInd),2)./sum(noiseInd); % ave power in this range
+    ppdat = sum(ppdat(:,any(noiseInd,2)),2)./sum(noiseInd(:)); % ave power in this range
     ppdat = 20*log(max(ppdat,1e-12)); % convert to db
 
    case 'noisefrac'; % 50Hz power / total power, last 2s only ---------------------------------------
     ppdat = welchpsd(ppdat(:,find(times>-2,1):end),2,'width_ms',opts.welch_width_ms,'fs',hdr.fsample,'detrend',1,'aveType','amp');
-    ppdat = sum(ppdat(:,noiseInd),2)./sum(ppdat,2); % fractional power in 50hz band
+    noisefrac = zeros(size(ppdat,1),size(noiseInd,2));
+    for ni=1:size(noiseInd,2);
+       % Ratio of ave power in noise-band to ave-power in the band normalization frequencies
+       noisefrac(:,ni) = (sum(ppdat(:,noiseInd(:,ni)),2)./sum(noiseInd(:,ni)))./(sum(ppdat(:,noiseNormInd(:,ni)),2)./sum(noiseNormInd(:,ni)));
+    end
+    ppdat = max(noisefrac,[],2); % worse case fractional power in 50hz band
     
    case 'spect'; % spectrogram  -----------------------------------
     ppdat = spectrogram(ppdat,2,'width_ms',opts.spect_width_ms,'fs',hdr.fsample);
@@ -540,7 +553,7 @@ while ( ~endTraining )
       if ( ~isempty(cbarhdl) ) 
         set(cbarhdl,'position',cbarpos); % ARGH! octave moves the cbar if axes are changed!
         set(findobj(cbarhdl),'visible','on');
-        set(get(cbarhdl,'children'),'ydata',datlim);set(cbarhdl,'ylim',datlim); 
+        set(findobj(cbarhdl,'type','image'),'ydata',datlim);set(cbarhdl,'ylim',datlim); 
       end;
       
      case 'spect'; % spectrogram -----------------------------------
@@ -556,7 +569,7 @@ while ( ~endTraining )
       if ( ~isempty(cbarhdl) ) 
         set(cbarhdl,'position',cbarpos); % ARGH! octave moves the cbar if axes are changed!
         set(findobj(cbarhdl),'visible','on'); 
-        set(get(cbarhdl,'children'),'ydata',datlim);set(cbarhdl,'ylim',datlim); 
+        set(findobj(cbarhdl,'type','image'),'ydata',datlim);set(cbarhdl,'ylim',datlim); 
       end;
     
     end
@@ -591,7 +604,7 @@ while ( ~endTraining )
         datlim=datrange; set(hdls(1:size(ppdat,1)),'clim',datlim);
                                 % update the colorbar info
         if ( ~isempty(cbarhdl) ); 
-           set(get(cbarhdl,'children'),'ydata',datlim);
+           set(findobj(cbarhdl,'type','image'),'ydata',datlim);
            set(cbarhdl,'ylim',datlim); 
         end;
       else % lines - datalim is y-range
@@ -625,7 +638,7 @@ return;
 function freqInd=getfreqInd(freqs,freqbands)
 if ( nargin<1 || isempty(freqbands) ); freqIdx=[1 numel(freqs)]; return; end;
 if( ~iscell(freqbands) ) freqbands={freqbands}; end;
-freqInd=false(size(freqs));
+freqInd=false(numel(freqs),1);
 for bi=1:numel(freqbands);
   [ans,lb]=min(abs(freqs-max(freqs(1),freqbands{bi}(1)))); 
   [ans,ub]=min(abs(freqs-min(freqs(end),freqbands{bi}(end))));
