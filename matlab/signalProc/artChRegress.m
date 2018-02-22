@@ -42,7 +42,7 @@ function [X,state,info]=artChRegress(X,state,dim,idx,varargin);
 %  ch_pos   -- [3 x size(X,dim(1))] physical positions of the channels in dim(1) of X
 %
 % TODO:
-%    [] Correct state propogate over calls for the EOG data pre-processing, i.e. convert to IIR/Butter for band-pass
+%    [X] Correct state propogate over calls for the EOG data pre-processing, i.e. convert to IIR/Butter for band-pass
 %    [] Spatio-temporal learning - learn the optimal spectral filter as well as spatial
 %    [] Switching-mode removal   - for transient artifacts add artifact detector to only learn covariance function when artifact is present..
 opts=struct('detrend',0,'center',2,'bands',[],'step_samp',[],'artfilttype','iir','fs',[],'verb',0,'covFilt',[],'filtstate',[],'ch_names',[],'ch_pos',[],'pushbackartsig',1);
@@ -171,10 +171,14 @@ while epi<=nEp; % loop over epochs
       else
         sampi=1;
         epi=epi+1;
+        % clear filter state between epochs
+        if( strncmp(artFilt.type(end:-1:1),fliplr('epoch'),4)) artFilt.filtstate=[]; end; 
         if ( opts.verb>=0 && nEp>10 ) textprogressbar(epi,nEp); end;
       end
     else % step directly over epochs
       epi=epi+1;
+      % clear filter state between epochs
+      if( strncmp(artFilt.type(end:-1:1),fliplr('epoch'),4)) artFilt.filtstate=[]; end; 
       if ( opts.verb>=0 && nEp>10 ) textprogressbar(epi,nEp); end;
     end
     % extract the current data bit to work on
@@ -202,18 +206,14 @@ while epi<=nEp; % loop over epochs
             artfiltstate = zeros(size(A)); % fall back to zero initialization
           end
           artfiltstate(1) = [];
-          artfiltstate=artfiltstate(:)*reshape(artSig(:,1,:),1,[]);
-          artfiltstate=reshape(artfiltstate,[size(artfiltstate,1),size(artSig,1),size(artSig,3)]);
+          prePad = double(repop(2*artSig(:,1,:,:),'-',artSig(:,min(size(X,2),lrefl):-1:2,:,:)));
+          artfiltstate=artfiltstate(:)*reshape(prePad(:,1,:),1,[]);
+          artfiltstate=reshape(artfiltstate,[size(artfiltstate,1),size(prePad,1),size(prePad,3)]);
           % pre-warm on the reversed initial signal...
-          [ans,artfiltstate]=filter(B,A,double(repop(2*artSig(:,1,:,:),'-',artSig(:,min(size(X,2),lrefl):-1:2,:,:))),artfiltstate,2);
+          [ans,artfiltstate]=filter(B,A,prePad,artfiltstate,2);
         end
-        % apply the filter
-        [artSig,artfiltstate]=filter(artFilt.B,artFilt.A,artSig,artfiltstate,dim(2));
-        % update the filter state, for next call if wanted
-        if(strncmp(artFilt.type(end:-1:1),fliplr('epoch'),4)) artFilt.filtstate=[]; 
-        else                                                  artFilt.filtstate=artfiltstate; 
-        end;
-
+        % apply the filter, and record output state, to propogate to the next call
+        [artSig,artFilt.filtstate]=filter(artFilt.B,artFilt.A,artSig,artfiltstate,dim(2));
      else % fftFilter
         artSig = fftfilter(artSig,artFilt,[],dim(2),1); 
      end
@@ -246,7 +246,8 @@ while epi<=nEp; % loop over epochs
   
   % regression solution for estimateing X from the artifact channels: w_B = (B^TXX^TB)^{-1} B^TXY^T = (BX)\Y
   %w_B    = BXXtB\BXYt; % slower, min-norm, low-rank robust(ish) [nArt x nCh]
-  w_B    = pinv(BXXtB)*BXYt; % slower, min-norm, low-rank robust(ish) [nArt x nCh]
+  tol    = max(diag(BXXtB))*5e-3; % TODO: Robustify this further...  only-signals within factor 200 of max power
+  w_B    = pinv(BXXtB,tol)*BXYt; % slower, min-norm, low-rank robust(ish) [nArt x nCh]
   w_B(:,idx)=0; % don't modify the art-channels..
   
   % make a single spatial filter to remove the artifact signal in 1 step
