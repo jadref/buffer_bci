@@ -38,9 +38,13 @@ function [data,devents,hdr,allevents]=sliceraw(fname,varargin)
 %              {type value} OR {{types} {values}}
 %               See matchEvents for details
 %             OR
-%               {str} [function_handle] handle to a function which takes in all events and
-%                   returns the set of events on which to slice e.g.
-%                    [triggerEvents] = myMatchEvents(events); % events is struct array of all events
+%               'str' the event type to match
+%             OR
+%               [function_handle] handle to a function which takes in all events and
+%                   returns the events on which to slice e.g.
+%                    [triggerEvents] = myMatchEvents(allevents); 
+%                       Input:  allevents     = (struct) all events in this data file
+%                       Output: triggerEvents = (struct) the events on which to slice the data
 %             OR
 %               (struct) struct array of event's already selected/filtered to slice on
 %  trlen_ms/trlen_samp - [1x1] length of data to get for each epoch in milliseconds or samples (3000ms)
