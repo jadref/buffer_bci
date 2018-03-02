@@ -85,10 +85,9 @@ function [data,devents,hdr,allevents,filtstate]=slicepreproc(fname,varargin)
 %  % 5: alternative way of doing a high-pass filter using the signalProc/filterFilt function
 %  [data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',1500,'width_raw_ms',5000,'preprocFn',{'filterFilt' 'filter',{'butter',6,10,'low'}});
 %
-%  % 6: transformation to time-frequencey representation with welch + downsample->10hz
-%  [data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',5000,'width_raw_ms',5000,'width_ms',250,'step_ms',100,'preprocFn',@(x,s) welchpsd(x,2,'width_samp',25));
-%  % Note: data.buf is not [ ch x  ( freqs * times ) ]
-%  tfr = reshape(data(1).buf,[size(data(1).buf,1) size(data(1).buf,2)/50 50]);
+%  % 6: transformation to time-frequencey representation with welch + downsample->10hz  
+%  [data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',{'stimulus.tgtFlash'},'trlen_ms',5000,'width_raw_ms',5000,'width_ms',250,'step_ms',100,'preprocFn',@(x,varargin) permute(welchpsd(x,2,'width_samp',25),[1 3 2]));
+%  % Note: data.buf is now [ ch x times x freqs ]
 %  clf;image3d(tfr,'xlabel','ch','ylabel','freq','zlabel','time'); plot the TFR
 %
 %  % 6: apply minimal pre-processing consisting of, band-pass (1-10hz) -> CAR -> subsample@20Hz
@@ -203,7 +202,11 @@ windat      = rawdat(:,1:width_samp,:); % extract the raw-data window for this p
 if( isempty(preprocFn) )
   curppdat  = windat;
 else
-  [curppdat,filtstate]  = feval(preprocFn{1},windat,filtstate,preprocFn{2:end},'fs',fs,'hdr',hdr);
+   try;
+      [curppdat,filtstate]  = feval(preprocFn{1},windat,filtstate,preprocFn{2:end},'fs',fs,'hdr',hdr);
+  catch; % try without state output
+     curppdat  = feval(preprocFn{1},windat,filtstate,preprocFn{2:end},'fs',fs,'hdr',hdr);
+   end
 end
 szppwin     = size(curppdat); % size of 1 block of pre-processed data
 subsampratio= szppwin(2) / step_samp; % estimate the ratio of raw-to-preprocessed samples, every step_samp -> szppwin(2) samples
@@ -215,7 +218,7 @@ trlen_ppsamp= ceil(trlen_samp * subsampratio);
 % needed for the sliced event info
 ppbuf_window = ceil(trlen_window) + 1; % number windows of preprocessed data for event data
 ppdat        = zeros([szppwin(1),szppwin(2)*ppbuf_window,szppwin(3:end)]);
-ppdat(:,end-szppwin(2)+1:end,:) = curppdat; % insert into the ring-buffer, N.B. ppdat is lagged w.r.t. rawdat!
+ppdat(:,end-szppwin(2)+1:end,:) = curppdat(:,:,:); % insert into the ring-buffer, N.B. ppdat is lagged w.r.t. rawdat!
 ppbuf_samp   = ppbuf_window * step_samp; % number of raw samples in preprocessed data buffer
 ppend_samp   = step_samp;  % last sample *in* the pre-processed data buffer
 
@@ -238,7 +241,11 @@ while( ~eof )  % process all packets
     if( isempty(preprocFn) ) % no pre-processsing
       curppdat  = windat;
     else % apply the given function
-      [curppdat,filtstate]  = feval(preprocFn{1},windat,filtstate,preprocFn{2:end},'hdr',hdr);
+       if( ~isempty(filtstate) )
+          [curppdat,filtstate]  = feval(preprocFn{1},windat,filtstate,preprocFn{2:end},'hdr',hdr);
+       else % state-less call
+          curppdat = feval(preprocFn{1},windat,[],preprocFn{2:end},'hdr',hdr);
+       end
       if( any(isnan(curppdat)) ) 
          warning('NaNs!!!');
       end
@@ -246,8 +253,8 @@ while( ~eof )  % process all packets
       
                                 % update the pre-processed data buffer
     ppdat(:,1:end-szppwin(2),:)    = ppdat(:,szppwin(2)+1:end,:); % shift
-    ppdat(:,end-szppwin(2)+1:end,:)= curppdat; % insert
-    %windowend_samp                 = windowend_samp + step_samp; % sample number for the current pre-proc call, used to matche event sample info
+    ppdat(:,end-szppwin(2)+1:end,:)= curppdat(:,:,:); % insert
+    %windowend_samp                = windowend_samp + step_samp; % sample number for the current pre-proc call, used to matche event sample info
     ppend_samp                     = ppend_samp + step_samp; % update the end of ppdat marker
     
     % check if there is a trigger event we should slice out the pre-processed data for
@@ -256,7 +263,7 @@ while( ~eof )  % process all packets
     while( bgns(curevt)+trlen_samp <= ppend_samp )
       eventstart_ppsamp= (bgns(curevt)-ppstart_samp) * subsampratio; % samples from start ppbuf in pp-samples
       eventIdx         = ceil(eventstart_ppsamp) -1 + (1:trlen_ppsamp);
-      data(curevt).buf = ppdat(:,eventIdx);  
+      data(curevt).buf = ppdat(:,eventIdx,:,:);  
       keep(curevt)     = true;
       curevt           = curevt+1; % move on to the next event
       fprintf('.');
@@ -345,8 +352,13 @@ figure(1);clf;mcplot([data0(1).buf(2,:);data(1).buf(2,:);data0(1).buf(3,:);data(
 
 % time-frequency decomposition, 4hz resolution, 10hz feature rate
 % N.B. we assume a 100hz sample rate
-[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'width_raw_ms',5000,'width_ms',250,'step_ms',100,'preprocFn',@(x,s) welchpsd(x,2,'width_samp',25));
-
+[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'width_raw_ms',5000,'width_ms',250,'step_ms',100,'preprocFn',@(x,varargin) permute(welchpsd(x,2,'width_samp',25),[1 3 2]));
 % plot the resulting sliced TFR
-clf;image3d(reshape(data(1).buf,[size(data(1).buf,1) size(data(1).buf,2)/50 50]),'xlabel','ch','ylabel','freq','zlabel','time');
+clf;image3d(data(1).buf,'xlabel','ch','ylabel','time','zlabel','freq');
+
+% time-freq 4hz res, 10hz feature rate, polar+cart rep
+[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'width_raw_ms',5000,'width_ms',250,'step_ms',100,'preprocFn',@(x,varargin) permute(fft_posfreq(x,[],2,'polar+cart'),[1 4 2 3]));
+
+% alternative approach using the spectrogram function - so can process in larger chunks
+[data,devents,hdr,allevents]=slicepreproc(datadir,'startSet',struct('type','start','value',1,'sample',1),'trlen_ms',5000,'width_raw_ms',5000,'width_ms',5000,'preprocFn',@(x,s) permute(spectrogram(x,2,'width_samp',25,'step_samp',10),[1 3 2]));
 
