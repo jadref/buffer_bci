@@ -13,6 +13,8 @@ function [FX]=fft_posfreq(X,len,dim,feat,taper,detrendp,centerp,corMag,MAXEL,ver
 %           'l2','pow' - power, i.e. squared length of the complex coefficient
 %           'abs'     - absolute length of the coefficients
 %           'angle'   - angle of the complex coefficient
+%           'polar'   - abs,arg format, i.e. length+angle
+%           'polar+cart' - abs+complex-angle format
 %           'real'    - real part
 %           'imag'    - imaginary part
 %           'db'      - power in decibles, ie. 10*log10(F(X).^2)
@@ -23,7 +25,12 @@ function [FX]=fft_posfreq(X,len,dim,feat,taper,detrendp,centerp,corMag,MAXEL,ver
 %  MAXEL- chunk size for chunking algorithm
 %  verb - verbosity level
 % Output:
-%  FX   - Fourier transform of X for positive frequencies only
+%  FX   -  Fourier transform of X for positive frequencies only with size:
+%         [size(X,1:dim-1) size(X,dim)/2] size(X,dim+1:end)] for all *except*
+%         OR
+%         [size(X,1:dim-1) size(X,dim)/2 2 size(X,dim+1:end)] for 'polar', or 'cart' features
+%         OR
+%         [size(X,1:dim-1) size(X,dim)/2 3 size(X,dim+1:end)] for 'polar+cart' features
 if ( nargin < 3 || isempty(dim) ) 
    dim = find(size(X)>1,1,'first'); if ( isempty(dim) ) dim=1; end;  
 end;
@@ -46,6 +53,12 @@ switch lower(feat);
   FX = complex(zeros([sizeX(1:dim-1) ceil((sizeX(dim)-1)/2)+1 sizeX(dim+1:end)],class(X))); % pre-alloc
  case {'abs','real','imag','angle','pow','db','amp'};
   FX = zeros([sizeX(1:dim-1) ceil((sizeX(dim)-1)/2)+1 sizeX(dim+1:end)],class(X)); % pre-alloc
+ case {'cart'}; % cartesian versio of the complex version
+  FX = zeros([sizeX(1:dim-1) ceil((sizeX(dim)-1)/2)+1 2 sizeX(dim+1:end)],class(X)); % pre-alloc: x,y
+ case {'polar'};
+  FX = zeros([sizeX(1:dim-1) ceil((sizeX(dim)-1)/2)+1 2 sizeX(dim+1:end)],class(X)); % pre-alloc: abs,ang
+ case {'polar+cart','polar+unitcart'};
+  FX = zeros([sizeX(1:dim-1) ceil((sizeX(dim)-1)/2)+1 3 sizeX(dim+1:end)],class(X)); % pre-alloc: abs,angle-x,angle-y
  otherwise;
   error('Unrec feature type to compute');
 end
@@ -62,10 +75,11 @@ while ( ~isempty(idx) )
    tX=fft(tX,len,dim); % full FFT. N.B. inc pos & neg freq
 
    % Make some index expresssions
-   FXidx=idx; FXidx{dim}=1:size(FX,dim); % to assign into result
    % to extract pos freq only
    tmpIdx={};for d=1:ndims(tX); tmpIdx{d}=1:size(tX,d); end; 
    tmpIdx{dim}=1:size(FX,dim);
+   % to insert into the output
+   FXidx=idx; FXidx{dim}=1:size(FX,dim); % to assign into result
    
    % Do the extraction
    tX=tX(tmpIdx{:});
@@ -77,6 +91,29 @@ while ( ~isempty(idx) )
     case 'real';        FX(FXidx{:}) = real(tX);
     case 'imag';        FX(FXidx{:}) = imag(tX);     
     case 'db';          FX(FXidx{:}) = 10*log10(2*(real(tX).^2 + imag(tX).^2));
+    case 'cart';
+      FXidx=[FXidx(1:dim); (1:size(FX,dim+1))'; FXidx(dim+1:end)]; % insert extra dim for real/image parts
+      FXidx{dim+1}=1; FX(FXidx{:}) = real(tX);
+      FXidx{dim+1}=2; FX(FXidx{:}) = imag(tX);
+      FXidx{dim+1}=1:size(FX,dim+1); % ensure index contains all new values
+    case {'polar'};
+      FXidx=[FXidx(1:dim); (1:size(FX,dim+1))'; FXidx(dim+1:end)]; % insert extra dim for real/image parts
+      FXidx{dim+1}=1; FX(FXidx{:}) = abs(tX);
+      FXidx{dim+1}=2; FX(FXidx{:}) = angle(tX);
+      FXidx{dim+1}=1:size(FX,dim+1); % ensure index contains all new values      
+    case {'polar+cart'};
+      FXidx=[FXidx(1:dim); (1:size(FX,dim+1))'; FXidx(dim+1:end)]; % insert extra dim for real/image parts
+      FXidx{dim+1}=1; FX(FXidx{:}) = abs(tX);
+      FXidx{dim+1}=2; FX(FXidx{:}) = real(tX);
+      FXidx{dim+1}=3; FX(FXidx{:}) = imag(tX);
+      FXidx{dim+1}=1:size(FX,dim+1); % ensure index contains all new values      
+    case {'polar+unitcart'};
+      FXidx=[FXidx(1:dim); (1:size(FX,dim+1))'; FXidx(dim+1:end)]; % insert extra dim for real/image parts
+      FXidx{dim+1}=1; FX(FXidx{:}) = abs(tX);
+      tX=tX./abs(tX);
+      FXidx{dim+1}=2; FX(FXidx{:}) = real(tX);
+      FXidx{dim+1}=3; FX(FXidx{:}) = imag(tX);
+      FXidx{dim+1}=1:size(FX,dim+1); % ensure index contains all new values      
    end
         
    if ( corMag ) % correct double mag of fs/2 entry
