@@ -33,7 +33,7 @@ else
   if ( all(win==1) ) win=[]; end; % fast-path when no window applied
 end;
 if ( nargin < 7 || isempty(hilbertp) ) hilbertp=0; end;
-if ( nargin < 8 || isempty(MAXEL) ) MAXEL=2e6; end;
+if ( nargin < 8 || isempty(MAXEL) || MAXEL<=0 ) MAXEL=2e6; end;
 if ( nargin < 9 || isempty(verb) ) verb=-1; end;
 if ( numel(len) < 2 ) len=[len repmat(size(f,dim),2-numel(len),1)]; end;
 len(len==0)=size(f,dim); % convert 0's to full size

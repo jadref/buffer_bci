@@ -38,10 +38,10 @@ if ( dim < 0 ) dim = ndims(X)-dim+1; end;
 if ( nargin < 2 || isempty(len) ) len = size(X,dim); end;
 if ( nargin < 4 || isempty(feat) ) feat='complex'; end;
 if ( nargin < 5 ) taper=[]; end;
-if ( nargin < 6 || isempty(detrendp) ) detrendp=true; end;
-if ( nargin < 7 || isempty(centerp) ) centerp=true; end;
-if ( nargin < 8 || isempty(corMag) ) corMag=true; end;
-if ( nargin < 9 || isempty(MAXEL) ) MAXEL=2e6; end;
+if ( nargin < 6 || isempty(detrendp) ) detrendp=false; end;
+if ( nargin < 7 || isempty(centerp) ) centerp=false; end;
+if ( nargin < 8 || isempty(corMag) ) corMag=false; end;
+if ( nargin < 9 || isempty(MAXEL) || MAXEL<=0 ) MAXEL=2e6; end;
 if ( nargin < 10 || isempty(verb) ) verb=0; end;
 sizeX=size(X);
 
@@ -64,7 +64,7 @@ switch lower(feat);
 end
   
 [idx,allStrides,nchnks]=nextChunk([],size(X),dim,MAXEL);
-ci=0; if ( verb >= 0 && nchnks>1 ) fprintf('FFT posfreq:'); end;
+ci=0; if ( verb >= 0 && nchnks>1 ) fprintf('%s:',mfilename); end;
 while ( ~isempty(idx) )
 
    tX = X(idx{:});
@@ -72,14 +72,13 @@ while ( ~isempty(idx) )
    if ( detrendp )        tX=detrend(tX,dim);     end;
    if ( ~isempty(taper) ) tX=repop(tX,'*',taper); end;
 
-   tX=fft(tX,len,dim); % full FFT. N.B. inc pos & neg freq
+   if ( len(1)>size(tX,dim) ); tX=fft(tX,len(1),dim); else tX=fft(tX,[],dim); end; % full FFT. N.B. inc pos & neg freq
 
    % Make some index expresssions
    % to extract pos freq only
-   tmpIdx={};for d=1:ndims(tX); tmpIdx{d}=1:size(tX,d); end; 
-   tmpIdx{dim}=1:size(FX,dim);
+   tmpIdx=idx; tmpIdx{dim}=1:size(FX,dim);
    % to insert into the output
-   FXidx=idx; FXidx{dim}=1:size(FX,dim); % to assign into result
+   FXidx=idx;  FXidx{dim} =1:size(FX,dim); % to assign into result
    
    % Do the extraction
    tX=tX(tmpIdx{:});
