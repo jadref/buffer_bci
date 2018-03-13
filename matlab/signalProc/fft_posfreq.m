@@ -46,7 +46,10 @@ if ( nargin < 10 || isempty(verb) ) verb=0; end;
 sizeX=size(X);
 
 if ( len ~= size(X,dim) ) error('len isnt correctly implemented yet!'); end;
-if ( ~isempty(taper) ) taper=shiftdim(taper,-dim+1); end;
+if ( ~isempty(taper) ) 
+   if( ischar(taper) || iscell(taper) )      taper=mkFilter(size(X,dim),taper);   end;
+   taper=shiftdim(taper(:),-dim+1); 
+end;
 
 switch lower(feat);
  case 'complex'; 
