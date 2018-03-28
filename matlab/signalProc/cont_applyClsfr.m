@@ -177,14 +177,16 @@ while( ~endTest )
     end
 
     % filter the raw predictions if wanted
-    if ( isempty(dv) || isempty(opts.predFilt) ) 
+    if ( isempty(dv) && isempty(opts.predFilt) ) 
       dv=f;
     else
-      if ( isempty(dv) ) dv=zeros(size(f)); end;
+      if ( isempty(dv) ) 
+          dv=zeros(size(f)); 
+      end;
       if ( isnumeric(opts.predFilt) )
         if ( opts.predFilt>=0 ) % exp weighted moving average
           dv=dv*opts.predFilt + (1-opts.predFilt)*f;
-		  else % store predictions in a ring buffer
+        else % store predictions in a ring buffer
           fbuff(:,mod(nEpochs-1,abs(opts.predFilt))+1)=f; % store predictions in a ring buffer
           dv=mean(fbuff,2);
         end
