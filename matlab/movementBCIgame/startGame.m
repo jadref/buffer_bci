@@ -13,6 +13,16 @@ function startGame()
         msgbox({'Please change your directory to buffer_bci/matlab/movementBCIgame'},'Change directory');
     end
     
+    if ~exist ('data','dir')
+        mkdir('data');
+    end
+    if ~exist ('classifier','dir')
+        mkdir('classifier');
+    end
+    if ~exist ('logfiles','dir')
+        mkdir('logfiles');
+    end
+    
     prompt = {'Player number'};
     dlg_title = 'Player';
     num_lines = 1;
