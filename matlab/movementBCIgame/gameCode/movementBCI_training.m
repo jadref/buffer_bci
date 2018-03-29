@@ -46,6 +46,7 @@ function movementBCI_training(subject)
     instruct=instructions();
     
     % show instructions
+    sendEvent('experiment', 'start');
     set(scoreh,'visible','off');
     set(msgh,'string',instruct,'visible','on');drawnow;
     waitforbuttonpress;
