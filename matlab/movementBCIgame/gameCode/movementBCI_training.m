@@ -249,10 +249,11 @@ function movementBCI_training(subject)
     % show end message
     set(msgh,'string',{'Thank you for playing!'},'visible','on','Color',[1 1 1]);drawnow;
     sendEvent('experiment','end');
-    
+
     pause(5);
-    
+
     % go back to game menu
     close(figure(2));
+
     figure(1);
 end
