@@ -2,7 +2,7 @@
 % a classifier.
 % Needs a running buffer and EEG or EMG source
 function get_train_data(subject)
-    run '../../utilities/initPaths.m';
+    run(fullfile('..','..','utilities','initPaths.m'));
 
     % connect to the buffer
     buffhost='localhost';buffport=1972;
@@ -24,5 +24,5 @@ function get_train_data(subject)
     [data,devents,state]=buffer_waitData(buffhost,buffport,[],'startSet',{{'stimulus.target'} {'premove' 'prenonmove'}},'exitSet',{'end_training'},'trlen_ms',1500);
     mi=matchEvents(devents,'end_training'); devents(mi)=[]; data(mi)=[]; % remove the exit event
     fprintf('Saving %d epochs to : %s\n',numel(devents),dname);
-    save(sprintf('../data/raw_subject_data_%1g',subject), 'data','devents','hdr');
+    save(fullfile('..','data',['raw_subject_data_',num2str(subject)]), 'data','devents','hdr');
 end

@@ -3,16 +3,16 @@ function startGame()
     clear all
     close all
     
-    cd '~/buffer_bci/matlab/movementBCIgame'
+    cd(fullfile('~','buffer_bci','matlab','movementBCIgame'));
     
     global choice playerNr
 
     % Add all necessary paths
     try;
-        run ../utilities/initPaths.m
+        run(fullfile('..','utilities','initPaths.m'))
         addpath('gameCode');
     catch
-        msgbox({'Please change your directory to buffer_bci/matlab/movementBCIgame'},'Change directory');
+        msgbox({'Please change your directory to movementBCIgame'},'Change directory');
     end
     
     if ~exist ('data','dir')
@@ -31,7 +31,7 @@ function startGame()
     defaultans = {'1'};
     answer = inputdlg(prompt,dlg_title,num_lines,defaultans);
     playerNr = str2double(answer);
-    save('logfiles/playerNr', 'playerNr');
+    save(fullfile('logfiles','playerNr'), 'playerNr');
     
     % set the desired input values
     game_options = {'Practice game', 'Play behavioural game (collect training data)', 'Play muscle game', 'Play brain game I (RP)', 'Play brain game II (ERD)', 'Play full game (muscle, ERD, RP)'};
@@ -129,24 +129,24 @@ function hitStart(source,callbackdata)
             handles.gameFigure = figure();
             movementBCI_game(playerNr);
         case 2 % collect EEG/EMG training data
-            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd '~/buffer_bci/matlab/movementBCIgame/gameCode';  load '../logfiles/playerNr'; get_train_data(playerNr)" &
+            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd(fullfile('~','buffer_bci','matlab','movementBCIgame','gameCode'));  load(fullfile('..','logfiles','playerNr')); get_train_data(playerNr)" &
             handles.gameFigure = figure();
             movementBCI_training(playerNr);
             train_classifiers(playerNr);
         case 3 % online game with EMG feedback
-            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd '~/buffer_bci/matlab/movementBCIgame/gameCode';  load '../logfiles/playerNr'; version = 4; cont_apply_classifiers(playerNr,version)" &
+            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd(fullfile('~','buffer_bci','matlab','movementBCIgame','gameCode'));  load(fullfile('..','logfiles','playerNr')); version = 4; cont_apply_classifiers(playerNr,version)" &
             handles.gameFigure = figure();
             movementBCI_testing(playerNr);
         case 4 % online game with RP feedback
-            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd '~/buffer_bci/matlab/movementBCIgame/gameCode';  load '../logfiles/playerNr'; version = 3; cont_apply_classifiers(playerNr,version)" &
+            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd(fullfile('~','buffer_bci','matlab','movementBCIgame','gameCode'));  load(fullfile('..','logfiles','playerNr')); version = 3; cont_apply_classifiers(playerNr,version)" &
             handles.gameFigure = figure();
             movementBCI_testing(playerNr);
         case 5 % online game with ERD feedback
-            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd '~/buffer_bci/matlab/movementBCIgame/gameCode';  load '../logfiles/playerNr'; version = 2; cont_apply_classifiers(playerNr,version)" &
+            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd(fullfile('~','buffer_bci','matlab','movementBCIgame','gameCode'));  load(fullfile('..','logfiles','playerNr')); version = 2; cont_apply_classifiers(playerNr,version)" &
             handles.gameFigure = figure();
             movementBCI_testing(playerNr);
         otherwise % online game with EMG, RP and ERD feedback
-            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd '~/buffer_bci/matlab/movementBCIgame/gameCode';  load '../logfiles/playerNr'; version = 1; cont_apply_classifiers(playerNr,version)" &
+            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd(fullfile('~','buffer_bci','matlab','movementBCIgame','gameCode'))';  load(fullfile('..','logfiles','playerNr')); version = 1; cont_apply_classifiers(playerNr,version)" &
             handles.gameFigure = figure();
             movementBCI_testing(playerNr);
     end

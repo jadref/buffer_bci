@@ -164,7 +164,7 @@ function movementBCI_game(subject)
         pause(5);
         
         set(feedback,'visible','off');
-        save(sprintf('logfiles/practice_subject%1g_block%1g',subject,b), 'planned_comp','human_stats', 'rthuman', 'rtcomputer') ;
+        save(fullfile('logfiles',['practice_subject',num2str(subject),'_block',num2str(b)]), 'planned_comp','human_stats', 'rthuman', 'rtcomputer') ;
         
         if b < nr_blocks           
             set(msgh, 'string',{'press <space> to start a new round'},'Color', textColor,'visible','on');drawnow;

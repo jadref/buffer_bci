@@ -229,7 +229,7 @@ function movementBCI_testing(subject)
         pause(5);
     
         set(feedback,'visible','off');
-        save(sprintf('logfiles/training_subject%1g_block%1g',subject,b), 'planned_comp','human_stats', 'rthuman', 'rtcomputer') ;
+        save(fullfile('logfiles',['training_subject',num2str(subject),'_block',num2str(b)]), 'planned_comp','human_stats', 'rthuman', 'rtcomputer') ;
         if (b < nr_blocks)
             sendEvent('stimulus.break', 'start');
             set(msgh, 'string',{'press <space> to start a new round'},'Color', textColor,'visible','on');drawnow;

@@ -4,7 +4,7 @@ function train_classifiers(subject)
     
     % look for training data
     try
-        datafile = ['data/raw_subject_data_',num2str(subject)];
+        datafile = fullfile('data',['raw_subject_data_',num2str(subject)]);
         load(datafile);
     catch
         msgbox({'Training data was not found!'},'Error');
@@ -35,20 +35,20 @@ function train_classifiers(subject)
                         'badchrm', 0, 'badtrrm', 1, 'freqband',[4 8 30 40],'ch_names', ch_names,...
                         'overridechnms',1, 'spatialfilter', 'slap', 'windowType',...
                         'hanning', 'detrend', 0); 
-    msgbox({'Press any key when you are ready...'},'Change directory');
+    msgbox({'Press OK when you are ready...'},'Continue');
     waitforbuttonpress;
     % RP
     [clsfr_RP,res_RP,X,Y]=buffer_train_erp_clsfr(data, devents,hdr, 'fs', 256, 'badCh', ~iseeg, 'badchrm', 0,...
                         'badtrrm', 1, 'freqband',[0 0 10 20], 'ch_names', ch_names, 'spatialfilter', 'slap',...
                         'overridechnms',1, 'detrend', 0); 
-    msgbox({'Press any key when you are ready...'},'Change directory');
+    msgbox({'Press OK when you are ready...'},'Continue');
     waitforbuttonpress;
     % EMG
     [clsfr_EMG,res_EMG,X,Y]=buffer_train_ersp_clsfr(data,devents,hdr,'badCh', badCh, ...
                          'fs', 256, 'width_ms', 250, 'badchrm', 0, 'badtrrm', 1, ...
                          'freqband',[10 20 47 60],'ch_names', ch_names,...
                          'overridechnms',1, 'spatialfilter', [-1 1], 'windowType', 'hanning', 'detrend', 0); 
-    msgbox({'Press any key when you are ready...'},'Change directory');
+    msgbox({'Press OK when you are ready...'},'Continue');
     waitforbuttonpress;
     
     % correct RP classifier
@@ -61,10 +61,10 @@ function train_classifiers(subject)
     
     % save the classifiers
     classifiers = cat(1,clsfr_ERD,clsfr_RP,clsfr_EMG); % all classifiers combined
-    save(sprintf('classifier/ERD_classifier_subject_%1g',subject), 'clsfr_ERD');
-    save(sprintf('classifier/RP_classifier_subject_%1g',subject), 'clsfr_RP');
-    save(sprintf('classifier/EMG_classifier_subject_%1g',subject), 'clsfr_EMG');
-    save(sprintf('classifier/comb_classifier_subject_%1g',subject), 'classifiers');
+    save(fullfile('classifier',['ERD_classifier_subject_',num2str(subject)]), 'clsfr_ERD');
+    save(fullfile('classifier',['RP_classifier_subject_',num2str(subject)]), 'clsfr_RP');
+    save(fullfile('classifier',['EMG_classifier_subject_',num2str(subject)]), 'clsfr_EMG');
+    save(fullfile('classifier',['comb_classifier_subject_',num2str(subject)]), 'classifiers');
     
     close(figure(2))
     close(figure(3))
