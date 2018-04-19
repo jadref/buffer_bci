@@ -203,14 +203,14 @@ end
 filt=[]; 
 fs=opts.fs;
 outsz=[size(X,2) size(X,2)];
-if(~isempty(opts.downsample)) outsz(2)=min(outsz(2),round(trlen_samp*opts.downsample/fs)); fs=opts.downsample; end;
+if(~isempty(opts.downsample)) outsz(2)=min(outsz(2),round(size(X,2)*opts.downsample/fs)); fs=opts.downsample; end;
 if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) ) 
   fprintf('4) filter\n');
   len=size(X,2);
   filt=mkFilter(opts.freqband,floor(len/2),opts.fs/len);
   X   =fftfilter(X,filt,outsz,2,2);
 elseif( ~isempty(opts.downsample) ) % manual downsample without filtering
-  X   =subsample(X,outsz(2));   
+  X   =subsample(X,outsz(2),2);   
 end
 
 %4.2) time range selection
