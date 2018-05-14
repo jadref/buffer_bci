@@ -36,7 +36,8 @@ end
 if( ~isempty(state.subsampleStep) ) % averaging downsampler, to reduce aliasing effects
   nsubsamp = floor(size(x,2)/state.subsampleStep);
   if( nsubsamp*state.subsampleStep < size(x,2) ) % need to pad
-     x = cat(2,x,repmat(x(:,end,:),[1,(nsubsamp+1)*state.subsampleStep-size(x,2),1]));
+     nsubsamp=nsubsamp+1;
+     x = cat(2,x,repmat(x(:,end,:),[1,nsubsamp*state.subsampleStep-size(x,2),1]));
   end;
   x = mean(reshape(x,[size(x,1),state.subsampleStep,nsubsamp,size(x,3)]),2); % average samples
   x = reshape(x,[size(x,1),size(x,3),size(x,4)]); % remove averaged dim
