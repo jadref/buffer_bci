@@ -61,7 +61,7 @@ end;
 
 if ( isempty(bufferClient) )
   buffer_bcidir=fileparts(fileparts(fileparts(mfilename('fullpath')))); % buffer_bci directory
-  bufferjavaclassdir = fileparts(mfilename('fullpath'));
+  bufferjavaclassdir = fullfile(buffer_bcidir,'dataAcq','buffer','java');
   bufferjar = fullfile(bufferjavaclassdir,'BufferClient.jar');
   if ( exist(bufferjar,'file') )
     if ( ~any(strcmp(javaclasspath,bufferjar)) )
