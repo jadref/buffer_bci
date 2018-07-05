@@ -29,7 +29,7 @@ function [varargout]=buffer(cmd,detail,host,port)
 % Clock alignment extensions
 %   buffer('get_samp', [],  host, port) % get the estimated sample count for the current real-time-clock time
 %   buffer('get_samp', t,   host, port) % get the estimated sample count at time 't' from the real-time-clock
-%   buffer('get_time', [],  host, port) % get the current real-time-clock time
+%   buffer('get_time', [],  host, port) % get the current real-time-clock time. N.B. w.r.t. arbitary 0
 %   buffer('sync_clk',wait, host, port) % sync the real-time and sample clocks with points at wait
 %   buffer('con', [], host, port) % create connection to host/port
 %
@@ -40,7 +40,7 @@ function [varargout]=buffer(cmd,detail,host,port)
 %	 CHAR    = 0;	 UINT8   = 1;	 UINT16  = 2;	 UINT32  = 3;	 UINT64  = 4;	 INT8    = 5;
 %	 INT16   = 6;	 INT32   = 7;	 INT64   = 8;	 FLOAT32 = 9;	 FLOAT64 = 10;
     
-global bufferClient TESTING; % globals used to hold the java object, and connection info
+global bufferClient TESTING REFTIME; % globals used to hold the java object, and connection info
 if ( nargin<1 ) cmd=[]; end;
 if ( nargin<2 ) detail=[]; end;
 if ( nargin<3 ) host=[]; end;
@@ -60,9 +60,12 @@ if ( isequal(TESTING,true) )
 end;
 
 if ( isempty(bufferClient) )
-  buffer_bcidir=fileparts(fileparts(fileparts(mfilename('fullpath')))); % buffer_bci directory
-  bufferjavaclassdir = fullfile(buffer_bcidir,'dataAcq','buffer','java');
-  bufferjar = fullfile(bufferjavaclassdir,'BufferClient.jar');
+  bufferjar = fullfile(fileparts(mfilename('fullpath')),'BufferClient.jar');
+  if( ~exist(bufferjar,'file') ) % not in same dir, search elsewhere
+    buffer_bcidir=fileparts(fileparts(fileparts(mfilename('fullpath')))); % buffer_bci directory
+    bufferjavaclassdir = fullfile(buffer_bcidir,'dataAcq','buffer','java');
+    bufferjar = fullfile(bufferjavaclassdir,'BufferClient.jar');
+  end
   if ( exist(bufferjar,'file') )
     if ( ~any(strcmp(javaclasspath,bufferjar)) )
       warning('Modifying javaclass path -- this clears all variables!');
@@ -72,10 +75,13 @@ if ( isempty(bufferClient) )
     warning('Modifying javaclass path -- this clears all variables!');
     javaaddpath(bufferjavaclassdir); % N.B. this will clear all local variables!
   end
+  % reconfig the globals
+  global bufferClient TESTING REFTIME;
 end
 
 % re-connect if wanted / needed
 [bufClient,host,port]=reconnect(host,port);
+if( isempty(REFTIME) ) REFTIME=bufClient.getTime(); end;
 
 if ( isempty(cmd) ) return; end;
 switch cmd;
@@ -220,7 +226,7 @@ switch cmd;
   end
  
  case 'get_time';
-  varargout{1}=bufClient.getTime();
+  varargout{1}=bufClient.getTime() - REFTIME;
  
  case 'sync_clk'; 
   if ( ~isempty(detail) ) bufClient.syncClocks(detail); else bufClient.syncClocks(); end;
