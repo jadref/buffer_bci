@@ -1,4 +1,4 @@
-package nl.ru.dcc.buffer_bci;
+package nl.dcc.buffer_bci;
 
 import nl.fcdonders.fieldtrip.bufferclient.*;
 

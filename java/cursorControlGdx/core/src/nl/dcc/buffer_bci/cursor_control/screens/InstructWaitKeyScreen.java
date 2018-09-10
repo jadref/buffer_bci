@@ -1,4 +1,4 @@
-package nl.ru.dcc.buffer_bci.cursor_control.screens;
+package nl.dcc.buffer_bci.cursor_control.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
@@ -6,20 +6,27 @@ import com.badlogic.gdx.InputAdapter;
 /**
  * Created by Lars on 1-12-2015.
  */
-public class BlankWaitKeyScreen extends BlankScreen {
+public class InstructWaitKeyScreen extends InstructScreen {
     private boolean active = false;
 
-    public BlankWaitKeyScreen() {
+    public InstructWaitKeyScreen() {
+        this("");
+    }
+
+    public InstructWaitKeyScreen(String instruction) {
+        super(instruction);
+
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean keyUp(int keycode) {
-                if(active) {
+                if (active) {
                     setDuration(0); // Force finish.
                 }
                 return true;
             }
         });
     }
+
 
     @Override
     public void start() {

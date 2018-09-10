@@ -1,4 +1,4 @@
-package nl.ru.dcc.buffer_bci.cursor_control;
+package nl.dcc.buffer_bci.cursor_control;
 /* ToDo:
  [] - eventSeq - include boolean eventSeq which says at which event times we should
                  send a stimulus event

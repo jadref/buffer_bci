@@ -1,4 +1,4 @@
-package nl.ru.dcc.buffer_bci.cursor_control.screens;
+package nl.dcc.buffer_bci.cursor_control.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
@@ -7,8 +7,8 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import nl.fcdonders.fieldtrip.bufferclient.BufferEvent;
 import nl.fcdonders.fieldtrip.bufferclient.SamplesEventsCount;
-import nl.ru.dcc.buffer_bci.BufferBciInput;
-import nl.ru.dcc.buffer_bci.cursor_control.StimSeq;
+import nl.dcc.buffer_bci.BufferBciInput;
+import nl.dcc.buffer_bci.cursor_control.StimSeq;
 
 /**
  * Created by Lars on 1-12-2015.

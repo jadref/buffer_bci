@@ -1,4 +1,4 @@
-package nl.ru.dcc.buffer_bci.cursor_control.screens;
+package nl.dcc.buffer_bci.cursor_control.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;

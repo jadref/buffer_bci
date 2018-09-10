@@ -65,6 +65,8 @@ project(":core") {
 
     dependencies {
         compile "com.badlogicgames.gdx:gdx:$gdxVersion"
+        compile "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+        compile fileTree( dir: '../../../dataAcq/buffer/java', include: 'BufferClient.jar')
     }
 }
 

@@ -1,4 +1,4 @@
-package nl.ru.dcc.buffer_bci.cursor_control;
+package nl.dcc.buffer_bci.cursor_control;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
@@ -6,11 +6,11 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import nl.fcdonders.fieldtrip.bufferclient.BufferEvent;
-import nl.ru.dcc.buffer_bci.BufferBciInput;
-import nl.ru.dcc.buffer_bci.cursor_control.screens.BlankScreen;
-import nl.ru.dcc.buffer_bci.cursor_control.screens.CursorControlScreen;
-import nl.ru.dcc.buffer_bci.cursor_control.screens.CursorScreen;
-import nl.ru.dcc.buffer_bci.cursor_control.screens.InstructWaitKeyScreen;
+import nl.dcc.buffer_bci.BufferBciInput;
+import nl.dcc.buffer_bci.cursor_control.screens.BlankScreen;
+import nl.dcc.buffer_bci.cursor_control.screens.CursorControlScreen;
+import nl.dcc.buffer_bci.cursor_control.screens.CursorScreen;
+import nl.dcc.buffer_bci.cursor_control.screens.InstructWaitKeyScreen;
 
 import java.io.BufferedReader;
 import java.io.File;
