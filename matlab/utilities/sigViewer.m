@@ -329,7 +329,7 @@ while ( ~endTraining )
       if ( ~isempty(ppopts.freqbands) ) % filter bands given
         filt=mkFilter(trlen_samp/2,ppopts.freqbands,fs/trlen_samp); 
       end
-      freqInd =getfreqInd(freqs,ppopts.freqbands);
+      freqInd     =getfreqInd(freqs,ppopts.freqbands);
 		spectFreqInd=getfreqInd(spectFreqs,ppopts.freqbands);
     end
   end
@@ -543,10 +543,10 @@ while ( ~endTraining )
           set(hdls(hi),'xticklabel',[],'yticklabel',[]);
         end
         switch curvistype;
-			 case '50hz';   xlabel(hdls(hi),'50Hz Power');
+			 case '50hz';     xlabel(hdls(hi),'50Hz Power');
 			 case 'noisefrac';xlabel(hdls(hi),'Noise Fraction');
-			 case 'power';  xlabel(hdls(hi),'Signal Amplitude');
-			 case 'offset'; xlabel(hdls(hi),'offset');
+			 case 'power';    xlabel(hdls(hi),'Signal Amplitude');
+			 case 'offset';   xlabel(hdls(hi),'offset');
 		  end
         ylabel(hdls(hi),'');
       end
@@ -628,7 +628,7 @@ while ( ~endTraining )
       set(img_hdls(hi),'cdata',shiftdim(ppdat(hi,:,:)));
     end
   end
-  pause(.001); %drawnow;
+  drawnow; pause(.01); 
 end
 % close the options figure as well
 if ( exist('optsFigh') && ishandle(optsFigh) ); close(optsFigh); end;
