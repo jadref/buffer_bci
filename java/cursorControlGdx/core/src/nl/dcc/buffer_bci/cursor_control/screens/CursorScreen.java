@@ -246,6 +246,7 @@ public class CursorScreen extends CursorControlScreen {
 
         // Initialize shape renderer
         ShapeRenderer renderer = new ShapeRenderer();
+        renderer.begin(ShapeRenderer.ShapeType.Filled);
 
         double stimRadius = 1.0/(nSymbs/2.0+1.0); // relative coordinates
         // draw the targets -- centers
@@ -292,8 +293,8 @@ public class CursorScreen extends CursorControlScreen {
                 //g.setStroke(new BasicStroke((int)(stimRadius*getWidth()/20)));
 //                g.drawOval((int)(getWidth()*(x-stimRadius/2)),(int)(getHeight()*(y - stimRadius/2)),
 //                        (int)(getWidth()*stimRadius), (int)(getHeight()*stimRadius));
-                renderer.ellipse((int)(getWidth()*(x-stimRadius/2)),(int)(getHeight()*(y - stimRadius/2)),
-                        (int)(getWidth()*stimRadius), (int)(getHeight()*stimRadius));
+                renderer.ellipse((int) (getWidth() * (x - stimRadius / 2)), (int) (getHeight() * (y - stimRadius / 2)),
+                        (int) (getWidth() * stimRadius), (int) (getHeight() * stimRadius));
 
             }
 
@@ -304,10 +305,11 @@ public class CursorScreen extends CursorControlScreen {
         renderer.ellipse((int)(getWidth()*(1.0/2-stimRadius/4)),(int)(getHeight()*(1.0/2-stimRadius/4)),
                 (int)(getWidth()*stimRadius/2), (int)(getHeight()*stimRadius/2));
 
+        renderer.end();
     }
 
     @Override
     public void update(float delta) {
-
+        update();
     }
 };

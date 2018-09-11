@@ -31,7 +31,6 @@ public class InstructWaitKeyScreen extends InstructScreen {
     @Override
     public void start() {
         super.start();
-
         active = true;
     }
 }

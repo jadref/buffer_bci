@@ -10,7 +10,12 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
  * Created by Lars on 1-12-2015.
  */
 public class InstructScreen extends CursorControlScreen {
-    private static final BitmapFont font = new BitmapFont(Gdx.files.internal("data/font16.fnt"), Gdx.files.internal("data/font16.png"), false);
+    private static final BitmapFont font =
+            new BitmapFont(Gdx.files.classpath("com/badlogic/gdx/utils/arial-15.fnt"),
+                    Gdx.files.classpath("com/badlogic/gdx/utils/arial-15.png"),
+                    false,true);
+                    // Gdx.files.internal("data/font16.fnt"),
+                    // Gdx.files.internal("data/font16.png"), false);
 
     private String instruction;
     private SpriteBatch batch;

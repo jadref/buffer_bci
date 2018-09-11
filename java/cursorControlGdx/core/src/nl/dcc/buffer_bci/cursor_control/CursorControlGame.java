@@ -21,52 +21,59 @@ public class CursorControlGame extends ApplicationAdapter {
 	CursorControlScreen screen;
     BufferBciInput input;
 
-	@Override
+    int nSymbs                 =8;
+    int nSeq                   =nSymbs*2;
+    float seqDuration          =3.5f;
+    static public int UPDATE_INTERVAL=1000/60; // Graphics re-draw rate
+
+    CursorScreen cursor;
+    InstructWaitKeyScreen instruct;
+    BlankScreen   blank;
+
+    @Override
 	public void create () {
         input = new BufferBciInput(500, false);
 
         while(!input.connect("localhost", 1972))
             Gdx.app.log("CursorControlGame", "Could not connect to buffer!");
 
+        cursor=new CursorScreen(nSymbs, input);
+        instruct=new InstructWaitKeyScreen();
+        blank=new BlankScreen();
+
         Gdx.app.log("CursorControlGame", "Connected to buffer!");
-	}
+        setScreen(blank);
+        startControllerThread();  // start the thread for the experiment controller
+    }
 
 	@Override
 	public void render () {
-        screen.render(Gdx.graphics.getDeltaTime());
+        if ( screen != null ) {
+            screen.render(Gdx.graphics.getDeltaTime());
+            if (screen.isDone()) {
+                synchronized(_controller) {
+                    _controller.notify();
+                }
+            }
+        }
 	}
+
 
     private void setScreen(CursorControlScreen screen) {
         this.screen = screen;
     }
 
     public void runScreen(CursorControlScreen screen) {
-        this.screen = screen;
+        setScreen(screen);
         this.screen.start();
     }
 
-    public void runScreen() {
-        if(this.screen != null)
-            this.screen.start();
-    }
-
-
-
-
-    // Object used to communicate between render/controller threads
-    volatile Object _controller=new Object();
-
+    private final Object _controller = new Object();
     private void waitScreen(){
         synchronized ( _controller ) {
             try { _controller.wait(); } catch (InterruptedException ignored) {};
         }
     }
-
-
-    int nSymbs                 =8;
-    int nSeq                   =nSymbs*2;
-    float seqDuration          =3.5f;
-    static public int UPDATE_INTERVAL=1000/60; // Graphics re-draw rate
 
     //--------------------------------------------------------------------------------
     // Main function to control the experiment at the top level
@@ -77,8 +84,6 @@ public class CursorControlGame extends ApplicationAdapter {
         float isi=1f/10;
         String blockName="Untitled";
         // This method implements the main experiment control flow
-        InstructWaitKeyScreen instruct=new InstructWaitKeyScreen();
-        BlankScreen blank=new BlankScreen();
         System.out.println("Starting Controller");
 
         // set the startup screen and wait for it to finish
@@ -273,9 +278,6 @@ public class CursorControlGame extends ApplicationAdapter {
 
     public void runBlock(String stimType, float seqDuration, int[] tgtSeq, float[][] stimSeq, int[] stimTime_ms, boolean contColor)  throws java.io.IOException  {
         // Run a block of the experiment were we vary the target but not the stimulus sequence
-        CursorScreen cursor=new CursorScreen(nSymbs, input);
-        InstructWaitKeyScreen instruct=new InstructWaitKeyScreen();
-        BlankScreen   blank=new BlankScreen();
 
         // set the startup screen and wait for it to finish
         instruct.setDuration(30000);
@@ -320,8 +322,22 @@ public class CursorControlGame extends ApplicationAdapter {
 
     long getCurTime(){return java.lang.System.currentTimeMillis();}
 
-    public void startUpdateThread(){
+    public void startControllerThread() {
+        Thread updateThread = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    runExpt();
+                } catch (java.io.IOException ex){
+                    System.out.println("IO exception" + ex);
+                    ex.printStackTrace();
+                }
+            }
+        };
+        updateThread.start(); // called back run()
+    }
 
+    public void startRenderThread(){
         // Create a new thread to run update at regular interval
         // i.e. this simulates the once/frame call to render
         try {  Thread.sleep(1000); } catch (InterruptedException ignore) {}
