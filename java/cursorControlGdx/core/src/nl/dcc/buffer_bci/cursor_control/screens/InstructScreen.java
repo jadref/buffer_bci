@@ -9,7 +9,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 /**
  * Created by Lars on 1-12-2015.
  */
-public class InstructScreen extends CursorControlScreen {
+public class InstructScreen extends StimulusScreen {
     private static final BitmapFont font =
             new BitmapFont(Gdx.files.classpath("com/badlogic/gdx/utils/arial-15.fnt"),
                     Gdx.files.classpath("com/badlogic/gdx/utils/arial-15.png"),
@@ -27,9 +27,9 @@ public class InstructScreen extends CursorControlScreen {
 
 
     public InstructScreen(String instruction) {
-        this.instruction = instruction;
         batch = new SpriteBatch();
         layout = new GlyphLayout();
+        setInstruction(instruction);
     }
 
     public void setInstruction(String instruction) {
@@ -52,13 +52,11 @@ public class InstructScreen extends CursorControlScreen {
 
     @Override
     public void update(float delta) {
-
     }
 
     @Override
     public void dispose() {
         super.dispose();
-
         batch.dispose();
     }
 }

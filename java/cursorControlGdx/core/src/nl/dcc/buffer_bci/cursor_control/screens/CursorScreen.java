@@ -3,7 +3,6 @@ package nl.dcc.buffer_bci.cursor_control.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import nl.fcdonders.fieldtrip.bufferclient.BufferEvent;
 import nl.fcdonders.fieldtrip.bufferclient.SamplesEventsCount;
@@ -13,10 +12,7 @@ import nl.dcc.buffer_bci.cursor_control.StimSeq;
 /**
  * Created by Lars on 1-12-2015.
  */
-public class CursorScreen extends CursorControlScreen {
-    Color[] defaultColors={new Color(.5f,.5f,.5f, 1.0f), // bgColor
-            new Color(1f,1f,1f, 1.0f),    // fgColor
-            new Color(0f,1f,0f, 1.0f)};   // tgtColor
+public class CursorScreen extends StimulusSequenceScreen {
     int   nSymbs=8;
 
     public static int VERB=0;
@@ -24,7 +20,6 @@ public class CursorScreen extends CursorControlScreen {
     static public int avesleep=0;
 
     // model of the whole sequence
-    int   _tgt=-1;
     float[][] _stimSeq=null;
     int[]   _stimTime_ms=null;
     boolean[] _eventSeq=null;
@@ -37,8 +32,6 @@ public class CursorScreen extends CursorControlScreen {
     volatile long _nextFrameTime=-1; // *relative* time until the next stimulus change
     volatile long _t0=-1; // absolute time we started running
     volatile long _loopStartTime=-1; // absolute time we started current loop
-    int _duration_ms=1000; // time we run for
-
 
     SamplesEventsCount _sec=new SamplesEventsCount(0,0); // Track of the number of events/samples processed so far
     int nskip=0;
@@ -50,25 +43,30 @@ public class CursorScreen extends CursorControlScreen {
         this.input = input;
     }
 
-    public void setDuration_ms(int duration_ms){ _duration_ms=duration_ms; }
-    public void setDuration(float duration){ _duration_ms=(int)(duration*1000); }
-    public int getDuration(){ return _duration_ms; }
     public void start(){
-        System.out.println("Cursor Screen : " + _duration_ms);
-        framei=-1; // set to -1 to indicate that no-valid frames have been drawn yet
+        super.start();
+        System.out.println("Cursor Screen : " + duration_ms);
+        // set to -1 to indicate that no-valid frames have been drawn yet
+        framei=-1;
         // just record the current time so we know when to quit
-        _t0=getCurTime(); // absolute time we started this stimulus
-        _loopStartTime=_t0; // absolute time we started this stimulus loop
+        _t0=-1;getCurTime(); // absolute time we started this stimulus
+        _loopStartTime=-1; // absolute time we started this stimulus loop
         // get current sample/event count, everything before this time is ignored..
+        try {
+            _sec = input.getBufferClient().poll(); // get current sample/event count
+        } catch (java.io.IOException ex) {
+            System.out.println("Could not get initial event count");
+            ex.printStackTrace();
+        }
     }
     synchronized public boolean isDone(){
         // mark as finished
-        boolean _isDone = _t0>0 && getCurTime() > _duration_ms + _t0;
+        boolean _isDone = _t0>0 && getCurTime() > duration_ms + _t0;
         if ( _isDone ){
             if ( VERB>=0 )
                 System.out.println("Run-time: " + (getCurTime()-_t0) + " / " +
-                        _duration_ms + " ( " + (UPDATE_INTERVAL - avesleep) + " ) ");
-            _t0=-1; framei=-1; // mark as finished
+                        duration_ms + " ( " + (UPDATE_INTERVAL - avesleep) + " ) ");
+            framei=-1; // mark as finished
         }
         return _isDone;
     }
@@ -80,8 +78,8 @@ public class CursorScreen extends CursorControlScreen {
         java.lang.System.arraycopy(stimTime_ms,0,_stimTime_ms,0,stimTime_ms.length);
         // Validate that this stimTime sequence is correct...
         if ( _stimTime_ms.length==1 && _stimTime_ms[_stimTime_ms.length-1]==0 &&
-                _duration_ms>0 )
-            _stimTime_ms[0]=_duration_ms;
+                duration_ms >0 )
+            _stimTime_ms[0]= duration_ms;
         // Copy the stimulus sequence
         _stimSeq     = new float[stimSeq.length][];
         for ( int ti=0; ti<stimSeq.length; ti++){ // time points
@@ -97,30 +95,15 @@ public class CursorScreen extends CursorControlScreen {
         // initialize the color-table for this stimulus sequence
         _colors=colors;
     }
-    public void setStimSeq(float [][]stimSeq, int[] stimTime_ms){
-        setStimSeq(stimSeq,stimTime_ms,null,defaultColors);
-    }
-    public void setStimSeq(float [][]stimSeq, int[] stimTime_ms, boolean [] eventSeq){
-        setStimSeq(stimSeq,stimTime_ms,eventSeq,defaultColors);
-    }
-    public void setStimSeq(float [][]stimSeq, int[] stimTime_ms, boolean [] eventSeq, boolean contColor){
-        if( contColor )
-            setStimSeq(stimSeq,stimTime_ms,eventSeq,null);
-        else
-            setStimSeq(stimSeq,stimTime_ms,eventSeq,defaultColors);
-    }
-    public void setStimSeq(float [][]stimSeq, int[] stimTime_ms, boolean contColor){
-        if( contColor )
-            setStimSeq(stimSeq,stimTime_ms,null,null);
-        else
-            setStimSeq(stimSeq,stimTime_ms,null,defaultColors);
-    }
-    public void setTarget(int tgt){ _tgt=tgt;}
-    public void setTarget(int[] tgt){
-        for( int i=0; i<tgt.length; i++) if (tgt[i]>0) {_tgt=i; break;}
-    }
 
-    void update() {
+    @Override
+    public void update(float delta) {
+        if( _t0<0 && framei<0 ){ // first call since start, record timing
+            _t0=getCurTime(); // absolute time we started this stimulus
+            _loopStartTime=_t0; // absolute time we started this stimulus loop
+            framei=0;
+            renderi=0;
+        }
         // get the next stimulus frame to display
         int oframei=framei;
         updateFramei();
@@ -134,7 +117,9 @@ public class CursorScreen extends CursorControlScreen {
                 System.out.println("]");
             }
             if( oframei>0 && framei-oframei>1 ) {
-                System.out.println((getCurTime()-_t0) + ": Warning dropped " + (framei-oframei) + " frames!");
+                System.out.println("[" + oframei + "]@" + (getCurTime()-_t0) +
+                            "ms: Dropped " + (framei-oframei-1) + " frames" +
+                        " deltaTime = " + (getCurTime()-_t0 - _stimTime_ms[oframei]));
             }
 
             try {
@@ -149,27 +134,39 @@ public class CursorScreen extends CursorControlScreen {
     }
     long getCurTime(){return java.lang.System.currentTimeMillis();}
 
+    long[] rendertimes=new long[1024];
+    int renderi;
     void updateFramei(){
         // get the current time since start of this loop
         long curTime    = getCurTime();
+        rendertimes[renderi]=curTime-_t0; renderi++;
+
         // skip to the next stimulus frame we should display
         if ( _stimTime_ms != null ) {
             framei=framei<0?0:framei;// ensure is valid frame
+            int oframei=framei;
             // Skip to the next frame to draw
-            while ( _stimTime_ms[framei] < curTime-_loopStartTime ){
+            long loopTime = curTime - _loopStartTime;
+            while ( _stimTime_ms[framei] <= loopTime ){
                 framei++;
                 if ( framei>=_stimSeq.length ) { // loop and update loop start time
-                    _loopStartTime += _stimTime_ms[_stimTime_ms.length-1];
                     framei=0;
+                    if( _stimTime_ms[_stimTime_ms.length-1]<=0 ) break; // guard against zero-stimTime sequences
+                    // cycle round, update the start time for this loop to reflect the current time
+                    _loopStartTime += _stimTime_ms[_stimTime_ms.length-1];
+                    loopTime = curTime - _loopStartTime;
                 }
             }
-            _nextFrameTime = Math.min(_stimTime_ms[framei]+_loopStartTime,_duration_ms+_t0);
+            if( framei-oframei > 1 ){
+                System.out.println("dropped frame");
+            }
+            _nextFrameTime = Math.min(_stimTime_ms[framei]+_loopStartTime, duration_ms +_t0);
             _ss = _stimSeq[framei];
             //java.lang.System.copyarray(_stimSeq[framei],0,_ss,0,_ss.length);// paranoid?
         }
     }
 
-
+    // TODO [] : This REALLY should be in a separate NON-RENDER thread... as it can take a **long** time
     void getPredictions() throws java.io.IOException {
         nskip=nskip<40*10?nskip+1:0;
         if ( false && nskip%40==0 ) { // test the feedback based re-drawing
@@ -186,6 +183,7 @@ public class CursorScreen extends CursorControlScreen {
         }
 
         SamplesEventsCount sec=input.getBufferClient().poll(); // get current sample/event count
+        if ( _sec.nEvents == 0 ) { _sec = sec; }
         if ( sec.nEvents>_sec.nEvents ) {// new events to process
             // get the new events
             BufferEvent[] evs = input.getBufferClient().getEvents(_sec.nEvents,sec.nEvents-1);
@@ -308,8 +306,4 @@ public class CursorScreen extends CursorControlScreen {
         renderer.end();
     }
 
-    @Override
-    public void update(float delta) {
-        update();
-    }
 };

@@ -6,9 +6,9 @@ import com.badlogic.gdx.Screen;
 /**
  * Created by Lars on 1-12-2015.
  */
-public abstract class CursorControlScreen implements Screen {
-    private int duration_ms;
-    private long startTime = 0;
+public abstract class StimulusScreen implements Screen {
+    protected int duration_ms;
+    protected long startTime = 0;
 
     private int width = 640, height = 480;
 
@@ -20,9 +20,8 @@ public abstract class CursorControlScreen implements Screen {
         return height;
     }
 
-    public void setDuration(int ms) {
-        duration_ms = ms;
-    }
+    public void setDuration(int ms){duration_ms = ms; }
+    public void setDuration(float duration){ setDuration((int)(1000*duration));}
 
     public int getDuration() {
         return duration_ms;
@@ -32,21 +31,23 @@ public abstract class CursorControlScreen implements Screen {
         return (startTime + duration_ms) - System.currentTimeMillis();
     }
 
-    @Override
-    public void render(float delta) {
-        update(delta);
-        draw();
-    }
-
     public void start() {
         startTime = System.currentTimeMillis();
+        donelogged=false;
         Gdx.app.log(this.getClass().getSimpleName(), "Start at: " + startTime + ", duration: " + duration_ms);
     }
 
+    private boolean donelogged=false;
     public boolean isDone() {
         boolean done = startTime + duration_ms < System.currentTimeMillis();
-        if(done)
-            Gdx.app.log(this.getClass().getSimpleName(), "Run-time: " + (System.currentTimeMillis() - startTime));
+        if(done) {
+            if (!donelogged) { // guard for logging lots of times..
+                Gdx.app.log(this.getClass().getSimpleName(), "Run-time: " + (System.currentTimeMillis() - startTime));
+                donelogged=true;
+            }
+        } else {
+            donelogged=false;
+        }
         return done;
     }
 
@@ -54,11 +55,18 @@ public abstract class CursorControlScreen implements Screen {
     public abstract void draw();
     public abstract void update(float delta);
 
-
+    //-------------------- methods from GDXScreen from here -----------
 
     @Override
-    public void show() {
+    public void render(float delta) {
+        update(delta);
+        draw();
+    }
 
+    @Override
+    // redirect show->start the screen and it's clock
+    public void show() {
+        this.start();
     }
 
     @Override
@@ -69,20 +77,21 @@ public abstract class CursorControlScreen implements Screen {
 
     @Override
     public void pause() {
-
+        // Hmmm, not supported yet!
     }
 
     @Override
     public void resume() {
+        // Hmmm, not supported yet!
     }
 
     @Override
     public void hide() {
-
+        // Hmm, not supported yet!
     }
 
     @Override
     public void dispose() {
-
+        // Hmm, not supported yet!
     }
 }
