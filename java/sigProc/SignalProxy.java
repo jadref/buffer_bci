@@ -4,9 +4,21 @@ import java.util.Random;
 import nl.fcdonders.fieldtrip.bufferclient.BufferClient;
 import nl.fcdonders.fieldtrip.bufferclient.Header;
 
+// imports for the trigger channel
+import java.nio.channels.DatagramChannel;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.net.SocketException;
+import java.net.SocketAddress;
+
+
 public class SignalProxy implements Runnable {
 	static int VERB=1;
 
+    public static final int DEFAULTTRIGGERPORT=8300;
+    DatagramChannel triggerchannel;
+    ByteBuffer buf;
+    
 	 boolean run = true;
 	 final String hostname;
 	 final int port;
@@ -19,12 +31,13 @@ public class SignalProxy implements Runnable {
 	 int nSample=0;
 	 int nBlk   =0;
 	 static final String usage=
-		    "Usage: SignalProxy buffhost:buffport fsample nchans blockSize\n"
+		    "Usage: SignalProxy buffhost:buffport fsample nchans blockSize triggerPort\n"
 		  + "where:\n"
 		  + "\t buffersocket\t is a string of the form bufferhost:bufferport (localhost:1972)\n"
 		  + "\t fsample\t is the frequency data is generated in Hz                 (100)\n"
 		  + "\t nchans\t is the number of simulated channels to make                 (3)\n"
-		  + "\t blocksize\t is the number of samples to send in one packet           (5)\n";
+		  + "\t blocksize\t is the number of samples to send in one packet           (5)\n"
+    + "\t triggerPort\t is the port to listen for trigger inputs on.           (" + DEFAULTTRIGGERPORT + ")\n";
 
 	 public static void main(String[] args) throws IOException,InterruptedException {
 		   String hostname="localhost";
@@ -83,13 +96,7 @@ public class SignalProxy implements Runnable {
 	 }
 
 	 public SignalProxy(){
-        hostname="localhost";
-        port    =1972;
-        nChannels=4;
-        fSample =100;
-        blockSize=5;
-		  client   = new BufferClient();
-		  generator= new Random();        
+        this("localhost",1972,4,100,5);
     }
 
 	 public SignalProxy(String hostname, int port, int nChannels, double fSample, int blockSize){
@@ -98,7 +105,24 @@ public class SignalProxy implements Runnable {
 		  this.nChannels= nChannels;
 		  this.fSample  = fSample;
 		  this.blockSize= blockSize;
-		  client   = new BufferClient();
+
+        try { 
+            this.triggerchannel = DatagramChannel.open();
+            this.triggerchannel.socket().bind(new InetSocketAddress(DEFAULTTRIGGERPORT));
+            this.triggerchannel.configureBlocking(false);
+        } catch ( SocketException ex ) {
+            System.out.println("Error binding the trigger port!");
+            this.triggerchannel=null;
+        } catch ( IOException ex ) {
+            System.out.println("Error creating the trigger channel!");
+            this.triggerchannel = null;
+        }
+        if( this.triggerchannel != null ) {
+            System.out.println("TriggerPort = " + triggerchannel.socket().getPort());
+        }
+        this.buf = ByteBuffer.allocate(512);
+        
+        client   = new BufferClient();
 		  generator= new Random();
 	 }
 
@@ -120,6 +144,41 @@ public class SignalProxy implements Runnable {
 		return data;
 	}
 
+
+
+    // Add triggers to the running data when recieve messages on a trigger port
+    // N.B. to test on linux+bash use: cat > /dev/udp/127.0.0.1/8300
+    // key + enter sends the trigger   
+    private double[][] addTriggers(double[][] data) { // data=[samples x channels]
+        // check for trigger messages & add trigger signal if needed        
+        int nSamp = data.length;
+        int nCh   = data[0].length;
+        SocketAddress sendAdd;
+        if( triggerchannel!=null ) {
+            buf.clear();
+            try {
+                sendAdd = triggerchannel.receive(buf);// Non-blocking READ
+                buf.flip();
+                int nread = buf.remaining();
+                if( sendAdd!=null && nread>0 ) {
+                    System.out.println("Buf"+buf.toString()+" size"+buf.remaining());
+                    float trig=0;
+                    if( nread<4 ) { // it's a single byte.
+                        System.out.println("Byte");                        
+                        trig=(float)buf.get();
+                    } else if ( nread>=4 )  {// assume it's a single
+                        System.out.println("Float");
+                        trig=buf.getFloat();
+                    }
+                    System.out.println("Got trigger " + sendAdd.toString() + " = " +  trig);
+                    data[nSamp-1][nCh-1]=trig;
+                }
+            } catch ( IOException ex ) {                
+            }
+        }
+        return data;
+    }
+    
 	public void mainloop() {
 		run = true;
 		try {
@@ -149,7 +208,9 @@ public class SignalProxy implements Runnable {
 			long nextBlockTime = t0;
 			while (run) {
 				data = genData(data);
+            data = addTriggers(data);
 				client.putData(data);
+            
 				nBlk     = nBlk+1;
 				nSample  = nSample + blockSize; // current total samples sent
 				t        = System.currentTimeMillis() - t0; // current time since start

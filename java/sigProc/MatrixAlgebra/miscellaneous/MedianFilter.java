@@ -2,7 +2,7 @@ package nl.dcc.buffer_bci.matrixalgebra.miscellaneous;
 
 public class MedianFilter {
     // Simple approximate median filter based on Jeff McClintock median filter, and or:
-    // Ma, Qiang, S. Muthukrishnan, and Mark Sandler. “Frugal Streaming for Estimating Quantiles.” In Space-Efficient Data Structures, Streams, and Algorithms, 77–96. Springer, 2013. http://link.springer.com/chapter/10.1007/978-3-642-40273-9_7.
+    // Ma, Qiang, S. Muthukrishnan, and Mark Sandler. Frugal Streaming for Estimating Quantiles. In Space-Efficient Data Structures, Streams, and Algorithms, 77-96. Springer, 2013. http://link.springer.com/chapter/10.1007/978-3-642-40273-9_7.
 
     protected int    direction=0; // count of the number in the same direction for adaptive step sizing
     protected double step  =0;
