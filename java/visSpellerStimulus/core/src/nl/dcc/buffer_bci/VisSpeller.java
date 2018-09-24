@@ -20,7 +20,8 @@ import com.badlogic.gdx.graphics.FPSLogger;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.BitmapFont.TextBounds;
+//import com.badlogic.gdx.graphics.g2d.BitmapFont.TextBounds;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -46,10 +47,10 @@ public class VisSpeller extends ApplicationAdapter {
 				nextState();
 			} catch (NumberFormatException e) {
 				AdressListener listener = new AdressListener();
-				Gdx.input.getTextInput(listener, "Bad buffer adress", text);
+				Gdx.input.getTextInput(listener, "Bad buffer adress", text, "");
 			} catch (ArrayIndexOutOfBoundsException e){
 				AdressListener listener = new AdressListener();
-				Gdx.input.getTextInput(listener, "Bad buffer adress", text);
+				Gdx.input.getTextInput(listener, "Bad buffer adress", text, "");
 			}
 		}
 	}
@@ -65,9 +66,11 @@ public class VisSpeller extends ApplicationAdapter {
 
 		public Text(String text_) {
 			text = text_;
-			TextBounds bounds = font.getBounds(text);
-			x = Gdx.graphics.getWidth() / 2 - bounds.width / 2;
-			y = Gdx.graphics.getHeight() / 2 - bounds.height / 2;
+			GlyphLayout layout = new GlyphLayout(); 
+			layout.setText(font,text_);
+			//TextBounds bounds = font.getBounds(text);
+			x = Gdx.graphics.getWidth() / 2 - layout.width / 2;
+			y = Gdx.graphics.getHeight() / 2 - layout.height / 2;
 		}
 
 		public Text(String text_, float x_, float y_) {
@@ -661,7 +664,7 @@ public class VisSpeller extends ApplicationAdapter {
 			startOfState = false;
 			AdressListener listener = new AdressListener();
 			Gdx.input.getTextInput(listener, "Enter buffer adress",
-					"127.0.0.1:1972");
+					"127.0.0.1:1972","");
 		}
 	}
 

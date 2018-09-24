@@ -24,7 +24,6 @@ public class BlankWaitKeyScreen extends BlankScreen {
     @Override
     public void start() {
         super.start();
-
         active = true;
     }
 }
