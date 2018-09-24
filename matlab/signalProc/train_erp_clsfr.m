@@ -149,7 +149,7 @@ if ( opts.badchrm || (~isempty(opts.badCh) && sum(opts.badCh)>0) )
     if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names))); end;
     ch_names=ch_names(~isbadch(1:numel(ch_names)));
   end
-  fprintf('%d ch removed\n',sum(isbadch(1:numel(ch_names))));
+  fprintf('%d ch removed + %d non-eeg\n',sum(isbadch(1:numel(ch_names))),sum(isbadch(numel(ch_names)+1:end)));
 end
 
 %3) Spatial filter/re-reference
