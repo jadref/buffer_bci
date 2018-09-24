@@ -63,7 +63,7 @@ else
   end
   if ( isnumeric(mval) && isnumeric(value) )
 	 mi(mi)=any(repop(value(mi),'==',mval(:)'),2);
-  elseif ( iscell(type) )
+  elseif ( iscell(value) )
 	 ms =find(mi);
 	 mi(ms)=false;
 	 for ei=ms(:)';
