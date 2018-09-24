@@ -17,7 +17,7 @@ Cname={}; latlong=[]; xy=[]; xyz=[];
 for cr=1:numel(capRoots);
   capRoot=capRoots{cr};
   if ( ~isempty(capExt) )
-    capFile=fullfile(capRoot,capDir,[capFn,'.txt']);
+    capFile=fullfile(capRoot,capDir,[capFn,capExt]);
     if(exist(capFile,'file') ) break; end;
   else
     capFile=fullfile(capRoot,capDir,[capFn,'.txt']);
@@ -43,13 +43,19 @@ elseif ( strfind(cap,'xy') ) % contains xy coords
    xy     = [x y]';
    latlong= xy2latlong(xy);
    xyz    = latlong2xyz(latlong);
-elseif ( isequal(capExt,'lay') ) % fieldtrip layout file
+elseif ( isequal(capExt,'lay') || isequal(capExt,'.lay') ) % fieldtrip layout file
    [ans x y w h Cname]=textread(capFile,'%d %f %f %f %f %s');
    xy     = [x y]'; 
    xy     = repop(xy,'-',mean(xy,2)); 
    xy     = repop(xy,'./',sqrt(mean(xy.^2,2))); % map to unit circle and center
    latlong= xy2latlong(xy);
    xyz    = latlong2xyz(latlong);   
+elseif ( isequal(capExt,'.loc') || isequal(capExt,'.loc') ) % fieldtrip layout file
+   [ans lat radius Cname]=textread(capFile,'%d %f %f %s');
+   if( max(abs(lat(:)))>2*pi ) lat=lat/180*pi; end;
+   x = radius.*sin(lat);  y=radius.*cos(lat); xy=[x y]';
+   latlong= xy2latlong(xy);
+   xyz    = latlong2xyz(latlong);
 elseif( strcmp(capFn,'showAll') )
 else % contains lat/long co-ords
    [Cname lat long]=textread(capFile,'%s %f %f');
