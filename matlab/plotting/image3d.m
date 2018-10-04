@@ -471,7 +471,8 @@ for pi=1:N;
      end
    end
    
-   %HACK! check for and fix overlapping tick labels caused by matlab bugs
+       %HACK! check for and fix overlapping tick labels caused by matlab bugs
+   if( ~exist('OCTAVE_VERSION','var') ) 
    tmp=get(hdls(pi),'units');   set(hdls(pi),'units','pixels');   pos=get(hdls(pi),'position');      set(hdls(pi),'units',tmp);
    tmp=get(hdls(pi),'fontunit');set(hdls(pi),'fontunit','pixels');fontsize=get(hdls(pi),'fontsize'); set(hdls(pi),'fontunit',tmp);
    tickIdx=get(hdls(pi),'xtick'); ticks=get(hdls(pi),'xticklabel');
@@ -500,6 +501,7 @@ for pi=1:N;
        keep = round(linspace(1,numel(tickIdx),pos(3)./(size(ticks,2)*fontsize*.5)));
 		 if (iscell(ticks) ) ticks=ticks(keep); else ticks=ticks(keep,:); end;
        set(hdls(pi),'xtick',tickIdx(keep),'xticklabel',ticks);  set(hdls(pi),'xminortick','on');
+     end
      end
    end
    tickIdx=get(hdls(pi),'ytick'); ticks=get(hdls(pi),'yticklabel');

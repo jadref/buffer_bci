@@ -8,7 +8,7 @@ sigproc=0;
 if [ $# -gt 1 ]; then sigproc=$2; fi
 
 echo Starting the java buffer server \(background\)
-dataAcq/startJavaBuffer.sh &
+bash dataAcq/startJavaBuffer.sh &
 bufferpid=$!
 echo buffpid=$bufferpid
 sleep 5
@@ -16,9 +16,9 @@ sleep 5
 
 echo Starting the data acquisation device $dataacq \(background\)
 if [ $dataacq == 'mobita' ]; then
-  dataAcq/startMobita.sh localhost 2 &
+  bash dataAcq/startMobita.sh localhost 2 &
 elif [ $dataacq == 'biosemi' ]; then
-  dataAcq/startBiosemi.sh &
+  bash dataAcq/startBiosemi.sh &
 else
   echo Dont recognise the eeg device type!
 fi
@@ -33,7 +33,7 @@ fi
 
 
 echo Starting the event viewer
-dataAcq/startJavaEventViewer.sh
+bash dataAcq/startJavaEventViewer.sh
 kill $bufferpid
 kill $dataacqpid
 kill $sigprocpid
