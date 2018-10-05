@@ -127,7 +127,7 @@ public class SignalProxy implements Runnable {
         if( this.triggerchannel != null ) {
             System.out.println("TriggerPort: " + triggerchannel.socket().getLocalPort());
         }
-        this.buf = ByteBuffer.allocate(512);
+        this.buf = ByteBuffer.allocate(1024);
         
         client   = new BufferClient();
 		  generator= new Random();
@@ -245,7 +245,7 @@ public class SignalProxy implements Runnable {
 
             // wait until time to send to the buffer
             data = addTriggersAndWait(data,blockStartTime,blockEndTime);
-            t        = getTime(); // current time since start
+            t    = getTime(); // current time since start
 				if (blockEndTime > t) {
 					 Thread.sleep(blockEndTime-t);
 				} else if ( t > blockEndTime+10*1000  ) {

@@ -1,4 +1,4 @@
-function [X,pipeline,info,opts]=preproc_ersp(X,varargin)
+function [X,pipeline,info]=preproc_ersp(X,varargin)
 % simple pre-processing function
 % 
 % [X,pipeline,info,opts]=preproc_ersp(X,...)
@@ -51,6 +51,6 @@ function [X,pipeline,info,opts]=preproc_ersp(X,varargin)
 %               .badtr   -- [bool N x 1] logical indicating which trials were found bad
 %  opts    -- [struct] the options used for in this call
 
-[pipeline,res,X]=train_clsfr_ersp(X,[],varargin{:},'classify',0);
-
+[pipeline,res,X]=train_ersp_clsfr(X,[],varargin{:},'classify',0);
+info=res.info;
 return;
