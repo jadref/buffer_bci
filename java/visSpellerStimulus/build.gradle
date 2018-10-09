@@ -15,8 +15,8 @@ allprojects {
     version = '1.0'
     ext {
         appName = 'Visual Speller'
-        gdxVersion = '1.2.0'
-        roboVMVersion = '0.0.14'
+        gdxVersion = '1.9.8'
+        roboVMVersion = '2.3.1'
     }
 
     repositories {

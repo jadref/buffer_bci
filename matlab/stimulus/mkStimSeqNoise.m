@@ -1,4 +1,4 @@
-function [stimSeq,stimTime,eventSeq,colors]=mkStimSeqNoise(nSymbs,duration,isi,type)
+function [stimSeq,stimTime,eventSeq,colors]=mkStimSeqNoise(nSymbs,duration,isi,type,bitp1,bitp2)
 % make a stimulus sequence / stimTim pair for a set of nSymbols
 %
 % [stimSeq,stimTime,eventSeq,colors]=mkStimSeqRand(nSymbs,duration,isi,type)
@@ -23,7 +23,7 @@ function [stimSeq,stimTime,eventSeq,colors]=mkStimSeqNoise(nSymbs,duration,isi,t
 if ( numel(nSymbs)>1 ) nSymbs=numel(nSymbs); end;
 if ( nargin<3 || isempty(isi) ) isi=1; end;
 if ( nargin<4 || isempty(type) ) type='gold'; end;
-if ( nargin<5 || isempty(smooth) ) smooth=false; end;
+%if ( nargin<5 || isempty(smooth) ) smooth=false; end;
 colors=[1 1 1]';
 nStim = duration/isi;
 stimTime=(1:nStim)*isi(1);
@@ -32,21 +32,25 @@ eventSeq=[];
 stimSeq=zeros(nSymbs,nStim); 
 switch lower(type);
   case 'gold'; 
-	 nBits = max(8,ceil(log2(nStim+1))); % state long enough to not repeat in nStim events
-	 if ( nBits==8 ) bitpattern1=[8,7,6,5,2,1]; bitpattern2=[8,7,6,1]; % magic, special code
+	 nBits = ceil(log2(nStim+1)); % state long enough to not repeat in nStim events
+    if ( nargin>4 )     bitpattern1=bitp1;         bitpattern2=bitp2; 
+    elseif ( nBits==6 ) bitpattern1=[6,5];         bitpattern2=[6,5,3,2]; % magic, special code
+	 elseif ( nBits==8 ) bitpattern1=[8,7,6,5,2,1]; bitpattern2=[8,7,6,1]; % magic, special code
 	 else % randomly pick the set of taps
 			% N.B. this will generate sub-optimal bit sequences
 		bitpattern1=find(rand(nBits,1)>.5); 
-		bitpattern2=makeTaps(nBits); if( isempty(bitpattern2) ) bitpattern2=find(rand(nBits,1)>.5); end;
+		bitpattern2=makeTaps(nBits);
+      if( isempty(bitpattern2) ) bitpattern2=find(rand(nBits,1)>.5); end;
 	 end;
-	 stimSeq = make_golds(nBits, bitpattern1, bitpattern2, 0:nSymbs-1);	 
+	 stimSeq = make_golds(nBits, bitpattern1, bitpattern2);%, 0:nSymbs-1);	  % [ nSamp x nCodes]
 	 % set correct size etc
 	 if ( 2*nSymbs+nStim<size(stimSeq,1) ) % shift away the warmup phase
 		stimSeq = stimSeq(2*nSymbs+(1:nStim),1:nSymbs)'; 
 	 else % use it all as normal
 		stimSeq = stimSeq(1:nStim,1:nSymbs)'; 
 	 end
-  case 'gaus'; 
+
+      case 'gaus'; 
 	 stimSeq = randn(size(stimSeq));
 	 if ( ~smooth ) stimSeq=single(stimSeq>0); end;
 otherwise ; error('Unrecognised noise type');
@@ -60,6 +64,7 @@ function all_code=make_golds(n, bitpattern1, bitpattern2, shift)
 %   n - number of bits of internal state
 %   bitpattern1, bittpattern2 -- two bit patterns to combine to make the final code
 %   shift - set of shifts of code 2 to combine with code1 to make the output code
+if( nargin<4 || isempty(shift) ) shift=0:2^(n-1); end;
 code1=pseudo_random_ruisgenerator(n, bitpattern1);
 code2=pseudo_random_ruisgenerator(n, bitpattern2);
 all_code=zeros(numel(code2),numel(shift));

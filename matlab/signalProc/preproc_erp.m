@@ -1,4 +1,4 @@
-function [X,pipeline,info,opts]=preproc_erp(X,varargin)
+function [X,pipeline,info]=preproc_erp(X,varargin)
 % simple pre-processing function
 % 
 % [X,pipeline,info,opts]=preproc(X,...)
@@ -50,4 +50,5 @@ function [X,pipeline,info,opts]=preproc_erp(X,varargin)
 %               .badtr   -- [bool N x 1] logical indicating which trials were found bad
 %  opts    -- [struct] the options used for in this call
 [pipeline,res,X]=train_clsfr_erp(X,[],varargin{:},'classify',0);
+info=res.info;
 return;

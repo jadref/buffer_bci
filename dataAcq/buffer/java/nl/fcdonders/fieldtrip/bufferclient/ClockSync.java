@@ -39,10 +39,6 @@ public class ClockSync {
 		  N=0;
 		  S0=0; T0=0; sS=0; sT=0; sS2=0; sST=0; sT2=0; Tlast=-10000; Slast=-10000; sampErr=10000;
 	 }
-	 public double getTime(){ // current time in milliseconds
-		  //return ((double)java.lang.System.nanoTime())/1000.0/1000.0; // N.B. only java >=1.5
-		  return ((double)java.lang.System.currentTimeMillis());
-	 }
 	 public void updateClock(double S){
 		  updateClock(S, getTime());
 	 }
@@ -90,6 +86,10 @@ public class ClockSync {
 		  //System.out.println(" wght=" + wght + " N= " + N + " m,b= " + m + ',' + b + " estErr=" + estErr);
 	 }
 
+	 public double getTime(){ // current time in milliseconds
+		  //return ((double)java.lang.System.nanoTime())/1000.0/1000.0; // N.B. only java >=1.5
+		  return ((double)java.lang.System.currentTimeMillis());
+	 }
 	 public long getSamp(){ return getSamp(getTime());}
 	 public long getSamp(double time){ 
 		  return (long)(N>0?(m*time + b):Slast); //If not enough data yet, just return last seen #samp

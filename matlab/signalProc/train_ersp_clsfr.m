@@ -78,6 +78,13 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %           |.welchAveType -- [str] type of averaging used in frequency domain transformation (ERsP only)
 %           |.freqIdx     -- [2x1] range of frequency to keep  (ERsP only)
 %  res    - [struct] detailed results for each fold
+%  res.info [struct] structure with other information about what has been done to the data.  
+%              Specificially:
+%               .ch_names-- {str nCh x 1} names of each channel as from cap-file
+%               .ch_pos  -- [3 x nCh] position of each channel as from capfile
+%               .freqs   -- [int nFreq x 1] frequencies of each of the frequency bins
+%               .badch   -- [bool nCh x 1] logical indicating which channels were found bad
+%               .badtr   -- [bool N x 1] logical indicating which trials were found bad
 %  X       -- [ppch x pptime x ppepoch] pre-processed data (N.B. may/will have different size to input X)
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
 opts=struct('classify',1,'fs',[],'timeband_ms',[],'freqband',[],...
@@ -486,6 +493,8 @@ if ( opts.visualize >= 1 )
    end
    drawnow;
 end
+
+res.info=struct('badch',isbadch,'badtr',isbadtr,'freqs',freqs,'ch_names',ch_names,'ch_pos',ch_pos);
 
 return;
 

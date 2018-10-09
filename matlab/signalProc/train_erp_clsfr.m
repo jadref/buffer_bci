@@ -79,6 +79,12 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %           |.freqIdx     -- [2x1] range of frequency to keep  (ERsP only)
 %  res    - [struct] results structure as returned by 'cvtrainFn'. 
 %                    use: help cvtrainFn for more information on its structure
+%  res.info    -- [struct] structure with other information about what has been done to the data.  
+%              Specificially:
+%               .ch_names-- {str nCh x 1} names of each channel as from cap-file
+%               .ch_pos  -  [3 x nCh] position of each channel as from capfile
+%               .badch   -- [bool nCh x 1] logical indicating which channels were found bad
+%               .badtr   -- [bool N x 1] logical indicating which trials were found bad
 %  X      - [size(X)] the pre-processed data
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
   opts=struct('classify',1,'fs',[],...
@@ -149,7 +155,7 @@ if ( opts.badchrm || (~isempty(opts.badCh) && sum(opts.badCh)>0) )
     if ( ~isempty(ch_pos) ) ch_pos  =ch_pos(:,~isbadch(1:numel(ch_names))); end;
     ch_names=ch_names(~isbadch(1:numel(ch_names)));
   end
-  fprintf('%d ch removed\n',sum(isbadch(1:numel(ch_names))));
+  fprintf('%d ch removed + %d non-eeg\n',sum(isbadch(1:numel(ch_names))),sum(isbadch(numel(ch_names)+1:end)));
 end
 
 %3) Spatial filter/re-reference
@@ -407,6 +413,8 @@ if ( opts.visualize >= 1 )
    end
    drawnow;
 end
+
+res.info=struct('badch',isbadch,'badtr',isbadtr,'times',times,'ch_names',ch_names,'ch_pos',ch_pos);
 
 return;
 

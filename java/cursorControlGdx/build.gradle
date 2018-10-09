@@ -17,11 +17,8 @@ allprojects {
     version = '1.0'
     ext {
         appName = "cursorControl"
-        gdxVersion = '1.9.6'
+        gdxVersion = '1.9.8'
         roboVMVersion = '2.3.1'
-        box2DLightsVersion = '1.4'
-        ashleyVersion = '1.7.0'
-        aiVersion = '1.8.0'
     }
 
     repositories {
@@ -65,6 +62,8 @@ project(":core") {
 
     dependencies {
         compile "com.badlogicgames.gdx:gdx:$gdxVersion"
+        compile "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+        compile fileTree( dir: '../../../dataAcq/buffer/java', include: 'BufferClient.jar')
     }
 }
 
