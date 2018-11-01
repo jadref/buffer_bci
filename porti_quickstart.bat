@@ -2,12 +2,6 @@ setlocal enabledelayedexpansion
 set batdir=%~dp0
 cd %batdir%\dataAcq
 
-set dataacq=%1
-if "%dataacq%"=="" ( 
-set dataacq=mobita
-)
-set sigproc=%2
-
 echo Starting the java buffer server \(background\)
 rem wmic process call create "dataAcq/startJavaNoSaveBuffer.bat" | find "ProcessId"
 start startJavaBuffer.bat
