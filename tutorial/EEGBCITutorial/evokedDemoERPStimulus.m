@@ -29,9 +29,9 @@ if ( exist('OCTAVE_VERSION','builtin') ) hold('on'); ph=plot(-1.5,-1.5,'k'); end
 % load the audio fragments
 audio={};
 if ( ~exist('OCTAVE_VERSION','builtin') ) % audioplayer not supported in octave
-  [tmp,fsi]= wavread('auditoryStimuli/550.wav');%oddball
+  [tmp,fsi]= audioread('auditoryStimuli/550.wav');%oddball
   beepStd  = audioplayer(tmp(1:min(size(tmp,1),fsi*.2),:)', fsi); % limit to .2s long
-  [tmp,fsi]= wavread('auditoryStimuli/500.wav');%standard
+  [tmp,fsi]= audioread('auditoryStimuli/500.wav');%standard
   beepOdd = audioplayer(tmp(1:min(size(tmp,1),fsi*.2),:)', fsi); % limit to .2s long
   audio = {beepStd beepOdd};
 end

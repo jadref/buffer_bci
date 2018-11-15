@@ -10,7 +10,7 @@ rem Weird windows hack to sleep for 2 secs to allow the buffer server to start
 ping 127.0.0.1 -n 3 > nul
 
 echo Starting the data acquisation device %dataacq% \(background\)
-start startPorti.bat
+start startMobita.bat
 rem dataacqpid=$!
 
 echo Starting the event viewer
