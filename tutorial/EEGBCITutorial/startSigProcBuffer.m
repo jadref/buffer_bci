@@ -89,7 +89,7 @@ while ( true )
    %---------------------------------------------------------------------------------
    %  Speller
    case {'spcalibrate','spcalibration','erpviewcalibrate','erpviewercalibrate','calibrateerp'};
-     [traindata,traindevents]=erpViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix','stimulus.tgtFlash','endType',{'stimulus.training'},'trlen_ms',sptrlen_ms,'freqbands',[.0 .3 45 47]);
+     [traindata,traindevents]=erpViewer(buffhost,buffport,'capFile',capFile,'overridechnms',overridechnms,'cuePrefix','stimulus.tgtFlash','endType',{'stimulus.training' 'end'},'trlen_ms',sptrlen_ms,'freqbands',[.0 .3 45 47]);
      %[traindata,traindevents]=buffer_waitData(buffhost,buffport,[],'startSet',{'stimulus.tgtFlash'},'exitSet',{'stimulus.training' 'end'},'verb',verb+1,'trlen_ms',sptrlen_ms);
      mi=matchEvents(traindevents,'stimulus.training','end'); traindevents(mi)=[]; traindata(mi)=[];%remove exit event
      fprintf('Saving %d epochs to : %s\n',numel(traindevents),['sp_' dname '_' subject '_' datestr]);

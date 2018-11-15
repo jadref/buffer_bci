@@ -8,6 +8,11 @@ ax=axes('position',[0.025 0.025 .975 .975],'units','normalized','visible','off',
 set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized');% win size in pixels
 [h]=initGrid(symbols);
 
+                       % make a connection to the buffer for trigger messages
+trigsocket=javaObject('java.net.DatagramSocket'); % creat UDP socket and bind to triggerport
+trigsocket.connect(javaObject('java.net.InetSocketAddress','localhost',9400)); 
+
+
 % make the target stimulus sequence
 [ans,ans,ans,ans,tgtSeq]=mkStimSeqRand(numel(symbols),nSeq);
 % make the row/col flash sequence for each sequence
@@ -18,6 +23,7 @@ set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized')
 % reset the cue and fixation point to indicate trial has finished  
 set(h(:),'color',bgColor*.5);
 sendEvent('stimulus.training','start');
+pause(3);
 % Waik for key-press to being stimuli
 instructh=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),spInstruct,...
 		 'HorizontalAlignment','center','color',[0 1 0],'fontunits','pixel','FontSize',.07*wSize(4));
@@ -31,11 +37,12 @@ lastPause=0;
 for si=1:nSeq;
 
   if ( ~ishandle(fig) ) break; end;
-  if( si>lastPause+spPauseInstruct ) % regular subject pauses
+  if( si>lastPause+nPauseSeq ) % regular subject pauses
     set(instructh,'string',spPauseInstruct,'visible','on');drawnow;
     waitforbuttonpress;
     set(instructh,'visible','off');drawnow;
     sleepSec(1);    
+    lastPause=si;
   else % standard inter-sequence delay
     sleepSec(interSeqDuration);
   end
@@ -57,6 +64,7 @@ for si=1:nSeq;
     drawnow;
     ev=sendEvent('stimulus.rowFlash',stimSeqRow(:,ei)); % indicate this row is 'flashed'
     sendEvent('stimulus.tgtFlash',stimSeqRow(tgtRow,ei),ev.sample); % indicate if it was a 'target' flash
+    try; trigsocket.socket.send(javaObject('java.net.DatagramPacket',stimSeq(tgtRow,ei)));catch;end;
     sleepSec(stimDuration);
   end
   
@@ -67,6 +75,7 @@ for si=1:nSeq;
     drawnow;
     ev=sendEvent('stimulus.colFlash',stimSeqCol(:,ei)); % indicate this row is 'flashed'
     sendEvent('stimulus.tgtFlash',stimSeqCol(tgtCol,ei),ev.sample); % indicate if it was a 'target' flash
+    try; trigsocket.socket.send(javaObject('java.net.DatagramPacket',stimSeq(tgtRow,ei))); catch;end;
     sleepSec(stimDuration);
   end
    

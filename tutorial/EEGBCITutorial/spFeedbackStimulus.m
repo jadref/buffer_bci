@@ -11,8 +11,8 @@ ax=axes('position',[0.025 0.025 .975 .975],'units','normalized','visible','off',
 
 % make the row/col flash sequence for each sequence
 if ( ~exist('nTestRepetitions','var') ) nTestRepetitions=nRepetitions; end;
-[stimSeqRow]=mkStimSeqRand(size(symbols,1),nTestRepetitions*size(symbols,1));
-[stimSeqCol]=mkStimSeqRand(size(symbols,2),nTestRepetitions*size(symbols,2));
+[stimSeqRow]=mkStimSeqRand(size(tstSymbols,1),nTestRepetitions*size(tstSymbols,1));
+[stimSeqCol]=mkStimSeqRand(size(tstSymbols,2),nTestRepetitions*size(tstSymbols,2));
 
 
                                 % Waik for key-press to being stimuli
@@ -20,7 +20,7 @@ instructh=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),spTestInstruct,...
 		 'HorizontalAlignment','center','color',[0 1 0],'fontunits','pixel','FontSize',.07*wSize(4));
 % wait for button press to continue
 waitforbuttonpress;
-set(t,'visible','off');
+set(instructh,'visible','off');
 drawnow;
 
 % play the stimulus
@@ -31,39 +31,43 @@ state=[];
 for si=1:nSeq;
 
   if ( ~ishandle(fig) ) break; end;
-  nFlash = 0; stimSeq=zeros(size(symbols));
+  nFlash = 0; stimSeq=zeros(size(tstSymbols));
   set(h(:),'color',bgColor); % rest all symbols to background color
   sleepSec(interSeqDuration);
   sendEvent('stimulus.sequence','start');
   
-  if( verb>0 ) fprintf(1,'Rows  '); end;
-  % rows stimulus
-  for ei=1:size(stimSeqRow,2);
-    % record the stimulus state, needed for decoding the classifier predictions later
-    nFlash=nFlash+1;
-    stimSeq(stimSeqRow(:,ei)>0,:,nFlash)=true;
-    % set the stimulus state
-    set(h(:),'color',bgColor);
-    set(h(stimSeqRow(:,ei)>0,:),'color',flashColor);
-    drawnow;
-    sendEvent('stimulus.rowFlash',stimSeqRow(:,ei)); % indicate this row is 'flashed'    
-    sleepSec(stimDuration);
+  if( size(stimSeqRow,1)>1 )
+     if( verb>0 ) fprintf(1,'Rows  '); end;
+     % rows stimulus
+     for ei=1:size(stimSeqRow,2);
+        % record the stimulus state, needed for decoding the classifier predictions later
+        nFlash=nFlash+1;
+        stimSeq(stimSeqRow(:,ei)>0,:,nFlash)=true;
+        % set the stimulus state
+        set(h(:),'color',bgColor);
+        set(h(stimSeqRow(:,ei)>0,:),'color',flashColor);
+        drawnow;
+        sendEvent('stimulus.rowFlash',stimSeqRow(:,ei)); % indicate this row is 'flashed'    
+        sleepSec(stimDuration);
+     end
   end
 
-  if( verb>0 ) fprintf(1,'Cols');end
-  % cols stimulus
-  for ei=1:size(stimSeqCol,2);
-    % record the stimulus state, needed for decoding the classifier predictions later
-    nFlash=nFlash+1;
-    stimSeq(:,stimSeqCol(:,ei)>0,nFlash)=true;
-    % set the stimulus state
-    set(h(:),'color',bgColor);
-    set(h(:,stimSeqCol(:,ei)>0),'color',flashColor);
-    drawnow;
-    sendEvent('stimulus.colFlash',stimSeqCol(:,ei)); % indicate this row is 'flashed'
-    sleepSec(stimDuration);    
+  if( size(stimSeqCol,1)>1 ) 
+     if( verb>0 ) fprintf(1,'Cols');end
+     % cols stimulus
+     for ei=1:size(stimSeqCol,2);
+        % record the stimulus state, needed for decoding the classifier predictions later
+        nFlash=nFlash+1;
+        stimSeq(:,stimSeqCol(:,ei)>0,nFlash)=true;
+        % set the stimulus state
+        set(h(:),'color',bgColor);
+        set(h(:,stimSeqCol(:,ei)>0),'color',flashColor);
+        drawnow;
+        sendEvent('stimulus.colFlash',stimSeqCol(:,ei)); % indicate this row is 'flashed'
+        sleepSec(stimDuration);    
+     end
   end
-   
+
   % reset the cue and fixation point to indicate trial has finished  
   set(h(:),'color',bgColor);
   drawnow;
@@ -80,8 +84,8 @@ for si=1:nSeq;
     % correlate the stimulus sequence with the classifier predictions to identify the most likely
     % N.B. assume last prediction is one for prev sequence
     pred = devents(end).value;
-    fprintf('Got %d predictions\n',numel(pred));
-    ss   = reshape(stimSeq(:,:,1:nFlash),[numel(symbols) nFlash]);
+    fprintf('%d) Got %d predictions\n',ei,numel(pred));
+    ss   = reshape(stimSeq(:,:,1:nFlash),[numel(tstSymbols) nFlash]);
     nPred= numel(pred);
     if( nPred < nFlash )
       fprintf('Warning missing predictionns');
@@ -95,9 +99,10 @@ for si=1:nSeq;
     [ans,predTgt] = max(corr); % predicted target is highest correlation
   
     % show the classifier prediction
+    fprintf('PredTgt = %s',tstSymbols{predTgt});
     set(h(predTgt),'color',fbColor);
     drawnow;
-    sendEvent('stimulus.prediction',symbols{predTgt});
+    sendEvent('stimulus.prediction',tstSymbols{predTgt});
   else
 	 fprintf('No prediction events recieved!');
   end

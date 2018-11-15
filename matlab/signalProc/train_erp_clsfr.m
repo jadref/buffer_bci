@@ -89,7 +89,7 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %  X      - [size(X)] the pre-processed data
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
   opts=struct('classify',1,'fs',[],...
-				  'timeband_ms',[],'freqband',[],'windowFn',[0 .2 .8 1],...
+				  'timeband_ms',[],'freqband',[],'windowType',[0 .2 .8 1],...
               'downsample',[],'preFiltFn',[],'detrend',1,'spatialfilter','car',...
               'adaptspatialfiltFn',[],'adaptspatialfiltstate',[],...
 				  'badchrm',1,'badchthresh',3.1,'badchscale',0,...
@@ -215,10 +215,10 @@ if(~isempty(opts.downsample)) outsz(2)=min(outsz(2),round(size(X,2)*opts.downsam
 if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) ) 
   fprintf('4) filter\n');
   len=size(X,2);
-  filt=mkFilter(opts.freqband,floor(len/2),opts.fs/len);
+  filt=mkFilter(floor(len/2),opts.freqband,opts.fs/len);
   % temporal window to use
   if( isnumeric(opts.windowType) )
-    winFn =mkFilter(len,opts.windowType*len,[],[],'sqrtcos');
+    winFn =mkFilter(len,opts.windowType*len,[],'sqrtcos');
   else
     winFn =mkFilter(len,opts.windowType);
   end

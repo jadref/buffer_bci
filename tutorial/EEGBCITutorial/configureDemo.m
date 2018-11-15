@@ -84,6 +84,7 @@ instructstr={'Stimulus Type Keys',
 % speller config options
 spnSeq=20;
 nPauseSeq=5;
+nSeq=5;
 spPauseInstruct={'Break Time!','What do your brain responses look like?','','Click to continue'};
 nRepetitions=5;    % the number of complete row/col stimulus before sequence is finished
 nTestRepetitions=5;% the number of complete row/col stim for test phase
