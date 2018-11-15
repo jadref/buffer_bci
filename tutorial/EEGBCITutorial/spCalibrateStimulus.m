@@ -10,7 +10,7 @@ set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized')
 
                        % make a connection to the buffer for trigger messages
 trigsocket=javaObject('java.net.DatagramSocket'); % creat UDP socket and bind to triggerport
-trigsocket.connect(javaObject('java.net.InetSocketAddress','localhost',9400)); 
+trigsocket.connect(javaObject('java.net.InetSocketAddress','localhost',8300)); 
 
 
 % make the target stimulus sequence
