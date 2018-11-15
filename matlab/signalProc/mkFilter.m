@@ -1,16 +1,19 @@
-function [filt]=mkFilter(len,bands,xscale)
+function [filt]=mkFilter(len,bands,xscale,ramptype)
 % Make different types of spectral/temporal filter
 %
-% filt = mkFilter(len,bands/type,xscale)
+% filt = mkFilter(len,bands/type,xscale,ramptype)
 % simple code to make a temporal/spectral window given a set of pass-bands
 % Inputs
 %  len   -- Number of elements in the output filter
 %         OR
 %           [len x 1] vector of bin centers
 %  bands -- Either:
-%         a) vector with the band limits, 
-%             [ min max ] or [ min cent max ] or [ mstart mend maxstart maxend]
+%         a) vector with the pass-band limits, padded at ends with ramptype
+%             [ lo hi ] or [ lo cent hi ] or [ lo-cut lo-pass hi-pass hi-cut] 
 %             N.B. the 1st elment in the filter has band value of 0!!!
+%            OR
+%             [ -1 lo-cut lo-pass hi-pass hi-cut] where negative hi-pass/cut values
+%               work back from the end of the time range
 %         b) String describing the filter type wanted, possibly with optional parameters one of:
 %          {rect,one,gaussian,hamming,hamming0,hanning,hanning0,bartlet,blackman,kasier}
 %         c) Cell array of filter types and their optional parameters, e.g. {'gaus' 10} or band limits
@@ -23,7 +26,8 @@ function [filt]=mkFilter(len,bands,xscale)
 %           indexs, (N.B. use 1/fs for time filters, and 1/duration=fs/len for spectral) (1)
 %           OR
 %           [len x 1] vector of bin centers
-%
+%  ramptype -- 'str' type of ramp to use at the edges of the band-pass filter.           ('cos')
+%              one of: 'cos' - raised cosine, 'lin' - linear
 % Outputs:
 %  filt  -- [len x 1] filter or 
 %           [len x numel(bands)] filters for vector-cell-array inputs
@@ -32,12 +36,15 @@ function [filt]=mkFilter(len,bands,xscale)
 % Example:
 %  filt= mkFilter(floor(nSamp/2),[8 10 24 28],1/duration); % mk fftfilter filter for data nSamp long = duration (s)
 % N.B. for constant weight overlapping window functions you should use:
-%  blackman=.37,kaiser(2)=.46, rest=.5
-if ( nargin < 3 ) xscale=1; end;
+%  blackman=.30,kaiser(2)=.45, rest=.5
+if ( nargin < 3 || isempty(xscale) ) xscale=1; end;
+if ( nargin < 4 || isempty(ramptype) ) ramptype='cos'; end;
 % BODGE: make old calling convention still work (mostly)
 if ( ~iscell(bands) ) bands={bands}; end;
 if ( numel(len)>1 ) xscale=len; len=numel(xscale); end;
 if ( isempty(len) && numel(xscale)>1 ) len=numel(xscale); end;
+% gen full point label if not given
+if ( numel(xscale)==1 && isnumeric(xscale) )  xscale=(0:len-1)*xscale; end; 
 
 if ( isempty(bands{1}) )  
    filt=ones(len,1);   
@@ -45,7 +52,7 @@ if ( isempty(bands{1}) )
 elseif ( iscell(bands{1}) ) 
    filt=zeros(len,numel(bands));
    for j=1:numel(bands); % build a result for each input by recursive calls
-      filt(:,j)=mkFilter(len,bands{j},xscale);
+      filt(:,j)=mkFilter(len,bands{j},xscale,ramptype);
    end
 
 elseif ( iscell(xscale) ) % exact match only
@@ -67,25 +74,52 @@ elseif ( ischar(bands{1}) )
     case {'rect','rectangle','one','tophat','box','boxcar'};
      filt=ones(len,1);
     
-    case {'gaus','gaussian'};  % 2-sigma centered gaussian over whole region
-     sigma=(len-1)/2; if ( numel(bands)>1 ) sigma=bands{2}; end
-     filt= exp(-.5*(([0:len-1]'-(len-1)/2)./sigma).^2);
-    
-    case 'hamming'; % hamming window (optimised for min side-lobe size)
-     filt= .53836 - (1-.5386)*cos( ([0:len-1])*2*pi/(len-1) ); 
-    
-    case 'hanning'; % raised cosine -- non-zero at limits
-     filt= .5*(1- cos( ([1:len])*2*pi/(len+1) ));
-    
-    case 'hanning0';% raised cosine -- zero at limits
-     filt= .5*(1- cos( ([0:len-1])*2*pi/(len-1) ));
-    
     case 'bartlet'; % triangle window -- non-zero at limits
      filt= [1:ceil(len/2) floor(len/2):-1:1]/(len/2);
     
-    case 'bartlet0'; % triangle window -- zero at limits
+    case {'bartlet0','triangle'}; % triangle window -- zero at limits
      filt= [0:ceil(len/2)-1 floor(len/2)-1:-1:0]/(len/2);
+
+    case {'gaus','gaussian'};  % 2-sigma centered gaussian over whole region
+     sigma=(len-1)/2; if ( numel(bands)>1 ) sigma=bands{2}; end
+     if (sigma<=0 ) sigma=1; end; % guard divide by 0
+     filt= exp(-.5*(([0:len-1]'-(len-1)/2)./sigma).^2);
+
+    case {'gaus.5','gaus2'};  % 2-sigma centered gaussian over whole region
+     sigma=(2*len-1)/2; if ( numel(bands)>1 ) sigma=bands{2}; end
+     if (sigma<=0 ) sigma=1; end; % guard divide by 0
+     filt= exp(-.5*(([0:2*len-1]'-(2*len-1)/2)./sigma).^2);
+     filt= filt(end-len+1:end); % 2nd half only returned    
+     if ( strcmp(bands{1}(end-1:end),'.5') )
+        filt= sqrt(filt);
+     else
+        filt= filt.^2;
+     end
+
+    case 'hanning'; % raised cosine -- non-zero at limits
+     filt= .5*(1- cos( ([1:len])*2*pi/(len+1) ));
+
+    case {'hanning.5','hanning2'}; % 1/2 of the raised cosine -- non-zero at limits
+     filt= .5*(1- cos( ([1:(2*len)])*2*pi/(len*2+1) ));
+     filt= filt(end-len+1:end); % only the 2nd half returned
+     % BODGE: for the autocorr component transformation sqrt to simulate pre-power-comp-usage
+     if ( strcmp(bands{1}(end-1:end),'.5') )
+        filt= sqrt(filt);
+     else
+        filt= filt.^2;
+     end
+
+    case {'hanningL','hanningR'}; % 1/2 of the raised cosine -- non-zero at limits
+     filt= .5*(1- cos( ([1:(2*len)])*2*pi/(len*2+1) ));
+     % get the half we want
+     if ( strcmp(bands{1}(end),'L') ) filt= filt(1:len); else filt= filt(end-len+1:end); end
+
+    case 'hanning0';% raised cosine -- zero at limits
+     filt= .5*(1- cos( ([0:len-1])*2*pi/(len-1) ));
     
+    case 'hamming'; % hamming window (optimised for min side-lobe size)
+     filt= .53836 - (1-.5386)*cos( ([0:len-1])*2*pi/(len-1) ); 
+        
     case 'blackman'; % 2nd order raised cosine
      filt= .424 - .497*cos([0:len-1]*2*pi/(len-1)) + 0.078*cos([0:len-1]*4*pi/(len-1));
     
@@ -97,9 +131,15 @@ elseif ( ischar(bands{1}) )
      % see http://ccrma.stanford.edu/~jos/sasp/Kaiser_Window_Beta_Parameter.html
      alpha=2; if ( numel(bands)>1 ) alpha=bands{2}; end
      filt=besseli(0,alpha*pi*[sqrt(1-(([0:len-1]-(len-1)/2)/(len/2)).^2)])/besseli(0,alpha*pi);
-    
+     filt=filt-min(filt); filt=filt./max(filt); % ensure is 0 at edges and 1 at max
+
     otherwise;
-     error('Unrecognised window type: %s\n',bands{1});
+     try; % try as a function to evaluate
+        fopts={}; if ( numel(bands>1) ) fopts=bands(2:end); end;
+        filt = feval(bands{1},len,fopts{:});
+     catch;
+        error('Unrecognised window type: %s\n',bands{1});
+     end
   end
   filt=filt(:); % ensure is column vector
 
@@ -113,47 +153,68 @@ else
          bands{i}=[bands{i}(1) bands{i}(2) bands{i}(2) bands{i}(3)];
       elseif( numel(bands{i})==2 )
          bands{i}=[bands{i}(1) bands{i}(1) bands{i}(2) bands{i}(2)];
+      elseif( numel(bands{i})==5 )
+		  if ( isequal(bands{i}(1),-1) ) % neg values count back from the end of the range
+			 bands{i}=bands{i}(2:end);
+			 if ( any(bands{i}<0) )
+				bands{i}(bands{i}<0) = xscale(end)+bands{i}(bands{i}<0);
+			 end
+		  else
+			 warning('5 values spec but dont know how to use');
+		  end
       end
-      if ( numel(bands{i})==4 )
-         % convert from frequencies to indicies in the fft'd data array
-         if ( numel(xscale)==1 ) 
-           band=max(min((bands{i}/xscale)+.5,size(filt,1)),0); % N.B. shift to bin end? why????
-         else % find closest point
-           for j=1:numel(bands{i}); 
-             if ( isnumeric(xscale) )
-               [ans,band(j)]= min(abs(bands{i}(j)-xscale)); 
-             else % work with cell array xscale spec
-               for k=1:numel(xcale);
-                 if(isequal(bands{i}{j},xscale{k}))band(j)=k;break;end;
-               end
-             end
-           end
-         end
-         grad=1./max([band(2)-band(1) band(4)-band(3)],eps);
+      if ( numel(bands{i})==4 ) % use xscale to convert to indicies in the fft'd data array
+										  % find closest point
+         band=zeros(4,1);
+        for j=1:numel(bands{i}); 
+           band(j)=bands{i}(j);
+          if ( isnumeric(xscale) )
+            [ans,binidx]= min(abs(band(j)-xscale)); % nearest bin center
+            if( xscale(binidx)<band(j) && binidx<numel(xscale) ) band(j) = binidx + (band(j)-xscale(binidx))/(xscale(binidx+1)-xscale(binidx));
+            elseif( xscale(binidx)>band(j) && binidx>1         ) band(j) = binidx + (band(j)-xscale(binidx))/(xscale(binidx)-xscale(binidx-1));
+            else                                                 band(j) = binidx; 
+            end
+          else % work with cell array xscale spec
+            for k=1:numel(xscale);
+              if(isequal(bands{i}{j},xscale{k}))band(j)=k;break;end;
+            end
+          end
+        end
          if( all(band<=1) || all(band>=len) ) 
             warning('Band is outside the requested length');
          end
          % build the filter
          tmpf=zeros(size(filt));
-         if( ceil(band(1))<ceil(band(2)) )       % up-ramp
-            rng=[.5*(ceil(band(1))-band(1)).^2*grad(1);
-                 1-.5*(band(2)-floor(band(2))).^2*grad(1)];
-            tmpf(ceil(band(1)):ceil(band(2)))=linspace(rng(1),rng(2),ceil(band(2))-ceil(band(1))+1);
-         elseif ( band(2)==.5 ) % zero is special
+         if( ceil(band(1))<ceil(band(2)) )       % up-ramp            
+            grad=1./(band(2)-band(1));
+            tmpf(ceil(band(1)):ceil(band(2)))=min(1,((ceil(band(1)):ceil(band(2)))-band(1))*grad);
+         elseif ( band(2)<=1 ) % zero is special
            tmpf(ceil(band(2)))=1;
          else
-            tmpf(ceil(band(2)))=ceil(band(2))-.5 -mean([band(1),band(2)]-.5); % proportional part, compensate for the +.5
+            tmpf(ceil(band(2)))=.5; % proportional part, compensate for the +.5
          end
          tmpf(ceil(band(2))+1:ceil(band(3))-1)= 1; % top-hat
-         if ( ceil(band(3))<ceil(band(4)) )      % down-ramp
-            rng=[1-.5*(ceil(band(3))-band(3)).^2*grad(2);
-                 .5*(band(4)-floor(band(4))).^2*grad(2)];
-            tmpf(ceil(band(3)):ceil(band(4)))=linspace(rng(1),rng(2),ceil(band(4))-ceil(band(3))+1);
+			if ( ceil(band(3))<ceil(band(4)) )      % down-ramp
+            grad=1./(band(3)-band(4));
+            tmpf(ceil(band(3)):ceil(band(4)))=min(1,((ceil(band(3)):ceil(band(4)))-band(4))*grad);
+			elseif ( band(3)>=xscale(end) ) % end-of-scale is also special
+			  tmpf(band(3))=1;
          else
-            tmpf(ceil(band(3)))=mean([band(3),band(4)]-.5)-floor(band(3)-.5-1e-4); % proportional part, compensate for the +.5
+           tmpf(ceil(band(3)))=.5;
          end
          filt=max(filt,tmpf(1:numel(filt)));
-         filt=.5-.5*cos(pi*filt);  % smooth the edges
+			if ( any(strcmp(ramptype,{'lin','tri'})) )
+					 ; % already linear
+			elseif ( strcmp(ramptype,'cos') )
+           filt=.5-.5*cos(pi*filt);  % smooth the edges with raised cosine
+			elseif ( any(strcmp(ramptype,'sqrtcos')) ) % sqrt to preserve power after filtering
+			  filt=sqrt((1-cos(pi*filt))/2);
+			elseif ( any(strcmp(ramptype,'sqrt')) )
+			  %filt=sqrt(filt);
+			  filt=sqrt((1-cos(pi*filt))/2);
+			else
+			  warning('unrecognised ramptype'); 
+			end
       
       elseif ( numel(bands{i})==size(filt,1) )
          filt=max(filt,bands{i}(:));
@@ -170,9 +231,13 @@ else
 return
 %---------------------------------------------------------------------------
 function []=testCases()
-len=40;fs=2; sampres=1/fs; freqs=0:sampres:(len-1)*sampres;
-filt=mkFilter([0 5 10 15],len,1./fs); % 1 filter about 7Hz
-plot(freqs,filt);
+len=40;fs=2;dur=len/fs; sampres=1/fs; freqs=0:sampres:(len-1)*sampres;
+filt2=mkFilter(len,[5 10],1./fs); % 1 filter about 7Hz, 2-param version
+filt3=mkFilter(len,[5 7 10],1./fs); % 1 filter about 7Hz, 3-param version
+filt4=mkFilter(len,[0 5 10 15],1./fs); % 1 filter about 7Hz, 4-param version
+filt5=mkFilter(len,[-1 0 5 10 15],1./fs); % 1 filter about 7Hz, 5-param version
+filt6=mkFilter(len,[-1 0 5 -10 -5],1./fs); % 1 filter about 7Hz, 5-param version, neg-vals
+clf;plot(freqs,[filt2 filt3 filt4 filt5 filt6],'linewidth',1);
 filt=mkFilter(len,{[0 1 3 5] [10 12 15 17]},sampres); % 1 multi modal filter
 filt=mkFilter(len,{{[0 1 3 5]} {[10 12 15 17]}},sampres); % 2 filters
 filt=mkFilter(len,{[0 1 3 5] [10 12 15 17]},freqs); % given bin centers
@@ -198,7 +263,7 @@ clf;plot(X);hold on; plot(sum(X,2),'k','LineWidth',3);
 
 % Test the quality of the filters in time-domain implementation
 fs=50;dur=1;len=dur*fs;
-filt=mkFilter([8 9 11 12],len/2,1./dur); 
+filt=mkFilter(len/2,[8 9 11 12],1./dur); 
 subplot(211);plot((0:numel(filt)-1)/dur,filt,'*-');
 xlabel('freq (hz)');title('Spectral filter');
 ifilt=(ifft([filt;0;filt(end:-1:2)]));

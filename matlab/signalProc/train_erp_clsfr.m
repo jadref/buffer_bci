@@ -20,6 +20,7 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %              EMPTY for *NO* spectral filter
 %              OR
 %              { nFreq x 1 } cell array of discrete frequencies to pick
+%  windowType- [4 x 1] taper to use with the spectral filter.  ([0 .2 .8 1])
 %  width_ms  - [float] width in millisecs for the windows in the welch spectrum (250)
 %              estimation.  
 %              N.B. the output frequency resolution = 1000/width_ms, so 4Hz with 250ms
@@ -74,7 +75,7 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %           |.filt    -- [float] filter weights for spectral filtering (ERP only)
 %           |.outsz   -- [float] info on size after spectral filter for downsampling
 %           |.timeIdx -- [2x1] time range (start/end sample) to apply the classifer to
-%           |.windowFn -- [float] window used in frequency domain transformation (ERsP only)
+%           |.windowFn -- [float] window used before spectral-filter or frequency domain transformation
 %           |.welchAveType -- [str] type of averaging used in frequency domain transformation (ERsP only)
 %           |.freqIdx     -- [2x1] range of frequency to keep  (ERsP only)
 %  res    - [struct] results structure as returned by 'cvtrainFn'. 
@@ -88,7 +89,8 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %  X      - [size(X)] the pre-processed data
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
   opts=struct('classify',1,'fs',[],...
-				  'timeband_ms',[],'freqband',[],'downsample',[],'preFiltFn',[],'detrend',1,'spatialfilter','car',...
+				  'timeband_ms',[],'freqband',[],'windowFn',[0 .2 .8 1],...
+              'downsample',[],'preFiltFn',[],'detrend',1,'spatialfilter','car',...
               'adaptspatialfiltFn',[],'adaptspatialfiltstate',[],...
 				  'badchrm',1,'badchthresh',3.1,'badchscale',0,...
 				  'badtrrm',1,'badtrthresh',3,'badtrscale',0,...
@@ -214,7 +216,14 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
   fprintf('4) filter\n');
   len=size(X,2);
   filt=mkFilter(opts.freqband,floor(len/2),opts.fs/len);
-  X   =fftfilter(X,filt,outsz,2,2);
+  % temporal window to use
+  if( isnumeric(opts.windowType) )
+    winFn =mkFilter(len,opts.windowType*len,[],[],'sqrtcos');
+  else
+    winFn =mkFilter(len,opts.windowType);
+  end
+  % N.B. by default we detrend before filtering!!
+  X   =fftfilter(X,filt,outsz,2,2,winFn);
 elseif( ~isempty(opts.downsample) ) % manual downsample without filtering
   X   =subsample(X,outsz(2),2);   
 end
@@ -375,7 +384,7 @@ clsfr.filt         = filt; % filter weights for spectral filtering
 clsfr.outsz        = outsz; % info on size after spectral filter for downsampling
 clsfr.timeIdx      = timeIdx; % time range to apply the classifer to
 
-clsfr.windowFn     = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
+clsfr.windowFn     = winFn; % taper to apply to the data before the spectral filter
 clsfr.welchAveType = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
 clsfr.freqIdx      = []; % DUMMY -- so ERP and ERSP classifier have same structure fields
 clsfr.featFiltFn   = featFiltFn; % feature normalization type

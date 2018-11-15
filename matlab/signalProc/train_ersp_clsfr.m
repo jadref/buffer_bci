@@ -74,7 +74,7 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %           |.filt    -- [float] filter weights for spectral filtering (ERP only)
 %           |.outsz   -- [float] info on size after spectral filter for downsampling
 %           |.timeIdx -- [2x1] time range (start/end sample) to apply the classifer to
-%           |.windowFn -- [float] window used in frequency domain transformation (ERsP only)
+%           |.windowFn -- [float] window used before spectral-filter or frequency domain transformation
 %           |.welchAveType -- [str] type of averaging used in frequency domain transformation (ERsP only)
 %           |.freqIdx     -- [2x1] range of frequency to keep  (ERsP only)
 %  res    - [struct] detailed results for each fold

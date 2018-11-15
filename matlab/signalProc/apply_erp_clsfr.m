@@ -68,7 +68,7 @@ end
 
 %4) spectral filter
 if ( isfield(clsfr,'filt') && ~isempty(clsfr.filt) )
-  X=fftfilter(X,clsfr.filt,clsfr.outsz,2,2);
+  X=fftfilter(X,clsfr.filt,clsfr.outsz,2,2,clsfr.windowFn);
 elseif ( clsfr.outsz(2)~=size(X,2) ) % downsample only
   X=subsample(X,clsfr.outsz(2));
 end
