@@ -83,8 +83,10 @@ instructstr={'Stimulus Type Keys',
 
 % speller config options
 spnSeq=20;
+nPauseSeq=5;
+spPauseInstruct={'Break Time!','What do your brain responses look like?','','Click to continue'};
 nRepetitions=5;    % the number of complete row/col stimulus before sequence is finished
-nTestRepetitions=7;% the number of complete row/col stim for test phase
+nTestRepetitions=5;% the number of complete row/col stim for test phase
 cueDuration=2;
 stimDuration=.15; % the length a row/col is highlighted
 dataDuration=.6;  % amount of data used for classifier
@@ -94,7 +96,9 @@ feedbackDuration=5;
 symbols={'1' '2' '3';...
          '4' '5' '6';...
          '7' '8' '9'}';
-spInstruct={'Concentrate on the Green Number.','Click to begin'};
+spInstruct={'Concentrate on the Green Number.','And count the number of times','it flashes.','Click to begin'};
+spTestInstruct={'Freely choose which response to look at','and count the flashses.','After the flashsing finishes','The BLUE symbol is what','the BCI thought','','Click to begin'};
+tstSymbols={'yes' 'no' 'mabye'};
 symbSize=.1;
 sptrlen_ms=dataDuration*1000;
 

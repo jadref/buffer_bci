@@ -7,7 +7,7 @@ ax=axes('position',[0.025 0.025 .975 .975],'units','normalized','visible','off',
         'xtick',[],'xticklabelmode','manual','ytick',[],'yticklabelmode','manual',...
         'color',[0 0 0],'DrawMode','fast','nextplot','replacechildren',...
         'xlim',[-1.5 1.5],'ylim',[-1.5 1.5],'Ydir','normal');
-[h,symbs]=initGrid(symbols);
+[h,symbs]=initGrid(tstSymbols);
 
 % make the row/col flash sequence for each sequence
 if ( ~exist('nTestRepetitions','var') ) nTestRepetitions=nRepetitions; end;
@@ -16,12 +16,11 @@ if ( ~exist('nTestRepetitions','var') ) nTestRepetitions=nRepetitions; end;
 
 
                                 % Waik for key-press to being stimuli
-t=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'Freely choose which number to look at' 'after the stimulus finishes the' 'BCI predicted letter will be shown' 'in green' '' 'Click to continue'},...
+instructh=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),spTestInstruct,...
 		 'HorizontalAlignment','center','color',[0 1 0],'fontunits','pixel','FontSize',.07*wSize(4));
 % wait for button press to continue
 waitforbuttonpress;
 set(t,'visible','off');
-delete(t);
 drawnow;
 
 % play the stimulus
@@ -96,11 +95,11 @@ for si=1:nSeq;
     [ans,predTgt] = max(corr); % predicted target is highest correlation
   
     % show the classifier prediction
-    set(h(predTgt),'color',tgtColor);
+    set(h(predTgt),'color',fbColor);
     drawnow;
     sendEvent('stimulus.prediction',symbols{predTgt});
   else
-		fprintf('No prediction events recieved!');
+	 fprintf('No prediction events recieved!');
   end
   sleepSec(feedbackDuration);
   fprintf('\n');

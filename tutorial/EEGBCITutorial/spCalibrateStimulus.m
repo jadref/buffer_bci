@@ -19,20 +19,27 @@ set(fig,'Units','pixel');wSize=get(fig,'position');set(fig,'units','normalized')
 set(h(:),'color',bgColor*.5);
 sendEvent('stimulus.training','start');
 % Waik for key-press to being stimuli
-t=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),spInstruct,...
+instructh=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),spInstruct,...
 		 'HorizontalAlignment','center','color',[0 1 0],'fontunits','pixel','FontSize',.07*wSize(4));
 % wait for button press to continue
 waitforbuttonpress;
-set(t,'visible','off');
-delete(t);
+set(instructh,'visible','off');
 drawnow;
 
 sleepSec(1);
+lastPause=0;
 for si=1:nSeq;
 
   if ( ~ishandle(fig) ) break; end;
-
-  sleepSec(interSeqDuration);
+  if( si>lastPause+spPauseInstruct ) % regular subject pauses
+    set(instructh,'string',spPauseInstruct,'visible','on');drawnow;
+    waitforbuttonpress;
+    set(instructh,'visible','off');drawnow;
+    sleepSec(1);    
+  else % standard inter-sequence delay
+    sleepSec(interSeqDuration);
+  end
+  
   sendEvent('stimulus.sequence','start');
   % show the subject cue where to attend
   [tgtRow,tgtCol]=ind2sub(size(symbols),tgtSeq(si)); % convert to row/col index
