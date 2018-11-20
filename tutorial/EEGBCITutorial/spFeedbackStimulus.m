@@ -14,6 +14,10 @@ if ( ~exist('nTestRepetitions','var') ) nTestRepetitions=nRepetitions; end;
 [stimSeqRow]=mkStimSeqRand(size(tstSymbols,1),nTestRepetitions*size(tstSymbols,1));
 [stimSeqCol]=mkStimSeqRand(size(tstSymbols,2),nTestRepetitions*size(tstSymbols,2));
 
+                       % make a connection to the buffer for trigger messages
+trigsocket=javaObject('java.net.DatagramSocket'); % creat UDP socket and bind to triggerport
+trigsocket.connect(javaObject('java.net.InetSocketAddress','localhost',8300)); 
+
 
                                 % Waik for key-press to being stimuli
 instructh=text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),spTestInstruct,...
@@ -83,7 +87,7 @@ for si=1:nSeq;
   if ( ~isempty(devents) ) 
     % correlate the stimulus sequence with the classifier predictions to identify the most likely
     % N.B. assume last prediction is one for prev sequence
-    pred = devents(end).value;
+    pred = devents(end).value*dv2flash; % BODGE: correct for poss sign flick in the classifier
     fprintf('%d) Got %d predictions\n',ei,numel(pred));
     ss   = reshape(stimSeq(:,:,1:nFlash),[numel(tstSymbols) nFlash]);
     nPred= numel(pred);
@@ -92,7 +96,7 @@ for si=1:nSeq;
       corr = ss(:,1:nPred)*pred;
     elseif ( nPred > nFlash )
       fprintf('Warning: extra predictions');
-      core = ss*pred(1:nFlash);
+      corr = ss*pred(1:nFlash);
     else
       corr = ss*pred;
     end
