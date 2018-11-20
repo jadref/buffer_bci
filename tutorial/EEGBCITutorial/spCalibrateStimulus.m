@@ -63,7 +63,11 @@ for si=1:nSeq;
     set(h(stimSeqRow(:,ei)>0,:),'color',flashColor);
     drawnow;
     ev=sendEvent('stimulus.rowFlash',stimSeqRow(:,ei)); % indicate this row is 'flashed'
-    sendEvent('stimulus.tgtFlash',stimSeqRow(tgtRow,ei),ev.sample); % indicate if it was a 'target' flash
+    if( stimSeqRow(tgtRow,ei)>0 )
+      sendEvent('stimulus.tgtFlash','1-Tgt',ev.sample); % indicate if it was a 'target' flash
+    else
+      sendEvent('stimulus.tgtFlash','0-Non-Tgt',ev.sample); % indicate if it was a 'target' flash
+    end
     try; trigsocket.socket.send(javaObject('java.net.DatagramPacket',stimSeq(tgtRow,ei)));catch;end;
     sleepSec(stimDuration);
   end
@@ -74,7 +78,11 @@ for si=1:nSeq;
     set(h(:,stimSeqCol(:,ei)>0),'color',flashColor);
     drawnow;
     ev=sendEvent('stimulus.colFlash',stimSeqCol(:,ei)); % indicate this row is 'flashed'
-    sendEvent('stimulus.tgtFlash',stimSeqCol(tgtCol,ei),ev.sample); % indicate if it was a 'target' flash
+    if( stimSeqCol(tgtCol,ei)>0 )
+      sendEvent('stimulus.tgtFlash','1-Tgt',ev.sample); % indicate if it was a 'target' flash
+    else
+      sendEvent('stimulus.tgtFlash','0-Non-Tgt',ev.sample); % indicate if it was a 'target' flash
+    end
     try; trigsocket.socket.send(javaObject('java.net.DatagramPacket',stimSeq(tgtRow,ei))); catch;end;
     sleepSec(stimDuration);
   end
