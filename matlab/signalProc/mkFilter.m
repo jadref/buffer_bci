@@ -163,11 +163,11 @@ else
 			 warning('5 values spec but dont know how to use');
 		  end
       end
-      if ( numel(bands{i})==4 ) % use xscale to convert to indicies in the fft'd data array
-										  % find closest point
-         band=zeros(4,1);
+      if ( numel(bands{i})==4 ) % use xscale to convert to indicies 
+        band=zeros(4,1);
         for j=1:numel(bands{i}); 
-           band(j)=bands{i}(j);
+          band(j)=bands{i}(j);
+          band(j)=max(min(band(j),xscale(end)),xscale(1)); % bound to the available range
           if ( isnumeric(xscale) )
             [ans,binidx]= min(abs(band(j)-xscale)); % nearest bin center
             if( xscale(binidx)<band(j) && binidx<numel(xscale) ) band(j) = binidx + (band(j)-xscale(binidx))/(xscale(binidx+1)-xscale(binidx));
@@ -241,6 +241,7 @@ clf;plot(freqs,[filt2 filt3 filt4 filt5 filt6],'linewidth',1);
 filt=mkFilter(len,{[0 1 3 5] [10 12 15 17]},sampres); % 1 multi modal filter
 filt=mkFilter(len,{{[0 1 3 5]} {[10 12 15 17]}},sampres); % 2 filters
 filt=mkFilter(len,{[0 1 3 5] [10 12 15 17]},freqs); % given bin centers
+filt=mkFilter(len,[0 inf])
 
 % test with a very low spectral resolution and high band spec resolution
 clf;
