@@ -34,9 +34,23 @@ damage=false(5,1);
 if( nargout>1 && nargin>1) 
   if ( isstruct(oldopts) )
     damage(1)= ~isequal(oldopts.badchrm,sigprocopts.badchrm);
-    %damage(2)= ~isequal(oldopts.spatfilttype,sigprocopts.spatfilttype);
-    %damage(3)= ~isequal(oldopts.preproctype,sigprocopts.preproctype);
+    if(isfield(oldopts,'spatfilttype'))
+    damage(2)= ~isequal(oldopts.spatfilttype,sigprocopts.spatfilttype);
+    end
+    if( isfield(oldopts,'preproctype') )
+    damage(3)= ~isequal(oldopts.preproctype,sigprocopts.preproctype);
+    end
     damage(4)= ~isequal(oldopts.freqbands,sigprocopts.freqbands);
     damage(5)= ~isequal(oldopts.badchthresh,sigprocopts.badchthresh);
+
+    fns=fieldnames(oldopts);
+    for fi=1:numel(fns);
+       fn=fns{fi};
+       if(isfield(sigprocopts,fn) && isfield(oldopts,fn) )
+          if( ~isequal(getfield(oldopts,fn),getfield(sigprocopts,fn)) ) 
+             damage(5)=true; break; 
+          end
+       end;
+    end
   end
 end
