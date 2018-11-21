@@ -29,7 +29,7 @@
 #define __eemagine_sdk_h__
 
 #ifdef EEGO_SDK_EXPORT
-#  ifdef WIN32
+#  ifdef _WIN32
 #    define EEGO_SDK_API __declspec(dllexport)
 #  endif
 #  ifdef __unix__
@@ -65,6 +65,9 @@ extern "C" {
 	typedef enum {
 		EEMAGINE_SDK_CHANNEL_TYPE_REFERENCE,
 		EEMAGINE_SDK_CHANNEL_TYPE_BIPOLAR,
+		EEMAGINE_SDK_CHANNEL_TYPE_ACCELEROMETER,
+		EEMAGINE_SDK_CHANNEL_TYPE_GYROSCOPE,
+		EEMAGINE_SDK_CHANNEL_TYPE_MAGNETOMETER,
 		EEMAGINE_SDK_CHANNEL_TYPE_TRIGGER,
 		EEMAGINE_SDK_CHANNEL_TYPE_SAMPLE_COUNTER,
 		EEMAGINE_SDK_CHANNEL_TYPE_IMPEDANCE_REFERENCE,
@@ -77,6 +80,11 @@ extern "C" {
 		int                       index;
 		eemagine_sdk_channel_type type;
 	} eemagine_sdk_channel_info;
+	/**
+	* @brief setup sdk library
+	*/
+	typedef void(*eemagine_sdk_setup_t)(void *);
+	EEGO_SDK_API void eemagine_sdk_setup(void *);
 	/**
 	 * @brief initialze sdk library
 	 */

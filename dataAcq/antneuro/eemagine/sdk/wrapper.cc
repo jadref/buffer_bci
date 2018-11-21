@@ -49,10 +49,10 @@
 #define _UNICODE
 #endif
 
-// Find out what operating system we are using and default to WIN32
-#if !(defined(WIN32) ^ defined(__unix__))
-#pragma message ("Neither WIN32 nor __unix__ has been defined. Default to WIN32.")
-#define WIN32
+// Find out what operating system we are using and default to _WIN32
+#if !(defined(_WIN32) ^ defined(__unix__))
+#pragma message ("Neither _WIN32 nor __unix__ has been defined. Default to _WIN32.")
+#define _WIN32
 #endif
 
 // For windows we are using UTF16 in any case!
@@ -62,7 +62,7 @@
 #ifndef UNICODE
 #define UNICODE
 #endif
-#ifdef WIN32
+#ifdef _WIN32
 #  include <Windows.h> // For library loading
 #endif
 #ifdef __unix__
@@ -77,6 +77,10 @@ class _sdkBindings
 {
 public:
 	bool initialized;
+	/**
+	* @brief setup sdk library
+	*/
+	eemagine_sdk_setup_t setup;
 	/**
 	* @brief initialze sdk library
 	*/
@@ -202,7 +206,7 @@ std::vector<eemagine::sdk::channel> _channelArrayToVector(eemagine_sdk_channel_i
 	std::vector<eemagine::sdk::channel> rv; // the list to be filled
 	rv.reserve(channelCount);
 
-	for(unsigned channel = 0; channel < channelCount; ++channel)
+	for (unsigned channel = 0; channel < channelCount; ++channel)
 	{
 		eemagine_sdk_channel_info* read_ptr = channelPtr + channel;
 		if (read_ptr->index < 0)
@@ -228,6 +232,15 @@ std::vector<eemagine::sdk::channel> _channelArrayToVector(eemagine_sdk_channel_i
 			break;
 		case EEMAGINE_SDK_CHANNEL_TYPE_IMPEDANCE_GROUND:
 			rv.push_back(eemagine::sdk::channel(index, eemagine::sdk::channel::impedance_ground));
+			break;
+		case EEMAGINE_SDK_CHANNEL_TYPE_ACCELEROMETER:
+			rv.push_back(eemagine::sdk::channel(index, eemagine::sdk::channel::accelerometer));
+			break;
+		case EEMAGINE_SDK_CHANNEL_TYPE_GYROSCOPE:
+			rv.push_back(eemagine::sdk::channel(index, eemagine::sdk::channel::gyroscope));
+			break;
+		case EEMAGINE_SDK_CHANNEL_TYPE_MAGNETOMETER:
+			rv.push_back(eemagine::sdk::channel(index, eemagine::sdk::channel::magnetometer));
 			break;
 		default:
 			throw eemagine::sdk::exceptions::unknown("Channel type unknown: " + read_ptr->type);
@@ -257,7 +270,7 @@ public:
 
 	eemagine::sdk::buffer getData() {
 		int bytes_to_allocate(_return_value_guard(_sdk.prefetch(_stream_id)));
-		size_t double_count(bytes_to_allocate / sizeof(double));
+		int double_count(bytes_to_allocate / sizeof(double));
 		eemagine::sdk::buffer rv(getChannelCount(), double_count / getChannelCount());
 		_return_value_guard(_sdk.get_data(_stream_id, rv.data(), bytes_to_allocate));
 		return rv;
@@ -277,38 +290,47 @@ protected:
 };
 
 ///////////////////////////////////////////////////////////////////////////////
+
+void increment_amplifier_reference_count(const eemagine_sdk_amplifier_info & info);
+void decrement_amplifier_reference_count(const eemagine_sdk_amplifier_info & info);
+
+///////////////////////////////////////////////////////////////////////////////
 class _sdk_amplifier : public eemagine::sdk::amplifier {
 public:
-	_sdk_amplifier(eemagine_sdk_amplifier_info info) : _amplifier_id(info.id) { }
-	~_sdk_amplifier() { _sdk.close_amplifier(_amplifier_id); }
+	_sdk_amplifier(eemagine_sdk_amplifier_info info) : _amplifier_info(info) {
+    }
+	~_sdk_amplifier() {
+		_sdk.close_amplifier(_amplifier_info.id);
+		decrement_amplifier_reference_count(_amplifier_info);
+	}
 
 	std::string getSerialNumber() const override {
 		char serial[1024];
-		_return_value_guard(_sdk.get_amplifier_serial(_amplifier_id, serial, 1024));
+		_return_value_guard(_sdk.get_amplifier_serial(_amplifier_info.id, serial, 1024));
 		return std::string(serial);
 	}
 
 	int getFirmwareVersion() const override {
-		return _return_value_guard(_sdk.get_amplifier_version(_amplifier_id));
+		return _return_value_guard(_sdk.get_amplifier_version(_amplifier_info.id));
 	}
 
 	std::string getType() const override {
 		char type[1024];
-		_return_value_guard(_sdk.get_amplifier_type(_amplifier_id, type, 1024));
+		_return_value_guard(_sdk.get_amplifier_type(_amplifier_info.id, type, 1024));
 		return std::string(type);
 	}
 
 	std::vector<eemagine::sdk::channel> getChannelList() const override {
 		std::vector<eemagine::sdk::channel> rv;
 		eemagine_sdk_channel_info channel_info_array[1024];
-		int channel_count = _return_value_guard(_sdk.get_amplifier_channel_list(_amplifier_id, channel_info_array, 1024));
+		int channel_count = _return_value_guard(_sdk.get_amplifier_channel_list(_amplifier_info.id, channel_info_array, 1024));
 		return _channelArrayToVector(channel_info_array, channel_count);
 	}
 
 	std::vector<int> getSamplingRatesAvailable() const override {
 		std::vector<int> rv;
 		int sampling_rate_array[1024];
-		int sampling_rate_count = _return_value_guard(_sdk.get_amplifier_sampling_rates_available(_amplifier_id, sampling_rate_array, 1024));
+		int sampling_rate_count = _return_value_guard(_sdk.get_amplifier_sampling_rates_available(_amplifier_info.id, sampling_rate_array, 1024));
 		rv.resize(sampling_rate_count);
 		std::vector<int>::iterator rv_iter(rv.begin());
 		const int * read_ptr(sampling_rate_array);
@@ -324,7 +346,7 @@ public:
 	std::vector<double> getReferenceRangesAvailable() const override {
 		std::vector<double> rv;
 		double reference_range_array[1024];
-		int reference_range_count = _return_value_guard(_sdk.get_amplifier_reference_ranges_available(_amplifier_id, reference_range_array, 1024));
+		int reference_range_count = _return_value_guard(_sdk.get_amplifier_reference_ranges_available(_amplifier_info.id, reference_range_array, 1024));
 		rv.resize(reference_range_count);
 		std::vector<double>::iterator rv_iter(rv.begin());
 		const double * read_ptr(reference_range_array);
@@ -340,7 +362,7 @@ public:
 	std::vector<double> getBipolarRangesAvailable() const override {
 		std::vector<double> rv;
 		double bipolar_range_array[1024];
-		int bipolar_range_count = _return_value_guard(_sdk.get_amplifier_bipolar_ranges_available(_amplifier_id, bipolar_range_array, 1024));
+		int bipolar_range_count = _return_value_guard(_sdk.get_amplifier_bipolar_ranges_available(_amplifier_info.id, bipolar_range_array, 1024));
 		rv.resize(bipolar_range_count);
 		std::vector<double>::iterator rv_iter(rv.begin());
 		const double * read_ptr(bipolar_range_array);
@@ -354,27 +376,38 @@ public:
 	}
 
 	eemagine::sdk::stream * OpenEegStream(int sampling_rate, double reference_range, double bipolar_range, unsigned long long ref_mask, unsigned long long bip_mask) {
-		int stream_id = _return_value_guard(_sdk.open_eeg_stream(_amplifier_id, sampling_rate, reference_range, bipolar_range, ref_mask, bip_mask));
+		int stream_id = _return_value_guard(_sdk.open_eeg_stream(_amplifier_info.id, sampling_rate, reference_range, bipolar_range, ref_mask, bip_mask));
 		return new _sdk_stream(stream_id);
 	}
 
 	eemagine::sdk::stream * OpenImpedanceStream(unsigned long long ref_mask) {
-		int stream_id = _return_value_guard(_sdk.open_impedance_stream(_amplifier_id, ref_mask));
+		int stream_id = _return_value_guard(_sdk.open_impedance_stream(_amplifier_info.id, ref_mask));
 		return new _sdk_stream(stream_id);
 	}
 protected:
-	int _amplifier_id;
+	eemagine_sdk_amplifier_info _amplifier_info;
 };
 ///////////////////////////////////////////////////////////////////////////////
 class _sdk_guard {
 public:
 	_sdk_guard() {
-		_sdk.init();
+        _sdk.init();
 	}
 	~_sdk_guard() {
 		_sdk.exit();
 	}
 
+	void decrementAmplifierReferenceCount(const eemagine_sdk_amplifier_info & info) {
+		for (std::vector<_amp_ref_count>::iterator i = _amplifier_reference_count_vector.begin();
+			i != _amplifier_reference_count_vector.end();
+			++i)
+		{
+			if (info.id != i->info.id) {
+				++i->ref_count;
+				return;
+			}
+		}
+	}
 	void incrementAmplifierReferenceCount(const eemagine_sdk_amplifier_info & info) {
 		for (std::vector<_amp_ref_count>::iterator i = _amplifier_reference_count_vector.begin();
 			i != _amplifier_reference_count_vector.end();
@@ -422,30 +455,43 @@ protected:
 	};
 	std::vector<_amp_ref_count> _amplifier_reference_count_vector;
 };
-
 ///////////////////////////////////////////////////////////////////////////////
 _sdk_guard *
 _get_sdk_guard_singleton(bool release = false) {
+#if _WIN32 && (_MSC_VER < 1900)
 	// singleton to sdk initializer guard
 	static _sdk_guard * _guard = NULL;
 
-	if (release && _guard != NULL) {
-		delete _guard;
-		_guard = NULL;
-		return NULL;
+	if (release) {
+		if (_guard != NULL) {
+			delete _guard;
+			_guard = NULL;
+		}
 	}
-	if (_guard == NULL) {
-		_guard = new _sdk_guard();
+	else {
+		if (_guard == NULL) {
+			_guard = new _sdk_guard();
+		}
 	}
-
 	return _guard;
+#else
+	static _sdk_guard _guard_instance;
+	return & _guard_instance;
+#endif
 }
-
+///////////////////////////////////////////////////////////////////////////////
+void increment_amplifier_reference_count(const eemagine_sdk_amplifier_info & info) {
+	_get_sdk_guard_singleton()->incrementAmplifierReferenceCount(info);
+}
+void decrement_amplifier_reference_count(const eemagine_sdk_amplifier_info & info) {
+	_get_sdk_guard_singleton()->decrementAmplifierReferenceCount(info);
+	_get_sdk_guard_singleton()->sweepAmplifierReferenceCounts();
+}
 ///////////////////////////////////////////////////////////////////////////////
 #ifdef EEGO_SDK_BIND_STATIC
 // trivial case: The dll is bound during compile time. All we have to do is
 // assign the defined symbols to the _sdk structure.
-eemagine::sdk::factory::factory()
+eemagine::sdk::factory::factory(void * data)
 {
 	// Check version first
 	if (eemagine_sdk_get_version() != EEGO_SDK_VERSION)
@@ -453,8 +499,8 @@ eemagine::sdk::factory::factory()
 		throw(exceptions::incorrectValue("Eego SDK version mismatch"));
 	}
 
-	if (_sdk.initialized == false)
-	{
+	if (!_sdk.initialized) {
+		_sdk.setup = eemagine_sdk_setup;
 		_sdk.init = eemagine_sdk_init;
 		_sdk.exit = eemagine_sdk_exit;
 		_sdk.get_version = eemagine_sdk_get_version;
@@ -475,6 +521,7 @@ eemagine::sdk::factory::factory()
 		_sdk.prefetch = eemagine_sdk_prefetch;
 		_sdk.get_data = eemagine_sdk_get_data;
 		_sdk.get_error_string = eemagine_sdk_get_error_string;
+		_sdk.setup(data);
 		_sdk.initialized = true;
 	}
 }
@@ -489,7 +536,7 @@ eemagine::sdk::factory::factory()
 /// To connect to windows methods wide character strings have to be used.
 /// String handling methods follow.
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-#ifdef WIN32
+#ifdef _WIN32
 static std::string UTF16toUTF8(const std::wstring& utf16String)
 {
 	// empty
@@ -498,7 +545,7 @@ static std::string UTF16toUTF8(const std::wstring& utf16String)
 
 	// get length of conversion first or see if there is an error
 	const int utf8length = ::WideCharToMultiByte(
-		CP_UTF8, WC_ERR_INVALID_CHARS, utf16String.data(), utf16String.length(), // Input
+		CP_UTF8, WC_ERR_INVALID_CHARS, utf16String.data(), (int)utf16String.length(), // Input
 		NULL, 0, // just check
 		NULL, NULL); // invalid for utf8
 
@@ -515,8 +562,8 @@ static std::string UTF16toUTF8(const std::wstring& utf16String)
 	retvalUTF8.resize(utf8length);
 
 	const int convertedLength = ::WideCharToMultiByte(
-		CP_UTF8, 0, utf16String.data(), utf16String.length(), // Input
-		&retvalUTF8[0], retvalUTF8.length(),
+		CP_UTF8, 0, utf16String.data(), (int)utf16String.length(), // Input
+		&retvalUTF8[0], (int)retvalUTF8.length(),
 		NULL, NULL); // invalid for utf8
 
 	if (convertedLength == 0)
@@ -535,7 +582,7 @@ static std::wstring MBCStoUTF16(const std::string& mbcsString)
 
 	// get length of conversion first or see if there is an error
 	const int wideLength = ::MultiByteToWideChar(
-		CP_ACP, MB_ERR_INVALID_CHARS, mbcsString.data(), mbcsString.length(), // Input
+		CP_ACP, MB_ERR_INVALID_CHARS, mbcsString.data(), (int)mbcsString.length(), // Input
 		NULL, 0); // just check
 	if (wideLength == 0) // Must be error, as empty string should not happen here anymore
 	{
@@ -553,8 +600,8 @@ static std::wstring MBCStoUTF16(const std::string& mbcsString)
 	returnStringUTF16.resize(wideLength);
 
 	const int convertResult = ::MultiByteToWideChar(
-		CP_ACP, 0, mbcsString.data(), mbcsString.length(), // Input
-		&returnStringUTF16[0], returnStringUTF16.length()); // fill it
+		CP_ACP, 0, mbcsString.data(), (int)mbcsString.length(), // Input
+		&returnStringUTF16[0], (int)returnStringUTF16.length()); // fill it
 
 	if (convertResult == 0) // We already verified the string. Not recoverable
 	{
@@ -575,7 +622,7 @@ static std::wstring UTF8ToUTF16(const std::string& utf8String)
 
 	// get length of conversion first or see if there is an error
 	const int wideLength = ::MultiByteToWideChar(
-		CP_UTF8, MB_ERR_INVALID_CHARS, utf8String.data(), utf8String.length(), // Input
+		CP_UTF8, MB_ERR_INVALID_CHARS, utf8String.data(), (int)utf8String.length(), // Input
 		NULL, 0); // just check
 	if (wideLength == 0) // Must be error, as empty string should not happen here anymore
 	{
@@ -593,8 +640,8 @@ static std::wstring UTF8ToUTF16(const std::string& utf8String)
 	returnStringUTF16.resize(wideLength);
 
 	const int convertResult = ::MultiByteToWideChar(
-		CP_UTF8, 0, utf8String.data(), utf8String.length(), // Input
-		&returnStringUTF16[0], returnStringUTF16.length()); // fill it
+		CP_UTF8, 0, utf8String.data(), (int)utf8String.length(), // Input
+		&returnStringUTF16[0], (int)returnStringUTF16.length()); // fill it
 
 	if (convertResult == 0) //
 	{
@@ -622,7 +669,7 @@ static std::string MBCStoUTF8(const std::string& mbcsString)
 // Helper class for library loading:
 // Find funcName in dll specified by libHandle
 // If the function can not be found or another error has occured raise runtime_error.
-#ifdef WIN32
+#ifdef _WIN32
 typedef HINSTANCE library_handle_type;
 template <typename T>
 static T getFunc(library_handle_type libHandle, const char* funcName)
@@ -643,11 +690,11 @@ LoadSDKLibrary(const std::string &libPathUtf8) {
 	const std::wstring libPathUTF16(UTF8ToUTF16(libPathUtf8));
 
 	library_handle_type oLibHandle = ::LoadLibrary(libPathUTF16.c_str());
-    if (oLibHandle == NULL)
-    {
+	if (oLibHandle == NULL)
+	{
 		throw(eemagine::sdk::exceptions::incorrectValue("Could not load Library: " + libPathUtf8));
-    }
-    return oLibHandle;
+	}
+	return oLibHandle;
 }
 #endif
 #ifdef __unix__
@@ -655,26 +702,26 @@ typedef void * library_handle_type;
 template <typename T>
 static T getFunc(library_handle_type libHandle, const char* funcName)
 {
-    void * symbol(dlsym(libHandle, funcName));
+	void * symbol(dlsym(libHandle, funcName));
 	if (symbol == NULL)
 	{
 		throw(eemagine::sdk::exceptions::incorrectValue(std::string("Can't load function: ") + funcName));
 	}
 
-    return (T)(symbol);
+	return (T)(symbol);
 }
 library_handle_type
 LoadSDKLibrary(const std::string &filename) {
-    library_handle_type rv(dlopen(filename.c_str(), RTLD_LAZY));
-    if (rv == NULL)
-    {
-    	throw(eemagine::sdk::exceptions::incorrectValue("Could not load Library: " + filename + " error: " + dlerror()));
-    }
-    return rv;
+	library_handle_type rv(dlopen(filename.c_str(), RTLD_LAZY));
+	if (rv == NULL)
+	{
+		throw(eemagine::sdk::exceptions::incorrectValue("Could not load Library: " + filename + " error: " + dlerror()));
+	}
+	return rv;
 }
 #endif
 
-static void loadLibraryUTF8(const std::string& libPathUTF8)
+static void loadLibraryUTF8(const std::string& libPathUTF8, void * data)
 {
 	// Only load functions once
 	if (_sdk.initialized == false)
@@ -692,6 +739,7 @@ static void loadLibraryUTF8(const std::string& libPathUTF8)
 
 
 		// Load function pointers from DLL;
+		_sdk.setup = getFunc<eemagine_sdk_setup_t>(oLibHandle, "eemagine_sdk_setup");
 		_sdk.init = getFunc<eemagine_sdk_init_t>(oLibHandle, "eemagine_sdk_init");
 		_sdk.exit = getFunc<eemagine_sdk_exit_t>(oLibHandle, "eemagine_sdk_exit");
 		_sdk.get_amplifiers_info = getFunc<eemagine_sdk_get_amplifiers_info_t>(oLibHandle, "eemagine_sdk_get_amplifiers_info");
@@ -711,26 +759,26 @@ static void loadLibraryUTF8(const std::string& libPathUTF8)
 		_sdk.prefetch = getFunc<eemagine_sdk_prefetch_t>(oLibHandle, "eemagine_sdk_prefetch");
 		_sdk.get_data = getFunc<eemagine_sdk_get_data_t>(oLibHandle, "eemagine_sdk_get_data");
 		_sdk.get_error_string = getFunc<eemagine_sdk_get_error_string_t>(oLibHandle, "eemagine_sdk_get_error_string");
-
+		_sdk.setup(data);
 		_sdk.initialized = true;
 	}
 
 	// all ok!
 }
 
-#ifdef WIN32
-eemagine::sdk::factory::factory(const std::wstring& libPath)
+#ifdef _WIN32
+eemagine::sdk::factory::factory(const std::wstring& libPath, void * data)
 {
-	loadLibraryUTF8(UTF16toUTF8(libPath));
+	loadLibraryUTF8(UTF16toUTF8(libPath), data);
 }
 #endif
 
-eemagine::sdk::factory::factory(const std::string& libPath)
+eemagine::sdk::factory::factory(const std::string& libPath, void * data)
 {
 #if defined(_MBCS)
-	loadLibraryUTF8(MBCStoUTF8(libPath));
+	loadLibraryUTF8(MBCStoUTF8(libPath), data);
 #elif defined(_UNICODE)
-	loadLibraryUTF8(libPath);
+	loadLibraryUTF8(libPath, data);
 #else
 #error "Undefined string handling"
 #endif
@@ -739,8 +787,15 @@ eemagine::sdk::factory::factory(const std::string& libPath)
 
 ///////////////////////////////////////////////////////////////////////////////
 eemagine::sdk::factory::~factory() {
-	_get_sdk_guard_singleton()->sweepAmplifierReferenceCounts();
-	_get_sdk_guard_singleton(true);
+    try {
+        _get_sdk_guard_singleton()->sweepAmplifierReferenceCounts();
+        _get_sdk_guard_singleton(true);
+	}
+	catch (const std::exception &e) {
+		std::cerr << "exception in ~factory: " << e.what() << std::endl;
+	} catch (...) {
+		std::cerr << "exception in ~factory" << std::endl;
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -56,12 +56,12 @@ namespace eemagine {
 			 * constructor
 			 */
 #ifdef EEGO_SDK_BIND_STATIC
-			factory();
+			factory(void * data = NULL);
 #else
-#ifdef WIN32
-			factory(const std::wstring& path);
+#ifdef _WIN32
+			factory(const std::wstring& path, void * data = NULL);
 #endif
-			factory(const std::string& path);
+			factory(const std::string& path, void * data = NULL);
 #endif // EEGO_SDK_BIND_STATIC
 
 			/**

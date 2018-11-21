@@ -1,4 +1,8 @@
 PLATFORM = $(shell gcc -dumpmachine)
+UNAME = $(shell uname)
+ifndef MACHINE
+	MACHINE = $(shell uname -m)
+endif
 FTPATH   = ../buffer
 FTCPPPATH= $(FTPATH)/cpp
 FTBUFFER = $(FTPATH)
@@ -15,27 +19,78 @@ CFLAGS += -O3
 # turn-on profile code
 #CFLAGS += -g -pg -O 
 
+# defaults, might be overwritten further down
+INCPATH = -I$(FTBUFFER)/c -I$(CPPDIR) -I. 
+LDFLAGS = -L$(FTBUFFER)/c
+CFLAGS = $(INCPATH) -Wunused -Wall -pedantic -O3
+CXXFLAGS = $(CFLAGS)
+
 CFLAGS = -I$(FTBUFFER)/src -I$(FTBUFFER)/cpp -I$(FTBUFFER)/c -I. -I$(CPPDIR) -Wall
 CXXFLAGS= $(CFLAGS)
 LDFLAGS = -L$(FTBUFFER)
 LDXXFLAGS= $(LDFLAGS) -lstdc++
 
-#windows
+# to avoid dependencies just build everything from source every time...
+CPPSOURCES = $(patsubst %,$(FTCPPPATH)/%,\
+	SignalConfiguration.cc GdfWriter.cc FtConnection.cc StringServer.cc)
+CSOURCES = 	$(patsubst %,$(FTPATH)/c/%,\
+	tcpserver.c tcpsocket.c tcprequest.c clientrequest.c dmarequest.c cleanup.c util.c printstruct.c swapbytes.c extern.c endianutil.c socketserver.c)
+# dependencies info
+SOURCES = eego2ft.cc
+
 ifneq (,$(findstring mingw, $(PLATFORM)))
-#	BINDIR = $(FTPATH)/realtime/bin/win32
-	BINDIR = ../buffer/win32
-	EXTENSION = .exe
-#	LDLIBS += -lws2_32 $(BINDIR)/pthreadGC2.dll 
-#	LDLIBS += -lws2_32
-	EEGOLIBDIR= windows/32bit
-	LDFLAGS += -static -L$(EEGOLIBDIR) -leego-SDK
-	CFLAGS += -I$(BINDIR)/pthreads-win32/include
-	LDFLAGS += -L$(BINDIR)/pthreads-win32/lib -lws2_32 -lpthreadGC2
-   # Make clean target work on windows:
+	BINDIR = $(FTBUFFER)/win32
+	SUFFIX = .exe
 	fixpath = $(subst /,\,$1)
-#	RM = del
+	EEGOLIBDIR=windows/32bit/eego-SDK.dll
+	LDLIBS += -lws2_32 $(BINDIR)/pthreads-win32/lib/pthreadGC2.dll $(EEGOLIBDIR)/eego-SDK.dll
+	INCPATH += -I./portaudio -I$(FTBUFFER)/win32/include 
+	LDFLAGS += -static
+	RM = del
+endif
+ifneq (,$(findstring msys, $(PLATFORM)))
+	BINDIR = $(FTBUFFER)/win32
+	SUFFIX = .exe
+	fixpath = $(subst /,\,$1)
+	EEGOLIBDIR=windows/32bit/eego-SDK.dll
+	LDLIBS += -lws2_32 $(BINDIR)/pthreads-win32/lib/pthreadGC2.dll windows/32bit/eego-SDK.dll
+	INCPATH += -I$(FTBUFFER)/win32/include
+	LDFLAGS += -static
+	RM = rm
 endif
 ifneq (,$(findstring cygwin, $(PLATFORM))) # cygwin is *not* w32!
+endif
+
+ifeq "$(UNAME)" "Linux"
+    fixpath = $1
+    ifeq "$(MACHINE)" "i686"
+		BINDIR = $(FTBUFFER)/glnx86
+		EEGOLIBDIR=linux/32bit/eego-SDK.dll
+	   LDLIBS += $(EEGOLIBDIR)/libeego-SDK.so
+    endif
+    ifeq "$(MACHINE)" "x86_64"
+		BINDIR = $(FTBUFFER)/glnxa64
+		EEGOLIBDIR=linux/64bit/libeego-SDK.so
+	   LDLIBS += $(EEGOLIBDIR)/libeego-SDK.so
+    endif
+    ifeq "$(MACHINE)" "armv6l"
+		EEGOLIBDIR=linux/32bit
+		BINDIR = $(FTBUFFER)/raspberrypi
+    endif
+	# Cross-compile for windows on linux
+	ifeq "$(MACHINE)" "mingw32"
+		CXX = i686-w64-mingw32-g++
+		BINDIR = $(FTBUFFER)/win32
+		SUFFIX = .exe
+		fixpath = $(subst /,\,$1)
+		EEGOLIBDIR=windows/32bit
+		LDLIBS += -lws2_32 $(BINDIR)/pthreads-win32/lib/pthreadGC2.dll -lpthread $(EEGOLIBDIR)/eego-SDK.dll
+		INCPATH += -I$(FTBUFFER)/win32/include
+		# Build directly from sources to avoid dependency issues with e.g. .o files
+	else
+		LDLIBS += -lpthread -ldl
+	   LDFLAGS += -L$(FTBUFFER)/c
+	endif
 endif
 
 ifneq (,$(findstring apple-darwin,$(PLATFORM))) # MacOS
@@ -49,29 +104,13 @@ ifneq (,$(findstring apple-darwin,$(PLATFORM))) # MacOS
 	LDFLAGS += -Lmaci -leego-SDK
 endif
 
-ifneq (,$(findstring linux,$(PLATFORM))) # linux
-	CXX = g++
-#	BINDIR = $(FTPATH)/realtime/bin/glnx86
-	BINDIR = ../buffer/glnx86
-	CFLAGS += -DDISABLE_NAGLE
-	EEGOLIBDIR= linux/64bit
-	LDFLAGS+= -lpthread -L$(EEGOLIBDIR) -leego-SDK
-endif
-
-# dependencies info
-SOURCES = eego2ft.cc
-bufferSOURCES = $(patsubst %,$(FTPATH)/cpp/%,\
-	SignalConfiguration.o GdfWriter.o FtConnection.o StringServer.o)\
-	$(patsubst %,$(FTPATH)/c/%,\
-	tcpserver.o tcpsocket.o tcprequest.o clientrequest.o dmarequest.o cleanup.o util.o printstruct.o swapbytes.o extern.o endianutil.o socketserver.o)
-
-TARGETS = eego2ft$(EXTENSION)
+TARGETS = eego2ft$(SUFFIX)
 
 all: $(TARGETS)
 
-eego2ft$(EXTENSION): $(SOURCES) $(bufferSOURCES)
-	$(CXX) -o eego2ft $^ $(CXXFLAGS) $(LDXXFLAGS) $(LDXXLIBS)
-	cp eego2ft$(EXTENSION) $(BINDIR)
+eego2ft$(SUFFIX): $(SOURCES) $(CPPSOURCES) $(CSOURCES)
+	$(CXX) -o eego2ft$(SUFFIX) $^ $(CXXFLAGS) $(LDXXFLAGS) $(LDXXLIBS)
+	cp eego2ft$(SUFFIX) $(BINDIR)
 	cp $(EEGOLIBDIR)/* $(BINDIR)
 
 clean:

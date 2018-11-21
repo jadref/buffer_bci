@@ -38,7 +38,7 @@ namespace eemagine {
 			/**
 			 * type of channel
 			 */
-			enum channel_type { none, reference, bipolar, trigger, sample_counter, impedance_reference, impedance_ground };
+			enum channel_type { none, reference, bipolar, trigger, sample_counter, impedance_reference, impedance_ground, accelerometer, gyroscope, magnetometer };
 
 			/**
 			* \brief default constructor
@@ -67,9 +67,7 @@ namespace eemagine {
 // conversion for writing the channel into an ostream.
 inline
 std::ostream &
-operator<<(std::ostream &out, const eemagine::sdk::channel &c)
-{
-
+operator<<(std::ostream &out, const eemagine::sdk::channel &c) {
 	out << "channel(";
 	out << c.getIndex();
 	out << ", ";
@@ -91,6 +89,18 @@ operator<<(std::ostream &out, const eemagine::sdk::channel &c)
 		break;
 	case eemagine::sdk::channel::impedance_ground:
 		out << "impedance_ground";
+		break;
+	case eemagine::sdk::channel::accelerometer:
+		out << "accel";
+		break;
+	case eemagine::sdk::channel::gyroscope:
+		out << "gyro";
+		break;
+	case eemagine::sdk::channel::magnetometer:
+		out << "magneto";
+		break;
+	default:
+		out << "?";
 		break;
 	}
 	out << ")";
