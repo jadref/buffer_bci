@@ -65,15 +65,19 @@ ifeq "$(UNAME)" "Linux"
     fixpath = $1
     ifeq "$(MACHINE)" "i686"
 		BINDIR = $(FTBUFFER)/glnx86
-		EEGOLIBDIR=linux/32bit/eego-SDK.dll
+		EEGOLIBDIR=linux/32bit
 	   LDLIBS += $(EEGOLIBDIR)/libeego-SDK.so
     endif
     ifeq "$(MACHINE)" "x86_64"
 		BINDIR = $(FTBUFFER)/glnxa64
-		EEGOLIBDIR=linux/64bit/libeego-SDK.so
+		EEGOLIBDIR=linux/64bit
 	   LDLIBS += $(EEGOLIBDIR)/libeego-SDK.so
     endif
     ifeq "$(MACHINE)" "armv6l"
+		EEGOLIBDIR=linux/32bit
+		BINDIR = $(FTBUFFER)/raspberrypi
+    endif
+    ifeq "$(MACHINE)" "aarch64"
 		EEGOLIBDIR=linux/32bit
 		BINDIR = $(FTBUFFER)/raspberrypi
     endif
@@ -84,9 +88,10 @@ ifeq "$(UNAME)" "Linux"
 		SUFFIX = .exe
 		fixpath = $(subst /,\,$1)
 		EEGOLIBDIR=windows/32bit
-		LDLIBS += -lws2_32 $(BINDIR)/pthreads-win32/lib/pthreadGC2.dll -lpthread $(EEGOLIBDIR)/eego-SDK.dll
+		LDLIBS += -lws2_32 $(BINDIR)/pthreadGC2.dll -lpthread $(EEGOLIBDIR)/eego-SDK.dll
 		INCPATH += -I$(FTBUFFER)/win32/include
 		# Build directly from sources to avoid dependency issues with e.g. .o files
+		LDFLAGS += -static
 	else
 		LDLIBS += -lpthread -ldl
 	   LDFLAGS += -L$(FTBUFFER)/c
@@ -114,4 +119,4 @@ eego2ft$(SUFFIX): $(SOURCES) $(CPPSOURCES) $(CSOURCES)
 	cp $(EEGOLIBDIR)/* $(BINDIR)
 
 clean:
-	$(RM) *.o $(call fixpath, $(TARGETS)) eego2ft$(EXTENSION)
+	$(RM) *.o $(call fixpath, $(TARGETS)) eego2ft$(EXTENSION) eego2ft.exe
