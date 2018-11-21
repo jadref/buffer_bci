@@ -105,7 +105,7 @@ while ( true )
       end;
       if ( verb>0 ) fprintf('%d epochs\n',numel(traindevents)); end;
 
-      [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','freqband',[.3 1 13 15],'badchrm',1,'badtrrm',0,'capFile',capFile,'overridechnms',overridechnms);
+      [clsfr,res]=buffer_train_erp_clsfr(traindata,traindevents,hdr,'spatialfilter','car','freqband',[.3 1 20 25],'badchrm',1,'badtrrm',0,'capFile',capFile,'overridechnms',overridechnms);
       clsSubj=subject;
       fprintf('Saving classifier to : %s\n',['sp_' cname '_' subject '_' datestr]);
       save(['sp_' cname '_' subject '_' datestr],'-struct','clsfr');

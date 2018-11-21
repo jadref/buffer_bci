@@ -39,7 +39,7 @@ opts=struct('cuePrefix','stimulus.target','endType','end.training','verb',1,...
 				'capFile',[],'overridechnms',0,'welch_width_ms',500,...
 				'redraw_ms',250,'lineWidth',1,'sigProcOptsGui',1,...
             'dataStd',2.5,...
-				'incrementalDraw',1,'closeFig',0);
+				'incrementalDraw',0,'closeFig',0);
 [opts,varargin]=parseOpts(opts,varargin);
 if ( nargin<1 || isempty(buffhost) ) buffhost='localhost'; end;
 if ( nargin<2 || isempty(buffport) ) buffport=1972; end;
@@ -178,11 +178,12 @@ drawnow; % make sure the figure is visible
 
 ppopts.badchrm=opts.badchrm;
 ppopts.badchthresh=opts.badchthresh;
-if(opts.detrend); ppopts.detrend=1; end;
+if(opts.detrend); ppopts.preproctype='detrend'; ppopts.detrend=1; end;
 if ( ischar(opts.spatfilt) && ~isempty(opts.spatfilt) ) ppopts.(opts.spatfilt)=1; end;
 if ( ischar(opts.adaptspatialfiltFn) && ~isempty(opts.adaptspatialfiltFn) ) 
    ppopts.(opts.adaptspatialfiltFn)=1; 
 end;
+ppopts.spatialfilttype=opts.spatfilt;
 ppopts.whiten =opts.whiten;
 ppopts.rmartch=opts.rmartch;
 ppopts.rmemg  =opts.rmemg;
@@ -245,10 +246,10 @@ while ( ~endTraining )
   end
   % get updated sig-proc parameters if needed
   if ( ~isempty(optsFigh) && ishandle(optsFigh) )
-	 try
+     %try
 		[ppopts,damage]=getSigProcOpts(optsFigh,ppopts);
-	 catch;
-	 end;
+      %catch;
+      %end;
     if ( any(damage) ) % re-draw all
       fprintf('Redraw all detected\n');
       updateLines(1)=true; updateLines(:)=true; 
@@ -260,7 +261,7 @@ while ( ~endTraining )
         filt=mkFilter(trlen_samp/2,ppopts.freqbands,fs/trlen_samp); 
       end
       freqIdx =getfreqIdx(freqs,ppopts.freqbands);
-		spectFreqIdx=getfreqIdx(spectFreqs,ppopts.freqbands);
+		%spectFreqIdx=getfreqIdx(spectFreqs,ppopts.freqbands);
     end
   end
 

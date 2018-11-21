@@ -68,7 +68,7 @@ for si=1:nSeq;
     else
       sendEvent('stimulus.tgtFlash',NONTARGETNAME,ev.sample); % indicate if it was a 'target' flash
     end
-    try; trigsocket.socket.send(javaObject('java.net.DatagramPacket',stimSeq(tgtRow,ei)));catch;end;
+    try; trigsocket.send(javaObject('java.net.DatagramPacket',stimSeqRow(tgtRow,ei),1));catch;end;
     sleepSec(stimDuration);
   end
   
@@ -83,7 +83,7 @@ for si=1:nSeq;
     else
       sendEvent('stimulus.tgtFlash',NONTARGETNAME,ev.sample); % indicate if it was a 'target' flash
     end
-    try; trigsocket.socket.send(javaObject('java.net.DatagramPacket',stimSeq(tgtRow,ei))); catch;end;
+    try; trigsocket.send(javaObject('java.net.DatagramPacket',stimSeqCol(tgtCol,ei),1)); catch;end;
     sleepSec(stimDuration);
   end
    
