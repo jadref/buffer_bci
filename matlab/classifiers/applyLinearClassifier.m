@@ -17,8 +17,8 @@ Widx=-(1:ndims(classifier.W));
 if( dim==ndims(X) ) Widx(dim)=numel(dim)+1; 
 else Widx(dim)=0; Widx(max(ndims(X)+1,ndims(classifier.W)))=numel(dim)+1;
 end
-fraw = tprod(X,Xidx,classifier.W,Widx,'n');      % apply the weight vector
-fraw = repop(fraw,'+',classifier.b);                % include the bias
+fraw = tprod(X,Xidx,classifier.W,Widx);      % apply the weight vector
+fraw = repop(fraw,'+',classifier.b);         % include the bias
 
 %fprintf('binDVs: %s\n',sprintf('%.2f\t',fraw));
 
