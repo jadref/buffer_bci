@@ -81,7 +81,7 @@ ifeq "$(UNAME)" "Linux"
 		EEGOLIBDIR=linux/32bit
 		BINDIR = $(FTBUFFER)/raspberrypi
     endif
-	# Cross-compile for windows on linux
+   # Cross-compile for windows on linux
 	ifeq "$(MACHINE)" "mingw32"
 		CXX = i686-w64-mingw32-g++
 		BINDIR = $(FTBUFFER)/win32
@@ -90,7 +90,7 @@ ifeq "$(UNAME)" "Linux"
 		EEGOLIBDIR=windows/32bit
 		LDLIBS += -lws2_32 $(BINDIR)/pthreadGC2.dll -lpthread $(EEGOLIBDIR)/eego-SDK.dll
 		INCPATH += -I$(FTBUFFER)/win32/include
-		# Build directly from sources to avoid dependency issues with e.g. .o files
+      # Build directly from sources to avoid dependency issues with e.g. .o files
 		LDFLAGS += -static
 	else
 		LDLIBS += -lpthread -ldl

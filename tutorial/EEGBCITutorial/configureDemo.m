@@ -93,9 +93,9 @@ stimDuration=.15; % the length a row/col is highlighted
 dataDuration=.6;  % amount of data used for classifier
 %interSeqDuration=2;
 feedbackDuration=5;
-TARGETNAME='Target'; NONTARGETNAME='Non-Target';
-% invert the sign of the classifier prediction to get flash state?
-[ans,si]=sort({TARGETNAME,NONTARGETNAME},'ascend'); if(si>1) dv2flash=-1; end; 
+% BODGE: class names in events: N.B. use +/- to indicate positive/negative classes
+TARGETNAME='+ Target'; NONTARGETNAME='- Non-Target';
+dv2flash=1; % multiplier for classifier output to convert to flash/non-flash if needed
 % the set of options the user will pick from
 symbols={'1' '2' '3';...
          '4' '5' '6';...
