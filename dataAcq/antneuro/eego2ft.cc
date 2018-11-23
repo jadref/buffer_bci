@@ -132,6 +132,10 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
 	
       buffer buf = eegStream->getData(); // Retrieve data from stream std::cout << "Samples read: "
 		unsigned int nSamplesTaken=buf.getSampleCount();
+      unsigned int nChannelsTaken = buf.getChannelCount();
+      if( nChannels != nChannelsTaken ){
+        fprintf(stderr,"Error: different numer of channels than I was expecting!! %d not %d",nChannelsTaken,nChannels);
+      }
 		if (nSamplesTaken != 0) {
         //allocate memory for new samples to go into
         double* dest = ODM.provideBlock(nSamplesTaken); 
