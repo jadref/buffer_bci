@@ -82,6 +82,11 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
    struct timeval starttime, curtime;
    if( packetInterval_ms<1 ) { packetInterval_ms = 10; }
 
+   std::vector<channel> channellist = amp->getChannelList();
+   for(int ci=0; ci<channellist.size(); ci++){
+     channel chi = channellist[ci];
+     fprintf(stderr,"%d) is type %d\n",chi.getIndex(),chi.getType());
+   }
    int nChannels = amp->getChannelList().size();
    fprintf(stderr,"Setting: %d channels @ %d hz\n",nChannels,sampleRate);
    OnlineDataManager<double, double> ODM(0, nChannels, (float) sampleRate);
