@@ -171,9 +171,9 @@ Y=permute(Y,yperm);
 Y=reshape(Y,[prod(szY(ipIdxY)) prod(szY(opIdxY)) prod(szY(mIdxY))]);
 
 % compute the output
-Z=zeros(size(X,1),size(Y,2),size(X,3));
+Z=zeros(size(X,1),size(Y,2),size(X,3),class(X));
 for mi=1:size(X,3);
-  Z(:,:,mi) = X(:,:,mi)*Y(:,:,mi);
+  Z(:,:,mi) = double(X(:,:,mi))*double(Y(:,:,mi));
 end
 
 % make to the desired output size

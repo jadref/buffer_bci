@@ -198,7 +198,7 @@ else
             grad=1./(band(3)-band(4));
             tmpf(ceil(band(3)):ceil(band(4)))=min(1,((ceil(band(3)):ceil(band(4)))-band(4))*grad);
 			elseif ( band(3)>=xscale(end) ) % end-of-scale is also special
-			  tmpf(band(3))=1;
+			  tmpf(ceil(band(3)))=1;
          else
            tmpf(ceil(band(3)))=.5;
          end

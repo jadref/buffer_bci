@@ -96,5 +96,6 @@ end % sequences
 % end training marker
 sendEvent('stimulus.training','end');
 
-text(mean(get(ax,'xlim')),mean(get(ax,'ylim')),{'That ends the training phase.','Thanks for your patience'},'HorizontalAlignment','center','color',[0 1 0],'fontunits','pixel','FontSize',.05*wSize(4));
-pause(3);
+set(instructh,'string',{'That ends the training phase.','Do a final check on your brain-signals','Press a key to finish'},'visible','on');drawnow;
+waitforbuttonpress;
+set(instructh,'visible','off');drawnow;
