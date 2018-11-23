@@ -105,6 +105,10 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
        ss.clear(); ss<<ci; // int->string
        std::string labci; labci.append("eggo").append(ss.str());cs.add(ci,labci); 
      }
+     // add the TWO extra channels for the Trigger and Counter
+     cs.add(nChannels+1,"TRG");
+     cs.add(nChannels+2,"CNT");
+     nChannels=nChannels+2;
      sigCfg.setStreamingSelection(cs);
      ODM.setSignalConfiguration(sigCfg);
    }
