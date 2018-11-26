@@ -101,14 +101,15 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
      // make a channel map with simple numbers
      ChannelSelection cs;
      std::stringstream ss;
-     for (int ci=0; ci<nChannels; ci++) {
+     int ci=0; 
+     for (; ci<nChannels; ci++) {
        ss.clear(); ss<<ci; // int->string
        std::string labci; labci.append("eggo").append(ss.str());cs.add(ci,labci); 
      }
      // add the TWO extra channels for the Trigger and Counter
-     cs.add(nChannels+1,"TRG");
-     cs.add(nChannels+2,"CNT");
-     nChannels=nChannels+2;
+     ci++; cs.add(ci,"TRG");
+     ci++; cs.add(ci,"CNT");
+     nChannels=ci+1;
      sigCfg.setStreamingSelection(cs);
      ODM.setSignalConfiguration(sigCfg);
    }
