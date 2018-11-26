@@ -88,9 +88,9 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
      fprintf(stderr,"%d) is type %d\n",chi.getIndex(),chi.getType());
    }
    int nChannels = amp->getChannelList().size();
+   nChannels=nChannels+2; // include the 2 extra channels, TRG and CNT
    fprintf(stderr,"Setting: %d channels @ %d hz\n",nChannels,sampleRate);
-   OnlineDataManager<double, double> ODM(0, nChannels, (float) sampleRate);
-	
+   OnlineDataManager<double, double> ODM(0, nChannels, (float) sampleRate);	
    if( strcmp(configFile, "-")!=0 ) {
      if (ODM.configureFromFile(configFile) != 0) {
        fprintf(stderr, "Configuration %s file is invalid\n", configFile);
@@ -102,14 +102,14 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
      ChannelSelection cs;
      std::stringstream ss;
      int ci=0; 
-     for (; ci<nChannels; ci++) {
+     for (; ci<nChannels-2; ci++) {
        ss.clear(); ss<<ci; // int->string
-       std::string labci; labci.append("eggo").append(ss.str());cs.add(ci,labci); 
+       std::string labci; labci.append("eggo").append(ss.str());cs.add(ci,labci);
+       fprintf(stderr,"Adding ch: %d) %s\n",ci,ss.str());
      }
      // add the TWO extra channels for the Trigger and Counter
-     ci++; cs.add(ci,"TRG");
-     ci++; cs.add(ci,"CNT");
-     nChannels=ci+1;
+     ci++; cs.add(ci,"TRG");       fprintf(stderr,"Adding ch: %d) %s\n",ci,"TRG");
+     ci++; cs.add(ci,"CNT");       fprintf(stderr,"Adding ch: %d) %s\n",ci,"CNT");
      sigCfg.setStreamingSelection(cs);
      ODM.setSignalConfiguration(sigCfg);
    }
