@@ -3,6 +3,7 @@
   <!-- Set the default java version to 1.5 to maximise compatability over OS/versions -->
   <property name="ant.build.javac.source" value="1.6"/>
   <property name="ant.build.javac.target" value="1.6"/>
+  <property name="ant.build.javac.release" value="6"/>
 
     <property name="src.dir"     value="."/>
     <property name="build.dir"   value="build"/>
