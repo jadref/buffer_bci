@@ -130,13 +130,19 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
 	
 	printf("Starting to transfer data - press [Escape] to quit\n");
 
+   buffer buf=NULL;
    gettimeofday(&starttime,NULL);
    while (running) {
 		if (conIn.checkKey() && conIn.getKey()==27) break;	
 		ctrlServ.checkRequests(ODM);
-	
-      buffer buf = eegStream->getData(); // Retrieve data from stream std::cout << "Samples read: "
-		unsigned int nSamplesTaken=buf.getSampleCount();
+
+      try { 
+        buf = eegStream->getData(); // Retrieve data from stream std::cout << "Samples read: "
+      } catch ( eemagine::sdk::exceptions::incorrectValue ex ) {
+        fprintf(stderr,"Error, incorrectvalue, sample missed?");// << ex << "\n";
+        continue; // skip and try again
+      }
+      unsigned int nSamplesTaken=buf.getSampleCount();
       unsigned int nChannelsTaken = buf.getChannelCount();
       if( nChannels != nChannelsTaken ){
         fprintf(stderr,"Error: different numer of channels than I was expecting!! %d not %d",nChannelsTaken,nChannels);
