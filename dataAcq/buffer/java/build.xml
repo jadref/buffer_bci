@@ -9,6 +9,7 @@
     <property name="build.dir"   value="build"/>
     <property name="classes.dir" value="${build.dir}/classes"/>
     <property name="jar.dir"     value="${build.dir}/jar"/>
+    <property name="doc.dir"     value="doc"/>
     <property name="main-class"  value="${ant.project.name}.bufferserver.BufferServer"/>
 
 	 <!-- Any library jar's we depend on? -->
@@ -46,7 +47,14 @@
         </jar>
     </target>
 
-	 <target name="dist" depends="server,client">
+    <target name="doc" description="generate documentation">
+      <mkdir dir="${doc.dir}" />
+      <javadoc destdir="${doc.dir}">
+        <fileset dir="${src.dir}" />
+      </javadoc>
+    </target>
+
+    <target name="dist" depends="server,client">
 		<copy file="${jar.dir}/BufferServer.jar" todir="."/>
 		<copy file="${jar.dir}/BufferClient.jar" todir="."/>
 	 </target>
@@ -60,7 +68,10 @@
       </java>
     </target>
 
-    <target name="clean">   <delete dir="${build.dir}"/>  </target>
+    <target name="clean">
+      <delete dir="${build.dir}"/>
+	   <delete dir="${doc.dir}" />
+    </target>
     <target name="build" depends="client,server"/>
     <target name="clean-build" depends="clean,build"/>
     <target name="main" depends="build,dist"/>
