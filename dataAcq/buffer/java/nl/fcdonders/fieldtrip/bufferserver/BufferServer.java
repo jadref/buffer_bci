@@ -24,7 +24,7 @@ public class BufferServer implements Runnable {
 
 	 static final int serverPort  =1972;    // default server port
 	 static final int dataBufSize =1024*60; // default save samples = 60s @ 1024Hz
-	 static final int eventBufSize=10*60;   // default save events  = 60s @ 10Hz
+	 static final int eventBufSize=60*60;   // default save events  = 60s @ 60Hz
     boolean run=false;
 
 	/**

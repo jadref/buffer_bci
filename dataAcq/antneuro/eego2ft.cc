@@ -82,10 +82,15 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
    struct timeval starttime, curtime;
    if( packetInterval_ms<1 ) { packetInterval_ms = 10; }
 
+   std::vector<channel> channellist = amp->getChannelList();
+   for(int ci=0; ci<channellist.size(); ci++){
+     channel chi = channellist[ci];
+     fprintf(stderr,"%d) is type %d\n",chi.getIndex(),chi.getType());
+   }
    int nChannels = amp->getChannelList().size();
+   nChannels=nChannels+2; // include the 2 extra channels, TRG and CNT
    fprintf(stderr,"Setting: %d channels @ %d hz\n",nChannels,sampleRate);
-   OnlineDataManager<double, double> ODM(0, nChannels, (float) sampleRate);
-	
+   OnlineDataManager<double, double> ODM(0, nChannels, (float) sampleRate);	
    if( strcmp(configFile, "-")!=0 ) {
      if (ODM.configureFromFile(configFile) != 0) {
        fprintf(stderr, "Configuration %s file is invalid\n", configFile);
@@ -96,10 +101,15 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
      // make a channel map with simple numbers
      ChannelSelection cs;
      std::stringstream ss;
-     for (int ci=0; ci<nChannels; ci++) {
+     int ci=0; 
+     for (; ci<nChannels-2; ci++) {
        ss.clear(); ss<<ci; // int->string
-       std::string labci; labci.append("eggo").append(ss.str());cs.add(ci,labci); 
+       std::string labci; labci.append("eggo").append(ss.str());cs.add(ci,labci);
+       fprintf(stderr,"Adding ch: %d) %s\n",ci,ss.str());
      }
+     // add the TWO extra channels for the Trigger and Counter
+     ci++; cs.add(ci,"TRG");       fprintf(stderr,"Adding ch: %d) %s\n",ci,"TRG");
+     ci++; cs.add(ci,"CNT");       fprintf(stderr,"Adding ch: %d) %s\n",ci,"CNT");
      sigCfg.setStreamingSelection(cs);
      ODM.setSignalConfiguration(sigCfg);
    }
@@ -120,13 +130,23 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
 	
 	printf("Starting to transfer data - press [Escape] to quit\n");
 
+   buffer buf=NULL;
    gettimeofday(&starttime,NULL);
    while (running) {
 		if (conIn.checkKey() && conIn.getKey()==27) break;	
 		ctrlServ.checkRequests(ODM);
-	
-      buffer buf = eegStream->getData(); // Retrieve data from stream std::cout << "Samples read: "
-		unsigned int nSamplesTaken=buf.getSampleCount();
+
+      try { 
+        buf = eegStream->getData(); // Retrieve data from stream std::cout << "Samples read: "
+      } catch ( eemagine::sdk::exceptions::incorrectValue ex ) {
+        fprintf(stderr,"Error, incorrectvalue, sample missed?");// << ex << "\n";
+        continue; // skip and try again
+      }
+      unsigned int nSamplesTaken=buf.getSampleCount();
+      unsigned int nChannelsTaken = buf.getChannelCount();
+      if( nChannels != nChannelsTaken ){
+        fprintf(stderr,"Error: different numer of channels than I was expecting!! %d not %d",nChannelsTaken,nChannels);
+      }
 		if (nSamplesTaken != 0) {
         //allocate memory for new samples to go into
         double* dest = ODM.provideBlock(nSamplesTaken); 
