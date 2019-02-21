@@ -24,7 +24,9 @@ X     =data['X']
 Y     =data['Y'].reshape(-1) # ensure is 1d
 fs    =data['fs'][0] # ensure is scalar
 Cnames=data['Cnames']
-Cnames=[item for sublist in Cnames for item in sublist] #flatten the list of lists of names
+Cnames=data['Cnames'].reshape(-1); 
+Cnames=np.array([item for sublist in Cnames for item in sublist]) #flatten the list of lists of names and make array
+print("Channel names : ");print(Cnames)
 Cpos  =data['Cpos']
 
 ylabel='time (s)'
@@ -50,6 +52,13 @@ def updatePlots():
     fig=plt.figure()
     plotERP(X,Y) # class averages
 
+# visualize the raw data
+# plot a subset of single-trials
+plotTrials(X,range(3));
+# plot the grand average's per condition
+plotERP(X,Y);
+   
+    
 #-------------------------------------------------------------------
 #  Run the standard pre-processing and analysis pipeline
 # 1: detrend
