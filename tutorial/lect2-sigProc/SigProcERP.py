@@ -20,11 +20,10 @@ from scipy.io import loadmat
 
 #load the datafile, and extract the variables
 data=loadmat('ERPdata.mat')
-X     =data['X']
-Y     =data['Y'].reshape(-1) # ensure is 1d
-fs    =data['fs'][0] # ensure is scalar
-Cnames=data['Cnames']
-Cnames=data['Cnames'].reshape(-1); 
+X     =data['X']; print("X= [channels x timepoints x trials]");print(X.shape) 
+Y     =data['Y'].reshape(-1);print("Y=[trials]");print(Y.shape)# ensure is 1d
+fs    =data['fs'][0][0]; print("Sample Rate = %g"%fs) # ensure is scalar
+Cnames=data['Cnames'].reshape(-1)
 Cnames=np.array([item for sublist in Cnames for item in sublist]) #flatten the list of lists of names and make array
 print("Channel names : ");print(Cnames)
 Cpos  =data['Cpos']
@@ -77,8 +76,8 @@ X = preproc.spatialfilter(X,type='car')
 updatePlots()
 
 # 4 & 5: map to frequencies and select frequencies of interest
-X = preproc.spectralfilter(X, (8,10,28,30), hdr.fSample)
-updatePlots()
+#X = preproc.spectralfilter(X, (8,10,28,30), fs)
+#updatePlots()
 
 # 6 : bad-trial removal, trials in dim=2
 goodtr, badtr = preproc.outlierdetection(X,dim=2)
