@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from posplot import *
 
-def image3d(X,dim=0,plotpos=None,xvals=None,xlabel=None,yvals=None,ylabel=None,zvals=None,zlabel=None,disptype='plot',layout=None,ticklabs='sw',*args):
+def image3d(X,dim=0,plotpos=None,xvals=None,xlabel=None,yvals=None,ylabel=None,zvals=None,zlabel=None,disptype='plot',layout=None,ticklabs='sw',clim='minmax',*args):
     """
     plot 3d matrix in the image style
  
@@ -66,6 +66,13 @@ def image3d(X,dim=0,plotpos=None,xvals=None,xlabel=None,yvals=None,ylabel=None,z
 
     nPlot=X.shape[dim]
 
+    # get the data-range for plots
+    datlim = [np.min(X),np.max(X)]
+    if clim=="minmax":
+        clim=datlim
+    elif clim=="cent":
+        clim=np.max(np.abs(X))*np.array([-1,1])   
+    
     # pre-build the axes
     fig = plt.gcf
     if not plotpos is None:
@@ -126,17 +133,19 @@ def image3d(X,dim=0,plotpos=None,xvals=None,xlabel=None,yvals=None,ylabel=None,z
                 xticks  = yvals;
                 xlab    = ylabel
                 
-        plt.axes(ax) # get the right plot to update        
+        plt.sca(ax) # get the right plot to update        
         if disptype=='plot':
             if xticks is None :
                 plt.plot(Xpi,*args)
             else:
                 plt.plot(xticks,Xpi,*args)
+            plt.ylim(clim)
         elif disptype=='image':
             if xticks is None or linenms is None :
                 plt.imshow(Xpi,*args)
             else:
                 plt.imshow(xticks,linenms,Xpi,*args)
+            plt.clim(clim)
 
         if not titlepi is None:
             ax.set_title(titlepi,position=(.5,.4))

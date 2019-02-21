@@ -1,7 +1,7 @@
 import numpy
 import scipy.stats
-import sklearn.grid_search
-import sklearn.cross_validation
+import sklearn.model_selection
+#import sklearn.BaseCrossValidator
 import collections
 
 def fit(data, events, classifier, mapping=dict(), params = None, folds = 5, shuffle=True, reducer=None):
@@ -92,8 +92,8 @@ def fit(data, events, classifier, mapping=dict(), params = None, folds = 5, shuf
         if not isinstance(folds, int):
             raise Exception("folds should be an integer")
         
-        folds = sklearn.cross_validation.KFold(X.shape[0], folds, shuffle=shuffle)
-        grid  = sklearn.grid_search.GridSearchCV(classifier, params, cv=folds)
+        folds = sklearn.model_selection.KFold(X.shape[0], folds, shuffle=shuffle)
+        grid  = sklearn.model_selection.GridSearchCV(classifier, params, cv=folds)
         
         if Y is None:
             grid.fit(X)

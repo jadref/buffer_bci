@@ -1,4 +1,3 @@
-
 import scipy.signal 
 import numpy
 from math import ceil
@@ -103,16 +102,21 @@ def spatialfilter(data, type="car",whitencutoff=1e-15, dim=1):
         
     if type=="car":
         
-        X = numpy.dot(X,numpy.eye(X.shape[1])-(1.0/X.shape[1]))
+        X = X - numpy.mean(X,axis=0,keepdims=True) #numpy.dot(X,numpy.eye(X.shape[0])-(1.0/X.shape[0]))
         
     elif type=="whiten":
         
         if not isinstance(whitencutoff, (int,float)):
             raise Exception("whitencutoff is not a number.") 
             
-        C = numpy.cov(X.T)
+        C = numpy.cov(X.reshape(X.shape[0],-1))
         e, E = numpy.linalg.eigh(C)
-        X = numpy.dot(X,reduce(numpy.dot,[E, numpy.diag(numpy.where(e > numpy.max(e) * whitencutoff, e, numpy.inf)**-.5), E.T]))
+        keep = [ v > numpy.max(e)*whitencutoff for v in e ]
+        e=e[keep]
+        E=E[:,keep]
+        isqrte = numpy.array([v**-.5 for v in e ])
+        W = numpy.dot(E,isqrte*E.T)
+        X = numpy.dot(W,X.reshape(X.shape[0],-1)).reshape(X.shape)
     
     if not isinstance(data,numpy.ndarray):
         return rebuilddata(X,data)
@@ -120,7 +124,7 @@ def spatialfilter(data, type="car",whitencutoff=1e-15, dim=1):
         return X
 
     
-def fouriertransform(data, fSample, dim=0, posFreq=False):
+def fouriertransform(data, dim=0, fSample=1, posFreq=False):
     '''Fourier transform for a list of datapoints.
     
     Transforms the data from the time domain to the frequency domain. Returns
@@ -129,9 +133,9 @@ def fouriertransform(data, fSample, dim=0, posFreq=False):
     Parameters
     ----------
     data : list of datapoints (numpy arrays) or a single numpy array.
-    fSample ; the sampling frequency of the data
-    dim : the dimension over which the fourier filter needs to be applied
-    posFreq : only return the values for the positive frequencies
+    dim : the dimension over which the fourier filter needs to be applied  (0)
+    fSample ; the sampling frequency of the data                           (1)
+    posFreq : only return the values for the positive frequencies          (False)
     
     Returns
     -------
@@ -141,16 +145,17 @@ def fouriertransform(data, fSample, dim=0, posFreq=False):
     --------
     >>> data, events = ftc.getData(0,100)
     >>> hdr = ftc.getHeader()
-    >>> data = preproc.fouriertransform(data, hdr.fSample)
+    >>> data = preproc.fouriertransform(data, fSample=hdr.fSample)
     >>> data = bufhelp.gatherdata("start",10,"stop")
-    >>> data = preproc.fouriertransform(data, bufhelp.fSample)
+    >>> data = preproc.fouriertransform(data, fSample=bufhelp.fSample)
     '''
         
     if not isinstance(dim, int):
         raise Exception("dim is not a int.")   
-        
-    if not isinstance(fSample, float):
-        raise Exception("fSample is not a float")
+
+    if isinstance(fSample,int): fSample=float(fSample) 
+    if not isinstance(fSample,float):
+        raise Exception("fSample is not float")
     
     if not isinstance(data,numpy.ndarray):
         ft = clonelist(data)
@@ -168,7 +173,7 @@ def fouriertransform(data, fSample, dim=0, posFreq=False):
         return 
     elif isinstance(data,numpy.ndarray):
         ft = numpy.fft.fft(data, axis=dim)
-        freqs = numpy.fft.fftfreq(data.shape[0], 1.0/fSample)
+        freqs = numpy.fft.fftfreq(data.shape[dim], 1.0/fSample)
         # select only the positive frequencies
         if posFreq :
             posfreqIdx = [i for i in numpy.argsort(freqs) if freqs[i] >= 0]
@@ -176,14 +181,48 @@ def fouriertransform(data, fSample, dim=0, posFreq=False):
             idx = [ slice(0,ft.shape[i]) for i in range(len(ft.shape))]
             idx[dim] = [i for i in numpy.argsort(freqs) if freqs[i] >= 0]
             # grab the wanted subset
-            ft  = ft(tuple(idx))
+            ft  = ft[tuple(idx)]
             freqs=freqs[posfreqIdx]
     else:
         raise Exception("data should be a numpy array or list of numpy arrays.")
         
-        return (ft,freqs)  
+    return (ft,freqs)  
+
+
+
+def ifft(data, dim=0):
+    '''inverse Fourier transform for a list of datapoints.
+    
+    Transforms the data from the time domain to the frequency domain. Returns
+    a power spectrum.
+    
+    Parameters
+    ----------
+    data : list of datapoints (numpy arrays) or a single numpy array.
+    dim : the dimension over which the fourier filter needs to be applied  (0)
+    
+    Returns
+    -------
+    out : (ft,freqs) the fourier transform of the data and the frequency bins
+    
+    '''        
+    if not isinstance(dim, int):
+        raise Exception("dim is not a int.")   
+
+    if not isinstance(data,numpy.ndarray):
+        ft = clonelist(data)
+        for k in range(0,len(data)):            
+            ft[k] = numpy.fft.ifft(ft[k], axis=dim)
+        return 
+    elif isinstance(data,numpy.ndarray):
+        ft = numpy.fft.ifft(data, axis=dim)
+    else:
+        raise Exception("data should be a numpy array or list of numpy arrays.")
         
-def spectrum(data, fSample, dim=0):
+    return ft
+
+
+def powerspectrum(data, dim, fSample=1):
     '''return the power spectral density of the data
     
     Assuming that the fourierfilter has been applied to the data, this function
@@ -202,17 +241,17 @@ def spectrum(data, fSample, dim=0):
     --------
     >>> data, events = ftc.getData(0,100)
     >>> hdr = ftc.getHeader()
-    >>> freqs = preproc.spectrum(data, hdr.fSample)
+    >>> freqs = preproc.powerspectrum(data, dim=1, hdr.fSample)
     >>> data = bufhelp.gatherdata("start",10,"stop")
-    >>> data = preproc.spectrum(data, bufhelp.fSample)
+    >>> data = preproc.powerspectrum(data, dim=1, bufhelp.fSample)
     '''
 
-    ft,freqs = fouriertransform(data,dim,posFreq=True)
-    ft = np.abs(ft) # convert to amplitude
+    ft,freqs = fouriertransform(data,dim,fSample,posFreq=True)
+    ft = numpy.abs(ft) # convert to amplitude
     
     return (ft,freqs)
 
-def fftfilter(data, band, fSample, dim=0):
+def fftfilter(data, dim, band, fSample=1):
     '''Applies a bandpass filter to the data.
     
     The band argument defines the range of the bandpass filter, it can either
@@ -241,27 +280,17 @@ def fftfilter(data, band, fSample, dim=0):
     Returns
     -------
     out : a clone of data on wich a spectral bandpass filter has been applied.
-    
-    Examples
-    --------
-    >>> data, events = ftc.getData(0,100)
-    >>> data = preproc.fouriertransform(data)
-    >>> hdr = ftc.getHeader()
-    >>> data = preproc.spectralfilteronly(data, (10,12), hdr.fSample)
-    >>> data = bufhelp.gatherdata("start",10,"stop")
-    >>> data = preproc.fouriertransform(data)
-    >>> data = preproc.spectralfilteronly(data, (8, 10, 12, 14), bufhelp.fSample)
     '''
-    data,freqs = fouriertransform(data, fSample, dim, posFreq=False)
-    wght = mkFilter(np.abs(freqs),band)
+    data,freqs = fouriertransform(data, dim, fSample, posFreq=False)
+    wght = mkFilter(numpy.abs(freqs),band)
     # make the shape of wght match that of data so can apply the weighting easily
-    sz   = 1*len(data.ndims); sz[dim]=data.shape[dim]
-    wght = wght.reshape(sz)
+    wght = wght.reshape([1 if d!=dim else wght.size for d in range(data.ndim)])
     data = data * wght
-    data = ifouriertransform(data,fSample,dim)
-    return 
+    # inverse fourier transform to get back to time-domain
+    data = numpy.real(ifft(data,dim))
+    return data
 
-def selectbands(data,band,bins=None,dim=0,threshold=0):
+def selectbands(data,band,dim=0,threshold=0,bins=None):
     """ select a subset of features given by band along the specified dim"""
     # compute the weighting over bin elements
     if bins is None:
@@ -271,24 +300,25 @@ def selectbands(data,band,bins=None,dim=0,threshold=0):
             raise("dimension bins is inconsistent with it's size!!");
         wght = mkFilter(bins,band)
     # threshold to identify which bins to keep
-    featIdx = np.where(wght>threshold)
+    keep = wght>threshold
     # build index expression to select the kept bits
     idx = [ slice(0,data.shape[i]) for i in range(data.ndim)];
-    idx[dim] = featIdx
+    idx[dim] = keep
     data = data[tuple(idx)]
-    return (data,featIdx)
+    return (data,keep)
 
 
 def mkFilter(bins,band,xscale=None):
     """ make a weighting over entries as specified by band"""
     # convert from number of bins to actual bin values
-    if len(bins)==1 :
-        bins = arange(0,bins)
+    if isinstance(bins,int) :
+        bins = numpy.arange(0,bins)
         if not xscale is None : # apply the scaling
-            bins = [ n*xscale for n in bins ]
+            bins = bins*xscale
     # use bandfunc to get the weighting for each bin given it's value
-    wght = [ _bandfunc(n,band) for n in bins]
-
+    wght = numpy.array([ _bandfunc(n,band) for n in bins])
+    return wght
+    
 def _bandfunc(x, band):
     """function get get a weighting for each index for a trapziod specified by 4 band numbers"""
     if len(band) == 2:
@@ -308,7 +338,7 @@ def _bandfunc(x, band):
     else:
         return band(x)
              
-def timebandfilter(data, timeband, milliseconds=False, fSample=None):
+def selecttimeband(data, timeband, milliseconds=False, fSample=1):
     '''Applies a timeband filter to the data.
     
     Removes any samples that do not fall within the range defined by the 
@@ -332,55 +362,16 @@ def timebandfilter(data, timeband, milliseconds=False, fSample=None):
     --------
     >>> data, events = ftc.getData(0,100)
     >>> hdr = ftc.getHeader()
-    >>> data = preproc.timebandfiler(data, (250,350), hdr.fSample)
+    >>> data = preproc.timebandfilter(data, (250,350), hdr.fSample)
     >>> data = bufhelp.gatherdata("start",10,"stop")
-    >>> data = preproc.spectrum(data, (25,35))
+    >>> data = preproc.powerspectrum(data, (25,35))
     '''
     
-    if not isinstance(timeband, (list,tuple)):
-        raise Exception("Timeband not a tuple or list.")
-    
-    if len(timeband) != 2:
-        raise Exception("Timeband is not size 2.")
-        
-    if not all([isinstance(x,(int,float)) for x in timeband]):
-        raise Exception("timeband contains non-number elements.")
-        
-    if timeband[0] > timeband[1]:
-        raise Exception("Lower bound higher than upper bound.")
-        
-    if not isinstance(data, list):
-        raise Exception("Data is not a list.")
-        
-    if not all([isinstance(x,numpy.ndarray) for x in data]):
-        raise Exception("Data contains non numpy.array elements.")
+    binsize=1000.0/fSample if milliseconds else 1/fSample
+    filt = mkFilter(data.shape[1],timeband,binsize)
+    return selectbands(data,1,filt)
 
-    if not isinstance(milliseconds,bool):
-        raise Exception("milliseconds is not a boolean")
-        
-    data = clonelist(data)        
-    
-    if milliseconds:
-        if not isinstance(fSample, float):
-            raise Exception("fSample is not a float.")
-            
-        lower = (timeband[0]/1000.0)*float(fSample)
-        upper = (timeband[1]/1000.0)*float(fSample)
-    else:
-        lower = timeband[0]
-        upper = timeband[1]
-    
-    lower = int(lower)
-    upper = int(ceil(upper))    
-    
-    for i in range(0,len(data)):
-        data[0] = data[0][lower:upper,:]
-        
-    return data
-     
-
-
-def removeoutliers(data,dim=0,threshold= (None,3.1)):
+def removeoutliers(data,dim=0,alreadybad=None,threshold= (None,3.1)):
     '''Removes outliers from data
     
     Removes bad trails from the data. Applies outlier detection on the rows
@@ -409,24 +400,7 @@ def removeoutliers(data,dim=0,threshold= (None,3.1)):
     X = X[tuple(idx)]
         
     if not isinstance(data,numpy.ndarray):
-        dataout = []
-        
-        for i in inliers:
-            dataout.append(data[i].copy())
-            
-        if events is not None:
-            eventsout = []
-            
-            for i in inliers:
-                if hasattr(events[i],"deepcopy"):
-                    eventsout.append(events[i].deepcopy())
-                elif hasattr(events[i],"copy"):
-                    eventsout.append(events[i].copy())
-                else:
-                    eventsout.append(events[i])
-        
-            return (dataout, eventsout, outliers)            
-            
+        dataout = rebuilddata(X,data)            
         return (dataout, inliers)
     elif isinstance(data,numpy.ndarray):
         return (X,inliers)
@@ -461,10 +435,10 @@ def badchannelremoval(data, badchannels = None, threshold = (-numpy.inf,3.1)):
     >>> data = bufhelp.gatherdata("start",10,"stop")
     >>> data, badch = preproc.badchannelremoval(data)
     '''
-    return removeoutliers(data,dim,threshold)
+    return removeoutliers(data,0,threshold=threshold,alreadybad=badchannels)
 
     
-def badtrailremoval(data, events = None, threshold = (None,3.1)):
+def badtrialremoval(data, events = None, threshold = (None,3.1)):
     '''Removes bad trails from the data.
     
     Removes bad trails from the data. Applies outlier detection on the rows
@@ -492,7 +466,7 @@ def badtrailremoval(data, events = None, threshold = (None,3.1)):
     return removeoutliers(data,dim=-1,threshold=threshold)
     
     
-def outlierdetection(X, dim=0, threshold=(None,3), maxIter=3, feat="var"):
+def outlierdetection(X, dim=0, threshold=(None,3), alreadybad=None, maxIter=3, feat="var"):
     '''Removes outliers from X. Based on idOutliers.m
     
     Removes outliers from X based on robust coviarance variance/mean 
@@ -517,18 +491,24 @@ def outlierdetection(X, dim=0, threshold=(None,3), maxIter=3, feat="var"):
     >>> data, events = ftc.getData(0,100)
     >>> inliers, outliers = preproc.outlierdetection(data)
     '''   
-  
+
+    # convert from dim to get outlier indices over, to dim to compute features over
+    if dim<0: dim=X.ndim+dim
+    featdim = tuple([ x for x in range(len(X.shape)) if x!=dim])
+    
     if feat=="var":
-        feat = numpy.sqrt(numpy.abs(numpy.var(X,dim)))
+        feat = numpy.sqrt(numpy.abs(numpy.var(X,axis=featdim)))
     elif feat =="mu":
-        feat = numpy.mean(X,dim)
+        feat = numpy.mean(X,axis=featdim)
     elif isinstance(feat,numpy.array):
         if not (all([isinstance(x,(int , float)) for x in feat]) and feat.shape == X.shape):
             raise Exception("Unrecognised feature type.")
-    else:        
+    else:
         raise Exception("Unrecognised feature type.")
 
-    inliers = numpy.ones(feat.shape[0], dtype=numpy.bool)
+    inliers = numpy.ones(feat.shape, dtype=numpy.bool)
+    if alreadybad is not None: # mark already known as bad
+        inliers[alreadybad]=False
     for i in range(0,maxIter):
         mufeat = numpy.median(feat[inliers])
         stdfeat = numpy.std(feat[inliers])
@@ -536,7 +516,7 @@ def outlierdetection(X, dim=0, threshold=(None,3), maxIter=3, feat="var"):
         if threshold[1] is not None:
             high = mufeat+threshold[1]*stdfeat
             bad = bad | (feat > high)
-        elif threshold[0] is not None:
+        if threshold[0] is not None:
             low = mufeat+threshold[0]*stdfeat
             bad = bad | (feat < low)
 
@@ -583,12 +563,9 @@ def concatdata(data,dim=0):
     if dim<2:
         cdata = numpy.concatenate(data,axis=dim)
     elif dim==2: # make new dim
-        cdata = numpy.concatenate([x[:,:,np.newaxis] for x in data],axis=dim)
+        cdata = numpy.concatenate([x[:,:,numpy.newaxis] for x in data],axis=dim)
 
     return cdata
-
-
-
 
 def rebuilddata(X,data):
     '''Rebuilds a list of datapoints based on a large numpy array.
@@ -662,11 +639,21 @@ def clonelist(original):
     return clone
 
 
-if __init__=="main":
+if __name__=="main":
+    #%pdb
     import preproc
-    import numpy as np
-    data = np.random.randn(3,4,5)
-    preproc.detrend(data,0)
-    preproc.spatialfilter(data,'car')
-    preproc.badchannelremoval(data)
-    preproc.badtrialremoval(data)
+    import numpy
+    fs   = 40
+    data = numpy.random.randn(3,fs,5)  # 1s of data    
+    ppdata=preproc.detrend(data,0)
+    ppdata=preproc.spatialfilter(data,'car')
+    ppdata=preproc.spatialfilter(data,'whiten')
+    ppdata,goodch=preproc.badchannelremoval(data)
+    ppdata,goodtr=preproc.badtrialremoval(data)
+    goodtr,badtr=preproc.outlierdetection(data,-1)
+    Fdata,freqs=preproc.fouriertransform(data, 2, fSamples=1, posFreq=True)
+    Fdata,freqs=preproc.powerspectrum(data, 1, dim=2)
+    filt=preproc.mkFilter(10,[0,4,6,7],1)
+    filt=preproc.mkFilter(numpy.abs(numpy.arange(-10,10,1)),[0,4,6,7])
+    ppdata=preproc.fftfilter(data,1,[0,3,4,6],fs)
+    ppdata,keep=preproc.selectbands(data,[4,5,10,15],1); ppdata.shape
