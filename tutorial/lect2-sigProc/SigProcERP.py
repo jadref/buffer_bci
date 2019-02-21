@@ -77,6 +77,15 @@ X = X[:,:,goodtr]
 Y = Y[goodtr]
 updatePlots()
 
-# 7: train classifier, default is a linear-least-squares-classifier
-mapping = {('stimulus.tgtFlash', '0'): 0, ('stimulus.tgtFlash', '1'): 1}
-classifier = linear.fit(X,events,mapping)
+# 7: train linear least squares classifier, with cross-validation
+import sklearn
+clsfr = sklearn.linear_model.RidgeCV()
+X2d = np.reshape(X,(-1,X.shape[2])).T # sklearn needs x to be [nTrials x nFeatures]
+clsfr.fit(X2d,Y)
+clsfr.score
+
+#8: plot the classifier weights
+# plot the classifier weight vector
+W = clsfr.coef_
+W = np.reshape(clsfr.coef_,(X.shape[1],X.shape[0])) 
+image3d(W,0,plotpos=Cpos,xvals=Cnames);
