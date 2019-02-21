@@ -1,3 +1,4 @@
+
 import scipy.signal 
 import numpy
 from math import ceil
@@ -54,40 +55,6 @@ def detrend(data, dim=1, type="linear"):
         return X
 
 
-def clonelist(original):
-    '''Clones a list.
-    
-    Creates a new list and adds all the object of to original list to it. If
-    the objects in the original list have a copy or deepcopy method it will be
-    used.
-    
-    Parameters
-    ----------
-    original : the list that eneds to be cloned
-    
-    Returns
-    -------
-    out : a clone of the list and its content
-    
-    Examples
-    --------
-    >>> a = [1,2,3,4]
-    >>> b = clonelist(a)
-    >>> events = ftc.getEvents(0,100)
-    >>> events_copy = clonelist(events)
-    '''
-    
-    clone = []
-
-    for element in original:
-        if hasattr(element,"deepcopy"):
-            clone.append(element.deepcopy())
-        elif hasattr(element,"copy"):
-            clone.append(element.copy())
-        else:
-            clone.append(element)
-    
-    return clone
 
 def spatialfilter(data, type="car",whitencutoff=1e-15, dim=1):
     '''Spatial filter for a list of datapoints.
@@ -151,8 +118,9 @@ def spatialfilter(data, type="car",whitencutoff=1e-15, dim=1):
         return rebuilddata(X,data)
     else:
         return X
+
     
-def fouriertransform(data, fSample, dim=0):
+def fouriertransform(data, fSample, dim=0, posFreq=False):
     '''Fourier transform for a list of datapoints.
     
     Transforms the data from the time domain to the frequency domain. Returns
@@ -163,10 +131,11 @@ def fouriertransform(data, fSample, dim=0):
     data : list of datapoints (numpy arrays) or a single numpy array.
     fSample ; the sampling frequency of the data
     dim : the dimension over which the fourier filter needs to be applied
+    posFreq : only return the values for the positive frequencies
     
     Returns
     -------
-    out : a clone of data on wich a fourier transform has been applied
+    out : (ft,freqs) the fourier transform of the data and the frequency bins
     
     Examples
     --------
@@ -184,58 +153,38 @@ def fouriertransform(data, fSample, dim=0):
         raise Exception("fSample is not a float")
     
     if not isinstance(data,numpy.ndarray):
-        dataclone = clonelist(data)
-        
-        for k in range(0,len(data)):
-            data = dataclone[k]
-            ft = numpy.abs(numpy.fft.fft(data, axis=dim))**2
-            freqs = numpy.fft.fftfreq(data.shape[0], 1.0/fSample)
-            idx = [i for i in numpy.argsort(freqs) if freqs[i] >= 0]
-    
-            index = list(data.shape)
-            index[dim] = len(idx)
-            ps = numpy.zeros(index)
+        ft = clonelist(data)
+        freqs = numpy.fft.fftfreq(data.shape[dim], 1.0/fSample)
+        for k in range(0,len(data)):            
+            ft[k] = numpy.fft.fft(ft[k], axis=dim)
+            if posFreq :
+                posfreqIdx = [i for i in numpy.argsort(freqs) if freqs[i] >= 0]
+                # build an index expression to get the subset of data we want
+                idx = [ slice(0,ft[k].shape[i]) for i in range(len(ft[k].shape))]
+                idx[dim] = posfreqIdx
+                ft[k]  = ft[k](tuple(idx))
+                freqs=freqs[posfreqIdx]
             
-            
-            s = list(data.shape)
-            del s[dim]
-            s = s[0]
-            for i in range(0,s):
-                ind = [i,i]
-                ind[dim] = list(range(0,len(idx)))
-                sel = [i,i]
-                sel[dim] = idx
-                ps[ind] = ft[sel]
-                
-            dataclone[k] = ps
-            
-        return dataclone
+        return 
     elif isinstance(data,numpy.ndarray):
-        ft = numpy.abs(numpy.fft.fft(data, axis=dim))**2
+        ft = numpy.fft.fft(data, axis=dim)
         freqs = numpy.fft.fftfreq(data.shape[0], 1.0/fSample)
-        idx = [i for i in numpy.argsort(freqs) if freqs[i] >= 0]
-
-        index = list(data.shape)
-        index[dim] = len(idx)
-        ps = numpy.zeros(index)
-        
-        
-        s = list(data.shape)
-        del s[dim]
-        s = s[0]
-        for i in range(0,s):
-            ind = [i,i]
-            ind[dim] = list(range(0,len(idx)))
-            sel = [i,i]
-            sel[dim] = idx
-            ps[ind] = ft[sel]
+        # select only the positive frequencies
+        if posFreq :
+            posfreqIdx = [i for i in numpy.argsort(freqs) if freqs[i] >= 0]
+            # build an index expression to get the subset of data we want
+            idx = [ slice(0,ft.shape[i]) for i in range(len(ft.shape))]
+            idx[dim] = [i for i in numpy.argsort(freqs) if freqs[i] >= 0]
+            # grab the wanted subset
+            ft  = ft(tuple(idx))
+            freqs=freqs[posfreqIdx]
     else:
         raise Exception("data should be a numpy array or list of numpy arrays.")
         
-        return ps   
+        return (ft,freqs)  
         
 def spectrum(data, fSample, dim=0):
-    '''Returns a list of frequenceis that form the spectrum of the data.
+    '''return the power spectral density of the data
     
     Assuming that the fourierfilter has been applied to the data, this function
     returns the frequency of the spectrum of each datapoint.
@@ -247,7 +196,7 @@ def spectrum(data, fSample, dim=0):
     
     Returns
     -------
-    out : a list of frequencies
+    out : (psd,freqs) the power-spectral-density of the data and the list of frequency bins
     
     Examples
     --------
@@ -257,20 +206,14 @@ def spectrum(data, fSample, dim=0):
     >>> data = bufhelp.gatherdata("start",10,"stop")
     >>> data = preproc.spectrum(data, bufhelp.fSample)
     '''
-    
-    if not isinstance(data,numpy.ndarray):
-        freqs = numpy.fft.fftfreq(data[0].shape[dim]*2, 1.0/fSample)    
-    elif isinstance(data,numpy.ndarray):
-        freqs = numpy.fft.fftfreq(data.shape[dim], 1.0/fSample)    
-    else:
-        raise Exception("data should be a numpy array or list of numpy arrays.")        
-        
-    return [freqs[i] for i in numpy.argsort(freqs) if freqs[i] >= 0]
 
-def spectralfilter(data, band, fSample, dim=0):
-    '''Applies a fourier transform and bandpass filter to the data.
+    ft,freqs = fouriertransform(data,dim,posFreq=True)
+    ft = np.abs(ft) # convert to amplitude
     
-    Applies a bandpass filter to the data.
+    return (ft,freqs)
+
+def fftfilter(data, band, fSample, dim=0):
+    '''Applies a bandpass filter to the data.
     
     The band argument defines the range of the bandpass filter, it can either
     be a tuple, list or a function. If it is a tuple or a list it should 
@@ -309,98 +252,45 @@ def spectralfilter(data, band, fSample, dim=0):
     >>> data = preproc.fouriertransform(data)
     >>> data = preproc.spectralfilteronly(data, (8, 10, 12, 14), bufhelp.fSample)
     '''
-    data = fouriertransform(data, fSample, dim)
-    
-    return spectralfilteronly(data,band,fSample,dim)
-    
-        
-def spectralfilteronly(data, band, fSample, dim=0):
-    '''Applies a bandpass filter to the data.
-    
-    Applies a bandpass filter to the data, assumes it has already been 
-    transformed to the frequency-power domain. 
-    
-    The band argument defines the range of the bandpass filter, it can either
-    be a tuple, list or a function. If it is a tuple or a list it should 
-    contain either 2 or 4 elements:
-    
-    2 elements - All frequencies < band[0] and > band[1] will be multiplied by
-                 0.
-    4 elements - All frequencies < band[0] and > band[3] will be mutliplied by 
-                 0. All frequencies between band[0] and band[1] will be 
-                 multiplied by (frequency - band[0])/(band[1]-band[0]). All 
-                 frequencies between band[2] and band[3] will be multiplied by 
-                 (band[3] - frequency)/(band[3]-band[2]). 
-    
-    If the band argument is a function then each frequency will be multiplied
-    by band(frequency).
-  
-    Parameters
-    ----------
-    data : list of datapoints (numpy arrays) or a single numpy array.
-    band : the band for the filter, should be a tuple or list containing either
-    2 or 4 elements, or a function that maps numbers on numbers.
-    fsample : the sampling frequency of the data
-    dim : the dimension over which the spectral filter has been applied  (0)
-    
-    Returns
-    -------
-    out : a clone of data on wich a spectral bandpass filter has been applied.
-    
-    Examples
-    --------
-    >>> data, events = ftc.getData(0,100)
-    >>> data = preproc.fouriertransform(data)
-    >>> hdr = ftc.getHeader()
-    >>> data = preproc.spectralfilteronly(data, (10,12), hdr.fSample)
-    >>> data = bufhelp.gatherdata("start",10,"stop")
-    >>> data = preproc.fouriertransform(data)
-    >>> data = preproc.spectralfilteronly(data, (8, 10, 12, 14), bufhelp.fSample)
-    '''
-    
-    if isinstance(band, (tuple,list)):
-        if not (len(band)==2 or len(band)==4):
-            raise Exception("band is wrong length tuple/list")
-    elif isinstance(band, collections.Callable):
-        try:
-            if not isinstance(band(4.0), (int,float)):
-                raise Exception("band does not return a number")
-        except:
-            raise Exception("band does not have accept floats as an argument")
+    data,freqs = fouriertransform(data, fSample, dim, posFreq=False)
+    wght = mkFilter(np.abs(freqs),band)
+    # make the shape of wght match that of data so can apply the weighting easily
+    sz   = 1*len(data.ndims); sz[dim]=data.shape[dim]
+    wght = wght.reshape(sz)
+    data = data * wght
+    data = ifouriertransform(data,fSample,dim)
+    return 
+
+def selectbands(data,band,bins=None,dim=0,threshold=0):
+    """ select a subset of features given by band along the specified dim"""
+    # compute the weighting over bin elements
+    if bins is None:
+        wght = mkFilter(data.shape[dim],band)
     else:
-        raise Exception("band must either be a callable, a tuple or a list")
-        
-    if not isinstance(fSample,float):
-        raise Exception("fSample is not a float.")
-        
-    if not isinstance(dim,int):
-        raise Exception("dim is not an int.")
-               
-    if not isinstance(data,numpy.ndarray):
-        for X in data:
-            freqs = spectrum(data,fSample)
-            s = list(X.shape)
-            del s[dim]
-            for j in range(0,s[0]):
-                index = [j,j]
-                for i in range(0,X.shape[dim]):
-                    index[dim] = i
-                    X[index] = X[index] * _bandfunc(freqs[i], band)           
-    elif isinstance(data,numpy.ndarray):
-        freqs = spectrum(data,fSample, dim)
-        s = list(data.shape)
-        del s[dim]
-        for j in range(0,s[0]):
-            index = [j,j]
-            for i in range(0,data.shape[dim]):
-                index[dim] = i
-                data[index] = data[index] * _bandfunc(freqs[i], band)
-    else:
-        raise Exception("data should be a numpy array or list of numpy arrays.")
-        
-    return data    
-        
+        if len(bins) != data.shape[dim] :
+            raise("dimension bins is inconsistent with it's size!!");
+        wght = mkFilter(bins,band)
+    # threshold to identify which bins to keep
+    featIdx = np.where(wght>threshold)
+    # build index expression to select the kept bits
+    idx = [ slice(0,data.shape[i]) for i in range(data.ndim)];
+    idx[dim] = featIdx
+    data = data[tuple(idx)]
+    return (data,featIdx)
+
+
+def mkFilter(bins,band,xscale=None):
+    """ make a weighting over entries as specified by band"""
+    # convert from number of bins to actual bin values
+    if len(bins)==1 :
+        bins = arange(0,bins)
+        if not xscale is None : # apply the scaling
+            bins = [ n*xscale for n in bins ]
+    # use bandfunc to get the weighting for each bin given it's value
+    wght = [ _bandfunc(n,band) for n in bins]
+
 def _bandfunc(x, band):
+    """function get get a weighting for each index for a trapziod specified by 4 band numbers"""
     if len(band) == 2:
         if x < band[0] or x > band[1]:
             return 0
@@ -417,8 +307,7 @@ def _bandfunc(x, band):
             return 1
     else:
         return band(x)
-        
-     
+             
 def timebandfilter(data, timeband, milliseconds=False, fSample=None):
     '''Applies a timeband filter to the data.
     
@@ -491,44 +380,60 @@ def timebandfilter(data, timeband, milliseconds=False, fSample=None):
      
 
 
-def concatdata(data,dim=0):
-    '''Concatenates a list of datapoints into a single numpy array.
+def removeoutliers(data,dim=0,threshold= (None,3.1)):
+    '''Removes outliers from data
+    
+    Removes bad trails from the data. Applies outlier detection on the rows
+    of the data, after having flattened the datapoint.
     
     Parameters
     ----------
-    data : list of datapoints (numpy arrays), assumed [nSamples x nChannels]
-    dim  : dimension along which to concatenate
-    
-    Returns
-    -------
-    out : a numpy array containing the datapoints in data. [nSamples x nChannels x nTrials]
-    
-    Examples
+    data : list of datapoints (numpy arrays) or a single numpy array.
+    threshold : the upper and lower bound of the thershold in a tuple expressed
+    in standard deviations.  
+    Outputs:
     --------
-    >>> data = bufhelp.gatherdata("start",10,"stop")
-    >>> X = preproc.concatdata(data)
-    
-    See Also
-    --------
-    rebuild
+    data : the data with the outliers removes
+    inliers : the indices of the good elements along dim
     '''
     
-    if not isinstance(data, list):
-        raise Exception("Data is not a list.")
+    if not isinstance(data,numpy.ndarray):
+        X = numpy.array([d.flatten() for d in data])
+    else:
+        X = data
         
-    if not all([isinstance(x,numpy.ndarray) for x in data]):
-        raise Exception("Data contains non numpy.array elements.")
-    
-    if not all([x.shape[1] == data[0].shape[1] for x in data]):
-        raise Exception("Inconsistent number of channels in data!")
-    
-    if dim<2:
-        cdata = numpy.concatenate(data,axis=dim)
-    elif dim==2: # make new dim
-        cdata = numpy.concatenate([x[:,:,np.newaxis] for x in data],axis=dim)
+    inliers, outliers = outlierdetection(X, dim, threshold)    
+    # build an index expression to get the subset of data we want
+    idx = [ slice(0,X.shape[i]) for i in range(X.ndim)]
+    idx[dim] = inliers
+    X = X[tuple(idx)]
+        
+    if not isinstance(data,numpy.ndarray):
+        dataout = []
+        
+        for i in inliers:
+            dataout.append(data[i].copy())
+            
+        if events is not None:
+            eventsout = []
+            
+            for i in inliers:
+                if hasattr(events[i],"deepcopy"):
+                    eventsout.append(events[i].deepcopy())
+                elif hasattr(events[i],"copy"):
+                    eventsout.append(events[i].copy())
+                else:
+                    eventsout.append(events[i])
+        
+            return (dataout, eventsout, outliers)            
+            
+        return (dataout, inliers)
+    elif isinstance(data,numpy.ndarray):
+        return (X,inliers)
+    else:
+        raise Exception("data should be a numpy array or list of numpy arrays.")
 
-    return cdata
-    
+
 def badchannelremoval(data, badchannels = None, threshold = (-numpy.inf,3.1)):
     '''Removes bad channels from the data.
     
@@ -556,42 +461,9 @@ def badchannelremoval(data, badchannels = None, threshold = (-numpy.inf,3.1)):
     >>> data = bufhelp.gatherdata("start",10,"stop")
     >>> data, badch = preproc.badchannelremoval(data)
     '''
-    
-    if not isinstance(data, list):
-        raise Exception("Data is not a list.")
-        
-    if not all([isinstance(x,numpy.ndarray) for x in data]):
-        raise Exception("Data contains non numpy.array elements.")
-    
-    if not all([x.shape[1] == data[0].shape[1] for x in data]):
-        raise Exception("Inconsistent number of channels in data!")
-    
-    if badchannels is not None:
-        goodchannels = [x for x in range(data[0].shape[1]) if x not in badchannels]        
-        
-        if not isinstance(data,numpy.ndarray):
-            data = clonelist(data)
-            for i in range(0,len(data)):
-                data[i] = data[i][:,goodchannels]            
-        else:
-            return data[:,badchannels]
-    
-    if not isinstance(data,numpy.ndarray):
-        X = concatdata(data)
-    elif isinstance(data,numpy.ndarray):
-        X = data
-    else:
-        raise Exception("data should be a list of numpy arrays or a numpy array")
-    
-    inliers, outliers = outlierdetection(X, 0, threshold)    
-        
-    if not isinstance(data,numpy.ndarray):
-        return (rebuilddata(X[:,inliers],data), outliers)
-    elif isinstance(data,numpy.ndarray):
-        return (X[:,inliers], outliers)
-    else:
-        raise Exception("data should be a numpy array or list of numpy arrays.")
+    return removeoutliers(data,dim,threshold)
 
+    
 def badtrailremoval(data, events = None, threshold = (None,3.1)):
     '''Removes bad trails from the data.
     
@@ -616,38 +488,9 @@ def badtrailremoval(data, events = None, threshold = (None,3.1)):
     >>> data = bufhelp.gatherdata("start",10,"stop")
     >>> data, badtrl = preproc.badchannelremoval(data)
     '''
+
+    return removeoutliers(data,dim=-1,threshold=threshold)
     
-    if not isinstance(data,numpy.ndarray):
-        X = numpy.array([d.flatten() for d in data])
-    else:
-        X = data
-        
-    inliers, outliers = outlierdetection(X, 1, threshold)    
-        
-    if not isinstance(data,numpy.ndarray):
-        dataout = []
-        
-        for i in inliers:
-            dataout.append(data[i].copy())
-            
-        if events is not None:
-            eventsout = []
-            
-            for i in inliers:
-                if hasattr(events[i],"deepcopy"):
-                    eventsout.append(events[i].deepcopy())
-                elif hasattr(events[i],"copy"):
-                    eventsout.append(events[i].copy())
-                else:
-                    eventsout.append(events[i])
-        
-            return (dataout, eventsout, outliers)            
-            
-        return (dataout, outliers)
-    elif isinstance(data,numpy.ndarray):
-        return (X[inliers,:], outliers)
-    else:
-        raise Exception("data should be a numpy array or list of numpy arrays.")
     
 def outlierdetection(X, dim=0, threshold=(None,3), maxIter=3, feat="var"):
     '''Removes outliers from X. Based on idOutliers.m
@@ -705,6 +548,48 @@ def outlierdetection(X, dim=0, threshold=(None,3), maxIter=3, feat="var"):
     return (list(numpy.where(inliers)[0]), list(numpy.where(~inliers)[0]))
 
 
+
+def concatdata(data,dim=0):
+    '''Concatenates a list of datapoints into a single numpy array.
+    
+    Parameters
+    ----------
+    data : list of datapoints (numpy arrays), assumed [nSamples x nChannels]
+    dim  : dimension along which to concatenate
+    
+    Returns
+    -------
+    out : a numpy array containing the datapoints in data. [nSamples x nChannels x nTrials]
+    
+    Examples
+    --------
+    >>> data = bufhelp.gatherdata("start",10,"stop")
+    >>> X = preproc.concatdata(data)
+    
+    See Also
+    --------
+    rebuild
+    '''
+    
+    if not isinstance(data, list):
+        raise Exception("Data is not a list.")
+        
+    if not all([isinstance(x,numpy.ndarray) for x in data]):
+        raise Exception("Data contains non numpy.array elements.")
+    
+    if not all([x.shape[1] == data[0].shape[1] for x in data]):
+        raise Exception("Inconsistent number of channels in data!")
+    
+    if dim<2:
+        cdata = numpy.concatenate(data,axis=dim)
+    elif dim==2: # make new dim
+        cdata = numpy.concatenate([x[:,:,np.newaxis] for x in data],axis=dim)
+
+    return cdata
+
+
+
+
 def rebuilddata(X,data):
     '''Rebuilds a list of datapoints based on a large numpy array.
     
@@ -740,3 +625,48 @@ def rebuilddata(X,data):
         start = start + data[i].shape[0]
         
     return data
+
+def clonelist(original):
+    '''Clones a list.
+    
+    Creates a new list and adds all the object of to original list to it. If
+    the objects in the original list have a copy or deepcopy method it will be
+    used.
+    
+    Parameters
+    ----------
+    original : the list that eneds to be cloned
+    
+    Returns
+    -------
+    out : a clone of the list and its content
+    
+    Examples
+    --------
+    >>> a = [1,2,3,4]
+    >>> b = clonelist(a)
+    >>> events = ftc.getEvents(0,100)
+    >>> events_copy = clonelist(events)
+    '''
+    
+    clone = []
+
+    for element in original:
+        if hasattr(element,"deepcopy"):
+            clone.append(element.deepcopy())
+        elif hasattr(element,"copy"):
+            clone.append(element.copy())
+        else:
+            clone.append(element)
+    
+    return clone
+
+
+if __init__=="main":
+    import preproc
+    import numpy as np
+    data = np.random.randn(3,4,5)
+    preproc.detrend(data,0)
+    preproc.spatialfilter(data,'car')
+    preproc.badchannelremoval(data)
+    preproc.badtrialremoval(data)
