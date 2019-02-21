@@ -136,7 +136,7 @@ def spatialfilter(data, type="car",whitencutoff=1e-15, dim=1):
         
     if type=="car":
         
-        X = numpy.dot(X,numpy.eye(X.shape[1])-(1.0/X.shape[1]))
+        X = X - numpy.mean(X,axis=0) #numpy.dot(X,numpy.eye(X.shape[0])-(1.0/X.shape[0]))
         
     elif type=="whiten":
         
@@ -674,18 +674,21 @@ def outlierdetection(X, dim=0, threshold=(None,3), maxIter=3, feat="var"):
     >>> data, events = ftc.getData(0,100)
     >>> inliers, outliers = preproc.outlierdetection(data)
     '''   
-  
+
+    # convert from dim to get outlier indices over, to dim to compute features over
+    featdim = tuple([ x for x in range(len(X.shape)) if x!=dim])
+    
     if feat=="var":
-        feat = numpy.sqrt(numpy.abs(numpy.var(X,dim)))
+        feat = numpy.sqrt(numpy.abs(numpy.var(X,axis=featdim)))
     elif feat =="mu":
-        feat = numpy.mean(X,dim)
+        feat = numpy.mean(X,axis=featdim)
     elif isinstance(feat,numpy.array):
         if not (all([isinstance(x,(int , float)) for x in feat]) and feat.shape == X.shape):
             raise Exception("Unrecognised feature type.")
-    else:        
+    else:
         raise Exception("Unrecognised feature type.")
 
-    inliers = numpy.ones(feat.shape[0], dtype=numpy.bool)
+    inliers = numpy.ones(feat.shape, dtype=numpy.bool)
     for i in range(0,maxIter):
         mufeat = numpy.median(feat[inliers])
         stdfeat = numpy.std(feat[inliers])
@@ -693,7 +696,7 @@ def outlierdetection(X, dim=0, threshold=(None,3), maxIter=3, feat="var"):
         if threshold[1] is not None:
             high = mufeat+threshold[1]*stdfeat
             bad = bad | (feat > high)
-        elif threshold[0] is not None:
+        if threshold[0] is not None:
             low = mufeat+threshold[0]*stdfeat
             bad = bad | (feat < low)
 
