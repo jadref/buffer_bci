@@ -87,7 +87,7 @@ Y = Y[goodtr]
 updatePlots()
 
 # 7: train linear least squares classifier, with cross-validation
-import sklearn
+from sklearn.linear_model import LinearRegression
 clsfr = sklearn.linear_model.RidgeCV()
 X2d = np.reshape(X,(-1,X.shape[2])).T # sklearn needs x to be [nTrials x nFeatures]
 clsfr.fit(X2d,Y)
