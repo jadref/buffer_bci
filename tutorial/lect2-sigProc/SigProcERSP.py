@@ -52,19 +52,17 @@ def plotERP(X,Y):
 def updatePlots():
     global X,Y
     # Plot the raw data
-    fig=plt.figure(1,figsize=(12, 12))
+    fig=plt.figure()
     plotTrials(X,range(3)) # single trial
 
-    fig=plt.figure(2,figsize=(12, 12))
+    fig=plt.figure()
     plotERP(X,Y) # class averages
 
 # plot a subset of single-trials
-plt.figure(1,figsize=(12, 12));
 plotTrials(X,range(3));
 
 
 # plot the grand average's per condition
-plt.figure(2,figsize=(12, 12))
 plotERP(X,Y);
 
 
