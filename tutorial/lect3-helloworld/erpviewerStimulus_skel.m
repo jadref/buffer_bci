@@ -23,6 +23,10 @@ initgetwTime;
 initsleepSec;
 
 
+% setup connection for trigger-injection for debugging
+trigsocket=javaObject('java.net.DatagramSocket'); % creat UDP socket and bind to triggerport
+trigsocket.connect(javaObject('java.net.InetSocketAddress','localhost',8300)); 
+
 
 % ----------------------------------------------------------------------------
 %    FILL IN YOUR CODE BELOW HERE
@@ -54,6 +58,8 @@ drawnow;
 % change the cue's color as needed
 if ( epoch==1 ) 
   set(h,'facecolor',[1 1 1]);
+  % inject signal into the simulated data-stream for debugging
+  try; trigsocket.send(javaObject('java.net.DatagramPacket',int8([1 0]),1)); catch; end;
 else
   set(h,'facecolor',[.5 .5 .5]);
 end

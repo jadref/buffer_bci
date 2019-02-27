@@ -58,7 +58,3 @@ for i in range(len(sentence)):
 showText(goodbye_text)
 bufhelp.sendEvent('experiment','end')
 waitForKeypress()
-
-
-
-
