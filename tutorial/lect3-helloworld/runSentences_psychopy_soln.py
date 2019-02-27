@@ -67,7 +67,3 @@ bufhelp.sendEvent('stimulus.seq','end')
 showText(goodbye_text)
 bufhelp.sendEvent('experiment','end')
 waitForKeypress()
-
-
-
-
