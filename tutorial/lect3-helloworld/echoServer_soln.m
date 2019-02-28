@@ -28,9 +28,11 @@ while ( ~endExpt )
   % send an ack event with the same value, for each recieved event
   for ei=1:numel(events);
     evt=events(ei);
-    if ( ~strcmp(evt.type,'echo') ) continue; end;
-    if ( strcmp(evt.type,'exit') ) endExpt=true; end;
-    fprintf('%s\n',ev2str(evt));
-    sendEvent('ack',events(ei).value,-1);
+    if ( strcmp(evt.type,'exit') )
+        endExpt=true;
+    elseif (~strcmp(evt.type,'ack')) 
+        fprintf('%s\n',ev2str(evt));
+        sendEvent('ack',events(ei).value,-1);
+    end
   end  
 end
