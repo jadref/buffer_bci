@@ -10,8 +10,9 @@ bufhelpPath = "../../python/signalProc"
 utilitiesPath = "../../python/utilities"
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),bufhelpPath))
 import bufhelp
-#sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),utilitiesPath))
-#import readCapInf
+import preproc
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),utilitiesPath))
+import readCapInf
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),sigProcPath))
 plottingPath= '../../python/plotting'
 try:
@@ -31,11 +32,9 @@ nr_channels = 4 # in debug mode
 erp = np.zeros((nr_channels,trlen_samp,nSymbols))
 nTarget = np.zeros((nSymbols,1))
 
-#Cname,latlong,xy,xyz=readCapInf('sigproxy_with_TRG.txt')
-Cnames = ["1/f","noise1","sin10.0Hz","TRG"]
-Cpos = [[23, 90], [-46, 0], [46, 0], [23, -90]]
-ylabel="time (s)"
-yvals = np.arange(0,trlen_samp)
+Cname,latlong,xy,xyz,capfile= readCapInf.readCapInf('sigproxy_with_TRG')
+ylabel = 'time(s)'
+yvals = np.arange(0,trlen_samp);
 
 fig=plt.figure()
 
@@ -45,7 +44,7 @@ while endTest is False:
     # grab data after every t:'stimulus' event until we get a {t:'stimulus.training' v:'end'} event 
     data, events, stopevents = bufhelp.gatherdata(["stimulus","experiment"],trlen_samp,("sequence","end"), milliseconds=False)
 
-    for ei in range(len(events),0):
+    for ei in np.arange(len(events)-1,-1,-1):
         ev = events[ei]
         # check for exit event
         if (ev.type is "experiment") and (ev.value is "end"):
@@ -59,8 +58,13 @@ while endTest is False:
         else:
             classlabel  = 0
         erp[:,:,classlabel] = (erp[:,:,classlabel]*nTarget[classlabel] + np.transpose(data[ei]))/(nTarget[classlabel]+1);
-        nTarget[classlabel]= nTarget[classlabel]+1; 
-        image3d(erp,0,plotpos=Cpos,xvals=Cnames,ylabel=ylabel,yvals=yvals) # plot the ERPs
+        nTarget[classlabel]= nTarget[classlabel]+1;
+
+        # detrend erp, so we can see stuff
+        erp = preproc.detrend(erp)
+
+    image3d(erp)  # plot the ERPs
+    plt.show()
 
 
 
