@@ -58,7 +58,7 @@ public class PreprocClassifier {
         this.windowTimeIdx  = pc.windowTimeIdx;
 
 		  this.welchWindow   = pc.welchWindow;
-        this.welchAveType = pc.welchAveType;
+        this.welchAveType  = pc.welchAveType;
         this.windowFrequencyIdx = pc.windowFrequencyIdx;
         //this.outSize = pc.outSize;
 
@@ -172,7 +172,7 @@ public class PreprocClassifier {
         // Spatial filtering
         if (spatialFilter != null) {
             if ( VERB>1 ) System.out.println(TAG+  "Spatial filtering the data");
-				data.preMultiply(spatialFilter);
+				data = new Matrix(data.preMultiply(spatialFilter));
             if ( VERB>1 ) System.out.println(TAG+  "New size: " + data.shapeString());
         }
 		  if ( VERB>1 ) System.out.println(TAG+  "Final size: " + data.shapeString());

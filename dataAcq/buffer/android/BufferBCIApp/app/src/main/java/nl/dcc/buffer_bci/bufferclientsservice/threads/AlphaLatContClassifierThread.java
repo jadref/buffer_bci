@@ -25,7 +25,7 @@ public class AlphaLatContClassifierThread extends ThreadBase {
     protected int trialLength_ms  =-1;
     protected int step_ms  = 100;
     protected String clsfrFile="clsfr_nf_tpref.txt";
-    private ContinuousClassifier clsfr=null;
+    protected ContinuousClassifier clsfr=null;
 	 protected boolean compLat=true;
 	 protected boolean normLat=true;
 
@@ -53,7 +53,7 @@ public class AlphaLatContClassifierThread extends ThreadBase {
     /**
      * Initializes the attributes of this class
      */
-    private void initialize() {
+    protected void initialize() {
         this.hostname = arguments[0].getString();
         this.port = arguments[1].getInteger();
         this.timeout_ms = arguments[2].getInteger();

@@ -18,11 +18,16 @@ ERsP
 0 0 0 0 
 
 
-#spatialfilter: (4x4)
+#spatialfilter: (4x4) # [ nout x nin ]
+# TP1 - (TP1+TP2)/2
 .5 0 0 -.5
+# FP1 - (TP1+TP2)/2
 -.5 1 0 -.5
+# FP2 - (TP1+TP2)/2
 -.5 0 1 -.5
+# TP2 - (TP1+TP2)/2
 -.5 0 0 .5
+
 
 #spectralfilt: (1x0)
 []
