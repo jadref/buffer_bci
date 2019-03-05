@@ -176,6 +176,7 @@ public class PreprocClassifier {
             if ( VERB>1 ) System.out.println(TAG+  "New size: " + data.shapeString());
         }
 		  if ( VERB>1 ) System.out.println(TAG+  "Final size: " + data.shapeString());
+        if ( VERB>2 ) System.out.println(TAG+  "Final data: " + data.toString());
 		  return data;
 	 }
 
@@ -202,9 +203,9 @@ public class PreprocClassifier {
 
     public Matrix applyLinearClassifier(Matrix data, int dim) {
         double[] results = new double[clsfrW.size()];
-		  if ( VERB>2 ) System.out.print(TAG+ "Data=" + data.toString());
+		  if ( VERB>2 ) System.out.println(TAG+ "Data=" + data.toString());
         for (int i = 0; i < clsfrW.size(); i++){
-				if ( VERB>2 ) System.out.print(TAG+ "clsfr{"+i+"}"+clsfrW.get(i).toString());
+				if ( VERB>2 ) System.out.println(TAG+ "clsfr{"+i+"}"+clsfrW.get(i).toString());
             results[i] = this.clsfrW.get(i).multiplyElements(data).sum() + clsfrb[i];
             //results[i] = this.clsfrW.get(i).multiplyAccumulateElements(data) + clsfrb[i];
 		  }
@@ -401,11 +402,19 @@ public class PreprocClassifier {
 				"\nWelch ave type     \t" + welchAveType +
 				"\nFrequency idx      \t" + Arrays.toString(windowFrequencyIdx) + 
 				"\nsubProb desc       \t" + Arrays.toString((subProbDescription)) + 
-				"\nclsfr Weights      \t" + (clsfrW != null ? clsfrW.get(0).toString() : "null") + 
-				"\nclsfr bias         \t" + Arrays.toString(clsfrb) + 
+				"\nclsfr Weights      \t" ;
+        if ( clsfrW != null ) {
+            str += clsfrW.size();
+            for ( int i=0; i < clsfrW.size(); i++ ) {
+                str += "W{" + i + "}=\n" + clsfrW.get(i).toString() + "\n\n";
+            }
+        } else {
+            str += "<null>";
+        }
+        str += 				"\nclsfr bias         \t" + Arrays.toString(clsfrb) + 
 				//"\nDimension          \t" + dimension + 
 				"";
-		  
+
 		  return str;
     }
 

@@ -9,6 +9,8 @@ import nl.dcc.buffer_bci.signalprocessing.ContinuousClassifier;
 import nl.dcc.buffer_bci.matrixalgebra.linalg.WelchOutputType;
 import nl.dcc.buffer_bci.signalprocessing.PreprocClassifier;
 
+import static nl.dcc.buffer_bci.signalprocessing.ContinuousClassifier.VERB;
+
 public class ThetaContClassifierThread extends AlphaLatContClassifierThread {
 
     private static final String TAG = ThetaContClassifierThread.class.getSimpleName();
@@ -37,12 +39,14 @@ public class ThetaContClassifierThread extends AlphaLatContClassifierThread {
             return;
         }
         clsfr = new AlphaLatContClassifier(hostname,port,timeout_ms);
-        PreprocClassifier.VERB=3;
+        PreprocClassifier.VERB=1;
         clsfr.initialize(clsfrReader,trialLength_ms,step_ms);
         ((AlphaLatContClassifier)clsfr).setcomputeLateralization(compLat);
         ((AlphaLatContClassifier)clsfr).setnormalizeLateralization(normLat);
         ((AlphaLatContClassifier)clsfr).setMedianFilter(medFilt);
         //((AlphaLatContClassifier)clsfr).welchAveType = welchOutputType;
+        if( PreprocClassifier.VERB>1 )
+            System.out.println(TAG+"Loaded Classifier" + clsfr.toString());
         clsfr.setprocessName(processName);
         clsfr.mainloop();
         clsfr=null;
