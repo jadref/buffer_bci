@@ -62,7 +62,7 @@ if DEBUG:
     plt.switch_backend('agg') # N.B. command to work in non-display mode
 fig = plt.figure(facecolor=(0,0,0))
     
-fig.suptitle('RunSentences-Stimulus', fontsize=14, fontweight='bold',color=txtColor)
+fig.suptitle('IM-Stimulus', fontsize=14, fontweight='bold',color=txtColor)
 ax = fig.add_subplot(111) # default full-screen ax
 ax.set_xlim((-1.5,1.5))
 ax.set_ylim((-1.5,1.5))
@@ -99,6 +99,10 @@ drawnow()
 waitforkey(fig)
 txthdl.set(visible=False)
 
+# set stimuli to visible
+txthdl.set(visible=False)
+[_.set(facecolor=bgColor,visible=True) for _ in hdls]
+
 bufhelp.sendEvent('stimulus.training','start');
 ## STARTING stimulus loop
 for si,tgt in enumerate(tgtSeq):
@@ -106,7 +110,7 @@ for si,tgt in enumerate(tgtSeq):
     sleep(intertrialDuration)
 
     # show the baseline
-    hdls[-1].set(visible=True,facecolor=fixColor)
+    hdls[-1].set(facecolor=fixColor) # fixation cross red
     drawnow()
     bufhelp.sendEvent('stimulus.baseline','start')
     sleep(baselineDuration)
@@ -114,20 +118,20 @@ for si,tgt in enumerate(tgtSeq):
       
     #show the target
     print("%d) tgt=%d :"%(si,tgt))
-    [_.set(facecolor=bgColor,visible=True) for _ in hdls]
-    hdls[tgt].set(facecolor=tgtColor)
+    hdls[-1].set(facecolor=tgtColor) # target green
+    hdls[tgt].set(facecolor=tgtColor) # fixation cross green
     drawnow()
     bufhelp.sendEvent('stimulus.target',tgt)
     bufhelp.sendEvent('stimulus.trial','start')
     sleep(trialDuration)
       
     # reset the display
-    [ _.set(visible=False) for _ in hdls]
-    txthdl.set(visible=False)
+    [_.set(facecolor=bgColor) for _ in hdls]
     drawnow()
     bufhelp.sendEvent('stimulus.trial','end');
 
 bufhelp.sendEvent('stimulus.training','end')
-txthdl.set(text=['Thanks for taking part!' '' 'Press key to finish'],visible=True)
+[ _.set(visible=False) for _ in hdls] # hide all stimuli
+txthdl.set(text='Thanks for taking part!' '' 'Press key to finish',visible=True)
 drawnow()
 waitforkey(fig)
