@@ -51,8 +51,10 @@ while( ~endTest )
       break;
     end;
 
-    % update the ERPs info
-    class=devents(ei).value; % WARNING: here we assume event value is integer class ID
+                                % update the ERPs info
+    class=devents(ei).value; % WARNING: here we assume event value is integer class ID > 1 
+    if( ischar(class) ) class=str2num(class); end;
+    if( class < 1 ) fprintf('Warning::Mapped class <1 => 1'); class=1; end;
     erp(:,:,class) = (erp(:,:,class)*nTarget(class) + data.buf(iseeg,:))/(nTarget(class)+1);
     
     % detrend data

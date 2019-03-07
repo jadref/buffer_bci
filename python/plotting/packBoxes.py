@@ -52,7 +52,7 @@ def packBoxes(Xs,Ys):
             rX[unconsX]=0
             minX=np.min(Xs - rX)
             maxX=np.min(Xs + rX)
-            rX[unconsX]=np.min(np.concatenate(maxX - Xs[unconsX],Xs[unconsX] - minX),0)
+            rX[unconsX]=np.min(np.stack((maxX - Xs[unconsX],Xs[unconsX] - minX),1),1)
 # packBoxes.m:31
     
     if np.any(np.isinf(rY)):
@@ -63,7 +63,7 @@ def packBoxes(Xs,Ys):
             rY[unconsY]=0
             minY=np.min(Ys - rY)
             maxY=np.min(Ys + rY)
-            rY[unconsY]=np.min(np.concatenate(maxY - Ys[unconsY],Ys[unconsY] - minY),0)
+            rY[unconsY]=np.min(np.stack((maxY - Ys[unconsY],Ys[unconsY] - minY),1),1)
     
     
     return rX,rY
