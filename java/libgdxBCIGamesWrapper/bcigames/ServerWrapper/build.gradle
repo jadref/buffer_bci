@@ -1,0 +1,16 @@
+plugins {
+    id 'java'
+}
+
+sourceSets.main.java.srcDirs = [ "src/" ]
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile files('./dependencies/BufferClient.jar')
+    compile files('./dependencies/BufferServer.jar')
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}

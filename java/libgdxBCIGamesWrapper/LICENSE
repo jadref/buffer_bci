@@ -1,0 +1,42 @@
+Copyright (c) 2019 Jeremy Constantin Börker, Anna Gansen, Marit Hagens, Codruta Lugoj, Wouter Loeve, Samarpan Rai and Alex Tichter
+
+All rights reserved.
+
+We use the BSD license, this means that:
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. Neither the name of copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+In this project, we have used code from the following third-party sources:
+1. https://github.com/jadref/buffer_bci/blob/master/LICENSE
+2. https://github.com/kotcrab/vis-ui/blob/master/LICENSE
+3. https://github.com/suluke/gdx.automation/blob/master/LICENSE.txt (for bcigames/gdxInputReplacer/InputProxy.java)
+
+Our example games are from the following third-party sources:
+1. https://github.com/oddlydrawn/nahwc-g/blob/master/LICENSE
+2. https://github.com/yichen0831/Pacman_libGdx/blob/master/LICENSE
+3. https://github.com/jadref/buffer_bci/blob/master/java/spaceInvaders_gdx/LICENSE
+ 
+All third-party code has been used in accordance with their license.
+Might there be any problem regarding intellectual property, please contact us.

@@ -1,0 +1,12 @@
+/*Game related*/
+include 'desktop', 'android', 'core'
+
+/*BCI related*/
+include ':bcigames:FakeController'
+include ':bcigames:ServerWrapper'
+include ':bcigames:StandardizedInterface'
+findProject(':bcigames:StandarizedInterface')?.name = 'StandarizedInterface'
+include ':bcigames:VisualStimuliSystem'
+include 'bcigames:VisualStimuliBackend'
+
+
