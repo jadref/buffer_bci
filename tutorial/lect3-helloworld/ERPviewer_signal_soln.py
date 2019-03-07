@@ -42,7 +42,9 @@ state = []
 endTest = False
 while endTest is False:
     # grab data after every t:'stimulus' event until we get a {t:'stimulus.training' v:'end'} event 
-    data, events, stopevents = bufhelp.gatherdata(["stimulus","experiment"],trlen_samp,("sequence","end"), milliseconds=False)
+    #data, events, stopevents = bufhelp.gatherdata(["stimulus","experiment"],trlen_samp,("sequence","end"), milliseconds=False)
+    
+    data, events, stopevents, state = bufhelp.gatherdata(["stimulus","experiment"],trlen_samp,("sequence","end"), state, milliseconds=False)
 
     for ei in np.arange(len(events)-1,-1,-1):
         ev = events[ei]
@@ -60,11 +62,10 @@ while endTest is False:
         erp[:,:,classlabel] = (erp[:,:,classlabel]*nTarget[classlabel] + np.transpose(data[ei]))/(nTarget[classlabel]+1);
         nTarget[classlabel]= nTarget[classlabel]+1;
 
-        # detrend erp, so we can see stuff
-        erp = preproc.detrend(erp)
-
-    image3d(erp)  # plot the ERPs
-    plt.show()
+    # detrend erp, so we can see stuff in the viewer
+    plterp = preproc.detrend(erp)
+    image3d(plterp)  # plot the ERPs
+    plt.show()    
 
 
 
