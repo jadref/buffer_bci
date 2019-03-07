@@ -12,7 +12,7 @@ def drawnow(fig=None):
     "force a matplotlib figure to redraw itself, inside a compute loop"
     if fig is None: fig=plt.gcf()
     fig.canvas.draw()
-    #plt.pause(1e-3) # wait for draw.. 1ms
+    plt.pause(1e-3) # wait for draw.. 1ms
 
 currentKey=None
 def keypressFn(event):
