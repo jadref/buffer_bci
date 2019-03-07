@@ -32,19 +32,32 @@ nr_channels = 4 # in debug mode
 erp = np.zeros((nr_channels,trlen_samp,nSymbols))
 nTarget = np.zeros((nSymbols,1))
 
-Cname,latlong,xy,xyz,capfile= readCapInf.readCapInf('sigproxy_with_TRG')
+Cnames,latlong,xy,xyz,capfile= readCapInf.readCapInf('sigproxy_with_TRG')
+print("Cnames:");print("%s,"%Cnames)
+print("Pos(x):");print(*xy[0])
+print("Pos(y):");print(*xy[1])
 ylabel = 'time(s)'
 yvals = np.arange(0,trlen_samp);
 
+def drawnow(fig=None):
+    "force a matplotlib figure to redraw itself, inside a compute loop"
+    if fig is None: fig=plt.gcf()
+    fig.canvas.draw()
+    plt.pause(1e-3) # wait for draw.. 1ms
+plt.ion()
 fig=plt.figure()
+drawnow()
 
+
+triggerevents=["stimulus","experiment"]
+stopevent=('sequence','end')
 state = []
 endTest = False
+print("Waiting for triggers: %s and endtrigger: %s"%(triggerevents[0],stopevent[0]))
 while endTest is False:
     # grab data after every t:'stimulus' event until we get a {t:'stimulus.training' v:'end'} event 
-    #data, events, stopevents = bufhelp.gatherdata(["stimulus","experiment"],trlen_samp,("sequence","end"), milliseconds=False)
-    
-    data, events, stopevents, state = bufhelp.gatherdata(["stimulus","experiment"],trlen_samp,("sequence","end"), state, milliseconds=False)
+    #data, events, stopevents, state = bufhelp.gatherdata(triggerevents,trlen_samp,stopevent, state, milliseconds=False)
+    data, events, stopevents, state = bufhelp.gatherdata(triggerevents,trlen_samp,[], state, milliseconds=False)
 
     for ei in np.arange(len(events)-1,-1,-1):
         ev = events[ei]
@@ -64,8 +77,8 @@ while endTest is False:
 
     # detrend erp, so we can see stuff in the viewer
     plterp = preproc.detrend(erp)
-    image3d(plterp)  # plot the ERPs
-    plt.show()    
+    image3d(plterp,plotpos=xy,xvals=Cnames)  # plot the ERPs
+    drawnow()
 
 
 
