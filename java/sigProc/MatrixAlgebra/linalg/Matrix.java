@@ -899,6 +899,10 @@ public class Matrix extends Array2DRowRealMatrix {
 		  // 		//System.out.println(TAG+"width=" + width + " taper>>width= " + (taper.length>>width)); 
 		  // }
 		  // width=1<<width;
+        // Set the window width to 1) smaller than data width, 2) power-of-2 greater then the taper
+        if( sizeDim < taper.length ) {
+            System.err.println(TAG+"::welch Warning, data is smaller than the taper?");
+        }
 		  int width = 1 << (int)Math.ceil(Math.log(taper.length)/Math.log(2));
 		  if ( VERB>1 ) System.out.println(TAG+"1<<width="+width);
 		  // Compute the updated taper if needed.		  
@@ -919,16 +923,22 @@ public class Matrix extends Array2DRowRealMatrix {
 		  }
 		  if ( start.length==0 ) {
 				System.err.println(TAG+"No start points?: sz="+sizeDim+" wdth="+width+" taper.len="+taper.length);
+            start = new int[]{0};
 		  }
 
         // Create W
 		  // Compute the size of the output, i.e. X x #freqs
-        int wWidth, wHeight;
+        int winWidth, winHeight; // size of the window to slice out
+        int wWidth, wHeight;     // size of the output of the welch
         int reducedDim = (int) Math.round(((Math.ceil(((double) width - 1) / 2) + 1)));
         if (dim == 0) {
+            winWidth = this.getColumnDimension();
+            winHeight= width;
             wHeight = reducedDim;
             wWidth = this.getColumnDimension();
         } else {
+            winWidth= width;
+            winHeight= this.getRowDimension();
             wHeight = this.getRowDimension();
             wWidth = reducedDim;
         }
@@ -945,10 +955,15 @@ public class Matrix extends Array2DRowRealMatrix {
         // Sum over the windows
         for (int wi : start ) { 
             // Window the dimension
-            idx.set(dim, Matrix.range(wi, wi + width, 1));
+            idx.set(dim, Matrix.range(wi, Math.min(wi + width,sizeDim), 1));
 
             // Get submatrix
             Matrix wX = new Matrix(this.getSubMatrix(idx.get(0), idx.get(1)));
+            if( width > sizeDim ) { // zero-pad 
+                Matrix tmp = wX;
+                wX = Matrix.zeros(winHeight,winWidth);
+                wX.setSubMatrix(tmp.getData(),0,0);
+            }
 
             if (detrendP==2) // Subtract mean from window
                 wX = wX.subtract(wX.mean(dim).repeat(wX.getDimension(dim), dim));

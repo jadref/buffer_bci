@@ -23,7 +23,7 @@ initgetwTime;
 initsleepSec;
 
 % load the cap layout from file
-[ch_names latlong ch_pos ch_pos3d]=readCapInf('1010');
+[ch_names latlong ch_pos ch_pos3d]=readCapInf('sigproxy_with_TRG');
 % mark only num-channels send by amp as EEG and to-be plotted
 iseeg=false(size(ch_names));iseeg(1:numel(hdr.labels))=true; 
 
@@ -56,6 +56,10 @@ while( ~endTest )
     if( ischar(class) ) class=str2num(class); end;
     if( class < 1 ) fprintf('Warning::Mapped class <1 => 1'); class=1; end;
     erp(:,:,class) = (erp(:,:,class)*nTarget(class) + data.buf(iseeg,:))/(nTarget(class)+1);
+    
+    % detrend data
+    erp=detrend(erp,2);
+    
     nTarget(class) = nTarget(class)+1;        
     
     % update the ERP plot

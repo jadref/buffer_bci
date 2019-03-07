@@ -7,6 +7,8 @@ bufhelpPath = "../../python/signalProc"
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),bufhelpPath))
 import bufhelp
 
+plt.ion()
+
 ## HELPER FUNCTIONS
 def drawnow(fig=None):
     "force a matplotlib figure to redraw itself, inside a compute loop"
@@ -52,7 +54,7 @@ ax = fig.add_subplot(111) # default full-screen ax
 ax.set_xlim((-1,1))
 ax.set_ylim((-1,1))
 ax.set_axis_off()
-txthdl =ax.text(0, 0, 'This is some text', style='italic')
+txthdl = ax.text(0, 0, 'This is some text', style='italic')
 
 ## init connection to the buffer
 ftc,hdr=bufhelp.connect();

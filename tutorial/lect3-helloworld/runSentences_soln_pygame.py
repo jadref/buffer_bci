@@ -51,6 +51,8 @@ def updateFrame(string, big=False, center=True):
     """ Display the given string on the display """
     if type(string) is not list:
         string = [string]
+    
+    print('1')
 
     # draw the white background onto the surface
     windowSurface.fill(BLACK)
@@ -64,7 +66,8 @@ def updateFrame(string, big=False, center=True):
     rects = [x.get_rect() for x in text]
     h = sum([x.h for x in rects]) - rects[0].h
     offset = h/2
-
+    
+    print('2')
     # move the text to the center and draw onto the screen
     for t in text:
         textRect = t.get_rect()
@@ -75,15 +78,19 @@ def updateFrame(string, big=False, center=True):
 
         # draw the text onto the surface
         windowSurface.blit(t, textRect)
+        
+    print('3')
 
     # draw the window onto the screen
-    pygame.display.update()
+    pygame.display.flip()
 
 def waitForKey():
     """ Wait for the user to press a key and return the pressed key."""
     event = pygame.event.wait()
+    print('4')
     while not (event.type == KEYDOWN): 
         event = pygame.event.wait()
+        print('5')
     return event.key
 
 
@@ -130,5 +137,7 @@ for si,sentence in enumerate(sentences):
     waitForKey()
 
 sendEvent('stimulus.sentences','end')
-updateFrame(['Thanks for taking part!' '' 'Press key to finish'])
+updateFrame(['Press key to finish'])
 waitForKey()
+
+pygame.quit()

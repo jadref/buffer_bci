@@ -34,8 +34,9 @@ mywin = visual.Window(size=(screenWidth, screenHeight), fullscr=False, screen=1,
     monitor='testMonitor', units="pix",color=[1,1,1], colorSpace='rgb',blendMode='avg', useFBO=True)
 
 #define variables
-sentence = 'Hello World!'
+sentence = ['Hello World!', 'How are you today?', 'Good, thank you!']
 interCharDuration=1
+interSentenceDuration=5
 
 #create some stimuli
 welcome_text = visual.TextStim(mywin, text='Welcome! \n\nPress a key to start...',color=(-1,-1,-1),wrapWidth = 800) 
@@ -47,13 +48,21 @@ showText(welcome_text)
 bufhelp.sendEvent('experiment','start')
 waitForKeypress()
 
-for i in range(len(sentence)):
-    for c in range(i):
-        current_text.text = current_text.text + sentence[c]
-    showText(current_text)
-    bufhelp.sendEvent('stimulus',sentence[i])
-    current_text.text = '';
-    core.wait(interCharDuration) 
+bufhelp.sendEvent('stimulus.seq','start')
+for s in range(len(sentence)):
+    current_sentence = sentence[s]
+    bufhelp.sendEvent('stimulus.sentence','start')
+    for i in range(len(current_sentence)):
+        for c in range(i+1):
+            current_text.text = current_text.text + current_sentence[c]
+        showText(current_text)
+        bufhelp.sendEvent('stimulus.letter',current_sentence[i])
+        current_text.text = '';
+        core.wait(interCharDuration) 
+    bufhelp.sendEvent('stimulus.sentence','end')
+    mywin.flip()
+    core.wait(interSentenceDuration) 
+bufhelp.sendEvent('stimulus.seq','end')
 
 showText(goodbye_text)
 bufhelp.sendEvent('experiment','end')

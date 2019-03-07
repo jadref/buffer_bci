@@ -6,6 +6,7 @@ import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.ArrayFunctions;
 import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.Tuple;
 import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.Windows;
 import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.MedianFilter;
+import nl.dcc.buffer_bci.matrixalgebra.miscellaneous.MeanVarTracker;
 import nl.fcdonders.fieldtrip.bufferclient.BufferClientClock;
 import nl.fcdonders.fieldtrip.bufferclient.BufferEvent;
 import nl.fcdonders.fieldtrip.bufferclient.Header;
@@ -30,11 +31,12 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 	 private String baselineEventType = "stimulus.baseline";
     private String baselineEnd = "end";
     private String baselineStart = "start";
-    private int nBaselineStep = 5000;
+    private int nBaselineStep = 0;
 	 private boolean computeLateralization=true; // lateralization or total power
 	 private boolean normalizeLateralization=true; // normalize the lateralization score
     private boolean medianFilter=true;   // median filter the lateralization score
     private MedianFilter medFilt=null;    
+    private MeanVarTracker baselineTracker=null;
     
 	 public static void main(String[] args) throws IOException,InterruptedException {	
 		  String hostname=null;
@@ -138,6 +140,7 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 		  long t=t0;
 		  long pnext=t+printInterval_ms;
         medFilt = new MedianFilter();
+        baselineTracker = new MeanVarTracker();
         
 		  try {
 				C.putEvent(new BufferEvent("process."+processName,"start",-1));  // Log that we are starting
@@ -243,14 +246,12 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
                 // Update baseline
                 if (baselinePhase) {
                     nBaseline++;
-                    dvBaseline = new Matrix(dvBaseline.add(dv));
-                    dv2Baseline = new Matrix(dv2Baseline.add(dv.multiplyElements(dv)));
+                    baselineTracker.addPoint(dv.getColumn(0));
+                    baselineMean = new Matrix(baselineTracker.getmu());
+                    baselineVar  = new Matrix(baselineTracker.getsigma());
                     if (nBaselineStep > 0 && nBaseline > nBaselineStep) {
                         if(VERB>0) System.out.println( "Baseline timeout\n");
                         baselinePhase = false;
-                        Tuple<Matrix, Matrix> ret = baselineValues(dvBaseline, dv2Baseline, nBaseline);
-                        baselineMean = ret.x;
-                        baselineVar = ret.y;
 								if ( VERB>=0 ) logbaseline(baselineMean,baselineVar);
                     }
                 }
@@ -289,15 +290,10 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
 									 if(VERB>0)System.out.println(TAG+ "Baseline start event received");
 									 baselinePhase = true;
 									 nBaseline = 0;
-									 dvBaseline = Matrix.zeros(classifiers.get(0).getOutputSize() - 1, 1);
-									 dv2Baseline = Matrix.ones(classifiers.get(0).getOutputSize() - 1, 1);
 								} else if ( value.equals(baselineEnd)) {
 									 if(VERB>0) System.out.println(TAG+ "Baseline end event received");
 									 if ( baselinePhase ){
 										  baselinePhase = false;
-										  Tuple<Matrix, Matrix> ret=baselineValues(dvBaseline,dv2Baseline,nBaseline);
-										  baselineMean = ret.x;
-										  baselineVar = ret.y;
 										  if ( VERB>=0 ) logbaseline(baselineMean,baselineVar);
 									 }
 								}
@@ -313,22 +309,6 @@ public class AlphaLatContClassifier extends ContinuousClassifier {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    /**
-     * Computes the baseline values after the baseline has ended
-     *
-     * @param dvBaseline  the dv values of the baseline
-     * @param dv2Baseline the squared dv values of the baseline
-     * @param nBaseline   the number of samples the dv is based on
-     * @return The mean and variance of the baseline
-     */
-    public Tuple<Matrix, Matrix> baselineValues(Matrix dvBaseline, Matrix dv2Baseline, int nBaseline) {
-        double scale = 1. / nBaseline;
-        Matrix baselineMean = new Matrix(dvBaseline.scalarMultiply(scale));
-        Matrix baselineVar = new Matrix(new Matrix(dv2Baseline.subtract(dvBaseline.multiplyElements(dvBaseline)
-                .scalarMultiply(scale))).abs().scalarMultiply(scale)).sqrt();
-        return new Tuple<Matrix, Matrix>(baselineMean, baselineVar);
     }
 
 	 void logbaseline(Matrix baselineMean, Matrix baselineVar){

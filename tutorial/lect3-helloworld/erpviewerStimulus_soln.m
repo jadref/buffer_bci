@@ -64,7 +64,7 @@ for si=1:size(stimSeq,2);
     if ( epoch==1 ) 
       set(h,'facecolor',[1 1 1]);
       % inject signal into the simulated data-stream for debugging
-      try; trigsocket.send(javaObject('java.net.DatagramPacket',int8([1 0]),1)); catch; end;
+      trigsocket.send(javaObject('java.net.DatagramPacket',int8([10 0]),1));
     else
       set(h,'facecolor',[.5 .5 .5]);
     end
