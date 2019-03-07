@@ -1,0 +1,13 @@
+Exporting to executables in processing:
+
+To windows and linux executables is easy; you just click File -> Export 
+
+Select windows and/or linux and export. The executable should be in the directory where your original .pde was.
+Mac OS X is greyed out for me and I have not yet found a workaround, nor a way to make one executable jar file out of the .pde.
+
+For an android file you need a special android mode. To get that, you open processing and n the upper right corner click java and ...
+select the android one and download it. Will take some time.
+
+Then to run it, you need a connected device or an emulator. To download the emulator go to Sketch -> Run in emulator and it will prompt you to install one. Install it and then run in emulator again. 
+The emulator doesnt start for me.
+Connected to a physical device it does launch. It takes two minutes, but it works. My advice here is to develop in java mode and sometimes check if everything works in android mode as well.
