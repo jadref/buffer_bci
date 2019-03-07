@@ -47,7 +47,7 @@ while endTest is False:
     for ei in np.arange(len(events)-1,-1,-1):
         ev = events[ei]
         # check for exit event
-        if (ev.type is "experiment") and (ev.value is "end"):
+        if (ev.type == "experiment") and (ev.value == "end"):
             endTest = True
             print("end experiment")
             break

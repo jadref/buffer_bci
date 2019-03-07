@@ -52,7 +52,6 @@ showText(welcome_text)
 bufhelp.sendEvent('experiment','start')
 waitForKeypress()
 
-bufhelp.sendEvent('experiment','start')
 for s in range(nr_sequences):
     bufhelp.sendEvent('sequence','start')
     for t in range(nr_trials):
