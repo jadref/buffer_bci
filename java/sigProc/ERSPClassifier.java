@@ -52,6 +52,7 @@ public class ERSPClassifier extends PreprocClassifier {
 				data = new Matrix(data.getSubMatrix(allRows, windowFrequencyIdx));
             if ( VERB>1 ) System.out.println(TAG+  "New size: " + data.shapeString());
 		  }
+        if ( VERB>2 ) System.out.println(TAG+  "New Data: " + data.toString());
 		  return data;
 	 }
 

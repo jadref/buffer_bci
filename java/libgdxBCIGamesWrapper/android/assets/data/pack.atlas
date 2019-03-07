@@ -1,0 +1,92 @@
+
+pack.png
+size: 1024,128
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+background
+  rotate: false
+  xy: 904, 114
+  size: 4, 4
+  orig: 4, 4
+  offset: 0, 0
+  index: -1
+box
+  rotate: false
+  xy: 2, 20
+  size: 32, 32
+  split: 11, 12, 11, 11
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+boxSelected
+  rotate: false
+  xy: 870, 86
+  size: 32, 32
+  split: 11, 12, 11, 11
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+checked
+  rotate: false
+  xy: 2, 2
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: -1
+knob
+  rotate: false
+  xy: 870, 68
+  size: 8, 16
+  orig: 8, 16
+  offset: 0, 0
+  index: -1
+level1
+  rotate: false
+  xy: 260, 38
+  size: 120, 80
+  orig: 120, 80
+  offset: 0, 0
+  index: -1
+level2
+  rotate: false
+  xy: 382, 38
+  size: 120, 80
+  orig: 120, 80
+  offset: 0, 0
+  index: -1
+level3
+  rotate: false
+  xy: 504, 38
+  size: 120, 80
+  orig: 120, 80
+  offset: 0, 0
+  index: -1
+level4
+  rotate: false
+  xy: 626, 38
+  size: 120, 80
+  orig: 120, 80
+  offset: 0, 0
+  index: -1
+level5
+  rotate: false
+  xy: 748, 38
+  size: 120, 80
+  orig: 120, 80
+  offset: 0, 0
+  index: -1
+nahwc_title
+  rotate: false
+  xy: 2, 54
+  size: 256, 64
+  orig: 256, 64
+  offset: 0, 0
+  index: -1
+unchecked
+  rotate: false
+  xy: 36, 36
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: -1
