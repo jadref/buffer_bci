@@ -72,5 +72,5 @@ theta badness badChL badChR
 
 
 
-#b: (1x5)
+#b: (1x4)
 0 0 0 0

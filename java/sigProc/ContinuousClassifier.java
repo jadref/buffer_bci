@@ -254,6 +254,11 @@ public class ContinuousClassifier {
 		  if ( VERB>0 ) System.out.println(TAG+"trlen_samp="+trialLength_samp+" step_samp="+step_samp);
     }
 
+    public void setPredictionFilter(double predfilt){ this.predictionFilter=predfilt;}
+    public void setPredictionEventType(String et){ this.predictionEventType=et;}
+
+
+    
     public void mainloop() {
         // Get information of the buffer
         int nEvents = header.nEvents;
@@ -343,10 +348,10 @@ public class ContinuousClassifier {
                 }
 
                 // Smooth the classifiers
-                if (dv == null ) {
+                if (dv == null || predictionFilter<=0.0 || predictionFilter>=1.0 ) {
 						  dv = f;
                 } else {
-                    if (predictionFilter >= 0.) { // exponiential smoothing of predictions
+                    if (predictionFilter > 0.) { // exponiential smoothing of predictions
 								// dv = (1-alpha)*dv + alpha*f
                         dv = new Matrix(dv.scalarMultiply(1. - predictionFilter)
 													 .add(f.scalarMultiply(predictionFilter)));
