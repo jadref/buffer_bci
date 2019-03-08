@@ -45,7 +45,7 @@ public class ThetaContClassifierThread extends AlphaLatContClassifierThread {
         ((AlphaLatContClassifier)clsfr).setcomputeLateralization(compLat);
         ((AlphaLatContClassifier)clsfr).setnormalizeLateralization(normLat);
         ((AlphaLatContClassifier)clsfr).setMedianFilter(medFilt);
-        ((AlphaLatContClassifier)clsfr).setBaselineEventType(baselineEvenType);
+        ((AlphaLatContClassifier)clsfr).setBaselineEventType(baselineEventType);
         ((AlphaLatContClassifier)clsfr).setnBaselineStep(nBaselineStep);
         ((AlphaLatContClassifier)clsfr).setPredictionEventType(predictionEventType);
         //((AlphaLatContClassifier)clsfr).welchAveType = welchOutputType;

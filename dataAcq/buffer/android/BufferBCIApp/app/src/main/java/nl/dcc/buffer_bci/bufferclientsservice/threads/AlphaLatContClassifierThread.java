@@ -30,7 +30,7 @@ public class AlphaLatContClassifierThread extends ThreadBase {
 	 protected boolean normLat=true;
     protected boolean medFilt=false;
     protected String baselineEventType="stimulus.startbaseline";
-    protected String predictionEventTuype="classifier.prediction";
+    protected String predictionEventType="classifier.prediction";
     
     /**
      * length of the z-score baseliner.
@@ -96,7 +96,7 @@ public class AlphaLatContClassifierThread extends ThreadBase {
         ((AlphaLatContClassifier)clsfr).setnormalizeLateralization(normLat);
         ((AlphaLatContClassifier)clsfr).setMedianFilter(medFilt);
         ((AlphaLatContClassifier)clsfr).setnBaselineStep(nBaselineStep);
-        ((AlphaLatContClassifier)clsfr).predictionEventType(predictionEventType);
+        ((AlphaLatContClassifier)clsfr).setPredictionEventType(predictionEventType);
         ((AlphaLatContClassifier)clsfr).setBaselineEventType(baselineEventType);
         clsfr.setprocessName(processName);
         clsfr.mainloop();
