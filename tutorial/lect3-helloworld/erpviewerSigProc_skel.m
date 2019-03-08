@@ -23,7 +23,7 @@ initgetwTime;
 initsleepSec;
 
 % load the cap layout from file
-[ch_names latlong ch_pos ch_pos3d]=readCapInf('1010');
+[ch_names latlong ch_pos ch_pos3d]=readCapInf('sigproxy_with_TRG');
 
 trlen_samp = 50; % #samples per epoch
 nSymbols = 2;

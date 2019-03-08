@@ -93,9 +93,9 @@ for si=1:nSeq;
   sendEvent('stimulus.sequence','end');
   fprintf('\n');
 end % sequences
-% end training marker
-sendEvent('stimulus.training','end');
 
 set(instructh,'string',{'That ends the training phase.','Do a final check on your brain-signals','Press a key to finish'},'visible','on');drawnow;
 waitforbuttonpress;
 set(instructh,'visible','off');drawnow;
+% end training marker
+sendEvent('stimulus.training','end');

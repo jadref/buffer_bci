@@ -2,6 +2,9 @@
 
 %% SETTINGS %%
 
+% Psychtoolbox 
+% addpath(genpath('../../../Psychtoolbox'));
+
 % Clear the workspace and the screen
 sca;
 close all;
@@ -27,7 +30,7 @@ end;
 
 % User settings
 picture_version = true; % true = run picture version, false = run non-picture version
-n_trials = 3 0; % indicate number of trials
+n_trials = 100; % indicate number of trials
 stimulus_duration = 0.07; % secs
 %handle = PsychRTBox('Open', [], [0]); % uncomment to send markers (then
 %also uncomment buttonbox(marker)

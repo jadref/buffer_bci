@@ -12,7 +12,7 @@ def drawnow(fig=None):
     "force a matplotlib figure to redraw itself, inside a compute loop"
     if fig is None: fig=plt.gcf()
     fig.canvas.draw()
-    #plt.pause(1e-3) # wait for draw.. 1ms
+    plt.pause(1e-3) # wait for draw.. 1ms
 
 currentKey=None
 def keypressFn(event):
@@ -28,6 +28,15 @@ def waitforkey(fig=None,reset=True):
     while currentKey is None:
         plt.pause(1e-3) # allow gui event processing
 
+def injectERP(amp=1,host="localhost",port=8300):
+    """Inject an erp into a simulated data-stream, sliently ignore if failed, e.g. because not simulated"""
+    import socket
+    try:
+        socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0).sendto(bytes(amp),(host,port))
+    except: # sliently igore any errors
+        pass
+    
+    
 ## CONFIGURABLE VARIABLES
 # make the target sequence
 sentences=['hello world','this is new!','BCI is fun!'];
@@ -54,6 +63,9 @@ bufhelp.sendEvent('stimulus.sentences','start');
 ## STARTING PROGRAM LOOP
 h.set_text('some_text')
 drawnow() # update the display
+
+# inject a signal into the simulated data-stream for debugging your signal-processing scripts
+injectERP(1)
 
 sleep(interCharDuration)
     

@@ -186,6 +186,7 @@ public class SignalProxy implements Runnable {
                     }
                     // get the sample position to insert this trigger at
                     int sampIdx = (int)((t-pktStartTime)/sampDuration);
+                    if( sampIdx>data.length-1 ) sampIdx=data.length-1; // ensure fits..
                     data[sampIdx][nCh-1]=trig;
                     System.out.println((t/1000f) + ") " + "samp=" + sampIdx + " Got trigger " + sendAdd.toString() + " = " +  trig);
                 }

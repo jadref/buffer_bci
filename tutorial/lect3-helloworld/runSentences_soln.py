@@ -7,6 +7,8 @@ bufhelpPath = "../../python/signalProc"
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),bufhelpPath))
 import bufhelp
 
+plt.ion()
+
 ## HELPER FUNCTIONS
 def drawnow(fig=None):
     "force a matplotlib figure to redraw itself, inside a compute loop"
@@ -28,6 +30,15 @@ def waitforkey(fig=None,reset=True):
     while currentKey is None:
         plt.pause(1e-2) # allow gui event processing
 
+def injectERP(amp=1,host="localhost",port=8300):
+    """Inject an erp into a simulated data-stream, sliently ignore if failed, e.g. because not simulated"""
+    import socket
+    try:
+        socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0).sendto(bytes(amp),(host,port))
+    except: # sliently igore any errors
+        pass
+
+        
 ## CONFIGURABLE VARIABLES
 
 # make the target sequence
@@ -43,7 +54,7 @@ ax = fig.add_subplot(111) # default full-screen ax
 ax.set_xlim((-1,1))
 ax.set_ylim((-1,1))
 ax.set_axis_off()
-txthdl =ax.text(0, 0, 'This is some text', style='italic')
+txthdl = ax.text(0, 0, 'This is some text', style='italic')
 
 ## init connection to the buffer
 ftc,hdr=bufhelp.connect();
@@ -63,6 +74,7 @@ for si,sentence in enumerate(sentences):
         txthdl.set(text=sentence[0:ci+1])
         drawnow()
         bufhelp.sendEvent('stimulus.character',char)
+        injectERP(1)  # inject erp into data = should see in sig-viewer / event-locked average
         sleep(interCharDuration)
     
     drawnow()

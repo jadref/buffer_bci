@@ -24,7 +24,7 @@ public class BufferServer implements Runnable {
 
 	 static final int serverPort  =1972;    // default server port
 	 static final int dataBufSize =1024*60; // default save samples = 60s @ 1024Hz
-	 static final int eventBufSize=10*60;   // default save events  = 60s @ 10Hz
+	 static final int eventBufSize=60*60;   // default save events  = 60s @ 60Hz
     boolean run=false;
 
 	/**
@@ -267,7 +267,9 @@ public class BufferServer implements Runnable {
 		 // Add shutdown hook to force close and flush to disk of open files if interrupted/aborted
 		 Runtime.getRuntime().addShutdownHook(new Thread() { public void run() { cleanup(); } });		
 		 try {
-			serverSocket = new ServerSocket(portNumber);
+			serverSocket = new ServerSocket();
+         // N.B. use the 0.0.0.0 address to allow connection for any IP on this machine
+         serverSocket.bind(new java.net.InetSocketAddress("0.0.0.0",portNumber));
 		} catch (final IOException e) {
 			 System.err.println("Could not listen on port " + portNumber);
 			 System.err.println(e);

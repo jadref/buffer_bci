@@ -1,0 +1,47 @@
+PROCESSING:
+Installing is very easy, just unzipping a zip file and running from there.
+
+Then you can start by writing for example:
+
+rect(30, 20, 55, 55, 7); //for a button shape. xPos, yPos, xSize, ySize, roundness
+
+but if you want to change the canvas size for example, first write:
+void setup(){
+	size(640, 360);
+}
+
+void draw(){
+	rect(30, 20, 55, 55, 7); //xPos, yPos, xSize, ySize, roundness
+}
+
+//
+
+https://processing.org/examples/button.html
+
+AN EXAMPLE:
+void setup() {
+  size(640, 360);
+}
+int xPos = 30;
+int yPos = 50;
+int margin = 20;
+
+void draw() {
+  rect(xPos, yPos, 100, 50, 7);
+  //smooth();//????
+  fill(#FFFFFF); // if you dont fill the rectangle here, it is filled by whatever next fill, which is the text so then you cant read anything...
+
+  textSize(10);
+  text("Hello World!", xPos + margin, yPos + margin+10);
+  fill(#000000);
+  
+}
+One of the BEST things I found is if you press ctrl+shift+t (or Sketch -> Tweak), you can drag the numbers/colors and see your sketch change.
+
+
+You can use mouseClicked and mousePressed amongst others for mouseclicks. I don't see any way to add a position to that though so we need a workaround for that.
+
+CLASSES
+Making classes happens in the same file with:
+class <ClassName> {
+}

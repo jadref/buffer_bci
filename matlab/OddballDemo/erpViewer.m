@@ -6,8 +6,8 @@ trlen_ms = 0;
 linewidth = 1.5;
 plot_min = -0.1;
 plot_max = 0.9;
-offset_ms = [-5000 2000];
-freqbands = [0.1 0.2 30 40];
+offset_ms = [-3000 2000];
+freqbands = [0.1 30];
 cuePrefix = 'stimulus';
 endType = 'experiment.end';
 redraw_ms = 250;
@@ -15,7 +15,9 @@ verb = 1;
 maxEvents = 150; % remember up to 150 trials
 timeout_ms = 250;   
 linecols='brkgcmyk';
-erp_chan = {'Cz','Pz','Oz'}; 
+erp_chan = {'Cz','Pz','POz'}; 
+ref_chan1 = 'TP9';
+ref_chan2 = 'TP10';
 downsampleFr = []; % downsample
 
 % define the buffer
@@ -51,11 +53,11 @@ end;
 ch_names = hdr.channel_names; 
 iseeg = true(numel(ch_names),1);
 % get capFile info for positions
-capFile= 'cap_tmsi_mobita_16ch.txt';  % get our capfile
+capFile= '../../../resources/cap_porti_16ch_oddball.txt';  % get our capfile
     
 if (~isempty(capFile)) 
   overridechnms = 1; %default -- assume cap-file is mapping from wires->name+pos
-  if (~isempty(strfind(capFile,'cap_tmsi_mobita_16ch.txt')) || ~isempty(strfind(capFile,'subset'))) 
+  if (~isempty(strfind(capFile,'../../../resources/cap_porti_16ch_oddball.txt')) || ~isempty(strfind(capFile,'subset'))) 
      overridechnms = 0; % capFile is just position-info / channel-subset selection
   end 
   di = addPosInfo(ch_names,capFile,overridechnms,0,1); % get 3d-coords
@@ -199,19 +201,25 @@ while (~endTraining)
     end
     
     if ~isempty(deventsi) % only bother if something has changed and concerns move data
-        % CAR on all data
-        carmean = mean(rawEpochs(:,:,:),1);
-        
         ppdat = rawEpochs(:,:,:); % only EEG
-
-        % common pre-processing ERP & ERD
-        ppdat = repop(ppdat,'-',carmean);
+        
+        % (1) CAR on all data
+%         carmean = mean(rawEpochs(:,:,:),1);
+%         ppdat = repop(ppdat,'-',carmean);
+        
+        % OR
+        
+        % (1) mastoid reference
+        masIdx(1)= find(strcmp(ch_names,ref_chan1));
+        masIdx(2)= find(strcmp(ch_names,ref_chan2));
+        ppdat(:,:,:) = repop(ppdat,'-',mean(ppdat(masIdx,:,:),1));
 
         % (2) center the data (demean)
         ppdat = repop(ppdat,'-',mean(ppdat,2)); 
 
        % (6) filter
-       ppdat_ERP = fftfilter(ppdat,filt,outsz,2,0);
+       ppdat_ERP = fftfilter(ppdat,filt,[],2); 
+       %ppdat_ERP = fftfilter(ppdat,filt,outsz,2,0);
       
        % (7) baseline
        ppdat_ERP = repop(ppdat_ERP,'-',mean(ppdat_ERP(:,base_period,:),2));

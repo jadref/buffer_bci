@@ -1,0 +1,34 @@
+plugins {
+    id 'java'
+}
+
+
+sourceSets.main.java.srcDirs = [ "src/" ]
+sourceSets.test.java.srcDirs = [ "test/" ]
+sourceCompatibility = 1.8
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    compile project(":bcigames:ServerWrapper")
+    compile project(":bcigames:VisualStimuliBackend")
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testCompile("org.junit.jupiter:junit-jupiter-api:5.3.2")
+    testRuntime("org.junit.jupiter:junit-jupiter-engine:5.3.2")
+
+    // These are the dependencies for the settingsScreen
+    implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
+    compile "com.kotcrab.vis:vis-ui:$visuiVersion"
+    //implementation "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
+    //implementation "com.badlogicgames.gdx:gdx-ai:$aiVersion"
+    //implementation "com.badlogicgames.ashley:ashley:$ashleyVersion"
+    //implementation "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+
+}
+
+test {
+    useJUnitPlatform()
+}
