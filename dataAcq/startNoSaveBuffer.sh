@@ -1,5 +1,5 @@
 #!/bin/bash
-buffdir=`dirname $0`
+buffdir=`dirname "$0"`
 # Identify the OS and search for the appropriate executable
 if [ `uname -s` == 'Linux' ]; then
 	 if  [ "`uname -a`" == 'armv6l' ]; then

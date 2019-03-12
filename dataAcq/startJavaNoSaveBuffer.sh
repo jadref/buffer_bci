@@ -1,5 +1,5 @@
 #!/bin/bash
-buffdir=`dirname $0`
+buffdir=`dirname "$0"`
 
 if [ $# -lt 1 ]; then 
   port=1972;

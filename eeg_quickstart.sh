@@ -1,6 +1,5 @@
 #!/bin/bash
-cd `dirname ${BASH_SOURCE[0]}`
-buffdir=`dirname $0`
+cd `dirname "${BASH_SOURCE[0]}"`
 
 dataacq='mobita';
 if [ $# -gt 0 ]; then dataacq=$1; fi

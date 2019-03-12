@@ -1,4 +1,3 @@
 #!/bin/bash
-cd `dirname ${BASH_SOURCE[0]}`
-buffdir=`dirname $0`
-java -cp ${buffdir}/buffer/java/Mobita2ft.jar:${buffdir}/buffer/java/BufferClient.jar Mobita2ft.Mobita2ft $@
+cd `dirname "${BASH_SOURCE[0]}"`
+java -cp buffer/java/Mobita2ft.jar:buffer/java/BufferClient.jar Mobita2ft.Mobita2ft $@

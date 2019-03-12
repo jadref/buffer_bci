@@ -1,5 +1,5 @@
 #!/bin/bash
-cd `dirname $0`
+cd `dirname "$0"`
 
 # force to use older java compilier
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-arm64

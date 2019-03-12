@@ -1,6 +1,5 @@
 #! /usr/bin/env bash
-cd `dirname ${BASH_SOURCE[0]}`
-buffdir=`dirname $0`
+cd `dirname "${BASH_SOURCE[0]}"`
 execname='muse-io'
 if [ `uname -s` == 'Linux' ]; then
 	 if  [ "`uname -a`" == 'armv6l' ]; then
@@ -11,7 +10,7 @@ if [ `uname -s` == 'Linux' ]; then
 else # Mac
 	 arch='maci'
 fi
-buffexe="$buffdir/buffer/bin/${execname}";
+buffexe="buffer/bin/${execname}";
 if [ -r "$buffdir/${execname}" ]; then
     buffexe="$buffdir/${execname}";
 fi
