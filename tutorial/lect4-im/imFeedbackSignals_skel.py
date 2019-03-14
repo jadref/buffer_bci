@@ -30,24 +30,11 @@ while True:
     # wait for data after a trigger event
     data, events, stopevents, state = bufhelp.gatherdata(["stimulus.target"],trlen_ms,[("stimulus.feedback","end")], milliseconds=True)
 
-    # stop processing if needed
-    if isinstance(stopevents, list) and any(["stimulus.feedback" in x.type for x in stopevents]):
-        break
-    elif "stimulus.feedback" in stopevents.type:
-        break
-
-    # 1: detrend
-    data = preproc.detrend(data)
-    # 2: bad-channel removal
-    data, badch = preproc.badchannelremoval(data)
-    # 3: apply spatial filter
-    data = preproc.spatialfilter(data)
-    # 4 & 5: map to frequencies and select frequencies of inter
-    data = preproc.spectralfilter(data, (8,10,28,30), hdr.fSample)
-    # 6 : bad-trial removal
-    data2, events, badtrials = preproc.badtrailremoval(data, events)
-    # 7: train classifier, default is a linear-least-squares-classifier        
+    # YOUR CODE HERE #
+    
+    # apply classifier, default is a linear-least-squares-classifier        
     predictions = linear.predict(data)
+    
     # send the prediction events
     for pred in predictions:
         bufhelp.sendEvent("classifier.prediction",pred)
