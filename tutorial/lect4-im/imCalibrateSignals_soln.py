@@ -19,7 +19,7 @@ cname  ='clsfr';
 
 print("Calibration phase")
 # grab data after every t:'stimulus.target' event until we get a {t:'stimulus.training' v:'end'} event 
-data, events, stopevents = bufhelp.gatherdata("stimulus.target",trlen_ms,("stimulus.training","end"), milliseconds=True)
+data, events, stopevents, pending = bufhelp.gatherdata("stimulus.target",trlen_ms,("stimulus.training","end"), milliseconds=True)
 # save the calibration data
 pickle.dump({"events":events,"data":data,'hdr':hdr}, open(dname+'.pk','wb'))#N.B. to pickle open in binary mode
 # # also as a hdf5 / .mat v7.3 fi
