@@ -4,7 +4,7 @@ import sys, os
 import numpy as np
 # Get the helper functions for connecting to the buffer
 try:     pydir=os.path.dirname(__file__)
-except:  pydir=os.getcwd()    
+except:  pydir=os.getcwd()
 sigProcPath = os.path.join(os.path.abspath(pydir),'../../python/signalProc')
 sys.path.append(sigProcPath)
 import bufhelp
@@ -41,17 +41,24 @@ if not 'data' in dir() and os.path.exists(dname+'.mat'):
 # 1: detrend
 data        = preproc.detrend(data)
 # 2: bad-channel removal
-data, badch = preproc.badchannelremoval(data)
+data = np.array(data)
+goodch, badch = preproc.outlierdetection(data)
+data = data[goodch,:,:]
 # 3: apply spatial filter
 data        = preproc.spatialfilter(data,type='car')
 # 4 & 5: map to frequencies and select frequencies of interest
-data        = preproc.spectralfilter(data, (8,10,28,30), hdr.fSample)
+data = preproc.fftfilter(data, 1, [8,10,28,30], hdr.fSample)
 # 6 : bad-trial removal
-data, events, badtrials = preproc.badtrailremoval(data, events)
+data, badtrials = preproc.badtrialremoval(data, events)
 # 7: train classifier, default is a linear-least-squares-classifier
 import linear
-#mapping = {('stimulus.target', 0): 0, ('stimulus.target', 1): 1}
-classifier = linear.fit(data,events)#,mapping)
+
+# Map events to numbers before training
+y = [e.value[0] for e in events]
+# Squash data into 2 dimensions
+data = np.reshape(data, (data.shape[0],data.shape[1]*data.shape[2]))
+# Fit classifier
+classifier = linear.fit(data,y)
 
 # save the trained classifer
 print('Saving clsfr to : %s'%(cname+'.pk'))
