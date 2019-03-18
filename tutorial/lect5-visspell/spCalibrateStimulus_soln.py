@@ -39,6 +39,15 @@ def waitforkey(fig=None,reset=True,debug=DEBUG):
     while currentKey is None:
         plt.pause(1e-2) # allow gui event processing
 
+
+def injectERP(amp=1,host="localhost",port=8300):
+    """Inject an erp into a simulated data-stream, sliently ignore if failed, e.g. because not simulated"""
+    import socket
+    try:
+        socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0).sendto(bytes(amp),(host,port))
+    except: # sliently igore any errors
+        pass
+        
 ## CONFIGURABLE VARIABLES
 verb=0
 symbols=['a', 'b', 'c', 'd']
@@ -117,7 +126,7 @@ plt.ion()
 
 bufhelp.sendEvent('stimulus.training','start');
 ## STARTING stimulus loop
-for si,tgt in enumerate(tgtSeq):
+for ti,tgt in enumerate(tgtSeq):
     
     sleep(interSeqDuration)
       
@@ -141,7 +150,8 @@ for si,tgt in enumerate(tgtSeq):
             # flash
             hdls[si].set(color=flashColor)
             bufhelp.sendEvent('stimulus.flash',si)
-            bufhelp.sendEvent('stimulus.tgtFlash',si==tgt)
+            bufhelp.sendEvent('stimulus.tgtFlash',si==tgt)            
+            injectERP(amp=int(si==tgt)) # injectERP for debug testing
             drawnow()
             sleep(epochDuration)                
             # reset

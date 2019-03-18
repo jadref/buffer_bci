@@ -38,6 +38,13 @@ def waitforkey(fig=None,reset=True,debug=DEBUG):
     while currentKey is None:
         plt.pause(1e-2) # allow gui event processing
 
+def injectERP(amp=1,host="localhost",port=8300):
+    """Inject an erp into a simulated data-stream, sliently ignore if failed, e.g. because not simulated"""
+    import socket
+    try:
+        socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0).sendto(bytes(amp),(host,port))
+    except: # sliently igore any errors
+        pass
 
 
 def initGrid(symbols,ax=None,txtColor=txtColor):
@@ -80,7 +87,6 @@ txtColor=(1,1,1)
 
 # make the target sequence
 tgtSeq=list(range(nSymbs)*int(nSeq/nSymbs +1) # sequence in sequential order
-shuffle(tgtSeq) # N.B. shuffle works in-place!
 tgtSeq=tgtSeq[1:nSeq]
             
 ##--------------------- Start of the actual experiment loop ----------------------------------
@@ -112,7 +118,7 @@ txthdl.set(visible=False)
 
 bufhelp.sendEvent('stimulus.feedback','start');
 ## STARTING stimulus loop
-for si,tgt in enumerate(tgtSeq):
+for ti,tgt in enumerate(tgtSeq):
     
     sleep(interSeqDuration)
       
@@ -124,6 +130,7 @@ for si,tgt in enumerate(tgtSeq):
             hdls[si].set(color=flashColor)
             drawnow()
             bufhelp.sendEvent('stimulus.flash',si)
+            injectERP(amp=int(si==1)) # TGT=1 debugging ERP
             # record this flash info in the total sequence
             # convert to binary encoding to make decoding easier later
             stimSeq.add([ i==si for i in range(nSymbs) ]) 
@@ -141,11 +148,14 @@ for si,tgt in enumerate(tgtSeq):
     if events is None:
         print("Error! no predictions, continuing")
     else:
+        # get all true stimulus into 1 numpy array
+        stimSeq = np.array(stimSeq) # [ nEpochs x nSymbs ]
         # get all predictions into 1 numpy array
         pred = np.array([e.value for e in events]) # [ nEpochs ]
-        nPred= len(pred)
-        ss   = np.array(stimSeq[:,:nFlash]) # [ nSymbs x nEpochs ]
-        sim  = np.dot(ss,pred)        
+        ss   = stimSeq[:len(pred),:] # [ nSymbs x nEpochs ]
+        # similarity to prediction for each output [ nSymbs ]        
+        sim  = np.dot(pred,ss.T)
+        # max similarity is the predicted class
         predIdx= np.argmax(sim,0) # predicted class
             
     #show the feedback
