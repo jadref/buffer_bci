@@ -28,10 +28,12 @@ nSeq=6;
 nRepetitions=5;  % the number of complete row/col stimulus before sequence is finished
 cueDuration=2;
 stimDuration=.2; % the length a row/col is highlighted
+feedbackDuration = 1;
 interSeqDuration=2;
 bgColor=[.5 .5 .5]; % background color (grey)
 flashColor=[1 1 1]; % the 'flash' color (white)
 tgtColor=[0 1 0]; % the target indication color (green)
+fbColor = [0 0 1];
 
 % the set of options the user will pick from
 symbols={'A' 'B' 'C' 'D'};
@@ -41,9 +43,7 @@ clf;
 [h]=initGrid(symbols);
 
 tgtSeq = repmat([1:numel(symbols)]',ceil(nSeq/numel(symbols)));
-tgtSeq = randperm(tgtSeq(1:nSeq));
-
-
+tgtSeq = tgtSeq(randperm(nSeq));
 
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
@@ -58,9 +58,9 @@ for si=1:nSeq;
   % initialize the buffer_newevents state so that will catch all predictions after this time
   [ans,state]=buffer_newevents(buffhost,buffport,[],[],[],0);
 
-  stimSeq=zeros(numel(symbols),nRep*numel(symbols)); % [nSyb x nFlash] used record what flashed when
+  stimSeq=zeros(numel(symbols),nRepetitions*numel(symbols)); % [nSyb x nFlash] used record what flashed when
   nFlash=0;
-  for ri=1:nRep; % reps
+  for ri=1:nRepetitions; % reps
     for ei=1:numel(symbols); % symbs
       nFlash=nFlash+1;
       flashIdx=ei;
@@ -92,7 +92,7 @@ for si=1:nSeq;
     [ans,predTgt] = max(corr); % predicted target is highest correlation
   
     % show the classifier prediction
-    set(h(predTgt),'color',tgtColor);
+    set(h(predTgt),'color',fbColor);
     drawnow;
     sendEvent('stimulus.prediction',symbols{predTgt});
   end
