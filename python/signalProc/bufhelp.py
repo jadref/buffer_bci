@@ -269,7 +269,7 @@ def createeventfilter(trigger):
         
     return func
     
-def gatherdata(trigger, time, stoptrigger, gather=[], milliseconds=False, verbose = True):
+def gatherdata(trigger, time, stoptrigger=[], pending=[], stopondata=False, milliseconds=False, verbose = True):
     """Gathers data and returns a list of data and triggering events. The
     arguments trigger and stroptrigger are used to create event filters (using
     the function createeventfilter). 
@@ -296,9 +296,10 @@ def gatherdata(trigger, time, stoptrigger, gather=[], milliseconds=False, verbos
      trigger    - [] set of triggers to start recording data
      time       - [] length of data to record, in samples if Milliseconds=False, in milliseconds if Milliseconds=true
      stoptrigger- [] set of triggers to stop gathering data.  
-                     **return immeadiately if stoptrigger is *not* set**
+                     **return immeadiately data is available if stoptrigger is *not* set**
      pending    - [] set of previously identified events to get data from who do not have all the data yet
      
+     stopondata - [boolean] if set then stop gathering as soon as we have some data to return, i.e. trigger-event happened and sufficient samples available.
     Outputs:
      data       - [[nSamp x nCh] x nEvent] list of lists of numpy-arrays of [nSamp x nCh] for each trigger
      events     - [event] list of trigger events
@@ -312,7 +313,13 @@ def gatherdata(trigger, time, stoptrigger, gather=[], milliseconds=False, verbos
       # wait for trigger event and return data as soon as it's ready 
       pending=[]
       while true:
-         data,devents,stopevents,pending=bufhelp.gatherdata('stimulus.epoch',100,[],pending)
+         data,devents,stopevents,pending=bufhelp.gatherdata('stimulus.epoch',100,[],pending,stopondata=true)
+         print('Got %d new events'%(len(data),len(devents)))
+
+      # wait for trigger event and return data OR when "stimulus.end"
+      pending=[]
+      while true:
+         data,devents,stopevents,pending=bufhelp.gatherdata('stimulus.epoch',100,'stimulus.end',pending,stopondata=true)
          print('Got %d new events'%(len(data),len(devents)))
 """
 
@@ -331,9 +338,11 @@ def gatherdata(trigger, time, stoptrigger, gather=[], milliseconds=False, verbos
             time = int(ceil(time))    
     
     gatherFilter = createeventfilter(trigger)
-    if stoptrigger : 
+    if stoptrigger :        
         stopFilter = createeventfilter(stoptrigger)
-    
+    else:
+        stopondata=true
+        
     global ftc
     nSamples, nEvents = ftc.poll()
     
@@ -366,20 +375,20 @@ def gatherdata(trigger, time, stoptrigger, gather=[], milliseconds=False, verbos
                 else:
                     endSample = event.sample + time[event.type]
                 
-                gather.append((event, endSample))
+                pending.append((event, endSample))
                 
-        for point in gather:
+        for point in pending:
             event,endSample = point
             if nSamples > endSample:
-                if not stoptrigger : # stop gathering if should return first time data is available
-                    stillgathering = False
                 events.append(event)
                 data.append(ftc.getData((event.sample, endSample -1))) # [ nSamples x nChannels ]
-                gather.remove(point)            
+                pending.remove(point)            
+                if stopondata : # stop gathering if should return first time data is available
+                    stillgathering = False
                 if verbose:
                     print(("Saving event :" + str(event) + " data from " + str(event.sample) + " to " +str(endSample)))
                 
-        if not stillgathering and not gather:
+        if not stillgathering and not pending:
             break
             
-    return (data, events, stopevents, gather)
+    return (data, events, stopevents, pending)

@@ -136,8 +136,8 @@ for si,tgt in enumerate(tgtSeq):
     sleep(postCueDuration)
 
     # start the scanning loop
-    for rep in range(nRep):
-        for si in range(nSymbs):
+    for rep in range(nRep): # repeat enough times
+        for si in range(nSymbs): # linear scan over outputs
             # flash
             hdls[si].set(color=flashColor)
             bufhelp.sendEvent('stimulus.flash',si)

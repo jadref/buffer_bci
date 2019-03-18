@@ -15,13 +15,13 @@ import pickle
 dname  ='training_data'
 cname  ='clsfr'
 
-trlen_ms = 3000
+trlen_ms = 600
 
 #load the trained classifier
 if os.path.exists(cname+'.pk'):
     f     =pickle.load(open(cname+'.pk','rb'))
     goodch     = f['goodch']
-    freqIdx    = f['freqIdx']
+    freqbands  = f['freqbands']
     valuedict  = f['valuedict']
     classifier = f['classifier']
 
@@ -30,12 +30,13 @@ ivaluedict = { k:v for k,v in valuedict.items() }
     
 # connect to the buffer, if no-header wait until valid connection
 ftc,hdr=bufhelp.connect()
+fs = hdr.fSample
 
 while True:
     # wait for data after a trigger event
     #  exitevent=None means return as soon as data is ready
     #  N.B. be sure to propogate state between calls
-    data, events, stopevents, pending = bufhelp.gatherdata(["stimulus.target"], trlen_ms, None, pending, milliseconds=True)
+    data, events, stopevents, pending = bufhelp.gatherdata(["stimulus.flash"], trlen_ms, ("stimulus.feedback","end"), pending, stopondata=True, milliseconds=True)
 
     # stop processing if needed
     if isinstance(stopevents, list) and any(["stimulus.feedback" in x.type for x in stopevents]):
@@ -49,14 +50,12 @@ while True:
     data = data[goodch,:,:]
     # 3: apply spatial filter (as in classifier training)
     data = preproc.spatialfilter(data,type=spatialfilter)
-    # 4: map to frequencies (TODO: check fs matches!!)
-    data,freqs = preproc.powerspectrum(data,dim=1,fSample=fs)
-    # 5: select frequency bins we want
-    data,freqIdx=preproc.selectbands(data,dim=1,band=freqbands,bins=freqs)
+    # 4 & 5: spectral filter (TODO: check fs matches!!)
+    data         = preproc.fftfilter(data, 1, freqbands, fs)
     # 6 : bad-trial removal
     # 7: apply the classifier, get raw predictions
     fraw = classifier.predict(data)
-    # 8: map from fraw to event values
+    # 8: map from fraw to event values (note probably not necessary here!)
     predictions = [ ivaluedict[round(i)] for i in fraw ]
     # send the prediction events
     for pred in predictions:

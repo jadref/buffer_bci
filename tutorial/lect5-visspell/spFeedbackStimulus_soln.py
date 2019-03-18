@@ -110,20 +110,23 @@ drawnow()
 waitforkey(fig)
 txthdl.set(visible=False)
 
-bufhelp.sendEvent('stimulus.training','start');
+bufhelp.sendEvent('stimulus.feedback','start');
 ## STARTING stimulus loop
 for si,tgt in enumerate(tgtSeq):
     
     sleep(interSeqDuration)
       
     # start the scanning loop
+    stimSeq=[] # [ nSymbs x nEpochs ] info on flash/non-flash state of each output
     for rep in range(nRep): 
         for si in range(nSymbs):
             # flash
             hdls[si].set(color=flashColor)
             drawnow()
-            bufhelp.sendEvent('stimulus.cue',si)
-            bufhelp.sendEvent('stimulus.tgtFlash',si==tgt)
+            bufhelp.sendEvent('stimulus.flash',si)
+            # record this flash info in the total sequence
+            # convert to binary encoding to make decoding easier later
+            stimSeq.add([ i==si for i in range(nSymbs) ]) 
             sleep(stimDuration)                
             # reset
             hdls[si].set(color=bgColor)
@@ -139,11 +142,11 @@ for si,tgt in enumerate(tgtSeq):
         print("Error! no predictions, continuing")
     else:
         # get all predictions into 1 numpy array
-        pred = np.array([e.value for e in events])
+        pred = np.array([e.value for e in events]) # [ nEpochs ]
         nPred= len(pred)
-        ss   = stimSeq[:,:nFlash]
-        corr = np.dot(ss,pred)        
-        predIdx= np.argmax(corr,0) # predicted class
+        ss   = np.array(stimSeq[:,:nFlash]) # [ nSymbs x nEpochs ]
+        sim  = np.dot(ss,pred)        
+        predIdx= np.argmax(sim,0) # predicted class
             
     #show the feedback
     print("%d) pred=%d :"%(si,predIdx))
@@ -156,7 +159,7 @@ for si,tgt in enumerate(tgtSeq):
     drawnow()
 
             
-bufhelp.sendEvent('stimulus.training','end')
+bufhelp.sendEvent('stimulus.feedback','end')
 txthdl.set(text=['Thanks for taking part!' '' 'Press key to finish'],visible=True)
 drawnow()
 waitforkey(fig)
