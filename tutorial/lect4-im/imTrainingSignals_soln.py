@@ -76,7 +76,6 @@ data,freqs = preproc.powerspectrum(data,dim=1,fSample=fs)
 # 5 : select the frequency bins we want
 freqbands   =[8,10,28,30]
 data,freqIdx=preproc.selectbands(data,dim=1,band=freqbands,bins=freqs)
-freqs=freqs[freqIdx]
 
 # 6 : bad-trial removal
 goodtr, badtr = preproc.outlierdetection(data,dim=2)
@@ -85,11 +84,11 @@ y = y[goodtr]
 
 # 7: train classifier, default is a linear-least-squares-classifier
 clsfr = sklearn.linear_model.RidgeCV(store_cv_values=True)
-X2d = np.reshape(data,(-1,data.shape[2])).T # sklearn needs x to be [nTrials x nFeatures]
+X2d = np.reshape(data,(-1,data.shape[2])).T # sklearn needs data to be [nTrials x nFeatures]
 clsfr.fit(X2d,y)
 print("MSSE=%g"%np.mean(clsfr.cv_values_))
 
 # save the trained classifer
 # N.B. Be sure to save enough to apply the classifier later!!
 print('Saving clsfr to : %s'%(cname+'.pk'))
-pickle.dump({'classifier':clsfr,'spatialfilter':spatialfilter,'freqbands':freqbands,'freqIdx':freqIdx,'goodch':goodch,'valuedict':valuedict},open(cname+'.pk','wb'))
+pickle.dump({'classifier':clsfr,'fSample':fs,'spatialfilter':spatialfilter,'freqbands':freqbands,'goodch':goodch,'valuedict':valuedict},open(cname+'.pk','wb'))

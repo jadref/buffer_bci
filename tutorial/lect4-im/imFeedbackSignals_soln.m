@@ -32,16 +32,18 @@ state=[];
 endTest=false;
 while ( ~endTest )
   % wait for data to apply the classifier to
-  [data,devents,state]=buffer_waitData(opts.buffhost,opts.buffport,state,'startSet',{'stimulus.trial','start'},'trlen_ms',trlen_ms,'exitSet',{'data' {'stimulus.testing'}});
+  [data,devents,state]=buffer_waitData([],[],state,'startSet',{'stimulus.trial','start'},'trlen_ms',trlen_ms,'exitSet',{'data' {'stimulus.testing'}});
   
-  % process these events
-  for ei=1:numel(devents)
-    if ( strcmp(events.type,'stimulus.training') )
-      endTest=True;
-    else
-      % apply classification pipeline to this events data
-      [f,fraw,p]=buffer_apply_ersp_clsfr(data(ei).buf,clsfr);
-      sendEvent('classifier.prediction',f,devents(ei).sample);
-    end
-  end % devents 
+  if ~isempty(data)
+      % process these events
+      for ei=1:numel(devents)
+        if ( strcmp(devents(ei).type,'stimulus.testing') ) && ( strcmp(devents(ei).value,'end') )
+          endTest=true;
+        elseif ( strcmp(devents(ei).type,'stimulus.trial') )
+          % apply classification pipeline to this events data
+          [f,fraw,p]=buffer_apply_ersp_clsfr(data(ei).buf,clsfr);
+          sendEvent('classifier.prediction',f,devents(ei).sample);
+        end
+      end % devents 
+  end
 end 
