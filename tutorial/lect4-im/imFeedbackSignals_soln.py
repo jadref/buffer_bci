@@ -20,15 +20,22 @@ trlen_ms = 3000
 #load the trained classifier
 if os.path.exists(cname+'.pk'):
     f     =pickle.load(open(cname+'.pk','rb'))
+    goodch     = f['goodch']
+    freqIdx    = f['freqIdx']
+    valuedict  = f['valuedict']
     classifier = f['classifier']
 
-
+# invert the value dict to get a key->value map
+ivaluedict = { k:v for k,v in valuedict.items() }
+    
 # connect to the buffer, if no-header wait until valid connection
 ftc,hdr=bufhelp.connect()
 
 while True:
     # wait for data after a trigger event
-    data, events, stopevents, state = bufhelp.gatherdata(["stimulus.target"],trlen_ms,[("stimulus.feedback","end")], milliseconds=True)
+    #  exitevent=None means return as soon as data is ready
+    #  N.B. be sure to propogate state between calls
+    data, events, stopevents, pending = bufhelp.gatherdata(["stimulus.target"], trlen_ms, None, pending, milliseconds=True)
 
     # stop processing if needed
     if isinstance(stopevents, list) and any(["stimulus.feedback" in x.type for x in stopevents]):
@@ -38,16 +45,20 @@ while True:
 
     # 1: detrend
     data = preproc.detrend(data)
-    # 2: bad-channel removal
-    data, badch = preproc.badchannelremoval(data)
-    # 3: apply spatial filter
-    data = preproc.spatialfilter(data)
-    # 4 & 5: map to frequencies and select frequencies of inter
-    data = preproc.spectralfilter(data, (8,10,28,30), hdr.fSample)
+    # 2: bad-channel removal (as identifed in classifier training)
+    data = data[goodch,:,:]
+    # 3: apply spatial filter (as in classifier training)
+    data = preproc.spatialfilter(data,type=spatialfilter)
+    # 4: map to frequencies (TODO: check fs matches!!)
+    data,freqs = preproc.powerspectrum(data,dim=1,fSample=fs)
+    # 5: select frequency bins we want
+    data=data[:,freqIdx,:]
+    freqs=freqs[freqIdx]
     # 6 : bad-trial removal
-    data2, events, badtrials = preproc.badtrailremoval(data, events)
-    # 7: train classifier, default is a linear-least-squares-classifier        
-    predictions = linear.predict(data)
+    # 7: apply the classifier, get raw predictions
+    fraw = classifier.predict(data)
+    # 8: map from fraw to event values
+    predictions = [ ivaluedict[round(i)] for i in fraw ]
     # send the prediction events
     for pred in predictions:
         bufhelp.sendEvent("classifier.prediction",pred)

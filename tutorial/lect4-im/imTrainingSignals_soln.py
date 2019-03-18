@@ -45,8 +45,19 @@ if not 'data' in dir() and os.path.exists(dname+'.mat'):
 data = np.array(data)
 data = np.transpose(data)
 fs = hdr.fSample # sample rate
-y = [e.value[0] for e in events] # get class labels from events
-y = np.array(y) 
+
+# 0: get class labels from events values
+y = [e.value[0] for e in events] 
+# convert to numeric labels
+valuedict={} # dict to convert from event.values to numbers    
+#y = np.array(y) # N.B. Only works with *NUMERIC* event values...
+# get the unique values in y
+valuedict = set(y)
+# convert to dictionary
+valuedict = { val:i for i,val in enumerate(valuedict) }
+# use the dict to map from values to numbers
+y    = np.array([ valuedict[val] for val in y ])
+
 
 # 1: detrend
 data        = preproc.detrend(data)
@@ -56,10 +67,15 @@ goodch, badch = preproc.outlierdetection(data);
 data = data[goodch,:,:];
 
 # 3: apply spatial filter
-data        = preproc.spatialfilter(data,type='car')
+spatialfilter='car'
+data        = preproc.spatialfilter(data,type=spatialfilter)
 
 # 4: map to frequencies 
-data = preproc.fftfilter(data, 1, [8,10,28,30], fs)
+data,freqs = preproc.powerspectrum(data,dim=1,fSample=fs)
+
+# 5 : select the frequency bins we want
+data,freqIdx=preproc.selectbands(data,dim=1,band=[8,10,28,30],bins=freqs)
+freqs=freqs[freqIdx]
 
 # 6 : bad-trial removal
 goodtr, badtr = preproc.outlierdetection(data,dim=2)
@@ -73,5 +89,6 @@ clsfr.fit(X2d,y)
 print("MSSE=%g"%np.mean(clsfr.cv_values_))
 
 # save the trained classifer
+# N.B. Be sure to save enough to apply the classifier later!!
 print('Saving clsfr to : %s'%(cname+'.pk'))
-pickle.dump({'classifier':clsfr},open(cname+'.pk','wb'))
+pickle.dump({'classifier':clsfr,'spatialfilter':spatialfilter,'freqIdx':freqIdx,'goodch':goodch,'valuedict':valuedict},open(cname+'.pk','wb'))
