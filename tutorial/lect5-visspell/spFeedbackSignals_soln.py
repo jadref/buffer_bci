@@ -38,7 +38,7 @@ while True:
     # wait for data after a trigger event
     #  exitevent=None means return as soon as data is ready
     #  N.B. be sure to propogate state between calls
-    data, events, stopevents, pending = bufhelp.gatherdata(["stimulus.flash"], trlen_ms, None, pending, milliseconds=True)
+    data, events, stopevents, pending = bufhelp.gatherdata(["stimulus.flash"], trlen_ms, None, pending, milliseconds=True, verbose=True)
     
     # get all event type labels
     event_types = [e.type[0] for e in events] 
@@ -46,6 +46,8 @@ while True:
     # stop processing if needed
     if "stimulus.feedback" in event_types:
         break
+
+    print("Applying classifier to %d events"%(len(events)))
     
     # get data in correct format
     data = np.transpose(data)

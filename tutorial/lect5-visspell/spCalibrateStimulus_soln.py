@@ -50,7 +50,7 @@ def injectERP(amp=1,host="localhost",port=8300):
         
 ## CONFIGURABLE VARIABLES
 verb=0
-symbols=['a', 'b', 'c', 'd']
+symbols=[['1','2','3'],['4','5','6'],['7','8','9']]
 nSymbs =sum([len(r) for r in symbols])
 nSeq=6
 nRep=5
@@ -79,15 +79,13 @@ def initGrid(symbols,ax=None,txtColor=txtColor):
     hdls=[]
     for i,row in enumerate(symbols):
         x=axw[0]+i*w+w/2
-        rowh=[]
         # TODO: ensure row is enumeratable...
         for j,symb in enumerate(row):
             y=axh[0]+j*h+h/2
             print('%s @(%f,%f)'%(symb,x,y))
             txthdl =ax.text(x, y, symb, color=txtColor,visible=True)
-            rowh.append(txthdl)
-        if len(rowh)==1: rowh=rowh[0] # BODGE: ensure hdls has same structure as symbols
-        hdls.append(rowh)
+            hdls.append(txthdl)
+        #if len(rowh)==1: rowh=rowh[0] # BODGE: ensure hdls has same structure as symbols
     print('hds(%d)=[%s]'%(len(hdls),str(hdls)))
     drawnow()
     return hdls

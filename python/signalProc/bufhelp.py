@@ -91,16 +91,18 @@ def buffer_newevents(evttype=None,timeout_ms=500,state=True,verbose=False):
     '''
     global ftc,globalstate # use to store number events processed accross function calls
     useglobal=False
-    if state is None :
-        state = ftc.poll();
-    elif state==True : # use single global state
+    if state==True : # use a single global state
         useglobal=True
         if globalstate is None:
-            globalstate = ftc.poll();
+            globalstate = ftc.poll()
         state = globalstate
+    else : 
+        if not state : # init if not already set
+            state = ftc.poll()
 
     if verbose:
-        print(("Waiting for event(s) " + str(evttype) + " with timeout_ms " + str(timeout_ms)))
+        print("Waiting for event(s) " + str(evttype) + " with timeout_ms " + str(timeout_ms) + "from: (" + str(state[0])+","+str(state[1]) + ")")
+        if useglobal : print("using global state")
 
     start = time.time()
     elapsed_ms = -1 # ensure checks at least once even with 0-timeout
@@ -120,6 +122,7 @@ def buffer_newevents(evttype=None,timeout_ms=500,state=True,verbose=False):
             
             if not evttype is None and not events is None:
                 events = [x for x in events if x.type in evttype]
+            if events : print("Got %d events"%(len(events)))
         nEvents = curEvents # update starting number events (allow for buffer restarts)
         elapsed_ms = (time.time() - start)*1000
 
@@ -341,7 +344,8 @@ def gatherdata(trigger, time, stoptrigger=[], pending=[], stopondata=False, mill
     if stoptrigger :        
         stopFilter = createeventfilter(stoptrigger)
     else:
-        stopondata=true
+        if verbose: print("Stopping when data available")
+        stopondata=True
         
     global ftc
     nSamples, nEvents = ftc.poll()
@@ -388,7 +392,7 @@ def gatherdata(trigger, time, stoptrigger=[], pending=[], stopondata=False, mill
                 if verbose:
                     print(("Saving event :" + str(event) + " data from " + str(event.sample) + " to " +str(endSample)))
                 
-        if not stillgathering and not pending:
+        if not stillgathering:
             break
             
     return (data, events, stopevents, pending)
