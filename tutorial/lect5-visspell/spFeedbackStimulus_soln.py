@@ -59,7 +59,7 @@ postCueDuration=1
 epochDuration=0.1
 interEpochDuration=0.1
 interSeqDuration=2
-erpDuration=.5
+classifierLagDuration=1
 feedbackDuration=2
 
 # target used for ERP injection for debugging
@@ -161,7 +161,7 @@ for ti in range(nSeq):
 
     bufhelp.sendEvent('stimulus.trial','end')
     # extra wait for the final ERPs to finish
-    sleep(erpDuration)
+    sleep(classifierLagDuration)
 
     #catch the prediction
     # N.B. use state to track which events processed so far
@@ -182,7 +182,7 @@ for ti in range(nSeq):
         predIdx= predIdx[0] # as integer for indexing
             
         #show the feedback
-        print("%d) pred=%d :"%(si,predIdx))
+        print("%d) pred=%d :"%(ti,predIdx))
         hdls[predIdx].set(color=fbColor)
         drawnow()
         sleep(feedbackDuration)
