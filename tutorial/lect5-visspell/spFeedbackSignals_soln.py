@@ -50,7 +50,7 @@ while True:
     print("Applying classifier to %d events"%(len(events)))
     
     # get data in correct format
-    data = np.transpose(data)
+    data = np.transpose(data) # make it [d x tau]
     
     # 1: detrend
     data = preproc.detrend(data)
@@ -59,13 +59,14 @@ while True:
     # 3: apply spatial filter (as in classifier training)
     data = preproc.spatialfilter(data,type=spatialfilter)
     # 4 & 5: spectral filter (TODO: check fs matches!!)
-    data         = preproc.fftfilter(data, 1, freqbands, fs)
+    data = preproc.fftfilter(data, 1, freqbands, fs)
     # 6 : bad-trial removal
     # 7: apply the classifier, get raw predictions
-    X2d = np.reshape(data,(-1,data.shape[2])).T # sklearn needs data to be [nTrials x nFeatures]
+    X2d  = np.reshape(data,(-1,data.shape[2])).T # sklearn needs data to be [nTrials x nFeatures]
     fraw = classifier.predict(X2d)
-    # 8: map from fraw to event values (note probably not necessary here!)
-    predictions = [ ivaluedict[round(i)] for i in fraw ]
+    # 8: map from fraw to event values (note probably not necessary here!)    
+    #predictions = [ ivaluedict[round(i)] for i in fraw ]
     # send the prediction events
-    for pred in predictions:
-        bufhelp.sendEvent("classifier.prediction",pred)
+    for i,f in enumerate(fraw):
+        print("%d) {%s}=%f(raw)\n"%(i,str(events[i]),f))
+        bufhelp.sendEvent("classifier.prediction",f)
