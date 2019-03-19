@@ -28,7 +28,18 @@ public class AlphaLatContClassifierThread extends ThreadBase {
     protected ContinuousClassifier clsfr=null;
 	 protected boolean compLat=true;
 	 protected boolean normLat=true;
-
+    protected boolean medFilt=false;
+    protected String baselineEventType="stimulus.startbaseline";
+    protected String predictionEventType="classifier.prediction";
+    
+    /**
+     * length of the z-score baseliner.
+     * 0 -> no baseline
+     * <0 = moving baseline half-life 
+     * >0 = this number of predictions in the post-baseline
+     */
+    protected int nBaselineStep=0; 
+    
     @Override
     public Argument[] getArguments() {
         final Argument[] arguments = new Argument[]{
@@ -57,6 +68,8 @@ public class AlphaLatContClassifierThread extends ThreadBase {
         this.hostname = arguments[0].getString();
         this.port = arguments[1].getInteger();
         this.timeout_ms = arguments[2].getInteger();
+        this.predictionEventType=arguments[5].getString();
+        this.baselineEventType=arguments[6].getString();
         this.trialLength_ms = arguments[7].getInteger();
         this.step_ms = arguments[8].getInteger();
         this.clsfrFile = arguments[11].getString();
@@ -81,6 +94,10 @@ public class AlphaLatContClassifierThread extends ThreadBase {
         clsfr.initialize(clsfrReader,trialLength_ms,step_ms);
         ((AlphaLatContClassifier)clsfr).setcomputeLateralization(compLat);
         ((AlphaLatContClassifier)clsfr).setnormalizeLateralization(normLat);
+        ((AlphaLatContClassifier)clsfr).setMedianFilter(medFilt);
+        ((AlphaLatContClassifier)clsfr).setnBaselineStep(nBaselineStep);
+        ((AlphaLatContClassifier)clsfr).setPredictionEventType(predictionEventType);
+        ((AlphaLatContClassifier)clsfr).setBaselineEventType(baselineEventType);
         clsfr.setprocessName(processName);
         clsfr.mainloop();
         clsfr=null;

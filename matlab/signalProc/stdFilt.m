@@ -16,6 +16,7 @@ function [x,s,mu,std]=stdFilt(x,s,alpha)
 %           [ndx2] 2 decay factors.  
 %                    alpha(1) = decay for mu/std estimation
 %                    alpha(2) = decay for averaging raw inputs (high-pass)
+%            Note: alpha = exp(log(.5)./(half-life)), half-life = log(.5)/log(alpha)
 % Outputs:
 %   x - [nd x 1] filtered data
 %   s - [struct] updated filter state

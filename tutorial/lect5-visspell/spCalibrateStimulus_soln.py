@@ -39,6 +39,15 @@ def waitforkey(fig=None,reset=True,debug=DEBUG):
     while currentKey is None:
         plt.pause(1e-2) # allow gui event processing
 
+
+def injectERP(amp=1,host="localhost",port=8300):
+    """Inject an erp into a simulated data-stream, sliently ignore if failed, e.g. because not simulated"""
+    import socket
+    try:
+        socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0).sendto(bytes(amp),(host,port))
+    except: # sliently igore any errors
+        pass
+        
 ## CONFIGURABLE VARIABLES
 verb=0
 symbols=['a', 'b', 'c', 'd']
@@ -47,8 +56,8 @@ nSeq=6
 nRep=5
 cueDuration=2
 postCueDuration=1
-epochDuration=0#.1
-interEpochDuration=0#.1
+epochDuration=0.1
+interEpochDuration=0.1
 interSeqDuration=2
 
 bgColor =(.5,.5,.5)
@@ -92,7 +101,7 @@ tgtSeq=tgtSeq[1:nSeq]
 # set the display and the string for stimulus
 fig = plt.figure(facecolor=(0,0,0))
     
-fig.suptitle('RunSentences-Stimulus', fontsize=14, fontweight='bold',color=txtColor)
+fig.suptitle('speller-Stimulus', fontsize=14, fontweight='bold',color=txtColor)
 ax = fig.add_subplot(111) # default full-screen ax
 ax.set_xlim((-1.5,1.5))
 ax.set_ylim((-1.5,1.5))
@@ -117,12 +126,12 @@ plt.ion()
 
 bufhelp.sendEvent('stimulus.training','start');
 ## STARTING stimulus loop
-for si,tgt in enumerate(tgtSeq):
+for ti,tgt in enumerate(tgtSeq):
     
     sleep(interSeqDuration)
       
     #show the target/cue
-    print("%d) tgt=%d :"%(si,tgt))
+    print("%d) tgt=%d :"%(ti,tgt))
     [_.set(color=bgColor,visible=True) for _ in hdls]
     hdls[tgt].set(color=tgtColor)
     drawnow()
@@ -136,12 +145,13 @@ for si,tgt in enumerate(tgtSeq):
     sleep(postCueDuration)
 
     # start the scanning loop
-    for rep in range(nRep):
-        for si in range(nSymbs):
+    for rep in range(nRep): # repeat enough times
+        for si in range(nSymbs): # linear scan over outputs
             # flash
             hdls[si].set(color=flashColor)
             bufhelp.sendEvent('stimulus.flash',si)
-            bufhelp.sendEvent('stimulus.tgtFlash',si==tgt)
+            bufhelp.sendEvent('stimulus.tgtFlash',si==tgt)            
+            injectERP(amp=int(si==tgt)) # injectERP for debug testing
             drawnow()
             sleep(epochDuration)                
             # reset

@@ -35,8 +35,6 @@ mmmcode
 mpicode
 *.log
 *.svn*
-D
-D
 .svn/*
 matlab/brainfly/AUC.pdf
 matlab/brainfly/ERSP.pdf
@@ -44,3 +42,4 @@ matlab/brainfly/saveaspdf.pdf
 matlab/offline/AUC.pdf
 matlab/offline/ERP.pdf
 matlab/offline/ERSP.pdf
+*/build/*

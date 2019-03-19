@@ -16,38 +16,57 @@ dname  ='training_data'
 cname  ='clsfr'
 
 trlen_ms = 3000
+spatialfilter='car'
 
 #load the trained classifier
 if os.path.exists(cname+'.pk'):
     f     =pickle.load(open(cname+'.pk','rb'))
+    goodch     = f['goodch']
+    freqbands  = f['freqbands']
+    valuedict  = f['valuedict']
     classifier = f['classifier']
+    fs         = f['fSample']
 
-
+# invert the value dict to get a key->value map
+ivaluedict = { k:v for k,v in valuedict.items() }
+    
 # connect to the buffer, if no-header wait until valid connection
 ftc,hdr=bufhelp.connect()
 
+# clear event history
+pending = []
 while True:
     # wait for data after a trigger event
-    data, events, stopevents = bufhelp.gatherdata(["stimulus.target"],trlen_ms,[("stimulus.feedback","end")], milliseconds=True)
-
+    #  exitevent=None means return as soon as data is ready
+    #  N.B. be sure to propogate state between calls
+    data, events, stopevents, pending = bufhelp.gatherdata(["stimulus.target"], trlen_ms, None, pending, milliseconds=True)
+    
+    # get all event type labels
+    event_types = [e.type[0] for e in events] 
+    
     # stop processing if needed
-    if isinstance(stopevents, list) and any(["stimulus.feedback" in x.type for x in stopevents]):
+    if "stimulus.feedback" in event_types:
         break
-    elif "stimulus.feedback" in stopevents.type:
-        break
+
+    # get data in correct format
+    data = np.transpose(data)
 
     # 1: detrend
     data = preproc.detrend(data)
-    # 2: bad-channel removal
-    data, badch = preproc.badchannelremoval(data)
-    # 3: apply spatial filter
-    data = preproc.spatialfilter(data)
-    # 4 & 5: map to frequencies and select frequencies of inter
-    data = preproc.spectralfilter(data, (8,10,28,30), hdr.fSample)
-    # 6 : bad-trial removal
-    data2, events, badtrials = preproc.badtrailremoval(data, events)
-    # 7: train classifier, default is a linear-least-squares-classifier        
-    predictions = linear.predict(data)
+    # 2: bad-channel removal (as identifed in classifier training)
+    data = data[goodch,:,:]
+    # 3: apply spatial filter (as in classifier training)
+    data = preproc.spatialfilter(data,type=spatialfilter)
+    # 4: map to frequencies (TODO: check fs matches!!)
+    data,freqs = preproc.powerspectrum(data,dim=1,fSample=fs)
+    # 5: select frequency bins we want
+    data,freqIdx=preproc.selectbands(data,dim=1,band=freqbands,bins=freqs)
+    # 6: apply the classifier, get raw predictions
+    X2d = np.reshape(data,(-1,data.shape[2])).T # sklearn needs data to be [nTrials x nFeatures]
+    fraw = classifier.predict(X2d)
+    # 7: map from fraw to event values
+    predictions = [ ivaluedict[round(i)] for i in fraw ]
     # send the prediction events
     for pred in predictions:
         bufhelp.sendEvent("classifier.prediction",pred)
+        

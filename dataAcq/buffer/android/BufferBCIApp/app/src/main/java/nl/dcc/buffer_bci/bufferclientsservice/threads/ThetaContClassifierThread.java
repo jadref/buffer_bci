@@ -14,7 +14,6 @@ import static nl.dcc.buffer_bci.signalprocessing.ContinuousClassifier.VERB;
 public class ThetaContClassifierThread extends AlphaLatContClassifierThread {
 
     private static final String TAG = ThetaContClassifierThread.class.getSimpleName();
-	protected boolean medFilt=true;
 	protected WelchOutputType welchOutputType=WelchOutputType.AMPLITUDE;
 	 public ThetaContClassifierThread(){
 	     step_ms       =200;
@@ -23,6 +22,8 @@ public class ThetaContClassifierThread extends AlphaLatContClassifierThread {
 		 compLat=false;
 		 normLat=false;
 		 medFilt=true;
+       nBaselineStep = -6000; // very long moving average baseline
+       baselineEventType=null; // turn off event-triggered baseline
 		 this.processName=TAG; // reset the process name used in logging
 		 this.clsfrFile="clsfr_theta_tpref.txt"; // override the default classifier file name
 	 }
@@ -44,6 +45,9 @@ public class ThetaContClassifierThread extends AlphaLatContClassifierThread {
         ((AlphaLatContClassifier)clsfr).setcomputeLateralization(compLat);
         ((AlphaLatContClassifier)clsfr).setnormalizeLateralization(normLat);
         ((AlphaLatContClassifier)clsfr).setMedianFilter(medFilt);
+        ((AlphaLatContClassifier)clsfr).setBaselineEventType(baselineEventType);
+        ((AlphaLatContClassifier)clsfr).setnBaselineStep(nBaselineStep);
+        ((AlphaLatContClassifier)clsfr).setPredictionEventType(predictionEventType);
         //((AlphaLatContClassifier)clsfr).welchAveType = welchOutputType;
         if( PreprocClassifier.VERB>1 )
             System.out.println(TAG+"Loaded Classifier" + clsfr.toString());

@@ -47,7 +47,7 @@ while ( endTest==0 )
       endTest=ei; % record which is the end-feedback event
     elseif ( matchEvents(devents(ei),'stimulus.flash') ) % flash, apply the classifier
       if ( verb>0 ) fprintf('Processing event: %s',ev2str(devents(ei))); end;
-                          % apply classification pipeline to this events data
+      % apply classification pipeline to this events data
       [f,fraw,p]=buffer_apply_erp_clsfr(data(ei).buf,clsfr);
       % send prediction, using the trigger-event sample number for matching later
       sendEvent('classifier.prediction',f,devents(ei).sample);

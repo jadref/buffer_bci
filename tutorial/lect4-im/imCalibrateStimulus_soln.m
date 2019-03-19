@@ -23,7 +23,7 @@ initsleepSec;
 initgetwTime;
 
 verb=0;
-nSymbs=3;
+nSymbs=2;
 nSeq=15;
 nBlock=2;%10; % number of stim blocks to use
 trialDuration=3;
