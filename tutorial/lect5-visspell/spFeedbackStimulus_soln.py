@@ -161,7 +161,7 @@ for ti in range(nSeq):
 
     bufhelp.sendEvent('stimulus.trial','end')
     # extra wait for the final ERPs to finish
-    sleep(erpDuation)
+    sleep(erpDuration)
 
     #catch the prediction
     # N.B. use state to track which events processed so far
