@@ -62,7 +62,6 @@ interSeqDuration=2
 
 bgColor =(.5,.5,.5)
 tgtColor=(0,1,0)
-fbColor=(0,0,1)
 fixColor=(1,0,0)
 txtColor=(1,1,1)
 flashColor=(1,1,1)
@@ -92,6 +91,11 @@ def initGrid(symbols,ax=None,txtColor=txtColor):
     print('hds(%d)=[%s]'%(len(hdls),str(hdls)))
     drawnow()
     return hdls
+
+# make the target sequence
+tgtSeq=list(range(nSymbs))*int(nSeq/nSymbs +1) # sequence in sequential order
+shuffle(tgtSeq) # N.B. shuffle works in-place!
+tgtSeq=tgtSeq[1:nSeq]
             
 ##--------------------- Start of the actual experiment loop ----------------------------------
 # set the display and the string for stimulus
@@ -120,69 +124,29 @@ txthdl.set(visible=False)
 
 plt.ion()
 
-[ _.set(visible=True) for _ in hdls]
+bufhelp.sendEvent('stimulus.training','start');
+
+## START EXPERIMENTAL LOOP #
+      
+#show the target/cue
+print("%d) tgt=%d :"%(ti,tgt))
+[_.set(color=bgColor,visible=True) for _ in hdls]
+hdls[tgt].set(color=tgtColor)
+drawnow()
+bufhelp.sendEvent('stimulus.target',tgt)
+sleep(cueDuration)
+  
+# reset the display
+[ _.set(color=bgColor) for _ in hdls]
 drawnow()
 
-bufhelp.sendEvent('stimulus.feedback','start');
-state = None
-## STARTING stimulus loop
-for ti in range(nSeq):
+# flash
+hdls[si].set(color=flashColor)         
+injectERP(amp=int(si==tgt)) # injectERP for debug testing
+        
     
-    sleep(interSeqDuration)
-      
-    # reset the display
-    [ _.set(color=bgColor) for _ in hdls]
-    drawnow()
-    sleep(postCueDuration)
-    
-    # start the scanning loop
-    stimSeq=[] # [ nSymbs x nEpochs ] info on flash/non-flash state of each output
-    for rep in range(nRep): # repeat enough times
-        for si in range(nSymbs): # linear scan over outputs
-            # flash
-            hdls[si].set(color=flashColor)
-            bufhelp.sendEvent('stimulus.flash',si)        
-            injectERP(amp=int(si==ti)) # injectERP for debug testing
-            drawnow()
-            stimSeq.append([ i==si for i in range(nSymbs) ]) 
-            sleep(epochDuration)                
-            # reset
-            hdls[si].set(color=bgColor)
-            drawnow()
-            sleep(interEpochDuration)
-
-    bufhelp.sendEvent('stimulus.trial','end');
-
-    #catch the prediction
-    # N.B. use state to track which events processed so far
-    events,state = bufhelp.buffer_newevents('classifier.prediction',5000,state)
-    if events == []:
-        print("Error! no predictions, continuing")
-    else:
-        # get all true stimulus into 1 numpy array
-        stimSeq = np.array(stimSeq) # [ nEpochs x nSymbs ]
-        # get all predictions into 1 numpy array
-        pred = np.array([e.value for e in events]) # [ nEpochs ]
-        ss   = stimSeq[:len(pred),:] # [ nSymbs x nEpochs ]
-        # similarity to prediction for each output [ nSymbs ]        
-        sim  = np.dot(pred,ss.T)
-        # max similarity is the predicted class
-        predIdx= np.argmax(sim,0) # predicted class
-            
-        #show the feedback
-        print("%d) pred=%d :"%(si,predIdx))
-        hdls[predIdx].set(color=fbColor)
-        drawnow()
-        sleep(feedbackDuration)
-      
-        # reset the display
-        [ _.set(color=bgColor) for _ in hdls]
-        drawnow()
-
+bufhelp.sendEvent('stimulus.training','end')
 [ _.set(visible=False) for _ in hdls]
-drawnow()        
-
-bufhelp.sendEvent('stimulus.feedback','end')
-txthdl.set(text='Thanks for taking part! Press key to finish',visible=True)
+txthdl.set(text='Thanks for taking part!\nPress key to finish',visible=True)
 drawnow()
 waitforkey(fig)

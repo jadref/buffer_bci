@@ -16,6 +16,7 @@ dname  ='training_data'
 cname  ='clsfr'
 
 trlen_ms = 600
+spatialfilter='car'
 
 #load the trained classifier
 if os.path.exists(cname+'.pk'):
@@ -32,18 +33,23 @@ ivaluedict = { k:v for k,v in valuedict.items() }
 ftc,hdr=bufhelp.connect()
 fs = hdr.fSample
 
+pending = []
 while True:
     # wait for data after a trigger event
     #  exitevent=None means return as soon as data is ready
     #  N.B. be sure to propogate state between calls
-    data, events, stopevents, pending = bufhelp.gatherdata(["stimulus.flash"], trlen_ms, ("stimulus.feedback","end"), pending, stopondata=True, milliseconds=True)
-
+    data, events, stopevents, pending = bufhelp.gatherdata(["stimulus.flash"], trlen_ms, None, pending, milliseconds=True)
+    
+    # get all event type labels
+    event_types = [e.type[0] for e in events] 
+    
     # stop processing if needed
-    if isinstance(stopevents, list) and any(["stimulus.feedback" in x.type for x in stopevents]):
+    if "stimulus.feedback" in event_types:
         break
-    elif "stimulus.feedback" in stopevents.type:
-        break
-
+    
+    # get data in correct format
+    data = np.transpose(data)
+    
     # 1: detrend
     data = preproc.detrend(data)
     # 2: bad-channel removal (as identifed in classifier training)
@@ -54,7 +60,8 @@ while True:
     data         = preproc.fftfilter(data, 1, freqbands, fs)
     # 6 : bad-trial removal
     # 7: apply the classifier, get raw predictions
-    fraw = classifier.predict(data)
+    X2d = np.reshape(data,(-1,data.shape[2])).T # sklearn needs data to be [nTrials x nFeatures]
+    fraw = classifier.predict(X2d)
     # 8: map from fraw to event values (note probably not necessary here!)
     predictions = [ ivaluedict[round(i)] for i in fraw ]
     # send the prediction events

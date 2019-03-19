@@ -37,9 +37,6 @@ if not 'data' in dir() and os.path.exists(dname+'.mat'):
     events=f['events']
     hdr   =f['hdr']
 
-
-
-    
 #-------------------------------------------------------------------
 #  Run the standard pre-processing and analysis pipeline
 
@@ -60,26 +57,7 @@ valuedict = { val:i for i,val in enumerate(valuedict) }
 # use the dict to map from values to numbers
 y    = np.array([ valuedict[val] for val in y ])
 
-
-# 1: detrend
-data        = preproc.detrend(data)
-
-# 2: bad-channel removal
-goodch, badch = preproc.outlierdetection(data)
-data         = data[goodch,:,:]
-
-# 3: apply spatial filter
-spatialfilter='car'
-data         = preproc.spatialfilter(data,type=spatialfilter)
-
-# 4 & 5: spectral filter
-freqbands    = [8,10,28,30]
-data         = preproc.fftfilter(data, 1, freqbands, fs)
-
-# 6 : bad-trial removal
-goodtr, badtr = preproc.outlierdetection(data,dim=2)
-data = data[:,:,goodtr]
-y = y[goodtr]
+# DO PREPROCESSING #
 
 # 7: train classifier, default is a linear-least-squares-classifier
 clsfr = sklearn.linear_model.RidgeCV(store_cv_values=True)

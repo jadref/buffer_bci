@@ -56,8 +56,8 @@ nSeq=6
 nRep=5
 cueDuration=2
 postCueDuration=1
-epochDuration=0#.1
-interEpochDuration=0#.1
+epochDuration=0.1
+interEpochDuration=0.1
 interSeqDuration=2
 
 bgColor =(.5,.5,.5)
@@ -101,7 +101,7 @@ tgtSeq=tgtSeq[1:nSeq]
 # set the display and the string for stimulus
 fig = plt.figure(facecolor=(0,0,0))
     
-fig.suptitle('RunSentences-Stimulus', fontsize=14, fontweight='bold',color=txtColor)
+fig.suptitle('speller-Stimulus', fontsize=14, fontweight='bold',color=txtColor)
 ax = fig.add_subplot(111) # default full-screen ax
 ax.set_xlim((-1.5,1.5))
 ax.set_ylim((-1.5,1.5))
@@ -131,7 +131,7 @@ for ti,tgt in enumerate(tgtSeq):
     sleep(interSeqDuration)
       
     #show the target/cue
-    print("%d) tgt=%d :"%(si,tgt))
+    print("%d) tgt=%d :"%(ti,tgt))
     [_.set(color=bgColor,visible=True) for _ in hdls]
     hdls[tgt].set(color=tgtColor)
     drawnow()
