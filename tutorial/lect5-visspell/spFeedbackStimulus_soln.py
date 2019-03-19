@@ -50,7 +50,8 @@ def injectERP(amp=1,host="localhost",port=8300):
         
 ## CONFIGURABLE VARIABLES
 verb=0
-symbols=[['1','2','3'],['4','5','6'],['7','8','9']]
+#symbols=[['1','2','3'],['4','5','6'],['7','8','9']]
+symbols=['a','b','c','d']
 nSymbs =sum([len(r) for r in symbols])
 nSeq=6
 nRep=5
