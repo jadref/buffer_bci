@@ -1,5 +1,5 @@
 #!/bin/bash
-scriptDir=`dirname ${BASH_SOURCE[0]}`
+scriptDir=`dirname "${BASH_SOURCE[0]}"`
 cd $scriptDir
 source ../../utilities/findMatlab.sh
 if [[ $matexe == *matlab ]]; then  args=-nodesktop; fi

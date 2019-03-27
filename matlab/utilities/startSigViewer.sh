@@ -1,5 +1,5 @@
 #!/bin/bash
-cd `dirname ${BASH_SOURCE[0]}`
+cd `dirname "${BASH_SOURCE[0]}"`
 source ../../utilities/findMatlab.sh
 if [ $# -lt 1 ]; then 
   port=1972;

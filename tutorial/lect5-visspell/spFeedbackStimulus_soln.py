@@ -50,7 +50,8 @@ def injectERP(amp=1,host="localhost",port=8300):
         
 ## CONFIGURABLE VARIABLES
 verb=0
-symbols=['a', 'b', 'c', 'd']
+#symbols=[['1','2','3'],['4','5','6'],['7','8','9']]
+symbols=['a','b','c','d']
 nSymbs =sum([len(r) for r in symbols])
 nSeq=6
 nRep=5
@@ -59,6 +60,11 @@ postCueDuration=1
 epochDuration=0.1
 interEpochDuration=0.1
 interSeqDuration=2
+classifierLagDuration=2
+feedbackDuration=2
+
+# target used for ERP injection for debugging
+debugTarget=1
 
 bgColor =(.5,.5,.5)
 tgtColor=(0,1,0)
@@ -80,15 +86,16 @@ def initGrid(symbols,ax=None,txtColor=txtColor):
     hdls=[]
     for i,row in enumerate(symbols):
         x=axw[0]+i*w+w/2
-        rowh=[]
+        #rowh=[]
         # TODO: ensure row is enumeratable...
         for j,symb in enumerate(row):
             y=axh[0]+j*h+h/2
             print('%s @(%f,%f)'%(symb,x,y))
             txthdl =ax.text(x, y, symb, color=txtColor,visible=True)
-            rowh.append(txthdl)
-        if len(rowh)==1: rowh=rowh[0] # BODGE: ensure hdls has same structure as symbols
-        hdls.append(rowh)
+            hdls.append(txthdl)
+            #rowh.append(txthdl)
+        #if len(rowh)==1: rowh=rowh[0] # BODGE: ensure hdls has same structure as symbols
+        #hdls.append(rowh)
     print('hds(%d)=[%s]'%(len(hdls),str(hdls)))
     drawnow()
     return hdls
@@ -124,7 +131,9 @@ plt.ion()
 drawnow()
 
 bufhelp.sendEvent('stimulus.feedback','start');
-state = None
+# initialize the state for tracking and catching classifier prediction events
+#_,state = bufhelp.buffer_newevents('classifier.prediction',0,False,True)
+_ = bufhelp.buffer_newevents('classifier.prediction',0)
 ## STARTING stimulus loop
 for ti in range(nSeq):
     
@@ -142,7 +151,7 @@ for ti in range(nSeq):
             # flash
             hdls[si].set(color=flashColor)
             bufhelp.sendEvent('stimulus.flash',si)        
-            injectERP(amp=int(si==ti)) # injectERP for debug testing
+            injectERP(amp=int(si==debugTarget)) # injectERP for debug testing
             drawnow()
             stimSeq.append([ i==si for i in range(nSymbs) ]) 
             sleep(epochDuration)                
@@ -151,26 +160,37 @@ for ti in range(nSeq):
             drawnow()
             sleep(interEpochDuration)
 
-    bufhelp.sendEvent('stimulus.trial','end');
+    bufhelp.sendEvent('stimulus.trial','end')
+    # extra wait for the final ERPs to finish
+    sleep(classifierLagDuration)
 
     #catch the prediction
     # N.B. use state to track which events processed so far
-    events,state = bufhelp.buffer_newevents('classifier.prediction',5000,state)
+    #events,state = bufhelp.buffer_newevents('classifier.prediction',5000,state,True)
+    events = bufhelp.buffer_newevents('classifier.prediction',500)
     if events == []:
         print("Error! no predictions, continuing")
     else:
         # get all true stimulus into 1 numpy array
         stimSeq = np.array(stimSeq) # [ nEpochs x nSymbs ]
         # get all predictions into 1 numpy array
-        pred = np.array([e.value for e in events]) # [ nEpochs ]
-        ss   = stimSeq[:len(pred),:] # [ nSymbs x nEpochs ]
+        pred = np.array([e.value for e in events]) # [ pred nEpochs ]
+        # ensure the sizes match
+        if len(pred) > stimSeq.shape[0] : # more pred than stim
+            print("Warning: more predictions than stimulus, assuming last n pred valid")
+            pred   = pred[-stimSeq.shape[0]:]
+        elif len(pred)< stimSeq.shape[0]: # more stim than pred
+            print("Warning: more stimulus than predictions, assuming first N stim valid")
+            stimSeq= stimSeq[:len(pred),:] # [ nSymbs x nEpochs ]
         # similarity to prediction for each output [ nSymbs ]        
-        sim  = np.dot(pred,ss.T)
+        sim  = np.dot(stimSeq.T,pred)
+        print("Similarities: " + [ str(f)+" " for f in sim ] ) 
         # max similarity is the predicted class
         predIdx= np.argmax(sim,0) # predicted class
+        predIdx= predIdx[0] # as integer for indexing
             
         #show the feedback
-        print("%d) pred=%d :"%(si,predIdx))
+        print("%d) pred=%d :"%(ti,predIdx))
         hdls[predIdx].set(color=fbColor)
         drawnow()
         sleep(feedbackDuration)

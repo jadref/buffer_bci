@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 # Set up imports and paths
 import sys, os
@@ -44,13 +45,14 @@ def injectERP(amp=1,host="localhost",port=8300):
     """Inject an erp into a simulated data-stream, sliently ignore if failed, e.g. because not simulated"""
     import socket
     try:
-        socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0).sendto(bytes(amp),(host,port))
+        socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0).sendto(bytes([amp]),(host,port))
     except: # sliently igore any errors
         pass
         
 ## CONFIGURABLE VARIABLES
 verb=0
-symbols=['a', 'b', 'c', 'd']
+#symbols=[['1','2','3'],['4','5','6'],['7','8','9']]
+symbols=['a','b','c','d']
 nSymbs =sum([len(r) for r in symbols])
 nSeq=6
 nRep=5
@@ -79,15 +81,13 @@ def initGrid(symbols,ax=None,txtColor=txtColor):
     hdls=[]
     for i,row in enumerate(symbols):
         x=axw[0]+i*w+w/2
-        rowh=[]
         # TODO: ensure row is enumeratable...
         for j,symb in enumerate(row):
             y=axh[0]+j*h+h/2
             print('%s @(%f,%f)'%(symb,x,y))
             txthdl =ax.text(x, y, symb, color=txtColor,visible=True)
-            rowh.append(txthdl)
-        if len(rowh)==1: rowh=rowh[0] # BODGE: ensure hdls has same structure as symbols
-        hdls.append(rowh)
+            hdls.append(txthdl)
+        #if len(rowh)==1: rowh=rowh[0] # BODGE: ensure hdls has same structure as symbols
     print('hds(%d)=[%s]'%(len(hdls),str(hdls)))
     drawnow()
     return hdls
@@ -149,10 +149,10 @@ for ti,tgt in enumerate(tgtSeq):
         for si in range(nSymbs): # linear scan over outputs
             # flash
             hdls[si].set(color=flashColor)
+            drawnow()
             bufhelp.sendEvent('stimulus.flash',si)
             bufhelp.sendEvent('stimulus.tgtFlash',si==tgt)            
             injectERP(amp=int(si==tgt)) # injectERP for debug testing
-            drawnow()
             sleep(epochDuration)                
             # reset
             hdls[si].set(color=bgColor)

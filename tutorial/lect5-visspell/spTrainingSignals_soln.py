@@ -44,9 +44,10 @@ if not 'data' in dir() and os.path.exists(dname+'.mat'):
 #  Run the standard pre-processing and analysis pipeline
 
 # get data in correct format
-data = np.array(data)
-data = np.transpose(data)
+data = np.array(data) # [ nTrials x d x time ]
+data = np.transpose(data) # [ d x time x nTrials ]
 fs = hdr.fSample # sample rate
+print("Data: "+str(data.shape))
 
 # 0: get class labels from events values
 y = [e.value[0] for e in events] 
@@ -60,6 +61,7 @@ valuedict = { val:i for i,val in enumerate(valuedict) }
 # use the dict to map from values to numbers
 y    = np.array([ valuedict[val] for val in y ])
 
+print("Y"+str(y))
 
 # 1: detrend
 data        = preproc.detrend(data)

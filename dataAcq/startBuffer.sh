@@ -1,5 +1,5 @@
 #!/bin/bash
-buffdir=`dirname $0`
+buffdir=`dirname "$0"`
 outdir=
 
 # use GUI to update the save location

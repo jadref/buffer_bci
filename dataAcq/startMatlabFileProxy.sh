@@ -1,5 +1,5 @@
 #!/bin/bash
-cd `dirname ${BASH_SOURCE[0]}`
+cd `dirname "${BASH_SOURCE[0]}"`
 source ../matlab/utilities/findMatlab.sh
 fname=$1;
 if [ ${fname:0:1}X != "'"X ]; then fname="'$fname'"; fi

@@ -1,6 +1,5 @@
 #! /usr/bin/env bash
-cd `dirname ${BASH_SOURCE[0]}`
-buffdir=`dirname $0`
+cd `dirname "${BASH_SOURCE[0]}"`
 execname='thinkgear2ft'
 if [ `uname -s` == 'Linux' ]; then
 	 if  [ "`uname -a`" == 'armv6l' ]; then
@@ -11,14 +10,14 @@ if [ `uname -s` == 'Linux' ]; then
 else # Mac
 	 arch='maci'
 fi
-buffexe="$buffdir/buffer/bin/${execname}";
-if [ -r $buffdir/${execname} ]; then
-    buffexe="$buffdir/${execname}";
+buffexe="buffer/bin/${execname}";
+if [ -r ${execname} ]; then
+    buffexe="${execname}";
 fi
-if [ -r $buffdir/buffer/bin/${arch}/${execname} ]; then
-	 buffexe="$buffdir/buffer/bin/${arch}/${execname}";
+if [ -r buffer/bin/${arch}/${execname} ]; then
+	 buffexe="buffer/bin/${arch}/${execname}";
 fi
-if [ -r $buffdir/buffer/${arch}/${execname} ]; then
-	 buffexe="$buffdir/buffer/${arch}/${execname}";
+if [ -r buffer/${arch}/${execname} ]; then
+	 buffexe="buffer/${arch}/${execname}";
 fi
 $buffexe /dev/ttyUSB0 mindwave.cfg localhost 1972

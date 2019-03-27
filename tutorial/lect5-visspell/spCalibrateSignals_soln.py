@@ -8,7 +8,6 @@ sigProcPath = os.path.join(os.path.abspath(pydir),'../../python/signalProc')
 sys.path.append(sigProcPath)
 import bufhelp 
 import pickle
-import h5py
 
 # connect to the buffer, if no-header wait until valid connection
 ftc,hdr=bufhelp.connect()
