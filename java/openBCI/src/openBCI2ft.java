@@ -277,7 +277,7 @@ class openBCI2ft {
 					 if ( curT-updateT > 2*1000 ) {
 						  updateT=curT;
 						  System.out.println((float)(curT-startT)/1000.0 
- 											+ "  " + nSamp + "  " + nBlk + "  " + ((float)(curT-startT))/((float)nSamp) 
+                                       + "  " + nSamp + "  " + nBlk + "  " + (nSamp*1000.0f/((float)(curT-startT))) 
 											+ "   (t,samp,blk,Hz)");
 					 }
 				}
