@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-cd `dirname ${BASH_SOURCE[0]}`
+cd `dirname "${BASH_SOURCE[0]}"`
 buffdir=`dirname $0`
 execname='rda2ft'
 if [ `uname -s` == 'Linux' ]; then

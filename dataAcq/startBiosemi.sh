@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-cd `dirname ${BASH_SOURCE[0]}`
+cd `dirname "${BASH_SOURCE[0]}"`
 buffdir="$( pwd )"
 echo $buffdir
 bciroot=~/output

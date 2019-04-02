@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
-cd `dirname ${BASH_SOURCE[0]}`
-buffdir=`dirname $0`
+cd `dirname "${BASH_SOURCE[0]}"`
+buffdir=.
 execname='audio2ft'
 if [ `uname -s` == 'Linux' ]; then
 	 if  [ "`uname -a`" == 'armv6l' ]; then

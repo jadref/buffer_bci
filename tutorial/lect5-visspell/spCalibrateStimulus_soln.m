@@ -41,7 +41,7 @@ clf;
 [h]=initGrid(symbols);
 
 tgtSeq = repmat([1:numel(symbols)]',ceil(nSeq/numel(symbols)));
-tgtSeq = randperm(tgtSeq(1:nSeq));
+tgtSeq = tgtSeq(randperm(nSeq))
 
 % play the stimulus
 % reset the cue and fixation point to indicate trial has finished  
@@ -60,7 +60,7 @@ for si=1:nSeq;
   sleepSec(cueDuration);  
   set(h(:),'color',bgColor); % rest all symbols to background color
   
-  for ri=1:nRep; % reps
+  for ri=1:nRepetitions; % reps
     for ei=1:numel(symbols); % symbs
       flashIdx=ei;
       % flash

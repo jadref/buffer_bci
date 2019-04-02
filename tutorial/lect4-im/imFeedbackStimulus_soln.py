@@ -14,7 +14,7 @@ sigProcPath = os.path.join(os.path.abspath(pydir),'../../python/signalProc')
 sys.path.append(sigProcPath)
 import bufhelp
 
-DEBUG=True # False #
+DEBUG= False #True
 
 ## HELPER FUNCTIONS
 def drawnow(fig=None):
@@ -40,16 +40,20 @@ def waitforkey(fig=None,reset=True,debug=DEBUG):
 
 ## CONFIGURABLE VARIABLES
 verb=0
-nSymbs=3
+nSymbs=2
 nSeq=15
 nBlock=2 #10; # number of stim blocks to use
 trialDuration=3
 baselineDuration=1
+prepareDuration=1
+feedbackDuration=1
 intertrialDuration=2
 
 bgColor =(.5,.5,.5)
+fbColor=(0,0,1)
 tgtColor=(0,1,0)
 fixColor=(1,0,0)
+txtColor=(1,1,1)
 
 # make the target sequence
 tgtSeq=list(range(nSymbs))*int(nSeq/nSymbs +1) # sequence in sequential order
@@ -59,30 +63,32 @@ shuffle(tgtSeq) # N.B. shuffle works in-place!
 # set the display and the string for stimulus
 if DEBUG:
     plt.switch_backend('agg') # N.B. command to work in non-display mode
-fig = plt.figure()
+
+fig = plt.figure(facecolor=(0,0,0))
     
-fig.suptitle('RunSentences-Stimulus', fontsize=14, fontweight='bold')
+fig.suptitle('IM-Stimulus', fontsize=14, fontweight='bold',color=txtColor)
 ax = fig.add_subplot(111) # default full-screen ax
-ax.set_xlim((-1,1))
-ax.set_ylim((-1,1))
+ax.set_xlim((-1.5,1.5))
+ax.set_ylim((-1.5,1.5))
 ax.set_axis_off()
-txthdl =ax.text(0, 0, 'This is some text', style='italic')
+txthdl =ax.text(0, 0, 'This is some text', style='italic',color=txtColor)
 
 # setup the targets
 stimPos=[];
 hdls=[];
-stimRadius=.5;
+stimRadius=.3;
 theta=np.linspace(0,np.pi,nSymbs)
-stimPos=np.stack((np.cos(theta),np.sin(theta))) #[2 x nSymbs]
-for hi,pos in enumerate(stimPos):
-    rect=patches.Rectangle((pos[0]-stimRadius/2,pos[1]-stimRadius/2),stimRadius/2,stimRadius/2,facecolor=bgColor)
-    hhi=ax.add_patch(rect)
+stimPos=np.stack((np.cos(theta),np.sin(theta))).T #[nSymbs x 2]
+for hi,pos in enumerate(stimPos):  #N.B. enumerate goes over 1st dim if stimPos is array
+    print('%d) stimPos=(%f,%f)'%(hi,pos[0],pos[1]))
+    circ=patches.Circle(pos,stimRadius,facecolor=bgColor)
+    hhi=ax.add_patch(circ)
     hdls.insert(hi,hhi)
 # add symbol for the center of the screen
-spos = np.array((0,0)).reshape((-1,1))
-stimPos=np.hstack((stimPos,spos)) #[2 x nSymbs+1]
-rect = patches.Rectangle((0-stimRadius/4,0-stimRadius/4),stimRadius/2,stimRadius/2,facecolor=bgColor)
-hhi  =ax.add_patch(rect)
+spos   =np.array((0,0))#.reshape((1,-1))
+stimPos=np.vstack((stimPos,spos)) #[nSymbs+1 x 2]
+circ   =patches.Circle((0,0),stimRadius/4,facecolor=bgColor)
+hhi    =ax.add_patch(circ)
 hdls.insert(nSymbs,hhi)
 [ _.set(visible=False) for _ in hdls] # make all invisible
 
@@ -96,15 +102,20 @@ txthdl.set(text='Press key to start')
 drawnow()
 waitforkey(fig)
 
+# set stimuli to visible
+txthdl.set(visible=False)
+[_.set(facecolor=bgColor,visible=True) for _ in hdls]
+
 bufhelp.sendEvent('stimulus.training','start')
 state=None
+txthdl.set(visible=False)
 ## STARTING stimulus loop
 for si,tgt in enumerate(tgtSeq):
     
     sleep(intertrialDuration)
 
     # show the baseline
-    hdls[-1].set(visible=True,facecolor=fixColor)
+    hdls[-1].set(facecolor=fixColor) # fixation cross red
     drawnow()
     bufhelp.sendEvent('stimulus.baseline','start')
     sleep(baselineDuration)
@@ -112,8 +123,8 @@ for si,tgt in enumerate(tgtSeq):
       
     #show the target
     print("%d) tgt=%d :"%(si,tgt))
-    [_.set(facecolor=bgColor) for _ in hdls]
-    hdls[tgt].set(facecolor=tgtColor)
+    hdls[-1].set(facecolor=tgtColor) # target green
+    hdls[tgt].set(facecolor=tgtColor) # fixation cross green
     drawnow()
     bufhelp.sendEvent('stimulus.target',tgt)
     bufhelp.sendEvent('stimulus.trial','start')
@@ -122,40 +133,25 @@ for si,tgt in enumerate(tgtSeq):
     #catch the prediction
     # N.B. use state to track which events processed so far
     events,state = bufhelp.buffer_newevents('classifier.prediction',1500,state)
-    if events is None:
+    if events == []:
         print("Error! no predictions, continuing")
     else:
         if len(events)>1:
             print("Warning: multiple predictions. Some ignored.") 
         evt=events[-1] # only use the last event
-        if isinstance(dv,(int,long,float)):#binary problem, covert to per-class
-            dv = np.array((evt.value,-evt.value))
-        else:
-            dv =np.array(evt.value) # extract decision values
-        # convert to probability, using soft-max
-        prob = np.exp(dv - np.max(dv))
-        prob = prop / np.sum(prob)
-
-    predIdx= np.argmax(prob,0) # predicted class
-
-    # give user feedback on the prediction
-    # compute the position of the fixation point, weighted ave of rest
-    fixPos = np.dot(prob,stimPos)    
-    hdls[-1].set_xy(fixPos) # move the 
-    hdls[-1].set(color=fbColor)
-    hdls[predIdx].set(color=fbColor) # predicted target indication
-    drawnow()
-    
-    bufhelp.sendEvent('stimulus.predTgt',predIdx)
-    sleep(feedbackDuration)
+        
+        # show prediction (user feedback)
+        [_.set(facecolor=bgColor) for _ in hdls]
+        hdls[evt.value[-1]].set(facecolor=fbColor)
+        drawnow()
+        bufhelp.sendEvent('stimulus.predTgt',evt.value[-1])
+        sleep(feedbackDuration)
         
     # reset the display
-    hdls[-1].set_xy(stimPos[-1,:])
-    [ _.set(visible=False) for _ in hdls]
-    txthdl.set(visible=False)
+    [_.set(facecolor=bgColor) for _ in hdls]
     drawnow()
     bufhelp.sendEvent('stimulus.trial','end');
 
 bufhelp.sendEvent('stimulus.training','end')
-txthdl.set(text=['Thanks for taking part!' '' 'Press key to finish'])
+txthdl.set(visible=True,text='Thanks for taking part! Press key to finish')
 waitforkey(fig)

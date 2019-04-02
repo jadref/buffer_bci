@@ -24,7 +24,7 @@ initsleepSec;
 verb=0;
 buffhost='localhost';
 buffport=1972;
-nSymbs=3;
+nSymbs=2;
 nSeq=15;
 nBlock=2;%10; % number of stim blocks to use
 trialDuration=3;

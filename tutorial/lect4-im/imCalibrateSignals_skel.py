@@ -15,6 +15,6 @@ trlen_ms = 600
 
 print("Calibration phase")
 # grab data after every t:'stimulus.target' event until we get a {t:'stimulus.training' v:'end'} event 
-data, events, stopevents = bufhelp.gatherdata()
+data, events, stopevents, state = bufhelp.gatherdata()
 # save the calibration data
 pickle.dump({"events":events,"data":data}, open("subject_data", "w"))

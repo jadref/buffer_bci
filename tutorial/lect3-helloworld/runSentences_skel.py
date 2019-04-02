@@ -32,7 +32,7 @@ def injectERP(amp=1,host="localhost",port=8300):
     """Inject an erp into a simulated data-stream, sliently ignore if failed, e.g. because not simulated"""
     import socket
     try:
-        socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0).sendto(bytes(amp),(host,port))
+        socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0).sendto(bytes([amp]),(host,port))
     except: # sliently igore any errors
         pass
     

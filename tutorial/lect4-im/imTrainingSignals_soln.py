@@ -8,6 +8,8 @@ except:  pydir=os.getcwd()
 sigProcPath = os.path.join(os.path.abspath(pydir),'../../python/signalProc')
 sys.path.append(sigProcPath)
 import bufhelp
+import linear
+import sklearn
 import preproc
 import pickle
 
@@ -38,26 +40,55 @@ if not 'data' in dir() and os.path.exists(dname+'.mat'):
 
 #-------------------------------------------------------------------
 #  Run the standard pre-processing and analysis pipeline
+
+# get data in correct format
+data = np.array(data)
+data = np.transpose(data)
+fs = hdr.fSample # sample rate
+
+# 0: get class labels from events values
+y = [e.value[0] for e in events] 
+# convert to numeric labels
+valuedict={} # dict to convert from event.values to numbers    
+#y = np.array(y) # N.B. Only works with *NUMERIC* event values...
+# get the unique values in y
+valuedict = set(y)
+# convert to dictionary
+valuedict = { val:i for i,val in enumerate(valuedict) }
+# use the dict to map from values to numbers
+y    = np.array([ valuedict[val] for val in y ])
+
+
 # 1: detrend
 data        = preproc.detrend(data)
+
 # 2: bad-channel removal
-data, badch = preproc.badchannelremoval(data)
+goodch, badch = preproc.outlierdetection(data);
+data = data[goodch,:,:];
+
 # 3: apply spatial filter
-data        = preproc.spatialfilter(data,type='car')
-# 4 & 5: map to frequencies and select frequencies of interest
-data        = preproc.spectralfilter(data, (8,10,28,30), hdr.fSample)
+spatialfilter='car'
+data        = preproc.spatialfilter(data,type=spatialfilter)
+
+# 4: map to frequencies 
+data,freqs = preproc.powerspectrum(data,dim=1,fSample=fs)
+
+# 5 : select the frequency bins we want
+freqbands   =[8,10,28,30]
+data,freqIdx=preproc.selectbands(data,dim=1,band=freqbands,bins=freqs)
+
 # 6 : bad-trial removal
-data, events, badtrials = preproc.badtrailremoval(data, events)
+goodtr, badtr = preproc.outlierdetection(data,dim=2)
+data = data[:,:,goodtr]
+y = y[goodtr]
+
 # 7: train classifier, default is a linear-least-squares-classifier
-import linear
-#mapping = {('stimulus.target', 0): 0, ('stimulus.target', 1): 1}
-classifier = linear.fit(data,events)#,mapping)
+clsfr = sklearn.linear_model.RidgeCV(store_cv_values=True)
+X2d = np.reshape(data,(-1,data.shape[2])).T # sklearn needs data to be [nTrials x nFeatures]
+clsfr.fit(X2d,y)
+print("MSSE=%g"%np.mean(clsfr.cv_values_))
 
 # save the trained classifer
+# N.B. Be sure to save enough to apply the classifier later!!
 print('Saving clsfr to : %s'%(cname+'.pk'))
-pickle.dump({'classifier':classifier},open(cname+'.pk','wb'))
-# # Unfortunately doesn't work for objects...
-# # also as hdf5 / mat -v7.3
-# f = h5py.File(cname+'.mat','w')
-# f.create_dataset('classifier',data=classifier)
-# f.create_dataset('mapping',data=mapping)
+pickle.dump({'classifier':clsfr,'fSample':fs,'spatialfilter':spatialfilter,'freqbands':freqbands,'goodch':goodch,'valuedict':valuedict},open(cname+'.pk','wb'))

@@ -1,5 +1,5 @@
 #!/bin/bash
-buffdir=`dirname $0`
+buffdir=`dirname "$0"`
 if [ `uname -s` == 'Linux' ]; then
    buffexe=$buffdir'/buffer/bin/';
    if [ -r $buffdir/csignalproxy ]; then

@@ -1,5 +1,5 @@
 #!/bin/bash
-buffdir=`dirname ${BASH_SOURCE[0]}`
+buffdir=`dirname "${BASH_SOURCE[0]}"`
 buffinfo=localhost:1972
 if [ $# -gt 0 ]; then
 	 buffinfo=$1;
