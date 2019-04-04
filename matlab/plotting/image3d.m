@@ -607,9 +607,12 @@ if ( ~isempty(opts.colorbar) && opts.colorbar && ~isempty(opts.clim) )  % true c
   pos(3)=max(.1,pos(3)-.02); pos(2)=max(pos(2),.05); pos(3)=min(.07,1-pos(1)-.05); pos(4)=min(1-pos(2)-.05,pos(4));
   if ( exist('OCTAVE_VERSION','builtin') ) % in octave have to manually convert arrays..
     tmp=get(hdls(N),'position');
+    try
     hdls(N+1)=colorbar('peer',hdls(N),'position',pos); %BUG: octave resizes axes even if give colorbar size
     set(hdls(N),'position',tmp);
     set(hdls(N+1),'position',pos);
+    catch;
+    end
   else    
     % bug in Matlab 2014b -- colorbar doens't correctly accept arguments
     axes(hdls(N));

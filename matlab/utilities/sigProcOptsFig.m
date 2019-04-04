@@ -42,7 +42,7 @@ h12 = uibuttongroup(...
 ...%'createfcn',@(o,v) setappdata(gcbf(),get(o,'tag'),get(get(o,'SelectedObject'),'String')),...    
 'OldSelectedObject',[]);
 catch
-  h12=[];
+  h12=h1;
 end
 
 h13 = uicontrol(...
@@ -113,7 +113,7 @@ h2 = uibuttongroup(...
 ...%'createfcn',@(o,v) setappdata(gcbf(),get(o,'tag'),get(get(o,'SelectedObject'),'String')),...    
 'OldSelectedObject',[]);
 catch
-  h2=[];
+  h2=h1;
 end
 
 h3 = uicontrol(...
@@ -161,7 +161,7 @@ h13 = uipanel(...
 'Tag','adaptfilt',...
 'UserData',[]);
 catch
-  h13=[];
+  h13=h1;
 end
 
 
