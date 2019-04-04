@@ -235,13 +235,13 @@ class openBCI2ft {
 		  System.out.println("nCh : " + nActiveCh);
 		  System.out.println("#samp/buf : " + buffdownsample + " buff_packet : " + buffpacketsize);
 	  		
+		  // Now do the data forwarding
+		  DataPacket_ADS1299 curPacket = 
+				new DataPacket_ADS1299(nEEGDataValuesPerPacket,nAuxDataValuesPerPacket); 
 		  long startT=System.currentTimeMillis(); 
 		  long updateT=startT; // time we last printed update
 		  long packetT=startT; // time last packet was recieved
 		  float packetDur=1f/sampleRate; // time between packets in millis
-		  // Now do the data forwarding
-		  DataPacket_ADS1299 curPacket = 
-				new DataPacket_ADS1299(nEEGDataValuesPerPacket,nAuxDataValuesPerPacket); 
 		  while ( true ) {			 
 				// wait for an OPENBCI message
 				// event driven means we don't block... so sleep a sensible amount between

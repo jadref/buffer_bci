@@ -22,7 +22,7 @@ CFLAGS += -O3
 # defaults, might be overwritten further down
 INCPATH = -I$(FTBUFFER)/c -I$(CPPDIR) -I. 
 LDFLAGS = -L$(FTBUFFER)/c
-CFLAGS = $(INCPATH) -Wunused -Wall -pedantic -O3
+CFLAGS = $(INCPATH) -Wunused -Wall -pedantic -O3 
 CXXFLAGS = $(CFLAGS)
 
 CFLAGS = -I$(FTBUFFER)/src -I$(FTBUFFER)/cpp -I$(FTBUFFER)/c -I. -I$(CPPDIR) -Wall
@@ -74,13 +74,19 @@ ifeq "$(UNAME)" "Linux"
 	   LDLIBS += $(EEGOLIBDIR)/libeego-SDK.so
     endif
     ifeq "$(MACHINE)" "armv6l"
-		EEGOLIBDIR=linux/32bit
 		BINDIR = $(FTBUFFER)/raspberrypi
+		EEGOLIBDIR=linux/arm32bit
+	   LDLIBS += $(EEGOLIBDIR)/libeego-SDK.so
     endif
     ifeq "$(MACHINE)" "aarch64"
-		EEGOLIBDIR=linux/32bit
 		BINDIR = $(FTBUFFER)/raspberrypi
-    endif
+		EEGOLIBDIR=linux/arm32bit
+		LDLIBS += $(EEGOLIBDIR)/libeego-SDK.so
+		# cross-compile to arm32
+		CXX = arm-linux-gnueabihf-g++
+		#LDFLAGS = -static
+		CXXFLAGS += -fpermissive
+	endif
    # Cross-compile for windows on linux
 	ifeq "$(MACHINE)" "mingw32"
 		CXX = i686-w64-mingw32-g++
