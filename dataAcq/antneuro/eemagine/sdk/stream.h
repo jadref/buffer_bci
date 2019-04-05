@@ -2,7 +2,7 @@
  * License: eego amplifier Interface SDK, rev. 1.3
  *
  *
- * Copyright 2015, eemagine Medical Imaging Solutions GmbH
+ * Copyright 2018, eemagine Medical Imaging Solutions GmbH
  *
  *
  * 1. Redistributions of source code must retain the copyright notice this list of conditions and the following disclaimer.

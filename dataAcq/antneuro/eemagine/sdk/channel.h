@@ -2,7 +2,7 @@
  * License: eego amplifier Interface SDK, rev. 1.3
  *
  *
- * Copyright 2015, eemagine Medical Imaging Solutions GmbH
+ * Copyright 2018, eemagine Medical Imaging Solutions GmbH
  *
  *
  * 1. Redistributions of source code must retain the copyright notice this list of conditions and the following disclaimer.
@@ -56,6 +56,9 @@ namespace eemagine {
 			* #return this channel's type
 			*/
 			channel_type getType() const { return _type; }
+
+			bool operator==(const channel& other) const { return _type == other._type; } // Just the type is interesting, the index can be anything
+			bool operator!=(const channel& other) const { return !operator==(other); }
 
 		protected:
 			unsigned int _index;

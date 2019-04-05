@@ -2,7 +2,7 @@
  * License: eego amplifier Interface SDK, rev. 1.3
  *
  *
- * Copyright 2015, eemagine Medical Imaging Solutions GmbH
+ * Copyright 2018, eemagine Medical Imaging Solutions GmbH
  *
  *
  * 1. Redistributions of source code must retain the copyright notice this list of conditions and the following disclaimer.
@@ -91,7 +91,17 @@ namespace eemagine {
 			           The data return by the getData call on this streams contains sample values measured in Volt.
 			           Note that there may only be a maxium one stream alive at all times
 			 */
-			virtual eemagine::sdk::stream * OpenEegStream(int sampling_rate, double reference_range = 1, double bipolar_range = 4, unsigned long long ref_mask=0xffffffffffffffff, unsigned long long bip_mask=0xffffffffffffffff) = 0;
+			virtual eemagine::sdk::stream * OpenEegStream(int sampling_rate, double reference_range, double bipolar_range, unsigned long long ref_mask=0xffffffffffffffff, unsigned long long bip_mask=0xffffffffffffffff) = 0;
+			/**
+			 * \brief Overload for creating an EEG stream with default parameters
+			 * @param sampling_rate the sampling rate for this stream, valid values are: 500, 512, 1000, 1024, 2000, 2048, 4000, 4096, 8000, 8192, 16000, 16384
+			 * @return an object of type stream. The end-user is responsible for deleting the stream when done.
+			 The data return by the getData call on this streams contains sample values measured in Volt.
+			 Note that there may only be a maxium one stream alive at all times
+			 */
+			eemagine::sdk::stream * OpenEegStream(int sampling_rate) {
+				return OpenEegStream(sampling_rate, getReferenceRangesAvailable()[0], getBipolarRangesAvailable()[0]);
+			}
 			/**
 			* \brief Creates an impedance stream
 			* @param ref_mask bitset for selecting which reference channels are used

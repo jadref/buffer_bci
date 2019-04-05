@@ -2,7 +2,7 @@
  * License: eego amplifier Interface SDK, rev. 1.3
  *
  *
- * Copyright 2015, eemagine Medical Imaging Solutions GmbH
+ * Copyright 2018, eemagine Medical Imaging Solutions GmbH
  *
  *
  * 1. Redistributions of source code must retain the copyright notice this list of conditions and the following disclaimer.
@@ -40,7 +40,7 @@ namespace eemagine {
 			 */
 			class notConnected : public std::runtime_error {
 			public:
-				notConnected(const std::string &msg) : std::runtime_error(msg) { }
+				explicit notConnected(const std::string &msg) : std::runtime_error(msg) { }
 			};
 			///////////////////////////////////////////////////////////////////////////////
 			/**
@@ -48,7 +48,7 @@ namespace eemagine {
 			 */
 			class alreadyExists : public std::runtime_error {
 			public:
-				alreadyExists(const std::string &msg) : std::runtime_error(msg) { }
+				explicit alreadyExists(const std::string &msg) : std::runtime_error(msg) { }
 			};
 			///////////////////////////////////////////////////////////////////////////////
 			/**
@@ -56,7 +56,7 @@ namespace eemagine {
 			 */
 			class notFound : public std::runtime_error {
 			public:
-				notFound(const std::string &msg) : std::runtime_error(msg) { }
+				explicit notFound(const std::string &msg) : std::runtime_error(msg) { }
 			};
 			///////////////////////////////////////////////////////////////////////////////
 			/**
@@ -64,7 +64,14 @@ namespace eemagine {
 			*/
 			class incorrectValue : public std::runtime_error {
 			public:
-				incorrectValue(const std::string &msg) : std::runtime_error(msg) { }
+				explicit incorrectValue(const std::string &msg) : std::runtime_error(msg) { }
+			};
+			/**
+			* can be used if an internal error occured
+			*/
+			class internalError : public std::runtime_error {
+			public:
+				explicit internalError(const std::string &msg) : std::runtime_error(msg) { }
 			};
 			///////////////////////////////////////////////////////////////////////////////
 			/**
@@ -72,7 +79,7 @@ namespace eemagine {
 			*/
 			class unknown : public std::runtime_error {
 			public:
-				unknown(const std::string &msg) : std::runtime_error(msg) { }
+				explicit unknown(const std::string &msg) : std::runtime_error(msg) { }
 			};
 		}
 	}
