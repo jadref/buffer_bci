@@ -2,14 +2,23 @@
 cd `dirname "${BASH_SOURCE[0]}"`
 buffdir="$( pwd )"
 echo $buffdir
-exedir=${buffdir}/buffer/bin
+exedir=${buffdir}/buffer
 buffexe=eego2ft;
 if [ `uname -s` == 'Linux' ]; then
-   if [ -r $buffdir/buffer/bin/glnx86/$buffexe ]; then
-	 exedir=$buffdir'/buffer/bin/glnx86';
-fi
-   if [ -r $buffdir/buffer/glnx86/$buffexe ]; then
-	 exedir=$buffdir'/buffer/glnx86';
+   if [[ `uname -m` =~ arm* ]]; then
+	# rapsberry pi
+        if [ -r $buffdir/buffer/raspberrypi/$bufexe ]; then
+           exedir=$buffdir'/buffer/raspberrypi';
+        else
+           echo ERROR 
+	fi 
+   else # x86 linux 
+   	if [ -r $buffdir/buffer/bin/glnx86/$buffexe ]; then
+		 exedir=$buffdir'/buffer/bin/glnx86';
+	fi
+   	if [ -r $buffdir/buffer/glnx86/$buffexe ]; then
+		 exedir=$buffdir'/buffer/glnx86';
+   	fi
    fi
    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${exedir}
 else # Mac

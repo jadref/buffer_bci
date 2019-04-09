@@ -98,20 +98,22 @@ void acquisition(const char *configFile, unsigned int sampleRate) {
      }
    }else { // setup a default stream everything config.
      SignalConfiguration sigCfg;
-     // make a channel map with simple numbers
-     ChannelSelection cs;
-     std::stringstream ss;
+     //std::stringstream ss;
+     char* labci=new char[10];
      int ci=0; 
      for (; ci<nChannels-2; ci++) {
-       ss.clear(); ss<<ci; // int->string
-       std::string labci; labci.append("eggo").append(ss.str());cs.add(ci,labci);
-       fprintf(stderr,"Adding ch: %d) %s\n",ci,ss.str());
+       sprintf(labci,"eego%d",ci);
+       sigCfg.selectForStreaming(ci,labci);
+       fprintf(stderr,"Adding ch: %d) %s\n",ci,labci);
      }
      // add the TWO extra channels for the Trigger and Counter
-     ci++; cs.add(ci,"TRG");       fprintf(stderr,"Adding ch: %d) %s\n",ci,"TRG");
-     ci++; cs.add(ci,"CNT");       fprintf(stderr,"Adding ch: %d) %s\n",ci,"CNT");
-     sigCfg.setStreamingSelection(cs);
-     ODM.setSignalConfiguration(sigCfg);
+     sigCfg.selectForStreaming(ci,"TRG");  fprintf(stderr,"Adding ch: %d) %s\n",ci,"TRG"); ci++;
+     sigCfg.selectForStreaming(ci,"CNT");  fprintf(stderr,"Adding ch: %d) %s\n",ci,"CNT");
+     if( !ODM.setSignalConfiguration(sigCfg) ) {
+		 fprintf(stderr,"ERROR: couldn't update the config");
+		 exit(-1);
+	 }
+     
    }
    fprintf(stderr,"Streaming %i out of %i channels\n", ODM.getSignalConfiguration().getStreamingSelection().getSize(), nChannels);
 	if ( strcmp(hostname, "-")==0 ) {

@@ -7,7 +7,7 @@ FTPATH   = ../buffer
 FTCPPPATH= $(FTPATH)/cpp
 FTBUFFER = $(FTPATH)
 
-CXX = gcc
+CXX = g++
 ##LDFLAGS = -L$(FTBUFFER)
 LDLIBS = -lm
 LDXXLIBS= $(LDLIBS)
@@ -23,12 +23,12 @@ CFLAGS += -O3
 INCPATH = -I$(FTBUFFER)/c -I$(CPPDIR) -I. 
 LDFLAGS = -L$(FTBUFFER)/c
 CFLAGS = $(INCPATH) -Wunused -Wall -pedantic -O3 
-CXXFLAGS = $(CFLAGS)
+CXXFLAGS = $(CFLAGS) -std=c++11
 
 CFLAGS = -I$(FTBUFFER)/src -I$(FTBUFFER)/cpp -I$(FTBUFFER)/c -I. -I$(CPPDIR) -Wall
 CXXFLAGS= $(CFLAGS)
 LDFLAGS = -L$(FTBUFFER)
-LDXXFLAGS= $(LDFLAGS) -lstdc++
+LDXXFLAGS= $(LDFLAGS)  -lstdc++
 
 # to avoid dependencies just build everything from source every time...
 CPPSOURCES = $(patsubst %,$(FTCPPPATH)/%,\
@@ -78,6 +78,15 @@ ifeq "$(UNAME)" "Linux"
 		EEGOLIBDIR=linux/arm32bit
 	   LDLIBS += $(EEGOLIBDIR)/libeego-SDK.so
     endif
+    ifeq "$(MACHINE)" "armv7l"
+		BINDIR = $(FTBUFFER)/raspberrypi
+		EEGOLIBDIR=linux/arm32bit
+	   LDLIBS += $(EEGOLIBDIR)/libeego-SDK.so
+	   LD = arm-none-eabi+g++
+           #LDXXFLAGS += --stl=gnustl
+		CXX = arm-linux-gnueabihf-g++
+		CXXFLAGS += -fpermissive # -fno-exceptions
+    endif
     ifeq "$(MACHINE)" "aarch64"
 		BINDIR = $(FTBUFFER)/raspberrypi
 		EEGOLIBDIR=linux/arm32bit
@@ -120,8 +129,9 @@ TARGETS = eego2ft$(SUFFIX)
 all: $(TARGETS)
 
 eego2ft$(SUFFIX): $(SOURCES) $(CPPSOURCES) $(CSOURCES)
-	$(CXX) -o eego2ft$(SUFFIX) $^ $(CXXFLAGS) $(LDXXFLAGS) $(LDXXLIBS)
+	$(CXX) -o eego2ft$(SUFFIX) $^ $(LDXXLIBS) $(CXXFLAGS) $(LDXXFLAGS) 
 	cp eego2ft$(SUFFIX) $(BINDIR)
+	cp eego2ft$(SUFFIX) $(EEGOLIBDIR)
 	cp $(EEGOLIBDIR)/* $(BINDIR)
 
 clean:
