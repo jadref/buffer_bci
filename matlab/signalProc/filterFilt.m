@@ -3,6 +3,8 @@ function [X,state]=filterFilt(X,state,varargin);
 %
 % Options:
 %  dim        -- [int ] the dimensions along which to apply the filter
+%  fs         -- [float] the sample rate of the data
+%  ch_names   -- {'' } the names of the channels in X  (!IGNORED!)
 %  filter     -- the filter to use, either:
 %                {'name' order cutoff 'type'} name and parameters for filter to use, one-of;
 %                name is one-of: 
@@ -24,9 +26,8 @@ function [X,state]=filterFilt(X,state,varargin);
 %      .A - [1 x order] the Y coefficients for the filter
 %      .B - [1 x order] the X coefficients for the filter order
 %         OR
-%      .A - [order x 6] the X,Y coefficients for the
+%      .A - [order x 6] and .B - [] => A has the X,Y coefficients for the
 %           second-order-section implementation of the filter
-%      .B - []
 %      .filtstate - [] the filter coeficients to propogate between calls
 %      .dim - [int] the dimension the filter applies to
 % Examples:
@@ -49,15 +50,15 @@ else
   if(isempty(fs) && ~isempty(opts.hdr))
     if(isfield(opts.hdr,'fSample')) fs=opts.hdr.fSample; elseif(isfield(opts.hdr,'Fs')) fs=opts.hdr.Fs; end;
   end;
-
+  if(any(opts.dim)<0) opts.dim(opts.dim<0)=ndims(X)+opts.dim(opts.dim<0)+1; end;
+  
   % intialize the filter coefficients if not set yet
   if( isempty(opts.A) || isempty(opts.B) )
     [opts.A,opts.B]=initFilter(opts.filter,fs);
-    opts.filtstate =warmupFilter(opts.A,opts.B,X,dim);
+    opts.filtstate =warmupFilter(opts.A,opts.B,X,opts.dim);
   end
 end
 dim=opts.dim;
-dim(dim<0)=ndims(X)+dim(dim<0)+1;
 szX=size(X); szX(end+1:max(dim))=1;
 if( numel(dim)<2 )
   nEp=1;
@@ -81,17 +82,20 @@ for epi=1:nEp; % auto-apply incrementally if given multiple epochs
   if( numel(dim)>1 )
     xidx{dim(2)}=epi;                             
     Xei=X(xidx{:});
-  end    
+  end
   if( doubleFilter ) Xei=double(Xei); end
                                 % apply the filter
-  if ( isempty(opts.B) ) % Second-order-section filter
+  if ( isempty(opts.B) || size(opts.A,1)>1 ) % Second-order-section filter
+    % N.B. cannot use sosfilt as it **does not** provide the filter state as 
+    % output to propogation between calls
     % N.B. this is *not* computationally efficient as we pass
     % through all the data multiple times..
     for li=1:size(opts.A,1); % apply the sos filter cascade
-      [Xei,state.filtstate(:,:,li)]=filter(opts.A(li,1:3),opts.A(li,4:6),Xei,opts.filtstate(:,:,li),dim(1));       
+      [Xei,opts.filtstate(:,:,li)]=filter(opts.A(li,1:3),opts.A(li,4:6),Xei,opts.filtstate(:,:,li),dim(1));
     end
+    if(~isempty(opts.B) ) Xei=opts.B*Xei; end;
   else % transfer-function filter    
-    [Xei,opts.filtstate]=filter(opts.B,opts.A,double(Xei),opts.filtstate,dim(1));
+    [Xei,opts.filtstate]=filter(opts.B,opts.A,Xei,opts.filtstate,dim(1));
   
   end
   if ( doubleFilter ) Xei=single(Xei); end; % covert back to single
@@ -135,14 +139,32 @@ function [A,B]=initFilter(filter,fs)
   elseif ( iscell(filter) && ischar(filter{1}) ) % filter name
     filttype=lower(filter{1});
     ord=filter{2};
-    bands=filter{3};
-    type='high'; if(numel(filter)>3) type=filter{4}; end;
+    type={'high'}; if(numel(filter)>3) type=filter(4); end;
+    if( strcmp(type{:},'bandpass') ) type={}; end;
+    bands=filter{3}*2/fs; bands=max(0,min(1,bands));
+    if( numel(bands)>1 )
+      if( bands(2)>=1 )     bands=bands(1); type={'high'};
+      elseif( bands(1)<=0 ) bands=bands(2); type={'low'};
+      end;
+    end
     switch filttype;
-      case {'butter','buttersos'};
-        [B,A]=butter(ord,bands*2/fs,type);
-        if (strcmp(filttype,'buttersos')) A=tf2sos(B,A); B=[]; end;
+      case {'butter'}
+        if( exist('OCTAVE_VERSION','builtin') && ~exist('butter') )
+		  warning('loading the signal package : this may mess up your paths!!!');
+          pkg load signal;
+        end;
+        if(  ord>6 ) warning('Butter is unstable with order>6'); end;
+        [A,B]=butter(ord,bands,type{:});
+      case {'buttersos'};
+        if( exist('OCTAVE_VERSION','builtin') && ~exist('butter') )
+		  warning('loading the signal package : this may mess up your paths!!!');
+          pkg load signal;
+        end;
+        if(ord>10) warning('buttersos may be unstable with order>10'); end;
+        [z,p,k]=butter(ord,bands,type{:}); % more stable to use zero-pole as intermediate
+        A=zp2sos(z,p,k);B=1;
       case {'fir','firmin'};
-        B   =fir1(ord,bands*2/fs,type);
+        B   =fir1(ord,bands,type{:});
         A   =1;
         if ( isequal(filter{1},'firmin') )B=firminphase(B); end
         [ans,gDelay]=max(abs(B));
@@ -150,46 +172,66 @@ function [A,B]=initFilter(filter,fs)
         error('Unrecognised filter design type');
     end
   end
-  opts.B=B;
-  opts.A=A;
+  return
 
+function filtstate = filticwarmup(A,B,X,Y)
+  % X = [d x t]
+  if nargin < 4, Y = zeros(size(X)); end 
 
-function filtstate=warmupFitler(A,B,X,dim)
-  % pre-warm the filter on time-reversed data
-  if( nargin<3 ) dim=2; end;
-  if( dim >3  ) error('Only for dim<3 for now'); end;
-  % extract 100 samples of time-reversed data
-  if( dim==1 )        tmp=X(min(end,100):-1:1,:,1); 
-  elseif ( dim==2 )   tmp=X(:,min(end,100):-1:1,1);
-  end
+  nz = max(length(a)-1,length(b)-1);
+  zf = zeros(nz,size(X,1)); % [order x d]
+  % Pad arrays x and y to length nz if required
+  X(:,end+1:nz)=0;
+  Y(:,end+1:nz)=0;
 
-  if( isa(X,'single') )  tmp=double(tmp); end;
-  if( ~isempty(B) ) % normal filter warmup
-    [tmp,filtstate]=filter(B,A,tmp,[],dim);
-  else % SOS
-    [tmp,filtstate]=filter(A(1,1:3),A(1,4:6),tmp,[],dim);
-    filtstate=repmat(filtstate,[1 1 size(A,1)]);
-    for li=2:size(A,1); % apply the filter cascade
-       [tmp,filtstate(:,:,li)]=filter(state.sos(li,1:3),state.sos(li,4:6),tmp,[],dim);
+  for i=nz:-1:1
+    for j=i:nz-1
+      zf(j,:) = b(j+1)*x(:,i)' - a(j+1)*y(:,i)'+zf(j+1,:);
     end
-  end  
+    zf(nz)=b(nz+1)*x(:,i)'-a(nz+1)*y(:,i)';
+  end
   return;
 
-  
-
-
-                        %----------------------------------------------------
+%----------------------------------------------------
 function testcase()
+X=ones(2,1000);
 X=cumsum(randn(2,1000*10),2);
+X(1,:)=X(1,:)+1e3; % massive offset and difference between channels
+
+% test initialization on simple inputs
+[fX,s]=filterFilt(ones(2,1000),[],'filter',{'buttersos',8,.5,'high'},'fs',100);
+clf;plot(fX');
+max(abs(fX(:)))
 
 % 1 call
-[fX,s]=filterFilt(X,[],'filter',{'butter',6,.1,'high'},'fs',100); 
-XfX=cat(3,X,fX);clf;image3d(XfX,1,'disptype','plot','Zvals',{'X' 'fX'});
+[fX,s]=filterFilt(X,[],'filter',{'butter',8,.5,'high'},'fs',100);
+clf;image3d(cat(3,X,fX),1,'disptype','plot','Zvals',{'X' 'fX'});
+[fX,s]=filterFilt(X,[],'filter',{'buttersos',16,.1,'high'},'fs',100); 
+clf;image3d(cat(3,X,fX),1,'disptype','plot','Zvals',{'X' 'fX2'});
 
+% effect of order and edge-proximity on stability
+[fX10,s]=filterFilt(X,[],'filter',{'buttersos',10,[.3 27],'bandpass'},'fs',250);
+[fX14,s]=filterFilt(X,[],'filter',{'buttersos',14,[.3 27],'bandpass'},'fs',250);
+clf;subplot(211);plot(fX10');title('ord=10'); subplot(212);plot(fX14');title('ord=14'); 
+
+filter={'buttersos' 8 1 'high'}
 X3d=reshape(X,[size(X,1),size(X,2)/10,10]);
-s=[];fX=[];  % call in blocks
+fXo=filterFilt(X3d(:,:),[],'filter',filter,'fs',250);
+s=[];
+fXi=zeros(size(X3d));  % call in blocks
 for ei=1:size(X3d,3);
-  [fX(:,:,ei),s]=filterFilt(X3d(:,:,ei),s,'filter',{'butter' 6 .1 'high'},'fs',100);
+  [fXi(:,:,ei),s]=filterFilt(X3d(:,:,ei),s,'filter',filter,'fs',250);
 end;
+clf;image3d(cat(3,fXo,fXi(:,:)),1,'disptype','plot','Zvals',{'fX once' 'fX incremental'});
+mad(fXo,fXi)
+max(abs(fXo(:)))
+
+                                % with pre-config
+fXii=zeros(size(X3d));  % call in blocks
+[fXii(:,:,1),s]=filterFilt(X3d(:,:,1),[],'filter',{'buttersos',16,.1,'high'},'fs',100);
+for ei=2:size(X3d,3);
+  [fXii(:,:,ei),s]=filterFilt(X3d(:,:,ei),s);
+end;
+mad(fXii,fXi)
 
 XfX=cat(3,X3d(:,:),fX(:,:));clf;image3d(XfX,1,'disptype','plot','Zvals',{'X' 'fX'});
