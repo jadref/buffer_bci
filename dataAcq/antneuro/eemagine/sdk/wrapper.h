@@ -2,7 +2,7 @@
  * License: eego amplifier Interface SDK, rev. 1.3
  *
  *
- * Copyright 2015, eemagine Medical Imaging Solutions GmbH
+ * Copyright 2018, eemagine Medical Imaging Solutions GmbH
  *
  *
  * 1. Redistributions of source code must retain the copyright notice this list of conditions and the following disclaimer.
@@ -28,16 +28,7 @@
 #ifndef __eemagine_sdk_h__
 #define __eemagine_sdk_h__
 
-#ifdef EEGO_SDK_EXPORT
-#  ifdef _WIN32
-#    define EEGO_SDK_API __declspec(dllexport)
-#  endif
-#  ifdef __unix__
-#    define EEGO_SDK_API __attribute__ ((visibility ("default")))
-#  endif
-#else // We are importing
-#  define EEGO_SDK_API
-#endif // #ifdef EEGO_SDK_EXPORT
+#include <eemagine/sdk/visibility.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,7 +41,8 @@ extern "C" {
 		EEMAGINE_SDK_ALREADY_EXISTS = -2,
 		EEMAGINE_SDK_NOT_FOUND = -3,
 		EEMAGINE_SDK_INCORRECT_VALUE = -4,
-		EEMAGINE_SDK_UNKNOWN = -5
+		EEMAGINE_SDK_INTERNAL_ERROR = -5,
+		EEMAGINE_SDK_UNKNOWN = -6
 	};
 	/**
 	 * @brief structure to support amplifier info
@@ -81,11 +73,6 @@ extern "C" {
 		eemagine_sdk_channel_type type;
 	} eemagine_sdk_channel_info;
 	/**
-	* @brief setup sdk library
-	*/
-	typedef void(*eemagine_sdk_setup_t)(void *);
-	EEGO_SDK_API void eemagine_sdk_setup(void *);
-	/**
 	 * @brief initialze sdk library
 	 */
 	typedef void(*eemagine_sdk_init_t)(void);
@@ -101,10 +88,20 @@ extern "C" {
 	typedef int(*eemagine_sdk_get_version_t)(void);
 	EEGO_SDK_API int eemagine_sdk_get_version();
 	/**
+	* @brief create virtual cascaded amplifier
+	*/
+	typedef int(*eemagine_sdk_create_cascaded_amplifier_t)(const int * amplifier_id_array, int amount_of_amplifiers);
+	EEGO_SDK_API int eemagine_sdk_create_cascaded_amplifier(const int * amplifier_id_array, int amount_of_amplifiers);
+	/**
 	 * @brief get an array of connected amplifiers
 	 */
 	typedef int(*eemagine_sdk_get_amplifiers_info_t)(eemagine_sdk_amplifier_info * amplifier_info_array, int amplifier_info_array_size);
 	EEGO_SDK_API int eemagine_sdk_get_amplifiers_info(eemagine_sdk_amplifier_info * amplifier_info_array, int amplifier_info_array_size);
+	/**
+	* open amplifier
+	*/
+	typedef int(*eemagine_sdk_open_amplifier_t)(int amplifier_id);
+	EEGO_SDK_API int eemagine_sdk_open_amplifier(int amplifier_id);
 	/**
 	* close amplifier
 	*/

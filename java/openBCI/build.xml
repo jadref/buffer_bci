@@ -64,6 +64,7 @@
 	 <target name="dist" depends="jar">
 		<copy file="${lib.dir}/jssc.jar" todir="${buffer.dir}"/>
 		<copy file="${jar.dir}/${ant.project.name}.jar" todir="${buffer.dir}"/>
+      <copy file="${jar.dir}/${ant.project.name}.jar" todir="."/>
 	 </target>
 
     <target name="clean">   <delete dir="${build.dir}"/>  </target>

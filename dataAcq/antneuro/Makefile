@@ -7,7 +7,7 @@ FTPATH   = ../buffer
 FTCPPPATH= $(FTPATH)/cpp
 FTBUFFER = $(FTPATH)
 
-CXX = gcc
+CXX = g++
 ##LDFLAGS = -L$(FTBUFFER)
 LDLIBS = -lm
 LDXXLIBS= $(LDLIBS)
@@ -22,13 +22,13 @@ CFLAGS += -O3
 # defaults, might be overwritten further down
 INCPATH = -I$(FTBUFFER)/c -I$(CPPDIR) -I. 
 LDFLAGS = -L$(FTBUFFER)/c
-CFLAGS = $(INCPATH) -Wunused -Wall -pedantic -O3
-CXXFLAGS = $(CFLAGS)
+CFLAGS = $(INCPATH) -Wunused -Wall -pedantic -O3 
+CXXFLAGS = $(CFLAGS) -std=c++11
 
 CFLAGS = -I$(FTBUFFER)/src -I$(FTBUFFER)/cpp -I$(FTBUFFER)/c -I. -I$(CPPDIR) -Wall
 CXXFLAGS= $(CFLAGS)
 LDFLAGS = -L$(FTBUFFER)
-LDXXFLAGS= $(LDFLAGS) -lstdc++
+LDXXFLAGS= $(LDFLAGS)  -lstdc++
 
 # to avoid dependencies just build everything from source every time...
 CPPSOURCES = $(patsubst %,$(FTCPPPATH)/%,\
@@ -74,13 +74,28 @@ ifeq "$(UNAME)" "Linux"
 	   LDLIBS += $(EEGOLIBDIR)/libeego-SDK.so
     endif
     ifeq "$(MACHINE)" "armv6l"
-		EEGOLIBDIR=linux/32bit
 		BINDIR = $(FTBUFFER)/raspberrypi
+		EEGOLIBDIR=linux/arm32bit
+	   LDLIBS += $(EEGOLIBDIR)/libeego-SDK.so
+    endif
+    ifeq "$(MACHINE)" "armv7l"
+		BINDIR = $(FTBUFFER)/raspberrypi
+		EEGOLIBDIR=linux/arm32bit
+	   LDLIBS += $(EEGOLIBDIR)/libeego-SDK.so
+	   LD = arm-none-eabi+g++
+           #LDXXFLAGS += --stl=gnustl
+		CXX = arm-linux-gnueabihf-g++
+		CXXFLAGS += -fpermissive # -fno-exceptions
     endif
     ifeq "$(MACHINE)" "aarch64"
-		EEGOLIBDIR=linux/32bit
 		BINDIR = $(FTBUFFER)/raspberrypi
-    endif
+		EEGOLIBDIR=linux/arm32bit
+		LDLIBS += $(EEGOLIBDIR)/libeego-SDK.so
+		# cross-compile to arm32
+		CXX = arm-linux-gnueabihf-g++
+		#LDFLAGS = -static
+		CXXFLAGS += -fpermissive
+	endif
    # Cross-compile for windows on linux
 	ifeq "$(MACHINE)" "mingw32"
 		CXX = i686-w64-mingw32-g++
@@ -114,8 +129,9 @@ TARGETS = eego2ft$(SUFFIX)
 all: $(TARGETS)
 
 eego2ft$(SUFFIX): $(SOURCES) $(CPPSOURCES) $(CSOURCES)
-	$(CXX) -o eego2ft$(SUFFIX) $^ $(CXXFLAGS) $(LDXXFLAGS) $(LDXXLIBS)
+	$(CXX) -o eego2ft$(SUFFIX) $^ $(LDXXLIBS) $(CXXFLAGS) $(LDXXFLAGS) 
 	cp eego2ft$(SUFFIX) $(BINDIR)
+	cp eego2ft$(SUFFIX) $(EEGOLIBDIR)
 	cp $(EEGOLIBDIR)/* $(BINDIR)
 
 clean:

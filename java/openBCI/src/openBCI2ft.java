@@ -22,29 +22,46 @@ class openBCI2ft {
 	 static private float openBCI_impedanceDrive_amps = (float)6.0e-9;  //6 nA
 	 boolean isBiasAuto = true;
 	 static int n_aux_ifEnabled = 3;  // this is the accelerometer data CHIP 2014-11-03
-	 //program constants
+	 // N.B. each channel is measured as: P - N, 
+	 //    where P is the positive pin (top) and N is the negative pin (N)
+	 //    Thus, connecting all pins to SRB2 makes this the reference for all pins!
+	 //    In addition the BIAS pin is a "driven ground" which the average of all included
+	 //    channels into the head! 
+				// Channel settings format: is
+				// [CHANNEL, POWER_DOWN, GAIN_SET, INPUT_TYPE_SET, BIAS_SET, SRB2_SET, SRB1_SET]
+				// **POWER_DOWN**  0 = ON (default),  1 = OFF    
+				// **GAIN_SET**    1=2x, 2=4x, 3=6x, 4=8x, 5=12x, 6=24x
+				// **INPUT_TYPE_SET**  0=ADSINPUT_NORMAL     	(default),
+				//   1=ADSINPUT_SHORTED, 2=ADSINPUT_BIAS_MEAS, 3=ADSINPUT_MVDD, 4=ADSINPUT_TEMP
+				//   5=ADSINPUT_TESTSIG, 6=ADSINPUT_BIAS_DRP, 7=ADSINPUT_BIAS_DRN 
+				// **BIAS_SET**  (a.k.a. DRIVEN-GROUND) 0= Remove form BIAS, 1 = Include in BIAS (=>common-average-ground)  (default)  
+				// **SRB2_SET**  (a.k.a. ref-channel) 0=Disconnect this inputs **P** pin from SRB2, 1=Connect this inputs **P** pin to SRB2 (default)
+				// **SRB1_SET**  0=Disconnect all N inputs from SRB1 (default), 1=Connect all N to SRB1  
+	// Thus default config for: all 8ch measure EEG, with Driven-Ground=CAR, SRB2=Reference, other-P-wires included in SRB reference. is: {0,6,0,1,1,0}
 	 static char[] defaultSettings={'0','6','0','1','1','0'};
 
+	int curDataPacketInd = -1;
+	int lastReadDataPacketInd = -1;
 
-int curDataPacketInd = -1;
-int lastReadDataPacketInd = -1;
-
-//related to sync'ing communiction to OpenBCI hardware?
-boolean currentlySyncing = false;
-long timeOfLastCommand = 0;
+	//related to sync'ing communiction to OpenBCI hardware?
+	boolean currentlySyncing = false;
+	long timeOfLastCommand = 0;
 
 	 public static void main(String[] args) throws IOException,InterruptedException {
 
 		  
-		  if ( args.length==0 ) {
+		  //if ( args.length==0 ) {
 				System.out.println("openBCI2ft openBCIport bufferhost:bufferport nActiveCh useAux eventDriven buffpacketsize");
-		  }
+		  //}
 		  
 		  // openBCI port
 		  String    openBCIport    = null;
 		  if (args.length>=1) {
 				openBCIport=args[0];
 		  }
+		  // print the current settings
+		  System.out.println("OPENBCI port: " + openBCIport);
+		  
 		  // buffer host:port
 		  String buffhostname = "localhost";
 		  int buffport = 1972;
@@ -56,20 +73,27 @@ long timeOfLastCommand = 0;
 					 buffhostname=buffhostname.substring(0,sep);
 				}
 		  }
+		  System.out.println("Buffer server: " + buffhostname + " : " + buffport);
+
 		  int nActiveCh=-1;
 		  if (args.length>=3) { nActiveCh = Integer.parseInt(args[2]); }		  
+		  System.out.println("nActiveCh :"+nActiveCh);
+
 		  boolean useAux=true;
 		  if (args.length>=4) { 
 				useAux = Integer.parseInt(args[3])>0;
 				//System.out.println("Warning, samplerate fixed for this hardware. Argument ignored.");
 				//sampleRate = Integer.parseInt(args[3]); 
-		  }		  
+		  }
+		  System.out.println("useAux : "+ useAux);
+
 		  int buffdownsample=1;
 		  boolean readAll=true; // do we read all data from serial port when some is available
-		  boolean serialEvent=false; // do we use event-driven serial comms
+		  boolean serialEvent=true; // do we use event-driven serial comms
 		  if (args.length>=5) { 
-				serialEvent = Integer.parseInt(args[4])>0;;
+				serialEvent = Integer.parseInt(args[4])>0;
 		  }
+		  System.out.println("SerialEvent :"+serialEvent);
 		  // if (args.length>=5) { 
 		  // 		//System.out.println("Warning, buff-down-sample currently isn't supported.  Argument ignored.");		 
 		  // 		buffdownsample = Integer.parseInt(args[4]); 
@@ -77,8 +101,8 @@ long timeOfLastCommand = 0;
 		  // }		  
 		  int buffpacketsize=-1;
 		  if (args.length>=6) { buffpacketsize = Integer.parseInt(args[5]); }		  
+		  System.out.println("buffpacketsize :"+buffpacketsize);
 		  
-
 		  if ( openBCIport == null ) { // list available ports and exit
 				System.out.println("No serial port defined.  Current serial ports connected are:");
 				String[] portNames = jssc.SerialPortList.getPortNames();
@@ -87,11 +111,7 @@ long timeOfLastCommand = 0;
 				}
 				System.out.println();
 				System.exit(1);
-		  }
-		  
-		  // print the current settings
-		  System.out.println("OPENBCI port: " + openBCIport);
-		  System.out.println("Buffer server: " + buffhostname + " : " + buffport);
+		  }		  
 
 		  // open the connection to the buffer server		  
 		  BufferClientClock C = new BufferClientClock();
@@ -215,13 +235,13 @@ long timeOfLastCommand = 0;
 		  System.out.println("nCh : " + nActiveCh);
 		  System.out.println("#samp/buf : " + buffdownsample + " buff_packet : " + buffpacketsize);
 	  		
-		  long startT=System.currentTimeMillis(); 
-		  long updateT=startT; // time we last printed update
-		  long packetT=startT; // time last packet was recieved
-		  float packetDur=0; // time between packets in millis
 		  // Now do the data forwarding
 		  DataPacket_ADS1299 curPacket = 
 				new DataPacket_ADS1299(nEEGDataValuesPerPacket,nAuxDataValuesPerPacket); 
+		  long startT=System.currentTimeMillis(); 
+		  long updateT=startT; // time we last printed update
+		  long packetT=startT; // time last packet was recieved
+		  float packetDur=1f/sampleRate; // time between packets in millis
 		  while ( true ) {			 
 				// wait for an OPENBCI message
 				// event driven means we don't block... so sleep a sensible amount between
@@ -236,7 +256,7 @@ long timeOfLastCommand = 0;
 						  // so use a non-blocking read to check for new data
 						  if ( openBCI.read(false,0) < 0 ){ // non-blocking read new data
 								// no data on serial port, so wait for some to come available
-								Thread.sleep((int)(.5f*1000f/sampleRate)); // sleep for 50% sample rate
+								Thread.sleep((int)(.1f*1000f/sampleRate)); // sleep for 50% sample rate
 						  }
 					 } else {
 						  // Use a blocking read to wait for new bytes on the serial port
@@ -246,19 +266,19 @@ long timeOfLastCommand = 0;
 				nSamp++;
 				// Moving average est interpacket duration
 				long curT = System.currentTimeMillis();
-				packetDur = (System.currentTimeMillis()-packetT)*.01f + packetDur*.99f; 
+				packetDur = (curT-packetT)*.01f + packetDur*.99f; // move-ave est packet duration
 				packetT   = curT;
 				if ( VERB>1 ){ 
-					 System.out.println((System.currentTimeMillis()-startT)/1000.0 + 
+					 System.out.println((curT-startT)/1000.0 + 
 											  " : Got a data packet from openBCI"); 
 				}
 				// increment the cursor position
 				if ( VERB>0 ){
-					 if ( System.currentTimeMillis()-updateT > 2*1000 ) {
-						  updateT=System.currentTimeMillis();
-						  System.out.println((float)(System.currentTimeMillis()-startT)/1000.0 
-													+ "  " + nSamp + "  " + nBlk + "  " + (1000f/packetDur) 
-													+ "   (t,samp,blk,Hz)");
+					 if ( curT-updateT > 2*1000 ) {
+						  updateT=curT;
+						  System.out.println((float)(curT-startT)/1000.0 
+                                       + "  " + nSamp + "  " + nBlk + "  " + (nSamp*1000.0f/((float)(curT-startT))) 
+											+ "   (t,samp,blk,Hz)");
 					 }
 				}
 				// get (a copy of) the data just read

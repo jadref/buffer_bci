@@ -2,7 +2,7 @@
  * License: eego amplifier Interface SDK, rev. 1.3
  *
  *
- * Copyright 2018, eemagine Medical Imaging Solutions GmbH
+ * Copyright 2015, eemagine Medical Imaging Solutions GmbH
  *
  *
  * 1. Redistributions of source code must retain the copyright notice this list of conditions and the following disclaimer.
@@ -25,76 +25,18 @@
  * Please be especially advised that any certification holding for the eego amplifier is not valid for a combined system of your application software and the eego amplifier. You must obtain your own certification for a combined system of amplifier and software.
  */
 
-#ifndef __eemagine_sdk_buffer_h__
-#define __eemagine_sdk_buffer_h__
+#ifndef __eemagine_sdk_visibility_h__
+#define __eemagine_sdk_visibility_h__
 
-// system
-#include <string>
-#include <vector>
-// eemagine
-#include <eemagine/sdk/exceptions.h>
-
-namespace eemagine {
-	namespace sdk {
-		/// Wrapper around array to provide indexed access to values
-		class buffer {
-		public:
-			/**
-			 * \brief default constructor
-			 */
-			buffer(unsigned int channel_count = 0, unsigned int sample_count = 0)
-				: _data(channel_count * sample_count)
-				, _channel_count(channel_count)
-				, _sample_count(sample_count)
-			{
-			}
-			/**
-			* \brief get the number of channels
-			* @return number of channels
-			*/
-			const unsigned int& getChannelCount() const
-			{
-				return _channel_count;
-			}
-
-			/**
-			* \brief get the number of samples
-			* @return number of samples
-			*/
-			const unsigned int& getSampleCount() const
-			{
-				return _sample_count;
-			}
-			/**
-			* \brief get sample value
-			* @param channel the channel index(start indexing at zero)
-			* @param sample the sample index(start indexing at zero)
-			* @return returns that value for channel at sample
-			*/
-			const double& getSample(unsigned int channel, unsigned int sample) const
-			{
-				if (channel >= _channel_count || sample >= _sample_count) {
-					throw(eemagine::sdk::exceptions::incorrectValue("invalid getSample index"));
-				}
-				return _data[channel + sample * _channel_count];
-			}
-			/**
-			* \brief get number of samples
-			* @return number of samples
-			*/
-			size_t size() const { return _data.size(); }
-			/**
-			 * \brief direct pointer to data
-			 */
-			double * data() {
-				return _data.data();
-			}
-		protected:
-			std::vector < double > _data;
-			unsigned int           _channel_count;
-			unsigned int           _sample_count;
-		};
-	}
-}
+#ifdef EEGO_SDK_EXPORT
+#  ifdef _WIN32
+#    define EEGO_SDK_API __declspec(dllexport)
+#  endif
+#  ifdef __unix__
+#    define EEGO_SDK_API __attribute__ ((visibility ("default")))
+#  endif
+#else // We are importing
+#  define EEGO_SDK_API
+#endif // #ifdef EEGO_SDK_EXPORT
 
 #endif

@@ -2,7 +2,7 @@
  * License: eego amplifier Interface SDK, rev. 1.3
  *
  *
- * Copyright 2015, eemagine Medical Imaging Solutions GmbH
+ * Copyright 2018, eemagine Medical Imaging Solutions GmbH
  *
  *
  * 1. Redistributions of source code must retain the copyright notice this list of conditions and the following disclaimer.
@@ -25,10 +25,9 @@
  * Please be especially advised that any certification holding for the eego amplifier is not valid for a combined system of your application software and the eego amplifier. You must obtain your own certification for a combined system of amplifier and software.
  */
 
-// system
+ // system
 #pragma warning(disable: 4996)
 #include <string.h>
-#include <iostream>
 #include <map>
 #include <sstream>
 
@@ -78,10 +77,6 @@ class _sdkBindings
 public:
 	bool initialized;
 	/**
-	* @brief setup sdk library
-	*/
-	eemagine_sdk_setup_t setup;
-	/**
 	* @brief initialze sdk library
 	*/
 	eemagine_sdk_init_t init;
@@ -94,6 +89,10 @@ public:
 	*/
 	eemagine_sdk_get_version_t get_version;
 	/**
+	* @brief create virtual cascaded amplifier
+	*/
+	eemagine_sdk_create_cascaded_amplifier_t create_cascaded_amplifier;
+	/**
 	* @brief get an array of connected amplifiers
 	*/
 	eemagine_sdk_get_amplifiers_info_t get_amplifiers_info;
@@ -101,6 +100,10 @@ public:
 	* get the channel list from an amplifier
 	*/
 	eemagine_sdk_get_amplifier_channel_list_t get_amplifier_channel_list;
+	/**
+	* open amplifier
+	*/
+	eemagine_sdk_open_amplifier_t open_amplifier;
 	/**
 	* close amplifier
 	*/
@@ -193,6 +196,9 @@ _return_value_guard(int rv) {
 		_sdk.get_error_string(msg, 1024);
 		throw(eemagine::sdk::exceptions::incorrectValue(msg));
 		break;
+	case EEMAGINE_SDK_INTERNAL_ERROR:
+		_sdk.get_error_string(msg, 1024);
+		throw(eemagine::sdk::exceptions::internalError(msg));
 	case EEMAGINE_SDK_UNKNOWN:
 		_sdk.get_error_string(msg, 1024);
 		throw(eemagine::sdk::exceptions::unknown(msg));
@@ -201,6 +207,7 @@ _return_value_guard(int rv) {
 	return rv;
 }
 
+///////////////////////////////////////////////////////////////////////////////
 std::vector<eemagine::sdk::channel> _channelArrayToVector(eemagine_sdk_channel_info* channelPtr, unsigned int channelCount)
 {
 	std::vector<eemagine::sdk::channel> rv; // the list to be filled
@@ -211,7 +218,9 @@ std::vector<eemagine::sdk::channel> _channelArrayToVector(eemagine_sdk_channel_i
 		eemagine_sdk_channel_info* read_ptr = channelPtr + channel;
 		if (read_ptr->index < 0)
 		{
-			throw eemagine::sdk::exceptions::unknown("Channel index is below zero: " + read_ptr->index);
+			std::stringstream ss;
+			ss << "Channel index is below zero: " << read_ptr->index;
+			eemagine::sdk::exceptions::unknown(ss.str().c_str());
 		}
 		unsigned index = read_ptr->index;
 		switch (read_ptr->type) {
@@ -243,7 +252,10 @@ std::vector<eemagine::sdk::channel> _channelArrayToVector(eemagine_sdk_channel_i
 			rv.push_back(eemagine::sdk::channel(index, eemagine::sdk::channel::magnetometer));
 			break;
 		default:
-			throw eemagine::sdk::exceptions::unknown("Channel type unknown: " + read_ptr->type);
+			std::stringstream ss;
+			ss << "Channel type unknown: " << read_ptr->type;
+			throw eemagine::sdk::exceptions::unknown(ss.str().c_str());
+			break;
 		}
 	}
 
@@ -290,18 +302,14 @@ protected:
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-
-void increment_amplifier_reference_count(const eemagine_sdk_amplifier_info & info);
-void decrement_amplifier_reference_count(const eemagine_sdk_amplifier_info & info);
-
-///////////////////////////////////////////////////////////////////////////////
 class _sdk_amplifier : public eemagine::sdk::amplifier {
 public:
 	_sdk_amplifier(eemagine_sdk_amplifier_info info) : _amplifier_info(info) {
-    }
-	~_sdk_amplifier() {
+        _sdk.open_amplifier(_amplifier_info.id);
+	}
+
+	virtual ~_sdk_amplifier() {
 		_sdk.close_amplifier(_amplifier_info.id);
-		decrement_amplifier_reference_count(_amplifier_info);
 	}
 
 	std::string getSerialNumber() const override {
@@ -375,123 +383,34 @@ public:
 		return rv;
 	}
 
-	eemagine::sdk::stream * OpenEegStream(int sampling_rate, double reference_range, double bipolar_range, unsigned long long ref_mask, unsigned long long bip_mask) {
+	eemagine::sdk::stream * OpenEegStream(
+		int sampling_rate,
+		double reference_range,
+		double bipolar_range,
+		unsigned long long ref_mask,
+		unsigned long long bip_mask) override
+	{
 		int stream_id = _return_value_guard(_sdk.open_eeg_stream(_amplifier_info.id, sampling_rate, reference_range, bipolar_range, ref_mask, bip_mask));
 		return new _sdk_stream(stream_id);
 	}
 
-	eemagine::sdk::stream * OpenImpedanceStream(unsigned long long ref_mask) {
+	eemagine::sdk::stream * OpenImpedanceStream(unsigned long long ref_mask) override {
 		int stream_id = _return_value_guard(_sdk.open_impedance_stream(_amplifier_info.id, ref_mask));
 		return new _sdk_stream(stream_id);
+	}
+
+	const eemagine_sdk_amplifier_info & get_amplifier_info() const {
+		return _amplifier_info;
 	}
 protected:
 	eemagine_sdk_amplifier_info _amplifier_info;
 };
-///////////////////////////////////////////////////////////////////////////////
-class _sdk_guard {
-public:
-	_sdk_guard() {
-        _sdk.init();
-	}
-	~_sdk_guard() {
-		_sdk.exit();
-	}
 
-	void decrementAmplifierReferenceCount(const eemagine_sdk_amplifier_info & info) {
-		for (std::vector<_amp_ref_count>::iterator i = _amplifier_reference_count_vector.begin();
-			i != _amplifier_reference_count_vector.end();
-			++i)
-		{
-			if (info.id != i->info.id) {
-				++i->ref_count;
-				return;
-			}
-		}
-	}
-	void incrementAmplifierReferenceCount(const eemagine_sdk_amplifier_info & info) {
-		for (std::vector<_amp_ref_count>::iterator i = _amplifier_reference_count_vector.begin();
-			i != _amplifier_reference_count_vector.end();
-			++i)
-		{
-			if (info.id == i->info.id) {
-				++i->ref_count;
-				return;
-			}
-		}
-		// if we got here, we didn't find one, so create
-		_amp_ref_count arc;
-		arc.ref_count = 2;
-		arc.info.id = info.id;
-		strncpy(arc.info.serial, info.serial, 64);
-		arc.amp = new _sdk_amplifier(info);
-		_amplifier_reference_count_vector.push_back(arc);
-	}
-
-	void sweepAmplifierReferenceCounts() {
-		for (std::vector<_amp_ref_count>::iterator i = _amplifier_reference_count_vector.begin(); i != _amplifier_reference_count_vector.end();) {
-			--i->ref_count;
-			if (i->ref_count == 0) {
-				i = _amplifier_reference_count_vector.erase(i);
-			}
-			else {
-				++i;
-			}
-		}
-	}
-
-	std::vector<eemagine::sdk::amplifier *> getAmplifiers() {
-		std::vector<eemagine::sdk::amplifier *> rv;
-		for (std::vector<_amp_ref_count>::iterator i = _amplifier_reference_count_vector.begin(); i != _amplifier_reference_count_vector.end(); ++i) {
-			rv.push_back(i->amp);
-		}
-		return rv;
-	}
-
-protected:
-	struct _amp_ref_count {
-		int                           ref_count;
-		eemagine_sdk_amplifier_info   info;
-		eemagine::sdk::amplifier    * amp;
-	};
-	std::vector<_amp_ref_count> _amplifier_reference_count_vector;
-};
-///////////////////////////////////////////////////////////////////////////////
-_sdk_guard *
-_get_sdk_guard_singleton(bool release = false) {
-#if _WIN32 && (_MSC_VER < 1900)
-	// singleton to sdk initializer guard
-	static _sdk_guard * _guard = NULL;
-
-	if (release) {
-		if (_guard != NULL) {
-			delete _guard;
-			_guard = NULL;
-		}
-	}
-	else {
-		if (_guard == NULL) {
-			_guard = new _sdk_guard();
-		}
-	}
-	return _guard;
-#else
-	static _sdk_guard _guard_instance;
-	return & _guard_instance;
-#endif
-}
-///////////////////////////////////////////////////////////////////////////////
-void increment_amplifier_reference_count(const eemagine_sdk_amplifier_info & info) {
-	_get_sdk_guard_singleton()->incrementAmplifierReferenceCount(info);
-}
-void decrement_amplifier_reference_count(const eemagine_sdk_amplifier_info & info) {
-	_get_sdk_guard_singleton()->decrementAmplifierReferenceCount(info);
-	_get_sdk_guard_singleton()->sweepAmplifierReferenceCounts();
-}
 ///////////////////////////////////////////////////////////////////////////////
 #ifdef EEGO_SDK_BIND_STATIC
 // trivial case: The dll is bound during compile time. All we have to do is
 // assign the defined symbols to the _sdk structure.
-eemagine::sdk::factory::factory(void * data)
+eemagine::sdk::factory::factory()
 {
 	// Check version first
 	if (eemagine_sdk_get_version() != EEGO_SDK_VERSION)
@@ -500,11 +419,12 @@ eemagine::sdk::factory::factory(void * data)
 	}
 
 	if (!_sdk.initialized) {
-		_sdk.setup = eemagine_sdk_setup;
 		_sdk.init = eemagine_sdk_init;
 		_sdk.exit = eemagine_sdk_exit;
 		_sdk.get_version = eemagine_sdk_get_version;
+		_sdk.create_cascaded_amplifier = eemagine_sdk_create_cascaded_amplifier;
 		_sdk.get_amplifiers_info = eemagine_sdk_get_amplifiers_info;
+		_sdk.open_amplifier = eemagine_sdk_open_amplifier;
 		_sdk.close_amplifier = eemagine_sdk_close_amplifier;
 		_sdk.get_amplifier_channel_list = eemagine_sdk_get_amplifier_channel_list;
 		_sdk.get_amplifier_serial = eemagine_sdk_get_amplifier_serial;
@@ -521,9 +441,10 @@ eemagine::sdk::factory::factory(void * data)
 		_sdk.prefetch = eemagine_sdk_prefetch;
 		_sdk.get_data = eemagine_sdk_get_data;
 		_sdk.get_error_string = eemagine_sdk_get_error_string;
-		_sdk.setup(data);
 		_sdk.initialized = true;
 	}
+
+	_sdk.init();
 }
 #else
 // More complicated case. The path to the dll is provided by call to the factory.
@@ -721,7 +642,7 @@ LoadSDKLibrary(const std::string &filename) {
 }
 #endif
 
-static void loadLibraryUTF8(const std::string& libPathUTF8, void * data)
+static void loadLibraryUTF8(const std::string& libPathUTF8)
 {
 	// Only load functions once
 	if (_sdk.initialized == false)
@@ -737,12 +658,12 @@ static void loadLibraryUTF8(const std::string& libPathUTF8, void * data)
 			throw(eemagine::sdk::exceptions::incorrectValue("Eego SDK version mismatch"));
 		}
 
-
 		// Load function pointers from DLL;
-		_sdk.setup = getFunc<eemagine_sdk_setup_t>(oLibHandle, "eemagine_sdk_setup");
 		_sdk.init = getFunc<eemagine_sdk_init_t>(oLibHandle, "eemagine_sdk_init");
 		_sdk.exit = getFunc<eemagine_sdk_exit_t>(oLibHandle, "eemagine_sdk_exit");
+		_sdk.create_cascaded_amplifier = getFunc<eemagine_sdk_create_cascaded_amplifier_t>(oLibHandle, "eemagine_sdk_create_cascaded_amplifier");
 		_sdk.get_amplifiers_info = getFunc<eemagine_sdk_get_amplifiers_info_t>(oLibHandle, "eemagine_sdk_get_amplifiers_info");
+		_sdk.open_amplifier = getFunc<eemagine_sdk_open_amplifier_t>(oLibHandle, "eemagine_sdk_open_amplifier");
 		_sdk.close_amplifier = getFunc<eemagine_sdk_close_amplifier_t>(oLibHandle, "eemagine_sdk_close_amplifier");
 		_sdk.get_amplifier_channel_list = getFunc<eemagine_sdk_get_amplifier_channel_list_t>(oLibHandle, "eemagine_sdk_get_amplifier_channel_list");
 		_sdk.get_amplifier_serial = getFunc<eemagine_sdk_get_amplifier_serial_t>(oLibHandle, "eemagine_sdk_get_amplifier_serial");
@@ -759,7 +680,6 @@ static void loadLibraryUTF8(const std::string& libPathUTF8, void * data)
 		_sdk.prefetch = getFunc<eemagine_sdk_prefetch_t>(oLibHandle, "eemagine_sdk_prefetch");
 		_sdk.get_data = getFunc<eemagine_sdk_get_data_t>(oLibHandle, "eemagine_sdk_get_data");
 		_sdk.get_error_string = getFunc<eemagine_sdk_get_error_string_t>(oLibHandle, "eemagine_sdk_get_error_string");
-		_sdk.setup(data);
 		_sdk.initialized = true;
 	}
 
@@ -767,41 +687,36 @@ static void loadLibraryUTF8(const std::string& libPathUTF8, void * data)
 }
 
 #ifdef _WIN32
-eemagine::sdk::factory::factory(const std::wstring& libPath, void * data)
+eemagine::sdk::factory::factory(const std::wstring& libPath)
 {
-	loadLibraryUTF8(UTF16toUTF8(libPath), data);
+	loadLibraryUTF8(UTF16toUTF8(libPath));
+
+	_sdk.init();
 }
 #endif
 
-eemagine::sdk::factory::factory(const std::string& libPath, void * data)
+eemagine::sdk::factory::factory(const std::string& libPath)
 {
 #if defined(_MBCS)
-	loadLibraryUTF8(MBCStoUTF8(libPath), data);
+	loadLibraryUTF8(MBCStoUTF8(libPath));
 #elif defined(_UNICODE)
-	loadLibraryUTF8(libPath, data);
+	loadLibraryUTF8(libPath);
 #else
 #error "Undefined string handling"
 #endif
+	_sdk.init();
 }
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
 eemagine::sdk::factory::~factory() {
-    try {
-        _get_sdk_guard_singleton()->sweepAmplifierReferenceCounts();
-        _get_sdk_guard_singleton(true);
-	}
-	catch (const std::exception &e) {
-		std::cerr << "exception in ~factory: " << e.what() << std::endl;
-	} catch (...) {
-		std::cerr << "exception in ~factory" << std::endl;
-	}
+	_sdk.exit();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 std::vector<eemagine::sdk::amplifier *>
 eemagine::sdk::factory::getAmplifiers() {
-	_sdk_guard * sg = _get_sdk_guard_singleton();
+	std::vector<eemagine::sdk::amplifier *> rv;
 
 	// get list from c layer first
 	eemagine_sdk_amplifier_info amplifier_info_array[64];
@@ -809,13 +724,10 @@ eemagine::sdk::factory::getAmplifiers() {
 
 	// mark
 	for (int amp_id = 0; amp_id < amplifier_count; ++amp_id) {
-		sg->incrementAmplifierReferenceCount(amplifier_info_array[amp_id]);
+		rv.push_back(new _sdk_amplifier(amplifier_info_array[amp_id]));
 	}
 
-	// sweep
-	sg->sweepAmplifierReferenceCounts();
-
-	return sg->getAmplifiers();
+	return rv;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -836,6 +748,31 @@ eemagine::sdk::factory::getAmplifier() {
 	}
 
 	return rv;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+eemagine::sdk::amplifier*
+eemagine::sdk::factory::createCascadedAmplifier(const std::vector<amplifier *> & list)
+{
+	int amplifier_id_array[64];
+	int amplifier_id_count(0);
+
+	for (size_t n = 0; n < list.size(); ++n)
+	{
+		_sdk_amplifier * sa(dynamic_cast<_sdk_amplifier*>(list[n]));
+		if (sa) {
+			amplifier_id_array[amplifier_id_count] = sa->get_amplifier_info().id;
+			++amplifier_id_count;
+		}
+	}
+
+	// construct info
+	eemagine_sdk_amplifier_info info;
+	info.id = _return_value_guard(_sdk.create_cascaded_amplifier(amplifier_id_array, amplifier_id_count));
+    _sdk.get_amplifier_serial(info.id, info.serial, 64);
+
+	// return
+	return new _sdk_amplifier(info);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
