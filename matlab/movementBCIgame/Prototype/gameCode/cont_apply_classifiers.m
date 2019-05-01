@@ -7,7 +7,7 @@
 % Needs a running buffer and EMG or EEG data source
 function cont_apply_classifiers(subject,version)
 
-    run(fullfile('..','..','utilities','initPaths.m'));
+    run(fullfile('..','..','..','utilities','initPaths.m'));
 
     if version == 1 % all classifiers combined (it sums over all classifier predictions and applies the percentile filter on that single value)
         try

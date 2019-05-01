@@ -2,35 +2,38 @@ function [data, devents] = erpGameViewer(buffhost,buffport)
 % simple viewer for ERPs based on matching buffer events
 
 % define parameters
-trlen_ms = 5000;
-offset_ms = [-3500 -1000];
+trlen_ms = 0;
+intention = -0.25;
+linewidth = 1.5;
+plot_min = -3.5;
+plot_max = 1;
+rp_ymin = -10;
+rp_ymax = 5;
+offset_ms = [-5000 3000];
 welch_width_ms = 500;
-freqbands = [0.1 0.2 47 60];
-freqbands_emg = [47 51 250 256];
+freqbands = [0.1 0.2 45 47];
+freqbands_emg = [{30 47} {53 97} {103 160}]; %[47 51 250 256];
 plot_nms = {'Brain ERD (C3)', 'Brain RP (Cz)', 'Muscle (arm)'};
-downsample = 128;
-plotPos = [1 3;  1 2; 1 1];
-lineWidth = 1;
-cuePrefix = 'stimulus.target';
-cueValue = 'move';
-endType = 'end.training';
+cuePrefix = 'move';
+cueValue = 'scientist';
+endType = 'experiment.end';
 redraw_ms = 250;
 verb = 1;
 badchthresh = 3.5;
 badtrthresh = 3.5;
-maxEvents = 50; % remember up to 50 trials
+maxEvents = 150; % remember up to 50 trials
 timeout_ms = 250; 
 spect_width_ms = 500;
 freqRange = [8 30];
 ylabel_f = 'freq (Hz)';  
 ylabel_t = 'time (s)';
 linecols='brkgcmyk';
-emg_chan1 = 'noise1'
-emg_chan2 = 'noise2'
-erd_chan = 'sin10.0Hz';
-rp_chan = 'noise1';
-ref_chan1 = 'noise1';
-ref_chan2 = 'noise2';
+emg_chan1 = 'EMG1'; % EDITED
+emg_chan2 = 'EMG2';% EDITED
+erd_chan = 'C3';% EDITED
+rp_chan = 'Cz';% EDITED
+downsampleFr = []; % downsample to 128Hz
+nrEEG = 14; % channels 1:nrEEG are considered EEG channels  EDITED
 
 % define the buffer
 if (nargin<1 || isempty(buffhost)) 
@@ -41,10 +44,11 @@ if (nargin<2 || isempty(buffport))
 end
 wb = which('buffer'); 
 if (isempty(wb) || isempty(strfind('dataAcq',wb))); 
-    run(fullfile('..','utilities','initPaths.m')); 
+    cd(fullfile('~','buffer_bci','matlab','utilities'));
+    initPaths;
 end
 if (ischar(buffport)) 
-    buffport=atoi(buffport); 
+    buffport=toi(buffport); 
 end
 fprintf('Connection to buffer on %s : %d\n',buffhost,buffport);
 
@@ -69,17 +73,17 @@ iseeg = true(numel(ch_names),1);
 % get capFile info for positions
 capFile = []; 
 overridechnms = []; 
-capFile='1010.txt';  % 1010 default if not selected
+capFile= 'cap_tmsi_mobita_16ch.txt';  % get our capfile
     
 if (~isempty(capFile)) 
   overridechnms = 1; %default -- assume cap-file is mapping from wires->name+pos
-  if (~isempty(strfind(capFile,'1010.txt')) || ~isempty(strfind(capFile,'subset'))) 
+  if (~isempty(strfind(capFile,'cap_tmsi_mobita_16ch.txt')) || ~isempty(strfind(capFile,'subset'))) 
      overridechnms = 0; % capFile is just position-info / channel-subset selection
   end 
   di = addPosInfo(ch_names,capFile,overridechnms,0,1); % get 3d-coords
   ch_pos = cat(2,di.extra.pos2d); % extract pos and channels names
   ch_pos3d = cat(2,di.extra.pos3d);
-  ch_names = di.vals; 
+  ch_names = di.vals; %EDITED
   iseeg = [di.extra.iseeg];
   if (~any(iseeg) || ~isempty(strfind(capFile,'showAll.txt'))) % fall back on showing all data
     warning('Capfile didnt match any data channels -- no EEG?');
@@ -125,46 +129,40 @@ end
 if (~isempty(freqbands_emg)) 
     filt_emg = mkFilter(outsz(1)/2, freqbands_emg, fs/outsz(1));
 end
-if(~isempty(downsample)) % update the plotting info
-  outsz(2) = min(outsz(2),floor(outsz(1)*downsample/fs)); 
-  times = (1:outsz(2))./downsample + offset_samp(1)/fs;
+if(~isempty(downsampleFr)) % update the plotting info
+  outsz(2) = min(outsz(2),floor(outsz(1)*downsampleFr/fs)); 
+  times = (1:outsz(2))./downsampleFr + offset_samp(1)/fs;
 end
 
 % recording the ERP data
 key      = {};
 label    = {};
 nCls     = 0;                      
-rawEpochs = zeros(numel(ch_names),outsz(1),maxEvents); 
+rawEpochs = zeros(sum(iseeg),outsz(1),maxEvents); 
 rawIds   = 0;
 nTarget  = 0;
 rp      = zeros(1,outsz(2),max(1,nCls)); % stores the pre-proc data used in the figures
 emg      = zeros(1,outsz(2),max(1,nCls)); % stores the pre-proc data used in the figures
-isbadch  = false(sum(iseeg),1);
+isbadch  = false(nrEEG,1);
+spectIdx = 0;
 % spectogram
-[ppspect,start_samp,spectFreqs] = spectrogram(rawEpochs,2,'width_ms',spect_width_ms,'fs',hdr.fsample);
+
+[ppspect,start_samp,spectFreqs] = spectrogram(rawEpochs(1:nrEEG,:,1),2,'width_ms',spect_width_ms,'fs',fs);
 spectFreqInd = find(spectFreqs > freqRange(1) & spectFreqs < freqRange(2));
-erd = sum(ppspect(1,spectFreqInd,:,:),4)./size(ppspect(1,:,:,:),4); % subset to freq range of interest and average over trials
+erd(:,:,:,1) = ppspect(1,spectFreqInd,:); % subset to freq range of interest and average over trials
 times_f = linspace(times(1),times(end),size(erd,3));
+spectEpochs = zeros(1,numel(spectFreqInd),size(erd,3),1); 
 base_period_f = find(times_f >= -3.500 & times_f <= -2.500);
 
 % make the figure window
 fig = figure(1); clf;
 set(fig,'Name','ER(s)P Viewer (close window = quit)','menubar','none','toolbar','none','doublebuffer','on');
-subplot(3,1,1);
-imagesc(times_f,spectFreqs(spectFreqInd),squeeze(erd)); ylabel(ylabel_f); colorbar;
-title(plot_nms{1})
-subplot(3,1,2);
-plot(times,rp); ylabel('amplitude (mV)'); xlim([times(1) times(end)]);
-title(plot_nms{2})
-subplot(3,1,3);
-plot(times,emg); xlabel(ylabel_t); ylabel('amplitude (mV)'); xlim([times(1) times(end)]);
-title(plot_nms{3})
+updatePlot(linecols,intention,ylabel_t,times_f,spectFreqs,spectFreqInd,erd,ylabel_f,plot_min,plot_max,plot_nms,times,rp,rp_ymin, rp_ymax,emg, nCls, label,linewidth);
 resethdl = uicontrol(fig,'Style','togglebutton','units','normalized','position',[0.8 0.94 .2 0.06],'String','Reset');
-drawnow; % make sure the figure is visible
 
 % empty buffer
-[datai,deventsi,state,waitDatopts] = buffer_waitData(buffhost,buffport,[],'startSet',{cuePrefix cueValue},'trlen_samp',trlen_samp,'offset_samp',offset_samp,'exitSet',{redraw_ms 'data' endType},'verb',verb,1,'timeOut_ms',timeout_ms);
-fprintf('Waiting for events of type: %s\n  %s\n',cuePrefix, cueValue);
+[datai,deventsi,state,waitDatopts] = buffer_waitData(buffhost,buffport,[],'startSet',{cuePrefix cueValue},'offset_samp',offset_samp,'exitSet',{redraw_ms 'data' endType},'verb',verb,1,'timeOut_ms',timeout_ms);
+fprintf('Waiting for events of type: %s\n %s\n',cuePrefix,cueValue);
 data = {}; 
 devents = []; % for returning the data/events
 endTraining = false;
@@ -181,25 +179,19 @@ while (~endTraining)
         nTarget = 0; 
         rawIds = []; 
         devents = [];
-        rawEpochs = zeros(numel(ch_names),outsz(1),maxEvents); 
+        rawEpochs = zeros(sum(iseeg),outsz(1),maxEvents); 
         rp      = zeros(1,outsz(2),1); % stores the pre-proc data used in the figures
         emg      = zeros(1,outsz(2),1); % stores the pre-proc data used in the figures
         % spectogram
-        [ppspect,start_samp,spectFreqs] = spectrogram(rawEpochs,2,'width_ms',spect_width_ms,'fs',hdr.fsample);
+        [ppspect,start_samp,spectFreqs] = spectrogram(rawEpochs(1:nrEEG,:,end),2,'width_ms',spect_width_ms,'fs',fs);
+        spectIdx = 0;
         spectFreqInd = find(spectFreqs > freqRange(1) & spectFreqs < freqRange(2));
-        erd = sum(ppspect(1,spectFreqInd,:,:),4)./size(ppspect(1,:,:,:),4); % subset to freq range of interest and average over trials
+        erd(:,:,:,1) = ppspect(1,spectFreqInd,:); % subset to freq range of interest and average over trials
+        spectEpochs = zeros(1,numel(spectFreqInd),size(erd,3),1); 
         
         % draw figure again
-        subplot(3,1,1);
-        imagesc(times_f,spectFreqs(spectFreqInd),squeeze(erd)); ylabel(ylabel_f); colorbar;
-        title(plot_nms{1})
-        subplot(3,1,2);
-        plot(times,rp); ylabel('amplitude (mV)'); xlim([times(1) times(end)]);
-        title(plot_nms{2})
-        subplot(3,1,3);
-        plot(times,emg); xlabel(ylabel_t); ylabel('amplitude (mV)'); xlim([times(1) times(end)]);
-        title(plot_nms{3})
-        
+        updatePlot(linecols,intention,ylabel_t,times_f,spectFreqs,spectFreqInd,erd,ylabel_f,plot_min,plot_max,plot_nms,times,rp,rp_ymin, rp_ymax,emg, nCls, label,linewidth);
+        resethdl = uicontrol(fig,'Style','togglebutton','units','normalized','position',[0.8 0.94 .2 0.06],'String','Reset');
         resetval = 0;
         set(resethdl,'value',resetval); % pop the button back out
     end
@@ -262,68 +254,41 @@ while (~endTraining)
     end
     
     if ~isempty(deventsi) % only bother if something has changed and concerns move data
-        ppdat = rawEpochs;
+        % CAR on all data
+        carmean = mean(rawEpochs(1:nrEEG,:,:),1);
+        
+        ppdat = rawEpochs(1:nrEEG,:,:); % only EEG
 
         % common pre-processing ERP & ERD
         % (1) mastoid reference
-        masIdx(1)= find(strcmp(ch_names,ref_chan1));
-        masIdx(2)= find(strcmp(ch_names,ref_chan2));
-        ppdat(~isbadch,:,:) = repop(ppdat,'-',mean(ppdat(masIdx,:,:),1));
+        %masIdx(1)= find(strcmp(ch_names,ref_chan1));
+        %masIdx(2)= find(strcmp(ch_names,ref_chan2));
+        %ppdat = repop(ppdat,'-',mean(ppdat(masIdx,:,:),1));
+        ppdat = repop(ppdat,'-',carmean);
 
         % (2) center the data (demean)
         ppdat = repop(ppdat,'-',mean(ppdat,2)); 
 
-        % (3) filter
-        ppdat = fftfilter(ppdat(iseeg,:,:),filt,outsz,2,0);
-
-        % (4) bad-channel identify and remove
-        oisbadch = isbadch;
-        isbadch = idOutliers(rawEpochs(iseeg,:,:),1,badchthresh);
-        % set the data in this channel to 0
-        ppdat(isbadch,:) = 0;
-        % give feedback on which channels are marked as bad
-        for hi=find(oisbadch(:)~=isbadch(:))';
-           th=[];
-           try
-              th = get(hdls(hi),'title');
-           catch
-           end
-           if (~isempty(th)) 
-              tstr=get(th,'string'); 
-              if(isbadch(hi))
-                 if (~strcmp(tstr(max(end-5,1):end),' (bad)')) 
-                     set(th,'string',[tstr ' (bad)']); 
-                 end
-              elseif (~isbadch(hi))
-                 if (strcmp(tstr(max(end-5,1):end),' (bad)'));  
-                     set(th,'string',tstr(1:end-6)); 
-                 end
-              end
-           end
-
-            % bad-ch rm also implies bad trial
-            isbadtr = idOutliers(ppdat,3,badtrthresh);
-            ppdat(:,:,isbadtr) = 0;
-        end
-
-       % (5) baseline
-       ppdat_RP = repop(ppdat,'-',mean(ppdat(:,base_period,:),2));
+       % (6) filter
+       ppdat_RP = fftfilter(ppdat,filt,outsz,2,0);
+      
+       % (7) baseline
+       ppdat_RP = repop(ppdat_RP,'-',mean(ppdat_RP(:,base_period,:),2));
 
        % EMG
        % (A) Only keep EMG channels and subtract bipolar EMG channels  
        emg_ch(1) = find(strcmp(ch_names,emg_chan1));
        emg_ch(2) = find(strcmp(ch_names,emg_chan2));
-       ppdat_EMG = ppdat(emg_ch(1),:,:)-ppdat(emg_ch(2),:,:);
-       % (B) filter
+       cardat_emg = repop(rawEpochs(emg_ch,:,:),'-',carmean);
+       %ppdat_EMG = rawEpochs(emg_ch(1),:,:)-rawEpochs(emg_ch(2),:,:);
+       ppdat_EMG = cardat_emg(1,:,:)-cardat_emg(2,:,:);
+       % (B) demean
+       ppdat_EMG = repop(ppdat_EMG,'-',mean(ppdat_EMG,2)); 
+       % (C) filter
        ppdat_EMG = fftfilter(ppdat_EMG,filt_emg,outsz,2,0);
-       % (C) take absolute value
+       % (D) take absolute value
        ppdat_EMG = abs(ppdat_EMG);
-       % (D) low pass filter
-       for ie = 1:size(ppdat_EMG,3) % Per epoch
-           [B,A] = butter(1,16/128,'low');
-           ppdat_EMG(:,:,ie) = filter(B,A,ppdat_EMG(:,:,ie));                        
-       end
-
+      
        % calculate ERP for every class
        for mi=1:nCls
            ppdatmi_RP = ppdat_RP(:,:,rawIds==mi); % get this class data
@@ -331,14 +296,14 @@ while (~endTraining)
            ppdatmi_EMG = ppdat_EMG(:,:,rawIds==mi); % get this class data
 
            % Calculate ERD
-           ppspectmi = spectrogram(ppdatmi_ERD,2,'width_ms',spect_width_ms,'fs',hdr.fsample);
+           ppspectmi = spectrogram(ppdatmi_ERD(:,:,end),2,'width_ms',spect_width_ms,'fs',fs);
            % baseline spectogram
-           ppspectmi = repop(ppspectmi,'-',mean(ppspectmi(:,:,base_period_f,:),3));
-
-           % Calculate ERP
-           erd(:,:,:,mi) = sum(ppspectmi(find(strcmp(ch_names,erd_chan)),spectFreqInd,:,:),4)./size(ppspectmi(1,:,:,:),4);
-           rp(:,:,mi) = sum(ppdatmi_RP(find(strcmp(ch_names,rp_chan)),:,:),3)./size(ppdatmi_RP(2,:,:),3);
-           emg(:,:,mi) = sum(ppdatmi_EMG,3)./size(ppdatmi_EMG,3);    
+           ppspectmi = repop(ppspectmi,'-',median(ppspectmi(:,:,base_period_f,:),3));
+           spectIdx = spectIdx+1;
+           spectEpochs(:,:,:,spectIdx) = ppspectmi(find(strcmp(ch_names,erd_chan)),spectFreqInd,:);
+           erd(:,:,:,mi) = median(spectEpochs,4);
+           rp(:,:,mi) = median(ppdatmi_RP(find(strcmp(ch_names,rp_chan)),:,:),3);
+           emg(:,:,mi) = median(ppdatmi_EMG,3);
 
            if ( isnumeric(key{mi}) ) % line label -- including number of times seen
               label{mi}=sprintf('%g (%d)',key{mi},sum(rawIds(1:nTarget)==mi));
@@ -352,27 +317,7 @@ while (~endTraining)
             break; 
        else
            % redraw whole image
-           subplot(3,1,1)
-           imagesc(times_f,spectFreqs(spectFreqInd),squeeze(erd(:,:,:,1))); ylabel(ylabel_f);
-           title(plot_nms{1})
-           subplot(3,1,2)
-           for mi=1:nCls
-                plot(times,rp(:,:,mi),linecols(mi)); 
-                hold on;
-           end
-           hold off;
-           ylabel('amplitude (mV)'); xlim([times(1) times(end)]);
-           title(plot_nms{2})
-           subplot(3,1,3) 
-           for mi=1:nCls
-                emgPlot = plot(times,emg(:,:,mi),linecols(mi));
-                hold on;
-           end
-           hold off;
-           xlabel(ylabel_t); ylabel('amplitude (mV)'); xlim([times(1) times(end)]);
-           title(plot_nms{3})
-           % add class labels
-           legend(label);
+           updatePlot(linecols,intention,ylabel_t,times_f,spectFreqs,spectFreqInd,erd,ylabel_f,plot_min,plot_max,plot_nms,times,rp,rp_ymin, rp_ymax,emg, nCls, label,linewidth)
 
            % indicate we've updated
            if (verb>0 ) 
@@ -390,6 +335,37 @@ if(nargout>0)
 end
 
 return
+end
+
+function updatePlot(linecols,intention,ylabel_t,times_f,spectFreqs,spectFreqInd,erd,ylabel_f,plot_min,plot_max,plot_nms,times,rp,rp_ymin, rp_ymax,emg, nCls, label,linewidth)
+    % update plot
+    subplot(3,1,1);
+    imagesc(times_f,spectFreqs(spectFreqInd),squeeze(erd(:,:,:,1))); ylabel(ylabel_f); xlim([plot_min plot_max]); caxis([-max(abs(erd(:))) max(abs(erd(:)))]);
+    hold on; plot([0 0], [min(spectFreqs) max(spectFreqs)],'r','LineWidth',linewidth); 
+    plot([intention intention], ylim,'k--','LineWidth',linewidth); hold off;
+    title(plot_nms{1})
+    subplot(3,1,2);
+    for mi=1:nCls
+         plot(times,rp(:,:,mi),linecols(mi),'LineWidth',linewidth); 
+         hold on;
+    end
+    hold on;
+    ylabel('amplitude (mV)'); xlim([plot_min plot_max]);
+    plot([intention intention], ylim,'k--','LineWidth',linewidth);
+    plot([0 0], ylim,'r','LineWidth',linewidth); hold off;
+    title(plot_nms{2})
+    subplot(3,1,3);
+   % add class labels
+    for mi=1:nCls
+        emgPlot = plot(times,emg(:,:,mi),linecols(mi),'LineWidth',linewidth);
+        hold on;
+    end
+    legend(label,'west');
+    hold on;
+   xlabel(ylabel_t); ylabel('amplitude (mV)'); xlim([plot_min plot_max]);
+   plot([0 0], ylim,'r','LineWidth',linewidth); 
+   plot([intention intention], ylim,'k--','LineWidth',linewidth); hold off;
+   title(plot_nms{3})      
 end
 
 function freqIdx=getfreqIdx(freqs,freqbands)

@@ -129,24 +129,24 @@ function hitStart(source,callbackdata)
             handles.gameFigure = figure();
             movementBCI_game(playerNr);
         case 2 % collect EEG/EMG training data
-            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd(fullfile('~','buffer_bci','matlab','movementBCIgame','gameCode'));  load(fullfile('..','logfiles','playerNr')); get_train_data(playerNr)" &
+            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd(fullfile('~','buffer_bci','matlab','movementBCIgame','Prototype','gameCode'));  load(fullfile('..','logfiles','playerNr')); get_train_data(playerNr)" &
             handles.gameFigure = figure();
             movementBCI_training(playerNr);
             train_classifiers(playerNr);
         case 3 % online game with EMG feedback
-            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd(fullfile('~','buffer_bci','matlab','movementBCIgame','gameCode'));  load(fullfile('..','logfiles','playerNr')); version = 4; cont_apply_classifiers(playerNr,version)" &
+            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd(fullfile('~','buffer_bci','matlab','movementBCIgame','Prototype','gameCode'));  load(fullfile('..','logfiles','playerNr')); version = 4; cont_apply_classifiers(playerNr,version)" &
             handles.gameFigure = figure();
             movementBCI_testing(playerNr);
         case 4 % online game with RP feedback
-            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd(fullfile('~','buffer_bci','matlab','movementBCIgame','gameCode'));  load(fullfile('..','logfiles','playerNr')); version = 3; cont_apply_classifiers(playerNr,version)" &
+            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd(fullfile('~','buffer_bci','matlab','movementBCIgame','Prototype','gameCode'));  load(fullfile('..','logfiles','playerNr')); version = 3; cont_apply_classifiers(playerNr,version)" &
             handles.gameFigure = figure();
             movementBCI_testing(playerNr);
         case 5 % online game with ERD feedback
-            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd(fullfile('~','buffer_bci','matlab','movementBCIgame','gameCode'));  load(fullfile('..','logfiles','playerNr')); version = 2; cont_apply_classifiers(playerNr,version)" &
+            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd(fullfile('~','buffer_bci','matlab','movementBCIgame','Prototype','gameCode'));  load(fullfile('..','logfiles','playerNr')); version = 2; cont_apply_classifiers(playerNr,version)" &
             handles.gameFigure = figure();
             movementBCI_testing(playerNr);
         otherwise % online game with EMG, RP and ERD feedback
-            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd(fullfile('~','buffer_bci','matlab','movementBCIgame','gameCode'))';  load(fullfile('..','logfiles','playerNr')); version = 1; cont_apply_classifiers(playerNr,version)" &
+            !"/Applications/MATLAB_R2015b.app/bin/matlab" -r "cd(fullfile('~','buffer_bci','matlab','movementBCIgame','Prototype','gameCode'))';  load(fullfile('..','logfiles','playerNr')); version = 1; cont_apply_classifiers(playerNr,version)" &
             handles.gameFigure = figure();
             movementBCI_testing(playerNr);
     end

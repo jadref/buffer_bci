@@ -2,7 +2,7 @@
 % a classifier.
 % Needs a running buffer and EEG or EMG source
 function get_train_data(subject)
-    run(fullfile('..','..','utilities','initPaths.m'));
+    run(fullfile('..','..','..','utilities','initPaths.m'));
 
     % connect to the buffer
     buffhost='localhost';buffport=1972;
