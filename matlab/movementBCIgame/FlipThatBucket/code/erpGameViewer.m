@@ -73,11 +73,11 @@ iseeg = true(numel(ch_names),1);
 % get capFile info for positions
 capFile = []; 
 overridechnms = []; 
-capFile= 'cap_tmsi_mobita_16ch.txt';  % get our capfile
+capFile= 'cap_porti_16ch_flipThatBucket.txt';  % get our capfile
     
 if (~isempty(capFile)) 
   overridechnms = 1; %default -- assume cap-file is mapping from wires->name+pos
-  if (~isempty(strfind(capFile,'cap_tmsi_mobita_16ch.txt')) || ~isempty(strfind(capFile,'subset'))) 
+  if (~isempty(strfind(capFile,'cap_porti_16ch_flipThatBucket.txt')) || ~isempty(strfind(capFile,'subset'))) 
      overridechnms = 0; % capFile is just position-info / channel-subset selection
   end 
   di = addPosInfo(ch_names,capFile,overridechnms,0,1); % get 3d-coords
