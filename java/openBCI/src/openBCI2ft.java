@@ -3,6 +3,9 @@ import nl.fcdonders.fieldtrip.bufferclient.*;
 //import OpenBCI_ADS1299;
 //import jssc.SerialPortList;
 
+//TODO:
+// [] move into a class + thread with run method
+// [] load default amp config info from file and/or allow run-time re-config via class methods
 class openBCI2ft {
 	 static int VERB=1; // global verbosity level
 	 static int BUFFERSIZE = 65500;
@@ -236,34 +239,65 @@ class openBCI2ft {
 		  System.out.println("#samp/buf : " + buffdownsample + " buff_packet : " + buffpacketsize);
 	  		
 		  // Now do the data forwarding
-		  DataPacket_ADS1299 curPacket = 
+		  DataPacket_ADS1299 curPacket =  // current packet sending to buffer
 				new DataPacket_ADS1299(nEEGDataValuesPerPacket,nAuxDataValuesPerPacket); 
+		  DataPacket_ADS1299 nextPacket = // next candidate valid sample
+				new DataPacket_ADS1299(nEEGDataValuesPerPacket,nAuxDataValuesPerPacket);
+        nextPacket.sampleIndex = -1; // mark this packet as invalid - so ask amp for data
 		  long startT=System.currentTimeMillis(); 
 		  long updateT=startT; // time we last printed update
 		  long packetT=startT; // time last packet was recieved
-		  float packetDur=1f/sampleRate; // time between packets in millis
+		  float packetDur=1f/((float)(sampleRate)); // time between packets in millis
+		  // Just in case to ensure we've cleaned the input buffer
+		  for ( int i=0; i<10; i++){
+				Thread.sleep(100); 
+				while ( openBCI.read(true,0)>0 ); // non-blocking consume all board output
+		  }
 		  while ( true ) {			 
 				// wait for an OPENBCI message
 				// event driven means we don't block... so sleep a sensible amount between
 				// samples to not overload the CPU
-				while ( !openBCI.get_isNewDataPacketAvailable() ) {
-					 if ( VERB>1 ){ 
-						  System.out.println((System.currentTimeMillis()-startT)/1000.0 + 
-													"Waiting for data packet from openBCI."); 
-					 }
-					 if ( serialEvent ) { 
-						  // BODGE: serial-events and blocking reads don't seem to mix...
-						  // so use a non-blocking read to check for new data
-						  if ( openBCI.read(false,0) < 0 ){ // non-blocking read new data
-								// no data on serial port, so wait for some to come available
-								Thread.sleep((int)(.1f*1000f/sampleRate)); // sleep for 50% sample rate
-						  }
-					 } else {
-						  // Use a blocking read to wait for new bytes on the serial port
-						  openBCI.read(false,-1);
-					 }
-				} // got a complete packet				
+            if( nextPacket.sampleIndex <=0 ) { // nextPacket is invalid, get a new valid one
+                while ( !openBCI.get_isNewDataPacketAvailable() ) {
+                    if ( VERB>1 ){ 
+                        System.out.println((System.currentTimeMillis()-startT)/1000.0 + 
+                                           "Waiting for data packet from openBCI."); 
+                    }
+                    if ( serialEvent ) { 
+                        // BODGE: serial-events and blocking reads don't seem to mix...
+                        // so use a non-blocking read to check for new data
+                        if ( openBCI.read(false,0) < 0 ){ // non-blocking read new data
+                            // no data on serial port, so wait for some to come available
+                            Thread.sleep((int)(.5f*1000f/sampleRate)); // sleep for 50% sample rate
+                        }
+                    } else {
+                        // Use a blocking read to wait for new bytes on the serial port
+                        openBCI.read(false,-1);
+                    }
+                } // got a complete packet
+                // get (a copy of) the data just read                
+                //resets isNewDataPacketAvailable to false
+                openBCI.copyDataPacketTo(nextPacket);
+                //System.out.println("o c" + curPacket.sampleIndex + "n"+ nextPacket.sampleIndex ); // log got packet from openBCI
+            }
+            // TODO: check for missing samples, and pad with old values if so to avoid sample drops..
+            // select if should replicate curPacket for dropped samples
+            if ( curPacket.sampleIndex == nextPacket.sampleIndex-1  // default, 1 sample between packets
+                 || ( curPacket.sampleIndex>=255 && nextPacket.sampleIndex==0 ) // wrap-around
+                 || curPacket.sampleIndex <0 ) { // curPacket is invalid
+                if( nextPacket.sampleIndex <0 ) {  System.err.println("Error: nextPacket is invalid!!!"); }
+                // nextPacket becomes the current packet
+                nextPacket.copyTo(curPacket);
+                nextPacket.sampleIndex=-1; // invalidate nextPacket so ask for new one from openBCI
+            } else {
+                System.err.println("OpenBCI dropped a sample! padding curSamp="+curPacket.sampleIndex+" nextSamp="+nextPacket.sampleIndex);
+                //if( curPacket.sampleIndex < nextPacket.sampleIndex-1 ) {
+                // curPacket is >1 sample earlier than valid next packet, increment count and re-use
+                curPacket.sampleIndex=curPacket.sampleIndex+1;
+                if( curPacket.sampleIndex > 255 ) curPacket.sampleIndex=0; // wrap-arround
+            }
 				nSamp++;
+
 				// Moving average est interpacket duration
 				long curT = System.currentTimeMillis();
 				packetDur = (curT-packetT)*.01f + packetDur*.99f; // move-ave est packet duration
@@ -281,9 +315,8 @@ class openBCI2ft {
 											+ "   (t,samp,blk,Hz)");
 					 }
 				}
-				// get (a copy of) the data just read
-				//resets isNewDataPacketAvailable to false
-				openBCI.copyDataPacketTo(curPacket); 
+
+            // copy openBCI sample to the buffer-packet
 				//next, gather the new data into the "little buffer"
 				int Ichan=0;
 				for (Ichan=0; Ichan < nActiveCh; Ichan++) {   //loop over each cahnnel

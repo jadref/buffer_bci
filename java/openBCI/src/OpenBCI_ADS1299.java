@@ -34,7 +34,7 @@ public static final String command_deactivateFilters = "g";  // not necessary an
 
 public static final String[] command_deactivate_channel = {"1", "2", "3", "4", "5", "6", "7", "8", "q", "w", "e", "r", "t", "y", "u", "i"};
 public static final String[] command_activate_channel = {"!", "@", "#", "$", "%", "^", "&", "*","Q", "W", "E", "R", "T", "Y", "U", "I"};
-	 public static final String[] command_startTest = {"0", "-", "=", "p", "[", "]"};
+public static final String[] command_startTest = {"0", "-", "=", "p", "[", "]"};
 
 public static int channelDeactivateCounter = 0; //used for re-deactivating channels after switching settings...
 
