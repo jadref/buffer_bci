@@ -1,0 +1,51 @@
+Events [type,value]:
+
+Participant information:
+['participant',code{1}] %same code as .mat files
+
+Experiment:
+['experiment','start'];
+['block',block] % current block
+['trial',trial] % current trial
+['stimulus.baseline','start'] 
+['stimulus.baseline','end']
+['stimulus.scientist_blink','start']
+['stimulus.scientist_blink','end']
+['stimulus.robot_blink','start']
+['stimulus.robot_blink','end']
+['stimulus.collected_slime','little']
+['stimulus.collected_slime','medium']
+['stimulus.collected_slime','lots']
+['keys',E.key] % sends an event at any keypress
+['training','end']
+['experiment','end']
+
+Classifier:
+['train',-1]; % non move data in robot move trial (excluding potential premove phase of 2s prior to robot move) + last 500ms of baseline 
+['train',1]; % premove data (starting 1s prior to player act) in human move trial 
+
+Robot:
+['robot','winsGame']
+['robot.act',actionTimeRobot]
+['robot.winsThisTrial',current_score_robot]
+
+Player:
+['player.wantedToact','start'] % posing question
+['player.wantedToact','yes'] % did player have an intention to act when the robot acted? 
+['player.wantedToact','no']
+['player,'winsGame']
+['player.act',actionTimeScientist]
+['player.winsThisTrial',current_score_scientist]
+
+Questionnaire:
+['stimulus.question1','start'] % 'What did you think about the game?\n\n[boring]\t1\t2\t3\t4\t5\t[fun]'
+['stimulus.question1',answer]
+['stimulus.question2','start'] % 'Did you feel free to do what you want?\n\n[Y]es\t\t[N]o'
+['stimulus.question2','yes']
+['stimulus.question2','no']
+['stimulus.question3','start'] % 'How difficult was it to win?\n\n[easy]\t1\t2\t3\t4\t5\t[difficult]'
+['stimulus.question3',answer]
+['stimulus.question4','start'] % 'How accurate was the robot in predicting your actions?\n\n[inaccurate]\t1\t2\t3\t4\t5\t[accurate]'
+['stimulus.question4',answer]
+['stimulus.question5','start'] % 'How good were the robot predictions in this block compared to the previous one?\n\n[worse]\t1\t2\t3\t4\t5\t[better]'
+['stimulus.question5',answer]

@@ -10,7 +10,7 @@
 /////////////////////////////////////
 
 class DataPacket_ADS1299 {
-  int sampleIndex;
+  public int sampleIndex;
   int[] values;
   int[] auxValues;
 

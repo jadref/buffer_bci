@@ -272,7 +272,7 @@ def createeventfilter(trigger):
         
     return func
     
-def gatherdata(trigger, time, stoptrigger=[], pending=[], stopondata=False, milliseconds=False, verbose = True):
+def gatherdata(trigger, time, stoptrigger=[], pending=[], state=True, stopondata=False, milliseconds=False, verbose = True):
     """Gathers data and returns a list of data and triggering events. The
     arguments trigger and stroptrigger are used to create event filters (using
     the function createeventfilter). 
@@ -307,8 +307,10 @@ def gatherdata(trigger, time, stoptrigger=[], pending=[], stopondata=False, mill
      data       - [[nSamp x nCh] x nEvent] list of lists of numpy-arrays of [nSamp x nCh] for each trigger
      events     - [event] list of trigger events
      stopevents - [event] list of events which caused us to stop gathering
-     state      - [struct] internal state of this function to track pending events which have not got complete data yet
-
+     pending      - [struct] internal state of this function to track pending events which have not got complete data yet
+     state      - internal state recording events processed so far        (True=global-state)
+                   use state=None to reset all history, i.e. ignore any events/samples before the current time
+                   use state=True to use a single shared global state over all calls
     Example Usage:
       # gather data for trigger events, and return when 'stimulus.end' event is recieved
       data,devents,stopevents=bufhelp.gatherdata('stimulus.epoch',100,'stimulus.end)
@@ -348,9 +350,19 @@ def gatherdata(trigger, time, stoptrigger=[], pending=[], stopondata=False, mill
         stopondata=True
         
     global ftc
-    nSamples, nEvents = ftc.poll()
-    
-
+    global globalstate # cursor for how much data processed in previous calls 
+    useglobal=False
+    if state==True : # use a single global state
+        useglobal=True
+        if globalstate is None:
+            globalstate = ftc.poll()
+        state = globalstate
+    else : 
+        if not state : # init if not already set
+            state = ftc.poll()
+    nSamples=state[0]
+    nEvents =state[1]
+            
     stillgathering = True;
     events = []
     data = []
@@ -395,6 +407,10 @@ def gatherdata(trigger, time, stoptrigger=[], pending=[], stopondata=False, mill
         if not stillgathering:
             break
             
+    # update record of which events we have processed so far
+    state=(nSamples,nEvents)
+    globalstate=state
+
     return (data, events, stopevents, pending)
 
 
