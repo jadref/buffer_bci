@@ -396,3 +396,74 @@ def gatherdata(trigger, time, stoptrigger=[], pending=[], stopondata=False, mill
             break
             
     return (data, events, stopevents, pending)
+
+
+
+def read_buffer_offline_events(file,verbosity=0):
+    '''read all events from a ft_offline event save file'''
+    if isinstance(file,str) :
+        file = open(file,'rb')
+    # read the entier file in one go into bytes
+    buf = file.read()
+    # scan through buf reading the events
+    offset = 0
+    E = []
+    while 1:
+        e = FieldTrip.Event()
+        consumed = e.deserialize(buf[offset:])
+        if consumed == 0:
+            break
+        E.append(e)
+        offset = offset + consumed
+    if verbosity>0 : print("Read %d events"%(len(E)))
+    return E
+
+def read_buffer_offline_data(file,hdr=None,datype=None,nchans=None,verbosity=0):
+    '''read all data from a ft_offline event sample file'''
+    if isinstance(file,str) :
+        file = open(file,'rb')
+    # read the entier file in one go into bytes
+    buf = file.read()
+    fsize=len(buf)
+    # use hdr object to get info about the data type
+    if hdr :
+        if not nchans : nchans = hdr.nChannels
+        if not datype : datype = hdr.dataType 
+    nsamp = int(len(buf) / nchans / FieldTrip.wordSize[datype])
+    D = FieldTrip.rawtoarray((nsamp, nchans), datype, buf)
+    if verbosity>0 : print("Read %d samples"%(len(D)))
+    return D
+
+def read_buffer_offline_header(file,verbosity=0):
+    '''read header information from a ft_offline binary header save file'''
+    import struct
+    if isinstance(file,str) :
+        file = open(file,'rb')
+    # read the entier file in one go into bytes
+    buf = file.read()
+    (nchans, nsamp, nevt, fsamp, dtype, bfsiz) = struct.unpack('IIIfII', buf[0:24])
+    H = FieldTrip.Header()
+    H.nChannels = nchans
+    H.nSamples = nsamp
+    H.nEvents = nevt
+    H.fSample = fsamp
+    H.dataType = dtype
+    # read the channel names
+    bufsize=len(buf)
+    if bufsize > 0:
+        offset = 24
+        while offset + 8 < bufsize:
+            (chunk_type, chunk_len) = struct.unpack('II', buf[offset:offset+8])
+            offset+=8
+            if offset + chunk_len < bufsize:
+                break
+            H.chunks[chunk_type] = buf[offset:offset+chunk_len]
+            offset += chunk_len
+
+        if FieldTrip.CHUNK_CHANNEL_NAMES in H.chunks:
+            labels = H.chunks[FieldTrip.CHUNK_CHANNEL_NAMES].decode() #convert from byte->char
+            L = labels.split('\0')
+            numLab = len(L);
+            if numLab>=H.nChannels:
+                H.labels = L[0:H.nChannels]
+    return H
