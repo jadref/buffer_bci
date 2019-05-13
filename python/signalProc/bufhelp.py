@@ -5,7 +5,8 @@ import FieldTrip
 import time
 from math import ceil
 import socket
-
+import numpy as np
+    
 MAXEVENTHISTORY=50
 
 def askaddress():
@@ -444,7 +445,9 @@ def read_buffer_offline_data(file,hdr=None,datype=None,nchans=None,verbosity=0):
     # use hdr object to get info about the data type
     if hdr :
         if not nchans : nchans = hdr.nChannels
-        if not datype : datype = hdr.dataType 
+        if not datype : datype = hdr.dataType
+    if not datype : print("Error: didn't give header or datatype")
+    if not nchans : print("Error: didn't give header or nchans")
     nsamp = int(len(buf) / nchans / FieldTrip.wordSize[datype])
     D = FieldTrip.rawtoarray((nsamp, nchans), datype, buf)
     if verbosity>0 : print("Read %d samples"%(len(D)))
@@ -483,3 +486,107 @@ def read_buffer_offline_header(file,verbosity=0):
             if numLab>=H.nChannels:
                 H.labels = L[0:H.nChannels]
     return H
+
+def sliceraw(alldata,events,trigger,time,hdr=None,fSample=None,offset=None,verbose=True):
+    ''' slice out epochs based on trigger events from buffer stream
+
+    Input:
+      alldata- [nSample x nCh] all data in the file
+      events - [nEvt x 1] Event objects
+      trigger- 'type' OR ('type','value') or ['type1','type2',...'typen'] trigger condition 
+               in formate used by `createventfilter` to identify which events to slice on
+      time   - [float] duration of the slice relative to the event in seconds
+      offset - [bgnoffset,endoffset] shift in slice start/end relative to [0,time]
+      hdr    - data header object
+      fSample- data sample rate
+    Output:
+      data  - [nTrl,nSample,nCh] sliced data
+      devents-[nTrlx1] Event objects
+    
+    Example:
+      # load the example-data and slice on the tgtFlash event
+      datadir='../../matlab/offline/example_data/raw_buffer/0001'
+      hdr    =bufhelp.read_buffer_offline_header(datadir+'/header')
+      alldata =bufhelp.read_buffer_offline_data(datadir+'/samples',hdr=hdr)
+      events =bufhelp.read_buffer_offline_events(datadir+'/events')
+      data,devents = bufhelp.sliceraw(alldata,events,"stimulus.tgtFlash",.6,hdr=hdr)
+      # get labels and train a classifier
+      y,ydict=bufhelp.eventvalue2label(devents)
+      import sklearn.linear_model
+      clsfr=sklearn.linear_model.RidgeCV(store_cv_values=True)
+      clsfr.fit(np.reshape(data,(data.shape[0],-1),y) # fit, after -> [ nTrl x nFeat ]
+      print("MSSE=%g"%np.mean(clsfr.cv_values_))
+    '''
+    # Compute the start-end of the epoch relative to the event time
+    bgnend = [0,time]    
+    if offset :  bgnend=bgnend + offset # include offset if given
+    # convert to samples
+    if not fSample and hdr : fSample=hdr.fSample 
+    bgnend = [ int(b * fSample) for b in bgnend ] 
+    # identify trigger events
+    gatherFilter = createeventfilter(trigger)
+    triggerevents = gatherFilter(events)
+    if len(triggerevents)==0 :
+        print("Warning: trigger didn't match any events!")
+        return (None,None)
+    if verbose : print("Slicing %d trigger events:"%(len(triggerevents)),end='')
+    # grab the slices
+    data=[]
+    devents=[]
+    printi=0
+    for ei,evt in enumerate(triggerevents):
+        rng = [evt.sample + b for b in bgnend ]
+        if rng[0]<0 or rng[1]>len(alldata):
+            print("Skipping event %d [%d-%d] outside available data [0-%d]"%(ei,rng[0],rng[1],len(alldata)))
+            continue;
+        data.append(alldata[rng[0]:rng[1]])
+        devents.append(evt)
+        # progress bar
+        if verbose and ei>printi: print('.',end=''); printi=printi+int(len(triggerevents)/100)
+    if verbose : print('') # newline
+    if isinstance(alldata,np.ndarray): # convert to 3-d numpy array
+        data = np.array(data)
+    return (data,devents)
+
+
+def eventvalue2label(events):
+    '''convert the values in the given set of events into a unique set of 
+       class IDs and return the mapped values and the value-dictionary
+       
+       Example:
+         y,ydict=bufhelp.eventvalue2label(events)
+    '''
+    # 0: get class labels from events values
+    y = [e.value[0] for e in events] 
+    # convert to numeric labels
+    valuedict={} # dict to convert from event.values to numbers    
+    #y = np.array(y) # N.B. Only works with *NUMERIC* event values...
+    # get the unique values in y
+    valuedict = set(y)
+    # convert to dictionary
+    valuedict = { val:i for i,val in enumerate(valuedict) }
+    # use the dict to map from values to numbers
+    y    = np.array([ valuedict[val] for val in y ])
+    return (y,valuedict)
+
+
+if __name__ == "__main__":
+    # small demo of running and offline classification analysis for testing
+    # load the example-data and slice on the tgtFlash event
+    datadir='../../matlab/offline/example_data/raw_buffer/0001'
+    hdr    =bufhelp.read_buffer_offline_header(datadir+'/header')
+    alldata =bufhelp.read_buffer_offline_data(datadir+'/samples',hdr=hdr)
+    events =bufhelp.read_buffer_offline_events(datadir+'/events')
+    data,devents = bufhelp.sliceraw(alldata,events,"stimulus.tgtFlash",.6,hdr=hdr)
+    # get labels and train a classifier
+    y,ydict=bufhelp.eventvalue2label(devents)
+    import sklearn.linear_model
+    print("Ridge Regression:")
+    clsfr=sklearn.linear_model.RidgeClassifierCV(store_cv_values=True) # ridge-regression
+    clsfr.fit(np.reshape(data,(data.shape[0],-1)),y) # fit, after -> [ nTrl x nFeat ]
+    print("MSSE=%g"%np.min(np.mean(clsfr.cv_values_,axis=0)))
+    print("Logistic Regression:")
+    clsfr=sklearn.linear_model.LogisticRegressionCV() # logistic-regression
+    clsfr.fit(np.reshape(data,(data.shape[0],-1)),y) # fit, after -> [ nTrl x nFeat ]
+    print("Best training score=%g"%np.max(np.mean(clsfr.scores_[1],axis=0)))    
+    

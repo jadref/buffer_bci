@@ -9,7 +9,7 @@ sigProcPath = os.path.join(os.path.abspath(pydir),'../../python/signalProc')
 sys.path.append(sigProcPath)
 import bufhelp
 import linear
-import sklearn
+import sklearn.linear_model
 import preproc
 import pickle
 
@@ -83,10 +83,10 @@ data = data[:,:,goodtr]
 y = y[goodtr]
 
 # 7: train classifier, default is a linear-least-squares-classifier
-clsfr = sklearn.linear_model.RidgeCV(store_cv_values=True)
+clsfr = sklearn.linear_model.LogisticRegressionCV()
 X2d = np.reshape(data,(-1,data.shape[2])).T # sklearn needs data to be [nTrials x nFeatures]
 clsfr.fit(X2d,y)
-print("MSSE=%g"%np.mean(clsfr.cv_values_))
+print("Best training score=%g"%np.max(np.mean(clsfr.scores_[1],axis=0)))    
 
 # save the trained classifer
 # N.B. Be sure to save enough to apply the classifier later!!
