@@ -1,5 +1,5 @@
 def signalproxy(fSample = 100, nChans = 10, blocksize = 2):
-    import bufferbci.fieldtrip.bufhelp as bufhelp
+    import bufhelp
     from time import sleep, time
     import numpy
     
@@ -9,7 +9,7 @@ def signalproxy(fSample = 100, nChans = 10, blocksize = 2):
     
     ftc.putHeader(nChans, fSample, 10)
     
-    print("Starting singal proxy")  
+    print("Starting signal proxy")  
     
     delta = 1.0/(fSample/blocksize)
     sample = numpy.random.rand(blocksize, nChans)    
@@ -25,4 +25,6 @@ def signalproxy(fSample = 100, nChans = 10, blocksize = 2):
         wait = delta - (time() - sendtime)
         if wait > 0:
             sleep(wait)
-        
+
+if __name__ == "__main__" :
+    signalproxy()
