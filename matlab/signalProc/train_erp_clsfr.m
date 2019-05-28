@@ -46,11 +46,6 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %              0 - do nothing
 %              1 - detrend the data
 %              2 - center the data (i.e. subtract the mean)
-%  preFiltFn -- 'fname' or {fname args} function to for pre-filteringfiltering, (such as high-pass filtering)
-%                fname should be the name of a *filterfunction* to call.  This should have a prototype:
-%                 [X,state]=fname(X,state,args{:})
-%                where state is some arbitary internal state of the filter which is propogated between calls
-%                SEE ALSO: firFilt, iirFilt
 %  visualize - [int] visualize the data                     (1)
 %               0 - don't visualize
 %               1 - visualize, but don't wait
@@ -90,13 +85,13 @@ function [clsfr,res,X,Y]=train_erp_clsfr(X,Y,varargin)
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
   opts=struct('classify',1,'fs',[],...
 				  'timeband_ms',[],'freqband',[],'windowType',[0 .2 .8 1],...
-              'downsample',[],'preFiltFn',[],'detrend',1,'spatialfilter','car',...
+              'downsample',[],'detrend',1,'spatialfilter','car',...
               'adaptspatialfiltFn',[],'adaptspatialfiltstate',[],...
 				  'badchrm',1,'badchthresh',3.1,'badchscale',0,...
 				  'badtrrm',1,'badtrthresh',3,'badtrscale',0,...
 				  'featFiltFn',[],'predFiltFn',[],...
 				  'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
-				  'visualize',1,'badCh',[],'nFold',10,'class_names',[],'zeroLab',1);
+				  'visualize',1,'badCh',[],'nFold',10,'class_names',[],'zeroLab',1,'Cs',[]);
 [opts,varargin]=parseOpts(opts,varargin);
 
 di=[]; ch_pos=opts.ch_pos; ch_names=opts.ch_names;
@@ -123,16 +118,6 @@ if ( opts.detrend )
   elseif ( isequal(opts.detrend,3) )
     fprintf('1) median Center\n');
     X=repop(X,'-',median(X,2));
-  end
-end
-% 5.9) Apply a feature filter post-processor if wanted
-preFiltFn=[]; if(isfield(opts,'preFiltFn'))preFiltFn=opts.preFiltFn;end;
-preFiltState=[];
-if ( ~isempty(preFiltFn) )
-  fprintf('5.5) preFilter\n');
-  if ( ~iscell(preFiltFn) ) preFiltFn={preFiltFn}; end;
-  for ei=1:size(X,3);
-	 [X(:,:,ei),preFiltState]=feval(preFiltFn{1},X(:,:,ei),preFiltState,preFiltFn{2:end});
   end
 end
 
@@ -227,6 +212,7 @@ if ( ~isempty(opts.freqband) && size(X,2)>10 && ~isempty(fs) )
 elseif( ~isempty(opts.downsample) ) % manual downsample without filtering
   X   =subsample(X,outsz(2),2);   
 end
+times=(1:size(X,2))/opts.fs;
 
 %4.2) time range selection
 timeIdx=[];
@@ -235,6 +221,7 @@ if ( ~isempty(opts.timeband_ms) )
   timeIdx = max(min(round(timeIdx),size(X,2)),1); % ensure valid range
   timeIdx = int32(timeIdx(1):timeIdx(2));
   X    = X(:,timeIdx,:);
+  times= times(timeIdx);
 end
 
 %4.5) Bad trial removal
@@ -301,7 +288,6 @@ if ( opts.visualize )
       auc(:,:,spi)=aucci;
     end
    end
-   times=(1:size(mu,2))/opts.fs;
 	xy=ch_pos; if (size(xy,1)==3) xy = xyz2xy(xy); end
    erpfig=figure(2); clf(erpfig);  set(erpfig,'Name','Data Visualisation: ERP');figure(erpfig);
 	yvals=times;
@@ -331,7 +317,7 @@ if ( ~opts.classify )
   clsfr=struct(); res=[];
 else 
   fprintf('6) train classifier\n');
-  [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',opts.zeroLab,'verb',opts.verb,'objFn','mlr_cg','binsp',0,'spMx','1vR',varargin{:});
+  [clsfr, res]=cvtrainLinearClassifier(X,Y,opts.Cs,opts.nFold,'zeroLab',opts.zeroLab,'verb',opts.verb,'objFn','mlr_cg','binsp',0,'spMx','1vR',varargin{:});
 
   if ( opts.visualize ) 
      if ( size(res.tstconf,2)==1 ) % confusion matrix is correct
@@ -369,8 +355,6 @@ end
 clsfr.type        = 'ERP';
 clsfr.fs          = fs;   % sample rate of training data
 clsfr.detrend     = opts.detrend; % detrend?
-clsfr.preFiltFn   = preFiltFn;     % pre-filter type
-clsfr.preFiltState= preFiltState;  % pre-filter state
 clsfr.isbad       = isbadch;% bad channels to be removed
 clsfr.spatialfilt = R;    % spatial filter used for surface laplacian
 % configure for apaptive use later

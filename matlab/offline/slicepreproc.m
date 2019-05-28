@@ -32,7 +32,7 @@ function [data,devents,hdr,allevents,filtstate]=slicepreproc(fname,varargin)
 %  width_ms/samp - [1x1] time duration for single data packet to propogate to the preprocFn    ([500ms])
 %  step_ms/samp  - [1x1] interval between raw data blocks to send to the pre-procFn            ([])
 %                        if empty then non-overlapping blocks, i.e. step=width
-%  preprocFn -- 'fname' or {fname args} function to call to preprocess the data, such as 'adaptWhitenFilt', or 'artChRegress'
+%  preprocFn -- 'fname' or {fname args} function to call to preprocess the data, such as 'filterFilt', 'adaptWhitenFilt', or 'artChRegress'
 %                fname should be the name of a *filterfunction* to call.  This should have a prototype:
 %                 [Xout,state]=fname(X,state,args{:})
 %                where;
@@ -41,7 +41,7 @@ function [data,devents,hdr,allevents,filtstate]=slicepreproc(fname,varargin)
 %                  state- [struct]  is some arbitary internal state of the filter which is propogated between calls
 %                NOTE: during *training* we call with extra meta-information about the data, specifically;
 %                           [X,state]=fname(X,state,args{:},'ch_names',ch_names,'fs',fs);
-%                SEE ALSO: adaptWhitenFilt, artChRegress, rmEMGFilt
+%                SEE ALSO: filterFilt, adaptWhitenFilt, artChRegress, rmEMGFilt
 %  width_raw_ms/samp -- [1x1] time duration for a single packet of raw data from the save file. ([])
 %                        if empty then; width_raw_ms=step_ms, i.e. the same as the preproc step size
 %  hdr       -- [struct] header file

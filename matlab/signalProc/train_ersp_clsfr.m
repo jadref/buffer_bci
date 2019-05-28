@@ -89,13 +89,13 @@ function [clsfr,res,X,Y]=train_ersp_clsfr(X,Y,varargin)
 %  Y       -- [ppepoch x 1] pre-processed labels (N.B. will have diff num examples to input!)
 opts=struct('classify',1,'fs',[],'timeband_ms',[],'freqband',[],...
             'width_ms',500,'windowType','hamming','aveType','amp','timefeat',0,...
-            'detrend',1,'preFiltFn','','spatialfilter','slap',...
+            'detrend',1,'spatialfilter','none',...
             'adaptspatialfiltFn',[],'adaptspatialfiltstate',[],...
             'badchrm',1,'badchthresh',3.1,'badchscale',0,'eegonly',1,...
             'badtrrm',1,'badtrthresh',3,'badtrscale',0,...
 				'featFiltFn',[],'predFiltFn',[],...
             'ch_pos',[],'ch_names',[],'verb',0,'capFile','1010','overridechnms',0,...
-            'visualize',1,'badCh',[],'nFold',10,'class_names',[],'zeroLab',1);
+            'visualize',1,'badCh',[],'nFold',10,'class_names',[],'zeroLab',1,'Cs',[]);
 [opts,varargin]=parseOpts(opts,varargin);
 
 % get the sampling rate
@@ -136,16 +136,6 @@ if ( opts.detrend )
     X=repop(X,'-',median(X,2));
   end
 end
-% 5.9) Apply a feature filter post-processor if wanted
-preFiltFn=opts.preFiltFn;preFiltState=[];
-if ( ~isempty(preFiltFn) )
-  if( opts.verb>0) fprintf('1.5) preFilter\n'); end;
-  if ( ~iscell(preFiltFn) ) preFiltFn={preFiltFn}; end;
-  for ei=1:size(X,3);
-	 [X(:,:,ei),preFiltState]=feval(preFiltFn{1},X(:,:,ei),preFiltState,preFiltFn{2:end},'ch_names',ch_names,'ch_pos',ch_pos,'fs',fs);
-  end
-end
-
 
 %2) Bad channel identification & removal
 isbadch=[]; chthresh=[];
@@ -408,7 +398,7 @@ if ( ~opts.classify )
   clsfr=struct();
 else
    if( opts.verb>0) fprintf('6) train classifier\n');end;
-   [clsfr, res]=cvtrainLinearClassifier(X,Y,[],opts.nFold,'zeroLab',opts.zeroLab,'verb',opts.verb,'objFn','mlr_cg','binsp',0,'spMx','1vR',varargin{:});  
+   [clsfr, res]=cvtrainLinearClassifier(X,Y,opts.Cs,opts.nFold,'zeroLab',opts.zeroLab,'verb',opts.verb,'objFn','mlr_cg','binsp',0,'spMx','1vR',varargin{:});  
    res.isbadtr=isbadtr; % record the list of found bad trials
   
    if ( opts.visualize ) 

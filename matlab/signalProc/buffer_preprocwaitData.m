@@ -196,7 +196,7 @@ if( isfield(state,'preprocFn') && ~isempty(state.preprocFn) )
    preprocFn=state.preprocFn; 
 end;
 preprocstate=opts.preprocstate;
-if( isfield(state,'preprocstate') && ~isempty(state.preprocstate) ) 
+if( isfield(state,'preprocstate') && ~isempty(state.preprocstate) )  % state overrides
    preprocstate=state.preprocstate; 
 end;
 

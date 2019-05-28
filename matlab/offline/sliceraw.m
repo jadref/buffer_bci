@@ -136,7 +136,10 @@ if ( ~isempty(opts.offset_samp) ) offset_samp = offset_samp+opts.offset_samp; en
 
 % Finally get the data segements we want
 data=repmat(struct('buf',[]),size(devents));
-if ( opts.verb>=0 ) fprintf('Slicing %d epochs:',numel(devents));end;
+if ( opts.verb>=0 )
+  fprintf('Slicing %d epochs from [%d-%d] samples',numel(devents),offset_samp);
+  if( subSampRatio>1 ) fprintf(' subsample %d->%ghz\n',fs,outfs); end;
+end;
 keep=true(numel(devents),1);
 for ei=1:numel(devents);
   data(ei).buf=read_buffer_offline_data(datafname,hdr,bgns(ei)+[offset_samp]);  
