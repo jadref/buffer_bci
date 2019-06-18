@@ -1,9 +1,12 @@
 import java.io.*;
 import nl.fcdonders.fieldtrip.bufferclient.*;
+import java.util.LinkedList;
+import java.util.List;
 //import OpenBCI_ADS1299;
 //import jssc.SerialPortList;
 
 //TODO:
+// [] refactor into a more usable format
 // [] move into a class + thread with run method
 // [] load default amp config info from file and/or allow run-time re-config via class methods
 class openBCI2ft {
@@ -41,7 +44,9 @@ class openBCI2ft {
 				// **SRB2_SET**  (a.k.a. ref-channel) 0=Disconnect this inputs **P** pin from SRB2, 1=Connect this inputs **P** pin to SRB2 (default)
 				// **SRB1_SET**  0=Disconnect all N inputs from SRB1 (default), 1=Connect all N to SRB1  
 	// Thus default config for: all 8ch measure EEG, with Driven-Ground=CAR, SRB2=Reference, other-P-wires included in SRB reference. is: {0,6,0,1,1,0}
-	 static char[] defaultSettings={'0','6','0','1','1','0'};
+    // This is the config for each channel inturn as a ragged array
+	 static final char[] defaultSettings={'0','6','0','1','1','0'};
+    static char[][] chSettings={defaultSettings};
 
 	int curDataPacketInd = -1;
 	int lastReadDataPacketInd = -1;
@@ -59,7 +64,7 @@ class openBCI2ft {
 		  
 		  // openBCI port
 		  String    openBCIport    = null;
-		  if (args.length>=1) {
+		  if (args.length>=1 && !args[0].equals("-")) {
 				openBCIport=args[0];
 		  }
 		  // print the current settings
@@ -68,7 +73,7 @@ class openBCI2ft {
 		  // buffer host:port
 		  String buffhostname = "localhost";
 		  int buffport = 1972;
-		  if (args.length>=2) {
+		  if (args.length>=2 && !args[1].equals("-") ) {
 				buffhostname = args[1];
 				int sep = buffhostname.indexOf(':');
 				if ( sep>0 ) {
@@ -79,7 +84,15 @@ class openBCI2ft {
 		  System.out.println("Buffer server: " + buffhostname + " : " + buffport);
 
 		  int nActiveCh=-1;
-		  if (args.length>=3) { nActiveCh = Integer.parseInt(args[2]); }		  
+		  if (args.length>=3) {
+            try {
+                nActiveCh = Integer.parseInt(args[2]);
+            } catch ( NumberFormatException e ) {
+                // not a number try to read from config file
+                chSettings = readConfigFile(args[2]);
+                nActiveCh  = chSettings.length;
+            }
+        }		  
 		  System.out.println("nActiveCh :"+nActiveCh);
 
 		  boolean useAux=true;
@@ -153,7 +166,7 @@ class openBCI2ft {
 
 		  // disable unused channels if wanted
 		  if ( nActiveCh<0 ) nActiveCh=openBCI.get_nChan();
-		  if ( nActiveCh>0 && nActiveCh < openBCI.get_nChan() ) {
+		  if ( nActiveCh>0 && chSettings!=null ) { // nActiveCh < openBCI.get_nChan() ) {
 				// Channel settings format: is
 				// [CHANNEL, POWER_DOWN, GAIN_SET, INPUT_TYPE_SET, BIAS_SET, SRB2_SET, SRB1_SET]
 				// **POWER_DOWN**  0 = ON (default),  1 = OFF    
@@ -165,23 +178,36 @@ class openBCI2ft {
 				// **SRB2_SET**  0=Disconnect this input from SRB2, 1=Connect this input to SRB2  (default
 				// **SRB1_SET**  0=Disconnect all N inputs from SRB1 (default), 1=Connect all N to SRB1  
 				char[][] chSettingsValues=new char[openBCI.get_nChan()][];
+            char [] chDefault=null; 
 				for ( int chi=0; chi<chSettingsValues.length; chi++){
 					 //Default: {on, 24x, ADSINPUT_NORMAL, Bias_include, SRB2-include, SRB1-disconnect}
-					 chSettingsValues[chi]=new char[defaultSettings.length];
-					 for( int ci=0; ci<chSettingsValues[chi].length; ci++) 
+                // get the settings for this channel from the default set,
+                // re-using the last one if more channels than defaults
+                if( chi<defaultSettings.length ) chDefault=chSettings[chi];
+					 chSettingsValues[chi]=new char[chDefault.length];
+					 for( int ci=0; ci<chSettingsValues[chi].length; ci++) {
 						  chSettingsValues[chi][ci]=defaultSettings[ci];
-				}
-				// disable channels after nActiveCh
-				for ( int chi=nActiveCh; chi<openBCI.get_nChan(); chi++){
-					 System.out.println("Setting inactive channel : " + chi);
-					 chSettingsValues[chi][0]='1'; // power-down
-					 //chSettingsValues[chi][2]='5'; // Test-signal
+                }
 					 openBCI.initChannelWrite(chi);
 					 while ( openBCI.get_isWritingChannel() ){ // run the settings loop
 						  openBCI.writeChannelSettings(chi,chSettingsValues);
 						  Thread.sleep(100); while ( openBCI.read(true,0)>0 );//non-blocking consume output
 					 }
 				}
+				// disable channels after nActiveCh
+				for ( int chi=nActiveCh; chi<openBCI.get_nChan(); chi++){
+					 System.out.println("Setting inactive channel : " + chi);
+					 chSettingsValues[chi][0]='1'; // power-down
+					 //chSettingsValues[chi][2]='5'; // Test-signal
+				}
+            // now write the settings
+            for ( int chi=0; chi<openBCI.get_nChan(); chi++){
+					 openBCI.initChannelWrite(chi);
+					 while ( openBCI.get_isWritingChannel() ){ // run the settings loop
+						  openBCI.writeChannelSettings(chi,chSettingsValues);
+						  Thread.sleep(100); while ( openBCI.read(true,0)>0 );//non-blocking consume output
+					 }
+            }
 				Thread.sleep(100); while ( openBCI.read(true,0)>0 ); // non-blocking consume board output
 		  } else {
 				System.out.println("Setting channels to default.");
@@ -375,5 +401,45 @@ class openBCI2ft {
 		  }
 	 }
 
+
+    public static char[][] readConfigFile(String chdefaultFile){
+        List<String> lines=new LinkedList<String>();
+        try { 
+            File file = new File(chdefaultFile);  
+            BufferedReader br = new BufferedReader(new FileReader(file));         
+            String line;
+            while ((line = br.readLine()) != null) {
+                if( line==null || line.startsWith("#") || line.length()==0 ) {// comment line
+                    continue;
+                }
+                lines.add(line);                
+            }
+        } catch ( IOException ex ) {
+            System.err.println("Something wrong reading config file" + chdefaultFile);
+        }
+        // copy the lines into the settings
+        char[][] settings=new char[lines.size()][];
+        int chi=0;
+        System.out.println("Loaded Config from file:");
+        for ( String line : lines ) {
+            settings[chi]=new char[6];
+            // copy the settings from the line into the char array
+            int j=0; 
+            for ( j=0; j< Math.min(settings[chi].length,line.length()); j++){
+                settings[chi][j]=line.charAt(j);
+            }
+            // copy rest from defaultSettings
+            for ( ; j<settings[chi].length; j++){
+                settings[chi][j]=defaultSettings[j];
+            }
+            System.out.print(chi+":");
+            for ( j=0;j<settings[chi].length; j++){
+                System.out.print(settings[chi][j]);
+            }
+            System.out.println();
+            chi++;
+        }        
+        return settings;
+    }
 
 } // class
