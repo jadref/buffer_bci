@@ -168,7 +168,7 @@ public class Header {
 		this.order = order;
 	}
 	 
-	protected void serialize(ByteBuffer buf) {
+	protected void serialize(ByteBuffer buf) throws  java.nio.BufferOverflowException{
 		buf.putInt(nChans);
 		buf.putInt(nSamples);
 		buf.putInt(nEvents);

@@ -8,6 +8,7 @@ if [ $# -gt 1 ]; then sigproc=$2; fi
 
 echo Starting the non-saving java buffer server \(background\)
 bash dataAcq/startJavaNoSaveBuffer.sh &
+#bash dataAcq/startJavaBuffer.sh &
 bufferpid=$!
 echo buffpid=$bufferpid
 sleep 5

@@ -12,8 +12,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 public class SavingRingDataStore extends RingDataStore {
-    private static final int dataBufSize  = 256 * 100 * 1; // ~1s data (@256Hz) file-write buffer
-    private static final int eventBufSize =  10 * 400 * 1; // ~1s event(@10/s) file-write buffer
+    private static final int dataBufSize  = 256 * 1000 * 1; // ~1s data (@256Hz) file-write buffer
+    private static final int eventBufSize = dataBufSize; // ~1s event(@10/s) file-write buffer
     private OutputStream eventWriter;
     private OutputStream dataWriter;
     private OutputStream headerWriter;
@@ -130,6 +130,7 @@ public class SavingRingDataStore extends RingDataStore {
         // Write everything in BIG_ENDIAN
         writeBuf = ByteBuffer.allocate(eventBufSize);
         writeBuf.order(ByteOrder.nativeOrder());
+        System.err.println("Write Buffer size: " + writeBuf.capacity());
         // Some debug info about what we're doing
         System.err.println("Saving to : " + savePath);
     }
@@ -351,8 +352,13 @@ public class SavingRingDataStore extends RingDataStore {
         if (eventWriter == null) return;
         //System.err.println("Writing event:");
         writeBuf.clear();
-        event.serialize(writeBuf);
-        eventWriter.write(writeBuf.array(), writeBuf.arrayOffset(), writeBuf.position());
+        try {
+            event.serialize(writeBuf);
+            eventWriter.write(writeBuf.array(), writeBuf.arrayOffset(), writeBuf.position());
+        } catch ( java.nio.BufferOverflowException ex ) {
+            System.err.println("Event to big for saving!");
+            System.err.println(ex.getMessage());
+        }
         //System.err.println("Event len"+writeBuf.position()+"char");
         //eventWriter.flush();
     }
@@ -361,10 +367,15 @@ public class SavingRingDataStore extends RingDataStore {
         if (headerWriter == null) return;
         //System.err.println("Writing header:");
         writeBuf.clear();
-        header.serialize(writeBuf);
-        headerWriter.write(writeBuf.array(), writeBuf.arrayOffset(), writeBuf.position());
-        //System.err.println(writeBuf.position()+"char");
-        headerWriter.flush(); // force flush header... we always want this correct
+        try { 
+            header.serialize(writeBuf);
+            headerWriter.write(writeBuf.array(), writeBuf.arrayOffset(), writeBuf.position());
+            //System.err.println(writeBuf.position()+"char");
+            headerWriter.flush(); // force flush header... we always want this correct
+        } catch ( java.nio.BufferOverflowException ex   ) {
+            System.err.println("Header to big for saving!");
+            System.err.println(ex.getMessage());
+        }
     }
 
     public void cleanup() {

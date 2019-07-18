@@ -88,17 +88,17 @@ public class Event {
 		this.order = order;
 	}
 
-	public void serialize(ByteBuffer buf) {
-		buf.putInt(typeType);
-		buf.putInt(typeSize);
-		buf.putInt(valueType);
-		buf.putInt(valueSize);
-		buf.putInt(sample);
-		buf.putInt(offset);
-		buf.putInt(duration);
-		buf.putInt(typeSize*NetworkProtocol.dataTypeSize(typeType)+valueSize*NetworkProtocol.dataTypeSize(valueType));
-		for ( int i=0; i<type.length; i++) buf.put(type[i]);
-		for ( int i=0; i<value.length; i++) buf.put(value[i]);
+	public void serialize(ByteBuffer buf) throws  java.nio.BufferOverflowException {
+       buf.putInt(typeType);
+       buf.putInt(typeSize);
+       buf.putInt(valueType);
+       buf.putInt(valueSize);
+       buf.putInt(sample);
+       buf.putInt(offset);
+       buf.putInt(duration);
+       buf.putInt(typeSize*NetworkProtocol.dataTypeSize(typeType)+valueSize*NetworkProtocol.dataTypeSize(valueType));
+       for ( int i=0; i<type.length; i++) buf.put(type[i]);
+       for ( int i=0; i<value.length; i++) buf.put(value[i]);
 	}	 
 
 }
